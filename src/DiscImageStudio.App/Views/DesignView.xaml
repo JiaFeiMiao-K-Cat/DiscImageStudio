@@ -204,13 +204,32 @@
                         </Border>
 
                         <controls:VisibilityGate x:Name="FilesCardGate" Grid.Row="1"
-                                                 IsOpen="{Binding IsCd}" Inverted="True"
+                                                 IsOpen="True"
                                                  SizeChanged="OnPageSizeChanged"
                                                  IsVisibleChanged="OnFilesCardVisibilityChanged">
                             <Border Style="{StaticResource CardStyle}" Padding="18" Margin="0,16,0,0">
                                 <StackPanel>
                                     <TextBlock Text="随盘文件" Style="{StaticResource PanelTitle}"
                                                Margin="0,0,0,12" />
+                                    <controls:VisibilityGate IsOpen="{Binding IsCd}">
+                                        <StackPanel>
+                                            <controls:PathField Label="文件夹" Compact="True"
+                                                                Text="{Binding State.CdDataDirectory}"
+                                                                ToolTip="{Binding State.CdDataDirectory}"
+                                                                ButtonLabel="选文件夹…"
+                                                                Command="{Binding BrowseDataCommand}" />
+                                            <controls:VisibilityGate IsOpen="{Binding State.HasCdFiles}">
+                                                <StackPanel Margin="0,14,0,0">
+                                                    <TextBlock Style="{StaticResource FieldLabel}"
+                                                               Text="文件位置" Margin="0,0,0,6" />
+                                                    <controls:SegmentedControl LabelA="内圈" LabelB="外圈"
+                                                                               IsSecondSelected="{Binding State.CdFilesAtOuterRing}" />
+                                                </StackPanel>
+                                            </controls:VisibilityGate>
+                                            <TextBlock Style="{StaticResource HintText}" Margin="0,12,0,0"
+                                                       Text="不附文件时使用音轨；附文件时自动使用数据盘。" />
+                                        </StackPanel>
+                                    </controls:VisibilityGate>
                                     <controls:VisibilityGate IsOpen="{Binding IsDvd}">
                                         <StackPanel>
                                             <controls:PathField Label="文件夹" Compact="True"

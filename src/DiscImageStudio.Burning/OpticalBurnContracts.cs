@@ -5,15 +5,19 @@ public enum OpticalBurnMediaKind
     CdAudio,
     DvdData,
     BluRayData,
+    CdData,
 }
 
 internal static class OpticalBurnMedia
 {
+    internal static bool UsesCdDao(OpticalBurnMediaKind mediaKind)
+        => mediaKind is OpticalBurnMediaKind.CdAudio or OpticalBurnMediaKind.CdData;
+
     internal static int GetSectorBytes(OpticalBurnMediaKind mediaKind)
         => mediaKind switch
         {
             OpticalBurnMediaKind.CdAudio => 2352,
-            OpticalBurnMediaKind.DvdData or OpticalBurnMediaKind.BluRayData => 2048,
+            OpticalBurnMediaKind.CdData or OpticalBurnMediaKind.DvdData or OpticalBurnMediaKind.BluRayData => 2048,
             _ => throw new ArgumentOutOfRangeException(nameof(mediaKind), mediaKind, "Unknown optical media kind."),
         };
 }
@@ -34,7 +38,7 @@ public sealed record OpticalWriteSpeed(
     public double GetMultiplier(OpticalBurnMediaKind mediaKind)
         => mediaKind switch
         {
-            OpticalBurnMediaKind.CdAudio => SectorsPerSecond / CdSectorsPerSecondAtOneX,
+            OpticalBurnMediaKind.CdAudio or OpticalBurnMediaKind.CdData => SectorsPerSecond / CdSectorsPerSecondAtOneX,
             OpticalBurnMediaKind.DvdData => SectorsPerSecond * 2048.0 / DvdBytesPerSecondAtOneX,
             OpticalBurnMediaKind.BluRayData => SectorsPerSecond * 2048.0 / BluRayBytesPerSecondAtOneX,
             _ => throw new ArgumentOutOfRangeException(nameof(mediaKind), mediaKind, "Unknown optical media kind."),
@@ -68,10 +72,10 @@ public sealed record OpticalBurnProgress(
 }
 
 /// <summary>
-/// CD producers supply headerless 44.1 kHz, 16-bit stereo little-endian PCM,
+/// CD audio producers supply headerless 44.1 kHz, 16-bit stereo little-endian PCM,
 /// as required by IMAPI_CD_SECTOR_AUDIO. ContentLength excludes any WAV header.
-/// DVD and Blu-ray producers supply complete 2048-byte logical data sectors.
-/// The recorder adds physical encoding and error correction.
+/// CD data, DVD and Blu-ray producers supply complete 2048-byte logical data sectors.
+/// The recording backend adds physical encoding and error correction.
 /// </summary>
 public sealed record OpticalBurnRequest(
     string DeviceId,

@@ -43,6 +43,11 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty] private string _cdPreviewSize = "1600";
     [ObservableProperty] private string _cdSamplesPerSector = "16";
     [ObservableProperty] private bool _cdInterleave = true;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCdFiles), nameof(IsCdAudioMode), nameof(IsCdWaveOutput))]
+    private string _cdDataDirectory = string.Empty;
+    [ObservableProperty] private bool _cdFilesAtOuterRing;
+    [ObservableProperty] private string _cdVolumeLabel = "CD_IMAGE";
 
     // Second parameter set of the live preview page's calibration mode: the disc the reader
     // follows, as opposed to the generated geometry above. It is preview-only and never
@@ -156,8 +161,30 @@ public partial class DiscParametersState : ObservableObject
 
     /// <summary>A CUE sheet only accompanies PCM WAV tracks, so the CD page offers its
     /// toggle only while the chosen output is a .wav file.</summary>
-    public bool IsCdWaveOutput => Path.GetExtension(CdOutputPath.Trim())
+    public bool IsCdWaveOutput => IsCdAudioMode && Path.GetExtension(CdOutputPath.Trim())
         .Equals(".wav", StringComparison.OrdinalIgnoreCase);
+
+    public bool HasCdFiles => !string.IsNullOrWhiteSpace(CdDataDirectory);
+
+    public bool IsCdAudioMode => !HasCdFiles;
+
+    partial void OnCdDataDirectoryChanged(string value) => NormalizeCdOutputFormat();
+
+    internal void NormalizeCdOutputFormat()
+    {
+        string output = CdOutputPath.Trim();
+        if (output.Length == 0) return;
+        string extension = Path.GetExtension(output);
+        if (HasCdFiles && (extension.Equals(".wav", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".raw", StringComparison.OrdinalIgnoreCase)))
+        {
+            CdOutputPath = Path.ChangeExtension(output, ".iso");
+        }
+        else if (!HasCdFiles && extension.Equals(".iso", StringComparison.OrdinalIgnoreCase))
+        {
+            CdOutputPath = Path.ChangeExtension(output, ".wav");
+        }
+    }
 
     public bool HasDvdFiles => !string.IsNullOrWhiteSpace(DvdDataDirectory);
 

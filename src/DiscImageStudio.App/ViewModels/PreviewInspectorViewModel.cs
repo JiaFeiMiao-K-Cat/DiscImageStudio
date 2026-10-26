@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.IO;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using DiscImageStudio.Core;
@@ -31,6 +32,9 @@ public class PreviewInspectorViewModel : ObservableObject
 
     public bool IsCd => _family == OpticalDiscFamily.CompactDisc;
 
+    public bool IsCdAudioArtifact => IsCd && !Path.GetExtension(_state.CdTrackPath.Trim())
+        .Equals(".iso", StringComparison.OrdinalIgnoreCase);
+
     public bool IsDvd => _family == OpticalDiscFamily.Dvd;
 
     public bool IsBluRay => _family == OpticalDiscFamily.BluRay;
@@ -60,14 +64,14 @@ public class PreviewInspectorViewModel : ObservableObject
     {
         OpticalDiscFamily.Dvd => "生成的 DVD ISO",
         OpticalDiscFamily.BluRay => "生成的蓝光 ISO",
-        _ => "生成的 CD 音轨",
+        _ => "生成的 CD 音轨或 ISO",
     };
 
     public string ArtifactHint => _family switch
     {
         OpticalDiscFamily.Dvd => "可直接粘贴或浏览已生成的 ISO 镜像。",
         OpticalDiscFamily.BluRay => "可直接粘贴或浏览已生成的 ISO；同名 sidecar 会带回几何与影调。",
-        _ => "可直接粘贴或浏览已生成的音轨。",
+        _ => "可选择 WAV / RAW 音轨或 CD 数据盘 ISO。",
     };
 
     public ICommand BrowseArtifactCommand => _family switch
@@ -235,6 +239,7 @@ public class PreviewInspectorViewModel : ObservableObject
     [
         nameof(IsDvd),
         nameof(IsCd),
+        nameof(IsCdAudioArtifact),
         nameof(IsBluRay),
         nameof(HasSamplesPerSector),
         nameof(ArtifactLabel),
@@ -260,6 +265,9 @@ public class PreviewInspectorViewModel : ObservableObject
         switch (e.PropertyName)
         {
             case nameof(DiscParametersState.CdTrackPath):
+                Raise(nameof(IsCdAudioArtifact));
+                Raise(nameof(ArtifactPath));
+                break;
             case nameof(DiscParametersState.DvdIsoPath):
             case nameof(DiscParametersState.BdIsoPath):
                 Raise(nameof(ArtifactPath));

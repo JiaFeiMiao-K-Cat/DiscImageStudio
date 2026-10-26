@@ -21,7 +21,7 @@ internal static class CdRawImageByteOrderTests
 
         // This creates an in-memory image only; no recorder or write interface is used.
         using DynamicCdRawImageSession session = new();
-        IStream image = session.CreateAudioImage(content);
+        IStream image = session.CreateImage(content);
         image.Stat(out STATSTG stat, 1);
         Require(session.StartOfLeadout == AudioSectorCount, "audio length matches lead-out");
         Require(stat.cbSize > audio.Length, "image includes RAW framing and lead-in/out");

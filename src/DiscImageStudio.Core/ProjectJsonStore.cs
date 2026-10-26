@@ -380,10 +380,6 @@ public static class ProjectJsonStore
     private static void ValidateOutputs(ProjectDocument document)
     {
         ProjectOutputs outputs = document.Outputs;
-        if (document.IsCd && outputs.FilesAtOuterRing)
-        {
-            throw new InvalidDataException("文件位置选项仅用于 DVD 和蓝光工程。");
-        }
         if (string.IsNullOrWhiteSpace(outputs.OutputPath))
         {
             throw new InvalidDataException("outputs.outputPath 不能为空。");

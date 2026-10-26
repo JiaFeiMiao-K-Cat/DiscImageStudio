@@ -46,23 +46,35 @@
                 <StackPanel>
                     <controls:VisibilityGate IsOpen="{Binding IsCd}">
                         <StackPanel>
-                            <controls:PathField Label="输出音轨 (.wav / .raw)"
+                            <controls:PathField Label="{Binding CdOutputLabel}"
                                                 Text="{Binding State.CdOutputPath}"
                                                 ButtonLabel="选择…"
-                                                Hint="推荐以 WAV 格式导出。"
+                                                Hint="{Binding CdOutputHint}"
                                                 Command="{Binding BrowseOutputCommand}" />
-                            <!-- CD-DA encoding is the one option that changes the bytes rather
-                                 than the file container, so it gets its own labelled row above
-                                 the format-specific ones instead of trailing the card. -->
-                            <TextBlock Style="{StaticResource FieldLabel}" Margin="0,14,0,2"
-                                       Text="CD-DA 编码" />
-                            <controls:InterleaveToggle IsChecked="{Binding State.CdInterleave}"
-                                                       Hint="生成音轨时按 CD-DA 标准做延迟交织。不清楚请默认勾选此项。"
-                                                       AutomationProperties.Name="启用 CD-DA 延迟交织" />
-                            <!-- CUE sheets only make sense next to PCM WAV output, so the option
-                                 follows the chosen output format instead of sitting permanently. -->
-                            <controls:VisibilityGate IsOpen="{Binding State.IsCdWaveOutput}" Margin="0,12,0,0">
-                                <CheckBox Content="同时导出 CUE 文件" IsChecked="{Binding State.CdWriteCue}" />
+                            <controls:PathField Label="可选：随盘保存的文件夹（留空则使用音轨）"
+                                                Text="{Binding State.CdDataDirectory}"
+                                                ButtonLabel="选择…" Margin="0,14,0,0"
+                                                Command="{Binding BrowseDataCommand}" />
+                            <controls:VisibilityGate IsOpen="{Binding State.HasCdFiles}">
+                                <StackPanel Margin="0,14,0,0">
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="文件位置" Margin="0,0,0,6" />
+                                    <controls:SegmentedControl LabelA="内圈" LabelB="外圈"
+                                                               IsSecondSelected="{Binding State.CdFilesAtOuterRing}" />
+                                    <TextBlock Style="{StaticResource FieldLabel}" Margin="0,14,0,6" Text="卷标" />
+                                    <TextBox Text="{Binding State.CdVolumeLabel, UpdateSourceTrigger=PropertyChanged}" MaxLength="32" />
+                                </StackPanel>
+                            </controls:VisibilityGate>
+                            <controls:VisibilityGate IsOpen="{Binding State.IsCdAudioMode}">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource FieldLabel}" Margin="0,14,0,2"
+                                               Text="CD-DA 编码" />
+                                    <controls:InterleaveToggle IsChecked="{Binding State.CdInterleave}"
+                                                               Hint="生成音轨时按 CD-DA 标准做延迟交织。不清楚请默认勾选此项。"
+                                                               AutomationProperties.Name="启用 CD-DA 延迟交织" />
+                                    <controls:VisibilityGate IsOpen="{Binding State.IsCdWaveOutput}" Margin="0,12,0,0">
+                                        <CheckBox Content="同时导出 CUE 文件" IsChecked="{Binding State.CdWriteCue}" />
+                                    </controls:VisibilityGate>
+                                </StackPanel>
                             </controls:VisibilityGate>
                         </StackPanel>
                     </controls:VisibilityGate>

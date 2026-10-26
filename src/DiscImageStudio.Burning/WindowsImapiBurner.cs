@@ -106,7 +106,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         dynamic? format = null;
         try
         {
-            format = mediaKind == OpticalBurnMediaKind.CdAudio
+            format = OpticalBurnMedia.UsesCdDao(mediaKind)
                 ? CreateComObject("IMAPI2.MsftDiscFormat2RawCD")
                 : CreateComObject("IMAPI2.MsftDiscFormat2Data");
             format.Recorder = recorder;
@@ -165,7 +165,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         try
         {
             currentOperation = "创建刻录格式";
-            format = request.MediaKind == OpticalBurnMediaKind.CdAudio
+            format = OpticalBurnMedia.UsesCdDao(request.MediaKind)
                 ? CreateComObject("IMAPI2.MsftDiscFormat2RawCD")
                 : CreateComObject("IMAPI2.MsftDiscFormat2Data");
             currentOperation = "连接刻录机";
@@ -224,10 +224,11 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             ValidateRequestedMedia(request.MediaKind, recorder, format);
 
             OpticalWriteSpeed? actualWriteSpeed;
-            if (request.MediaKind == OpticalBurnMediaKind.CdAudio)
+            if (OpticalBurnMedia.UsesCdDao(request.MediaKind))
             {
-                using DynamicCdRawImageSession imageSession = new();
-                actualWriteSpeed = BurnCdAudio(
+                using ICdRawImageSession imageSession = request.MediaKind == OpticalBurnMediaKind.CdData
+                    ? new CdDataRawImageSession() : new DynamicCdRawImageSession();
+                actualWriteSpeed = BurnCdDao(
                     new DynamicCdRawSession((object)format, writeProgress.ReportRawCdUpdate),
                     imageSession,
                     content,
@@ -475,7 +476,20 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         CancellationToken cancellationToken,
         Action<string>? reportOperation = null,
         Action<OpticalWriteSpeed>? reportWriteSpeed = null)
+        => BurnCdDao(format, imageSession, content, request, cancellationToken, reportOperation, reportWriteSpeed);
+
+    internal static OpticalWriteSpeed BurnCdDao(
+        ICdRawSession format,
+        ICdRawImageSession imageSession,
+        GeneratedContentComStream content,
+        OpticalBurnRequest request,
+        CancellationToken cancellationToken,
+        Action<string>? reportOperation = null,
+        Action<OpticalWriteSpeed>? reportWriteSpeed = null)
     {
+        if (!OpticalBurnMedia.UsesCdDao(request.MediaKind))
+            throw new ArgumentException("CD DAO requires an audio or CD data request.", nameof(request));
+        string trackDescription = request.MediaKind == OpticalBurnMediaKind.CdData ? "数据轨" : "音轨";
         bool prepared = false;
         Exception? operationException = null;
         try
@@ -516,8 +530,8 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             actualWriteSpeed.Validate();
             reportWriteSpeed?.Invoke(actualWriteSpeed);
 
-            reportOperation?.Invoke("构造 CD DAO 音轨");
-            IStream rawImage = imageSession.CreateAudioImage(content);
+            reportOperation?.Invoke($"构造 CD DAO {trackDescription}");
+            IStream rawImage = imageSession.CreateImage(content);
             long startOfLeadout = imageSession.StartOfLeadout;
             long lastPossibleStartOfLeadout = format.LastPossibleStartOfLeadout;
             long excessSectors = startOfLeadout - lastPossibleStartOfLeadout;
@@ -536,7 +550,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
 
             using CancellationTokenRegistration registration = cancellationToken.Register(
                 format.CancelWrite);
-            reportOperation?.Invoke("写入 CD DAO 音轨");
+            reportOperation?.Invoke($"写入 CD DAO {trackDescription}");
             format.WriteMedia(rawImage);
             return actualWriteSpeed;
         }
@@ -642,7 +656,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         {
             string medium = mediaKind switch
             {
-                OpticalBurnMediaKind.CdAudio => "CD-R 或 CD-RW",
+                OpticalBurnMediaKind.CdAudio or OpticalBurnMediaKind.CdData => "CD-R 或 CD-RW",
                 OpticalBurnMediaKind.DvdData => "DVD",
                 OpticalBurnMediaKind.BluRayData => "未格式化的单层顺序 BD-R（无备用区）",
                 _ => throw new ArgumentOutOfRangeException(nameof(mediaKind)),
@@ -660,7 +674,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         // check alone must not determine whether a DVD drawing can be written.
         return mediaKind switch
         {
-            OpticalBurnMediaKind.CdAudio => physicalMediaType switch
+            OpticalBurnMediaKind.CdAudio or OpticalBurnMediaKind.CdData => physicalMediaType switch
             {
                 0x2 => currentProfiles.Contains(0x9), // CD-R
                 0x3 => currentProfiles.Contains(0xA), // CD-RW
@@ -694,22 +708,38 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
 
     internal static void ValidateDataMedia(OpticalBurnRequest request, int mediaState, long freeSectors)
     {
-        string mediaName = request.MediaKind switch
+        string mediaName = ValidateWritableDataCapacity(request.MediaKind, mediaState, freeSectors);
+        long requiredSectors = request.ContentLength / 2048;
+        if (freeSectors < requiredSectors)
         {
+            long deficit = requiredSectors - freeSectors;
+            throw new InvalidOperationException(
+                $"{mediaName} 剩余容量不足：需要 {requiredSectors:N0} 扇区（{requiredSectors / 512.0:F3} MiB），"
+                + $"实际可写 {freeSectors:N0} 扇区（{freeSectors / 512.0:F3} MiB），"
+                + $"超出 {deficit:N0} 扇区（{deficit / 512.0:F3} MiB）。");
+        }
+    }
+
+    internal static string ValidateWritableDataCapacity(OpticalBurnMediaKind mediaKind,
+        int mediaState, long freeSectors)
+    {
+        string mediaName = mediaKind switch
+        {
+            OpticalBurnMediaKind.CdData => "CD",
             OpticalBurnMediaKind.DvdData => "DVD",
             OpticalBurnMediaKind.BluRayData => "蓝光盘",
-            _ => throw new ArgumentOutOfRangeException(nameof(request), "Expected DVD or Blu-ray data."),
+            _ => throw new ArgumentOutOfRangeException(nameof(mediaKind), "Expected CD, DVD or Blu-ray data."),
         };
         if ((mediaState & BlankMediaState) == 0)
         {
             throw new InvalidOperationException($"{mediaName} 不是空白盘，已取消刻录。");
         }
 
-        long requiredSectors = request.ContentLength / 2048;
-        if (freeSectors < requiredSectors)
+        if (freeSectors <= 0)
         {
-            throw new InvalidOperationException($"{mediaName} 剩余容量不足。");
+            throw new InvalidOperationException($"{mediaName} 未报告可用的数据容量（{freeSectors:N0} 扇区）。");
         }
+        return mediaName;
     }
 
     private static void ReportWriteSpeed(

@@ -44,6 +44,15 @@ public partial class ExportViewModel : ObservableObject
         };
         _design.DesignEdited += UpdateSourceSummary;
         _design.CanvasChanged += UpdateSourceSummary;
+        _state.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(DiscParametersState.CdDataDirectory))
+            {
+                OnPropertyChanged(nameof(GenerateButtonText));
+                OnPropertyChanged(nameof(CdOutputLabel));
+                OnPropertyChanged(nameof(CdOutputHint));
+            }
+        };
     }
 
     public bool IsCd => _shell.CurrentProject?.IsCd ?? true;
@@ -60,7 +69,13 @@ public partial class ExportViewModel : ObservableObject
     public string FamilyLabel => _shell.CurrentProject?.FamilyLabel ?? "CD";
 
     /// <summary>Primary action label: the artifact differs per family (WAV track vs ISO).</summary>
-    public string GenerateButtonText => _shell.CurrentProject?.IsCd == false ? "生成镜像" : "生成音轨";
+    public string GenerateButtonText => !IsCd || _state.HasCdFiles ? "生成镜像" : "生成音轨";
+
+    public string CdOutputLabel => _state.HasCdFiles ? "输出数据盘 (.iso)" : "输出音轨 (.wav / .raw)";
+
+    public string CdOutputHint => _state.HasCdFiles
+        ? "包含随盘文件，导出为 CD 数据盘 ISO。"
+        : "无随盘文件时生成音轨，推荐 WAV 格式。";
 
     /// <summary>The source card's jump into the project dialog, where the generation geometry
     /// is edited; every other workspace shows the same affordance for the same reason.</summary>
@@ -103,6 +118,14 @@ public partial class ExportViewModel : ObservableObject
                 _state.DvdOutputPath = iso;
             }
         }
+        else if (_state.HasCdFiles)
+        {
+            string? iso = _shell.Dialogs?.PickSave("ISO 镜像|*.iso|所有文件|*.*", ".iso", "cd-image.iso");
+            if (iso is not null)
+            {
+                _state.CdOutputPath = iso;
+            }
+        }
         else
         {
             string? wav = _shell.Dialogs?.PickSave("WAV 音轨（推荐）|*.wav|RAW 音轨（旧格式）|*.raw|所有文件|*.*", ".wav", "cd-track.wav");
@@ -115,6 +138,17 @@ public partial class ExportViewModel : ObservableObject
 
     private void BrowseData()
     {
+        if (IsCd)
+        {
+            string? picked = _shell.Dialogs?.PickFolder("选择要放入 CD 数据盘的文件夹");
+            if (picked is not null)
+            {
+                _state.CdDataDirectory = picked;
+            }
+
+            return;
+        }
+
         if (IsBluRay)
         {
             string? picked = _shell.Dialogs?.PickFolder("选择要放入蓝光盘的文件夹");
@@ -176,7 +210,8 @@ public partial class ExportViewModel : ObservableObject
 
     private async Task GenerateCdAsync(string compositePath)
     {
-        string output = RequirePath(_state.CdOutputPath, "请选择 CD 音轨输出位置。");
+        string output = RequirePath(_state.CdOutputPath,
+            _state.HasCdFiles ? "请选择 CD ISO 输出位置。" : "请选择 CD 音轨输出位置。");
         List<string> arguments = ["cd-generate", "--input", compositePath, "--output", output];
         // The CD engine defaults (1200 mm/s, 0°, 57.5 mm) cover velocity, start angle and the
         // image outer radius; only the user-visible geometry is passed through.
@@ -186,15 +221,30 @@ public partial class ExportViewModel : ObservableObject
             "--r0", _state.CdInnerRadius.Trim(),
             "--r1", _state.CdOuterRadius.Trim(),
             "--sectors", _state.CdSectors.Trim(),
-            "--interleave", _state.CdInterleave.ToString().ToLowerInvariant(),
-            "--cue", _state.CdWriteCue.ToString().ToLowerInvariant(),
             "--tone-dither", tone.DitherStrength.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
             "--tone-levels", tone.Levels.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "--tone-brightness", tone.Brightness.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
             "--tone-gamma", tone.SrgbLinearization.ToString().ToLowerInvariant(),
         ]);
+        if (_state.HasCdFiles)
+        {
+            arguments.AddRange(
+            [
+                "--data-dir", _state.CdDataDirectory.Trim(),
+                "--volume-label", string.IsNullOrWhiteSpace(_state.CdVolumeLabel) ? "CD_IMAGE" : _state.CdVolumeLabel.Trim(),
+                "--file-position", _state.CdFilesAtOuterRing ? "outer" : "inner",
+            ]);
+        }
+        else
+        {
+            arguments.AddRange(
+            [
+                "--interleave", _state.CdInterleave.ToString().ToLowerInvariant(),
+                "--cue", _state.CdWriteCue.ToString().ToLowerInvariant(),
+            ]);
+        }
         await _shell.RunDiscJobAsync(
-            "正在生成 CD 音轨…",
+            _state.HasCdFiles ? "正在生成 CD 数据盘 ISO…" : "正在生成 CD 音轨…",
             arguments.ToArray(),
             output);
         // The generated track is the live preview page's read-back input.

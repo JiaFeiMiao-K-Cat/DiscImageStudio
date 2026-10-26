@@ -96,6 +96,15 @@ public partial class BurnViewModel : ObservableObject
                 OnFamilyInputsChanged();
             }
         };
+        _state.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(DiscParametersState.CdDataDirectory)
+                && !UseCalibrationPattern
+                && _shell.CurrentProject?.Family == OpticalDiscFamily.CompactDisc)
+            {
+                OnFamilyInputsChanged();
+            }
+        };
         PropertyChanged += (_, args) =>
         {
             if (args.PropertyName is nameof(IsBurnRunning))
@@ -148,7 +157,8 @@ public partial class BurnViewModel : ObservableObject
         ? OpticalBurnMediaKind.BluRayData
         : IsDvdBurn
             ? OpticalBurnMediaKind.DvdData
-            : OpticalBurnMediaKind.CdAudio;
+            : !UseCalibrationPattern && !string.IsNullOrWhiteSpace(_state.CdDataDirectory)
+                ? OpticalBurnMediaKind.CdData : OpticalBurnMediaKind.CdAudio;
 
     /// <summary>Device→speeds→confirm gating: not busy, device chosen, checkbox ticked.</summary>
     private bool CanStartBurn()
@@ -263,12 +273,15 @@ public partial class BurnViewModel : ObservableObject
                 : "请先在设计页导入图片";
             // The encoding is part of the material actually written, and the burn page has
             // no switch of its own: surfacing it here keeps the streamed bytes explainable.
-            string encoding = _state.CdInterleave ? "启用 CD-DA 延迟交织" : "未交织";
+            string encoding = string.IsNullOrWhiteSpace(_state.CdDataDirectory)
+                ? _state.CdInterleave ? "CD 音轨 · 启用延迟交织" : "CD 音轨 · 未交织"
+                : $"CD 数据盘 · 文件位于{(_state.CdFilesAtOuterRing ? "外圈" : "内圈")}";
             SourceDetails = _design.HasLayers
                 ? $"确保磁盘预留适量空间 · {encoding}"
                 : $"合成图会自动生成本页输入。 · {encoding}";
             identity = string.Join("\u001f", "cd", _design.CompositeRevision, _state.CdSectors,
                 _state.CdInnerRadius, _state.CdOuterRadius, _state.CdInterleave,
+                _state.CdDataDirectory, _state.CdVolumeLabel, _state.CdFilesAtOuterRing,
                 _state.ToneDitherStrength, _state.ToneLevels, _state.ToneBrightness,
                 _state.ToneSrgbLinearization);
         }
@@ -532,21 +545,20 @@ public partial class BurnViewModel : ObservableObject
                 else
                 {
                     CdDiscParameters parameters = ReadCdGeneratedParameters();
-                    bool interleave = _state.CdInterleave;
-                    request = new OpticalBurnRequest(
+                    request = CreateCdBurnRequest(
+                        compositePath,
+                        parameters,
+                        _state.CdDataDirectory,
+                        _state.CdVolumeLabel,
+                        _state.CdFilesAtOuterRing,
+                        _state.CdInterleave,
+                        _state.Tone,
                         device.Id,
-                        OpticalBurnMediaKind.CdAudio,
-                        parameters.TotalBytes,
-                        (output, cancellationToken) => CdTrackGenerator.GenerateToStream(
-                            compositePath,
-                            output,
-                            parameters,
-                            interleave,
-                            cancellationToken: cancellationToken,
-                            audioByteOrder: CdAudioByteOrder.LittleEndian,
-                            tone: _state.Tone),
                         selectedWriteSpeed.Speed);
-                    contentDescription = $"CD · {parameters.Sectors} 扇区 · {parameters.TotalBytes / (1024.0 * 1024.0):F1} MiB";
+                    contentDescription = request.MediaKind == OpticalBurnMediaKind.CdData
+                        ? $"CD 数据盘（DAO） · 文件位于{(_state.CdFilesAtOuterRing ? "外圈" : "内圈")}"
+                        : "CD 音轨";
+                    contentDescription += $" · {parameters.Sectors} 扇区 · {request.ContentLength / (1024.0 * 1024.0):F1} MiB";
                 }
             }
 
@@ -634,6 +646,35 @@ public partial class BurnViewModel : ObservableObject
             OnPropertyChanged(nameof(IsSetupEnabled));
             UpdateActionState();
         }
+    }
+
+    // Build the layout before physical writing and capture all generation options.
+    internal static OpticalBurnRequest CreateCdBurnRequest(
+        string imagePath,
+        CdDiscParameters parameters,
+        string? dataDirectory,
+        string volumeLabel,
+        bool filesAtOuterRing,
+        bool interleave,
+        ToneProfile tone,
+        string deviceId,
+        OpticalWriteSpeed? writeSpeed)
+    {
+        parameters.Validate();
+        ToneProfile capturedTone = tone.Normalized();
+        if (string.IsNullOrWhiteSpace(dataDirectory))
+        {
+            return new OpticalBurnRequest(deviceId, OpticalBurnMediaKind.CdAudio, parameters.TotalBytes,
+                (output, token) => CdTrackGenerator.GenerateToStream(imagePath, output, parameters,
+                    interleave, cancellationToken: token, audioByteOrder: CdAudioByteOrder.LittleEndian,
+                    tone: capturedTone), writeSpeed);
+        }
+
+        CdDataLayoutPlan plan = CdDataImageGenerator.PrepareLayout(dataDirectory.Trim(), parameters,
+            string.IsNullOrWhiteSpace(volumeLabel) ? "CD_IMAGE" : volumeLabel.Trim(), filesAtOuterRing);
+        return new OpticalBurnRequest(deviceId, OpticalBurnMediaKind.CdData, checked(parameters.Sectors * 2048),
+            (output, token) => CdDataImageGenerator.GenerateToStream(imagePath, output, parameters, plan,
+                cancellationToken: token, tone: capturedTone), writeSpeed);
     }
 
     // Request construction is separate from physical writing so the captured

@@ -125,6 +125,9 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.CdInnerRadius)
             or nameof(DiscParametersState.CdOuterRadius)
             or nameof(DiscParametersState.CdSectors)
+            or nameof(DiscParametersState.CdDataDirectory)
+            or nameof(DiscParametersState.CdVolumeLabel)
+            or nameof(DiscParametersState.CdFilesAtOuterRing)
             or nameof(DiscParametersState.DvdInnerRadius)
             or nameof(DiscParametersState.DvdOuterRadius)
             or nameof(DiscParametersState.DvdTotalSectors)
@@ -257,17 +260,28 @@ public partial class ToneViewModel : ObservableObject
                 CdDiscParameters parameters = ReadCdPreviewParameters();
                 ToneProfile tone = _state.Tone;
                 samplesPerSector = TonePreviewSamplesPerSector;
+                string dataDirectory = _state.CdDataDirectory.Trim();
+                string volumeLabel = _state.CdVolumeLabel.Trim();
+                bool filesAtOuterRing = _state.CdFilesAtOuterRing;
                 await StaWorker.RunAsync(() =>
                 {
-                    CdTrackGenerator.PreviewWarp(
-                        sourcePath,
-                        outputPath,
-                        parameters,
-                        parameters,
-                        TonePreviewSize,
-                        samplesPerSector,
-                        tone,
-                        cancellationToken);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    CdDataLayoutPlan? plan = dataDirectory.Length > 0
+                        ? CdDataImageGenerator.PrepareLayout(dataDirectory, parameters, volumeLabel, filesAtOuterRing)
+                        : null;
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (plan is not null)
+                    {
+                        CdDataImageGenerator.PreviewWarp(sourcePath, outputPath, parameters, parameters,
+                            TonePreviewSize, samplesPerSector, tone, plan, cancellationToken);
+                        FileRegionPreviewOverlay.ApplyCd(outputPath, parameters,
+                            plan.DrawingStartLba, plan.DrawingEndLbaExclusive, cancellationToken);
+                    }
+                    else
+                    {
+                        CdTrackGenerator.PreviewWarp(sourcePath, outputPath, parameters, parameters,
+                            TonePreviewSize, samplesPerSector, tone, cancellationToken);
+                    }
                     return 0;
                 });
             }

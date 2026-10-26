@@ -6,6 +6,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using DiscImageStudio.BluRay;
+using DiscImageStudio.Cd;
 using DiscImageStudio.Core;
 using DiscImageStudio.Dvd;
 using DiscImageStudio.Services;
@@ -49,6 +50,7 @@ internal static class FilePlacementPreviewTests
             VerifyReadbackRange(directory);
 
             shell = new ShellViewModel(Dispatcher.CurrentDispatcher);
+            VerifyCdPreview(shell, directory, source, files);
             VerifyDvdPreview(shell, directory, source, files);
             VerifyBluRayPreview(shell, directory, source, files);
 
@@ -77,6 +79,92 @@ internal static class FilePlacementPreviewTests
             SynchronizationContext.SetSynchronizationContext(previous);
             Directory.Delete(directory, recursive: true);
         }
+    }
+
+    private static void VerifyCdPreview(ShellViewModel shell, string directory, string source, string files)
+    {
+        DiscParametersState state = shell.State;
+        LivePreviewViewModel preview = shell.LivePreview;
+        preview.SelectedFamily = OpticalDiscFamily.CompactDisc;
+        preview.IsCalibrationPreview = true;
+        state.CdImagePath = source;
+        state.CdSectors = "256";
+        state.CdInnerRadius = state.CdActualInnerRadius = "24.5";
+        state.CdOuterRadius = state.CdActualOuterRadius = "56.8";
+        state.CdPreviewSize = "256";
+        state.CdSamplesPerSector = "2";
+        state.CdDataDirectory = files;
+        CdDiscParameters disc = new(24.5, 56.8, 256);
+        foreach (bool outer in new[] { false, true })
+        {
+            state.CdFilesAtOuterRing = outer;
+            RunPreview(preview);
+            RequirePreview(preview, true, $"CD {(outer ? "outer" : "inner")} design projection");
+            CdDataLayoutPlan plan = CdDataImageGenerator.PrepareLayout(files, disc, filesAtOuterRing: outer);
+            BitmapSource projection = preview.ResultImage!;
+            double drawingMiddle = disc.RadiusFromByte(
+                ((long)plan.DrawingStartLba + plan.DrawingEndLbaExclusive) * CdDiscParameters.BytesPerSector / 2);
+            double fileRadius = disc.RadiusFromByte((outer
+                ? (long)plan.DrawingEndLbaExclusive + disc.Sectors
+                : plan.DrawingStartLba) * CdDiscParameters.BytesPerSector / 2);
+            Color SampleCd(double radius)
+                => Sample(projection, (int)Math.Round(projection.PixelWidth / 2.0
+                    + radius * projection.PixelWidth / (2 * disc.ImageOuterRadiusMm)), projection.PixelHeight / 2);
+            Require(SampleCd(fileRadius) == Yellow, "CD overlay follows CD image radius and pixel centre");
+            Require(SampleCd(drawingMiddle) != Yellow, "CD drawing retains its physical range");
+
+            string iso = Path.Combine(directory, $"cd-{outer}.iso");
+            CdDataImageGenerator.Generate(source, iso, disc, plan);
+            state.CdFilesAtOuterRing = !outer;
+            state.CdTrackPath = iso;
+            Require(state.CdFilesAtOuterRing == outer, "CD sidecar restores file placement");
+            Require(!preview.Inspector.IsCdAudioArtifact, "CD ISO readback hides audio interleave");
+            preview.IsCalibrationPreview = false;
+            RunPreview(preview);
+            RequirePreview(preview, true, $"CD {(outer ? "outer" : "inner")} ISO readback");
+            preview.IsCalibrationPreview = true;
+        }
+
+        CdDiscParameters customDisc = disc with
+        {
+            LinearVelocityMmPerSecond = 1300,
+            StartAngleRadians = .7,
+            ImageOuterRadiusMm = 61,
+        };
+        CdDataLayoutPlan customPlan = CdDataImageGenerator.PrepareLayout(files, customDisc);
+        string customIso = Path.Combine(directory, "cd-custom-geometry.iso");
+        CdDataImageGenerator.Generate(source, customIso, customDisc, customPlan);
+        state.CdTrackPath = customIso;
+        preview.IsCalibrationPreview = false;
+        RunPreview(preview);
+        RequirePreview(preview, true, "CD ISO custom CLI geometry readback");
+        string customPreview = Path.Combine(directory, "cd-custom-expected.png");
+        CdDataImageGenerator.PreviewTrack(customIso, customPreview, customDisc, 256, 1024);
+        FileRegionPreviewOverlay.ApplyCd(customPreview, customDisc,
+            customPlan.DrawingStartLba, customPlan.DrawingEndLbaExclusive);
+        Require(Pixels(preview.ResultImage!).SequenceEqual(Pixels(ReadPng(customPreview))),
+            "CD readback preserves sidecar velocity, start angle and image outer radius");
+        preview.IsCalibrationPreview = true;
+
+        state.CdDataDirectory = string.Empty;
+        RunPreview(preview);
+        RequirePreview(preview, false, "CD without files returns to audio projection");
+        state.CdDataDirectory = Path.Combine(directory, "missing-cd-files");
+        RunPreview(preview);
+        Require(!preview.HasFileRegionOverlay && !preview.StatusText.StartsWith("已实时更新"),
+            "missing CD folder cannot silently show audio projection");
+        state.CdDataDirectory = files;
+        state.CdSectors = "32";
+        RunPreview(preview);
+        Require(!preview.HasFileRegionOverlay && !preview.StatusText.StartsWith("已实时更新"),
+            "CD capacity failure does not fall back to full-disc drawing");
+        state.CdSectors = "256";
+        preview.IsCalibrationPreview = false;
+        File.WriteAllText(state.CdTrackPath + ".json", "invalid sidecar");
+        RunPreview(preview);
+        RequirePreview(preview, false, "CD ISO readback without valid layout metadata");
+        state.CdTrackPath = Path.Combine(directory, "audio.wav");
+        Require(preview.Inspector.IsCdAudioArtifact, "CD audio readback restores interleave controls");
     }
 
     private static void VerifyDvdPreview(ShellViewModel shell, string directory, string source, string files)

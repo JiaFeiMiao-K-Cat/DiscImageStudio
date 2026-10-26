@@ -9,5 +9,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DiscImageStudio.Core\DiscImageStudio.Core.csproj" />
+    <ProjectReference Include="..\DiscImageStudio.Iso\DiscImageStudio.Iso.csproj" />
   </ItemGroup>
 </Project>

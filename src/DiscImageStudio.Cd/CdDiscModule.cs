@@ -38,20 +38,23 @@ public sealed class CdDiscModule : IOpticalDiscModule
 
     private static readonly DiscModuleDescriptor ModuleDescriptor = new(
         ModuleId,
-        "CD-DA",
+        "CD",
         OpticalDiscFamily.CompactDisc,
-        "WAV and raw 2352-byte/sector CD-DA track generation and CLV geometry previews.",
+        "CD audio tracks or Mode 1 ISO9660/Joliet data images with CLV geometry previews.",
         SupportsCancellation: true,
         Commands:
         [
             new DiscCommandDescriptor(
                 "cd-generate",
-                "Generate CD audio track",
-                "Maps an image to WAV + CUE (.wav) or legacy big-endian audio (.raw), with optional delay interleave.",
-                DiscModuleCapabilities.RawTrackGeneration,
+                "Generate CD audio or data image",
+                "Without files, writes WAV/CUE or RAW audio; with --data-dir, writes a Mode 1 ISO with inner/outer-ring files.",
+                DiscModuleCapabilities.RawTrackGeneration | DiscModuleCapabilities.DataImageGeneration | DiscModuleCapabilities.HybridFilesystem,
                 [
                     new("input", "Source image", DiscOptionValueType.InputFile, Required: true),
-                    new("output", "Audio track (.wav or .raw)", DiscOptionValueType.OutputFile, Required: true),
+                    new("output", "Audio track (.wav/.raw) or data image (.iso)", DiscOptionValueType.OutputFile, Required: true),
+                    new("data-dir", "Files to include; omitted for audio", DiscOptionValueType.InputFolder),
+                    new("volume-label", "Data volume label", DiscOptionValueType.String, DefaultValue: "CD_IMAGE"),
+                    new("file-position", "File position", DiscOptionValueType.Choice, DefaultValue: "inner", Choices: ["inner", "outer"]),
                     .. GeometryOptions,
                     new("interleave", "CD-DA delay interleave", DiscOptionValueType.Boolean, DefaultValue: "true"),
                     new("cue", "Write a CUE sheet next to the WAV track", DiscOptionValueType.Boolean, DefaultValue: "true"),
@@ -68,17 +71,21 @@ public sealed class CdDiscModule : IOpticalDiscModule
                     .. GeometryOptions,
                     .. MeasuredGeometryOptions,
                     .. ToneOptions,
+                    new("data-dir", "Data files for drawing-range preview", DiscOptionValueType.InputFolder),
+                    new("volume-label", "Data volume label", DiscOptionValueType.String, DefaultValue: "CD_IMAGE"),
+                    new("file-position", "File position", DiscOptionValueType.Choice, DefaultValue: "inner", Choices: ["inner", "outer"]),
                     new("size", "Preview size", DiscOptionValueType.Integer, DefaultValue: "1600", Unit: "px"),
                     new("samples-per-sector", "Samples per sector", DiscOptionValueType.Integer, DefaultValue: "16"),
                 ]),
             new DiscCommandDescriptor(
                 "cd-preview-track",
-                "Preview CD audio track",
-                "Renders an existing WAV or raw CD-DA track with measured geometry, undoing the delay interleave by default.",
+                "Preview CD audio or data image",
+                "Renders WAV/RAW audio or a Mode 1 ISO with measured geometry.",
                 DiscModuleCapabilities.EncodedOutputPreview,
                 [
-                    new("track", "WAV or raw track", DiscOptionValueType.InputFile, Required: true),
+                    new("track", "WAV/RAW track or Mode 1 ISO", DiscOptionValueType.InputFile, Required: true),
                     new("output", "Preview PNG", DiscOptionValueType.OutputFile, Required: true),
+                    .. GeometryOptions,
                     new("size", "Preview size", DiscOptionValueType.Integer, DefaultValue: "1600", Unit: "px"),
                     new("byte-step", "Byte sampling interval", DiscOptionValueType.Integer, DefaultValue: "48"),
                     new("deinterleave", "Undo CD-DA delay interleave", DiscOptionValueType.Boolean, DefaultValue: "true"),
@@ -114,6 +121,22 @@ public sealed class CdDiscModule : IOpticalDiscModule
         CancellationToken cancellationToken)
     {
         string output = options.Require("output");
+        string dataDirectory = options.GetString("data-dir", string.Empty).Trim();
+        bool outer = ReadFilePosition(options);
+        if (dataDirectory.Length > 0)
+        {
+            CdDiscParameters parameters = ReadParameters(options);
+            CdDataLayoutPlan plan = CdDataImageGenerator.PrepareLayout(dataDirectory, parameters,
+                options.GetString("volume-label", "CD_IMAGE"), outer);
+            CdGenerationSummary dataSummary = CdDataImageGenerator.Generate(options.Require("input"),
+                output, parameters, plan,
+                value => progress?.Report(new DiscJobProgress(ModuleId, "generate",
+                    $"CD data progress {value.Fraction:P1}", value.Fraction, value.CompletedBytes,
+                    value.TotalBytes, value.Elapsed)), cancellationToken, ReadTone(options));
+            return new DiscJobResult(ModuleId, request.Command, 0,
+                $"CD data image complete: {plan.FileCount} files, {plan.TotalSectors} sectors, "
+                + $"files={(outer ? "outer" : "inner")}, output={dataSummary.OutputTrack}", dataSummary.OutputTrack);
+        }
         CdGenerationSummary summary = CdTrackGenerator.Generate(
             options.Require("input"),
             output,
@@ -147,6 +170,18 @@ public sealed class CdDiscModule : IOpticalDiscModule
         string output = Path.GetFullPath(options.Require("output"));
         progress?.Report(new DiscJobProgress(ModuleId, "preview", "Rendering CD geometry preview…"));
         CdDiscParameters generated = ReadParameters(options);
+        string dataDirectory = options.GetString("data-dir", string.Empty).Trim();
+        bool outer = ReadFilePosition(options);
+        if (dataDirectory.Length > 0)
+        {
+            CdDataLayoutPlan plan = CdDataImageGenerator.PrepareLayout(dataDirectory, generated,
+                options.GetString("volume-label", "CD_IMAGE"), outer);
+            CdDataImageGenerator.PreviewWarp(options.Require("input"), output, generated,
+                ReadMeasuredParameters(options, generated), options.GetInt("size", 1600),
+                options.GetInt("samples-per-sector", 16), ReadTone(options), plan, cancellationToken);
+            return new DiscJobResult(ModuleId, request.Command, 0,
+                $"CD data geometry preview complete: output={output}", output);
+        }
         CdTrackGenerator.PreviewWarp(
             options.Require("input"),
             output,
@@ -172,6 +207,16 @@ public sealed class CdDiscModule : IOpticalDiscModule
     {
         string output = Path.GetFullPath(options.Require("output"));
         progress?.Report(new DiscJobProgress(ModuleId, "preview", "Rendering CD track preview…"));
+        string track = options.Require("track");
+        if (Path.GetExtension(track).Equals(".iso", StringComparison.OrdinalIgnoreCase))
+        {
+            CdDataImageMetadata? metadata = CdDataImageMetadata.TryLoad(track);
+            CdDiscParameters parameters = ReadParameters(options, metadata?.Parameters);
+            CdDataImageGenerator.PreviewTrack(track, output, parameters,
+                options.GetInt("size", 1600), options.GetInt("byte-step", 48), cancellationToken);
+            return new DiscJobResult(ModuleId, request.Command, 0,
+                $"CD data readback preview complete: output={output}", output);
+        }
         CdTrackGenerator.PreviewTrack(
             options.Require("track"),
             output,
@@ -188,17 +233,25 @@ public sealed class CdDiscModule : IOpticalDiscModule
             output);
     }
 
-    private static CdDiscParameters ReadParameters(CdCommandOptions options)
+    private static CdDiscParameters ReadParameters(CdCommandOptions options, CdDiscParameters? fallback = null)
     {
-        double startAngleDegrees = options.GetDouble("theta0", 0.0);
+        double startAngleDegrees = options.GetDouble("theta0", (fallback?.StartAngleRadians ?? 0) * 180.0 / Math.PI);
         return new CdDiscParameters(
-            options.GetDouble("r0", 24.5),
-            options.GetDouble("r1", 56.8),
-            options.GetLong("sectors", 359849),
-            options.GetDouble("velocity", CdDiscParameters.StandardLinearVelocityMmPerSecond),
+            options.GetDouble("r0", fallback?.InnerRadiusMm ?? 24.5),
+            options.GetDouble("r1", fallback?.OuterRadiusMm ?? 56.8),
+            options.GetLong("sectors", fallback?.Sectors ?? 359849),
+            options.GetDouble("velocity", fallback?.LinearVelocityMmPerSecond ?? CdDiscParameters.StandardLinearVelocityMmPerSecond),
             startAngleDegrees * Math.PI / 180.0,
-            options.GetDouble("outer", CdDiscParameters.StandardImageOuterRadiusMm));
+            options.GetDouble("outer", fallback?.ImageOuterRadiusMm ?? CdDiscParameters.StandardImageOuterRadiusMm));
     }
+
+    private static bool ReadFilePosition(CdCommandOptions options)
+        => options.GetString("file-position", "inner").ToLowerInvariant() switch
+        {
+            "inner" => false,
+            "outer" => true,
+            _ => throw new ArgumentException("--file-position must be inner or outer."),
+        };
 
     private static ToneProfile ReadTone(CdCommandOptions options)
     {
@@ -271,6 +324,9 @@ public sealed class CdDiscModule : IOpticalDiscModule
             => _values.TryGetValue(key, out string? value)
                 ? value
                 : throw new ArgumentException($"Missing required option --{key}.");
+
+        internal string GetString(string key, string fallback)
+            => _values.TryGetValue(key, out string? value) ? value : fallback;
 
         internal int GetInt(string key, int fallback)
             => _values.TryGetValue(key, out string? value)

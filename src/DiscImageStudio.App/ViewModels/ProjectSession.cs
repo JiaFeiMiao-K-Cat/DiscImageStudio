@@ -72,7 +72,11 @@ internal static class ProjectSession
                 state.CdSectors = sectors;
                 state.CdActualInnerRadius = inner;
                 state.CdActualOuterRadius = outer;
+                state.CdDataDirectory = outputs.DataDirectory;
+                state.CdFilesAtOuterRing = outputs.FilesAtOuterRing;
+                state.CdVolumeLabel = string.IsNullOrWhiteSpace(outputs.VolumeLabel) ? "CD_IMAGE" : outputs.VolumeLabel;
                 state.CdOutputPath = outputs.OutputPath;
+                state.NormalizeCdOutputFormat();
                 state.CdWriteCue = outputs.WriteCue;
                 state.CdInterleave = outputs.Interleave;
                 state.CdImagePath = string.Empty;
@@ -127,11 +131,12 @@ internal static class ProjectSession
                     FilesAtOuterRing: state.BdFilesAtOuterRing);
             default:
                 return new ProjectOutputs(
-                    RequireOutput(state.CdOutputPath, "CD 音轨输出位置"),
+                    RequireOutput(state.CdOutputPath, state.HasCdFiles ? "CD ISO 输出位置" : "CD 音轨输出位置"),
                     state.CdWriteCue,
-                    DataDirectory: string.Empty,
-                    VolumeLabel: string.Empty,
-                    state.CdInterleave);
+                    state.CdDataDirectory,
+                    state.CdVolumeLabel,
+                    state.CdInterleave,
+                    FilesAtOuterRing: state.CdFilesAtOuterRing);
         }
     }
 

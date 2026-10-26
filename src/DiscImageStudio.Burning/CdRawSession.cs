@@ -32,7 +32,7 @@ internal interface ICdRawImageSession : IDisposable
 {
     long StartOfLeadout { get; }
 
-    IStream CreateAudioImage(IStream audioContent);
+    IStream CreateImage(IStream content);
 }
 
 internal sealed class DynamicCdRawSession(object format, Action<object>? reportWriteProgress = null) : ICdRawSession
@@ -123,7 +123,7 @@ internal sealed class DynamicCdRawImageSession : ICdRawImageSession
 
     public long StartOfLeadout => Convert.ToInt64(_creator.StartOfLeadout);
 
-    public IStream CreateAudioImage(IStream audioContent)
+    public IStream CreateImage(IStream audioContent)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(audioContent);

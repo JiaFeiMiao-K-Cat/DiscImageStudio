@@ -69,6 +69,11 @@ FilePlacementProjectTests.Run();
 FilePlacementPreviewTests.Run();
 DesignComposerTests.Run();
 CdAudioCompatibilityTests.Run();
+CdDataImageTests.Run();
+CdDataBurnTests.Run();
+CdDataDaoWorkflowTests.Run();
+CdMode1SectorTests.Run();
+CdDataRawImageTests.Run();
 CdRawImageByteOrderTests.Run();
 CdBinaryTests.Run();
 CdSimdSamplingTests.Run();
@@ -739,7 +744,7 @@ static void TestCdRawDaoCallOrder()
         "PrepareMedia,MediaPhysicallyBlank,SupportedSectorTypes,"
         + "SetRequestedSectorType,SetWriteSpeed,"
         + "CurrentWriteSpeed,CurrentRotationTypeIsPureCav,"
-        + "CreateAudioImage,StartOfLeadout,LastPossibleStartOfLeadout,"
+        + "CreateImage,StartOfLeadout,LastPossibleStartOfLeadout,"
         + "WriteMedia,ReleaseMedia",
         string.Join(',', session.Calls),
         "CD Raw DAO preparation order");
@@ -852,7 +857,7 @@ static void TestCdRawImageConstruction()
     content.WaitUntilPrebuffered(CancellationToken.None);
 
     using DynamicCdRawImageSession imageSession = new();
-    IStream rawImage = imageSession.CreateAudioImage(content);
+    IStream rawImage = imageSession.CreateImage(content);
     rawImage.Stat(out STATSTG stat, 1);
     Equal(300L, imageSession.StartOfLeadout, "Raw CD image lead-out matches audio length");
     True(
@@ -1023,9 +1028,9 @@ sealed class RecordingCdRawImageSession(List<string> calls) : ICdRawImageSession
         }
     }
 
-    public IStream CreateAudioImage(IStream audioContent)
+    public IStream CreateImage(IStream audioContent)
     {
-        calls.Add(nameof(CreateAudioImage));
+        calls.Add(nameof(CreateImage));
         return audioContent;
     }
 

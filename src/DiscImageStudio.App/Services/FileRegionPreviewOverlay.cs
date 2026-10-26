@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using DiscImageStudio.BluRay;
+using DiscImageStudio.Cd;
 using DiscImageStudio.Core;
 using DiscImageStudio.Dvd;
 
@@ -11,6 +12,17 @@ namespace DiscImageStudio.Services;
 /// burn streams never pass through this presentation layer.</summary>
 internal static class FileRegionPreviewOverlay
 {
+    internal static void ApplyCd(string path, CdDiscParameters actual,
+        uint drawingStartLba, uint drawingEndLbaExclusive, CancellationToken token = default)
+    {
+        actual.Validate();
+        ValidateRange(checked((uint)actual.Sectors), drawingStartLba, drawingEndLbaExclusive);
+        Apply(path, actual.InnerRadiusMm, actual.OuterRadiusMm,
+            actual.RadiusFromByte((long)drawingStartLba * CdDiscParameters.BytesPerSector),
+            actual.RadiusFromByte((long)drawingEndLbaExclusive * CdDiscParameters.BytesPerSector),
+            dvdPixelCoordinates: false, token, actual.ImageOuterRadiusMm);
+    }
+
     internal static void ApplyDvd(string path, DvdStreamingOptions actual,
         uint drawingStartLba, uint drawingEndLbaExclusive, CancellationToken token = default)
     {
@@ -44,7 +56,8 @@ internal static class FileRegionPreviewOverlay
     }
 
     private static void Apply(string path, double inner, double outer,
-        double drawingInner, double drawingOuter, bool dvdPixelCoordinates, CancellationToken token)
+        double drawingInner, double drawingOuter, bool dvdPixelCoordinates, CancellationToken token,
+        double? cdImageOuterRadius = null)
     {
         token.ThrowIfCancellationRequested();
         BitmapSource source;
@@ -62,8 +75,8 @@ internal static class FileRegionPreviewOverlay
         int stride = checked(size * 4);
         byte[] pixels = new byte[checked(stride * size)];
         source.CopyPixels(pixels, stride, 0);
-        double centre = (size - 1) / 2.0;
-        double mmPerPixel = outer * 2 / (dvdPixelCoordinates ? size - 1 : size);
+        double centre = cdImageOuterRadius.HasValue ? size / 2.0 : (size - 1) / 2.0;
+        double mmPerPixel = (cdImageOuterRadius ?? outer) * 2 / (dvdPixelCoordinates ? size - 1 : size);
         double innerSquared = inner * inner, outerSquared = outer * outer;
         double drawingInnerSquared = drawingInner * drawingInner;
         double drawingOuterSquared = drawingOuter * drawingOuter;

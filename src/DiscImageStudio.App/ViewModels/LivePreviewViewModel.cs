@@ -102,10 +102,10 @@ public partial class LivePreviewViewModel : ObservableObject
     private string _resultPreviewPath = string.Empty;
 
     [ObservableProperty]
-    private string _resultPreviewPlaceholderText = "请先选择生成的 CD 音轨。";
+    private string _resultPreviewPlaceholderText = "请先选择生成的 CD 音轨或 ISO。";
 
     [ObservableProperty]
-    private string _statusText = "等待生成的 CD 音轨";
+    private string _statusText = "等待生成的 CD 音轨或 ISO";
 
     [ObservableProperty]
     private System.Windows.Media.Imaging.BitmapSource? _resultImage;
@@ -243,6 +243,22 @@ public partial class LivePreviewViewModel : ObservableObject
         }
 
         _calibratedTrackPath = trackPath;
+        CdDataImageMetadata? dataMetadata = CdDataImageMetadata.TryLoad(trackPath);
+        if (dataMetadata is not null)
+        {
+            CdDiscParameters parameters = dataMetadata.Parameters;
+            ToneProfile dataTone = dataMetadata.Tone.Normalized();
+            _state.CdSectors = parameters.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            _state.CdInnerRadius = FormatNumber(parameters.InnerRadiusMm);
+            _state.CdOuterRadius = FormatNumber(parameters.OuterRadiusMm);
+            _state.CdFilesAtOuterRing = dataMetadata.FilesAtOuterRing;
+            _state.ToneDitherStrength = dataTone.DitherStrength;
+            _state.ToneLevels = dataTone.Levels;
+            _state.ToneBrightness = dataTone.Brightness;
+            _state.ToneSrgbLinearization = dataTone.SrgbLinearization;
+            _shell.AppendLog($"[{DateTime.Now:HH:mm:ss}] 已载入 {Path.GetFileName(trackPath)} 的 CD 数据盘几何与文件位置。\n");
+            return;
+        }
         CdTrackMetadata? metadata = CdTrackMetadata.TryLoad(trackPath);
         if (metadata is null)
         {
@@ -457,7 +473,7 @@ public partial class LivePreviewViewModel : ObservableObject
             {
                 OpticalDiscFamily.Dvd => "生成的 DVD ISO",
                 OpticalDiscFamily.BluRay => "生成的蓝光 ISO",
-                _ => "生成的 CD 音轨",
+                _ => "生成的 CD 音轨或 ISO",
             };
         ResultPreviewTitle = $"预览 - {discName}";
         ResultPreviewPlaceholderText = $"请先选择 {inputName}。";
@@ -584,6 +600,7 @@ public partial class LivePreviewViewModel : ObservableObject
         }
 
         bool deinterleave = _state.CdInterleave;
+        bool dataImage = Path.GetExtension(trackPath).Equals(".iso", StringComparison.OrdinalIgnoreCase);
         Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
         string outputPath = Path.Combine(
             TempFiles.LivePreviewDirectory,
@@ -592,16 +609,33 @@ public partial class LivePreviewViewModel : ObservableObject
         bool keepOutput = false;
         try
         {
+            CdDataImageMetadata? metadata = dataImage ? CdDataImageMetadata.TryLoad(trackPath) : null;
+            if (metadata is not null)
+            {
+                parameters = metadata.Parameters with
+                {
+                    InnerRadiusMm = parameters.InnerRadiusMm,
+                    OuterRadiusMm = parameters.OuterRadiusMm,
+                    Sectors = parameters.Sectors,
+                };
+            }
+            bool overlay = metadata is not null && metadata.Parameters.Sectors == parameters.Sectors;
             await StaWorker.RunAsync(() =>
             {
-                CdTrackGenerator.PreviewTrack(
-                    trackPath,
-                    outputPath,
-                    parameters,
-                    outputSize,
-                    CdDiscParameters.BytesPerSector / samplesPerSector,
-                    deinterleave,
-                    cancellationToken);
+                if (dataImage)
+                {
+                    CdDataImageGenerator.PreviewTrack(trackPath, outputPath, parameters,
+                        outputSize, 2048 / samplesPerSector, cancellationToken);
+                    if (overlay)
+                        FileRegionPreviewOverlay.ApplyCd(outputPath, parameters,
+                            metadata!.DrawingStartLba, metadata.DrawingEndLbaExclusive, cancellationToken);
+                }
+                else
+                {
+                    CdTrackGenerator.PreviewTrack(
+                        trackPath, outputPath, parameters, outputSize,
+                        CdDiscParameters.BytesPerSector / samplesPerSector, deinterleave, cancellationToken);
+                }
                 return 0;
             });
             cancellationToken.ThrowIfCancellationRequested();
@@ -610,9 +644,9 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, trackPath, "预览 - CD");
+            PublishPreview(outputPath, trackPath, "预览 - CD", overlay);
             keepOutput = true;
-            StatusText = $"已实时更新 · 读回模拟 · {(deinterleave ? "逆交织" : "纯音轨")}"
+            StatusText = $"已实时更新 · 读回模拟 · {(dataImage ? "CD 数据盘" : deinterleave ? "逆交织" : "纯音轨")}"
                 + $" · {outputSize} px · 每扇区 {samplesPerSector} 个采样";
         }
         catch (OperationCanceledException)
@@ -663,18 +697,29 @@ public partial class LivePreviewViewModel : ObservableObject
         bool keepOutput = false;
         try
         {
-            await StaWorker.RunAsync(() =>
+            string dataDirectory = _state.CdDataDirectory.Trim();
+            string volumeLabel = _state.CdVolumeLabel.Trim();
+            bool filesAtOuterRing = _state.CdFilesAtOuterRing;
+            CdDataLayoutPlan? plan = await StaWorker.RunAsync(() =>
             {
-                CdTrackGenerator.PreviewWarp(
-                    imagePath,
-                    outputPath,
-                    generated,
-                    actual,
-                    outputSize,
-                    samplesPerSector,
-                    tone,
-                    cancellationToken);
-                return 0;
+                cancellationToken.ThrowIfCancellationRequested();
+                CdDataLayoutPlan? layout = dataDirectory.Length > 0
+                    ? CdDataImageGenerator.PrepareLayout(dataDirectory, generated, volumeLabel, filesAtOuterRing)
+                    : null;
+                cancellationToken.ThrowIfCancellationRequested();
+                if (layout is not null)
+                {
+                    CdDataImageGenerator.PreviewWarp(imagePath, outputPath, generated, actual,
+                        outputSize, samplesPerSector, tone, layout, cancellationToken);
+                    FileRegionPreviewOverlay.ApplyCd(outputPath, actual,
+                        layout.DrawingStartLba, layout.DrawingEndLbaExclusive, cancellationToken);
+                }
+                else
+                {
+                    CdTrackGenerator.PreviewWarp(imagePath, outputPath, generated, actual,
+                        outputSize, samplesPerSector, tone, cancellationToken);
+                }
+                return layout;
             });
             cancellationToken.ThrowIfCancellationRequested();
             if (revision != _livePreviewRevision)
@@ -682,7 +727,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, imagePath, "预览 - CD");
+            PublishPreview(outputPath, imagePath, "预览 - CD", plan is not null);
             keepOutput = true;
             StatusText = $"已实时更新 · 标定预览 · 灰度 {tone.Levels} 级"
                 + $" · 抖动 {tone.DitherStrength * 100:0}% · {outputSize} px"
@@ -1154,13 +1199,13 @@ public partial class LivePreviewViewModel : ObservableObject
         samplesPerSector = 0;
         if (trackPath.Length == 0)
         {
-            message = "请先选择生成的 CD 音轨（导出页生成后自动填入）。";
+            message = "请先选择生成的 CD 音轨或 ISO（导出页生成后自动填入）。";
             return false;
         }
 
         if (!File.Exists(trackPath))
         {
-            message = "CD 音轨文件不存在。";
+            message = "CD 音轨或 ISO 文件不存在。";
             return false;
         }
 

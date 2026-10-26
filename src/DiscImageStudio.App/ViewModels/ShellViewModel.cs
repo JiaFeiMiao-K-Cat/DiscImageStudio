@@ -430,7 +430,7 @@ public partial class ShellViewModel : ObservableObject
                     result.Name + (compactDisc ? ".wav" : ".iso")),
                 WriteCue: compactDisc,
                 DataDirectory: string.Empty,
-                VolumeLabel: bluRay ? "BD_IMAGE" : "DISC_IMAGE",
+                VolumeLabel: bluRay ? "BD_IMAGE" : compactDisc ? "CD_IMAGE" : "DISC_IMAGE",
                 Interleave: compactDisc),
             CalibrationSessionPath: null,
             ThumbnailPngBase64: null,
@@ -747,6 +747,9 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.CdOutputPath),
         nameof(DiscParametersState.CdWriteCue),
         nameof(DiscParametersState.CdInterleave),
+        nameof(DiscParametersState.CdDataDirectory),
+        nameof(DiscParametersState.CdFilesAtOuterRing),
+        nameof(DiscParametersState.CdVolumeLabel),
         nameof(DiscParametersState.DvdInnerRadius),
         nameof(DiscParametersState.DvdOuterRadius),
         nameof(DiscParametersState.DvdTotalSectors),
@@ -896,7 +899,7 @@ public partial class ShellViewModel : ObservableObject
     /// <summary>Browse for the generated CD track used by the live read-back preview.</summary>
     internal bool BrowseCdTrack()
     {
-        string? picked = Dialogs?.PickOpen("选择生成的 CD 音轨", "WAV 音轨|*.wav|RAW 音轨|*.raw|所有文件|*.*");
+        string? picked = Dialogs?.PickOpen("选择生成的 CD 音轨或数据盘", "CD 音轨或镜像|*.wav;*.raw;*.iso|WAV 音轨|*.wav|RAW 音轨|*.raw|ISO 数据盘|*.iso|所有文件|*.*");
         if (picked is null)
         {
             return false;

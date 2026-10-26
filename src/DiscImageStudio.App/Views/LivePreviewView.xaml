@@ -170,7 +170,7 @@
                                              metadata and sync the switch themselves; an external
                                              track (another tool, an old build) has none, so the
                                              read-back needs the user to declare it here. -->
-                                        <controls:VisibilityGate IsOpen="{Binding Inspector.IsCd}">
+                                        <controls:VisibilityGate IsOpen="{Binding Inspector.IsCdAudioArtifact}">
                                             <controls:InterleaveToggle Label="逆交织"
                                                                        IsChecked="{Binding Inspector.State.CdInterleave}"
                                                                        Hint="若音轨生成时启用了延迟交织，则应勾选该选项。"

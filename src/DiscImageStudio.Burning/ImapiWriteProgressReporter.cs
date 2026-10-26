@@ -68,8 +68,8 @@ internal sealed class ImapiWriteProgressReporter
 
         if (rawCd)
         {
-            // DAO can report a negative lead-in LBA. The request counts audio
-            // payload only, so lead-in sectors must not advance its byte counter.
+            // DAO can report a negative lead-in LBA. The request counts audio or
+            // ISO payload only, so lead-in sectors must not advance its byte counter.
             if (last < 0)
             {
                 ReportStage("media", "正在写入 CD 导入区…");
