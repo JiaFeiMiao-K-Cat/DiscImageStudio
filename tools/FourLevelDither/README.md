@@ -59,7 +59,7 @@
 
 ## 从源码运行与发布
 
-在仓库根目录使用 .NET 9 SDK：
+在仓库根目录使用 .NET 10 SDK：
 
 ```powershell
 dotnet run --project tools/FourLevelDither --configuration Release
@@ -67,4 +67,4 @@ dotnet run --project tools/FourLevelDither --configuration Release
 dotnet publish tools/FourLevelDither/FourLevelDither.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true --output artifacts/FourLevelDither/win-x64
 ```
 
-自包含发布的 `FourLevelDither.exe` 内置 .NET 9 运行时；直接使用非自包含构建产物时，需要安装 .NET 9 Windows 桌面运行时。
+自包含发布的 `FourLevelDither.exe` 内置 .NET 10 运行时；直接使用非自包含构建产物时，需要安装 .NET 10 Windows 桌面运行时。

@@ -61,6 +61,11 @@ public partial class DesignViewModel : ObservableObject
     /// page renders through the engines' tone mapping.</summary>
     public ToneViewModel Tone { get; }
 
+    /// <summary>Disc files are shared with export, preview and burn; they are not image layers.</summary>
+    public DiscParametersState State => _state;
+
+    public RelayCommand BrowseDataCommand => _shell.Export.BrowseDataCommand;
+
     public ObservableCollection<DesignLayerViewModel> Layers { get; } = [];
 
     [ObservableProperty]

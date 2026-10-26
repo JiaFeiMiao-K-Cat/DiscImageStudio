@@ -47,6 +47,7 @@ public sealed class BluRayIsoPlan
     internal UdfImageWriter.LayoutPlan Filesystem => _filesystem
         ?? throw new InvalidOperationException("This drawing plan has no filesystem.");
     public bool HasFileSystem => _filesystem is not null;
+    public bool FilesAtOuterRing => _filesystem?.FilesAtOuterRing ?? false;
     public BluRayDiscParameters Disc { get; }
     public uint TotalSectors => Disc.TotalSectors;
     public long ContentLength => Disc.ContentLength;
@@ -62,7 +63,7 @@ public sealed class BluRayIsoPlan
     public double DrawingEndRadiusMm { get; }
 }
 
-/// <summary>Writes a UDF filesystem in the inner area, image payload in the middle
+/// <summary>Writes a UDF filesystem at the selected end, image payload in the remaining
 /// clusters and backup volume metadata at the end. The drive performs physical encoding.</summary>
 public static class BluRayIsoGenerator
 {
@@ -75,27 +76,30 @@ public static class BluRayIsoGenerator
         => new(disc, drawingStartSector, drawingEndSectorExclusive);
 
     public static BluRayIsoPlan PrepareDrawing(BluRayDiscParameters disc, string? dataDirectory = null,
-        string volumeLabel = "BD_IMAGE", DateTimeOffset? timestamp = null)
+        string volumeLabel = "BD_IMAGE", DateTimeOffset? timestamp = null, bool filesAtOuterRing = false)
     {
         ArgumentNullException.ThrowIfNull(disc);
         disc.Validate();
+        if (filesAtOuterRing && string.IsNullOrWhiteSpace(dataDirectory))
+            throw new ArgumentException("Outer-ring files require a data directory.", nameof(dataDirectory));
         return string.IsNullOrWhiteSpace(dataDirectory)
             ? new BluRayIsoPlan(disc)
-            : Prepare(disc, dataDirectory, volumeLabel, timestamp);
+            : Prepare(disc, dataDirectory, volumeLabel, timestamp, filesAtOuterRing);
     }
 
     // Explicit UDF preparation remains available for existing saved calibration
     // records whose captured drawing bounds exclude filesystem metadata.
     public static BluRayIsoPlan Prepare(BluRayDiscParameters disc, string? dataDirectory = null,
-        string volumeLabel = "BD_IMAGE", DateTimeOffset? timestamp = null)
+        string volumeLabel = "BD_IMAGE", DateTimeOffset? timestamp = null, bool filesAtOuterRing = false)
     {
         ArgumentNullException.ThrowIfNull(disc);
         disc.Validate();
         if (dataDirectory is not null) ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
-        UdfImageWriter.LayoutPlan filesystem = UdfImageWriter.Plan(dataDirectory, disc.TotalSectors, volumeLabel, timestamp);
-        uint drawingStart = checked((filesystem.DataEndLbaExclusive + 31) / 32 * 32);
+        UdfImageWriter.LayoutPlan filesystem = UdfImageWriter.Plan(dataDirectory, disc.TotalSectors,
+            volumeLabel, timestamp, filesAtOuterRing);
+        uint drawingStart = filesystem.DrawingStartLba;
         if (drawingStart >= filesystem.DrawingEndLbaExclusive)
-            throw new ArgumentException("UDF metadata and inner files must leave at least 32 sectors for drawing.", nameof(dataDirectory));
+            throw new ArgumentException("UDF metadata and files must leave at least 32 sectors for drawing.", nameof(dataDirectory));
         return new(disc, filesystem, drawingStart);
     }
 
@@ -151,7 +155,7 @@ public static class BluRayIsoGenerator
         string destination = Path.GetFullPath(outputPath);
         if (Iso9660ImageWriter.IsWithinDirectory(destination, source)
             || Iso9660ImageWriter.IsWithinDirectory(ResolveDirectoryLinks(destination), ResolveDirectoryLinks(source)))
-            throw new ArgumentException("ISO output must be outside the inner-file directory to preserve source files.", nameof(outputPath));
+            throw new ArgumentException("ISO output must be outside the source directory to preserve source files.", nameof(outputPath));
     }
 
     private static string ResolveDirectoryLinks(string path)

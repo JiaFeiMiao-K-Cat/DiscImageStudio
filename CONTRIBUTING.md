@@ -19,7 +19,7 @@
 ## 开发环境
 
 - Windows 10 2004+ 或 Windows 11。
-- .NET 9 SDK；仓库用 `global.json` 锁定 `9.0.x`，安装后 `dotnet` 会自动匹配。
+- .NET 10 SDK；仓库用 `global.json` 锁定 `10.0.x`，安装后 `dotnet` 会自动匹配。
 - 测试没有第三方框架依赖，全部是仓库自带的控制台回归程序。
 
 ```powershell

@@ -56,7 +56,8 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty] private string _dvdImagePath = string.Empty;
     [ObservableProperty] private string _dvdIsoPath = string.Empty;
     [ObservableProperty] private string _dvdOutputPath = string.Empty;
-    [ObservableProperty] private string _dvdDataDirectory = string.Empty;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDvdFiles))] private string _dvdDataDirectory = string.Empty;
+    [ObservableProperty] private bool _dvdFilesAtOuterRing;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(DvdPitchSummary), nameof(DvdActualPitchSummary))] private string _dvdTotalSectors = "2295104";
     [ObservableProperty, NotifyPropertyChangedFor(nameof(DvdPitchSummary))] private string _dvdInnerRadius = "24.0";
     [ObservableProperty, NotifyPropertyChangedFor(nameof(DvdPitchSummary))] private string _dvdOuterRadius = "58.0";
@@ -79,7 +80,8 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty] private string _bdImagePath = string.Empty;
     [ObservableProperty] private string _bdIsoPath = string.Empty;
     [ObservableProperty] private string _bdOutputPath = string.Empty;
-    [ObservableProperty] private string _bdDataDirectory = string.Empty;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasBluRayFiles))] private string _bdDataDirectory = string.Empty;
+    [ObservableProperty] private bool _bdFilesAtOuterRing;
     [ObservableProperty] private string _bdVolumeLabel = DefaultBluRayVolumeLabel;
     [ObservableProperty] private string _bdTotalSectors = "12219392";
     [ObservableProperty] private string _bdInnerRadius = "24.0";
@@ -156,6 +158,10 @@ public partial class DiscParametersState : ObservableObject
     /// toggle only while the chosen output is a .wav file.</summary>
     public bool IsCdWaveOutput => Path.GetExtension(CdOutputPath.Trim())
         .Equals(".wav", StringComparison.OrdinalIgnoreCase);
+
+    public bool HasDvdFiles => !string.IsNullOrWhiteSpace(DvdDataDirectory);
+
+    public bool HasBluRayFiles => !string.IsNullOrWhiteSpace(BdDataDirectory);
 
     public string DvdPitchSummary => PitchSummary(actual: false);
     public string DvdActualPitchSummary => PitchSummary(actual: true);

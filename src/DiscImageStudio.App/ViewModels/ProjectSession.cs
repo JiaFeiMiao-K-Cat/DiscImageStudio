@@ -47,6 +47,7 @@ internal static class ProjectSession
                 state.DvdActualPitchCubic = Format(geometry.PitchCubic);
                 state.DvdOutputPath = outputs.OutputPath;
                 state.DvdDataDirectory = outputs.DataDirectory;
+                state.DvdFilesAtOuterRing = outputs.FilesAtOuterRing;
                 state.DvdVolumeLabel = outputs.VolumeLabel;
                 state.DvdImagePath = string.Empty;
                 break;
@@ -58,6 +59,7 @@ internal static class ProjectSession
                 state.BdActualOuterRadius = outer;
                 state.BdOutputPath = outputs.OutputPath;
                 state.BdDataDirectory = outputs.DataDirectory;
+                state.BdFilesAtOuterRing = outputs.FilesAtOuterRing;
                 state.BdVolumeLabel = outputs.VolumeLabel;
                 state.BdInvertMapping = document.BluRay?.InvertMapping ?? false;
                 state.BdDrawingStartSector = "0";
@@ -113,14 +115,16 @@ internal static class ProjectSession
                     WriteCue: false,
                     state.DvdDataDirectory,
                     state.DvdVolumeLabel,
-                    Interleave: false);
+                    Interleave: false,
+                    FilesAtOuterRing: state.DvdFilesAtOuterRing);
             case OpticalDiscFamily.BluRay:
                 return new ProjectOutputs(
                     RequireOutput(state.BdOutputPath, "蓝光 ISO 输出位置"),
                     WriteCue: false,
                     state.BdDataDirectory,
                     state.BdVolumeLabel,
-                    Interleave: false);
+                    Interleave: false,
+                    FilesAtOuterRing: state.BdFilesAtOuterRing);
             default:
                 return new ProjectOutputs(
                     RequireOutput(state.CdOutputPath, "CD 音轨输出位置"),

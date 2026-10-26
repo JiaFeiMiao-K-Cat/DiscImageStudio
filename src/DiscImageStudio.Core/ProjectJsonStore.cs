@@ -34,7 +34,8 @@ public sealed record ProjectOutputs(
     bool WriteCue,
     string DataDirectory,
     string VolumeLabel,
-    bool Interleave);
+    bool Interleave,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool FilesAtOuterRing = false);
 
 /// <summary>Generation settings that exist only for BD-R: the 3T/6T mapping polarity.
 /// This is deliberately separate from <see cref="ToneProfile"/>: polarity selects which
@@ -379,6 +380,10 @@ public static class ProjectJsonStore
     private static void ValidateOutputs(ProjectDocument document)
     {
         ProjectOutputs outputs = document.Outputs;
+        if (document.IsCd && outputs.FilesAtOuterRing)
+        {
+            throw new InvalidDataException("文件位置选项仅用于 DVD 和蓝光工程。");
+        }
         if (string.IsNullOrWhiteSpace(outputs.OutputPath))
         {
             throw new InvalidDataException("outputs.outputPath 不能为空。");

@@ -45,11 +45,12 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
                     new("output", "ECC cluster", DiscOptionValueType.OutputFile, Required: true),
                     new("psn", "First physical sector", DiscOptionValueType.String, DefaultValue: "0x100000")]),
             new("bd-generate", "BD-R picture generation",
-                "Draw the full user-data area; selecting an inner files directory adds a UDF 2.01 filesystem.",
+                "Draw the full user-data area; selecting a files directory adds a UDF 2.01 filesystem at the inner or outer ring.",
                 DiscModuleCapabilities.DataImageGeneration,
                 [.. GeometryOptions, new("input", "Source image", DiscOptionValueType.InputFile, Required: true),
                     new("output", "ISO output", DiscOptionValueType.OutputFile, Required: true),
-                    new("data-dir", "Inner files directory", DiscOptionValueType.InputFolder),
+                    new("data-dir", "Files directory", DiscOptionValueType.InputFolder),
+                    new("file-position", "File placement", DiscOptionValueType.Choice, DefaultValue: "inner", Choices: ["inner", "outer"]),
                     new("volume-label", "ISO volume label", DiscOptionValueType.String, DefaultValue: "BD_IMAGE"),
                     new("invert", "Swap 3T/6T assignment", DiscOptionValueType.Boolean, DefaultValue: "false"),
                     new("tone-dither", "Dither strength 0..1", DiscOptionValueType.Decimal, DefaultValue: "0"),
@@ -160,8 +161,14 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
                 throw new ArgumentException("Input and output paths must be different.");
             generationInvert = options.TryGetValue("invert", out string? polarity)
                 ? Boolean(polarity, "invert") : preset.InvertMapping;
+            bool filesAtOuterRing = options.GetValueOrDefault("file-position", "inner") switch
+            {
+                "inner" => false,
+                "outer" => true,
+                _ => throw new ArgumentException("--file-position must be inner or outer."),
+            };
             isoPlan = BluRayIsoGenerator.PrepareDrawing(disc, options.GetValueOrDefault("data-dir"),
-                options.GetValueOrDefault("volume-label", "BD_IMAGE"));
+                options.GetValueOrDefault("volume-label", "BD_IMAGE"), filesAtOuterRing: filesAtOuterRing);
             BluRayIsoGenerator.ValidateOutputPath(output!, isoPlan);
             token.ThrowIfCancellationRequested();
             if (_imageLoader is null)
@@ -214,7 +221,7 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
 
         return new(Descriptor.Id, command.Name, 0,
             isPicture
-                ? $"BD {(isoPlan!.HasFileSystem ? "UDF 2.01" : "full-area drawing, no filesystem")}: {summary.BytesWritten} bytes, {disc.TotalSectors} sectors; {isoPlan.FileCount} inner files; drawing sectors {isoPlan.DrawingStartSector}..{isoPlan.DrawingEndSectorExclusive - 1}; {interpretation}."
+                ? $"BD {(isoPlan!.HasFileSystem ? "UDF 2.01" : "full-area drawing, no filesystem")}: {summary.BytesWritten} bytes, {disc.TotalSectors} sectors; {isoPlan.FileCount} {(isoPlan.FilesAtOuterRing ? "outer" : "inner")} files; drawing sectors {isoPlan.DrawingStartSector}..{isoPlan.DrawingEndSectorExclusive - 1}; {interpretation}."
                 : $"BD probe: {summary.BytesWritten} raw payload bytes, sectors {start}..{start + count - 1}; {interpretation}. No filesystem.",
             Path.GetFullPath(output!));
     }

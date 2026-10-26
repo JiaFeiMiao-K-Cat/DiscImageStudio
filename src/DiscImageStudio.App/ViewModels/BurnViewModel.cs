@@ -226,7 +226,7 @@ public partial class BurnViewModel : ObservableObject
         {
             string dataSuffix = string.IsNullOrWhiteSpace(_state.DvdDataDirectory)
                 ? string.Empty
-                : "；将顺序写入内圈文件夹与外圈图案";
+                : _state.DvdFilesAtOuterRing ? "；文件位于外圈，图案位于其内侧" : "；文件位于内圈，图案位于其外侧";
             SourceTitle = _design.HasLayers
                 ? "使用工程当前合成图与参数"
                 : "请先在设计页导入图片";
@@ -236,14 +236,14 @@ public partial class BurnViewModel : ObservableObject
             identity = string.Join("\u001f", "dvd", _design.CompositeRevision, _state.DvdTotalSectors,
                 _state.DvdInnerRadius, _state.DvdOuterRadius,
                 _state.DvdPitchLinear, _state.DvdPitchQuadratic, _state.DvdPitchCubic,
-                _state.DvdDataDirectory, _state.DvdVolumeLabel,
+                _state.DvdDataDirectory, _state.DvdVolumeLabel, _state.DvdFilesAtOuterRing,
                 _state.ToneDitherStrength, _state.ToneBrightness, _state.ToneSrgbLinearization);
         }
         else if (IsBluRayBurn)
         {
             string dataSuffix = string.IsNullOrWhiteSpace(_state.BdDataDirectory)
                 ? string.Empty
-                : "；将顺序写入内圈文件夹与外圈图案";
+                : _state.BdFilesAtOuterRing ? "；文件位于外圈，图案位于其内侧" : "；文件位于内圈，图案位于其外侧";
             SourceTitle = _design.HasLayers
                 ? "使用工程当前合成图与参数"
                 : "请先在设计页导入图片";
@@ -253,7 +253,7 @@ public partial class BurnViewModel : ObservableObject
                 : $"合成图会自动生成本页输入。 · {polarity}" + dataSuffix;
             identity = string.Join("\u001f", "bd", _design.CompositeRevision, _state.BdTotalSectors,
                 _state.BdInnerRadius, _state.BdOuterRadius, _state.BdDataDirectory,
-                _state.BdVolumeLabel, _state.BdInvertMapping,
+                _state.BdVolumeLabel, _state.BdInvertMapping, _state.BdFilesAtOuterRing,
                 _state.ToneDitherStrength, _state.ToneBrightness, _state.ToneSrgbLinearization);
         }
         else
@@ -461,7 +461,8 @@ public partial class BurnViewModel : ObservableObject
                         dataDirectory.Length == 0 ? null : dataDirectory,
                         string.IsNullOrWhiteSpace(_state.BdVolumeLabel)
                             ? "BD_IMAGE"
-                            : _state.BdVolumeLabel.Trim());
+                            : _state.BdVolumeLabel.Trim(),
+                        filesAtOuterRing: dataDirectory.Length != 0 && _state.BdFilesAtOuterRing);
                     ToneProfile tone = _state.BluRayTone;
                     bool invert = _state.BdInvertMapping;
                     request = new OpticalBurnRequest(
@@ -481,6 +482,7 @@ public partial class BurnViewModel : ObservableObject
                     contentDescription = $"BD-R · {disc.TotalSectors} 扇区"
                         + $" · {plan.ContentLength / (1024.0 * 1024.0):F1} MiB"
                         + $" · 绘图 LBA {plan.DrawingStartSector}–{plan.DrawingEndSectorExclusive - 1}"
+                        + (plan.HasFileSystem ? $" · 文件：{(_state.BdFilesAtOuterRing ? "外圈" : "内圈")}" : string.Empty)
                         + (invert ? " · 反转 3T/6T" : " · 标准 3T/6T");
                 }
                 else if (dvd)
@@ -494,7 +496,8 @@ public partial class BurnViewModel : ObservableObject
                             options,
                             string.IsNullOrWhiteSpace(_state.DvdVolumeLabel)
                                 ? "DISC_IMAGE"
-                                : _state.DvdVolumeLabel.Trim());
+                                : _state.DvdVolumeLabel.Trim(),
+                            filesAtOuterRing: _state.DvdFilesAtOuterRing);
                     request = new OpticalBurnRequest(
                         device.Id,
                         OpticalBurnMediaKind.DvdData,
@@ -522,7 +525,8 @@ public partial class BurnViewModel : ObservableObject
                         selectedWriteSpeed.Speed);
                     contentDescription = hybridPlan is null
                         ? $"DVD · {options.TotalSectors} 扇区 · {options.ContentLength / (1024.0 * 1024.0):F1} MiB"
-                        : $"DVD 混合盘 · {hybridPlan.FileCount} 个文件 · 绘图从 LBA {hybridPlan.DrawingStartLba} 开始"
+                        : $"DVD 混合盘 · {hybridPlan.FileCount} 个文件（{(_state.DvdFilesAtOuterRing ? "外圈" : "内圈")}）"
+                            + $" · 绘图 LBA {hybridPlan.DrawingStartLba}–{hybridPlan.DrawingEndLbaExclusive - 1}"
                             + $" · {options.ContentLength / (1024.0 * 1024.0):F1} MiB";
                 }
                 else

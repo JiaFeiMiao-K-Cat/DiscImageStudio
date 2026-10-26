@@ -113,6 +113,9 @@ public partial class LivePreviewViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasResultImage;
 
+    [ObservableProperty]
+    private bool _hasFileRegionOverlay;
+
     public LivePreviewViewModel(Dispatcher dispatcher, ShellViewModel shell, DiscParametersState state)
     {
         _shell = shell;
@@ -306,7 +309,8 @@ public partial class LivePreviewViewModel : ObservableObject
             && state.DvdOuterRadius.Trim() == outerRadius
             && state.DvdPitchLinear.Trim() == FormatNumber(metadata.PitchLinear)
             && state.DvdPitchQuadratic.Trim() == FormatNumber(metadata.PitchQuadratic)
-            && state.DvdPitchCubic.Trim() == FormatNumber(metadata.PitchCubic))
+            && state.DvdPitchCubic.Trim() == FormatNumber(metadata.PitchCubic)
+            && state.DvdFilesAtOuterRing == metadata.FilesAtOuterRing)
         {
             return;
         }
@@ -317,6 +321,7 @@ public partial class LivePreviewViewModel : ObservableObject
         state.DvdPitchLinear = FormatNumber(metadata.PitchLinear);
         state.DvdPitchQuadratic = FormatNumber(metadata.PitchQuadratic);
         state.DvdPitchCubic = FormatNumber(metadata.PitchCubic);
+        state.DvdFilesAtOuterRing = metadata.FilesAtOuterRing;
         _shell.AppendLog(
             $"[{DateTime.Now:HH:mm:ss}] 已按 {System.IO.Path.GetFileName(isoPath)} 的生成参数载入标定几何："
             + $"r0={innerRadius} mm, r1={outerRadius} mm, {totalSectors} 总扇区；{state.DvdPitchSummary}\n");
@@ -354,6 +359,7 @@ public partial class LivePreviewViewModel : ObservableObject
         state.BdActualInnerRadius = innerRadius;
         state.BdActualOuterRadius = outerRadius;
         state.BdInvertMapping = metadata.InvertMapping;
+        state.BdFilesAtOuterRing = metadata.FilesAtOuterRing;
         state.BdDrawingStartSector = metadata.DrawingStartSector.ToString(
             System.Globalization.CultureInfo.InvariantCulture);
         state.BdDrawingEndSectorExclusive = metadata.DrawingEndSectorExclusive.ToString(
@@ -440,6 +446,7 @@ public partial class LivePreviewViewModel : ObservableObject
 
     internal void UpdateMode(bool clearResult)
     {
+        HasFileRegionOverlay = false;
         // The inspector is a lens over both families; every mode change routes through here, so
         // this is where it is re-pointed.
         Inspector.SetFamily(SelectedFamily);
@@ -474,6 +481,7 @@ public partial class LivePreviewViewModel : ObservableObject
 
     internal void Schedule()
     {
+        HasFileRegionOverlay = false;
         if (!_shell.IsWindowLoaded)
         {
             return;
@@ -489,6 +497,7 @@ public partial class LivePreviewViewModel : ObservableObject
 
     internal void RefreshNow()
     {
+        HasFileRegionOverlay = false;
         _livePreviewTimer.Stop();
         _livePreviewCancellation?.Cancel();
         _livePreviewRevision++;
@@ -508,6 +517,7 @@ public partial class LivePreviewViewModel : ObservableObject
         {
             do
             {
+                HasFileRegionOverlay = false;
                 _livePreviewRefreshPending = false;
                 int revision = _livePreviewRevision;
                 switch (SelectedFamily)
@@ -742,7 +752,17 @@ public partial class LivePreviewViewModel : ObservableObject
         bool keepOutput = false;
         try
         {
-            int exitCode = await StaWorker.RunAsync(() => UnifiedCommandRunner.Run(arguments));
+            DvdImageMetadata? metadata = DvdImageMetadata.TryLoad(isoPath);
+            DvdStreamingOptions actual = ReadDvdPreviewGeometry(calibration: false);
+            bool overlay = metadata is { HasFileSystem: true };
+            int exitCode = await StaWorker.RunAsync(() =>
+            {
+                int result = UnifiedCommandRunner.Run(arguments);
+                if (result == 0 && overlay)
+                    FileRegionPreviewOverlay.ApplyDvd(outputPath, actual,
+                        metadata!.DrawingStartLba, metadata.DrawingEndLbaExclusive, cancellationToken);
+                return result;
+            });
             if (exitCode != 0)
             {
                 throw new InvalidOperationException("DVD 读回模拟引擎未能完成渲染。");
@@ -754,7 +774,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, isoPath, "预览 - DVD");
+            PublishPreview(outputPath, isoPath, "预览 - DVD", overlay);
             keepOutput = true;
             StatusText = $"已实时更新 · 读回模拟 · CW · {outputSize} px · 每扇区 {samplesPerSector} 个采样";
         }
@@ -791,6 +811,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 out string[] arguments,
                 out int outputSize,
                 out int samplesPerSector,
+                out DvdHybridStreamingPlan? filePlan,
                 out string message))
         {
             StatusText = message;
@@ -806,7 +827,15 @@ public partial class LivePreviewViewModel : ObservableObject
         bool keepOutput = false;
         try
         {
-            int exitCode = await StaWorker.RunAsync(() => UnifiedCommandRunner.Run(arguments));
+            DvdStreamingOptions actual = ReadDvdPreviewGeometry(calibration: true);
+            int exitCode = await StaWorker.RunAsync(() =>
+            {
+                int result = UnifiedCommandRunner.Run(arguments);
+                if (result == 0 && filePlan is not null)
+                    FileRegionPreviewOverlay.ApplyDvd(outputPath, actual,
+                        filePlan.DrawingStartLba, filePlan.DrawingEndLbaExclusive, cancellationToken);
+                return result;
+            });
             if (exitCode != 0)
             {
                 throw new InvalidOperationException("DVD 标定预览引擎未能完成渲染。");
@@ -818,7 +847,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, imagePath, "预览 - DVD");
+            PublishPreview(outputPath, imagePath, "预览 - DVD", filePlan is not null);
             keepOutput = true;
             StatusText = $"已实时更新 · 标定预览 · CW · 抖动 {_state.DvdTone.DitherStrength * 100:0}%"
                 + $" · {outputSize} px · 每扇区 {samplesPerSector} 个采样";
@@ -892,21 +921,14 @@ public partial class LivePreviewViewModel : ObservableObject
                 ParameterParser.ParsePositiveInt(_state.BdPreviewSize, "预览尺寸"), 64, 8192);
             tone = _state.BluRayTone;
             invert = _state.BdInvertMapping;
-            string dataDirectory = _state.BdDataDirectory.Trim();
-            long sidecarStart = ParameterParser.ParseNonNegativeLong(_state.BdDrawingStartSector, "绘图起始扇区");
-            long sidecarEnd = ParameterParser.ParseNonNegativeLong(_state.BdDrawingEndSectorExclusive, "绘图结束扇区");
-            plan = sidecarEnd > sidecarStart && sidecarEnd <= generated.TotalSectors
-                ? BluRayIsoGenerator.PrepareRaw(generated, checked((uint)sidecarStart), checked((uint)sidecarEnd))
-                : BluRayIsoGenerator.PrepareDrawing(
-                    generated,
-                    dataDirectory.Length == 0 ? null : dataDirectory,
-                    string.IsNullOrWhiteSpace(_state.BdVolumeLabel) ? "BD_IMAGE" : _state.BdVolumeLabel.Trim());
+            plan = PrepareBluRayProjectionPlan(generated);
         }
         catch (Exception exception) when (exception is FormatException
                                               or OverflowException
                                               or ArgumentException
                                               or InvalidOperationException
-                                              or IOException)
+                                              or IOException
+                                              or UnauthorizedAccessException)
         {
             StatusText = exception.Message;
             if (!HasResultImage)
@@ -938,6 +960,9 @@ public partial class LivePreviewViewModel : ObservableObject
                     invert,
                     cancellationToken,
                     tone);
+                if (plan.HasFileSystem)
+                    FileRegionPreviewOverlay.ApplyBluRay(outputPath, actual,
+                        plan.DrawingStartSector, plan.DrawingEndSectorExclusive, cancellationToken);
                 return 0;
             });
             cancellationToken.ThrowIfCancellationRequested();
@@ -946,7 +971,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, imagePath, "预览 - BD");
+            PublishPreview(outputPath, imagePath, "预览 - BD", plan.HasFileSystem);
             keepOutput = true;
             StatusText = $"已实时更新 · 设计投影 · 3T/6T 类别图"
                 + $" · {(invert ? "反转 3T/6T" : "标准 3T/6T")}"
@@ -1019,10 +1044,16 @@ public partial class LivePreviewViewModel : ObservableObject
         bool keepOutput = false;
         try
         {
+            BluRayIsoMetadata? metadata = BluRayIsoMetadata.TryLoad(isoPath);
+            bool overlay = metadata?.UdfTimestamp is not null;
             await StaWorker.RunAsync(() =>
             {
                 BluRayPreviewRenderer.RenderReadback(
-                    isoPath, outputPath, actual, outputSize, cancellationToken);
+                    isoPath, outputPath, actual, outputSize, cancellationToken,
+                    metadata?.DrawingStartSector ?? 0, metadata?.DrawingEndSectorExclusive);
+                if (overlay)
+                    FileRegionPreviewOverlay.ApplyBluRay(outputPath, actual,
+                        metadata!.DrawingStartSector, metadata.DrawingEndSectorExclusive, cancellationToken);
                 return 0;
             });
             cancellationToken.ThrowIfCancellationRequested();
@@ -1031,7 +1062,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, isoPath, "预览 - BD");
+            PublishPreview(outputPath, isoPath, "预览 - BD", overlay);
             keepOutput = true;
             StatusText = $"已实时更新 · 成品读回 · 3T/6T 类别图（非反射亮度） · {outputSize} px";
         }
@@ -1050,6 +1081,30 @@ public partial class LivePreviewViewModel : ObservableObject
                 TempFiles.TryDeleteTemporaryFile(outputPath);
             }
         }
+    }
+
+    /// <summary>Project projection always follows the current folder and placement. A
+    /// sidecar range belongs to its finished ISO and must not override later edits.</summary>
+    internal BluRayIsoPlan PrepareBluRayProjectionPlan(BluRayDiscParameters generated)
+    {
+        string dataDirectory = _state.BdDataDirectory.Trim();
+        return BluRayIsoGenerator.PrepareDrawing(generated,
+            dataDirectory.Length == 0 ? null : dataDirectory,
+            string.IsNullOrWhiteSpace(_state.BdVolumeLabel) ? "BD_IMAGE" : _state.BdVolumeLabel.Trim(),
+            filesAtOuterRing: dataDirectory.Length > 0 && _state.BdFilesAtOuterRing);
+    }
+
+    private DvdStreamingOptions ReadDvdPreviewGeometry(bool calibration)
+    {
+        uint sectors = checked((uint)ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, "总扇区数"));
+        DvdStreamingOptions options = new(sectors,
+            ParameterParser.ParsePositiveDouble(calibration ? _state.DvdActualInnerRadius : _state.DvdInnerRadius, "内半径"),
+            ParameterParser.ParsePositiveDouble(calibration ? _state.DvdActualOuterRadius : _state.DvdOuterRadius, "外半径"),
+            PitchLinear: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchLinear : _state.DvdPitchLinear, "相对一次项"),
+            PitchQuadratic: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchQuadratic : _state.DvdPitchQuadratic, "相对二次项"),
+            PitchCubic: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchCubic : _state.DvdPitchCubic, "相对三次项"));
+        options.Validate();
+        return options;
     }
 
     private static BluRayDiscParameters ReadBluRayDisc(
@@ -1072,12 +1127,14 @@ public partial class LivePreviewViewModel : ObservableObject
 
     /// <summary>Adopts a rendered preview as the canvas content and the export source, and
     /// retires the previous temporary file.</summary>
-    private void PublishPreview(string outputPath, string inputPath, string title)
+    private void PublishPreview(string outputPath, string inputPath, string title,
+        bool hasFileRegionOverlay = false)
     {
         string? previousPath = _lastLivePreviewPath;
         _lastLivePreviewPath = outputPath;
         _downloadablePreview = true;
-        ShowResultPreview(outputPath);
+        bool loaded = ShowResultPreview(outputPath);
+        HasFileRegionOverlay = hasFileRegionOverlay && loaded;
         _isLivePreviewReady = true;
         ResultPreviewTitle = title;
         ResultPreviewPath = Path.GetFileName(inputPath);
@@ -1279,12 +1336,14 @@ public partial class LivePreviewViewModel : ObservableObject
         out string[] arguments,
         out int outputSize,
         out int samplesPerSector,
+        out DvdHybridStreamingPlan? filePlan,
         out string message)
     {
         imagePath = _state.DvdImagePath.Trim();
         arguments = [];
         outputSize = 0;
         samplesPerSector = 0;
+        filePlan = null;
         if (imagePath.Length == 0)
         {
             message = "请先在设计页导入图片，合成图会自动填入。";
@@ -1325,13 +1384,26 @@ public partial class LivePreviewViewModel : ObservableObject
 
             string totalSectors = totalSectorsValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
             ToneProfile tone = _state.DvdTone;
+            uint drawingStart = 0;
+            uint drawingSectors = checked((uint)totalSectorsValue);
+            string dataDirectory = _state.DvdDataDirectory.Trim();
+            if (dataDirectory.Length > 0)
+            {
+                DvdStreamingOptions generated = ReadDvdPreviewGeometry(calibration: false);
+                filePlan = DvdStreamingGenerator.PrepareHybrid(dataDirectory, generated,
+                    string.IsNullOrWhiteSpace(_state.DvdVolumeLabel) ? "DISC_IMAGE" : _state.DvdVolumeLabel.Trim(),
+                    filesAtOuterRing: _state.DvdFilesAtOuterRing);
+                drawingStart = filePlan.DrawingStartLba;
+                drawingSectors = filePlan.DrawingSectors;
+            }
             arguments =
             [
                 "calibrate",
                 "--image", imagePath,
                 "--output", outputPath,
                 "--total-sectors", totalSectors,
-                "--fill-sectors", totalSectors,
+                "--lba", drawingStart.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                "--fill-sectors", drawingSectors.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 "--generated-inner-radius-mm", generatedInner.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
                 "--generated-outer-radius-mm", generatedOuter.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
                 "--actual-inner-radius-mm", actualInner.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
@@ -1348,13 +1420,15 @@ public partial class LivePreviewViewModel : ObservableObject
                 "--tone-dither", tone.DitherStrength.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
                 "--tone-levels", "2",
                 "--tone-brightness", tone.Brightness.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
+                "--tone-gamma", tone.SrgbLinearization.ToString().ToLowerInvariant(),
                 "--preview-size", outputSize.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 "--samples-per-sector", samplesPerSector.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ];
             message = string.Empty;
             return true;
         }
-        catch (Exception exception) when (exception is FormatException or OverflowException or ArgumentOutOfRangeException)
+        catch (Exception exception) when (exception is FormatException or OverflowException
+                                              or ArgumentException or IOException or UnauthorizedAccessException)
         {
             message = exception.Message;
             return false;
@@ -1377,6 +1451,7 @@ public partial class LivePreviewViewModel : ObservableObject
 
     internal void PrepareResultPreview(string outputPath)
     {
+        HasFileRegionOverlay = false;
         ResultImage = null;
         HasResultImage = false;
         _downloadablePreview = false;
@@ -1387,11 +1462,12 @@ public partial class LivePreviewViewModel : ObservableObject
             : "当前任务生成文件，不包含可视图片预览。";
     }
 
-    internal void ShowResultPreview(string outputPath)
+    internal bool ShowResultPreview(string outputPath)
     {
+        HasFileRegionOverlay = false;
         if (!ShellViewModel.IsPngPath(outputPath))
         {
-            return;
+            return false;
         }
 
         try
@@ -1407,11 +1483,13 @@ public partial class LivePreviewViewModel : ObservableObject
             ResultImage = bitmap;
             HasResultImage = true;
             ResultPreviewPath = Path.GetFileName(outputPath);
+            return true;
         }
         catch (Exception exception)
         {
             ResultPreviewPlaceholderText = "图片已生成，但无法在界面中加载。";
             _shell.AppendLog($"[{DateTime.Now:HH:mm:ss}] 预览加载失败：{exception.Message}\n");
+            return false;
         }
     }
 

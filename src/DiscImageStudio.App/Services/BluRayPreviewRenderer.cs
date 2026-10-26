@@ -89,10 +89,14 @@ public static class BluRayPreviewRenderer
     /// sectors in bounded batches sorted by file offset, instead of scanning the
     /// entire ISO or allocating one read request for every output pixel at once.</summary>
     public static void RenderReadback(string isoPath, string outputPath,
-        BluRayDiscParameters actual, int outputSize, CancellationToken cancellationToken = default)
+        BluRayDiscParameters actual, int outputSize, CancellationToken cancellationToken = default,
+        uint drawingStartSector = 0, uint? drawingEndSectorExclusive = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(isoPath);
         Validate(actual, outputSize);
+        uint drawingEnd = drawingEndSectorExclusive ?? actual.TotalSectors;
+        if (drawingStartSector >= drawingEnd || drawingEnd > actual.TotalSectors)
+            throw new ArgumentOutOfRangeException(nameof(drawingEndSectorExclusive), "The drawing range must lie inside the disc.");
         cancellationToken.ThrowIfCancellationRequested();
         using FileStream source = new(Path.GetFullPath(isoPath), FileMode.Open, FileAccess.Read,
             FileShare.Read, bufferSize: 1, FileOptions.RandomAccess);
@@ -112,6 +116,11 @@ public static class BluRayPreviewRenderer
             for (int x = 0; x < outputSize; x++)
             {
                 if (!projection.TryGetSector(x, y, out double sector)) continue;
+                if (sector < drawingStartSector || sector >= drawingEnd)
+                {
+                    SetPixel(pixels, y * outputSize + x, UnknownLevel);
+                    continue;
+                }
                 double clusterPosition = sector / BluRayDiscParameters.SectorsPerCluster;
                 uint cluster = (uint)clusterPosition;
                 double channel = (clusterPosition - cluster) * BluRayDiscParameters.ChannelBitsPerRecordingUnit;

@@ -74,10 +74,17 @@
                                                 ButtonLabel="选择…"
                                                 Command="{Binding BrowseOutputCommand}"
                                                 Margin="0,0,0,14" />
-                            <controls:PathField Label="可选：放入内圈的文件夹（留空则整盘只绘图）"
+                            <controls:PathField Label="可选：随盘保存的文件夹（留空则整盘只绘图）"
                                                 Text="{Binding State.DvdDataDirectory}"
                                                 ButtonLabel="选择…"
                                                 Command="{Binding BrowseDataCommand}" />
+                            <controls:VisibilityGate IsOpen="{Binding State.HasDvdFiles}">
+                                <StackPanel Margin="0,14,0,0">
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="文件位置" Margin="0,0,0,6" />
+                                    <controls:SegmentedControl LabelA="内圈" LabelB="外圈"
+                                                               IsSecondSelected="{Binding State.DvdFilesAtOuterRing}" />
+                                </StackPanel>
+                            </controls:VisibilityGate>
                             <TextBlock Style="{StaticResource FieldLabel}" Margin="0,14,0,6" Text="卷标" />
                             <TextBox Text="{Binding State.DvdVolumeLabel, UpdateSourceTrigger=PropertyChanged}" MaxLength="32" />
                         </StackPanel>
@@ -90,10 +97,17 @@
                                                 ButtonLabel="选择…"
                                                 Command="{Binding BrowseOutputCommand}"
                                                 Margin="0,0,0,14" />
-                            <controls:PathField Label="可选：放入内圈的文件夹（留空则整盘只绘图）"
+                            <controls:PathField Label="可选：随盘保存的文件夹（留空则整盘只绘图）"
                                                 Text="{Binding State.BdDataDirectory}"
                                                 ButtonLabel="选择…"
                                                 Command="{Binding BrowseDataCommand}" />
+                            <controls:VisibilityGate IsOpen="{Binding State.HasBluRayFiles}">
+                                <StackPanel Margin="0,14,0,0">
+                                    <TextBlock Style="{StaticResource FieldLabel}" Text="文件位置" Margin="0,0,0,6" />
+                                    <controls:SegmentedControl LabelA="内圈" LabelB="外圈"
+                                                               IsSecondSelected="{Binding State.BdFilesAtOuterRing}" />
+                                </StackPanel>
+                            </controls:VisibilityGate>
                             <TextBlock Style="{StaticResource FieldLabel}" Margin="0,14,0,6" Text="卷标" />
                             <TextBox Text="{Binding State.BdVolumeLabel, UpdateSourceTrigger=PropertyChanged}" MaxLength="32" />
                         </StackPanel>

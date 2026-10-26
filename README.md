@@ -58,8 +58,10 @@ Disc Image Studio 可将一张图片转换成符合 CD、DVD 与单层 BD-R 光�
 
 - **CD-DA 支持**：可导出带格式头的 WAV 音轨及配套 CUE，兼容 cdrecord, ImgBurn等刻录软件；也允许导出 RAW 音轨。详见 [CD 刻录兼容说明](docs/CD_AUDIO_COMPATIBILITY.md)。
 - **SIMD 与并行供流**：CD 图片采样使用四点 SIMD，像素边界及不支持的硬件回退原算法；DVD 保留四点 SIMD 和恒定轨距缓存优化。BD 图片与内建标定图案采用有界并行生成，3T/6T 阈值及扰码使用整数 SIMD，输出顺序和生成字节保持一致。
-- **DVD 支持**：支持导出 ISO 纯绘图盘与"内圈文件、外圈绘图"的混合数据盘镜像。
-- **蓝光支持**：单层 BD-R 25 GB，支持纯绘图与 UDF 2.01 内圈文件。详见 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。
+- **DVD 支持**：支持导出 ISO 纯绘图盘及文件与图案混合盘；文件可选择放在内圈或外圈，默认内圈。
+- **蓝光支持**：单层 BD-R 25 GB，支持纯绘图与 UDF 2.01 文件，文件位置可选择内圈或外圈。详见 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。
+- **文件区域预览**：混合盘的设计投影和带布局信息的成品读回用黄色标出文件区（含文件系统），绘图范围保持原始盘面位置。
+- **随盘文件**：DVD／蓝光可在设计页直接选择要保存的文件夹及内圈／外圈位置，也可在导出页调整；设置随工程保存。
 - **介质灰度方案**：CD 与 DVD 均使用黑白二阶，输入 `0–127 / 128–255` 对应图片亮度 `0 / 255`。CD 使用 `0D / AA`，DVD 扰码域使用 `A5 / 92`。文件生成、流式刻录和预览同步使用该映射；抖动强度、sRGB 伽马与灰阶档位由影调模块控制，见下文。
 - **灰度抖动工具**：独立程序也可将原图处理为 `0/255` 黑白二阶 PNG；支持打开或拖入原图、并排预览及无损 PNG 导出。可勾选"sRGB 伽马校正"，默认关闭，命令行通过 `--gamma none|srgb` 选择。详见[使用与构建说明](tools/FourLevelDither/README.md)。
 - **DVD 三次轨距模型**：支持轨距随半径变化，生成、预览和辅助标定共用同一套几何；相对系数全为零时使用恒定轨距。上方实盘对比展示了已验证的 Verbatim DVD 校准效果。
@@ -82,7 +84,7 @@ Disc Image Studio 可将一张图片转换成符合 CD、DVD 与单层 BD-R 光�
 ## 系统与设备要求
 
 - Windows 10 2004（2004/20H1，19041）及以上，或 Windows 11。
-- 构建：.NET 9 SDK（`global.json` 锁定 9.0.x）；自行构建的非自包含 GUI 需要 .NET 9 Windows 桌面运行时。Release EXE 已包含运行时，无需另行安装 .NET。
+- 构建：.NET 10 SDK（`global.json` 锁定 10.0.x）；自行构建的非自包含 GUI 需要 .NET 10 Windows 桌面运行时。Release EXE 已包含运行时，无需另行安装 .NET。
 - “即时刻录”功能需要一台 Windows 可识别的 CD / DVD / BD 刻录机与空白盘片；BD-R 需要支持顺序写入的单层空白盘。
 
 ## 下载与发布
@@ -121,7 +123,7 @@ MSIX 打包、测试包签名与发布流程见[发布指南](docs/RELEASING.md)
 | `cd-generate` | 将图片映射为 WAV + CUE 或旧 RAW CD-DA 音轨，可选延迟交织与影调 |
 | `cd-preview-warp` | 标定投影：按生成几何从 CD 源图片取样，按实测几何投到盘面（`--actual-r0` / `--actual-r1`） |
 | `cd-preview-track` | 按标定几何渲染已有的 WAV 或 RAW CD-DA 音轨（读回模拟，默认逆交织） |
-| `bd-generate` | 生成完整 BD-R ISO（纯绘图或 UDF 2.01 内圈文件），并写出 `<iso>.json` sidecar |
+| `bd-generate` | 生成完整 BD-R ISO（纯绘图或 UDF 2.01 内圈／外圈文件），并写出 `<iso>.json` sidecar |
 | `bd-info` / `bd-probe` / `bd-encode` | 导出 BD 参数、原始负载探针或单个 ECC 簇诊断 |
 
 设计页右栏的「影调」模块可调抖动强度（默认 75%）、sRGB 线性化（伽马）、灰阶档位（CD 2/4 级；DVD/BD 固定 2 级）与亮度，并在模块内实时投影当前合成图；BD 另有 3T/6T 映射极性开关。参数写入工程的 `tone` 节，生成、流式刻录、读回与标定投影共用；BD 的影调在源图分辨率一次性量化，预览、生成和刻录共用同一张二值栅格。细节见 [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md)、[DVD_ENGINE.md](docs/DVD_ENGINE.md) 与 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。

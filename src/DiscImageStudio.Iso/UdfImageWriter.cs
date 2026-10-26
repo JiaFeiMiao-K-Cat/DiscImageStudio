@@ -6,7 +6,7 @@ namespace DiscImageStudio.Iso;
 
 /// <summary>
 /// Plans a closed, read-only UDF 2.01 volume and writes it without seeking. The physical
-/// partition contains only the inner files; the drawing area is reserved volume space
+/// partition contains only the files and may be placed at either end; the drawing area is reserved volume space
 /// outside that partition. ECMA-167 (3rd edition), ECMA TR/112-4 (UDF 2.01).
 /// </summary>
 public static class UdfImageWriter
@@ -16,22 +16,26 @@ public static class UdfImageWriter
     private const uint MainVdsLba = 32;
     private const uint VdsSectors = 16;
     private const uint IntegrityLba = 48;
-    private const uint PartitionLba = 288;
+    private const uint FirstPartitionLba = 288;
     private const uint MaximumExtentBytes = 0x3ffff800;
     private const string ImplementationId = "*DiscImageStudio";
 
     public sealed class LayoutPlan
     {
         internal LayoutPlan(string sourceDirectory, uint volumeSectors, string volumeLabel,
-            DateTimeOffset timestamp, List<Node> nodes, uint dataEnd, uint drawingEnd)
+            DateTimeOffset timestamp, List<Node> nodes, uint partitionStart, uint dataEnd,
+            uint drawingStart, uint drawingEnd, bool filesAtOuterRing)
         {
             SourceDirectory = sourceDirectory;
             VolumeSectors = volumeSectors;
             VolumeLabel = volumeLabel;
             Timestamp = timestamp;
             Nodes = nodes;
+            PartitionStartLba = partitionStart;
             DataEndLbaExclusive = dataEnd;
+            DrawingStartLba = drawingStart;
             DrawingEndLbaExclusive = drawingEnd;
+            FilesAtOuterRing = filesAtOuterRing;
             FileCount = nodes.Count(node => !node.IsDirectory);
             DirectoryCount = nodes.Count - FileCount;
             FileBytes = nodes.Where(node => !node.IsDirectory).Sum(node => node.DataLength);
@@ -43,16 +47,19 @@ public static class UdfImageWriter
         public int DirectoryCount { get; }
         public long FileBytes { get; }
         public uint DataEndLbaExclusive { get; }
+        public uint DrawingStartLba { get; }
         public uint DrawingEndLbaExclusive { get; }
+        public bool FilesAtOuterRing { get; }
         public string VolumeLabel { get; }
         public DateTimeOffset Timestamp { get; }
         internal List<Node> Nodes { get; }
         internal uint ReserveVdsLba => VolumeSectors - 256;
-        internal uint PartitionSectors => DataEndLbaExclusive - PartitionLba;
+        internal uint PartitionStartLba { get; }
+        internal uint PartitionSectors => DataEndLbaExclusive - PartitionStartLba;
     }
 
     public static LayoutPlan Plan(string? sourceDirectory, uint volumeSectors, string volumeLabel,
-        DateTimeOffset? timestamp = null)
+        DateTimeOffset? timestamp = null, bool filesAtOuterRing = false)
     {
         if (volumeSectors < MinimumVolumeSectors || volumeSectors % 32 != 0)
             throw new ArgumentOutOfRangeException(nameof(volumeSectors),
@@ -93,7 +100,7 @@ public static class UdfImageWriter
             }
         }
 
-        uint cursor = checked(PartitionLba + 2);
+        uint cursor = checked(FirstPartitionLba + 2);
         foreach (Node node in nodes)
         {
             node.EntryLba = cursor++;
@@ -123,19 +130,40 @@ public static class UdfImageWriter
             cursor = checked(cursor + SectorCount(node.DataLength));
         }
         uint drawingEnd = (volumeSectors - 257) / 32 * 32;
-        if (checked((cursor + 31) / 32 * 32) >= drawingEnd)
-            throw new ArgumentException($"Inner files and UDF metadata need {cursor} sectors, leaving no complete drawing cluster before the backup metadata at sector {drawingEnd}.");
+        uint drawingStart = checked((cursor + 31) / 32 * 32);
+        if (drawingStart >= drawingEnd)
+            throw new ArgumentException($"Files and UDF metadata need {cursor} sectors, leaving no complete drawing cluster before the backup metadata at sector {drawingEnd}.");
+        uint partitionStart = FirstPartitionLba;
+        if (filesAtOuterRing)
+        {
+            // Relocate the entire physical partition, keeping picture bytes outside it.
+            // Its relative addresses stay identical; only the descriptor's partition
+            // origin and the absolute sequential write positions change.
+            uint partitionSectors = cursor - FirstPartitionLba;
+            partitionStart = (drawingEnd - partitionSectors) / 32 * 32;
+            uint shift = partitionStart - FirstPartitionLba;
+            foreach (Node node in nodes)
+            {
+                node.EntryLba = checked(node.EntryLba + shift);
+                node.DataLba = checked(node.DataLba + shift);
+            }
+            cursor = checked(cursor + shift);
+            drawingStart = FirstPartitionLba;
+            drawingEnd = partitionStart;
+        }
         string label = string.IsNullOrWhiteSpace(volumeLabel) ? "BD_IMAGE" : volumeLabel;
         // All descriptors use precisely the same logical volume identifier.
         label = FitDstring(label, 128);
-        return new LayoutPlan(sourcePath, volumeSectors, label, recorded, nodes, cursor, drawingEnd);
+        return new LayoutPlan(sourcePath, volumeSectors, label, recorded, nodes, partitionStart,
+            cursor, drawingStart, drawingEnd, filesAtOuterRing);
     }
 
     public static void WriteSequentialPrefix(LayoutPlan plan, Stream output, uint endLbaExclusive,
         CancellationToken cancellationToken = default)
     {
         ValidateOutput(plan, output);
-        if (endLbaExclusive < plan.DataEndLbaExclusive || endLbaExclusive > plan.DrawingEndLbaExclusive)
+        uint minimumEnd = plan.FilesAtOuterRing ? plan.DrawingStartLba : plan.DataEndLbaExclusive;
+        if (endLbaExclusive < minimumEnd || endLbaExclusive > plan.DrawingEndLbaExclusive)
             throw new ArgumentOutOfRangeException(nameof(endLbaExclusive));
         ValidateSources(plan, cancellationToken);
         SequentialWriter writer = new(output, 0, cancellationToken);
@@ -146,10 +174,18 @@ public static class UdfImageWriter
         writer.WriteAtLba(IntegrityLba, IntegrityDescriptor(plan));
         writer.WriteAtLba(IntegrityLba + 1, Descriptor(8, IntegrityLba + 1, 512));
         writer.WriteAtLba(256, Anchor(plan, 256));
-        writer.WriteAtLba(PartitionLba, FileSetDescriptor(plan));
-        writer.WriteAtLba(PartitionLba + 1, Descriptor(8, 1, 512));
+        if (!plan.FilesAtOuterRing)
+            WritePartition(plan, writer);
+        writer.PadToLba(endLbaExclusive);
+        ValidateSources(plan, cancellationToken);
+    }
+
+    private static void WritePartition(LayoutPlan plan, SequentialWriter writer)
+    {
+        writer.WriteAtLba(plan.PartitionStartLba, FileSetDescriptor(plan));
+        writer.WriteAtLba(plan.PartitionStartLba + 1, Descriptor(8, 1, 512));
         foreach (Node node in plan.Nodes)
-            writer.WriteAtLba(node.EntryLba, FileEntry(node));
+            writer.WriteAtLba(node.EntryLba, FileEntry(plan, node));
         foreach (Node directory in plan.Nodes.Where(node => node.IsDirectory))
         {
             writer.PadToLba(directory.DataLba);
@@ -160,17 +196,15 @@ public static class UdfImageWriter
 
             void WriteIdentifier(Node target, byte[] identifier, bool parent)
             {
-                uint location = checked(directory.DataLba - PartitionLba
+                uint location = checked(directory.DataLba - plan.PartitionStartLba
                     + (uint)(directoryOffset / LogicalSectorBytes));
-                byte[] record = FileIdentifier(target, identifier, parent, location, directoryOffset);
+                byte[] record = FileIdentifier(plan, target, identifier, parent, location, directoryOffset);
                 writer.Write(record);
                 directoryOffset += record.Length;
             }
         }
         foreach (Node file in plan.Nodes.Where(node => !node.IsDirectory))
             writer.WriteFile(file);
-        writer.PadToLba(endLbaExclusive);
-        ValidateSources(plan, cancellationToken);
     }
 
     /// <summary>Appends the reserved tail after the caller has written the drawing range.</summary>
@@ -182,6 +216,12 @@ public static class UdfImageWriter
             throw new ArgumentOutOfRangeException(nameof(startLba), "The UDF suffix must start at DrawingEndLbaExclusive.");
         cancellationToken.ThrowIfCancellationRequested();
         SequentialWriter writer = new(output, startLba, cancellationToken);
+        if (plan.FilesAtOuterRing)
+        {
+            ValidateSources(plan, cancellationToken);
+            WritePartition(plan, writer);
+            ValidateSources(plan, cancellationToken);
+        }
         writer.WriteAtLba(plan.VolumeSectors - 257, Anchor(plan, plan.VolumeSectors - 257));
         WriteVolumeDescriptors(plan, writer, plan.ReserveVdsLba);
         writer.WriteAtLba(plan.VolumeSectors - 1, Anchor(plan, plan.VolumeSectors - 1));
@@ -254,7 +294,7 @@ public static class UdfImageWriter
         U16(data, 20, 1);
         Entity(data.AsSpan(24, 32), "+NSR03");
         U32(data, 184, 1); // Read-only partition; there is no allocatable free space.
-        U32(data, 188, PartitionLba);
+        U32(data, 188, plan.PartitionStartLba);
         U32(data, 192, plan.PartitionSectors);
         Entity(data.AsSpan(196, 32), ImplementationId);
         SetTag(data, 5, location, 512);
@@ -321,19 +361,19 @@ public static class UdfImageWriter
         Dstring(data.AsSpan(112, 128), plan.VolumeLabel);
         Charspec(data.AsSpan(240, 64));
         Dstring(data.AsSpan(304, 32), FitDstring(plan.VolumeLabel, 32));
-        LongAd(data.AsSpan(400, 16), LogicalSectorBytes, plan.Nodes[0].EntryLba - PartitionLba);
+        LongAd(data.AsSpan(400, 16), LogicalSectorBytes, plan.Nodes[0].EntryLba - plan.PartitionStartLba);
         Entity(data.AsSpan(416, 32), "*OSTA UDF Compliant", domain: true);
         SetTag(data, 256, 0, 512);
         return data;
     }
 
-    private static byte[] FileEntry(Node node)
+    private static byte[] FileEntry(LayoutPlan plan, Node node)
     {
         byte[] data = new byte[LogicalSectorBytes];
         U16(data, 20, 4); // ICB strategy type 4, short allocation descriptors.
         U16(data, 24, 1);
         data[27] = node.IsDirectory ? (byte)4 : (byte)5;
-        U32(data, 28, (node.Parent ?? node).EntryLba - PartitionLba);
+        U32(data, 28, (node.Parent ?? node).EntryLba - plan.PartitionStartLba);
         U16(data, 34, 0); // AD type 0 (short_ad); no optional ICB flags.
         U32(data, 36, uint.MaxValue);
         U32(data, 40, uint.MaxValue);
@@ -350,7 +390,7 @@ public static class UdfImageWriter
         U64(data, 160, node.UniqueId);
         int offset = 176;
         long remaining = node.DataLength;
-        uint lbn = node.DataLba - PartitionLba;
+        uint lbn = node.DataLba - plan.PartitionStartLba;
         while (remaining > 0)
         {
             uint length = (uint)Math.Min(remaining, MaximumExtentBytes);
@@ -361,11 +401,11 @@ public static class UdfImageWriter
             offset += 8;
         }
         U32(data, 172, checked((uint)(offset - 176)));
-        SetTag(data, 261, node.EntryLba - PartitionLba, offset);
+        SetTag(data, 261, node.EntryLba - plan.PartitionStartLba, offset);
         return data;
     }
 
-    private static byte[] FileIdentifier(Node target, byte[] identifier, bool parent, uint location,
+    private static byte[] FileIdentifier(LayoutPlan plan, Node target, byte[] identifier, bool parent, uint location,
         long directoryOffset)
     {
         byte[] data = new byte[FileIdentifierLength(identifier.Length, directoryOffset)];
@@ -373,7 +413,7 @@ public static class UdfImageWriter
         U16(data, 16, 1);
         data[18] = parent ? (byte)10 : target.IsDirectory ? (byte)2 : (byte)0;
         data[19] = checked((byte)identifier.Length);
-        LongAd(data.AsSpan(20, 16), LogicalSectorBytes, target.EntryLba - PartitionLba);
+        LongAd(data.AsSpan(20, 16), LogicalSectorBytes, target.EntryLba - plan.PartitionStartLba);
         // long_ad ImplementationUse: 2 flag bytes followed by the UDF unique ID.
         U32(data, 32, checked((uint)target.UniqueId));
         U16(data, 36, checked((ushort)implementationBytes));

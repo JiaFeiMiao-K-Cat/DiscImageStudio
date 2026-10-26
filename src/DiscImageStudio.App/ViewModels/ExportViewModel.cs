@@ -117,7 +117,7 @@ public partial class ExportViewModel : ObservableObject
     {
         if (IsBluRay)
         {
-            string? picked = _shell.Dialogs?.PickFolder("选择要放入蓝光内圈的文件夹");
+            string? picked = _shell.Dialogs?.PickFolder("选择要放入蓝光盘的文件夹");
             if (picked is not null)
             {
                 _state.BdDataDirectory = picked;
@@ -126,7 +126,7 @@ public partial class ExportViewModel : ObservableObject
             return;
         }
 
-        string? dvdFolder = _shell.Dialogs?.PickFolder("选择要放入 DVD 内圈的文件夹");
+        string? dvdFolder = _shell.Dialogs?.PickFolder("选择要放入 DVD 的文件夹");
         if (dvdFolder is not null)
         {
             _state.DvdDataDirectory = dvdFolder;
@@ -237,6 +237,8 @@ public partial class ExportViewModel : ObservableObject
         {
             arguments.Add("--data-dir");
             arguments.Add(_state.DvdDataDirectory.Trim());
+            arguments.Add("--file-position");
+            arguments.Add(_state.DvdFilesAtOuterRing ? "outer" : "inner");
         }
 
         await _shell.RunDiscJobAsync(
@@ -271,6 +273,8 @@ public partial class ExportViewModel : ObservableObject
         {
             arguments.Add("--data-dir");
             arguments.Add(_state.BdDataDirectory.Trim());
+            arguments.Add("--file-position");
+            arguments.Add(_state.BdFilesAtOuterRing ? "outer" : "inner");
         }
 
         await _shell.RunDiscJobAsync(

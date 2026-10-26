@@ -38,6 +38,7 @@ internal static class Program
 
     private static int Solve(CliArguments arguments)
     {
+        _ = ReadFilesAtOuterRing(arguments);
         uint fillSectors = arguments.GetUInt("fill-sectors", DvdEccBlockEncoder.SectorCount);
         if (arguments.Has("data-dir")
             || fillSectors != DvdEccBlockEncoder.SectorCount
@@ -413,6 +414,7 @@ internal static class Program
     private static int SolveMultipleBlocks(CliArguments arguments, uint fillSectors)
     {
         bool hybridMode = arguments.Has("data-dir");
+        bool filesAtOuterRing = ReadFilesAtOuterRing(arguments);
         if (!arguments.Has("image") || arguments.Has("target"))
         {
             throw new ArgumentException("Range or fast output requires --image and does not accept --target.");
@@ -487,12 +489,13 @@ internal static class Program
                     "Hybrid mode requires --psn-offset to be aligned to a 16-sector ECC Block.");
             }
 
-            hybridIso = HybridIsoImageWriter.Create(
+            HybridIsoImageWriter.LayoutPlan isoLayout = HybridIsoImageWriter.Plan(
                 arguments.Require("data-dir"),
-                isoOutputPath,
                 imageMapping.TotalSectors,
-                arguments.Get("volume-label", "DVD_IMAGE"));
-            uint minimumDrawingLba = AlignToEccBlock(hybridIso.DataEndLbaExclusive, psnOffset);
+                arguments.Get("volume-label", "DVD_IMAGE"),
+                filesAtOuterRing);
+            uint minimumDrawingLba = AlignToEccBlock(filesAtOuterRing
+                ? isoLayout.MetadataEndLbaExclusive : isoLayout.DataEndLbaExclusive, psnOffset);
             lba = arguments.Has("drawing-start-lba")
                 ? arguments.GetUInt("drawing-start-lba", 0)
                 : minimumDrawingLba;
@@ -516,19 +519,26 @@ internal static class Program
                     "--drawing-start-lba exceeds the reported disc size.");
             }
 
-            fillSectors = checked((imageMapping.TotalSectors - lba)
+            uint drawingEndLba = filesAtOuterRing
+                ? isoLayout.FileDataStartLba / DvdEccBlockEncoder.SectorCount * DvdEccBlockEncoder.SectorCount
+                : imageMapping.TotalSectors;
+            if (drawingEndLba < lba)
+                throw new ArgumentException("The selected drawing range overlaps the outer-ring files.");
+            fillSectors = checked((drawingEndLba - lba)
                 / DvdEccBlockEncoder.SectorCount
                 * DvdEccBlockEncoder.SectorCount);
             if (fillSectors < DvdEccBlockEncoder.SectorCount)
             {
                 throw new ArgumentException(
-                    "The inner-ring filesystem leaves no complete ECC Block for outer-ring drawing.");
+                    "The filesystem leaves no complete ECC Block for drawing in the selected file layout.");
             }
+
+            hybridIso = HybridIsoImageWriter.Create(isoLayout, isoOutputPath);
 
             Console.WriteLine(
                 $"hybrid ISO: files={hybridIso.FileCount}, directories={hybridIso.DirectoryCount}, "
                 + $"data={hybridIso.FileBytes} bytes, filesystem end LBA={hybridIso.DataEndLbaExclusive}, "
-                + $"drawing starts at LBA {lba}");
+                + $"files={(filesAtOuterRing ? "outer" : "inner")}, drawing LBA {lba}..{lba + fillSectors - 1}");
             if (!fastOutput)
             {
                 Console.WriteLine($"replaying inner-ring modulation boundary: 0..{lba - 1}");
@@ -627,6 +637,7 @@ internal static class Program
             sourceImage = Path.GetFullPath(arguments.Require("image")),
             isoOutput = Path.GetFullPath(isoOutputPath),
             startLba = lba,
+            filesAtOuterRing = hybridIso?.FilesAtOuterRing ?? false,
             fillSectors,
             totalSectors = imageMapping.TotalSectors,
             psnOffset = $"0x{psnOffset:X}",
@@ -742,6 +753,19 @@ internal static class Program
         return 0;
     }
 
+    private static bool ReadFilesAtOuterRing(CliArguments arguments)
+    {
+        bool outer = arguments.Get("file-position", "inner") switch
+        {
+            "inner" => false,
+            "outer" => true,
+            _ => throw new ArgumentException("--file-position must be 'inner' or 'outer'."),
+        };
+        if (outer && !arguments.Has("data-dir"))
+            throw new ArgumentException("--file-position outer requires --data-dir.");
+        return outer;
+    }
+
     private static int WriteFastDispersionImage(
         CliArguments arguments,
         string isoOutputPath,
@@ -789,6 +813,7 @@ internal static class Program
             sourceImage = Path.GetFullPath(arguments.Require("image")),
             isoOutput = Path.GetFullPath(isoOutputPath),
             startLba = options.StartLba,
+            filesAtOuterRing = hybridIso?.FilesAtOuterRing ?? false,
             fillSectors = options.FillSectors,
             totalSectors = imageMapping.TotalSectors,
             psnOffset = $"0x{options.PsnOffset:X}",
@@ -1432,7 +1457,8 @@ internal static class Program
               --constraint-output FILE  Save the mapped 619008-symbol target
               --constraint-step N       Constrain every Nth channel bit (single block default 1)
               --fill-sectors N          Fill N consecutive sectors; N must be a multiple of 16
-              --data-dir DIR            Hybrid disc: store this directory in the inner ring and draw outside
+              --data-dir DIR            Hybrid disc: store this directory together with the drawing
+              --file-position MODE      inner (default) or outer; outer requires --data-dir
               --drawing-start-lba N     Hybrid override; must follow all files and align to an ECC Block
               --fast-output true|false Direct dispersion ISO output without ECC/EFM replay
                                         (default false; true in hybrid mode)
@@ -1479,9 +1505,10 @@ internal static class Program
             With --fast-output true, payload selection is unchanged but final ECC/EFM boundary and
             DSV verification are skipped; the JSON finalBoundary is therefore null.
 
-            Hybrid --data-dir mode builds a mountable ISO9660/Joliet filesystem in the inner ring,
-            aligns the drawing start after its last used sector, and preserves it while filling the
-            outer ring. It defaults to dispersion plus fast output. --lba and --fill-sectors are
+            Hybrid --data-dir mode builds a mountable ISO9660/Joliet filesystem. Files default to the inner ring;
+            --file-position outer reserves the outer ring for files and draws between front metadata and files.
+            Drawing boundaries align to ECC Blocks and never overwrite the filesystem.
+            It defaults to dispersion plus fast output. --lba and --fill-sectors are
             automatic in this mode; use --drawing-start-lba to leave additional inner-ring space.
 
             Calibration options:

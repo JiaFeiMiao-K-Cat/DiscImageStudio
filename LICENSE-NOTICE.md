@@ -11,6 +11,7 @@ CD 交织实现包含从 [CDImage](https://github.com/arduinocelentano/cdimage) 
 第三方组件和独立资源继续适用其原有许可证：
 
 - CommunityToolkit.Mvvm、MahApps.Metro.IconPacks 及其依赖：详见 [第三方声明](THIRD-PARTY-NOTICES.txt)。Lucide 图标另包含 ISC 和继承自 Feather 的 MIT 条款。
+- 自包含 EXE/MSIX 携带 .NET 10 与 Windows 桌面运行时，继续适用其 MIT 许可及上游第三方条款，完整文本保留在同一份[第三方声明](THIRD-PARTY-NOTICES.txt)中。
 - HarmonyOS Sans SC 字体：作为独立字体资源适用 [HarmonyOS Sans 字体许可协议](src/DiscImageStudio.App/Assets/Fonts/HarmonyOS-Sans-LICENSE.txt)，本项目不改变其授权。
 - 引用的 ECMA / ISO 标准文档与用户自行导入的图片不因本项目授权而改变其权利归属。
 

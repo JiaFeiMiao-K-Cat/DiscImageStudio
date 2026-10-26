@@ -88,108 +88,170 @@
                     <RowDefinition x:Name="RailRow" Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!-- Layer list. Rows are selectable and drive both the canvas selection and the
-                     property panel, mirroring how a selection drives the other workspaces. -->
-                <Border x:Name="LayersCard" Grid.Row="0" Grid.Column="0"
-                        Style="{StaticResource CardStyle}" Padding="0">
-                    <Grid>
+                <!-- Files are disc contents, separate from the editable picture layers. Both
+                     cards share a rail so narrow windows can stack them without shrinking
+                     the layer list or obscuring the file picker. -->
+                <ScrollViewer x:Name="LeftRailScroll" Grid.Row="0" Grid.Column="0"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              controls:ScrollMaskBehavior.Enabled="True">
+                    <Grid x:Name="LeftRail">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" MinHeight="260" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Border Grid.Row="0" Style="{StaticResource CardHeaderBandStyle}">
-                            <Grid Margin="16,0,12,0">
-                                <TextBlock Text="图层" Style="{StaticResource PanelTitle}" />
-                                <TextBlock Text="{Binding Layers.Count, StringFormat={}{0} 层}"
-                                           Style="{StaticResource HintText}" HorizontalAlignment="Right" />
+                        <!-- Layer list. Rows are selectable and drive both the canvas selection and the
+                             property panel, mirroring how a selection drives the other workspaces. -->
+                        <Border x:Name="LayersCard" Grid.Row="0"
+                                Style="{StaticResource CardStyle}" Padding="0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Border Grid.Row="0" Style="{StaticResource CardHeaderBandStyle}">
+                                    <Grid Margin="16,0,12,0">
+                                        <TextBlock Text="图层" Style="{StaticResource PanelTitle}" />
+                                        <TextBlock Text="{Binding Layers.Count, StringFormat={}{0} 层}"
+                                                   Style="{StaticResource HintText}" HorizontalAlignment="Right" />
+                                    </Grid>
+                                </Border>
+                                <ListBox Grid.Row="1" ItemsSource="{Binding Layers}"
+                                         SelectedItem="{Binding SelectedLayer, Mode=TwoWay}"
+                                         Background="Transparent" BorderThickness="0" Padding="0"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource RowListBoxItem}">
+                                            <Setter Property="Padding" Value="12,8" />
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="40" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" Width="40" Height="40" CornerRadius="{StaticResource RadiusChip}"
+                                                        Background="{StaticResource Surface2Brush}">
+                                                    <Image Source="{Binding Thumbnail}" Width="36" Height="36"
+                                                           Stretch="Uniform" />
+                                                </Border>
+                                                <StackPanel Grid.Column="1" Margin="10,0,6,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}" Style="{StaticResource RowText}" />
+                                                    <TextBlock Style="{StaticResource MicroText}" Margin="0,2,0,0">
+                                                        <Run Text="{Binding TranslateXMm, Mode=OneWay, StringFormat={}{0:F1}}" />
+                                                        <Run Text=", " />
+                                                        <Run Text="{Binding TranslateYMm, Mode=OneWay, StringFormat={}{0:F1}}" />
+                                                        <Run Text=" mm" />
+                                                    </TextBlock>
+                                                </StackPanel>
+                                                <Button Grid.Column="2" Style="{StaticResource IconButton}"
+                                                        VerticalAlignment="Center"
+                                                        Command="{Binding DataContext.ToggleVisibilityCommand,
+                                                                  RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        AutomationProperties.Name="显示或隐藏图层"
+                                                        ToolTip="显示 / 隐藏">
+                                                    <iconPacks:PackIconLucide Kind="Eye" Width="15" Height="15">
+                                                        <iconPacks:PackIconLucide.Style>
+                                                            <Style TargetType="iconPacks:PackIconLucide">
+                                                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsVisible}" Value="False">
+                                                                        <Setter Property="Kind" Value="EyeOff" />
+                                                                        <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </iconPacks:PackIconLucide.Style>
+                                                    </iconPacks:PackIconLucide>
+                                                </Button>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <StackPanel Grid.Row="2" Margin="12,10,12,12">
+                                    <!-- Selection actions: operate on the highlighted layer only. -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10"
+                                                Visibility="{Binding HasSelectionVisibility}">
+                                        <Button Style="{StaticResource IconButton}" Command="{Binding MoveSelectedUpCommand}"
+                                                AutomationProperties.Name="上移图层" ToolTip="上移一层">
+                                            <iconPacks:PackIconLucide Kind="ArrowUp" Width="15" Height="15"
+                                                                      Foreground="{StaticResource TextSecondaryBrush}" />
+                                        </Button>
+                                        <Button Style="{StaticResource IconButton}" Margin="6,0,0,0"
+                                                Command="{Binding MoveSelectedDownCommand}"
+                                                AutomationProperties.Name="下移图层" ToolTip="下移一层">
+                                            <iconPacks:PackIconLucide Kind="ArrowDown" Width="15" Height="15"
+                                                                      Foreground="{StaticResource TextSecondaryBrush}" />
+                                        </Button>
+                                        <Button Style="{StaticResource IconButton}" Margin="6,0,0,0"
+                                                Command="{Binding RemoveSelectedCommand}"
+                                                AutomationProperties.Name="删除图层" ToolTip="删除选中图层（Del）">
+                                            <iconPacks:PackIconLucide Kind="Trash2" Width="15" Height="15"
+                                                                      Foreground="{StaticResource TextSecondaryBrush}" />
+                                        </Button>
+                                    </StackPanel>
+                                    <Button Style="{StaticResource SecondaryButton}" Height="{StaticResource ControlHeight}"
+                                            Content="导入图片" Command="{Binding ImportImagesCommand}"
+                                            HorizontalAlignment="Stretch" />
+                                </StackPanel>
                             </Grid>
                         </Border>
-                        <ListBox Grid.Row="1" ItemsSource="{Binding Layers}"
-                                 SelectedItem="{Binding SelectedLayer, Mode=TwoWay}"
-                                 Background="Transparent" BorderThickness="0" Padding="0"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                 ScrollViewer.VerticalScrollBarVisibility="Auto">
-                            <ListBox.ItemContainerStyle>
-                                <Style TargetType="ListBoxItem" BasedOn="{StaticResource RowListBoxItem}">
-                                    <Setter Property="Padding" Value="12,8" />
-                                </Style>
-                            </ListBox.ItemContainerStyle>
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="40" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <Border Grid.Column="0" Width="40" Height="40" CornerRadius="{StaticResource RadiusChip}"
-                                                Background="{StaticResource Surface2Brush}">
-                                            <Image Source="{Binding Thumbnail}" Width="36" Height="36"
-                                                   Stretch="Uniform" />
-                                        </Border>
-                                        <StackPanel Grid.Column="1" Margin="10,0,6,0" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Name}" Style="{StaticResource RowText}" />
-                                            <TextBlock Style="{StaticResource MicroText}" Margin="0,2,0,0">
-                                                <Run Text="{Binding TranslateXMm, Mode=OneWay, StringFormat={}{0:F1}}" />
-                                                <Run Text=", " />
-                                                <Run Text="{Binding TranslateYMm, Mode=OneWay, StringFormat={}{0:F1}}" />
-                                                <Run Text=" mm" />
-                                            </TextBlock>
+
+                        <controls:VisibilityGate x:Name="FilesCardGate" Grid.Row="1"
+                                                 IsOpen="{Binding IsCd}" Inverted="True"
+                                                 SizeChanged="OnPageSizeChanged"
+                                                 IsVisibleChanged="OnFilesCardVisibilityChanged">
+                            <Border Style="{StaticResource CardStyle}" Padding="18" Margin="0,16,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="随盘文件" Style="{StaticResource PanelTitle}"
+                                               Margin="0,0,0,12" />
+                                    <controls:VisibilityGate IsOpen="{Binding IsDvd}">
+                                        <StackPanel>
+                                            <controls:PathField Label="文件夹" Compact="True"
+                                                                Text="{Binding State.DvdDataDirectory}"
+                                                                ToolTip="{Binding State.DvdDataDirectory}"
+                                                                ButtonLabel="选文件夹…"
+                                                                Command="{Binding BrowseDataCommand}" />
+                                            <controls:VisibilityGate IsOpen="{Binding State.HasDvdFiles}">
+                                                <StackPanel Margin="0,14,0,0">
+                                                    <TextBlock Style="{StaticResource FieldLabel}"
+                                                               Text="文件位置" Margin="0,0,0,6" />
+                                                    <controls:SegmentedControl LabelA="内圈" LabelB="外圈"
+                                                                               IsSecondSelected="{Binding State.DvdFilesAtOuterRing}" />
+                                                </StackPanel>
+                                            </controls:VisibilityGate>
                                         </StackPanel>
-                                        <Button Grid.Column="2" Style="{StaticResource IconButton}"
-                                                VerticalAlignment="Center"
-                                                Command="{Binding DataContext.ToggleVisibilityCommand,
-                                                          RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                CommandParameter="{Binding}"
-                                                AutomationProperties.Name="显示或隐藏图层"
-                                                ToolTip="显示 / 隐藏">
-                                            <iconPacks:PackIconLucide Kind="Eye" Width="15" Height="15">
-                                                <iconPacks:PackIconLucide.Style>
-                                                    <Style TargetType="iconPacks:PackIconLucide">
-                                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsVisible}" Value="False">
-                                                                <Setter Property="Kind" Value="EyeOff" />
-                                                                <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </iconPacks:PackIconLucide.Style>
-                                            </iconPacks:PackIconLucide>
-                                        </Button>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                        <StackPanel Grid.Row="2" Margin="12,10,12,12">
-                            <!-- Selection actions: operate on the highlighted layer only. -->
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10"
-                                        Visibility="{Binding HasSelectionVisibility}">
-                                <Button Style="{StaticResource IconButton}" Command="{Binding MoveSelectedUpCommand}"
-                                        AutomationProperties.Name="上移图层" ToolTip="上移一层">
-                                    <iconPacks:PackIconLucide Kind="ArrowUp" Width="15" Height="15"
-                                                              Foreground="{StaticResource TextSecondaryBrush}" />
-                                </Button>
-                                <Button Style="{StaticResource IconButton}" Margin="6,0,0,0"
-                                        Command="{Binding MoveSelectedDownCommand}"
-                                        AutomationProperties.Name="下移图层" ToolTip="下移一层">
-                                    <iconPacks:PackIconLucide Kind="ArrowDown" Width="15" Height="15"
-                                                              Foreground="{StaticResource TextSecondaryBrush}" />
-                                </Button>
-                                <Button Style="{StaticResource IconButton}" Margin="6,0,0,0"
-                                        Command="{Binding RemoveSelectedCommand}"
-                                        AutomationProperties.Name="删除图层" ToolTip="删除选中图层（Del）">
-                                    <iconPacks:PackIconLucide Kind="Trash2" Width="15" Height="15"
-                                                              Foreground="{StaticResource TextSecondaryBrush}" />
-                                </Button>
-                            </StackPanel>
-                            <Button Style="{StaticResource SecondaryButton}" Height="{StaticResource ControlHeight}"
-                                    Content="导入图片" Command="{Binding ImportImagesCommand}"
-                                    HorizontalAlignment="Stretch" />
-                        </StackPanel>
+                                    </controls:VisibilityGate>
+                                    <controls:VisibilityGate IsOpen="{Binding IsBluRay}">
+                                        <StackPanel>
+                                            <controls:PathField Label="文件夹" Compact="True"
+                                                                Text="{Binding State.BdDataDirectory}"
+                                                                ToolTip="{Binding State.BdDataDirectory}"
+                                                                ButtonLabel="选文件夹…"
+                                                                Command="{Binding BrowseDataCommand}" />
+                                            <controls:VisibilityGate IsOpen="{Binding State.HasBluRayFiles}">
+                                                <StackPanel Margin="0,14,0,0">
+                                                    <TextBlock Style="{StaticResource FieldLabel}"
+                                                               Text="文件位置" Margin="0,0,0,6" />
+                                                    <controls:SegmentedControl LabelA="内圈" LabelB="外圈"
+                                                                               IsSecondSelected="{Binding State.BdFilesAtOuterRing}" />
+                                                </StackPanel>
+                                            </controls:VisibilityGate>
+                                        </StackPanel>
+                                    </controls:VisibilityGate>
+                                    <TextBlock Style="{StaticResource HintText}" Margin="0,12,0,0"
+                                               Text="包含文件夹及子文件夹中的文件。清空路径可取消。" />
+                                </StackPanel>
+                            </Border>
+                        </controls:VisibilityGate>
                     </Grid>
-                </Border>
+                </ScrollViewer>
 
                 <!-- Center: the mm canvas -->
                 <Border x:Name="CanvasCard" Grid.Row="0" Grid.Column="2"

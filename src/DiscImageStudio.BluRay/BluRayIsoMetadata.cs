@@ -24,7 +24,8 @@ public sealed record BluRayIsoMetadata(
     string VolumeLabel,
     string? DataDirectory,
     DateTimeOffset? UdfTimestamp,
-    DateTimeOffset GeneratedUtc)
+    DateTimeOffset GeneratedUtc,
+    bool FilesAtOuterRing = false)
 {
     public const string FormatName = "bd-r-image-v1";
 
@@ -52,7 +53,8 @@ public sealed record BluRayIsoMetadata(
             plan.VolumeLabel ?? "BD_IMAGE",
             plan.DataDirectory,
             plan.UdfTimestamp,
-            generatedUtc);
+            generatedUtc,
+            plan.FilesAtOuterRing);
 
     public static string PathFor(string isoPath) => isoPath + ".json";
 

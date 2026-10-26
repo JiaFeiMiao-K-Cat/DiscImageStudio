@@ -59,13 +59,20 @@ public static class Iso9660ImageWriter
         public long FileBytes { get; }
 
         public uint DataEndLbaExclusive => _layout.DataEndLbaExclusive;
+
+        public uint MetadataEndLbaExclusive => _layout.MetadataEndLbaExclusive;
+
+        public uint FileDataStartLba => _layout.FileDataStartLba;
+
+        public bool FilesAtOuterRing => _layout.FilesAtOuterRing;
     }
 
     public static LayoutPlan Plan(
         string? sourceDirectory,
         uint volumeSectors,
         string volumeLabel,
-        DateTimeOffset? timestamp = null)
+        DateTimeOffset? timestamp = null,
+        bool filesAtOuterRing = false)
     {
         if (volumeSectors <= FirstMetadataLba)
         {
@@ -86,7 +93,7 @@ public static class Iso9660ImageWriter
             : ReadTree(sourceFullPath);
         List<IsoNode> directories = AssignDirectoryNumbers(root);
         AssignIdentifiers(directories);
-        Layout layout = BuildLayout(directories, volumeSectors);
+        Layout layout = BuildLayout(directories, volumeSectors, filesAtOuterRing);
         return new LayoutPlan(
             sourceFullPath,
             volumeSectors,
@@ -130,6 +137,53 @@ public static class Iso9660ImageWriter
     }
 
     private static void WriteFilesystem(LayoutPlan plan, SequentialIsoWriter output)
+    {
+        WriteMetadata(plan, output);
+        WriteFiles(plan, output);
+    }
+
+    /// <summary>Writes only the front metadata, leaving the planned drawing interval free.</summary>
+    public static void WriteOuterRingPrefix(LayoutPlan plan, Stream output, uint endLbaExclusive,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateOuterRange(plan, output, endLbaExclusive);
+        ValidateSources(plan, cancellationToken);
+        SequentialIsoWriter writer = new(output, cancellationToken);
+        WriteMetadata(plan, writer);
+        writer.PadToLba(endLbaExclusive);
+    }
+
+    /// <summary>Appends padding and file contents after the caller has produced the drawing.</summary>
+    public static void WriteOuterRingSuffix(LayoutPlan plan, Stream output, uint startLba,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateOuterRange(plan, output, startLba);
+        ValidateSources(plan, cancellationToken);
+        SequentialIsoWriter writer = new(output, cancellationToken, startLba);
+        WriteFiles(plan, writer);
+        writer.PadToLba(plan.VolumeSectors);
+    }
+
+    private static void ValidateOuterRange(LayoutPlan plan, Stream output, uint boundary)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(output);
+        if (!output.CanWrite) throw new ArgumentException("ISO output must be writable.", nameof(output));
+        if (!plan.FilesAtOuterRing || boundary < plan.MetadataEndLbaExclusive || boundary > plan.FileDataStartLba)
+            throw new ArgumentOutOfRangeException(nameof(boundary), "Outer-file drawing boundary overlaps metadata or files.");
+    }
+
+    private static void ValidateSources(LayoutPlan plan, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        foreach (IsoNode file in EnumerateFiles(plan._root))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ValidateSourceFile(file);
+        }
+    }
+
+    private static void WriteMetadata(LayoutPlan plan, SequentialIsoWriter output)
     {
         output.WriteAtLba(PrimaryVolumeDescriptorLba, BuildVolumeDescriptor(
             type: 1,
@@ -181,6 +235,10 @@ public static class Iso9660ImageWriter
                 BuildDirectoryExtent(directory, joliet: true));
         }
 
+    }
+
+    private static void WriteFiles(LayoutPlan plan, SequentialIsoWriter output)
+    {
         foreach (IsoNode file in EnumerateFiles(plan._root))
         {
             output.WriteFileAtLba(file);
@@ -301,7 +359,7 @@ public static class Iso9660ImageWriter
         }
     }
 
-    private static Layout BuildLayout(List<IsoNode> directories, uint volumeSectors)
+    private static Layout BuildLayout(List<IsoNode> directories, uint volumeSectors, bool filesAtOuterRing)
     {
         int primaryPathTableBytes = PathTableLength(directories, joliet: false);
         int jolietPathTableBytes = PathTableLength(directories, joliet: true);
@@ -323,9 +381,17 @@ public static class Iso9660ImageWriter
             directory.JolietDirectoryLba = Allocate(ref cursor, directory.JolietDirectoryBytes);
         }
 
-        foreach (IsoNode file in EnumerateFiles(directories[0]))
+        uint metadataEnd = cursor;
+        List<IsoNode> files = EnumerateFiles(directories[0]).ToList();
+        ulong fileSectors = 0;
+        foreach (IsoNode file in files) fileSectors = checked(fileSectors + SectorCount(file.DataLength));
+        if ((ulong)metadataEnd + fileSectors > volumeSectors)
+            throw new ArgumentException("Data directory and filesystem metadata exceed the disc capacity.");
+        if (filesAtOuterRing) cursor = checked(volumeSectors - (uint)fileSectors);
+        uint fileDataStart = cursor;
+        foreach (IsoNode file in files)
         {
-            file.DataLba = cursor;
+            file.DataLba = filesAtOuterRing && file.DataLength == 0 ? 0 : cursor;
             cursor = checked(cursor + SectorCount(file.DataLength));
         }
 
@@ -343,7 +409,10 @@ public static class Iso9660ImageWriter
             jolietBigPathTableLba,
             primaryPathTableBytes,
             jolietPathTableBytes,
-            cursor);
+            cursor,
+            metadataEnd,
+            fileDataStart,
+            filesAtOuterRing);
     }
 
     private static uint Allocate(ref uint cursor, long byteCount)
@@ -760,10 +829,11 @@ public static class Iso9660ImageWriter
         private readonly byte[] _zeroBuffer = new byte[CopyBufferBytes];
         private long _position;
 
-        internal SequentialIsoWriter(Stream output, CancellationToken cancellationToken)
+        internal SequentialIsoWriter(Stream output, CancellationToken cancellationToken, uint startLba = 0)
         {
             _output = output;
             _cancellationToken = cancellationToken;
+            _position = checked((long)startLba * LogicalSectorBytes);
         }
 
         internal void WriteAtLba(uint lba, ReadOnlySpan<byte> bytes)
@@ -776,6 +846,11 @@ public static class Iso9660ImageWriter
 
         internal void WriteFileAtLba(IsoNode file)
         {
+            if (file.DataLength == 0)
+            {
+                ValidateSourceFile(file);
+                return;
+            }
             PadToPosition(checked((long)file.DataLba * LogicalSectorBytes));
             ValidateSourceFile(file);
             using FileStream input = new(
@@ -865,5 +940,8 @@ public static class Iso9660ImageWriter
         uint JolietBigPathTableLba,
         int PrimaryPathTableBytes,
         int JolietPathTableBytes,
-        uint DataEndLbaExclusive);
+        uint DataEndLbaExclusive,
+        uint MetadataEndLbaExclusive,
+        uint FileDataStartLba,
+        bool FilesAtOuterRing);
 }
