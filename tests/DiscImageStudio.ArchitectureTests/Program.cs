@@ -64,6 +64,7 @@ RunStreamingGenerationTests();
 TestDiscPresets();
 TestDiscPresetJson();
 UserPresetDeleteTests.Run();
+ProjectDialogPresetTests.Run();
 ProjectStoreTests.Run();
 ProjectSessionTests.Run();
 FilePlacementProjectTests.Run();

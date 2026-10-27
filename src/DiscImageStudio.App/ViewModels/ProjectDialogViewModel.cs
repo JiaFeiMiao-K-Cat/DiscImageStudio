@@ -39,7 +39,7 @@ public sealed record PresetSaveResult(string Name);
 public partial class ProjectDialogViewModel : ObservableObject
 {
     private readonly DiscParametersState _state;
-    private readonly RecentTemplateStore _recentTemplates = new();
+    private readonly RecentTemplateStore _recentTemplates;
     private readonly bool _editMode;
 
     /// <summary>Left-pane tab order: recently confirmed templates first, then one category
@@ -49,8 +49,17 @@ public partial class ProjectDialogViewModel : ObservableObject
     public IReadOnlyList<string> TemplateCategories { get; } = ["最近", "CD", "DVD", "蓝光"];
 
     public ProjectDialogViewModel(DiscParametersState state, ProjectDialogRequest request)
+        : this(state, request, new RecentTemplateStore())
+    {
+    }
+
+    internal ProjectDialogViewModel(
+        DiscParametersState state,
+        ProjectDialogRequest request,
+        RecentTemplateStore recentTemplates)
     {
         _state = state;
+        _recentTemplates = recentTemplates;
         _editMode = request.EditMode;
         // Project settings start from the open project's BD polarity; switching to a preset
         // replaces it along with the geometry.
@@ -313,6 +322,11 @@ public partial class ProjectDialogViewModel : ObservableObject
             return;
         }
 
+        ApplySelectedTemplate(value);
+    }
+
+    private void ApplySelectedTemplate(ProjectTemplateTile? value)
+    {
         if (value is not null && value.Family != Family)
         {
             // Selecting another family's template switches the form too, without letting
@@ -704,7 +718,7 @@ public partial class ProjectDialogViewModel : ObservableObject
                 pitchLinear,
                 pitchQuadratic,
                 pitchCubic,
-                invertMapping: Family == OpticalDiscFamily.BluRay && _state.BdInvertMapping);
+                invertMapping: Family == OpticalDiscFamily.BluRay && _templateInvertMapping);
             ErrorMessage = string.Empty;
             SavedPresetMessage = $"已保存为预设：{displayName}";
             if (_editMode)
@@ -807,7 +821,7 @@ public partial class ProjectDialogViewModel : ObservableObject
             // every other deletion must leave the hand-tuned values alone.
             if (!_editMode && wasSelected)
             {
-                ApplyTemplate();
+                ApplySelectedTemplate(SelectedTemplate);
             }
 
             SavedPresetMessage = $"已删除预设：{removedName}";

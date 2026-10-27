@@ -4,7 +4,7 @@
 
 ## 本地验证
 
-最近一次完整回归：2026-10-26，Windows、.NET SDK 10.0.400（运行时 10.0.11），Release 配置。完整 solution 构建（0 警告）与架构回归全部通过；测试入口直接运行自研 Exe harness，不使用 `dotnet test`。
+最近一次完整回归：2026-10-27（v1.3.2），Windows、.NET SDK 10.0.400（运行时 10.0.11），Release 配置。完整 solution 构建（0 警告）与架构回归全部通过；测试入口直接运行自研 Exe harness，不使用 `dotnet test`。
 
 在仓库根目录执行：
 
@@ -45,6 +45,8 @@ dotnet run --project src/DiscImageStudio.App --configuration Release --no-build 
 设计页文件选择入口另检查了 DVD、BD、CD、未选文件夹、18 个图层、窄窗口及低窗口高度 7 种界面状态；宽屏图层列表内部滚动，文件选择区域保持可达，构建为 0 警告、0 错误。
 
 v1.3.0 另通过 `Build-Release.ps1` 的 .NET 10 自包含单文件验证：隔离目录仅放 EXE，刻录接口构建信息、DVD 自检、两扇区 RAW/WAV/CUE、关闭 CUE 及 WPF 界面渲染均通过。最终内置 .NET / Windows Desktop 10.0.11，并同步保留其完整上游许可声明。
+
+v1.3.2 通过完整架构回归、DVD 引擎及应用模块自检、发布工具 45 项检查。新增回归验证蓝光切换预设后另存与工程确认的极性一致，以及删除最近预设后跨盘型选择与几何同步；画布缩放覆盖 25%–1200% 边界、加减按钮和适应窗口重置。另核对新建 CD、蓝光、DVD 工程设置及 18 图层设计页共 4 张离屏截图。
 
 ## 实盘验证边界
 

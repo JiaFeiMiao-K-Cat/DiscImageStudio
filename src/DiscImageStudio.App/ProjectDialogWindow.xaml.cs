@@ -27,7 +27,7 @@ public partial class ProjectDialogWindow : Window
         PreviewKeyDown += (_, args) =>
         {
             // Escape answers the overwrite guard first; only an unguarded Escape closes.
-            if (PresetSwitchConfirm.HandleKeyDown(args.Key))
+            if (args.Key == Key.Escape && PresetSwitchConfirm.HandleKeyDown(args.Key))
             {
                 args.Handled = true;
                 return;
