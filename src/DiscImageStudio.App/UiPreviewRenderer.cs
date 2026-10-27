@@ -33,7 +33,8 @@ internal static class UiPreviewRenderer
         bool homeHover = false,
         bool projectUpdate = false,
         bool projectSave = false,
-        bool tonePreview = false)
+        bool tonePreview = false,
+        string? burnProgress = null)
     {
         if (width < 800 || height < 600 || width > 4096 || height > 2160)
             throw new ArgumentOutOfRangeException(nameof(width), "Snapshot dimensions must be 800–4096 × 600–2160.");
@@ -77,6 +78,7 @@ internal static class UiPreviewRenderer
             projectPath,
             expandJobDock,
             burnSource);
+        if (burnProgress is not null) window.ShowBurnProgressForSnapshot(burnProgress);
         window.Show();
         window.UpdateLayout();
         if (homeHover)

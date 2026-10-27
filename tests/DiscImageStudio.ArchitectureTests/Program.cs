@@ -55,6 +55,7 @@ UdfFilesystemTests.Run();
 UdfLargeFileTests.Run();
 GeneratedContentProgressTests.Run();
 OpticalWriteProgressTests.Run();
+BurnProgressDisplayTests.Run();
 OpticalBurnOperationGateTests.Run();
 BluRaySequentialBurnTests.Run();
 BluRayFlushDiagnosticsTests.Run();
@@ -101,6 +102,7 @@ CalibrationPhotoTests.Run();
 CalibrationPhotoCanvasTests.Run();
 DesignCanvasZoomTests.Run();
 CalibrationBurnWorkflowTests.Run();
+CalibrationBurnSourceTests.Run();
 CalibrationOutputPublisherTests.Run();
 CalibrationPhotoViewModelTests.Run();
 

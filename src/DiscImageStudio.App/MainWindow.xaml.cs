@@ -212,6 +212,25 @@ public partial class MainWindow : Window
         }
     }
 
+    // Snapshot-only synthetic telemetry. No burner or recorder is created here.
+    internal void ShowBurnProgressForSnapshot(string phase)
+    {
+        if (phase is not ("write" or "buffer" or "finalize"))
+            throw new ArgumentException("Burn progress snapshot must be write, buffer or finalize.");
+        var kind = _shell.Burn.IsBluRayBurn ? DiscImageStudio.Burning.OpticalBurnMediaKind.BluRayData
+            : _shell.Burn.IsDvdBurn ? DiscImageStudio.Burning.OpticalBurnMediaKind.DvdData
+            : DiscImageStudio.Burning.OpticalBurnMediaKind.CdAudio;
+        long total = kind == DiscImageStudio.Burning.OpticalBurnMediaKind.CdAudio ? 800L * 1024 * 1024
+            : kind == DiscImageStudio.Burning.OpticalBurnMediaKind.BluRayData ? 12219392L * 2048 : 2295104L * 2048;
+        _shell.SetBusy(true);
+        _shell.BeginBurnDockJob(kind, total);
+        _shell.ReportBurnProgress(new("buffer", "正在准备防断流缓冲区…", 0, total));
+        if (phase != "buffer")
+            _shell.ReportBurnProgress(new("write", "刻录机开始写入。", total / 3, total, 8.25 * 1024 * 1024));
+        if (phase == "finalize")
+            _shell.ReportBurnProgress(new("finalize", "正在刷新缓存并关闭刻录会话…", total / 3, total));
+    }
+
     /// <summary>Snapshot hook: forces the hovered state on the first recent-project card
     /// (card slid left, disc eased out and spinning) so the ui-snapshot CLI can capture the
     /// hover-only motion that a static page render cannot reach.</summary>

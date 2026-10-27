@@ -16,7 +16,7 @@ public partial class BurnViewModel : ObservableObject
     private readonly ShellViewModel _shell;
     private readonly DiscParametersState _state;
     private readonly DesignViewModel _design;
-    private readonly IOpticalDiscBurner _opticalDiscBurner = new WindowsImapiBurner();
+    private readonly IOpticalDiscBurner _opticalDiscBurner;
     private CancellationTokenSource? _burnCancellation;
     private int _burnWriteSpeedRefreshRevision;
     private int _burnPreparationRevision;
@@ -69,10 +69,17 @@ public partial class BurnViewModel : ObservableObject
     private bool _isBurnRunning;
 
     public BurnViewModel(ShellViewModel shell, DiscParametersState state, DesignViewModel design)
+        : this(shell, state, design, new WindowsImapiBurner())
+    {
+    }
+
+    internal BurnViewModel(ShellViewModel shell, DiscParametersState state, DesignViewModel design,
+        IOpticalDiscBurner opticalDiscBurner)
     {
         _shell = shell;
         _state = state;
         _design = design;
+        _opticalDiscBurner = opticalDiscBurner;
         RefreshDevicesCommand = new RelayCommand(() => _ = RefreshDevicesAsync(), () => !_shell.IsBusy);
         RefreshSpeedsCommand = new RelayCommand(() => _ = RefreshWriteSpeedsAsync(), () => !_shell.IsBusy);
         StartBurnCommand = new AsyncRelayCommand(() => StartStreamBurnAsync(), CanStartBurn);
@@ -220,15 +227,19 @@ public partial class BurnViewModel : ObservableObject
             else
             {
                 CalibrationParameters p = target.Parameters;
-                string kind = p.Kind == CalibrationDiscKind.Dvd ? "DVD" : "CD";
-                SourceTitle = $"标定图案 · {kind} · {target.Id[..8]}";
-                string encoding = p.Kind == CalibrationDiscKind.Dvd
-                    ? $"位长 {p.LinearDensity:0.######} nm"
-                    : $"线速度 {p.LinearDensity:0.######} mm/s · "
-                        + (_shell.Calibration.CdInterleave ? "延迟交织" : "未交织");
+                SourceTitle = $"标定图案 · {FamilyLabel} · {target.Id[..8]}";
+                string encoding = p.Kind switch
+                {
+                    CalibrationDiscKind.BluRay => $"位长 {p.LinearDensity:0.######} nm · "
+                        + (p.BluRayInvertMapping ? "反转 3T/6T" : "标准 3T/6T")
+                        + $" · 绘图 LBA {p.DrawingStartSector}–{(p.DrawingEndSectorExclusive == 0 ? p.Sectors : p.DrawingEndSectorExclusive) - 1}",
+                    CalibrationDiscKind.Dvd => $"位长 {p.LinearDensity:0.######} nm",
+                    _ => $"线速度 {p.LinearDensity:0.######} mm/s · "
+                        + (_shell.Calibration.CdInterleave ? "延迟交织" : "未交织"),
+                };
                 SourceDetails = $"绘图区 {p.InnerRadiusMm:0.######}–{p.OuterRadiusMm:0.######} mm"
                     + $" · {p.Sectors} 扇区 · {encoding}\n"
-                    + "将使用标定模块提供的参数。";
+                    + "按标定图案记录的盘型与参数写入。";
                 identity = $"calibration:{target.Id}:{p}:{_shell.Calibration.CdInterleave}";
             }
         }
@@ -583,25 +594,30 @@ public partial class BurnViewModel : ObservableObject
             ownsBusyState = true;
             _shell.SetBusy(true);
             IsBurnRunning = true;
-            _burnCancellation = new CancellationTokenSource();
+            CancellationTokenSource burnCancellation = new();
+            _burnCancellation = burnCancellation;
             // The burn reports real percentages, so it drives the job dock's bar instead of
             // showing a second progress surface inside this page.
-            _shell.BeginDockJob("流式刻录", determinate: true);
+            _shell.BeginBurnDockJob(request.MediaKind, request.ContentLength);
             BurnProgressValue = 0;
-            BurnStatusText = "正在准备流式刻录…";
+            BurnStatusText = "正在流式刻录，进度见底部任务栏。";
             _shell.AppendLog(
                 $"\n[{DateTime.Now:HH:mm:ss}] 开始流式刻录：{contentDescription}；"
                 + $"设备={device.DisplayName}；请求速度={selectedWriteSpeed.DisplayName}。\n");
             Progress<OpticalBurnProgress> progress = new(value =>
             {
-                BurnStatusText = value.Message;
-                BurnProgressValue = Math.Clamp(value.Fraction * 100.0, 0.0, 100.0);
-                _shell.ReportDockJob(value.Message, BurnProgressValue);
+                if (!IsBurnRunning || !ReferenceEquals(_burnCancellation, burnCancellation))
+                {
+                    return;
+                }
+
+                _shell.ReportBurnProgress(value);
+                BurnProgressValue = _shell.JobProgressValue;
             });
             OpticalBurnResult result = await _opticalDiscBurner.BurnAsync(
                 request,
                 progress,
-                _burnCancellation.Token);
+                burnCancellation.Token);
             BurnProgressValue = 100;
             BurnStatusText = "刻录完成，可以取出光盘。";
             _shell.CompleteDockJob("完成：流式刻录 " + contentDescription);

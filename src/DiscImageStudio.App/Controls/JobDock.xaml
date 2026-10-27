@@ -14,6 +14,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="36" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0" Margin="14,0,10,0">
@@ -30,14 +31,34 @@
                 <TextBlock Grid.Column="1" Text="{Binding JobTitle}" Style="{StaticResource CompactText}"
                            VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}"
                            Margin="10,0,10,0" />
-                <TextBlock Grid.Column="2" Text="{Binding JobStatusText}" Style="{StaticResource CompactHint}"
-                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                <ProgressBar Grid.Column="3" Style="{StaticResource CompactProgressBar}"
+                <TextBlock Grid.Column="2" Text="{Binding JobStatusText}"
+                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource CompactHint}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsBurnTelemetryVisible}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <ProgressBar Grid.Column="3"
                              Width="180" VerticalAlignment="Center" Margin="0,0,16,0"
                              IsIndeterminate="{Binding IsJobProgressIndeterminate}"
                              Minimum="0" Maximum="100"
-                             Value="{Binding JobProgressValue, Mode=OneWay}"
-                             Visibility="{Binding JobProgressVisibility}" />
+                             Value="{Binding JobProgressValue, Mode=OneWay}">
+                    <ProgressBar.Style>
+                        <Style TargetType="ProgressBar" BasedOn="{StaticResource CompactProgressBar}">
+                            <Setter Property="Visibility" Value="{Binding JobProgressVisibility}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsBurnTelemetryVisible}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ProgressBar.Style>
+                </ProgressBar>
                 <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Style="{StaticResource CompactButton}" Content="取消"
                             Command="{Binding CancelJobCommand}" Margin="0,0,8,0"
@@ -88,7 +109,19 @@
                 </StackPanel>
             </Grid>
 
-            <Border Grid.Row="1" x:Name="LogHost" Height="200" Background="{StaticResource BackgroundBrush}"
+            <StackPanel Grid.Row="1" Margin="14,0,14,10"
+                        Visibility="{Binding IsBurnTelemetryVisible, Converter={StaticResource BoolToVisibility}}">
+                <WrapPanel Margin="0,0,0,8" TextElement.FontFamily="{StaticResource MonoFontFamily}"
+                           TextElement.FontSize="12" TextElement.Foreground="{StaticResource TextPrimaryBrush}">
+                    <TextBlock Text="{Binding BurnAmountText}" Margin="0,0,24,0" />
+                    <TextBlock Text="{Binding BurnRateText}" Margin="0,0,24,0" />
+                    <TextBlock Text="{Binding BurnMultiplierText}" />
+                </WrapPanel>
+                <ProgressBar Style="{StaticResource CompactProgressBar}" Minimum="0" Maximum="100"
+                             Value="{Binding JobProgressValue, Mode=OneWay}" IsIndeterminate="False" />
+            </StackPanel>
+
+            <Border Grid.Row="2" x:Name="LogHost" Height="200" Background="{StaticResource BackgroundBrush}"
                     BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,1,0,0"
                     Visibility="{Binding IsJobDockExpanded, Converter={StaticResource BoolToVisibility}}">
                 <TextBox x:Name="LogTextBox" Style="{StaticResource BareTextBox}" IsReadOnly="True"

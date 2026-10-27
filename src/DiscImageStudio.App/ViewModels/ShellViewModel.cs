@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DiscImageStudio.Burning;
 using DiscImageStudio.Core;
 using DiscImageStudio.Services;
 
@@ -30,8 +31,15 @@ public partial class ShellViewModel : ObservableObject
     private string? _lastOutputPath;
     private bool _isApplyingProject;
     private bool _isWritingComposite;
+    private BurnProgressDisplay? _burnProgressDisplay;
+    private DispatcherTimer? _burnTelemetryTimer;
 
     public ShellViewModel(Dispatcher dispatcher)
+        : this(dispatcher, new WindowsImapiBurner())
+    {
+    }
+
+    internal ShellViewModel(Dispatcher dispatcher, IOpticalDiscBurner opticalDiscBurner)
     {
         _dispatcher = dispatcher;
         State = new DiscParametersState();
@@ -42,7 +50,7 @@ public partial class ShellViewModel : ObservableObject
         LivePreview = new LivePreviewViewModel(_dispatcher, this, State);
         Home = new HomeViewModel(this, State, _recentProjects);
         Calibration = new CalibrationViewModel(this, State);
-        Burn = new BurnViewModel(this, State, Design);
+        Burn = new BurnViewModel(this, State, Design, opticalDiscBurner);
         Export = new ExportViewModel(this, State, Design);
         About = new AboutViewModel();
         Design.CompositeRendered += Design_CompositeRendered;
@@ -142,6 +150,18 @@ public partial class ShellViewModel : ObservableObject
 
     [ObservableProperty]
     private double _jobProgressValue;
+
+    [ObservableProperty]
+    private bool _isBurnTelemetryVisible;
+
+    [ObservableProperty]
+    private string _burnAmountText = string.Empty;
+
+    [ObservableProperty]
+    private string _burnRateText = string.Empty;
+
+    [ObservableProperty]
+    private string _burnMultiplierText = string.Empty;
 
     /// <summary>CLI jobs report no percentage, so their bar sweeps; work that does report a
     /// fraction (the streaming burn) switches the same bar to determinate.</summary>
@@ -959,6 +979,9 @@ public partial class ShellViewModel : ObservableObject
             return;
         }
 
+        IsBurnTelemetryVisible = false;
+        _burnProgressDisplay = null;
+        _burnTelemetryTimer?.Stop();
         JobTitle = status;
         JobStatusText = "正在运行…";
         JobProgressValue = 0;
@@ -1038,11 +1061,48 @@ public partial class ShellViewModel : ObservableObject
     /// a second copy inside a page.</summary>
     internal void BeginDockJob(string title, bool determinate)
     {
+        IsBurnTelemetryVisible = false;
+        _burnProgressDisplay = null;
+        _burnTelemetryTimer?.Stop();
         JobTitle = title;
         JobStatusText = "正在运行…";
         JobProgressValue = 0;
         IsJobProgressIndeterminate = !determinate;
         JobHasResult = false;
+    }
+
+    internal void BeginBurnDockJob(OpticalBurnMediaKind mediaKind, long totalBytes)
+    {
+        BeginDockJob("流式刻录", determinate: true);
+        _burnProgressDisplay = new BurnProgressDisplay(mediaKind, totalBytes);
+        IsBurnTelemetryVisible = true;
+        UpdateBurnTelemetry();
+        if (_burnTelemetryTimer is null)
+        {
+            _burnTelemetryTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher)
+            {
+                Interval = TimeSpan.FromMilliseconds(500),
+            };
+            _burnTelemetryTimer.Tick += (_, _) => UpdateBurnTelemetry();
+        }
+        _burnTelemetryTimer.Start();
+    }
+
+    internal void ReportBurnProgress(OpticalBurnProgress progress)
+    {
+        if (_burnProgressDisplay is null) return;
+        string? diagnostic = _burnProgressDisplay.Apply(progress);
+        UpdateBurnTelemetry();
+        if (!string.IsNullOrWhiteSpace(diagnostic)) AppendLog($"[{DateTime.Now:HH:mm:ss}] {diagnostic}\n");
+    }
+
+    private void UpdateBurnTelemetry()
+    {
+        if (_burnProgressDisplay is null) return;
+        BurnAmountText = _burnProgressDisplay.AmountText;
+        BurnRateText = _burnProgressDisplay.RateText;
+        BurnMultiplierText = _burnProgressDisplay.MultiplierText;
+        JobProgressValue = _burnProgressDisplay.Percent;
     }
 
     internal void ReportDockJob(string status, double percent)
@@ -1053,6 +1113,13 @@ public partial class ShellViewModel : ObservableObject
 
     internal void CompleteDockJob(string status)
     {
+        _burnTelemetryTimer?.Stop();
+        if (_burnProgressDisplay is { } burn)
+        {
+            burn.Apply(new OpticalBurnProgress("complete", status, burn.TotalBytes, burn.TotalBytes));
+            UpdateBurnTelemetry();
+            JobTitle = "刻录完成";
+        }
         JobStatusText = status;
         JobProgressValue = 100;
         JobHasResult = true;
@@ -1062,8 +1129,12 @@ public partial class ShellViewModel : ObservableObject
     /// opens the log, because that is where the reason was written.</summary>
     internal void AbortDockJob(string status, bool expandLog)
     {
+        _burnTelemetryTimer?.Stop();
+        _burnProgressDisplay?.Stop();
+        UpdateBurnTelemetry();
+        if (_burnProgressDisplay is not null) JobTitle = status;
         JobStatusText = status;
-        JobProgressValue = 0;
+        if (_burnProgressDisplay is null) JobProgressValue = 0;
         JobHasResult = false;
         if (expandLog)
         {

@@ -82,7 +82,8 @@ internal static class UnifiedCommandRunner
                     HasOption(snapshotArguments, "home-hover"),
                     HasOption(snapshotArguments, "project-update"),
                     HasOption(snapshotArguments, "project-save"),
-                    HasOption(snapshotArguments, "tone-preview"));
+                    HasOption(snapshotArguments, "tone-preview"),
+                    FindOption(snapshotArguments, "burn-progress"));
             }
 
             if (command == "burn-devices")
@@ -166,6 +167,7 @@ internal static class UnifiedCommandRunner
                           [--project FILE.discproj] [--live-input IMAGE --live-disc cd|dvd]
                           [--dock] [--burn-source project|calibration]
                           [--about-dialog] [--preset-dialog] [--expand] [--scroll N] [--home-hover]
+                          [--burn-progress write|buffer|finalize]
                           [--project-update] [--project-save] [--tone-preview]
               burn-devices
               burn-build-info
