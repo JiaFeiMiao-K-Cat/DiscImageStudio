@@ -147,7 +147,8 @@ public static class CdTrackGenerator
         CdDiscParameters parameters,
         bool interleave,
         Action<CdProgress>? progress = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool useSimdSampling = true)
     {
         ArgumentNullException.ThrowIfNull(sampleGray);
         parameters.Validate();
@@ -186,7 +187,8 @@ public static class CdTrackGenerator
             progress,
             cancellationToken,
             outputFullPath,
-            wave ? CdAudioByteOrder.LittleEndian : CdAudioByteOrder.BigEndian);
+            wave ? CdAudioByteOrder.LittleEndian : CdAudioByteOrder.BigEndian,
+            useSimdSampling);
         return wave ? summary with { CueSheetPath = CdWaveFile.WriteCue(outputFullPath) } : summary;
     }
 
@@ -202,7 +204,8 @@ public static class CdTrackGenerator
         Action<CdProgress>? progress = null,
         CancellationToken cancellationToken = default,
         string outputDescription = "direct-burn-stream",
-        CdAudioByteOrder audioByteOrder = CdAudioByteOrder.BigEndian)
+        CdAudioByteOrder audioByteOrder = CdAudioByteOrder.BigEndian,
+        bool useSimdSampling = true)
     {
         ArgumentNullException.ThrowIfNull(sampleGray);
         ArgumentNullException.ThrowIfNull(output);
@@ -213,12 +216,9 @@ public static class CdTrackGenerator
 
         CdAudioSamples.Validate(audioByteOrder);
         parameters.Validate();
+        CdImageSampler sampler = new(sampleGray, parameters);
         return GenerateSamplesToStream(
-            globalByte =>
-            {
-                (double radius, double theta) = parameters.PolarFromByte(globalByte);
-                return sampleGray(radius * Math.Cos(theta), radius * Math.Sin(theta));
-            },
+            sampler.Sample,
             "calibration",
             output,
             parameters,
@@ -227,7 +227,8 @@ public static class CdTrackGenerator
             cancellationToken,
             outputDescription,
             audioByteOrder,
-            ToneProfile.LegacyBinary);
+            ToneProfile.LegacyBinary,
+            useSimdSampling && sampler.SupportsSimd ? sampler.SampleFour : null);
     }
 
     private static CdGenerationSummary GenerateSamplesToStream(

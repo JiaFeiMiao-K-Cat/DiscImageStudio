@@ -702,7 +702,9 @@ public partial class CalibrationViewModel : ObservableObject
             target.Sample,
             start,
             end,
-            target.Parameters.BluRayInvertMapping);
+            target.Parameters.BluRayInvertMapping,
+            // Saved targets and the fixed reference pixels are immutable.
+            allowParallelSampling: true);
     }
 
     private void SaveSession()

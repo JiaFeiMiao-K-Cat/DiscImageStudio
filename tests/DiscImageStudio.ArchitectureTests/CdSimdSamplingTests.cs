@@ -8,6 +8,7 @@ internal static class CdSimdSamplingTests
 {
     internal static void Run()
     {
+        TestAnalyticParity();
         string directory = Path.Combine(Path.GetTempPath(), $"disc-cd-simd-{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
         try
@@ -68,6 +69,46 @@ internal static class CdSimdSamplingTests
         Console.WriteLine(Vector256.IsHardwareAccelerated
             ? "cd-simd-sampling: passed (scalar/SIMD byte parity, independent pixel reference, full-radius/angle range, colour/alpha, non-square, half-pixel boundaries, interleave, byte order, cancellation)"
             : "cd-simd-sampling: passed (scalar/automatic fallback byte parity; hardware SIMD unavailable)");
+    }
+
+    private static void TestAnalyticParity()
+    {
+        CdDiscParameters[] geometries =
+        [
+            new(24.5, 57.5, 8, StartAngleRadians: -Math.PI / 3),
+            new(24.5, 57.5, 8, LinearVelocityMmPerSecond: 6_000_000),
+            new(24.5, 57.5, 8, StartAngleRadians: 1e12),
+        ];
+        foreach (CdDiscParameters parameters in geometries)
+        foreach (bool interleave in new[] { false, true })
+        foreach (CdAudioByteOrder byteOrder in Enum.GetValues<CdAudioByteOrder>())
+        {
+            List<(long X, long Y)> expectedCoordinates = [];
+            using MemoryStream scalar = new(), enabled = new();
+            CdTrackGenerator.GeneratePatternToStream((x, y) =>
+            {
+                long xBits = BitConverter.DoubleToInt64Bits(x), yBits = BitConverter.DoubleToInt64Bits(y);
+                // Check the callback's coordinates against the original direct
+                // scalar formula, including the first and last payload bytes.
+                var (radius, angle) = parameters.PolarFromByte(expectedCoordinates.Count);
+                Require(xBits == BitConverter.DoubleToInt64Bits(radius * Math.Cos(angle))
+                    && yBits == BitConverter.DoubleToInt64Bits(radius * Math.Sin(angle)),
+                    "analytic scalar coordinates preserve the original formula");
+                expectedCoordinates.Add((xBits, yBits));
+                return ((xBits ^ yBits) & 1) == 0 ? (byte)0 : (byte)255;
+            }, scalar, parameters, interleave, audioByteOrder: byteOrder, useSimdSampling: false);
+            int calls = 0;
+            CdTrackGenerator.GeneratePatternToStream((x, y) =>
+            {
+                long xBits = BitConverter.DoubleToInt64Bits(x), yBits = BitConverter.DoubleToInt64Bits(y);
+                Require(calls < expectedCoordinates.Count && expectedCoordinates[calls++] == (xBits, yBits),
+                    "analytic SIMD coordinates, callback order and exactly-once sampling");
+                return ((xBits ^ yBits) & 1) == 0 ? (byte)0 : (byte)255;
+            }, enabled, parameters, interleave, audioByteOrder: byteOrder, useSimdSampling: true);
+            Require(calls == parameters.TotalBytes && scalar.Length == parameters.TotalBytes
+                && enabled.ToArray().AsSpan().SequenceEqual(scalar.ToArray()),
+                "analytic SIMD preserves complete audio, interleaving and byte order");
+        }
     }
 
     private static void Compare(string path, byte[] pixels, int width, int height,

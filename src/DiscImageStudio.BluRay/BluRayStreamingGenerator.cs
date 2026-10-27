@@ -13,6 +13,15 @@ public interface IBluRayPayloadMapping
     void FillScrambledPayload(BluRaySectorContext context, Span<byte> destination);
 }
 
+// Only built-in mappings expose batching capabilities. Wrappers must preserve
+// the source's opt-in and sampling semantics instead of hiding its fast paths.
+internal interface IBluRayBatchPayloadMapping : IBluRayPayloadMapping
+{
+    bool CanGenerateInParallel(BluRayDiscParameters disc);
+    bool TryFillScrambledCluster(BluRayDiscParameters disc, uint firstSector,
+        Span<byte> destination, CancellationToken cancellationToken);
+}
+
 /// <summary>Explicit numeric probe, not an optical luminance calibration.</summary>
 public sealed class BluRayConstantByteMapping(byte value) : IBluRayPayloadMapping
 {
@@ -52,9 +61,9 @@ public static class BluRayStreamingGenerator
         Stopwatch stopwatch = Stopwatch.StartNew();
         long completed = 0;
         progress?.Report(new(0, options.ContentLength, stopwatch.Elapsed));
-        // Only the built-in immutable raster/3T-6T pair opts in. User-provided
-        // samplers and mapping implementations retain sequential invocation.
-        int workers = mapping is BluRayImagePayloadMapping image && image.CanGenerateInParallel(options.Disc)
+        // Built-in raster and explicitly thread-safe pattern samplers share
+        // the same bounded batches. Other mappings retain sequential invocation.
+        int workers = mapping is IBluRayBatchPayloadMapping batch && batch.CanGenerateInParallel(options.Disc)
             ? Math.Min(16, Math.Max(1, Environment.ProcessorCount - 1)) : 1;
         int batchCapacity = (int)Math.Min(options.SectorCount / 32, (uint)(workers == 1 ? 1 : workers * 2));
         byte[][] clusters = new byte[batchCapacity][];
@@ -93,8 +102,8 @@ public static class BluRayStreamingGenerator
         // §13.4 resets to the SAME seed for every sector in a cluster.
         Span<byte> mask = stackalloc byte[BluRayDiscParameters.BytesPerSector];
         BluRayScrambler.FillMask(psn, mask);
-        bool filledCluster = mapping is BluRayImagePayloadMapping image
-            && image.TryFillScrambledCluster(disc, firstSector, cluster, cancellationToken);
+        bool filledCluster = mapping is IBluRayBatchPayloadMapping batch
+            && batch.TryFillScrambledCluster(disc, firstSector, cluster, cancellationToken);
         for (int sector = 0; sector < 32; sector++)
         {
             cancellationToken.ThrowIfCancellationRequested();

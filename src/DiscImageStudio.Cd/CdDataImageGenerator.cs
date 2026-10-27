@@ -55,7 +55,7 @@ public static class CdDataImageGenerator
 
     public static CdGenerationSummary Generate(string imagePath, string outputPath,
         CdDiscParameters parameters, CdDataLayoutPlan plan, Action<CdProgress>? progress = null,
-        CancellationToken cancellationToken = default, ToneProfile? tone = null)
+        CancellationToken cancellationToken = default, ToneProfile? tone = null, bool useSimdSampling = true)
     {
         Validate(parameters, plan);
         cancellationToken.ThrowIfCancellationRequested();
@@ -75,7 +75,7 @@ public static class CdDataImageGenerator
             1024 * 1024, FileOptions.SequentialScan))
         {
             result = GenerateImageToStream(source, image, output, parameters, plan, progress,
-                cancellationToken, effectiveTone) with { OutputTrack = target };
+                cancellationToken, effectiveTone, useSimdSampling) with { OutputTrack = target };
         }
         CdDataImageMetadata.Save(target, new(parameters, plan.DrawingStartLba,
             plan.DrawingEndLbaExclusive, plan.FilesAtOuterRing, effectiveTone));
@@ -84,22 +84,23 @@ public static class CdDataImageGenerator
 
     public static CdGenerationSummary GenerateToStream(string imagePath, Stream output,
         CdDiscParameters parameters, CdDataLayoutPlan plan, Action<CdProgress>? progress = null,
-        CancellationToken cancellationToken = default, ToneProfile? tone = null)
+        CancellationToken cancellationToken = default, ToneProfile? tone = null, bool useSimdSampling = true)
     {
         Validate(parameters, plan);
         cancellationToken.ThrowIfCancellationRequested();
         string source = Path.GetFullPath(imagePath);
         return GenerateImageToStream(source, RasterImage.Load(source), output, parameters, plan,
-            progress, cancellationToken, (tone ?? ToneProfile.LegacyBinary).Normalized());
+            progress, cancellationToken, (tone ?? ToneProfile.LegacyBinary).Normalized(), useSimdSampling);
     }
 
     private static CdGenerationSummary GenerateImageToStream(string source, RasterImage image,
         Stream output, CdDiscParameters parameters, CdDataLayoutPlan plan,
-        Action<CdProgress>? progress, CancellationToken cancellationToken, ToneProfile tone)
+        Action<CdProgress>? progress, CancellationToken cancellationToken, ToneProfile tone, bool useSimdSampling)
     {
         ArgumentNullException.ThrowIfNull(output);
         if (!output.CanWrite) throw new ArgumentException("CD data output must be writable.", nameof(output));
         CdImageSampler sampler = new(image, parameters);
+        bool sampleFour = useSimdSampling && sampler.SupportsSimd;
         Stopwatch stopwatch = Stopwatch.StartNew();
         ProgressStream writer = new(output, plan.ContentLength, stopwatch, progress, cancellationToken);
         if (plan.FilesAtOuterRing)
@@ -108,10 +109,29 @@ public static class CdDataImageGenerator
             Iso9660ImageWriter.WriteSequentialPrefix(plan.IsoLayout, writer, plan.DrawingStartLba, cancellationToken);
 
         byte[] sector = new byte[BytesPerSector];
+        Span<long> positions = stackalloc long[4];
         for (uint lba = plan.DrawingStartLba; lba < plan.DrawingEndLbaExclusive; lba++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            for (int offset = 0; offset < BytesPerSector; offset++)
+            int offset = 0;
+            if (sampleFour)
+            {
+                for (; offset <= BytesPerSector - 4; offset += 4)
+                {
+                    // CIRC delays and the audio pair swap make these physical
+                    // positions non-contiguous even within one Mode 1 payload.
+                    for (int lane = 0; lane < 4; lane++)
+                        positions[lane] = PhysicalByteForPayload(lba, offset + lane);
+                    uint samples = sampler.SampleFour(positions[0], positions[1], positions[2], positions[3]);
+                    for (int lane = 0; lane < 4; lane++)
+                    {
+                        sector[offset + lane] = (byte)(CdToneMapping.Map((byte)samples, tone, positions[lane])
+                            ^ ScrambleMask[offset + lane + PayloadOffset - 12]);
+                        samples >>= 8;
+                    }
+                }
+            }
+            for (; offset < BytesPerSector; offset++)
             {
                 long physicalByte = PhysicalByteForPayload(lba, offset);
                 sector[offset] = (byte)(CdToneMapping.Map(sampler.Sample(physicalByte), tone, physicalByte)

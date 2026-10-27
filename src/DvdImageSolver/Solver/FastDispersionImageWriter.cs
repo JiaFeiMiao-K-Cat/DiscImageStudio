@@ -419,10 +419,11 @@ public static class FastDispersionImageWriter
         private readonly double _startAngleRadians;
         private readonly double _direction;
 
-        // Arbitrary analytic callbacks may depend on the exact scalar coordinates.
+        // Analytic callbacks share the exact vector geometry while retaining
+        // scalar trigonometry, so even coordinate-sensitive callbacks agree.
         // Constant-pitch batching regresses throughput while Asinh stays scalar;
         // retain its original loop until a separately validated path is faster.
-        internal bool SupportsSimdSampling => Vector256.IsHardwareAccelerated && _image is not null
+        internal bool SupportsSimdSampling => Vector256.IsHardwareAccelerated
             && !_spiral.IsConstantPitch;
 
         internal PayloadImageSampler(RasterImage image, ImageMappingOptions options)
@@ -474,6 +475,12 @@ public static class FastDispersionImageWriter
             // uses its precomputed inverse curve for a varying radial pitch.
             (double radiusMm, double trackAngle) = _spiral.AtArcLengthFast(arcLengthMm);
             double polarAngle = _startAngleRadians + (_direction * trackAngle);
+            return SamplePoint(radiusMm, polarAngle, trackAngle, globalChannelBit, toneIndex);
+        }
+
+        private PayloadTarget SamplePoint(double radiusMm, double polarAngle, double trackAngle,
+            ulong globalChannelBit, long toneIndex)
+        {
             double xMm = radiusMm * Math.Cos(polarAngle);
             double yMm = radiusMm * Math.Sin(polarAngle);
             if (_sampleScrambledCodeword is not null)
@@ -516,19 +523,16 @@ public static class FastDispersionImageWriter
                 _spiral.AtArcLengthFast(bits * Vector256.Create(_bitLengthMm));
             Vector256<double> angle = Vector256.Create(_startAngleRadians)
                 + Vector256.Create(_direction) * trackAngle;
-            if (!_image!.HasBinaryGrayscalePalette)
+            if (_image is null || !_image.HasBinaryGrayscalePalette)
             {
-                // Keep the original trig for bilinear colour/alpha sampling:
+                // Keep the original trig for analytic and bilinear colour/alpha sampling:
                 // tiny coordinate changes can cross luminance or alpha rounding
                 // thresholds even far from a pixel boundary. Geometry is SIMD.
                 for (int lane = 0; lane < 4; lane++)
                 {
-                    double polarAngle = angle.GetElement(lane);
-                    double radiusMm = radius.GetElement(lane);
-                    PixelSample sample = _image.SampleDisc(radiusMm * Math.Cos(polarAngle),
-                        radiusMm * Math.Sin(polarAngle), _options.OuterRadiusMm, preserveDiscreteGrayscale: true);
-                    samples[lane] = new PayloadTarget(
-                        ScrambledForLuminance(sample.Luminance, toneIndexBase + lane), sample.Alpha);
+                    samples[lane] = SamplePoint(radius.GetElement(lane), angle.GetElement(lane),
+                        trackAngle.GetElement(lane), blockFirstGlobalBit + (ulong)centres[lane],
+                        toneIndexBase + lane);
                 }
                 return;
             }

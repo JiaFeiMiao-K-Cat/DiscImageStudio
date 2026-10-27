@@ -86,10 +86,40 @@ internal static class CdDataImageTests
         }
 
         VerifyScrambleMaskAndPhysicalMapping(directory, data, parameters);
+        VerifySimdParity(image, data, parameters);
         Throws<ArgumentException>(() => CdDataImageGenerator.PrepareLayout(data, parameters with { Sectors = 20 }),
             "capacity rejection");
         VerifyCli(directory, data, image, parameters);
         VerifyMetadataGuards(directory);
+    }
+
+    private static void VerifySimdParity(string image, string data, CdDiscParameters parameters)
+    {
+        CdDiscParameters[] geometries =
+        [
+            parameters,
+            parameters with { LinearVelocityMmPerSecond = 6_000_000, StartAngleRadians = -Math.PI / 3 },
+            parameters with { StartAngleRadians = 1e12 },
+        ];
+        foreach (bool outer in new[] { false, true })
+        foreach (CdDiscParameters geometry in geometries)
+        foreach (ToneProfile tone in new[] { ToneProfile.LegacyBinary, ToneProfile.Photo })
+        {
+            CdDataLayoutPlan plan = CdDataImageGenerator.PrepareLayout(data, geometry, "CD_SIMD", outer);
+            long first = CdDataImageGenerator.PhysicalByteForPayload(plan.DrawingStartLba, 0);
+            Require(Enumerable.Range(1, 3).Any(lane =>
+                CdDataImageGenerator.PhysicalByteForPayload(plan.DrawingStartLba, lane) != first + lane),
+                "SIMD fixture exercises non-contiguous inverse-CIRC positions");
+            using MemoryStream scalar = new(), enabled = new();
+            CdDataImageGenerator.GenerateToStream(image, scalar, geometry, plan,
+                tone: tone, useSimdSampling: false);
+            using (ForwardOnlyStream forward = new(enabled))
+                CdDataImageGenerator.GenerateToStream(image, forward, geometry, plan,
+                    tone: tone, useSimdSampling: true);
+            Require(enabled.Length == plan.ContentLength
+                && enabled.ToArray().AsSpan().SequenceEqual(scalar.ToArray()),
+                "CD data scalar/SIMD parity preserves inner/outer ISO, CIRC positions, tone indices and scrambling");
+        }
     }
 
     private static void VerifyScrambleMaskAndPhysicalMapping(string directory, string data, CdDiscParameters parameters)

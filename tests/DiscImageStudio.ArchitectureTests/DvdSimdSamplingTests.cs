@@ -19,6 +19,7 @@ internal static class DvdSimdSamplingTests
     {
         TestConstantPitchAgainstLegacyFormula();
         TestGeometryLanes();
+        TestAnalyticParity();
         string directory = Path.Combine(Path.GetTempPath(), $"dvd-simd-sampling-{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
         try
@@ -49,6 +50,72 @@ internal static class DvdSimdSamplingTests
         Console.WriteLine(Vector256.IsHardwareAccelerated
             ? "dvd-simd-sampling: passed (scalar/SIMD payload and count parity, measured cubic geometry, alpha and half-pixel boundaries, parallel ordering)"
             : "dvd-simd-sampling: passed (scalar/automatic fallback parity; SIMD hardware assertions skipped)");
+    }
+
+    private static void TestAnalyticParity()
+    {
+        foreach (bool measured in new[] { false, true })
+        foreach (uint start in new[] { 0u, (TotalSectors / 2) & ~15u, TotalSectors - 16 })
+        foreach (int kind in new[] { 0, 1, 2 })
+        {
+            MultiBlockSolveOptions options = Options(start, measured) with
+            {
+                ImageMapping = Mapping(measured) with
+                {
+                    StartAngleDegrees = start == 0 ? 37.25 : 1e12,
+                    Clockwise = start != 0,
+                },
+            };
+            List<DvdCodewordSample> expectedCoordinates = [];
+            using MemoryStream scalar = new(), enabled = new();
+            WriteAnalytic(kind, sample =>
+            {
+                expectedCoordinates.Add(sample);
+                return AnalyticValue(sample);
+            }, scalar, options with { UseSimdSampling = false });
+            int calls = 0;
+            WriteAnalytic(kind, sample =>
+            {
+                Require(calls < expectedCoordinates.Count, "analytic sampling does not add callbacks");
+                DvdCodewordSample expected = expectedCoordinates[calls++];
+                AssertSameBits(expected.Xmm, sample.Xmm, "analytic SIMD X coordinate");
+                AssertSameBits(expected.Ymm, sample.Ymm, "analytic SIMD Y coordinate");
+                AssertSameBits(expected.TrackAngleRadians, sample.TrackAngleRadians, "analytic SIMD track angle");
+                Require(expected.GlobalCodewordIndex == sample.GlobalCodewordIndex,
+                    "analytic SIMD retains physical codeword indices and callback order");
+                return AnalyticValue(sample);
+            }, enabled, options with { UseSimdSampling = true });
+            Require(calls == 32768 && enabled.ToArray().AsSpan().SequenceEqual(scalar.ToArray()),
+                "analytic scalar/SIMD bytes and exactly-once callback counts agree");
+        }
+
+        // Five blocks reuse bounded slots and leave a partial two-worker batch.
+        // The callback is pure; both paths retain their existing parallel contract.
+        foreach (int kind in new[] { 0, 1, 2 })
+        {
+            MultiBlockSolveOptions options = Options(TotalSectors - 80, measured: true) with { FillSectors = 80 };
+            using MemoryStream scalar = new(), parallel = new();
+            WriteAnalytic(kind, AnalyticValue, scalar, options with { UseSimdSampling = false, FastParallelism = 1 });
+            WriteAnalytic(kind, AnalyticValue, parallel, options with { UseSimdSampling = true, FastParallelism = 2 });
+            Require(parallel.Length == 80 * 2048L && parallel.ToArray().AsSpan().SequenceEqual(scalar.ToArray()),
+                "analytic SIMD parallel batches preserve payload ordering and reused buffers");
+        }
+    }
+
+    private static byte AnalyticValue(DvdCodewordSample sample)
+        => ((BitConverter.DoubleToInt64Bits(sample.Xmm) ^ BitConverter.DoubleToInt64Bits(sample.Ymm)
+            ^ BitConverter.DoubleToInt64Bits(sample.TrackAngleRadians) ^ (long)sample.GlobalCodewordIndex) & 1) == 0
+            ? (byte)0 : (byte)255;
+
+    private static void WriteAnalytic(int kind, Func<DvdCodewordSample, byte> sample, Stream output,
+        MultiBlockSolveOptions options)
+    {
+        if (kind == 0)
+            FastDispersionImageWriter.WritePatternStream((x, y) => sample(new(x, y, 0, 0)), output, options);
+        else if (kind == 1)
+            FastDispersionImageWriter.WriteCodewordPatternStream(sample, output, options);
+        else
+            FastDispersionImageWriter.WriteScrambledCodewordPatternStream(sample, output, options);
     }
 
     private static void TestRasterParity(string binary, string translucent)
