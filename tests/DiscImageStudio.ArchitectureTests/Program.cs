@@ -163,7 +163,7 @@ static void TestDiscPresets()
     DiscPresetJsonDocument builtIn = DiscPresetJsonStore.LoadBuiltIn();
     Equal(4, builtIn.CdPresets.Count, "built-in CD preset count");
     Equal(3, builtIn.DvdPresets.Count, "built-in DVD preset count");
-    Equal(2, builtIn.BluRayPresets!.Count, "built-in Blu-ray preset count");
+    Equal(3, builtIn.BluRayPresets!.Count, "built-in Blu-ray preset count");
     Equal("zh-CN", builtIn.FallbackLanguage!, "built-in preset fallback language");
     True(
         builtIn.CdPresets.All(value =>
@@ -264,6 +264,17 @@ static void TestDiscPresets()
     True(
         bdStandard.DisplayName.StartsWith("标准", StringComparison.Ordinal),
         "standard Blu-ray preset announces its standard nature");
+    BluRayDiscPresetDefinition verbatimBd = builtIn.BluRayPresets!.Single(
+        value => value.Id == "bd-r-verbatim-64099");
+    Equal("Verbatim BD-R (64099)（实测）", verbatimBd.DisplayName, "Verbatim BD-R 64099 preset name");
+    Equal(12_219_392U, verbatimBd.TotalSectors, "Verbatim BD-R 64099 sectors");
+    Equal(23.987042157339335, verbatimBd.InnerRadiusMm, "Verbatim BD-R 64099 saved inner radius");
+    Equal(57.987960341783236, verbatimBd.OuterRadiusMm, "Verbatim BD-R 64099 saved outer radius");
+    True(!verbatimBd.InvertMapping, "Verbatim BD-R 64099 preserves the recorded normal polarity");
+    BluRayDiscPreset cliVerbatim = BluRayDiscPreset.Find(verbatimBd.Id);
+    Equal(new BluRayDiscParameters(verbatimBd.TotalSectors, 1, verbatimBd.InnerRadiusMm, verbatimBd.OuterRadiusMm),
+        cliVerbatim.CreateParameters(), "GUI JSON and CLI Verbatim BD-R 64099 geometry agree exactly");
+    Equal(verbatimBd.InvertMapping, cliVerbatim.InvertMapping, "GUI JSON and CLI Verbatim polarity agree");
 }
 
 static void TestDiscPresetJson()
@@ -300,7 +311,7 @@ static void TestDiscPresetJson()
         DiscPresetJsonDocument merged = DiscPresetJsonStore.Merge(builtIn, created);
         Equal(5, merged.CdPresets.Count, "merged CD preset count");
         Equal(4, merged.DvdPresets.Count, "merged DVD preset count");
-        Equal(3, merged.BluRayPresets!.Count, "merged Blu-ray preset count");
+        Equal(4, merged.BluRayPresets!.Count, "merged Blu-ray preset count");
         DvdDiscPresetDefinition verbatim = merged.DvdPresets.Single(
             value => value.Id == "verbatim-dvd-r-azo-43533");
         Equal(2_297_888U, verbatim.TotalSectors, "merged Verbatim DVD sectors");
@@ -448,7 +459,7 @@ static void TestDiscPresetJson()
             interim.DvdPresets[0].ChannelBitLengthNm,
             "interim schema without the field falls back to the DVD standard");
         Equal(
-            2,
+            3,
             DiscPresetJsonStore.Merge(builtIn, interim).BluRayPresets!.Count,
             "pre-BD schema still receives the built-in Blu-ray catalog");
 

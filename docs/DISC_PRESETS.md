@@ -81,6 +81,8 @@ DVD 的 `totalSectors` 必须大于 0 且是 16 的倍数，以满足 ECC Block 
 
 BD 的 `totalSectors` 必须大于 0、按 32 对齐且不超过单层容量 12,219,392；外半径不超过 60 mm。`invertMapping` 是预置的 3T/6T 极性，应用到工程后仍可在设计页影调模块中修改。
 
+内置 `bd-r-verbatim-64099`（Verbatim BD-R (64099)）采用用户文件 `disc-presets.json` 中已保存的「Verbatim 64099」预设，保留完整精度：内半径 `23.987042157339335` mm、外半径 `57.987960341783236` mm、`12,219,392` 扇区、`invertMapping: false`。GUI 与命令行使用相同参数。
+
 ## 固定参数与保留字段
 
 扫描速度、起始角、图片外半径与 DVD channel bit 长度是方案固定的物理量，界面不提供对应表单，程序生成时一律采用 1200 mm/s（ECMA-130）、0°、57.5 mm 与 133.3 nm。

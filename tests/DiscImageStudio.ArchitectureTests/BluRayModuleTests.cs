@@ -9,6 +9,11 @@ internal static class BluRayModuleTests
     private const string RitekPresetId = "bd-r-ritek-10x";
     private const double RitekInnerRadiusMm = 23.98822105616562;
     private const double RitekOuterRadiusMm = 58.023234731100764;
+    // Preserved from the saved user preset "Verbatim 64099"
+    // (user-bd-20261028-123134-08af), without re-fitting its calibration record.
+    private const string VerbatimPresetId = "bd-r-verbatim-64099";
+    private const double VerbatimInnerRadiusMm = 23.987042157339335;
+    private const double VerbatimOuterRadiusMm = 57.987960341783236;
 
     internal static void Run()
     {
@@ -24,7 +29,7 @@ internal static class BluRayModuleTests
     {
         BluRayDiscParameters disc = new();
         disc.Validate();
-        Equal(2, BluRayDiscPreset.BuiltIn.Count, "generic and calibrated single-layer presets");
+        Equal(3, BluRayDiscPreset.BuiltIn.Count, "generic and calibrated single-layer presets");
         True(BluRayDiscPreset.BuiltIn.All(preset => preset.LayerCount == 1), "all builtins retain single-layer support");
         Equal(new BluRayDiscParameters(), BluRayDiscPreset.BuiltIn[0].CreateParameters(), "generic geometry remains the first builtin");
         BluRayDiscPreset ritek = BluRayDiscPreset.Find(RitekPresetId);
@@ -32,6 +37,12 @@ internal static class BluRayModuleTests
         Equal(new BluRayDiscParameters(12_219_392, 1, RitekInnerRadiusMm, RitekOuterRadiusMm, 0),
             ritek.CreateParameters(), "Ritek geometry preserves the source JSON values exactly");
         True(!ritek.InvertMapping && !ritek.IsCustom && !ritek.IsUserPreset, "Ritek is a normal-polarity builtin");
+        BluRayDiscPreset verbatim = BluRayDiscPreset.Find(VerbatimPresetId);
+        Equal("Verbatim BD-R (64099)", verbatim.DisplayName, "Verbatim calibrated builtin name");
+        Equal(new BluRayDiscParameters(12_219_392, 1, VerbatimInnerRadiusMm, VerbatimOuterRadiusMm, 0),
+            verbatim.CreateParameters(), "Verbatim geometry preserves the saved user parameters exactly");
+        True(!verbatim.InvertMapping && !verbatim.IsCustom && !verbatim.IsUserPreset,
+            "Verbatim is a normal-polarity builtin");
         Equal(25_025_314_816L, disc.ContentLength, "nominal BD-R byte capacity");
         Equal(0x100000U, disc.GetPhysicalSectorNumber(0), "first physical sector");
         Equal(0xCA73FFU, disc.GetPhysicalSectorNumber(disc.TotalSectors - 1), "last physical sector");
@@ -102,6 +113,7 @@ internal static class BluRayModuleTests
     private static void TestCalibratedPresetCommands()
     {
         BluRayDiscModule module = new();
+        TestVerbatimPresetCommands(module);
         foreach (DiscCommandDescriptor command in module.Descriptor.Commands.Where(command => command.Name is "bd-info" or "bd-probe" or "bd-generate"))
             True(command.Options.Single(option => option.Name == "preset").Choices!.Contains(RitekPresetId),
                 command.Name + " advertises the calibrated builtin to CLI hosts");
@@ -129,6 +141,43 @@ internal static class BluRayModuleTests
             JsonElement parameters = info.RootElement.GetProperty("parameters");
             Equal(24d, parameters.GetProperty("InnerRadiusMm").GetDouble(), "unselected CLI keeps its generic inner default");
             Equal(58d, parameters.GetProperty("OuterRadiusMm").GetDouble(), "unselected CLI keeps its generic outer default");
+        }
+    }
+
+    private static void TestVerbatimPresetCommands(BluRayDiscModule module)
+    {
+        foreach (DiscCommandDescriptor command in module.Descriptor.Commands.Where(command => command.Name is "bd-info" or "bd-probe" or "bd-generate"))
+            True(command.Options.Single(option => option.Name == "preset").Choices!.Contains(VerbatimPresetId),
+                command.Name + " advertises the Verbatim 64099 preset to CLI hosts");
+        using (JsonDocument info = JsonDocument.Parse(Run(module, "bd-info", "--preset", VerbatimPresetId).Summary!))
+        {
+            JsonElement parameters = info.RootElement.GetProperty("parameters");
+            Equal(VerbatimPresetId, info.RootElement.GetProperty("preset").GetString()!, "CLI reports the Verbatim preset");
+            Equal(VerbatimInnerRadiusMm, parameters.GetProperty("InnerRadiusMm").GetDouble(), "CLI Verbatim saved inner radius");
+            Equal(VerbatimOuterRadiusMm, parameters.GetProperty("OuterRadiusMm").GetDouble(), "CLI Verbatim saved outer radius");
+            Equal(12_219_392U, parameters.GetProperty("TotalSectors").GetUInt32(), "CLI Verbatim full capacity");
+            Equal(1, parameters.GetProperty("LayerCount").GetInt32(), "CLI Verbatim single layer");
+            Equal(0d, parameters.GetProperty("StartAngleDegrees").GetDouble(), "CLI Verbatim zero start angle");
+            True(!info.RootElement.GetProperty("luminanceMapping").GetProperty("invert").GetBoolean(),
+                "CLI Verbatim preserves recorded polarity");
+        }
+        using (JsonDocument info = JsonDocument.Parse(Run(module, "bd-info", "--preset", VerbatimPresetId,
+            "--r0", "25.123456789", "--total-sectors", "1024", "--invert", "true").Summary!))
+        {
+            JsonElement parameters = info.RootElement.GetProperty("parameters");
+            Equal(25.123456789, parameters.GetProperty("InnerRadiusMm").GetDouble(), "explicit inner radius overrides Verbatim");
+            Equal(VerbatimOuterRadiusMm, parameters.GetProperty("OuterRadiusMm").GetDouble(), "omitted outer radius keeps Verbatim default");
+            Equal(1024U, parameters.GetProperty("TotalSectors").GetUInt32(), "explicit capacity overrides Verbatim");
+            True(info.RootElement.GetProperty("luminanceMapping").GetProperty("invert").GetBoolean(),
+                "explicit polarity overrides Verbatim");
+        }
+        using (JsonDocument info = JsonDocument.Parse(Run(module, "bd-info", "--preset", VerbatimPresetId,
+            "--r1", "57.125", "--start-angle", "37.5").Summary!))
+        {
+            JsonElement parameters = info.RootElement.GetProperty("parameters");
+            Equal(VerbatimInnerRadiusMm, parameters.GetProperty("InnerRadiusMm").GetDouble(), "omitted inner radius keeps Verbatim default");
+            Equal(57.125, parameters.GetProperty("OuterRadiusMm").GetDouble(), "explicit outer radius overrides Verbatim");
+            Equal(37.5, parameters.GetProperty("StartAngleDegrees").GetDouble(), "explicit start angle overrides Verbatim");
         }
     }
 

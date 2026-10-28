@@ -103,6 +103,15 @@
       "innerRadiusMm": 23.98822105616562,
       "outerRadiusMm": 58.023234731100764,
       "invertMapping": false
+    },
+    {
+      "id": "bd-r-verbatim-64099",
+      "displayName": "Verbatim BD-R (64099)（实测）",
+      "description": "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。",
+      "totalSectors": 12219392,
+      "innerRadiusMm": 23.987042157339335,
+      "outerRadiusMm": 57.987960341783236,
+      "invertMapping": false
     }
   ]
 }

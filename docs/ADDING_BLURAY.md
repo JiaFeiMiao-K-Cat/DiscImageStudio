@@ -12,7 +12,7 @@
 - **刻录**：把同一 ISO 流直接送入 MMC 顺序写入，不保存完整镜像；任务坞支持进度与取消。
 - **标定**：BD 目标覆盖完整数据区，保存扇区、半径、极性、绘图起止与 ISO 时间戳；拟合使用恒定轨距并回到 BD 参数。
 
-BD 预设与 CD/DVD 一起存放在 `disc-presets.json`（schema 4）的 `bluRayPresets` 中。内置「标准 25GB 单层 BD」和「铼德 BD-R 10x」两条；用户预设可在工程设置对话框底部保存。
+BD 预设与 CD/DVD 一起存放在 `disc-presets.json`（schema 4）的 `bluRayPresets` 中。内置「标准 25GB 单层 BD」「铼德 BD-R 10x」和「Verbatim BD-R (64099)」三条；用户预设可在工程设置对话框底部保存。
 
 ## 容量与几何
 
@@ -76,7 +76,7 @@ dotnet run --project src/DiscImageStudio.App -- bd-probe --byte 0xA6 --sectors 3
 dotnet run --project src/DiscImageStudio.App -- bd-encode --input bd-probe.bin --psn 0x100000 --output bd-ecc.bin
 ```
 
-`bd-generate` 的 `--preset` 可选 `bd-r-sl-25gb` 或 `bd-r-ritek-10x`；`--total-sectors`、`--r0`、`--r1`、`--start-angle` 可覆盖对应值。`--invert` 接受 `true`/`false`。`bd-generate` 不再接受旧的 `--start-sector` / `--sectors` 切片参数；切片仅保留在 `bd-probe`。
+`bd-generate` 的 `--preset` 可选 `bd-r-sl-25gb`、`bd-r-ritek-10x` 或 `bd-r-verbatim-64099`；`--total-sectors`、`--r0`、`--r1`、`--start-angle` 可覆盖对应值。`--invert` 接受 `true`/`false`。`bd-generate` 不再接受旧的 `--start-sector` / `--sectors` 切片参数；切片仅保留在 `bd-probe`。
 
 `bd-probe` 的 `--byte` 为 0..255 或 `0x00`..`0xFF`，范围按 32 对齐。`bd-encode` 输入必须恰好 65,536 bytes，输出 76,880 bytes 的 ECC cluster，不含 17PP、DC-control 或文件系统，不能当作可刻录镜像。
 
