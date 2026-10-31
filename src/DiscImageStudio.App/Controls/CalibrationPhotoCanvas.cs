@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using DiscImageStudio.Services;
 
 namespace DiscImageStudio.Controls;
 
@@ -106,7 +107,16 @@ public sealed class CalibrationPhotoCanvas : FrameworkElement
         ClipToBounds = true;
         Cursor = Cursors.Cross;
         RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.HighQuality);
+        Loaded += (_, _) =>
+        {
+            ThemeResolver.Changed -= ThemeResolver_Changed;
+            ThemeResolver.Changed += ThemeResolver_Changed;
+            InvalidateVisual();
+        };
+        Unloaded += (_, _) => ThemeResolver.Changed -= ThemeResolver_Changed;
     }
+
+    private void ThemeResolver_Changed(object? sender, EventArgs e) => InvalidateVisual();
 
     public Point WorldToView(Point point) => ViewMatrix.Transform(point);
     public Point ViewToWorld(Point point) { var matrix = ViewMatrix; matrix.Invert(); return matrix.Transform(point); }

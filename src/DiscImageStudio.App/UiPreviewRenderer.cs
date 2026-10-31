@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using DiscImageStudio.Core;
+using DiscImageStudio.Services;
 using DiscImageStudio.ViewModels;
 
 namespace DiscImageStudio;
@@ -34,11 +35,29 @@ internal static class UiPreviewRenderer
         bool projectUpdate = false,
         bool projectSave = false,
         bool tonePreview = false,
-        string? burnProgress = null)
+        string? burnProgress = null,
+        string? theme = null,
+        bool settingsDialog = false,
+        string? settingsView = null)
     {
-        if (width < 800 || height < 600 || width > 4096 || height > 2160)
-            throw new ArgumentOutOfRangeException(nameof(width), "Snapshot dimensions must be 800–4096 × 600–2160.");
-        Application application = AppHost.CreateApplication(ShutdownMode.OnExplicitShutdown);
+        // The settings window is 760 px wide, so its snapshots relax the page minimum.
+        int minimumWidth = settingsDialog ? 640 : 800;
+        if (width < minimumWidth || height < 600 || width > 4096 || height > 2160)
+            throw new ArgumentOutOfRangeException(
+                nameof(width),
+                "Snapshot dimensions must be at least 800×600 (640×600 for the settings dialog) and at most 4096×2160.");
+        AppTheme requestedTheme = theme?.ToLowerInvariant() switch
+        {
+            null or "" or "dark" => AppTheme.Dark,
+            "light" => AppTheme.Light,
+            "system" => AppTheme.System,
+            _ => throw new ArgumentException("Snapshot theme must be dark, light or system.", nameof(theme)),
+        };
+        Application application = AppHost.CreateApplication(ShutdownMode.OnExplicitShutdown, requestedTheme);
+        if (settingsDialog)
+        {
+            return RenderSettingsDialog(outputPath, width, height, settingsView, application);
+        }
         if (projectDialog is not null)
         {
             return RenderProjectDialog(outputPath, projectDialog, width, height, application);
@@ -208,6 +227,42 @@ internal static class UiPreviewRenderer
             Top = -10000,
             ShowInTaskbar = false,
         };
+        window.Show();
+        window.UpdateLayout();
+        return SaveWindowBitmap(window, outputPath, width, height, application);
+    }
+
+    /// <summary>Renders the settings window standalone. The store points at a throwaway file so
+    /// a snapshot never reads or rewrites the workstation's real settings.</summary>
+    private static int RenderSettingsDialog(
+        string outputPath,
+        int width,
+        int height,
+        string? view,
+        Application application)
+    {
+        int category = view?.ToLowerInvariant() switch
+        {
+            null or "" or "general" => 0,
+            "storage" => 1,
+            _ => throw new ArgumentException("Settings snapshot view must be general or storage.", nameof(view)),
+        };
+        AppSettingsStore store = new(Path.Combine(
+            Path.GetTempPath(),
+            "disc-settings-snapshot-" + Guid.NewGuid().ToString("N") + ".json"));
+        SettingsViewModel viewModel = new(new AppSettings(), store);
+        SettingsWindow window = new(viewModel)
+        {
+            Width = width,
+            Height = height,
+            WindowStartupLocation = WindowStartupLocation.Manual,
+            Left = -10000,
+            Top = -10000,
+            ShowInTaskbar = false,
+        };
+        // Select before Show so the nav item's Loaded refresh snaps to its active color
+        // instead of the snapshot catching the fade-in at frame zero.
+        window.ShowCategoryForSnapshot(category);
         window.Show();
         window.UpdateLayout();
         return SaveWindowBitmap(window, outputPath, width, height, application);

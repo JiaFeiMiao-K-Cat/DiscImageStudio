@@ -26,6 +26,29 @@
                     </Style>
                 </TextBox.Style>
             </TextBox>
+            <!-- Watermark for a field whose empty value means "use the default": it shows that
+                 default in place of the path until the user types or focuses the field. The
+                 inset matches the TextBox template (2px border margin + 1px stroke + 10px
+                 padding). -->
+            <TextBlock x:Name="PlaceholderTextBlock" Margin="13,0,12,0" IsHitTestVisible="False"
+                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                       Foreground="{DynamicResource TextMutedBrush}"
+                       FontSize="{Binding FontSize, ElementName=PathTextBox}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding Text, ElementName=PathTextBox}" Value="" />
+                                    <Condition Binding="{Binding IsKeyboardFocusWithin, ElementName=PathTextBox}" Value="False" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Visible" />
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
             <Button x:Name="BrowseButton" Grid.Column="1" Content="浏览">
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource BrowseButton}">

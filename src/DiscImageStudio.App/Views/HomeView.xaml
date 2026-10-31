@@ -31,12 +31,12 @@
                         <StackPanel Orientation="Horizontal">
                             <iconPacks:PackIconLucide Kind="ArrowLeft" Width="16" Height="16"
                                                       VerticalAlignment="Center"
-                                                      Foreground="{StaticResource PrimaryBrush}" />
+                                                      Foreground="{DynamicResource PrimaryBrush}" />
                             <TextBlock Text="返回工程" Margin="8,0,0,0" VerticalAlignment="Center" />
                             <TextBlock Text="{Binding CurrentProjectName}" Margin="8,0,0,0"
                                        VerticalAlignment="Center" MaxWidth="260"
                                        TextTrimming="CharacterEllipsis"
-                                       Foreground="{StaticResource TextMutedBrush}" />
+                                       Foreground="{DynamicResource TextMutedBrush}" />
                         </StackPanel>
                     </Button>
                     <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
@@ -71,7 +71,7 @@
                             <StackPanel VerticalAlignment="Center">
                                 <iconPacks:PackIconLucide Kind="{Binding Icon}" Width="30" Height="30"
                                                           HorizontalAlignment="Center"
-                                                          Foreground="{StaticResource TextSecondaryBrush}" />
+                                                          Foreground="{DynamicResource TextSecondaryBrush}" />
                                 <TextBlock Text="{Binding Title}" Style="{StaticResource RowText}"
                                            FontWeight="Medium" Height="36" Margin="0,10,0,0" TextAlignment="Center"
                                            TextWrapping="Wrap" />

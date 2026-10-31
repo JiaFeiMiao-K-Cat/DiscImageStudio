@@ -49,14 +49,15 @@ public partial class ProjectDialogViewModel : ObservableObject
     public IReadOnlyList<string> TemplateCategories { get; } = ["最近", "CD", "DVD", "蓝光"];
 
     public ProjectDialogViewModel(DiscParametersState state, ProjectDialogRequest request)
-        : this(state, request, new RecentTemplateStore())
+        : this(state, request, new RecentTemplateStore(), string.Empty)
     {
     }
 
     internal ProjectDialogViewModel(
         DiscParametersState state,
         ProjectDialogRequest request,
-        RecentTemplateStore recentTemplates)
+        RecentTemplateStore recentTemplates,
+        string defaultProjectDirectory = "")
     {
         _state = state;
         _recentTemplates = recentTemplates;
@@ -115,7 +116,13 @@ public partial class ProjectDialogViewModel : ObservableObject
             }
         }
 
-        SaveDirectory = ProjectJsonStore.GetDefaultProjectsDirectory();
+        // The configured default is a preference, not a hard requirement: a folder that was
+        // deleted or lives on a disconnected drive falls back to Documents instead of
+        // pointing the save path at an invalid location.
+        SaveDirectory = !string.IsNullOrWhiteSpace(defaultProjectDirectory)
+                        && Directory.Exists(defaultProjectDirectory)
+            ? defaultProjectDirectory
+            : ProjectJsonStore.GetDefaultProjectsDirectory();
     }
 
     public bool EditMode => _editMode;

@@ -6,8 +6,8 @@
          used to retype the same bordered icon+text box once per disc family; the export
          workspace retyped it a third time to hang an owner link off it. Optional Actions slot
          for that link, so the row keeps one chrome wherever it appears. -->
-    <Border Background="{StaticResource Surface2Brush}"
-            BorderBrush="{StaticResource DividerBrush}" BorderThickness="1"
+    <Border Background="{DynamicResource Surface2Brush}"
+            BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
             CornerRadius="{StaticResource RadiusPanel}" Padding="10,8">
         <Grid>
             <Grid.ColumnDefinitions>
@@ -17,10 +17,10 @@
             </Grid.ColumnDefinitions>
             <iconPacks:PackIconLucide Grid.Column="0" Kind="Layers" Width="15" Height="15"
                                       VerticalAlignment="Center"
-                                      Foreground="{StaticResource TextSecondaryBrush}" />
+                                      Foreground="{DynamicResource TextSecondaryBrush}" />
             <TextBlock x:Name="ChipText" Grid.Column="1" Style="{StaticResource RowText}" Margin="8,0,0,0"
                        VerticalAlignment="Center"
-                       Foreground="{StaticResource TextSecondaryBrush}" />
+                       Foreground="{DynamicResource TextSecondaryBrush}" />
             <ContentPresenter x:Name="ActionHost" Grid.Column="2" VerticalAlignment="Center"
                               Margin="12,0,0,0" />
         </Grid>

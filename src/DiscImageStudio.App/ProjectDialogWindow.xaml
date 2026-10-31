@@ -7,7 +7,7 @@
         Width="992" Height="640"
         WindowStartupLocation="CenterOwner"
         WindowStyle="None" ResizeMode="NoResize"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource AppFontFamily}"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
     <WindowChrome.WindowChrome>
@@ -27,14 +27,14 @@
                         <Border x:Name="TabBand" Background="Transparent" BorderThickness="0,0,0,2"
                                 BorderBrush="Transparent" Padding="10,3" Margin="0,0,4,6">
                             <TextBlock x:Name="TabLabel" Text="{Binding}" Style="{StaticResource RowText}"
-                                       Foreground="{StaticResource TextSecondaryBrush}" />
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="TabBand" Property="BorderBrush"
-                                        Value="{StaticResource PrimaryBrush}" />
+                                        Value="{DynamicResource PrimaryBrush}" />
                                 <Setter TargetName="TabLabel" Property="Foreground"
-                                        Value="{StaticResource TextPrimaryBrush}" />
+                                        Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -71,8 +71,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="Card" Background="{StaticResource Surface1Brush}"
-                                BorderBrush="{StaticResource DividerBrush}" BorderThickness="1"
+                        <Border x:Name="Card" Background="{DynamicResource Surface1Brush}"
+                                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
                                 CornerRadius="{StaticResource RadiusField}" Padding="10,14"
                                 Margin="0,0,10,10">
                             <ContentPresenter HorizontalAlignment="Center" />
@@ -80,13 +80,13 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Card" Property="BorderBrush"
-                                        Value="{StaticResource Surface3Brush}" />
+                                        Value="{DynamicResource Surface3Brush}" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="Card" Property="BorderBrush"
-                                        Value="{StaticResource PrimaryBrush}" />
+                                        Value="{DynamicResource PrimaryBrush}" />
                                 <Setter TargetName="Card" Property="Background"
-                                        Value="{StaticResource Surface2Brush}" />
+                                        Value="{DynamicResource Surface2Brush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -166,17 +166,22 @@
                                         <iconPacks:PackIconLucide Kind="{Binding IconKind}"
                                                                   Width="28" Height="28"
                                                                   HorizontalAlignment="Center"
-                                                                  Foreground="{StaticResource TextSecondaryBrush}" />
+                                                                  Foreground="{DynamicResource TextSecondaryBrush}" />
                                         <Border HorizontalAlignment="Right" VerticalAlignment="Top"
                                                 Padding="4,1" CornerRadius="{StaticResource RadiusChip}"
-                                                Background="{StaticResource Surface3Brush}"
+                                                Background="{DynamicResource Surface3Brush}"
                                                 Visibility="{Binding UserBadgeVisibility}">
                                             <TextBlock Text="自定" Style="{StaticResource MicroText}" />
                                         </Border>
                                     </Grid>
-                                    <TextBlock Text="{Binding Title}" Style="{StaticResource RowText}"
-                                               FontWeight="Medium" TextAlignment="Center" Margin="0,0,0,2"
-                                               TextTrimming="CharacterEllipsis" />
+                                    <!-- Preset names can outrun the card: the line scrolls
+                                         while the card is hovered (the home page's recent-
+                                         project marquee) and carries the full name as a
+                                         tooltip whenever it is clipped. -->
+                                    <controls:MarqueeText Text="{Binding Title}" FontWeight="Medium"
+                                                          Margin="0,0,0,2"
+                                                          IsActive="{Binding IsMouseOver,
+                                                                     RelativeSource={RelativeSource AncestorType=ListBoxItem}}" />
                                     <TextBlock Text="{Binding Detail}" Style="{StaticResource MicroText}"
                                                TextAlignment="Center" TextWrapping="Wrap" />
                                 </StackPanel>
@@ -249,7 +254,7 @@
                                         <TextBlock Text="盘型" Style="{StaticResource FieldLabel}"
                                                    VerticalAlignment="Center" Margin="0,0,8,0" />
                                         <Border Padding="6,2" CornerRadius="{StaticResource RadiusChip}"
-                                                Background="{StaticResource Surface3Brush}"
+                                                Background="{DynamicResource Surface3Brush}"
                                                 VerticalAlignment="Center">
                                             <TextBlock Text="{Binding FamilyBadge}" Style="{StaticResource BadgeText}" />
                                         </Border>
@@ -261,11 +266,11 @@
                                         <TextBlock Text="{Binding SavedPresetMessage}"
                                                    Style="{StaticResource HintText}" VerticalAlignment="Center"
                                                    Margin="10,0,0,0"
-                                                   Foreground="{StaticResource SuccessBrush}" />
+                                                   Foreground="{DynamicResource SuccessBrush}" />
                                     </StackPanel>
                                 </StackPanel>
                                 <TextBlock Style="{StaticResource HintText}" Margin="0,0,0,4"
-                                           Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap"
                                            Text="{Binding ErrorMessage}" />
                             </StackPanel>
                         </ScrollViewer>

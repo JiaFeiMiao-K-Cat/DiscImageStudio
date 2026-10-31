@@ -12,8 +12,8 @@
         <ItemsControl.ItemTemplate>
             <DataTemplate>
                 <Border x:Name="ToastCard" Width="320" Margin="0,0,0,10" HorizontalAlignment="Right"
-                        Background="{StaticResource Surface1Brush}"
-                        BorderBrush="{StaticResource DividerBrush}" BorderThickness="1"
+                        Background="{DynamicResource Surface1Brush}"
+                        BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
                         CornerRadius="{StaticResource RadiusFloating}" Padding="12,10,8,10" SnapsToDevicePixels="True"
                         Effect="{StaticResource FloatingShadow}"
                         IsHitTestVisible="True">
@@ -54,22 +54,22 @@
                                 AutomationProperties.Name="关闭通知" ToolTip="关闭"
                                 Click="CloseToast_Click">
                             <iconPacks:PackIconLucide Kind="X" Width="14" Height="14"
-                                                      Foreground="{StaticResource TextMutedBrush}" />
+                                                      Foreground="{DynamicResource TextMutedBrush}" />
                         </Button>
                     </Grid>
                 </Border>
                 <DataTemplate.Triggers>
                     <DataTrigger Binding="{Binding Kind}" Value="Success">
-                        <Setter TargetName="KindBar" Property="Background" Value="{StaticResource SuccessBrush}" />
+                        <Setter TargetName="KindBar" Property="Background" Value="{DynamicResource SuccessBrush}" />
                     </DataTrigger>
                     <DataTrigger Binding="{Binding Kind}" Value="Warning">
-                        <Setter TargetName="KindBar" Property="Background" Value="{StaticResource WarningBrush}" />
+                        <Setter TargetName="KindBar" Property="Background" Value="{DynamicResource WarningBrush}" />
                     </DataTrigger>
                     <DataTrigger Binding="{Binding Kind}" Value="Error">
-                        <Setter TargetName="KindBar" Property="Background" Value="{StaticResource DangerBrush}" />
+                        <Setter TargetName="KindBar" Property="Background" Value="{DynamicResource DangerBrush}" />
                     </DataTrigger>
                     <DataTrigger Binding="{Binding Kind}" Value="Info">
-                        <Setter TargetName="KindBar" Property="Background" Value="{StaticResource PrimaryBrush}" />
+                        <Setter TargetName="KindBar" Property="Background" Value="{DynamicResource PrimaryBrush}" />
                     </DataTrigger>
                 </DataTemplate.Triggers>
             </DataTemplate>

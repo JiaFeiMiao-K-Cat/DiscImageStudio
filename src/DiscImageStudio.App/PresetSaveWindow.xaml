@@ -6,7 +6,7 @@
         Width="480" SizeToContent="Height" MaxWidth="640"
         WindowStartupLocation="CenterOwner"
         WindowStyle="None" ResizeMode="NoResize"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource AppFontFamily}"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
     <WindowChrome.WindowChrome>

@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using DiscImageStudio.Services;
 
 namespace DiscImageStudio.Controls;
 
@@ -48,8 +49,9 @@ public partial class SegmentedControl : UserControl
     private static readonly Duration ColorDuration = Motion.Fast;
     private static readonly IEasingFunction TransitionEase = Motion.EaseOut;
 
-    private readonly Color _activeTextColor;
-    private readonly Color _idleTextColor;
+    private Color _selectedTextColor;
+    private Color _hoverTextColor;
+    private Color _idleTextColor;
     private readonly SolidColorBrush _labelABrush;
     private readonly SolidColorBrush _labelBBrush;
     private readonly SolidColorBrush _labelCBrush;
@@ -61,7 +63,8 @@ public partial class SegmentedControl : UserControl
     public SegmentedControl()
     {
         InitializeComponent();
-        _activeTextColor = ThemeValues.Color("TextPrimaryColor", Color.FromRgb(0xFA, 0xFA, 0xFA));
+        _selectedTextColor = ThemeValues.Color("OnPrimaryColor", Colors.White);
+        _hoverTextColor = ThemeValues.Color("TextPrimaryColor", Color.FromRgb(0xFA, 0xFA, 0xFA));
         _idleTextColor = ThemeValues.Color("TextSecondaryColor", Color.FromRgb(0xA1, 0xA1, 0xAA));
         _labelABrush = new SolidColorBrush(_idleTextColor);
         _labelBBrush = new SolidColorBrush(_idleTextColor);
@@ -69,9 +72,29 @@ public partial class SegmentedControl : UserControl
         OptionAText.Foreground = _labelABrush;
         OptionBText.Foreground = _labelBBrush;
         OptionCText.Foreground = _labelCBrush;
-        Loaded += (_, _) => ApplyLayout(animate: false);
+        Loaded += (_, _) =>
+        {
+            ThemeResolver.Changed -= ThemeResolver_Changed;
+            ThemeResolver.Changed += ThemeResolver_Changed;
+            RefreshThemeColors();
+            ApplyLayout(animate: false);
+        };
+        Unloaded += (_, _) => ThemeResolver.Changed -= ThemeResolver_Changed;
         Cells.SizeChanged += (_, _) => ApplyLayout(animate: false);
         ApplyLayout(animate: false);
+    }
+
+    private void ThemeResolver_Changed(object? sender, EventArgs e)
+    {
+        RefreshThemeColors();
+        UpdateLabelColors(animate: false);
+    }
+
+    private void RefreshThemeColors()
+    {
+        _selectedTextColor = ThemeValues.Color("OnPrimaryColor", Colors.White);
+        _hoverTextColor = ThemeValues.Color("TextPrimaryColor", Color.FromRgb(0xFA, 0xFA, 0xFA));
+        _idleTextColor = ThemeValues.Color("TextSecondaryColor", Color.FromRgb(0xA1, 0xA1, 0xAA));
     }
 
     public string LabelA
@@ -184,9 +207,9 @@ public partial class SegmentedControl : UserControl
     private void UpdateLabelColors(bool animate = true)
     {
         int index = Math.Clamp(SelectedIndex, 0, OptionCount - 1);
-        AnimateColor(_labelABrush, index == 0 || _hoverA ? _activeTextColor : _idleTextColor, animate);
-        AnimateColor(_labelBBrush, index == 1 || _hoverB ? _activeTextColor : _idleTextColor, animate);
-        AnimateColor(_labelCBrush, index == 2 || _hoverC ? _activeTextColor : _idleTextColor, animate);
+        AnimateColor(_labelABrush, index == 0 ? _selectedTextColor : _hoverA ? _hoverTextColor : _idleTextColor, animate);
+        AnimateColor(_labelBBrush, index == 1 ? _selectedTextColor : _hoverB ? _hoverTextColor : _idleTextColor, animate);
+        AnimateColor(_labelCBrush, index == 2 ? _selectedTextColor : _hoverC ? _hoverTextColor : _idleTextColor, animate);
     }
 
     private void AnimateColor(SolidColorBrush brush, Color target, bool animate)

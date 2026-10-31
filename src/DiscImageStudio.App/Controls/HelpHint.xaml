@@ -2,41 +2,17 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!-- 20px circular help hotspot: hover lights the glyph and ring, the hint sentence
-         shows as its tooltip. -->
+         shows as its tooltip. The hover colors are animated in code because a XAML
+         ColorAnimation captures a fixed palette value and would not follow a theme
+         switch. -->
     <Grid x:Name="Root" Width="20" Height="20" Background="Transparent" Cursor="Hand"
           ToolTipService.InitialShowDelay="150">
-        <Grid.Triggers>
-            <EventTrigger RoutedEvent="MouseEnter">
-                <BeginStoryboard>
-                    <Storyboard>
-                        <ColorAnimation Storyboard.TargetName="HelpGlyph"
-                                        Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)"
-                                        To="{StaticResource TextPrimaryColor}" Duration="0:0:0.15" />
-                        <DoubleAnimation Storyboard.TargetName="HelpCircle"
-                                         Storyboard.TargetProperty="Opacity"
-                                         To="1" Duration="0:0:0.15" />
-                    </Storyboard>
-                </BeginStoryboard>
-            </EventTrigger>
-            <EventTrigger RoutedEvent="MouseLeave">
-                <BeginStoryboard>
-                    <Storyboard>
-                        <ColorAnimation Storyboard.TargetName="HelpGlyph"
-                                        Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)"
-                                        To="{StaticResource TextMutedColor}" Duration="0:0:0.15" />
-                        <DoubleAnimation Storyboard.TargetName="HelpCircle"
-                                         Storyboard.TargetProperty="Opacity"
-                                         To="0" Duration="0:0:0.15" />
-                    </Storyboard>
-                </BeginStoryboard>
-            </EventTrigger>
-        </Grid.Triggers>
         <Border x:Name="HelpCircle" CornerRadius="10"
-                Background="{StaticResource PrimarySoftBrush}" Opacity="0" />
+                Background="{DynamicResource PrimarySoftBrush}" Opacity="0" />
         <TextBlock x:Name="HelpGlyph" Text="?" FontSize="14"
                    TextAlignment="Center" VerticalAlignment="Center">
             <TextBlock.Foreground>
-                <SolidColorBrush Color="{StaticResource TextMutedColor}" />
+                <SolidColorBrush Color="{DynamicResource TextMutedColor}" />
             </TextBlock.Foreground>
         </TextBlock>
     </Grid>

@@ -20,6 +20,8 @@
     <!-- Brand blue pair: 3385FF is the base fill on dark surfaces, 74C0FF the lighter
          emphasis used for hover states and accent text/icons on dark backgrounds. -->
     <Color x:Key="PrimaryColor">#3385FF</Color>
+    <!-- Label on a filled Primary surface (segmented thumb): white in both themes. -->
+    <Color x:Key="OnPrimaryColor">#FFFFFFFF</Color>
     <Color x:Key="PrimaryHoverColor">#74C0FF</Color>
     <Color x:Key="PrimaryPressedColor">#2569CC</Color>
     <Color x:Key="PrimarySoftColor">#1F3385FF</Color>
@@ -91,6 +93,16 @@
 
     <!-- Family badge chip painted over thumbnails (needs its own opacity to stay readable). -->
     <SolidColorBrush x:Key="BadgeSurfaceBrush" Color="#CC121212" />
+
+    <!-- Acknowledgement sheen swept across the project header: white on dark surfaces,
+         black on light ones (the light palette overrides the three color tokens). -->
+    <Color x:Key="ShineClearColor">#00FFFFFF</Color>
+    <Color x:Key="ShineSoftColor">#26FFFFFF</Color>
+    <Color x:Key="ShineCoreColor">#66FFFFFF</Color>
+
+    <!-- Transparent end of the sleeve's path fade. A transparent stop keeps its RGB during
+         gradient interpolation, so it cannot reuse the surface color directly. -->
+    <Color x:Key="Surface1FadeColor">#0018181B</Color>
 
     <!-- Shape and metric tokens: radii, control heights and the shared page padding.
          Keeping them here is what stops every view from inventing its own 24/26/32.
@@ -175,5 +187,12 @@
     <Geometry x:Key="WinMaximizeIcon">M0.5,0.5 H9.5 V9.5 H0.5 Z</Geometry>
     <Geometry x:Key="WinRestoreIcon">M0.5,2.5 H7.5 V9.5 H0.5 Z M2.5,2.5 V0.5 H9.5 V7.5 H7.5</Geometry>
     <Geometry x:Key="WinCloseIcon">M0,0 L10,10 M10,0 L0,10</Geometry>
+    <!-- App-menu ellipsis: three 2px dots on a 4px pitch. The icon grid's dots read heavier
+         than the 1px window-control strokes, so this one is drawn at chrome weight. -->
+    <GeometryGroup x:Key="WinEllipsisIcon">
+        <EllipseGeometry Center="1,1" RadiusX="1" RadiusY="1" />
+        <EllipseGeometry Center="5,1" RadiusX="1" RadiusY="1" />
+        <EllipseGeometry Center="9,1" RadiusX="1" RadiusY="1" />
+    </GeometryGroup>
 
 </ResourceDictionary>

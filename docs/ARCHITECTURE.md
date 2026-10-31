@@ -49,7 +49,7 @@ flowchart LR
 
 工作区页面的骨架与面板语言是共享的：`MonitorCard`（监视器卡：头部图标 + 标题 + 副标题 + 动作槽，主体内容，可选状态底栏）承载预览结果与标定照片舞台；`StepCard`（编号步骤卡：状态徽章 待开始/进行中/已完成 + 可折叠主体）承载标定页的三步检查器，活动步骤展开、其余收起；`VisibilityGate`（按一个布尔显隐内容）统一各页的盘型/模式分支，替代了各视图私有的 DataTrigger 样式；`PathField`、`SourceChip` 把反复出现的路径行、来源条收敛成单一实现；`EmptyStateCard`（图标 + 一句话 + 跳转动作）统一各页的空态引导。卡片头分两档：监视/列表容器用 `CardHeaderBandStyle` 色带头（MonitorCard、设计页图层卡），表单卡保持平铺标题；两者图标同为 15px。`SourceChip` 的 `Actions` 槽承载「转到拥有者」的按钮，因此「只读摘要 + 跳转」这一行在所有页面是同一份外观。密度规则：侧栏/检查器面板一律用 Compact 家族（36 px），主舞台与主操作按钮用标准高度（44 px），两侧面板宽度统一 `SidePanelWidth`（280）令牌。
 
-侧边栏在每个工作区条目上都带图标，收起成 72 px 时即成为图标栏（组头在收窄态隐藏、子项直接列出），与底部的「关于」读法一致；不再有需要二次点击才展开的折叠图标列表。
+侧边栏在每个工作区条目上都带图标，收起成 72 px 时即成为图标栏（组头在收窄态隐藏、子项直接列出）；不再有需要二次点击才展开的折叠图标列表。「设置…」与「关于…」统一收进标题栏最小化按钮左侧的「…」应用菜单（`TitleBar.ShowAppMenu` + `AppMenuRequested`，Ctrl+, 直达设置），主页与工程态都能打开，侧边栏底部不再保留「关于」入口。
 
 `DesignView` 与 `CalibrationView` 都按页宽切换布局：宽窗口下工作区钉住为视口高度（钉住值随外层 `ScrollViewer` 的视口/内容尺寸变化重算，首次布局视口为零、DPI 取整差一像素等瞬态不会把页面留在无意义的滚动状态）；窄窗口下侧栏折到舞台下方、整页滚动（设计页在页宽 < 900 时改变，标定页 < 990）。设计页在窄布局下给画布固定高度，避免三栏挤在一起时画布被压到不可用。设计页右栏是“属性 + 影调”两张自然高度的卡片，由右栏自己的 `ScrollViewer` 滚动；页宽 < 900 时右栏折到图层卡下方并随整页滚动。影调模块（`TonePanel`）是独立 UserControl，在 280 px 右栏里用缩略盘面 + 单列控件，在折页后的整宽右栏里切换为左侧大盘面、右侧控件（它有自己的名称范围，页面级 `x:Name` 不能穿透）。
 
@@ -66,6 +66,10 @@ flowchart LR
 设计工作区（`DesignViewModel` + `DiscDesignCanvas` + `DesignComposer`）维护图层栈：图层按面板顺序存储（顶部索引 0，画布自下而上绘制，与合成顺序一致），画布以盘心为原点的毫米坐标系渲染并支持拖动/角点缩放/旋转柄；图层行是可选中列表，与画布及属性面板双向同步。图层编辑经 450 ms 防抖后由 `DesignComposer` 渲染出方形合成图（预览 2048 px，导出 8192 px）：方形中心即盘心，边长对应 2 × 画布外半径（CD 固定 57.5 mm，DVD/BD 为生成外半径）。合成图写入 State 的源图片路径，成为导出与预览的共同输入；生成 CLI 与管线对此无感知。导出与刻录两条交付路径都使用导出质量的 8192 px 合成图，因此预览验证的素材就是写入盘片的素材。页眉的「下一步」贯穿 设计 → 预览 → 导出 → 刻录，标定经侧边栏或刻录页的链接进入。
 
 设计语言集中在 `Themes/Tokens.xaml`（颜色、语义色、圆角含 `RadiusChip`/`RadiusPanel`/卡片头尾镜像弧、控件高度、`SidePanelWidth`、页面留白、浮层阴影、画布调色板）与 `Themes/Controls.xaml`（文字层级、按钮族、输入控件、列表行、披露面板、`DangerCard` 警示卡、监视器与步骤卡模板）。代码侧动画统一走 `Controls/Motion.cs` 的三档时长，自定义画布统一通过 `Controls/DiscTheme.cs` 与 `Controls/DiscRenderCore.cs` 取色与绘制盘体，不再各自内置一套调色板。`Controls.xaml` 内基于隐式样式的派生样式（`BasedOn="{StaticResource {x:Type X}}"`）必须写在隐式样式之后：前向引用不会报错，而是静默回退到 Windows 自带样式，控件会以浅色系统外观出现。需要承载页面命名内容的面板（如 `MonitorCard`）做成模板化自定义控件而不是 UserControl：UserControl 会把内容隔离进自己的名称范围，页面里 `x:Name` 的元素无法编译，快照钩子与画布接线也因此够不到它们。
+
+主题切换是即时的：`Themes/Palette.Light.xaml` 覆盖 `Tokens.xaml` 的全部颜色与画刷键，`Services/ThemeResolver` 在合并字典的第 1 位插入或移除浅色层，窗口无需重建。因此视图对调色板键必须使用 `DynamicResource`（`StaticResource` 会把深色值固化在加载时刻，`ThemePaletteTests` 会拦截）；代码侧取色的控件（`SideNavItem`、`SegmentedControl`、`DiscDesignCanvas`、`CalibrationPhotoCanvas`、`JobDock`、`HelpHint`）订阅 `ThemeResolver.Changed` 并重新读取令牌。系统主题取 `HKCU\...\Themes\Personalize\AppsUseLightTheme`。
+
+应用设置由 `Services/AppSettingsStore` 持久化到 `%LOCALAPPDATA%\DiscImageStudio\settings.json`（camelCase、字符串枚举、临时文件原子替换）：主题、默认工程位置和缓存位置。缺失、损坏或 schemaVersion 高于当前版本的文件回落到默认值，手工改坏的路径在 `AppSettings.Normalize` 中被丢弃；设置从不写入 `.discproj`。默认工程位置只影响新建工程对话框的初始目录，不存在时回落到系统文档目录。`Services/TempFiles` 持有可配置的缓存目录（`LivePreviewDirectory`），设计合成图、缩略图与预览图都写到这里；切换只影响新任务，清空缓存按文件名白名单（`design-composite-*`、`design-tone-*`、`design-thumbnail.png`、`cd/dvd/bd-live-*` 及其 `.png.json` sidecar）删除，绝不删除目录、工程或导出文件。设置窗口在保存前只改副本，取消或 Esc 丢弃全部编辑。
 
 ## 图片预处理层
 

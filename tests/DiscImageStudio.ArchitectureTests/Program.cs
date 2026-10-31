@@ -105,6 +105,9 @@ CalibrationBurnWorkflowTests.Run();
 CalibrationBurnSourceTests.Run();
 CalibrationOutputPublisherTests.Run();
 CalibrationPhotoViewModelTests.Run();
+AppSettingsTests.Run();
+ThemePaletteTests.Run();
+TempFilesCacheTests.Run();
 
 Console.WriteLine("architecture-selftest: all checks passed");
 return;

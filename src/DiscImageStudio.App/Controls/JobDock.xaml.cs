@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
+using DiscImageStudio.Services;
 using DiscImageStudio.ViewModels;
 using MahApps.Metro.IconPacks;
 
@@ -24,12 +25,22 @@ public partial class JobDock : UserControl
         Loaded += (_, _) =>
         {
             AttachShell();
+            ThemeResolver.Changed -= ThemeResolver_Changed;
+            ThemeResolver.Changed += ThemeResolver_Changed;
             LogTextBox.Text = _shell?.LogText ?? string.Empty;
             _isAttached = true;
+            UpdateStatusIcon();
             ScrollToEnd();
         };
-        Unloaded += (_, _) => _isAttached = false;
+        Unloaded += (_, _) =>
+        {
+            ThemeResolver.Changed -= ThemeResolver_Changed;
+            _isAttached = false;
+        };
     }
+
+    // The status glyph holds a brush resolved from the palette; re-resolve it on a switch.
+    private void ThemeResolver_Changed(object? sender, EventArgs e) => UpdateStatusIcon();
 
     private void AttachShell()
     {

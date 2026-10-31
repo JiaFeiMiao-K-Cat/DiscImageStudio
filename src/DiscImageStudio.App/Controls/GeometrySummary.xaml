@@ -5,7 +5,7 @@
     <!-- Read-only view of a value group with a jump to its single owner. The button shares
          the title row and the details get the full panel width: in a 280px side panel a
          right-hand button column squeezed every summary into mid-word wraps. -->
-    <Border Background="{StaticResource Surface2Brush}" BorderBrush="{StaticResource DividerBrush}"
+    <Border Background="{DynamicResource Surface2Brush}" BorderBrush="{DynamicResource DividerBrush}"
             BorderThickness="1" CornerRadius="{StaticResource RadiusPanel}" Padding="12,10">
         <Grid>
             <Grid.RowDefinitions>
@@ -20,7 +20,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
                     <iconPacks:PackIconLucide Kind="Ruler" Width="15" Height="15" VerticalAlignment="Center"
-                                              Foreground="{StaticResource TextSecondaryBrush}" />
+                                              Foreground="{DynamicResource TextSecondaryBrush}" />
                     <!-- Centered on the row: the row's height is the edit button's, and a
                          stretched TextBlock would ride the top edge while the icon centers. -->
                     <TextBlock x:Name="TitleText" Style="{StaticResource FieldLabel}" Margin="8,0,0,0"

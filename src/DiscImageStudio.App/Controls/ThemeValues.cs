@@ -8,8 +8,14 @@ namespace DiscImageStudio.Controls;
 /// happens in design-time hosts and headless tests, so callers never have to null-check.</summary>
 internal static class ThemeValues
 {
+    /// Accepts either palette key form: callers name Color tokens and Brush tokens alike.
     public static Color Color(string key, Color fallback) =>
-        Application.Current?.TryFindResource(key) is SolidColorBrush brush ? brush.Color : fallback;
+        Application.Current?.TryFindResource(key) switch
+        {
+            Color color => color,
+            SolidColorBrush brush => brush.Color,
+            _ => fallback,
+        };
 
     public static Brush Brush(string key, Brush fallback) =>
         Application.Current?.TryFindResource(key) as Brush ?? fallback;

@@ -23,8 +23,8 @@
                    Text="影调" Style="{StaticResource PanelTitle}" Margin="0,0,0,12" />
 
         <Border x:Name="TonePreviewCard" Grid.Row="1" Grid.Column="0"
-                Background="{StaticResource Surface2Brush}"
-                BorderBrush="{StaticResource DividerBrush}" BorderThickness="1"
+                Background="{DynamicResource Surface2Brush}"
+                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
                 CornerRadius="{StaticResource RadiusPanel}" Padding="10">
             <!-- The projection is a square PNG whose corners are the page background, so
                  it is drawn through an ellipse brush: the disc becomes a medallion and the
@@ -49,7 +49,7 @@
                         </Style>
                     </Ellipse.Style>
                 </Ellipse>
-                <Ellipse Fill="{StaticResource Surface1Brush}">
+                <Ellipse Fill="{DynamicResource Surface1Brush}">
                     <Ellipse.Style>
                         <Style TargetType="Ellipse">
                             <Setter Property="Visibility" Value="Visible" />
@@ -73,7 +73,7 @@
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
-                <Ellipse Stroke="{StaticResource DividerBrush}" StrokeThickness="1"
+                <Ellipse Stroke="{DynamicResource DividerBrush}" StrokeThickness="1"
                          Margin="0.6" IsHitTestVisible="False" />
             </Grid>
         </Border>

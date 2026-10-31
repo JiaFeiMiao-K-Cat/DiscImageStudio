@@ -1,31 +1,54 @@
 <UserControl x:Class="DiscImageStudio.Controls.TitleBar"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Grid Height="32" Background="{StaticResource BackgroundBrush}">
+    <Grid Height="32" Background="{DynamicResource BackgroundBrush}">
         <StackPanel Orientation="Horizontal" Margin="12,0" VerticalAlignment="Center">
             <Image Source="{StaticResource AppIconSource}" Width="16" Height="16" Margin="0,0,8,0" />
             <TextBlock Text="Disc Image Studio" FontSize="12"
-                       Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" />
+                       Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
             <TextBlock x:Name="ProjectTitleText" FontSize="12" Margin="8,0,0,0" Visibility="Collapsed"
-                       Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" />
+                       Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" />
         </StackPanel>
 
         <StackPanel x:Name="WindowButtons" Orientation="Horizontal" HorizontalAlignment="Right"
                     WindowChrome.IsHitTestVisibleInChrome="True">
+            <!-- Application menu sits left of the window buttons; hidden on dialogs that do
+                 not opt in through ShowAppMenu. -->
+            <Button x:Name="AppMenuButton" Width="46" Height="32" Focusable="False"
+                    Click="AppMenu_Click" ToolTip="应用菜单"
+                    AutomationProperties.Name="应用菜单" Visibility="Collapsed">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Hot" Background="Transparent">
+                            <Path Data="{StaticResource WinEllipsisIcon}"
+                                  Fill="{DynamicResource TextPrimaryBrush}"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Hot" Property="Background" Value="{DynamicResource TitleBarHoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Hot" Property="Background" Value="{DynamicResource PressedOverlayBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
             <Button x:Name="MinimizeButton" Width="46" Height="32" Focusable="False" Click="Minimize_Click"
                     ToolTip="最小化">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Hot" Background="Transparent">
-                            <Path Data="{StaticResource WinMinimizeIcon}" Stroke="{StaticResource TextPrimaryBrush}" StrokeThickness="1"
+                            <Path Data="{StaticResource WinMinimizeIcon}" Stroke="{DynamicResource TextPrimaryBrush}" StrokeThickness="1"
                                   Width="10" Height="1" Stretch="None" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Hot" Property="Background" Value="{StaticResource TitleBarHoverBrush}" />
+                                <Setter TargetName="Hot" Property="Background" Value="{DynamicResource TitleBarHoverBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Hot" Property="Background" Value="{StaticResource PressedOverlayBrush}" />
+                                <Setter TargetName="Hot" Property="Background" Value="{DynamicResource PressedOverlayBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -37,18 +60,18 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Hot" Background="Transparent">
                             <Grid Width="10" Height="10">
-                                <Path x:Name="MaximizeGlyph" Data="{StaticResource WinMaximizeIcon}" Stroke="{StaticResource TextPrimaryBrush}"
+                                <Path x:Name="MaximizeGlyph" Data="{StaticResource WinMaximizeIcon}" Stroke="{DynamicResource TextPrimaryBrush}"
                                       StrokeThickness="1" Stretch="None" />
-                                <Path x:Name="RestoreGlyph" Data="{StaticResource WinRestoreIcon}" Stroke="{StaticResource TextPrimaryBrush}"
+                                <Path x:Name="RestoreGlyph" Data="{StaticResource WinRestoreIcon}" Stroke="{DynamicResource TextPrimaryBrush}"
                                       StrokeThickness="1" Stretch="None" Visibility="Collapsed" />
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Hot" Property="Background" Value="{StaticResource TitleBarHoverBrush}" />
+                                <Setter TargetName="Hot" Property="Background" Value="{DynamicResource TitleBarHoverBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Hot" Property="Background" Value="{StaticResource PressedOverlayBrush}" />
+                                <Setter TargetName="Hot" Property="Background" Value="{DynamicResource PressedOverlayBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -58,15 +81,15 @@
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Hot" Background="Transparent">
-                            <Path Data="{StaticResource WinCloseIcon}" Stroke="{StaticResource TextPrimaryBrush}" StrokeThickness="1"
+                            <Path Data="{StaticResource WinCloseIcon}" Stroke="{DynamicResource TextPrimaryBrush}" StrokeThickness="1"
                                   Width="10" Height="10" Stretch="None" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Hot" Property="Background" Value="{StaticResource CloseHotSoftBrush}" />
+                                <Setter TargetName="Hot" Property="Background" Value="{DynamicResource CloseHotSoftBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Hot" Property="Background" Value="{StaticResource CloseHotBrush}" />
+                                <Setter TargetName="Hot" Property="Background" Value="{DynamicResource CloseHotBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
