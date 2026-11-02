@@ -2,13 +2,19 @@
 
 ## Unreleased
 
+## [1.3.6] - 2026-11-02
+
 ### 中文
 
+- **实验性功能：Linux 和 macOS 离线命令行版。** 可从图片生成 CD 音轨（WAV+CUE 或 RAW）、CD 数据盘、DVD 和蓝光 ISO。两个系统均提供 x64 和 ARM64 自包含下载包。解压后运行 `./disc-image-studio --help` 查看命令。
+- Windows 桌面版继续使用 WIC 读图。跨平台 CLI 采用 StbImageSharp 读图和 StbImageWriteSharp 写 PNG，复用相同的盘面编码算法。
 - 新增日文界面：在「设置 → 通用 → 语言」可选择「日本語」；系统语言为日文（`ja`、`ja-JP`）时跟随系统也使用日文。所有翻译资源新增 `ja` 文本，`ui-snapshot --language` 支持 `ja`。
 - 新增日文 README（`README.ja.md`），所有 README 顶部的语言切换链接加入日本語。
 
 ### English
 
+- **Experimental feature: offline CLI for Linux and macOS.** Generate CD audio tracks (WAV+CUE or RAW), CD data images, and DVD or Blu-ray ISOs from an image. Self-contained x64 and ARM64 archives are available for both systems. Extract the archive and run `./disc-image-studio --help` to list commands.
+- The Windows desktop app continues to decode images with WIC. The cross-platform CLI uses StbImageSharp to read images and StbImageWriteSharp to write PNGs, with the same disc encoding algorithms.
 - Added a Japanese interface. Choose 日本語 under Settings → General → Language; Japanese system locales (`ja`, `ja-JP`) now use Japanese when following the system. Every translation entry gains `ja` text, and `ui-snapshot --language` accepts `ja`.
 - Added a Japanese README (`README.ja.md`) and a 日本語 link to the language switcher at the top of every README.
 

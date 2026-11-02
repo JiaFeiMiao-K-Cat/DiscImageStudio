@@ -96,6 +96,7 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       ref: ${{ needs.metadata.outputs.commit }}
+      release_tag: ${{ needs.metadata.outputs.tag }}
 
   package:
     needs: [metadata, validate]
@@ -118,11 +119,31 @@ jobs:
       - name: Build and verify standalone EXE
         run: ./packaging/Build-Release.ps1 -Tag $env:RELEASE_TAG
 
+      - name: Collect tested CLI archives
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cli-${{ needs.metadata.outputs.tag }}-*
+          path: artifacts/release/${{ needs.metadata.outputs.tag }}
+          merge-multiple: true
+
       - name: Prepare release notes
         run: |
           $metadata = ./packaging/Get-ReleaseMetadata.ps1 -Tag $env:RELEASE_TAG -RequireReleaseNotes
           $directory = Join-Path 'artifacts/release' $metadata.Tag
-          $checksum = (Get-Content -LiteralPath (Join-Path $directory 'SHA256SUMS.txt') -Raw).Trim()
+          $manifest = Join-Path $directory 'SHA256SUMS.txt'
+          $hashes = @((Get-Content -LiteralPath $manifest -Raw).Trim())
+          foreach ($rid in 'linux-x64','linux-arm64','osx-x64','osx-arm64') {
+            $archive = "DiscImageStudio-CLI-$($metadata.Tag)-$rid.tar.gz"
+            $path = Join-Path $directory $archive
+            $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            $line = "$hash  $archive"
+            if ((Get-Content -LiteralPath "$path.sha256" -Raw).Trim() -cne $line) {
+              throw "Downloaded CLI checksum does not match for $archive."
+            }
+            $hashes += $line
+          }
+          $checksum = $hashes -join "`n"
+          [IO.File]::WriteAllText($manifest, "$checksum`n", [Text.UTF8Encoding]::new($false))
           $notes = @(
             $metadata.Notes
             ''
@@ -130,14 +151,16 @@ jobs:
             ''
             '下载下方 win-x64.exe 后直接运行，支持 Windows 10 2004+ / Windows 11 x64，已内置 .NET 运行时。'
             '此便携 EXE 未进行代码签名。即时流式刻录仍为实验性功能；硬件实测范围以仓库验证记录为准。'
+            '**Linux 和 macOS 命令行版为实验性功能。** 按系统和处理器选择自包含的 tar.gz，解压后运行 `./disc-image-studio --help`。macOS 的 arm64 对应 Apple 芯片，x64 对应 Intel。'
             ''
             'Download the win-x64.exe below and run it directly on Windows 10 2004+ / Windows 11 x64. The .NET runtime is included.'
             'This portable EXE is unsigned. Live streaming burn remains experimental; see the repository validation records for tested hardware coverage.'
+            '**The Linux and macOS CLIs are experimental.** Extract the self-contained tar.gz matching your OS and CPU, then run `./disc-image-studio --help` in that directory. On macOS, arm64 is Apple silicon and x64 is Intel.'
             ''
             '### SHA-256'
             ''
-            '下载后运行以下命令，并将结果与下方校验值比较。'
-            'After downloading, run this command and compare the result with the checksum below.'
+            '使用 Windows 的 Get-FileHash、Linux 的 sha256sum 或 macOS 的 shasum -a 256 检查下载文件，并与对应文件名的校验值比较。'
+            'Use Get-FileHash on Windows, sha256sum on Linux or shasum -a 256 on macOS and compare the result with the entry for your filename.'
             ''
             '```powershell'
             "Get-FileHash .\DiscImageStudio-$($metadata.Tag)-win-x64.exe -Algorithm SHA256"
@@ -167,6 +190,7 @@ jobs:
           retention-days: 14
           path: |
             artifacts/release/${{ needs.metadata.outputs.tag }}/*.exe
+            artifacts/release/${{ needs.metadata.outputs.tag }}/*.tar.gz
             artifacts/release/${{ needs.metadata.outputs.tag }}/SHA256SUMS.txt
             artifacts/release/${{ needs.metadata.outputs.tag }}/release-notes.md
 
@@ -188,7 +212,12 @@ jobs:
           name: release-${{ needs.metadata.outputs.tag }}
           path: release
 
-      - name: Create or refresh draft with the EXE attachment
+      - name: Verify release attachments
+        working-directory: release
+        shell: bash
+        run: sha256sum --strict --check SHA256SUMS.txt
+
+      - name: Create or refresh draft with all release attachments
         run: |
           # Never replace assets on an already published release.
           $pages = gh api --paginate --slurp "repos/$env:GH_REPO/releases?per_page=100"
@@ -221,20 +250,17 @@ jobs:
             throw 'The release tag already points to a different commit. Use a new version.'
           }
 
-          $exe = "release/DiscImageStudio-$env:RELEASE_TAG-win-x64.exe"
-          $expectedHash = ((Get-Content 'release/SHA256SUMS.txt' -Raw).Trim() -split '\s+')[0]
-          if ((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash -ine $expectedHash) {
-            throw 'Downloaded EXE checksum does not match.'
-          }
+          $assets = @(Get-ChildItem -Path 'release/*.exe','release/*.tar.gz' -File | ForEach-Object FullName)
+          $assets += 'release/SHA256SUMS.txt'
           $options = @('--title', "Disc Image Studio $env:RELEASE_TAG", '--notes-file', 'release/release-notes.md')
           if ($existing.Count -eq 1) {
-            gh release upload $env:RELEASE_TAG $exe --clobber
-            if ($LASTEXITCODE -ne 0) { throw 'EXE upload failed.' }
+            gh release upload $env:RELEASE_TAG @assets --clobber
+            if ($LASTEXITCODE -ne 0) { throw 'Release asset upload failed.' }
             gh release edit $env:RELEASE_TAG @options --draft=true "--prerelease=$env:IS_PRERELEASE"
           } else {
             $options += @('--draft', '--verify-tag', '--target', $env:RELEASE_COMMIT)
             if ($env:IS_PRERELEASE -eq 'true') { $options += '--prerelease' }
-            gh release create $env:RELEASE_TAG $exe @options
+            gh release create $env:RELEASE_TAG @assets @options
           }
           if ($LASTEXITCODE -ne 0) { throw 'Saving the draft release failed.' }
           "Draft ready: https://github.com/$env:GH_REPO/releases" >> $env:GITHUB_STEP_SUMMARY

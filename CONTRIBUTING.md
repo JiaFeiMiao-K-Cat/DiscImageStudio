@@ -65,7 +65,7 @@ dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Rel
 ## 提交与 Pull Request
 
 1. Fork（或从 `main` 拉出）一个功能分支，一个分支只解决一件事，保持差异可评审。
-2. 提交信息标题使用简短描述；正文说明行为变化、验证方式，以及是否会产生大文件。不要滥用 emoji！
+2. 提交信息的标题和正文都使用英语。标题简短说明改动，正文按需说明行为变化、验证方式与大文件影响。每次发布的 Release notes 都提供中文和英文两节。
 3. PR 描述写清动机、改动口径与验证结果；涉及用户可见行为时，同步更新 `CHANGELOG.md` 的 Unreleased 段与相关 `docs/` 文档。
 4. 提交后确认 GitHub Actions 的 `build` 工作流为绿色。
 

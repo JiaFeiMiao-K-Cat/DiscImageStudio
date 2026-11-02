@@ -6,10 +6,10 @@
 
 <h2>光ディスクの記録面に可視画像を生成・書き込みするオールインワンツール</h2>
 
-Disc Image Studio は、光ディスクの記録面に描く画像を生成して書き込む Windows 用ツールです。**どんな**書き込みドライブでも、**どんな** DVD / CD / Blu-ray ディスクにも、肉眼で見える画像を刻むことができます。
+Windows デスクトップ版では、光ディスクの記録面に描く画像をデザインして書き込めます。Linux と macOS 向けの**実験的な CLI** では、CD、DVD、Blu-ray のイメージをオフラインで生成できます。
 
 ![.NET バージョン](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)
-![対応プラットフォーム](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078d6?style=flat-square)
+![対応プラットフォーム](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-0078d6?style=flat-square)
 ![開発言語](https://img.shields.io/badge/Language-C%23-68217A?style=flat-square)
 ![GitHub リポジトリサイズ](https://img.shields.io/github/repo-size/JiaFeiMiao-K-Cat/DiscImageStudio?style=flat-square&color=3cb371)
 ![コントリビューション歓迎](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=flat-square)
@@ -43,7 +43,7 @@ Disc Image Studio は、1 枚の画像を CD、DVD、片面一層 BD-R ディス
 
 ## クイックスタート
 
-[GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases) から Release EXE をダウンロードし、展開してそのまま実行してください。EXE には .NET ランタイムが同梱されています。
+Windows では `win-x64.exe` で終わるファイルをダウンロードして実行します。Linux または macOS では、CPU に合った**実験的な CLI** のアーカイブを展開し、`./disc-image-studio --help` を実行してください。いずれも .NET ランタイムを同梱しています。[GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 ### 1. プロジェクトを新規作成
 
@@ -98,7 +98,7 @@ Disc Image Studio は、インテリジェントで高精度な補助キャリ�
 
 ## システム・デバイス要件
 
-- Windows 10 2004（2004/20H1、19041）以降、または Windows 11。
+- デスクトップ版には Windows 10 2004（2004/20H1、19041）以降、または Windows 11 が必要です。
 - ビルド：.NET 10 SDK（`global.json` で 10.0.x に固定）。自分でビルドした非自己完結型の GUI には .NET 10 Windows デスクトップランタイムが必要です。Release EXE にはランタイムが同梱されているため、.NET を別途インストールする必要はありません。
 - 「即時書き込み」機能には、Windows が認識できる CD / DVD / BD 書き込みドライブと空のディスクが必要です。BD-R にはシーケンシャル書き込みに対応した空の片面一層ディスクが必要です。
 
@@ -120,7 +120,19 @@ dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Rel
 
 ## コマンドライン
 
-統合プログラムは、引数なしで起動すると GUI を開き、引数付きで起動すると自動化ツールとして動作します：
+glibc を使用する Linux では CPU に合わせて `linux-x64` または `linux-arm64` を選びます。Apple シリコン搭載 Mac では `osx-arm64`、Intel 搭載 Mac では `osx-x64` を選んでください。CLI で生成したイメージや音声トラックは、対応する書き込みソフトでディスクに書き込めます。
+
+.NET 10 SDK を使ってソースから起動するには、次のコマンドを実行します。
+
+```sh
+dotnet run --project src/DiscImageStudio.Cli -c Release -- --help
+```
+
+CLI は PNG、JPEG、BMP、GIF を読み込み、アニメーション画像には最初のフレームを使用します。次の例では、2 セクター分の音声トラックと CUE シートを生成して動作を確認できます。
+
+```sh
+./disc-image-studio cd-generate --input picture.png --output sample.wav --sectors 2
+```
 
 | コマンド | 説明 |
 | --- | --- |
@@ -140,6 +152,8 @@ dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Rel
 ## ソース構成
 
 ```text
+src/DiscImageStudio.Cli/     Linux / macOS 用のオフライン CLI
+src/DiscImageStudio.ImageIO/  WIC とクロスプラットフォームの画像コーデック
 src/DiscImageStudio.Core/    メディア非依存のモジュール契約、プロジェクト/プリセットモデル、ジョブとコマンドカタログ
 src/DiscImageStudio.Imaging/ CD/DVD/BD 共通の画像前処理とディザリング補助
 src/DiscImageStudio.Burning/ Windows IMAPI2 のデバイス列挙、ストリームバッファー、安全な書き込みレイヤー

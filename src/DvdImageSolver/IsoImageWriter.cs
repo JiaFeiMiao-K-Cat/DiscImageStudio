@@ -449,7 +449,7 @@ internal static class IsoImageWriter
     }
 
     internal static bool TryMarkSparse(SafeFileHandle handle)
-        => DeviceIoControl(
+        => OperatingSystem.IsWindows() && DeviceIoControl(
             handle,
             FsctlSetSparse,
             IntPtr.Zero,

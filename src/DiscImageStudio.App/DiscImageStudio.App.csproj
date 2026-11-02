@@ -29,6 +29,9 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DiscImageStudio.Core\DiscImageStudio.Core.csproj" />
+    <ProjectReference Include="..\DiscImageStudio.ImageIO\DiscImageStudio.ImageIO.csproj" />
+    <Compile Include="../Shared/BluRayImageLoader.cs" Link="Services/BluRayImageLoader.cs" />
+    <Compile Include="../Shared/ConsoleModuleRunner.cs" Link="ConsoleModuleRunner.cs" />
     <ProjectReference Include="..\DiscImageStudio.Burning\DiscImageStudio.Burning.csproj" />
     <ProjectReference Include="..\DiscImageStudio.Imaging\DiscImageStudio.Imaging.csproj" />
     <ProjectReference Include="..\DiscImageStudio.Cd\DiscImageStudio.Cd.csproj" />

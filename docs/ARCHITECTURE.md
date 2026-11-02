@@ -6,8 +6,9 @@
 
 ```mermaid
 flowchart LR
-    GUI[WPF GUI / CLI] --> Imaging[DiscImageStudio.Imaging]
+    GUI[Windows WPF GUI / CLI] --> Imaging[DiscImageStudio.Imaging]
     Imaging --> Catalog[DiscModuleCatalog]
+    CLI[Linux / macOS CLI] --> Catalog
     GUI --> Burning[DiscImageStudio.Burning]
     Burning --> IMAPI[Windows IMAPI2]
     Catalog --> Contract[IOpticalDiscModule]
@@ -19,6 +20,8 @@ flowchart LR
     BD --> BdEngine[BD encoder / 17PP / ECC]
     BD --> Iso[DiscImageStudio.Iso / UDF 2.01]
 ```
+
+`DiscImageStudio.Cli` 和 Windows 桌面程序从同一份模块目录执行离线命令。`DiscImageStudio.ImageIO` 在 Windows 桌面目标使用 WIC，在通用 `net10.0` 目标使用 StbImageSharp 读图、StbImageWriteSharp 写 PNG。两个后端都向生成器提供相同顺序的 BGRA 像素。蓝光共用透明度合成和灰度转换代码，CD 和 DVD 也分别共用各自原有的采样算法。
 
 ## Core 契约
 
