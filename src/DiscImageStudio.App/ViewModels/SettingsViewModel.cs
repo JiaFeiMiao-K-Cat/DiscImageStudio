@@ -53,6 +53,7 @@ public partial class SettingsViewModel : ObservableObject
             L.SystemLanguage => 0,
             L.TraditionalChinese => 2,
             L.English => 3,
+            L.Japanese => 4,
             L.Chinese => 1,
             _ => 0,
         };
@@ -119,6 +120,7 @@ public partial class SettingsViewModel : ObservableObject
                 0 => L.SystemLanguage,
                 2 => L.TraditionalChinese,
                 3 => L.English,
+                4 => L.Japanese,
                 1 => L.Chinese,
                 _ => L.SystemLanguage,
             },
