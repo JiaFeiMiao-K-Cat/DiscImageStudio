@@ -510,8 +510,7 @@ internal static class Program
                 }
                 else
                 {
-                    uint needed = checked((fileSectors + 32 + DvdEccBlockEncoder.SectorCount - 1)
-                        / DvdEccBlockEncoder.SectorCount * DvdEccBlockEncoder.SectorCount);
+                    uint needed = checked(fileSectors + 32);
                     bool whiteIsBlank = ReadBoolean(arguments, "white-is-blank", fallback: true);
                     IReadOnlyList<DvdFreeRegion> runs = DvdTransparencyScanner.FindFreeRuns(
                         arguments.Require("image"), imageMapping, probeStart, default,
@@ -528,9 +527,7 @@ internal static class Program
                     fileSegments = [];
                     foreach (Iso9660ImageWriter.IsoSegment used in isoLayout.FileSegments)
                     {
-                        uint end = checked((used.EndLbaExclusive + DvdEccBlockEncoder.SectorCount - 1)
-                            / DvdEccBlockEncoder.SectorCount * DvdEccBlockEncoder.SectorCount);
-                        fileSegments.Add((used.StartLba, end));
+                        fileSegments.Add((used.StartLba, used.EndLbaExclusive));
                     }
                 }
             }

@@ -233,7 +233,7 @@ public static class Iso9660ImageWriter
         }
 
         /// <summary>True once every file byte and its sector padding has been written.</summary>
-        public bool Completed => _input is null && _nextFile >= _files.Count;
+        public bool Completed => _nextFile >= _files.Count && (_input is null || (_remaining == 0 && _padding == 0));
 
         public void WriteSectors(Stream output, uint sectors)
         {
@@ -267,6 +267,45 @@ public static class Iso9660ImageWriter
                     output.Write(_buffer, 0, count);
                     _padding -= count;
                     request -= count;
+                }
+                else
+                {
+                    Close();
+                }
+            }
+        }
+
+        /// <summary>Fills whole sectors of <paramref name="destination"/> with the next file bytes.</summary>
+        public void FillSectors(Span<byte> destination)
+        {
+            if (destination.Length % LogicalSectorBytes != 0)
+                throw new ArgumentException("Destination must hold whole sectors.", nameof(destination));
+            int offset = 0;
+            while (offset < destination.Length)
+            {
+                _cancellationToken.ThrowIfCancellationRequested();
+                if (_input is null && _nextFile < _files.Count) Open(_files[_nextFile++]);
+                if (_input is null)
+                {
+                    destination[offset..].Clear();
+                    return;
+                }
+
+                if (_remaining > 0)
+                {
+                    int count = (int)Math.Min(destination.Length - offset, _remaining);
+                    int read = _input.Read(destination.Slice(offset, count));
+                    if (read == 0)
+                        throw new EndOfStreamException($"Source file ended early while streaming ISO: {_current!.SourcePath}");
+                    offset += read;
+                    _remaining -= read;
+                }
+                else if (_padding > 0)
+                {
+                    int count = (int)Math.Min(destination.Length - offset, _padding);
+                    destination.Slice(offset, count).Clear();
+                    offset += count;
+                    _padding -= count;
                 }
                 else
                 {

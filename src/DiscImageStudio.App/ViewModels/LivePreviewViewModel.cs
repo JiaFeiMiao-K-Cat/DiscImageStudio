@@ -856,14 +856,27 @@ public partial class LivePreviewViewModel : ObservableObject
             TempFiles.LivePreviewDirectory,
             $"dvd-live-warp-{revision}.png");
         string summaryJsonPath = outputPath + ".json";
-        if (!TryBuildDvdCalibrateCommand(
+        // Planning files in blank areas scans the whole disc spiral; keep it off the UI thread.
+        StatusText = L.T("正在规划文件区域…");
+        (bool built, string imagePath, string[] arguments, int outputSize, int samplesPerSector,
+            DvdHybridStreamingPlan? filePlan, string message) = await Task.Run(() =>
+        {
+            bool ok = TryBuildDvdCalibrateCommand(
                 outputPath,
-                out string imagePath,
-                out string[] arguments,
-                out int outputSize,
-                out int samplesPerSector,
-                out DvdHybridStreamingPlan? filePlan,
-                out string message))
+                out string path,
+                out string[] args,
+                out int size,
+                out int samples,
+                out DvdHybridStreamingPlan? plan,
+                out string text);
+            return (ok, path, args, size, samples, plan, text);
+        });
+        if (cancellationToken.IsCancellationRequested || revision != _livePreviewRevision)
+        {
+            return;
+        }
+
+        if (!built)
         {
             StatusText = message;
             if (!HasResultImage)

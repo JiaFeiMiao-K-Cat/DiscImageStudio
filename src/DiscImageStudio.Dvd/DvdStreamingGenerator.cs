@@ -220,10 +220,7 @@ public static class DvdStreamingGenerator
             dataDirectory, options.TotalSectors, volumeLabel);
         uint scanFrom = AlignToEccBlock(probe.MetadataEndLbaExclusive, PsnOffset);
         uint fileSectors = probe.DataEndLbaExclusive - probe.MetadataEndLbaExclusive;
-        uint needed = fileSectors == 0
-            ? 0
-            : checked((fileSectors + 32 + DvdEccBlockEncoder.SectorCount - 1)
-                / DvdEccBlockEncoder.SectorCount * DvdEccBlockEncoder.SectorCount);
+        uint needed = fileSectors == 0 ? 0 : checked(fileSectors + 32);
         IReadOnlyList<DvdFreeRegion> runs = DvdTransparencyScanner.FindFreeRuns(
             imagePath, CreateImageMapping(options), scanFrom, cancellationToken,
             whiteIsBlank ? DvdTransparencyScanner.DefaultWhiteLuminance : DvdTransparencyScanner.TransparentOnly);
@@ -259,8 +256,7 @@ public static class DvdStreamingGenerator
             return new DvdHybridStreamingPlan(probe, scanFrom, options.TotalSectors);
 
         // Extra extents enlarge the directory records, so keep a little headroom.
-        uint needed = checked((fileSectors + 32 + DvdEccBlockEncoder.SectorCount - 1)
-            / DvdEccBlockEncoder.SectorCount * DvdEccBlockEncoder.SectorCount);
+        uint needed = checked(fileSectors + 32);
         IReadOnlyList<DvdFreeRegion> runs = DvdTransparencyScanner.FindFreeRuns(
             imagePath, CreateImageMapping(options), scanFrom, cancellationToken,
             whiteIsBlank ? DvdTransparencyScanner.DefaultWhiteLuminance : DvdTransparencyScanner.TransparentOnly);
@@ -273,20 +269,18 @@ public static class DvdStreamingGenerator
             dataDirectory, options.TotalSectors, volumeLabel,
             candidateSegments: chosen.Select(run => new Iso9660ImageWriter.IsoSegment(run.StartLba, run.EndLbaExclusive)).ToList());
         uint drawingStartLba = AlignToEccBlock(isoLayout.MetadataEndLbaExclusive, PsnOffset);
-        List<DvdFileSegment> segments = [];
-        uint previousEnd = drawingStartLba;
-        foreach (Iso9660ImageWriter.IsoSegment used in isoLayout.FileSegments)
-        {
-            uint end = checked((used.EndLbaExclusive + DvdEccBlockEncoder.SectorCount - 1)
-                / DvdEccBlockEncoder.SectorCount * DvdEccBlockEncoder.SectorCount);
-            if (used.StartLba % DvdEccBlockEncoder.SectorCount != 0 || used.StartLba < previousEnd
-                || end > options.TotalSectors)
-                throw new InvalidOperationException("File segments are not aligned to ECC Blocks.");
-            segments.Add(new DvdFileSegment(used.StartLba, end));
-            previousEnd = end;
-        }
+                List<DvdFileSegment> segments = [];
+                uint previousEnd = drawingStartLba;
+                foreach (Iso9660ImageWriter.IsoSegment used in isoLayout.FileSegments)
+                {
+                    // File data replaces single sectors of the drawn blocks, so no block alignment is needed.
+                    if (used.StartLba < previousEnd || used.EndLbaExclusive > options.TotalSectors)
+                        throw new InvalidOperationException("File segments overlap the metadata or leave the disc.");
+                    segments.Add(new DvdFileSegment(used.StartLba, used.EndLbaExclusive));
+                    previousEnd = used.EndLbaExclusive;
+                }
 
-        return new DvdHybridStreamingPlan(isoLayout, drawingStartLba, options.TotalSectors, segments);
+                return new DvdHybridStreamingPlan(isoLayout, drawingStartLba, options.TotalSectors, segments);
     }
 
     public static DvdStreamingSummary Generate(
@@ -445,23 +439,16 @@ public static class DvdStreamingGenerator
         int totalBlocks = checked((int)(options.TotalSectors / DvdEccBlockEncoder.SectorCount));
         long prefixBytes = checked((long)plan.DrawingStartLba * DvdEccBlockEncoder.PayloadBytesPerSector);
         int prefixBlocks = checked((int)(plan.DrawingStartLba / DvdEccBlockEncoder.SectorCount));
-        IReadOnlyList<Iso9660ImageWriter.IsoSegment> exact = plan.IsoLayout.FileSegments;
-        List<(uint, uint)> skipped = plan.FileSegments.Select(s => (s.StartLba, s.EndLbaExclusive)).ToList();
-        int segmentIndex = 0;
+        List<(uint, uint)> fileSectors = plan.FileSegments.Select(s => (s.StartLba, s.EndLbaExclusive)).ToList();
 
         using Iso9660ImageWriter.FileRegionWriter files =
             HybridIsoImageWriter.CreateFileRegionWriter(plan.IsoLayout, cancellationToken);
         MultiBlockSolveOptions solveOptions = CreateSolveOptions(
             options, plan.DrawingStartLba, plan.DrawingSectors);
-        FastDvdStreamSummary drawing = FastDispersionImageWriter.WriteStreamSkipping(
-            sourceFullPath, output, solveOptions, skipped,
-            (start, stop) =>
-            {
-                // Only the last segment can end inside an ECC block; the writer emits zeros once
-                // every file has been written, so one call covers data and padding.
-                segmentIndex++;
-                files.WriteSectors(output, stop - start);
-            },
+        // Fill is called once per file interval in ascending order, so the writer streams the files in order.
+        FastDvdStreamSummary drawing = FastDispersionImageWriter.WriteStreamOverlay(
+            sourceFullPath, output, solveOptions, fileSectors,
+            (startLba, sectors) => files.FillSectors(sectors),
             value => progress?.Invoke(new DvdStreamingProgress(
                 checked(prefixBytes + value.BytesWritten),
                 options.ContentLength,

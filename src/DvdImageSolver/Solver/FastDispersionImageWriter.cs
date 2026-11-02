@@ -60,7 +60,7 @@ public static class FastDispersionImageWriter
         RasterImage image = RasterImage.Load(imagePath);
         PayloadImageSampler sampler = new(image, options.ImageMapping);
         int rangeBlocks = checked((int)(options.FillSectors / DvdEccBlockEncoder.SectorCount));
-        // Blocks that carry file data are left untouched in the ISO.
+        // Sectors that carry file data are left untouched in the ISO; a block is only skipped when it is fully covered.
         List<int> blockIndices = new(rangeBlocks);
         int skipIndex = 0;
         for (int block = 0; block < rangeBlocks; block++)
@@ -68,7 +68,8 @@ public static class FastDispersionImageWriter
             uint lba = options.StartLba + ((uint)block * DvdEccBlockEncoder.SectorCount);
             while (skipped is not null && skipIndex < skipped.Count && skipped[skipIndex].EndLbaExclusive <= lba)
                 skipIndex++;
-            if (skipped is not null && skipIndex < skipped.Count && skipped[skipIndex].StartLba <= lba)
+            if (skipped is not null && skipIndex < skipped.Count && skipped[skipIndex].StartLba <= lba
+                && skipped[skipIndex].EndLbaExclusive >= lba + DvdEccBlockEncoder.SectorCount)
                 continue;
             blockIndices.Add(block);
         }
@@ -105,7 +106,7 @@ public static class FastDispersionImageWriter
             for (int batchOffset = 0; batchOffset < batchCount; batchOffset++)
             {
                 GeneratedBlock block = generated[batchOffset];
-                iso.WriteBlock(block.Lba, block.Payloads);
+                WriteBlockAroundFiles(iso, block, skipped);
                 controlledWords += block.ControlledWords;
                 int completedBlocks = batchStart + batchOffset + 1;
                 progress?.Invoke(new FastDispersionProgress(
@@ -129,6 +130,26 @@ public static class FastDispersionImageWriter
             isoSectors);
     }
 
+    private static void WriteBlockAroundFiles(RawIsoImageWriter iso, GeneratedBlock block, IReadOnlyList<(uint StartLba, uint EndLbaExclusive)>? skipped)
+    {
+        const int sector = DvdEccBlockEncoder.PayloadBytesPerSector;
+        uint blockEnd = block.Lba + DvdEccBlockEncoder.SectorCount;
+        uint cursor = block.Lba;
+        if (skipped is not null)
+        {
+            foreach ((uint start, uint stop) in skipped)
+            {
+                if (stop <= block.Lba) continue;
+                if (start >= blockEnd) break;
+                uint from = Math.Max(start, block.Lba);
+                if (from > cursor) iso.WriteBlock(cursor, block.Payloads.AsSpan((int)(cursor - block.Lba) * sector, (int)(from - cursor) * sector));
+                cursor = Math.Min(stop, blockEnd);
+            }
+        }
+
+        if (cursor < blockEnd) iso.WriteBlock(cursor, block.Payloads.AsSpan((int)(cursor - block.Lba) * sector, (int)(blockEnd - cursor) * sector));
+    }
+
     public static FastDvdStreamSummary WriteStream(
         string imagePath,
         Stream output,
@@ -143,76 +164,38 @@ public static class FastDispersionImageWriter
     }
 
     /// <summary>
-    /// Draws the range described by <paramref name="options"/> but leaves the ascending,
-    /// disjoint, block-aligned <paramref name="skipped"/> intervals to the caller: for each one
-    /// <paramref name="writeSkipped"/> must append exactly that many sectors. The image is
-    /// loaded once and the drawing stays on the full-disc geometry.
+    /// Draws the range described by <paramref name="options"/> in full, then replaces the sectors of
+    /// the ascending, disjoint <paramref name="fileSectors"/> intervals with file data. Intervals need
+    /// not be ECC-aligned. The image is loaded once and the drawing keeps its full-disc geometry.
     /// </summary>
-    public static FastDvdStreamSummary WriteStreamSkipping(
+    public static FastDvdStreamSummary WriteStreamOverlay(
         string imagePath,
         Stream output,
         MultiBlockSolveOptions options,
-        IReadOnlyList<(uint StartLba, uint EndLbaExclusive)> skipped,
-        Action<uint, uint> writeSkipped,
+        IReadOnlyList<(uint StartLba, uint EndLbaExclusive)> fileSectors,
+        SectorFill fill,
         Action<FastDvdStreamProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(skipped);
-        ArgumentNullException.ThrowIfNull(writeSkipped);
+        ArgumentNullException.ThrowIfNull(fileSectors);
+        ArgumentNullException.ThrowIfNull(fill);
         ValidateStream(output, options);
+        uint end = checked(options.StartLba + options.FillSectors);
+        uint previous = options.StartLba;
+        foreach ((uint start, uint stop) in fileSectors)
+        {
+            if (start < previous || stop <= start || stop > end)
+                throw new ArgumentException("File sector intervals must be ascending, disjoint and inside the drawing range.", nameof(fileSectors));
+            previous = stop;
+        }
+
         RasterImage image = RasterImage.Load(imagePath);
         PayloadImageSampler sampler = new(image, options.ImageMapping);
-        uint end = checked(options.StartLba + options.FillSectors);
-        long totalBytes = checked((long)options.FillSectors * DvdEccBlockEncoder.PayloadBytesPerSector);
-        int totalBlocks = checked((int)(options.FillSectors / DvdEccBlockEncoder.SectorCount));
-        long doneBytes = 0;
-        int doneBlocks = 0;
-        long controlled = 0;
-        Stopwatch stopwatch = Stopwatch.StartNew();
-
-        void Draw(uint from, uint to)
-        {
-            if (to <= from) return;
-            long baseBytes = doneBytes;
-            int baseBlocks = doneBlocks;
-            // Block seeds derive from the block index, so continue the numbering of the whole range.
-            int blockOffset = checked((int)((from - options.StartLba) / DvdEccBlockEncoder.SectorCount));
-            MultiBlockSolveOptions part = options with
-            {
-                StartLba = from,
-                FillSectors = to - from,
-                RandomSeed = unchecked(options.RandomSeed + (blockOffset * 1_000_003)),
-            };
-            FastDvdStreamSummary summary = WriteSampledStream(sampler, output, part,
-                value => progress?.Invoke(new FastDvdStreamProgress(
-                    baseBlocks + value.CompletedBlocks, totalBlocks, value.BlockLba,
-                    baseBytes + value.BytesWritten, totalBytes, stopwatch.Elapsed)),
-                cancellationToken);
-            controlled += summary.ControlledWords;
-            doneBytes += summary.BytesWritten;
-            doneBlocks += summary.CompletedBlocks;
-        }
-
-        uint position = options.StartLba;
-        foreach ((uint start, uint stop) in skipped)
-        {
-            if (start < position || stop <= start || stop > end
-                || start % DvdEccBlockEncoder.SectorCount != 0 || stop % DvdEccBlockEncoder.SectorCount != 0)
-                throw new ArgumentException("Skipped intervals must be ascending, ECC-aligned and inside the drawing range.", nameof(skipped));
-            Draw(position, start);
-            cancellationToken.ThrowIfCancellationRequested();
-            writeSkipped(start, stop);
-            doneBytes += (long)(stop - start) * DvdEccBlockEncoder.PayloadBytesPerSector;
-            doneBlocks += checked((int)((stop - start) / DvdEccBlockEncoder.SectorCount));
-            progress?.Invoke(new FastDvdStreamProgress(doneBlocks, totalBlocks, stop, doneBytes, totalBytes, stopwatch.Elapsed));
-            position = stop;
-        }
-
-        Draw(position, end);
-        output.Flush();
-        stopwatch.Stop();
-        return new FastDvdStreamSummary(totalBlocks, options.FillSectors, doneBytes, controlled, stopwatch.Elapsed);
+        return WriteSampledStream(sampler, output, options, progress, cancellationToken, fileSectors, fill);
     }
+
+    /// <summary>Fills whole 2048-byte sectors; <paramref name="startLba"/> is the LBA of the first one.</summary>
+    public delegate void SectorFill(uint startLba, Span<byte> sectors);
 
     /// <summary>
     /// Encodes an opaque analytic pattern without first rasterizing it. The callback
@@ -292,9 +275,12 @@ public static class FastDispersionImageWriter
         Stream output,
         MultiBlockSolveOptions options,
         Action<FastDvdStreamProgress>? progress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IReadOnlyList<(uint StartLba, uint EndLbaExclusive)>? overlay = null,
+        SectorFill? fill = null)
     {
         int totalBlocks = checked((int)(options.FillSectors / DvdEccBlockEncoder.SectorCount));
+        int overlayIndex = 0;
         int parallelism = options.FastParallelism == 0
             ? Environment.ProcessorCount
             : options.FastParallelism;
@@ -324,6 +310,22 @@ public static class FastDispersionImageWriter
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 GeneratedBlock block = generated[batchOffset];
+                if (overlay is not null && fill is not null)
+                {
+                    // File sectors replace the generated bytes of the sectors they occupy.
+                    uint blockEnd = block.Lba + DvdEccBlockEncoder.SectorCount;
+                    while (overlayIndex < overlay.Count && overlay[overlayIndex].EndLbaExclusive <= block.Lba)
+                        overlayIndex++;
+                    for (int i = overlayIndex; i < overlay.Count && overlay[i].StartLba < blockEnd; i++)
+                    {
+                        uint from = Math.Max(overlay[i].StartLba, block.Lba);
+                        uint to = Math.Min(overlay[i].EndLbaExclusive, blockEnd);
+                        fill(from, block.Payloads.AsSpan(
+                            checked((int)(from - block.Lba) * DvdEccBlockEncoder.PayloadBytesPerSector),
+                            checked((int)(to - from) * DvdEccBlockEncoder.PayloadBytesPerSector)));
+                    }
+                }
+
                 output.Write(block.Payloads);
                 bytesWritten = checked(bytesWritten + block.Payloads.Length);
                 controlledWords += block.ControlledWords;

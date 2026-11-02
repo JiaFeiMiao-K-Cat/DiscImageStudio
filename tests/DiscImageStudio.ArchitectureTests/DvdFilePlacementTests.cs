@@ -137,9 +137,9 @@ internal static class DvdFilePlacementTests
         DvdStreamingOptions options = new(256, 24, 58, FastParallelism: 1);
         DvdHybridStreamingPlan plan = DvdStreamingGenerator.PrepareHybridInTransparency(data, ring, options, "PLACEMENT");
         Require(plan.FilesInTransparentRegion && !plan.FilesAtOuterRing
-            && plan.FileSegments.All(s => s.StartLba % 16 == 0 && s.EndLbaExclusive % 16 == 0
-                && s.StartLba >= plan.DrawingStartLba && s.EndLbaExclusive <= plan.DrawingEndLbaExclusive),
-            "transparent segments are block aligned and inside the drawing interval");
+            && plan.FileSegments.All(s => s.StartLba >= plan.DrawingStartLba
+                && s.EndLbaExclusive <= plan.DrawingEndLbaExclusive),
+            "transparent segments are inside the drawing interval");
         Require(plan.FileSegments[0].StartLba > plan.DrawingStartLba
             && plan.FileSegments[^1].EndLbaExclusive < plan.DrawingEndLbaExclusive,
             "picture remains on both sides of the file segments");
