@@ -1,5 +1,7 @@
 # 蓝光模式（单层 BD-R）
 
+[Español](ADDING_BLURAY.es.md)
+
 蓝光实现位于 `src/DiscImageStudio.BluRay`，引用介质无关的 Core 和 `src/DiscImageStudio.Iso`，不依赖 CD/DVD 编码器。依据 ISO/IEC 30190:2021，当前范围为 **120 mm、单层 25 GB BD-R**；不支持双层、BDXL、BD-RE 或视频蓝光制作。
 
 ## 在应用中的位置

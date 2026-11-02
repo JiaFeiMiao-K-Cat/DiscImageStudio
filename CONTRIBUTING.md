@@ -1,5 +1,7 @@
 # Contributing to Disc Image Studio
 
+[Español](CONTRIBUTING.es.md)
+
 欢迎参与 Disc Image Studio。请先通读本文档；它覆盖问题报告、开发环境搭建、模块边界规则、验证要求与提交流程。
 
 ## 报告问题

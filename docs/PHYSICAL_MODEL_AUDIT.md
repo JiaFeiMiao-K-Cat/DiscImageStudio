@@ -1,5 +1,7 @@
 # CD / DVD 生成物理模型复核
 
+[Español](PHYSICAL_MODEL_AUDIT.es.md)
+
 复核日期：2026-09-21。对象为 `DiscImageStudio-GitHub` 当前工作区（包含尚未提交的标定实现），基准提交 `6c55a18`。本次只做标准核对、源码审计和独立数值验证，未修改生成器、预设或刻录行为。
 
 ## 结论

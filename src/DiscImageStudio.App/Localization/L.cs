@@ -14,6 +14,7 @@ public static class L
     public const string TraditionalChinese = "zh-TW";
     public const string English = "en";
     public const string Japanese = "ja";
+    public const string Spanish = "es";
     public const string SystemLanguage = "system";
 
     private static readonly CultureInfo StartupCulture = CultureInfo.CurrentUICulture;
@@ -26,6 +27,8 @@ public static class L
         "system" => SystemLanguage,
         "en" => English,
         string name when name.StartsWith("en-", StringComparison.Ordinal) => English,
+        "es" => Spanish,
+        string name when name.StartsWith("es-", StringComparison.Ordinal) => Spanish,
         "ja" => Japanese,
         string name when name.StartsWith("ja-", StringComparison.Ordinal) => Japanese,
         string name when IsTraditionalChinese(name) => TraditionalChinese,
@@ -40,6 +43,7 @@ public static class L
         if (normalized != SystemLanguage) return normalized;
 
         CultureInfo culture = systemCulture ?? StartupCulture;
+        if (culture.TwoLetterISOLanguageName == "es") return Spanish;
         if (culture.TwoLetterISOLanguageName == "ja") return Japanese;
         if (culture.TwoLetterISOLanguageName != "zh") return English;
         return IsTraditionalChinese(culture.Name) ? TraditionalChinese : Chinese;

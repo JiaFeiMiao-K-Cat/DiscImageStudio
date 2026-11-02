@@ -1,6 +1,6 @@
 <div align="center">
 
-[简体中文](README.md) | [繁體中文](README.zh-TW.md) | **English** | [日本語](README.ja.md)
+[简体中文](README.md) | [繁體中文](README.zh-TW.md) | **English** | [日本語](README.ja.md) | [Español](README.es.md)
 
 ![Banner](docs/images/DiscImageStudio_Banner_2.png)
 
@@ -92,7 +92,7 @@ See the [assisted calibration guide](docs/CALIBRATION.md) for the workflow and p
 
 ### Application
 
-- Multilingual interface: Click **Settings** in the upper-right corner, then choose Simplified Chinese, Traditional Chinese, English, Japanese, or **System** under **General → Language**. Save and restart the app to apply the language change. Language and theme both follow the system by default; existing explicitly saved preferences are preserved. For the system language, `zh-TW`, `zh-HK`, `zh-MO`, and `zh-Hant` use Traditional Chinese, other Chinese locales use Simplified Chinese, Japanese locales use Japanese, and all other locales use English.
+- Multilingual interface: Click **Settings** in the upper-right corner, then choose Simplified Chinese, Traditional Chinese, English, Japanese, Spanish, or **System** under **General → Language**. Save and restart the app to apply the language change. Language and theme both follow the system by default; existing explicitly saved preferences are preserved. For the system language, `zh-TW`, `zh-HK`, `zh-MO`, and `zh-Hant` use Traditional Chinese, other Chinese locales use Simplified Chinese, Japanese locales use Japanese, Spanish locales use Spanish, and all other locales use English.
 - Two entry points: Launch without arguments to open the GUI, or with arguments to use the unified command line.
 - Modular design: CD, DVD, and Blu-ray connect through `IOpticalDiscModule`, sharing a command catalog and job contracts. See the [architecture guide](docs/ARCHITECTURE.md).
 

@@ -122,9 +122,29 @@ jobs:
       - name: Render GUI screenshot
         run: dotnet run --project src/DiscImageStudio.App --configuration Release --no-build -- ui-snapshot --output artifacts/store/home-screen.png
 
+      - name: Render Spanish interface screenshots
+        shell: pwsh
+        run: |
+          $scenes = @(
+            @('--language', 'es', '--output', 'artifacts/store/home-es.png'),
+            @('--tab', '1', '--language', 'es', '--output', 'artifacts/store/design-es.png'),
+            @('--tab', '2', '--language', 'es', '--output', 'artifacts/store/preview-es.png'),
+            @('--tab', '3', '--language', 'es', '--output', 'artifacts/store/export-es.png'),
+            @('--tab', '4', '--language', 'es', '--output', 'artifacts/store/burn-es.png'),
+            @('--tab', '5', '--language', 'es', '--output', 'artifacts/store/calibration-es.png'),
+            @('--project-dialog', 'new', '--language', 'es', '--output', 'artifacts/store/new-project-es.png'),
+            @('--about-dialog', '--language', 'es', '--output', 'artifacts/store/about-es.png'),
+            @('--settings-dialog', '--language', 'es', '--output', 'artifacts/store/settings-es.png'),
+            @('--settings-dialog', '--settings-view', 'storage', '--language', 'es', '--output', 'artifacts/store/settings-storage-es.png')
+          )
+          foreach ($scene in $scenes) {
+            dotnet run --project src/DiscImageStudio.App --configuration Release --no-build -- ui-snapshot @scene
+            if ($LASTEXITCODE -ne 0) { throw "Spanish UI snapshot failed." }
+          }
+
       - uses: actions/upload-artifact@v4
         with:
           name: validation-artifacts
           path: |
             artifacts/ci/cd-smoke.raw
-            artifacts/store/home-screen.png
+            artifacts/store/*.png

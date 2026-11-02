@@ -1,5 +1,7 @@
 # 蓝光字节与位周期密度分析
 
+[Español](README.es.md)
+
 分析单层 BD-R 的数字编码链，筛选用于实盘明暗映射测试的输入模式。结果不定义黑白极性，也不生成整盘镜像或执行刻录。详细结论见 [分析报告](../../docs/BLURAY_BYTE_DENSITY.md)。
 
 需要 .NET 10 SDK；独立标准表分析只需 Python 标准库，画图另需 matplotlib / numpy。在仓库根目录运行：

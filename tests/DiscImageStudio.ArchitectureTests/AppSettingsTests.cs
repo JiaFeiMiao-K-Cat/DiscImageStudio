@@ -131,6 +131,10 @@ internal static class AppSettingsTests
             ("ja", "ja"),
             ("ja-JP", "ja"),
             ("JA-jp", "ja"),
+            ("es", "es"),
+            ("es-ES", "es"),
+            ("ES-mx", "es"),
+            ("es-419", "es"),
         ];
         foreach ((string stored, string canonical) in cases)
         {

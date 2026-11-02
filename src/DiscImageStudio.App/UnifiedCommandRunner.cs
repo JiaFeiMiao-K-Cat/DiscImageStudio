@@ -133,7 +133,7 @@ internal static class UnifiedCommandRunner
                           [--project FILE.discproj] [--live-input IMAGE --live-disc cd|dvd]
                           [--dock] [--burn-source project|calibration]
                           [--about-dialog] [--preset-dialog] [--settings-dialog]
-                          [--language zh-CN|zh-TW|en|ja|system]
+                          [--language zh-CN|zh-TW|en|ja|es|system]
                           [--settings-view general|storage] [--theme dark|light|system]
                           [--expand] [--scroll N] [--home-hover]
                           [--burn-progress write|buffer|finalize]

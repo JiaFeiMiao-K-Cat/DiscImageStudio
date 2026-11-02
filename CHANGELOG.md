@@ -1,6 +1,18 @@
 # Changelog
 
+[Español](CHANGELOG.es.md)
+
 ## Unreleased
+
+### 中文
+
+- 新增西班牙文界面：在「设置 → 通用 → 语言」选择「Español」并保存、重启；西班牙文系统也可跟随系统。全部 734 条应用文案包含 `es` 翻译，保留格式参数、数值文化和原有回退规则。
+- 新增完整西班牙文文档副本与 README 语言入口；原始文档、署名及许可证保留不变。补充语言设置回归与 Windows 西班牙文界面截图检查。
+
+### English
+
+- Added a Spanish interface. Choose Español under Settings → General → Language, save, and restart; Spanish system locales can also follow the system. All 734 application strings include `es` translations while preserving format arguments, numeric culture, and existing fallback rules.
+- Added Spanish counterparts for the maintained documentation and Spanish links in every README language switcher. Original documents, attribution, and licenses are preserved. Extended language-setting regressions and Windows Spanish interface snapshot checks.
 
 ## [1.3.6] - 2026-11-02
 

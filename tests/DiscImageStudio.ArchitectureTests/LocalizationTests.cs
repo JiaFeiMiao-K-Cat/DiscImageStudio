@@ -16,6 +16,7 @@ internal static class LocalizationTests
         (2, L.TraditionalChinese),
         (3, L.English),
         (4, L.Japanese),
+        (5, L.Spanish),
     ];
 
     public static void Run()
@@ -54,7 +55,7 @@ internal static class LocalizationTests
             Require(translations.TryGetValue(L.Chinese, out string? chinese)
                     && !string.IsNullOrWhiteSpace(chinese), key + " has Simplified Chinese text");
             HashSet<string> sourceArguments = ReadArguments(chinese!, key);
-            foreach (string language in new[] { L.TraditionalChinese, L.English, L.Japanese })
+            foreach (string language in new[] { L.TraditionalChinese, L.English, L.Japanese, L.Spanish })
             {
                 Require(translations.TryGetValue(language, out string? translated)
                         && !string.IsNullOrWhiteSpace(translated), key + " has " + language + " text");
@@ -107,6 +108,17 @@ internal static class LocalizationTests
             Require(L.ResolveLanguage(L.SystemLanguage, CultureInfo.GetCultureInfo(language)) == L.Chinese,
                 language + " system locale uses Simplified Chinese");
         }
+        foreach (string language in new[] { "es", "es-ES", "es-MX", "es-419" })
+        {
+            Require(L.NormalizeLanguage(language) == L.Spanish, language + " normalizes to Spanish");
+            Require(L.ResolveLanguage(L.SystemLanguage, CultureInfo.GetCultureInfo(language)) == L.Spanish,
+                language + " system locale uses Spanish");
+        }
+        Require(L.NormalizeLanguage(" ES-mx ") == L.Spanish, "Spanish normalization ignores case and surrounding space");
+        Require(L.ResolveLanguage(L.Spanish, CultureInfo.GetCultureInfo("zh-CN")) == L.Spanish,
+            "explicit Spanish overrides a Chinese system");
+        Require(L.ResolveLanguage(L.English, CultureInfo.GetCultureInfo("es-MX")) == L.English,
+            "explicit English overrides a Spanish system");
         Require(L.NormalizeLanguage("SYSTEM") == L.SystemLanguage, "system preference normalizes");
         foreach (string? language in new string?[] { null, "", "   ", "unknown" })
         {
@@ -194,6 +206,18 @@ internal static class LocalizationTests
         Require(formattedJapanese.Contains(expected.ToString("N0", numericCulture), StringComparison.Ordinal)
                 && formattedJapanese.Contains(actual.ToString("N0", numericCulture), StringComparison.Ordinal),
             "Japanese interpolation preserves both formatted numeric arguments");
+
+        L.Initialize(L.Spanish);
+        Require(L.CurrentLanguage == L.Spanish && CultureInfo.CurrentUICulture.Name == L.Spanish,
+            "Spanish initializes the requested UI culture");
+        Require(L.T("Xaml.Cancel") == "Cancelar", "Spanish resolves from the embedded catalog");
+        Require(ReferenceEquals(CultureInfo.CurrentCulture, numericCulture), "Spanish does not alter numeric culture");
+        Require(L.T("unregistered localization key") == "unregistered localization key",
+            "Spanish preserves the missing-key fallback");
+        string formattedSpanish = L.F($"BD ISO 长度与总扇区数不符：需要 {expected:N0} 字节，实际 {actual:N0} 字节。");
+        Require(formattedSpanish.Contains(expected.ToString("N0", numericCulture), StringComparison.Ordinal)
+                && formattedSpanish.Contains(actual.ToString("N0", numericCulture), StringComparison.Ordinal),
+            "Spanish interpolation preserves numeric arguments and the numeric culture");
 
         L.Initialize(L.Chinese);
         Require(L.T("Xaml.Cancel") == "取消", "Chinese text is available after switching back");

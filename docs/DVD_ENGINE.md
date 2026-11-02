@@ -1,5 +1,7 @@
 # DVD NRZI 图像约束求解器
 
+[Español](DVD_ENGINE.es.md)
+
 本项目把连续 16 个 DVD 数据扇区作为一个 ECC Block，根据二维图片或指定的 NRZI pit/land 约束搜索可读的用户数据。
 
 固定约定：

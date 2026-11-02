@@ -1,5 +1,7 @@
 # 发布指南
 
+[Español](RELEASING.es.md)
+
 ## 分支与版本政策
 
 日常开发使用 `main` 加短期功能分支，通过 Pull Request 合并。修复版本也从 `main` 发布；暂不维护长期发布分支。

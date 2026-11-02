@@ -55,8 +55,8 @@ internal static class UiPreviewRenderer
             "system" => AppTheme.System,
             _ => throw new ArgumentException("Snapshot theme must be dark, light or system.", nameof(theme)),
         };
-        if (language is not (null or "zh-CN" or "zh-TW" or "en" or "ja" or "system"))
-            throw new ArgumentException("Snapshot language must be zh-CN, zh-TW, en, ja or system.", nameof(language));
+        if (language is not (null or "zh-CN" or "zh-TW" or "en" or "ja" or "es" or "system"))
+            throw new ArgumentException("Snapshot language must be zh-CN, zh-TW, en, ja, es or system.", nameof(language));
         Application application = AppHost.CreateApplication(ShutdownMode.OnExplicitShutdown, requestedTheme,
             language ?? L.Chinese);
         if (settingsDialog)

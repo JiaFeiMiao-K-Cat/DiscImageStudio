@@ -1,5 +1,7 @@
 # Independent 17PP reference
 
+[Español](README.es.md)
+
 Python standard-library tools transcribed from the user-supplied ISO/IEC 30190:2021, §13.17 and Figure 41. This implementation does not import the production C# encoder. The finite reference was cross-checked against C# for all 256 four-byte repeated inputs and 298 finite bit-pattern vectors; all matched. The expected vectors are included in the output artifacts.
 
 From the repository root:

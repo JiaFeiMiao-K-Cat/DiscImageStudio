@@ -67,6 +67,7 @@
                                     <ComboBoxItem Content="{loc:Text Settings.TraditionalChinese}" />
                                     <ComboBoxItem Content="English" />
                                     <ComboBoxItem Content="日本語" />
+                                    <ComboBoxItem Content="Español" />
                                 </ComboBox>
                                 <TextBlock Text="{loc:Text Settings.LanguageChangesTakeEffectAfterRestartingTheAppSystemUse}"
                                            Style="{StaticResource CompactHint}" Margin="0,8,0,0" TextWrapping="Wrap" />

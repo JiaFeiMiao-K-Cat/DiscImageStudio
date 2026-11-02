@@ -1,5 +1,7 @@
 # 固定标定参考图
 
+[Español](README.es.md)
+
 `target_slim.png` 是用户指定图片的原样副本，2400×2400 RGB。文件 SHA-256：
 
 ```text
