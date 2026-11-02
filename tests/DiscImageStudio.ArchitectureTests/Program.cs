@@ -89,6 +89,7 @@ DvdScrambledPatternTests.Run();
 ToneTests.Run();
 SaveTrailTests.Run();
 DvdCubicPipelineTests.Run();
+DvdTrackGeometryTests.Run();
 DvdFilePlacementTests.Run();
 DvdSimdSamplingTests.Run();
 AppCubicTests.Run();
