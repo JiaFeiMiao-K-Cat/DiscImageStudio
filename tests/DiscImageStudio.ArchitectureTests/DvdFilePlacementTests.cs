@@ -1,4 +1,4 @@
-﻿using System.Buffers.Binary;
+using System.Buffers.Binary;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -137,13 +137,12 @@ internal static class DvdFilePlacementTests
         DvdStreamingOptions options = new(256, 24, 58, FastParallelism: 1);
         DvdHybridStreamingPlan plan = DvdStreamingGenerator.PrepareHybridInTransparency(data, ring, options, "PLACEMENT");
         Require(plan.FilesInTransparentRegion && !plan.FilesAtOuterRing
-            && plan.FileRegionStartLba % 16 == 0 && plan.FileRegionEndLbaExclusive % 16 == 0
-            && plan.FileRegionStartLba >= plan.DrawingStartLba
-            && plan.FileRegionEndLbaExclusive <= plan.DrawingEndLbaExclusive,
-            "transparent region is block aligned and inside the drawing interval");
-        Require(plan.FileRegionStartLba > plan.DrawingStartLba
-            && plan.FileRegionEndLbaExclusive < plan.DrawingEndLbaExclusive,
-            "picture remains on both sides of the file region");
+            && plan.FileSegments.All(s => s.StartLba % 16 == 0 && s.EndLbaExclusive % 16 == 0
+                && s.StartLba >= plan.DrawingStartLba && s.EndLbaExclusive <= plan.DrawingEndLbaExclusive),
+            "transparent segments are block aligned and inside the drawing interval");
+        Require(plan.FileSegments[0].StartLba > plan.DrawingStartLba
+            && plan.FileSegments[^1].EndLbaExclusive < plan.DrawingEndLbaExclusive,
+            "picture remains on both sides of the file segments");
 
         using MemoryStream output = new();
         using ForwardOnlyStream forward = new(output);
@@ -157,8 +156,8 @@ internal static class DvdFilePlacementTests
         foreach (Entry entry in entries.Values.Where(entry => entry.Bytes.Length > 0))
         {
             uint end = entry.Lba + (uint)((entry.Bytes.Length + 2047) / 2048);
-            Require(entry.Lba >= plan.FileRegionStartLba && end <= plan.FileRegionEndLbaExclusive,
-                "all file extents stay inside the transparent region");
+            Require(plan.FileSegments.Any(s => entry.Lba >= s.StartLba && end <= s.EndLbaExclusive),
+                "all file extents stay inside the transparent segments");
         }
 
         string iso = Path.Combine(directory, "transparent.iso");
@@ -171,14 +170,24 @@ internal static class DvdFilePlacementTests
         DvdImageMetadata metadata = DvdImageMetadata.TryLoad(iso)
             ?? throw new InvalidOperationException("Missing transparent placement metadata.");
         Require(metadata.FilesInTransparentRegion && metadata.HasFileSystem
-            && metadata.FileRegionStartLba == plan.FileRegionStartLba
-            && metadata.FileRegionEndLbaExclusive == plan.FileRegionEndLbaExclusive
+            && metadata.FileSegments!.SequenceEqual(plan.FileSegments)
             && metadata.DrawingStartLba == plan.DrawingStartLba
             && metadata.DrawingEndLbaExclusive == plan.DrawingEndLbaExclusive,
             "sidecar records the transparent file region");
 
+        DvdTransparencyCapacity capacity = DvdStreamingGenerator.EstimateTransparentCapacity(
+            data, ring, options, "PLACEMENT");
+        Require(capacity.Fits && capacity.BlankSectors >= capacity.NeededSectors
+            && capacity.NeededSectors > 0 && capacity.SegmentsUsed >= 1
+            && capacity.RemainingBytes == capacity.BlankBytes - capacity.NeededBytes,
+            "capacity estimate fits the ring picture");
+
         string opaque = Path.Combine(directory, "opaque.png");
         WriteRingImage(opaque, transparentFrom: 0, transparentTo: 0);
+        DvdTransparencyCapacity none = DvdStreamingGenerator.EstimateTransparentCapacity(
+            data, opaque, options, "PLACEMENT");
+        Require(!none.Fits && none.BlankSectors == 0 && none.RemainingBytes < 0,
+            "capacity estimate reports the shortfall for an opaque picture");
         Throws<ArgumentException>(() => DvdStreamingGenerator.PrepareHybridInTransparency(
             data, opaque, options, "PLACEMENT"), "fully opaque picture has no room for files");
     }

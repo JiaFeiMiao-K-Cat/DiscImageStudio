@@ -66,9 +66,23 @@ public static class Iso9660ImageWriter
 
         public bool FilesAtOuterRing => _layout.FilesAtOuterRing;
 
-        /// <summary>True when the files occupy a caller-chosen block range inside the volume.</summary>
-        public bool FilesInRegion => _layout.FilesInRegion;
+        /// <summary>Caller-chosen sector runs that hold the file data, in ascending LBA order.</summary>
+        public IReadOnlyList<IsoSegment> FileSegments => _layout.FileSegments ?? [];
+
+        /// <summary>True when the files occupy caller-chosen sector runs inside the volume.</summary>
+        public bool FilesInRegion => FileSegments.Count > 0;
     }
+
+    /// <summary>A half-open run of sectors reserved for file data.</summary>
+    public readonly record struct IsoSegment(uint StartLba, uint EndLbaExclusive)
+    {
+        public uint Sectors => EndLbaExclusive - StartLba;
+    }
+
+    internal readonly record struct FileExtent(uint Lba, uint Sectors);
+
+    // ISO9660 stores an extent length in 32 bits; keep every piece below 4 GiB.
+    private const uint MaximumExtentSectors = 0x1FFFFF;
 
     public static LayoutPlan Plan(
         string? sourceDirectory,
@@ -76,10 +90,10 @@ public static class Iso9660ImageWriter
         string volumeLabel,
         DateTimeOffset? timestamp = null,
         bool filesAtOuterRing = false,
-        uint? fileDataStartLba = null)
+        IReadOnlyList<IsoSegment>? candidateSegments = null)
     {
-        if (fileDataStartLba.HasValue && filesAtOuterRing)
-            throw new ArgumentException("A fixed file start cannot be combined with outer-ring placement.");
+        if (candidateSegments is not null && filesAtOuterRing)
+            throw new ArgumentException("Candidate segments cannot be combined with outer-ring placement.");
         if (volumeSectors <= FirstMetadataLba)
         {
             throw new ArgumentOutOfRangeException(
@@ -99,7 +113,7 @@ public static class Iso9660ImageWriter
             : ReadTree(sourceFullPath);
         List<IsoNode> directories = AssignDirectoryNumbers(root);
         AssignIdentifiers(directories);
-        Layout layout = BuildLayout(directories, volumeSectors, filesAtOuterRing, fileDataStartLba);
+        Layout layout = BuildLayout(directories, volumeSectors, filesAtOuterRing, candidateSegments);
         return new LayoutPlan(
             sourceFullPath,
             volumeSectors,
@@ -170,7 +184,7 @@ public static class Iso9660ImageWriter
         writer.PadToLba(plan.VolumeSectors);
     }
 
-    /// <summary>Writes only the front metadata of a fixed-region layout.</summary>
+    /// <summary>Writes only the front metadata of a segmented layout.</summary>
     public static void WriteRegionPrefix(LayoutPlan plan, Stream output, uint endLbaExclusive,
         CancellationToken cancellationToken = default)
     {
@@ -178,26 +192,117 @@ public static class Iso9660ImageWriter
         ArgumentNullException.ThrowIfNull(output);
         if (!output.CanWrite) throw new ArgumentException("ISO output must be writable.", nameof(output));
         if (!plan.FilesInRegion || endLbaExclusive < plan.MetadataEndLbaExclusive || endLbaExclusive > plan.FileDataStartLba)
-            throw new ArgumentOutOfRangeException(nameof(endLbaExclusive), "Metadata boundary overlaps the file region.");
+            throw new ArgumentOutOfRangeException(nameof(endLbaExclusive), "Metadata boundary overlaps the file segments.");
         ValidateSources(plan, cancellationToken);
         SequentialIsoWriter writer = new(output, cancellationToken);
         WriteMetadata(plan, writer);
         writer.PadToLba(endLbaExclusive);
     }
 
-    /// <summary>Writes only the file contents of a fixed region, padding to its end.</summary>
-    public static void WriteFileRegion(LayoutPlan plan, Stream output, uint endLbaExclusive,
-        CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Creates a writer that emits the file bytes segment by segment, in the order the layout
+    /// allocated them. Each call to <see cref="FileRegionWriter.WriteSectors"/> must be given the
+    /// sector count of the next segment.
+    /// </summary>
+    public static FileRegionWriter CreateFileRegionWriter(LayoutPlan plan, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(plan);
-        ArgumentNullException.ThrowIfNull(output);
-        if (!output.CanWrite) throw new ArgumentException("ISO output must be writable.", nameof(output));
-        if (!plan.FilesInRegion || endLbaExclusive < plan.DataEndLbaExclusive || endLbaExclusive > plan.VolumeSectors)
-            throw new ArgumentOutOfRangeException(nameof(endLbaExclusive), "File region end must cover the planned files.");
+        if (!plan.FilesInRegion) throw new InvalidOperationException("The layout has no file segments.");
         ValidateSources(plan, cancellationToken);
-        SequentialIsoWriter writer = new(output, cancellationToken, plan.FileDataStartLba);
-        WriteFiles(plan, writer);
-        writer.PadToLba(endLbaExclusive);
+        return new FileRegionWriter(
+            EnumerateFiles(plan._root).Where(file => file.DataLength > 0).ToList(), cancellationToken);
+    }
+
+    /// <summary>Streams the source files into the segments of a segmented layout.</summary>
+    public sealed class FileRegionWriter : IDisposable
+    {
+        private const int BufferBytes = 128 * 1024;
+        private readonly List<IsoNode> _files;
+        private readonly CancellationToken _cancellationToken;
+        private readonly byte[] _buffer = new byte[BufferBytes];
+        private int _nextFile;
+        private IsoNode? _current;
+        private FileStream? _input;
+        private long _remaining;
+        private long _padding;
+
+        internal FileRegionWriter(List<IsoNode> files, CancellationToken cancellationToken)
+        {
+            _files = files;
+            _cancellationToken = cancellationToken;
+        }
+
+        /// <summary>True once every file byte and its sector padding has been written.</summary>
+        public bool Completed => _input is null && _nextFile >= _files.Count;
+
+        public void WriteSectors(Stream output, uint sectors)
+        {
+            ArgumentNullException.ThrowIfNull(output);
+            long request = checked((long)sectors * LogicalSectorBytes);
+            while (request > 0)
+            {
+                _cancellationToken.ThrowIfCancellationRequested();
+                if (_input is null && _nextFile < _files.Count) Open(_files[_nextFile++]);
+                if (_input is null)
+                {
+                    int zeros = (int)Math.Min(_buffer.Length, request);
+                    Array.Clear(_buffer, 0, zeros);
+                    output.Write(_buffer, 0, zeros);
+                    request -= zeros;
+                }
+                else if (_remaining > 0)
+                {
+                    int count = (int)Math.Min(Math.Min(_buffer.Length, _remaining), request);
+                    int read = _input.Read(_buffer, 0, count);
+                    if (read == 0)
+                        throw new EndOfStreamException($"Source file ended early while streaming ISO: {_current!.SourcePath}");
+                    output.Write(_buffer, 0, read);
+                    _remaining -= read;
+                    request -= read;
+                }
+                else if (_padding > 0)
+                {
+                    int count = (int)Math.Min(Math.Min(_buffer.Length, _padding), request);
+                    Array.Clear(_buffer, 0, count);
+                    output.Write(_buffer, 0, count);
+                    _padding -= count;
+                    request -= count;
+                }
+                else
+                {
+                    Close();
+                }
+            }
+        }
+
+        private void Open(IsoNode file)
+        {
+            ValidateSourceFile(file);
+            _current = file;
+            _input = new FileStream(file.SourcePath, FileMode.Open, FileAccess.Read, FileShare.Read,
+                bufferSize: BufferBytes, FileOptions.SequentialScan);
+            if (_input.Length != file.DataLength)
+                throw new IOException($"Source file size changed while streaming ISO: {file.SourcePath}");
+            _remaining = file.DataLength;
+            _padding = checked((long)SectorCount(file.DataLength) * LogicalSectorBytes - file.DataLength);
+        }
+
+        private void Close()
+        {
+            if (_input is null) return;
+            FileInfo? source = _current is null ? null : new FileInfo(_current.SourcePath);
+            _input.Dispose();
+            _input = null;
+            if (_current is not null) ValidateSourceFile(_current);
+            _ = source;
+            _current = null;
+        }
+
+        public void Dispose()
+        {
+            _input?.Dispose();
+            _input = null;
+        }
     }
 
     private static void ValidateOuterRange(LayoutPlan plan, Stream output, uint boundary)
@@ -396,7 +501,7 @@ public static class Iso9660ImageWriter
     }
 
     private static Layout BuildLayout(List<IsoNode> directories, uint volumeSectors, bool filesAtOuterRing,
-        uint? fixedFileStart = null)
+        IReadOnlyList<IsoSegment>? candidateSegments = null)
     {
         int primaryPathTableBytes = PathTableLength(directories, joliet: false);
         int jolietPathTableBytes = PathTableLength(directories, joliet: true);
@@ -405,39 +510,69 @@ public static class Iso9660ImageWriter
         uint primaryBigPathTableLba = Allocate(ref cursor, primaryPathTableBytes);
         uint jolietLittlePathTableLba = Allocate(ref cursor, jolietPathTableBytes);
         uint jolietBigPathTableLba = Allocate(ref cursor, jolietPathTableBytes);
+        uint directoryStart = cursor;
 
-        foreach (IsoNode directory in directories)
+        // Directory sizes depend on how many extents each file has, so they are laid out by a
+        // function that can be repeated when segmented placement changes the extent counts.
+        uint AllocateDirectories()
         {
-            directory.PrimaryDirectoryBytes = DirectoryExtentLength(directory, joliet: false);
-            directory.PrimaryDirectoryLba = Allocate(ref cursor, directory.PrimaryDirectoryBytes);
+            uint position = directoryStart;
+            foreach (IsoNode directory in directories)
+            {
+                directory.PrimaryDirectoryBytes = DirectoryExtentLength(directory, joliet: false);
+                directory.PrimaryDirectoryLba = Allocate(ref position, directory.PrimaryDirectoryBytes);
+            }
+
+            foreach (IsoNode directory in directories)
+            {
+                directory.JolietDirectoryBytes = DirectoryExtentLength(directory, joliet: true);
+                directory.JolietDirectoryLba = Allocate(ref position, directory.JolietDirectoryBytes);
+            }
+
+            return position;
         }
 
-        foreach (IsoNode directory in directories)
-        {
-            directory.JolietDirectoryBytes = DirectoryExtentLength(directory, joliet: true);
-            directory.JolietDirectoryLba = Allocate(ref cursor, directory.JolietDirectoryBytes);
-        }
-
-        uint metadataEnd = cursor;
         List<IsoNode> files = EnumerateFiles(directories[0]).ToList();
         ulong fileSectors = 0;
         foreach (IsoNode file in files) fileSectors = checked(fileSectors + SectorCount(file.DataLength));
+        uint metadataEnd = AllocateDirectories();
         if ((ulong)metadataEnd + fileSectors > volumeSectors)
             throw new ArgumentException("Data directory and filesystem metadata exceed the disc capacity.");
-        bool separateFiles = filesAtOuterRing || fixedFileStart.HasValue;
-        if (filesAtOuterRing) cursor = checked(volumeSectors - (uint)fileSectors);
-        if (fixedFileStart.HasValue)
+
+        List<IsoSegment>? used = null;
+        if (candidateSegments is not null)
         {
-            if (fixedFileStart.Value < metadataEnd || (ulong)fixedFileStart.Value + fileSectors > volumeSectors)
-                throw new ArgumentOutOfRangeException(nameof(fixedFileStart),
-                    "Fixed file start must leave room for the files after the filesystem metadata.");
-            cursor = fixedFileStart.Value;
+            // Segments start on a 16-sector boundary so a caller that draws in 16-sector blocks
+            // never shares a block between file data and generated content.
+            static uint AlignUp16(uint value) => checked((value + 15u) / 16u * 16u);
+            uint clip = AlignUp16(metadataEnd);
+            for (int attempt = 0; ; attempt++)
+            {
+                used = AllocateSegmented(files, candidateSegments, clip, volumeSectors);
+                uint grown = AllocateDirectories();
+                if (grown <= clip) { metadataEnd = grown; break; }
+                if (attempt > 8)
+                    throw new ArgumentException("File extents do not fit between the metadata and the candidate segments.");
+                clip = AlignUp16(grown);
+            }
         }
-        uint fileDataStart = cursor;
-        foreach (IsoNode file in files)
+
+        uint fileDataStart;
+        if (used is not null)
         {
-            file.DataLba = separateFiles && file.DataLength == 0 ? 0 : cursor;
-            cursor = checked(cursor + SectorCount(file.DataLength));
+            fileDataStart = used.Count > 0 ? used[0].StartLba : metadataEnd;
+            cursor = used.Count > 0 ? used[^1].EndLbaExclusive : metadataEnd;
+        }
+        else
+        {
+            cursor = metadataEnd;
+            if (filesAtOuterRing) cursor = checked(volumeSectors - (uint)fileSectors);
+            fileDataStart = cursor;
+            foreach (IsoNode file in files)
+            {
+                file.DataLba = filesAtOuterRing && file.DataLength == 0 ? 0 : cursor;
+                cursor = checked(cursor + SectorCount(file.DataLength));
+            }
         }
 
         if (cursor > volumeSectors)
@@ -458,7 +593,57 @@ public static class Iso9660ImageWriter
             metadataEnd,
             fileDataStart,
             filesAtOuterRing,
-            fixedFileStart.HasValue);
+            used);
+    }
+
+    /// <summary>
+    /// Places every file into the candidate runs in order, splitting a file across runs when it
+    /// does not fit in one. Returns the parts of the runs that were actually used.
+    /// </summary>
+    private static List<IsoSegment> AllocateSegmented(
+        List<IsoNode> files, IReadOnlyList<IsoSegment> candidates, uint clipStart, uint volumeSectors)
+    {
+        List<IsoSegment> pool = [];
+        uint previousEnd = 0;
+        foreach (IsoSegment candidate in candidates)
+        {
+            if (candidate.EndLbaExclusive > volumeSectors || candidate.EndLbaExclusive < candidate.StartLba
+                || candidate.StartLba < previousEnd)
+                throw new ArgumentException("Candidate segments must be ascending, disjoint and inside the volume.");
+            previousEnd = candidate.EndLbaExclusive;
+            uint start = Math.Max(candidate.StartLba, clipStart);
+            if (start < candidate.EndLbaExclusive) pool.Add(new IsoSegment(start, candidate.EndLbaExclusive));
+        }
+
+        List<IsoSegment> used = [];
+        int index = 0;
+        uint position = pool.Count > 0 ? pool[0].StartLba : 0;
+        foreach (IsoNode file in files)
+        {
+            file.Extents.Clear();
+            file.DataLba = 0;
+            if (file.DataLength == 0) continue;
+            uint needed = SectorCount(file.DataLength);
+            while (needed > 0)
+            {
+                if (index >= pool.Count)
+                    throw new ArgumentException("The candidate segments are too small for the files.");
+                uint take = Math.Min(Math.Min(pool[index].EndLbaExclusive - position, needed), MaximumExtentSectors);
+                file.Extents.Add(new FileExtent(position, take));
+                if (used.Count > 0 && used[^1].EndLbaExclusive == position)
+                    used[^1] = new IsoSegment(used[^1].StartLba, position + take);
+                else
+                    used.Add(new IsoSegment(position, position + take));
+                position += take;
+                needed -= take;
+                if (position == pool[index].EndLbaExclusive && ++index < pool.Count)
+                    position = pool[index].StartLba;
+            }
+
+            file.DataLba = file.Extents[0].Lba;
+        }
+
+        return used;
     }
 
     private static uint Allocate(ref uint cursor, long byteCount)
@@ -493,8 +678,13 @@ public static class Iso9660ImageWriter
             DirectoryRecordLength(1),
             DirectoryRecordLength(1),
         ];
-        recordLengths.AddRange(directory.Children.Select(child =>
-            DirectoryRecordLength(IdentifierBytes(child, joliet).Length)));
+        foreach (IsoNode child in directory.Children)
+        {
+            int length = DirectoryRecordLength(IdentifierBytes(child, joliet).Length);
+            int copies = child.IsDirectory ? 1 : Math.Max(1, child.Extents.Count);
+            for (int copy = 0; copy < copies; copy++) recordLengths.Add(length);
+        }
+
         return PackedRecordLength(recordLengths);
     }
 
@@ -574,6 +764,23 @@ public static class Iso9660ImageWriter
             parent.Timestamp));
         foreach (IsoNode child in directory.Children)
         {
+            if (!child.IsDirectory && child.Extents.Count > 0)
+            {
+                long remaining = child.DataLength;
+                for (int index = 0; index < child.Extents.Count; index++)
+                {
+                    FileExtent part = child.Extents[index];
+                    bool last = index == child.Extents.Count - 1;
+                    long partBytes = last ? remaining : (long)part.Sectors * LogicalSectorBytes;
+                    remaining -= partBytes;
+                    AddDirectoryRecord(extent, ref offset, BuildDirectoryRecord(
+                        part.Lba, partBytes, false, IdentifierBytes(child, joliet), child.Timestamp,
+                        multiExtent: !last));
+                }
+
+                continue;
+            }
+
             uint childLba = child.IsDirectory
                 ? joliet ? child.JolietDirectoryLba : child.PrimaryDirectoryLba
                 : child.DataLba;
@@ -668,7 +875,8 @@ public static class Iso9660ImageWriter
         long dataLength,
         bool isDirectory,
         ReadOnlySpan<byte> identifier,
-        DateTimeOffset timestamp)
+        DateTimeOffset timestamp,
+        bool multiExtent = false)
     {
         int length = DirectoryRecordLength(identifier.Length);
         byte[] record = new byte[length];
@@ -676,7 +884,7 @@ public static class Iso9660ImageWriter
         WriteBothEndian32(record, 2, extentLba);
         WriteBothEndian32(record, 10, checked((uint)dataLength));
         WriteDirectoryDate(record.AsSpan(18, 7), timestamp);
-        record[25] = isDirectory ? (byte)0x02 : (byte)0x00;
+        record[25] = isDirectory ? (byte)0x02 : multiExtent ? (byte)0x80 : (byte)0x00;
         WriteBothEndian16(record, 28, 1);
         record[32] = checked((byte)identifier.Length);
         identifier.CopyTo(record.AsSpan(33));
@@ -975,6 +1183,8 @@ public static class Iso9660ImageWriter
         internal uint JolietDirectoryLba { get; set; }
         internal int JolietDirectoryBytes { get; set; }
         internal uint DataLba { get; set; }
+        /// <summary>Extents of a segmented file; empty means one contiguous run at DataLba.</summary>
+        internal List<FileExtent> Extents { get; } = [];
         internal long DataLength { get; set; }
         internal DateTimeOffset Timestamp { get; set; }
     }
@@ -990,5 +1200,5 @@ public static class Iso9660ImageWriter
         uint MetadataEndLbaExclusive,
         uint FileDataStartLba,
         bool FilesAtOuterRing,
-        bool FilesInRegion = false);
+        IReadOnlyList<IsoSegment>? FileSegments = null);
 }

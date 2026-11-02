@@ -50,15 +50,27 @@ internal sealed class RasterImage
         return new RasterImage(width, height, pixels);
     }
 
-    /// <summary>True when the pixel or any bilinear neighbour has alpha at or above the threshold.</summary>
-    internal bool AnyAlphaAtLeast(int x, int y, byte threshold)
+    /// <summary>
+    /// True when the pixel or any bilinear neighbour carries picture content: alpha at or above
+    /// the threshold and, unless <paramref name="whiteLuminance"/> is 256, not close to white.
+    /// White is what the generator draws for blank paper, so file data may replace it.
+    /// </summary>
+    internal bool AnyContentAt(int x, int y, byte alphaThreshold, int whiteLuminance)
     {
         int x1 = Math.Min(x + 1, Width - 1);
         int y1 = Math.Min(y + 1, Height - 1);
-        return _bgra[(((y * Width) + x) * 4) + 3] >= threshold
-            || _bgra[(((y * Width) + x1) * 4) + 3] >= threshold
-            || _bgra[(((y1 * Width) + x) * 4) + 3] >= threshold
-            || _bgra[(((y1 * Width) + x1) * 4) + 3] >= threshold;
+        return IsContent(x, y, alphaThreshold, whiteLuminance)
+            || IsContent(x1, y, alphaThreshold, whiteLuminance)
+            || IsContent(x, y1, alphaThreshold, whiteLuminance)
+            || IsContent(x1, y1, alphaThreshold, whiteLuminance);
+    }
+
+    private bool IsContent(int x, int y, byte alphaThreshold, int whiteLuminance)
+    {
+        int offset = ((y * Width) + x) * 4;
+        if (_bgra[offset + 3] < alphaThreshold) return false;
+        double luminance = (0.2126 * _bgra[offset + 2]) + (0.7152 * _bgra[offset + 1]) + (0.0722 * _bgra[offset]);
+        return luminance < whiteLuminance;
     }
 
     internal PixelSample SampleDisc(

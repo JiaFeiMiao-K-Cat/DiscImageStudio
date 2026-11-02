@@ -811,7 +811,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 if (result == 0 && overlay)
                     FileRegionPreviewOverlay.ApplyDvd(outputPath, actual,
                         metadata!.DrawingStartLba, metadata.DrawingEndLbaExclusive, cancellationToken,
-                        metadata.FileRegionStartLba, metadata.FileRegionEndLbaExclusive);
+                        metadata.FileSegments);
                 return result;
             });
             if (exitCode != 0)
@@ -885,7 +885,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 if (result == 0 && filePlan is not null)
                     FileRegionPreviewOverlay.ApplyDvd(outputPath, actual,
                         filePlan.DrawingStartLba, filePlan.DrawingEndLbaExclusive, cancellationToken,
-                        filePlan.FileRegionStartLba, filePlan.FileRegionEndLbaExclusive);
+                        filePlan.FileSegments);
                 return result;
             });
             if (exitCode != 0)

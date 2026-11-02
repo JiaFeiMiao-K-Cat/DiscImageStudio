@@ -251,6 +251,10 @@
                                                     <CheckBox Margin="0,8,0,0" Content="{loc:Text Xaml.FilesInTransparentArea}"
                                                               ToolTip="{loc:Text Xaml.FilesInTransparentAreaTip}"
                                                               IsChecked="{Binding State.DvdFilesInTransparency}" />
+                                                    <controls:VisibilityGate IsOpen="{Binding HasCapacityText}">
+                                                        <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontSize="11"
+                                                                   Text="{Binding CapacityText}" />
+                                                    </controls:VisibilityGate>
                                                 </StackPanel>
                                             </controls:VisibilityGate>
                                         </StackPanel>

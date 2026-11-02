@@ -36,23 +36,25 @@ public static class HybridIsoImageWriter
         public uint FileDataStartLba => Layout.FileDataStartLba;
         public bool FilesAtOuterRing => Layout.FilesAtOuterRing;
         public bool FilesInRegion => Layout.FilesInRegion;
+        public IReadOnlyList<Iso9660ImageWriter.IsoSegment> FileSegments => Layout.FileSegments;
     }
 
     public static LayoutPlan Plan(string sourceDirectory, uint volumeSectors, string volumeLabel,
-        bool filesAtOuterRing = false, uint? fileDataStartLba = null)
+        bool filesAtOuterRing = false, IReadOnlyList<Iso9660ImageWriter.IsoSegment>? candidateSegments = null)
     {
         ArgumentNullException.ThrowIfNull(sourceDirectory);
         return new(Iso9660ImageWriter.Plan(sourceDirectory, volumeSectors, volumeLabel,
-            filesAtOuterRing: filesAtOuterRing, fileDataStartLba: fileDataStartLba));
+            filesAtOuterRing: filesAtOuterRing, candidateSegments: candidateSegments));
     }
 
     public static void WriteRegionPrefix(LayoutPlan plan, Stream output, uint endLbaExclusive,
         CancellationToken cancellationToken = default)
         => Iso9660ImageWriter.WriteRegionPrefix(plan.Layout, output, endLbaExclusive, cancellationToken);
 
-    public static void WriteFileRegion(LayoutPlan plan, Stream output, uint endLbaExclusive,
+    /// <summary>Writer that emits the file bytes one segment at a time, in ascending LBA order.</summary>
+    public static Iso9660ImageWriter.FileRegionWriter CreateFileRegionWriter(LayoutPlan plan,
         CancellationToken cancellationToken = default)
-        => Iso9660ImageWriter.WriteFileRegion(plan.Layout, output, endLbaExclusive, cancellationToken);
+        => Iso9660ImageWriter.CreateFileRegionWriter(plan.Layout, cancellationToken);
 
     public static void WriteOuterRingPrefix(LayoutPlan plan, Stream output, uint endLbaExclusive,
         CancellationToken cancellationToken = default)
@@ -95,8 +97,12 @@ public static class HybridIsoImageWriter
                 if (plan.FilesInRegion)
                 {
                     WriteRegionPrefix(plan, output, plan.MetadataEndLbaExclusive);
-                    output.Position = checked((long)plan.FileDataStartLba * IsoImageWriter.LogicalSectorBytes);
-                    WriteFileRegion(plan, output, plan.DataEndLbaExclusive);
+                    using Iso9660ImageWriter.FileRegionWriter files = CreateFileRegionWriter(plan);
+                    foreach (Iso9660ImageWriter.IsoSegment segment in plan.FileSegments)
+                    {
+                        output.Position = checked((long)segment.StartLba * IsoImageWriter.LogicalSectorBytes);
+                        files.WriteSectors(output, segment.Sectors);
+                    }
                 }
                 else if (plan.FilesAtOuterRing)
                 {

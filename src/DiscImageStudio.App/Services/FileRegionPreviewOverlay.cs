@@ -25,26 +25,45 @@ internal static class FileRegionPreviewOverlay
 
     internal static void ApplyDvd(string path, DvdStreamingOptions actual,
         uint drawingStartLba, uint drawingEndLbaExclusive, CancellationToken token = default,
-        uint fileRegionStartLba = 0, uint fileRegionEndLbaExclusive = 0)
+        IReadOnlyList<DvdFileSegment>? fileSegments = null)
     {
         actual.Validate();
         ValidateRange(actual.TotalSectors, drawingStartLba, drawingEndLbaExclusive);
         double length = actual.TotalSectors * 38688.0 * actual.ChannelBitLengthNm * 1e-6;
         DvdTrackGeometry geometry = DvdTrackGeometry.Create(actual.InnerRadiusMm,
             actual.OuterRadiusMm, length, actual.PitchLinear, actual.PitchQuadratic, actual.PitchCubic);
-        (double, double)? region = null;
-        if (fileRegionEndLbaExclusive > fileRegionStartLba)
+        Func<double, double, bool>? isFile = null;
+        if (fileSegments is { Count: > 0 })
         {
-            if (fileRegionEndLbaExclusive > actual.TotalSectors)
-                throw new ArgumentOutOfRangeException(nameof(fileRegionEndLbaExclusive));
-            region = (
-                geometry.RadiusAtArcLength(length * ((double)fileRegionStartLba / actual.TotalSectors)),
-                geometry.RadiusAtArcLength(length * ((double)fileRegionEndLbaExclusive / actual.TotalSectors)));
+            DvdFileSegment[] segments = fileSegments.OrderBy(s => s.StartLba).ToArray();
+            double start = actual.StartAngleDegrees * Math.PI / 180.0;
+            // The generator always walks the track clockwise (direction -1).
+            const double direction = -1.0;
+            isFile = (xMm, yUpMm) =>
+            {
+                double radius = Math.Sqrt(xMm * xMm + yUpMm * yUpMm);
+                if (radius < actual.InnerRadiusMm || radius > actual.OuterRadiusMm) return false;
+                double expected = geometry.AngleAtRadius(radius);
+                double polar = Math.Atan2(yUpMm, xMm);
+                double delta = direction * (polar - start) - expected;
+                delta -= 2 * Math.PI * Math.Round(delta / (2 * Math.PI));
+                double angle = Math.Clamp(expected + delta, 0, geometry.TotalAngleRadians);
+                double lba = geometry.ArcLengthAtAngle(angle) / length * actual.TotalSectors;
+                int low = 0, high = segments.Length - 1;
+                while (low <= high)
+                {
+                    int mid = (low + high) / 2;
+                    if (lba < segments[mid].StartLba) high = mid - 1;
+                    else if (lba >= segments[mid].EndLbaExclusive) low = mid + 1;
+                    else return true;
+                }
+                return false;
+            };
         }
         Apply(path, actual.InnerRadiusMm, actual.OuterRadiusMm,
             geometry.RadiusAtArcLength(length * ((double)drawingStartLba / actual.TotalSectors)),
             geometry.RadiusAtArcLength(length * ((double)drawingEndLbaExclusive / actual.TotalSectors)),
-            dvdPixelCoordinates: true, token, extraFileRing: region);
+            dvdPixelCoordinates: true, token, fileTest: isFile);
     }
 
     internal static void ApplyBluRay(string path, BluRayDiscParameters actual,
@@ -67,7 +86,7 @@ internal static class FileRegionPreviewOverlay
 
     private static void Apply(string path, double inner, double outer,
         double drawingInner, double drawingOuter, bool dvdPixelCoordinates, CancellationToken token,
-        double? cdImageOuterRadius = null, (double Inner, double Outer)? extraFileRing = null)
+        double? cdImageOuterRadius = null, Func<double, double, bool>? fileTest = null)
     {
         token.ThrowIfCancellationRequested();
         BitmapSource source;
@@ -90,9 +109,6 @@ internal static class FileRegionPreviewOverlay
         double innerSquared = inner * inner, outerSquared = outer * outer;
         double drawingInnerSquared = drawingInner * drawingInner;
         double drawingOuterSquared = drawingOuter * drawingOuter;
-        double ringInnerSquared = extraFileRing is { } ring ? ring.Inner * ring.Inner : 0;
-        double ringOuterSquared = extraFileRing is { } ring2 ? ring2.Outer * ring2.Outer : 0;
-        bool hasRing = extraFileRing.HasValue;
         for (int y = 0; y < size; y++)
         {
             token.ThrowIfCancellationRequested();
@@ -103,8 +119,8 @@ internal static class FileRegionPreviewOverlay
                 double radiusSquared = dx * dx + dy * dy;
                 if (radiusSquared < innerSquared || radiusSquared >= outerSquared)
                     continue;
-                bool inFileRing = hasRing && radiusSquared >= ringInnerSquared && radiusSquared < ringOuterSquared;
-                if (!inFileRing && radiusSquared >= drawingInnerSquared && radiusSquared < drawingOuterSquared)
+                bool inDrawing = radiusSquared >= drawingInnerSquared && radiusSquared < drawingOuterSquared;
+                if (inDrawing && !(fileTest is not null && fileTest(dx, -dy)))
                     continue;
                 int offset = y * stride + x * 4;
                 // #FACC15, matching the preview legend. File data is deliberately not

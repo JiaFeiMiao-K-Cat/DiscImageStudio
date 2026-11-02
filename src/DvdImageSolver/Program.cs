@@ -1,5 +1,6 @@
 using System.Text.Json;
 using DiscImageStudio.Core;
+using DiscImageStudio.Iso;
 using DvdImageSolver.Encoding;
 using DvdImageSolver.Solver;
 
@@ -416,7 +417,7 @@ internal static class Program
         bool hybridMode = arguments.Has("data-dir");
         bool filesAtOuterRing = ReadFilesAtOuterRing(arguments);
         bool filesInTransparency = ReadFilesInTransparency(arguments);
-        DvdFreeRegion? transparentRegion = null;
+        List<(uint StartLba, uint EndLbaExclusive)>? fileSegments = null;
         if (!arguments.Has("image") || arguments.Has("target"))
         {
             throw new ArgumentException("Range or fast output requires --image and does not accept --target.");
@@ -492,7 +493,6 @@ internal static class Program
             }
 
             HybridIsoImageWriter.LayoutPlan isoLayout;
-            DvdFreeRegion? fileRegion = null;
             if (filesInTransparency)
             {
                 if (!fastOutput)
@@ -510,18 +510,28 @@ internal static class Program
                 }
                 else
                 {
-                    uint needed = checked((fileSectors + DvdEccBlockEncoder.SectorCount - 1)
+                    uint needed = checked((fileSectors + 32 + DvdEccBlockEncoder.SectorCount - 1)
                         / DvdEccBlockEncoder.SectorCount * DvdEccBlockEncoder.SectorCount);
+                    bool whiteIsBlank = ReadBoolean(arguments, "white-is-blank", fallback: true);
                     IReadOnlyList<DvdFreeRegion> runs = DvdTransparencyScanner.FindFreeRuns(
-                        arguments.Require("image"), imageMapping, probeStart);
-                    DvdFreeRegion chosen = DvdTransparencyScanner.ChooseRegion(runs, needed)
+                        arguments.Require("image"), imageMapping, probeStart, default,
+                        whiteIsBlank ? DvdTransparencyScanner.DefaultWhiteLuminance : DvdTransparencyScanner.TransparentOnly);
+                    IReadOnlyList<DvdFreeRegion> chosen = DvdTransparencyScanner.ChooseSegments(runs, needed)
                         ?? throw new ArgumentException(
-                            $"The picture has no fully transparent area of {needed} sectors for the files; "
-                            + (runs.Count == 0 ? "no transparent area was found." : $"the largest is {runs[0].Sectors} sectors."));
-                    fileRegion = new DvdFreeRegion(chosen.StartLba, chosen.StartLba + needed);
+                            $"The picture leaves only {DvdTransparencyScanner.TotalSectors(runs)} blank sectors "
+                            + $"but the files need {needed}.");
                     isoLayout = HybridIsoImageWriter.Plan(
                         arguments.Require("data-dir"), imageMapping.TotalSectors,
-                        arguments.Get("volume-label", "DVD_IMAGE"), fileDataStartLba: chosen.StartLba);
+                        arguments.Get("volume-label", "DVD_IMAGE"),
+                        candidateSegments: chosen.Select(run =>
+                            new Iso9660ImageWriter.IsoSegment(run.StartLba, run.EndLbaExclusive)).ToList());
+                    fileSegments = [];
+                    foreach (Iso9660ImageWriter.IsoSegment used in isoLayout.FileSegments)
+                    {
+                        uint end = checked((used.EndLbaExclusive + DvdEccBlockEncoder.SectorCount - 1)
+                            / DvdEccBlockEncoder.SectorCount * DvdEccBlockEncoder.SectorCount);
+                        fileSegments.Add((used.StartLba, end));
+                    }
                 }
             }
             else
@@ -571,13 +581,12 @@ internal static class Program
                     "The filesystem leaves no complete ECC Block for drawing in the selected file layout.");
             }
 
-            transparentRegion = fileRegion;
             hybridIso = HybridIsoImageWriter.Create(isoLayout, isoOutputPath);
 
             Console.WriteLine(
                 $"hybrid ISO: files={hybridIso.FileCount}, directories={hybridIso.DirectoryCount}, "
                 + $"data={hybridIso.FileBytes} bytes, filesystem end LBA={hybridIso.DataEndLbaExclusive}, "
-                + $"files={(filesAtOuterRing ? "outer" : transparentRegion is { } r ? $"transparent LBA {r.StartLba}..{r.EndLbaExclusive - 1}" : "inner")}, drawing LBA {lba}..{lba + fillSectors - 1}");
+                + $"files={(filesAtOuterRing ? "outer" : fileSegments is { } segs ? $"transparent ({segs.Count} segments)" : "inner")}, drawing LBA {lba}..{lba + fillSectors - 1}");
             if (!fastOutput)
             {
                 Console.WriteLine($"replaying inner-ring modulation boundary: 0..{lba - 1}");
@@ -627,7 +636,7 @@ internal static class Program
                 options,
                 progressEvery,
                 hybridIso,
-                transparentRegion);
+                fileSegments);
         }
 
         Console.WriteLine(
@@ -817,7 +826,7 @@ internal static class Program
         MultiBlockSolveOptions options,
         int progressEvery,
         HybridIsoWriteSummary? hybridIso,
-        DvdFreeRegion? transparentRegion = null)
+        IReadOnlyList<(uint StartLba, uint EndLbaExclusive)>? fileSegments = null)
     {
         Console.WriteLine(
             $"fast raw ISO fill: LBA {options.StartLba}.."
@@ -844,38 +853,8 @@ internal static class Program
         }
 
         string imagePath = arguments.Require("image");
-        FastDispersionWriteResult result;
-        if (transparentRegion is { } region)
-        {
-            uint drawingEnd = options.StartLba + options.FillSectors;
-            MultiBlockSolveOptions head = options with { FillSectors = region.StartLba - options.StartLba };
-            MultiBlockSolveOptions tail = options with
-            {
-                StartLba = region.EndLbaExclusive,
-                FillSectors = drawingEnd - region.EndLbaExclusive,
-            };
-            int headBlocks = (int)(head.FillSectors / DvdEccBlockEncoder.SectorCount);
-            int allBlocks = headBlocks + (int)(tail.FillSectors / DvdEccBlockEncoder.SectorCount);
-            FastDispersionWriteResult? first = headBlocks > 0
-                ? FastDispersionImageWriter.Write(imagePath, isoOutputPath, head, p => Report(p, 0, allBlocks))
-                : null;
-            FastDispersionWriteResult? second = tail.FillSectors > 0
-                ? FastDispersionImageWriter.Write(imagePath, isoOutputPath, tail, p => Report(p, headBlocks, allBlocks))
-                : null;
-            result = new FastDispersionWriteResult(
-                allBlocks,
-                options.FillSectors,
-                (first?.ControlledWords ?? 0) + (second?.ControlledWords ?? 0),
-                (first?.Elapsed ?? TimeSpan.Zero) + (second?.Elapsed ?? TimeSpan.Zero),
-                (first ?? second)?.SparseIso ?? false,
-                (first ?? second)?.IsoSectors ?? options.ImageMapping.TotalSectors);
-        }
-        else
-        {
-            int allBlocks = (int)(options.FillSectors / DvdEccBlockEncoder.SectorCount);
-            result = FastDispersionImageWriter.Write(
-                imagePath, isoOutputPath, options, p => Report(p, 0, allBlocks));
-        }
+        FastDispersionWriteResult result = FastDispersionImageWriter.Write(
+            imagePath, isoOutputPath, options, p => Report(p, 0, p.TotalBlocks), fileSegments);
 
         ImageMappingOptions imageMapping = options.ImageMapping;
         var metadata = new
@@ -885,8 +864,7 @@ internal static class Program
             isoOutput = Path.GetFullPath(isoOutputPath),
             startLba = options.StartLba,
             filesAtOuterRing = hybridIso?.FilesAtOuterRing ?? false,
-            fileRegionStartLba = transparentRegion?.StartLba ?? 0u,
-            fileRegionEndLbaExclusive = transparentRegion?.EndLbaExclusive ?? 0u,
+            fileSegments = (fileSegments ?? []).Select(s => new { startLba = s.StartLba, endLbaExclusive = s.EndLbaExclusive }).ToArray(),
             fillSectors = options.FillSectors,
             totalSectors = imageMapping.TotalSectors,
             psnOffset = $"0x{options.PsnOffset:X}",

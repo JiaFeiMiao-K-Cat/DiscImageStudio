@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DiscImageStudio.Cd;
 using DiscImageStudio.Core;
+using DiscImageStudio.Dvd;
 using DiscImageStudio.Imaging;
 using DiscImageStudio.Services;
 
@@ -56,6 +57,93 @@ public partial class DesignViewModel : ObservableObject
         });
         Layers.CollectionChanged += Layers_CollectionChanged;
         Tone = new ToneViewModel(shell, state, this);
+        CompositeRendered += _ => ScheduleCapacityRefresh();
+        state.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName is nameof(DiscParametersState.DvdDataDirectory)
+                or nameof(DiscParametersState.DvdFilesInTransparency)
+                or nameof(DiscParametersState.DvdTotalSectors)
+                or nameof(DiscParametersState.DvdInnerRadius)
+                or nameof(DiscParametersState.DvdOuterRadius)
+                or nameof(DiscParametersState.DvdPitchLinear)
+                or nameof(DiscParametersState.DvdPitchQuadratic)
+                or nameof(DiscParametersState.DvdPitchCubic)
+                or nameof(DiscParametersState.DvdImagePath))
+            {
+                ScheduleCapacityRefresh();
+            }
+        };
+    }
+
+    private CancellationTokenSource? _capacityCts;
+
+    /// <summary>Blank capacity of the picture versus the size of the data folder (DVD, transparent placement).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCapacityText))]
+    private string _capacityText = string.Empty;
+
+    public bool HasCapacityText => CapacityText.Length > 0;
+
+    private static string FormatSize(long bytes)
+    {
+        double abs = Math.Abs((double)bytes);
+        string text = abs >= 1024.0 * 1024 * 1024
+            ? (abs / (1024.0 * 1024 * 1024)).ToString("0.00", CultureInfo.InvariantCulture) + " GiB"
+            : (abs / (1024.0 * 1024)).ToString("0.0", CultureInfo.InvariantCulture) + " MiB";
+        return bytes < 0 ? "-" + text : text;
+    }
+
+    /// <summary>Re-estimates after a short pause; the scan walks the whole disc spiral.</summary>
+    private async void ScheduleCapacityRefresh()
+    {
+        _capacityCts?.Cancel();
+        CancellationTokenSource cts = new();
+        _capacityCts = cts;
+        string dataDirectory = _state.DvdDataDirectory.Trim();
+        string imagePath = _state.DvdImagePath.Trim();
+        if (!IsDvd || !_state.DvdFilesInTransparency || dataDirectory.Length == 0
+            || imagePath.Length == 0 || !File.Exists(imagePath))
+        {
+            CapacityText = string.Empty;
+            return;
+        }
+
+        try
+        {
+            await Task.Delay(400, cts.Token);
+            DvdStreamingOptions options = new(
+                checked((uint)ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, L.T("总扇区数"))),
+                ParameterParser.ParsePositiveDouble(_state.DvdInnerRadius, L.T("内半径")),
+                ParameterParser.ParsePositiveDouble(_state.DvdOuterRadius, L.T("外半径")),
+                PitchLinear: ParameterParser.ParseDouble(_state.DvdPitchLinear, L.T("相对一次项")),
+                PitchQuadratic: ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("相对二次项")),
+                PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("相对三次项")));
+            string label = string.IsNullOrWhiteSpace(_state.DvdVolumeLabel) ? "DISC_IMAGE" : _state.DvdVolumeLabel.Trim();
+            CapacityText = L.T("正在估算可用空白…");
+            DvdTransparencyCapacity capacity = await Task.Run(
+                () => DvdStreamingGenerator.EstimateTransparentCapacity(
+                    dataDirectory, imagePath, options, label, cts.Token),
+                cts.Token);
+            if (cts.IsCancellationRequested)
+            {
+                return;
+            }
+
+            string head = L.F($"可用空白 {FormatSize(capacity.BlankBytes)} · 文件需要 {FormatSize(capacity.NeededBytes)}");
+            CapacityText = capacity.Fits
+                ? head + L.F($" · 剩余 {FormatSize(capacity.RemainingBytes)} · 约 {capacity.SegmentsUsed} 段")
+                : head + L.F($" · 还差 {FormatSize(-capacity.RemainingBytes)}，放不下");
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception exception)
+        {
+            if (!cts.IsCancellationRequested)
+            {
+                CapacityText = L.F($"无法估算：{exception.Message}");
+            }
+        }
     }
 
     /// <summary>The right rail's tone module: its preview projects the same composite this
