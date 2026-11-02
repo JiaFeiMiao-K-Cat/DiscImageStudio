@@ -1,3 +1,4 @@
+using DiscImageStudio.Localization;
 using System;
 using System.Collections.Generic;
 using System.Windows;
@@ -44,11 +45,11 @@ public partial class StageBar : UserControl
 
     private static readonly (Workspace Workspace, string Label)[] Stages =
     [
-        (Workspace.Design, "设计"),
-        (Workspace.Preview, "预览"),
-        (Workspace.Export, "导出"),
-        (Workspace.Burn, "刻录"),
-        (Workspace.Calibration, "标定"),
+        (Workspace.Design, L.T("设计")),
+        (Workspace.Preview, L.T("预览")),
+        (Workspace.Export, L.T("导出")),
+        (Workspace.Burn, L.T("刻录")),
+        (Workspace.Calibration, L.T("标定")),
     ];
 
     /// <summary>Raised when the user clicks a stage; the host wires this to NavigateTo.</summary>

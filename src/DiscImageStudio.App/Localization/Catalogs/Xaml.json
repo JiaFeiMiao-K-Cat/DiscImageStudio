@@ -1,0 +1,1037 @@
+{
+  "Xaml.AboutDiscImageStudio": {
+    "zh-CN": "关于 Disc Image Studio",
+    "en": "About Disc Image Studio",
+    "zh-TW": "關於 Disc Image Studio"
+  },
+  "Xaml.About": {
+    "zh-CN": "关于",
+    "en": "About",
+    "zh-TW": "關於"
+  },
+  "Xaml.DiscImageStudioIsAnAllInOneWorkspace": {
+    "zh-CN": "Disc Image Studio是帮助您在光盘表面印刷图案的一站式工作台。",
+    "en": "Disc Image Studio is an all-in-one workspace for creating visible artwork on optical discs.",
+    "zh-TW": "Disc Image Studio 是協助您在光碟表面製作圖案的整合工作台。"
+  },
+  "Xaml.ReleasedUnderTheGNUGeneralPublicLicenseV30": {
+    "zh-CN": "本项目以 GNU General Public License v3.0 or later 发布；重新分发须随附对应源代码并保留第三方声明。",
+    "en": "Released under the GNU General Public License v3.0 or later. Redistribution must include the corresponding source code and retain third-party notices.",
+    "zh-TW": "本專案依 GNU General Public License v3.0 or later 發布；重新散佈時須附上對應原始碼並保留第三方聲明。"
+  },
+  "Xaml.OpenSourceComponents": {
+    "zh-CN": "开源组件",
+    "en": "Open-source components",
+    "zh-TW": "開放原始碼元件"
+  },
+  "Xaml.HarmonyOSSansSCHarmonyOSSansFontLicense": {
+    "zh-CN": "HarmonyOS Sans SC — HarmonyOS Sans 字体许可协议",
+    "en": "HarmonyOS Sans SC — HarmonyOS Sans Font License",
+    "zh-TW": "HarmonyOS Sans SC — HarmonyOS Sans 字型授權條款"
+  },
+  "Xaml.MahAppsMetroIconPacksLucideLucideIconsMITLicense": {
+    "zh-CN": "MahApps.Metro.IconPacks.Lucide（Lucide Icons）— MIT 许可协议",
+    "en": "MahApps.Metro.IconPacks.Lucide (Lucide Icons) — MIT License",
+    "zh-TW": "MahApps.Metro.IconPacks.Lucide（Lucide Icons）— MIT 授權條款"
+  },
+  "Xaml.CommunityToolkitMvvmApacheLicense20": {
+    "zh-CN": "CommunityToolkit.Mvvm — Apache 许可协议 2.0",
+    "en": "CommunityToolkit.Mvvm — Apache License 2.0",
+    "zh-TW": "CommunityToolkit.Mvvm — Apache 授權條款 2.0"
+  },
+  "Xaml.GNUGPLV30OrLaterProjectLicense": {
+    "zh-CN": "GNU GPL v3.0 或更新版本（项目许可证）",
+    "en": "GNU GPL v3.0 or later (project license)",
+    "zh-TW": "GNU GPL v3.0 或更新版本（專案授權條款）"
+  },
+  "Xaml.ThirdPartyNotices": {
+    "zh-CN": "第三方声明",
+    "en": "Third-party notices",
+    "zh-TW": "第三方聲明"
+  },
+  "Xaml.HarmonyOSSansFontLicense": {
+    "zh-CN": "HarmonyOS Sans 字体协议",
+    "en": "HarmonyOS Sans Font License",
+    "zh-TW": "HarmonyOS Sans 字型授權條款"
+  },
+  "Xaml.Cancel": {
+    "zh-CN": "取消",
+    "en": "Cancel",
+    "zh-TW": "取消"
+  },
+  "Xaml.StopTheCurrentTaskIfItSupportsCancellation": {
+    "zh-CN": "停止正在运行且支持取消的任务。",
+    "en": "Stop the current task if it supports cancellation.",
+    "zh-TW": "停止目前執行中且支援取消的任務。"
+  },
+  "Xaml.OpenOutputFolder": {
+    "zh-CN": "打开输出位置",
+    "en": "Open output folder",
+    "zh-TW": "開啟輸出位置"
+  },
+  "Xaml.PreviewOutput": {
+    "zh-CN": "查看读回预览",
+    "en": "Preview output",
+    "zh-TW": "檢視讀回預覽"
+  },
+  "Xaml.SimulateReadingBackTheMostRecentlyGeneratedFileIn": {
+    "zh-CN": "把最近生成的文件作为输入镜像，在预览工作区模拟读回。",
+    "en": "Simulate reading back the most recently generated file in the Preview workspace.",
+    "zh-TW": "將最近產生的檔案作為輸入映像，在預覽工作區模擬讀回。"
+  },
+  "Xaml.ClearLog": {
+    "zh-CN": "清空日志",
+    "en": "Clear log",
+    "zh-TW": "清除記錄"
+  },
+  "Xaml.TaskDetails": {
+    "zh-CN": "任务详情",
+    "en": "Task details",
+    "zh-TW": "任務詳細資訊"
+  },
+  "Xaml.TaskDetailsLog": {
+    "zh-CN": "任务详情 / 运行日志",
+    "en": "Task details / Log",
+    "zh-TW": "任務詳細資訊 / 執行記錄"
+  },
+  "Xaml.NewProject": {
+    "zh-CN": "新建工程",
+    "en": "New project",
+    "zh-TW": "新增專案"
+  },
+  "Xaml.DeletePreset": {
+    "zh-CN": "删除预设",
+    "en": "Delete preset",
+    "zh-TW": "刪除預設"
+  },
+  "Xaml.ChangePreset": {
+    "zh-CN": "换用预设",
+    "en": "Change preset",
+    "zh-TW": "切換預設"
+  },
+  "Xaml.SelectingAnotherPresetReplacesTheCurrentGeometryParametersAfter": {
+    "zh-CN": "选择其他预设会用它的几何参数覆盖当前参数，切换前会先确认。",
+    "en": "Selecting another preset replaces the current geometry parameters after confirmation.",
+    "zh-TW": "選擇其他預設將以其幾何參數覆寫目前參數，切換前會先確認。"
+  },
+  "Xaml.Custom": {
+    "zh-CN": "自定",
+    "en": "Custom",
+    "zh-TW": "自訂"
+  },
+  "Xaml.PresetDetails": {
+    "zh-CN": "预设详细信息",
+    "en": "Preset details",
+    "zh-TW": "預設詳細資訊"
+  },
+  "Xaml.ProjectName": {
+    "zh-CN": "工程名",
+    "en": "Project name",
+    "zh-TW": "專案名稱"
+  },
+  "Xaml.InnerR0Mm": {
+    "zh-CN": "内半径 r0 (mm)",
+    "en": "Inner r0 (mm)",
+    "zh-TW": "內半徑 r0 (mm)"
+  },
+  "Xaml.OuterR1Mm": {
+    "zh-CN": "外半径 r1 (mm)",
+    "en": "Outer r1 (mm)",
+    "zh-TW": "外半徑 r1 (mm)"
+  },
+  "Xaml.Sectors": {
+    "zh-CN": "扇区数",
+    "en": "Sectors",
+    "zh-TW": "磁區數"
+  },
+  "Xaml.LinearTerm": {
+    "zh-CN": "相对一次项",
+    "en": "Linear term",
+    "zh-TW": "相對一次項"
+  },
+  "Xaml.QuadraticTerm": {
+    "zh-CN": "相对二次项",
+    "en": "Quadratic term",
+    "zh-TW": "相對二次項"
+  },
+  "Xaml.CubicTerm": {
+    "zh-CN": "相对三次项",
+    "en": "Cubic term",
+    "zh-TW": "相對三次項"
+  },
+  "Xaml.SingleLayerBDRSectorsMustBeAMultiple": {
+    "zh-CN": "单层 BD-R：扇区数须为 32 的倍数，使用恒定轨距与 0° 起始角。",
+    "en": "Single-layer BD-R: sectors must be a multiple of 32. Uses constant track pitch and a 0° start angle.",
+    "zh-TW": "單層 BD-R：磁區數須為 32 的倍數，使用恆定軌距與 0° 起始角。"
+  },
+  "Xaml.DiscType": {
+    "zh-CN": "盘型",
+    "en": "Disc type",
+    "zh-TW": "光碟類型"
+  },
+  "Xaml.SaveParametersAsPreset": {
+    "zh-CN": "将此套参数保存为预设",
+    "en": "Save parameters as preset",
+    "zh-TW": "將這組參數儲存為預設"
+  },
+  "Xaml.SaveLocation": {
+    "zh-CN": "保存位置",
+    "en": "Save location",
+    "zh-TW": "儲存位置"
+  },
+  "Xaml.Browse": {
+    "zh-CN": "浏览…",
+    "en": "Browse…",
+    "zh-TW": "瀏覽…"
+  },
+  "Xaml.Burn": {
+    "zh-CN": "刻录",
+    "en": "Burn",
+    "zh-TW": "燒錄"
+  },
+  "Xaml.StreamDataDirectlyToABlankDiscWithoutFirst": {
+    "zh-CN": "即时刻录将数据直接流式写入空白盘片，不必单独生成镜像文件再刻录。",
+    "en": "Stream data directly to a blank disc without first generating an image file.",
+    "zh-TW": "即時燒錄會將資料直接串流寫入空白光碟，無須先產生映像檔。"
+  },
+  "Xaml.ContentToWrite": {
+    "zh-CN": "写入内容",
+    "en": "Content to write",
+    "zh-TW": "寫入內容"
+  },
+  "Xaml.DesignComposite": {
+    "zh-CN": "设计页合成图",
+    "en": "Design composite",
+    "zh-TW": "設計頁合成圖"
+  },
+  "Xaml.CalibrationPattern": {
+    "zh-CN": "辅助标定图案",
+    "en": "Calibration pattern",
+    "zh-TW": "輔助校準圖案"
+  },
+  "Xaml.OpenCalibration": {
+    "zh-CN": "打开标定工作区",
+    "en": "Open Calibration",
+    "zh-TW": "開啟校準工作區"
+  },
+  "Xaml.RecorderAndSpeed": {
+    "zh-CN": "刻录机与速度",
+    "en": "Recorder and speed",
+    "zh-TW": "燒錄機與速度"
+  },
+  "Xaml.Recorder": {
+    "zh-CN": "刻录机",
+    "en": "Recorder",
+    "zh-TW": "燒錄機"
+  },
+  "Xaml.Refresh": {
+    "zh-CN": "刷新",
+    "en": "Refresh",
+    "zh-TW": "重新整理"
+  },
+  "Xaml.WriteSpeed": {
+    "zh-CN": "刻录速度",
+    "en": "Write speed",
+    "zh-TW": "燒錄速度"
+  },
+  "Xaml.ReadDisc": {
+    "zh-CN": "读取盘片",
+    "en": "Read disc",
+    "zh-TW": "讀取光碟片"
+  },
+  "Xaml.BeforeBurning": {
+    "zh-CN": "刻录前确认",
+    "en": "Before burning",
+    "zh-TW": "燒錄前確認"
+  },
+  "Xaml.StreamingRequiresBlankMediaInterruptionsPowerLossOrInsufficient": {
+    "zh-CN": "流式刻录仅支持空白介质。刻录开始后，中断、断电或生成速度不足都可能导致盘片报废。",
+    "en": "Streaming requires blank media. Interruptions, power loss, or insufficient generation speed may make the disc unusable.",
+    "zh-TW": "串流燒錄僅支援空白媒體。開始燒錄後，中斷、斷電或資料產生速度不足，都可能導致光碟報廢。"
+  },
+  "Xaml.IHaveInsertedTheCorrectBlankDisc": {
+    "zh-CN": "我确认已放入正确的空白盘",
+    "en": "I have inserted the correct blank disc",
+    "zh-TW": "我確認已放入正確的空白光碟"
+  },
+  "Xaml.StartStreamingBurn": {
+    "zh-CN": "开始流式刻录",
+    "en": "Start streaming burn",
+    "zh-TW": "開始串流燒錄"
+  },
+  "Xaml.CancelBurn": {
+    "zh-CN": "取消刻录",
+    "en": "Cancel burn",
+    "zh-TW": "取消燒錄"
+  },
+  "Xaml.SaveAsPreset": {
+    "zh-CN": "保存为预设",
+    "en": "Save as preset",
+    "zh-TW": "儲存為預設"
+  },
+  "Xaml.PresetName": {
+    "zh-CN": "预设名称",
+    "en": "Preset name",
+    "zh-TW": "預設名稱"
+  },
+  "Xaml.Save": {
+    "zh-CN": "保存",
+    "en": "Save",
+    "zh-TW": "儲存"
+  },
+  "Xaml.About2": {
+    "zh-CN": "关于…",
+    "en": "About…",
+    "zh-TW": "關於…"
+  },
+  "Xaml.BackToHome": {
+    "zh-CN": "返回主页",
+    "en": "Back to Home",
+    "zh-TW": "返回主頁"
+  },
+  "Xaml.ProjectSettings": {
+    "zh-CN": "工程设置",
+    "en": "Project settings",
+    "zh-TW": "專案設定"
+  },
+  "Xaml.Unsaved": {
+    "zh-CN": "未保存",
+    "en": "Unsaved",
+    "zh-TW": "未儲存"
+  },
+  "Xaml.ParametersUpdated": {
+    "zh-CN": "参数已更新",
+    "en": "Parameters updated",
+    "zh-TW": "參數已更新"
+  },
+  "Xaml.Design": {
+    "zh-CN": "设计",
+    "en": "Design",
+    "zh-TW": "設計"
+  },
+  "Xaml.Preview": {
+    "zh-CN": "预览",
+    "en": "Preview",
+    "zh-TW": "預覽"
+  },
+  "Xaml.Export": {
+    "zh-CN": "导出",
+    "en": "Export",
+    "zh-TW": "匯出"
+  },
+  "Xaml.Calibration": {
+    "zh-CN": "标定",
+    "en": "Calibration",
+    "zh-TW": "校準"
+  },
+  "Xaml.CollapseSidebar": {
+    "zh-CN": "收起侧边栏",
+    "en": "Collapse sidebar",
+    "zh-TW": "收起側邊欄"
+  },
+  "Xaml.Browse2": {
+    "zh-CN": "浏览",
+    "en": "Browse",
+    "zh-TW": "瀏覽"
+  },
+  "Xaml.ExportTheDesignCompositeAsABurnableImageAdjust": {
+    "zh-CN": "导出设计页的合成图为可刻录的镜像。相关参数请在“工程设置”中修改",
+    "en": "Export the design composite as a burnable image. Adjust its parameters in Project settings.",
+    "zh-TW": "將設計頁的合成圖匯出為可燒錄的映像。請在「專案設定」中修改相關參數。"
+  },
+  "Xaml.NextBurn": {
+    "zh-CN": "下一步：刻录",
+    "en": "Next: Burn",
+    "zh-TW": "下一步：燒錄"
+  },
+  "Xaml.SourceImage": {
+    "zh-CN": "源图片",
+    "en": "Source image",
+    "zh-TW": "來源圖片"
+  },
+  "Xaml.ProjectSettings2": {
+    "zh-CN": "工程设置…",
+    "en": "Project settings…",
+    "zh-TW": "專案設定…"
+  },
+  "Xaml.EditGeometryRadiiSectorsAndTrackPitchInProject": {
+    "zh-CN": "几何参数（半径、扇区、轨距）在工程设置中修改。",
+    "en": "Edit geometry (radii, sectors, and track pitch) in Project settings.",
+    "zh-TW": "幾何參數（半徑、磁區、軌距）在專案設定中修改。"
+  },
+  "Xaml.ImportImagesInDesign": {
+    "zh-CN": "前往设计导入图片",
+    "en": "Import images in Design",
+    "zh-TW": "前往設計匯入圖片"
+  },
+  "Xaml.OutputFile": {
+    "zh-CN": "输出文件",
+    "en": "Output file",
+    "zh-TW": "輸出檔案"
+  },
+  "Xaml.Select": {
+    "zh-CN": "选择…",
+    "en": "Select…",
+    "zh-TW": "選擇…"
+  },
+  "Xaml.VolumeLabel": {
+    "zh-CN": "卷标",
+    "en": "Volume label",
+    "zh-TW": "卷標"
+  },
+  "Xaml.CDDAEncoding": {
+    "zh-CN": "CD-DA 编码",
+    "en": "CD-DA encoding",
+    "zh-TW": "CD-DA 編碼"
+  },
+  "Xaml.ApplyCDDADelayInterleavingWhenGeneratingAudioTracks": {
+    "zh-CN": "生成音轨时按 CD-DA 标准做延迟交织。不清楚请默认勾选此项。",
+    "en": "Apply CD-DA delay interleaving when generating audio tracks. Leave this enabled if unsure.",
+    "zh-TW": "產生音軌時依 CD-DA 標準進行延遲交錯。若不確定，請保留勾選。"
+  },
+  "Xaml.EnableCDDADelayInterleaving": {
+    "zh-CN": "启用 CD-DA 延迟交织",
+    "en": "Enable CD-DA delay interleaving",
+    "zh-TW": "啟用 CD-DA 延遲交錯"
+  },
+  "Xaml.AlsoExportACUEFile": {
+    "zh-CN": "同时导出 CUE 文件",
+    "en": "Also export a CUE file",
+    "zh-TW": "同時匯出 CUE 檔案"
+  },
+  "Xaml.OutputISO": {
+    "zh-CN": "输出 ISO",
+    "en": "Output ISO",
+    "zh-TW": "輸出 ISO"
+  },
+  "Xaml.WritingAFileDoesNotModifyTheDisc": {
+    "zh-CN": "写入文件不会改动盘片。",
+    "en": "Writing a file does not modify the disc.",
+    "zh-TW": "寫入檔案不會變更光碟內容。"
+  },
+  "Xaml.DonTSave": {
+    "zh-CN": "不保存",
+    "en": "Don't save",
+    "zh-TW": "不儲存"
+  },
+  "Xaml.ConfirmBurn": {
+    "zh-CN": "确认刻录",
+    "en": "Confirm burn",
+    "zh-TW": "確認燒錄"
+  },
+  "Xaml.DesignProjectionQuicklyMapsTheSourceImageUsingProject": {
+    "zh-CN": "“设计投影”按工程参数将源图投到盘面上，速度快；“成品读回”则读取已生成的镜像文件还原。生成几何参数请在工程设置中修改。",
+    "en": "Design projection quickly maps the source image using project parameters. Output readback reconstructs a generated image file. Edit generation geometry in Project settings.",
+    "zh-TW": "「設計投影」依專案參數將來源圖片投影至碟面，速度較快；「成品讀回」則讀取已產生的映像檔來還原。請在專案設定中修改產生映像所用的幾何參數。"
+  },
+  "Xaml.NextExport": {
+    "zh-CN": "下一步：导出",
+    "en": "Next: Export",
+    "zh-TW": "下一步：匯出"
+  },
+  "Xaml.DesignProjection": {
+    "zh-CN": "设计投影",
+    "en": "Design projection",
+    "zh-TW": "設計投影"
+  },
+  "Xaml.OutputReadback": {
+    "zh-CN": "成品读回",
+    "en": "Output readback",
+    "zh-TW": "成品讀回"
+  },
+  "Xaml.ProjectParameters": {
+    "zh-CN": "当前工程参数",
+    "en": "Geometry",
+    "zh-TW": "目前專案參數"
+  },
+  "Xaml.MeasurementsAndQualityAdvanced": {
+    "zh-CN": "实测参数与预览精度（高级）",
+    "en": "Advanced preview settings",
+    "zh-TW": "實測參數與預覽精度（進階）"
+  },
+  "Xaml.InnerRadiusMm": {
+    "zh-CN": "内半径 (mm)",
+    "en": "Inner r (mm)",
+    "zh-TW": "內半徑 (mm)"
+  },
+  "Xaml.OuterRadiusMm": {
+    "zh-CN": "外半径 (mm)",
+    "en": "Outer r (mm)",
+    "zh-TW": "外半徑 (mm)"
+  },
+  "Xaml.PreviewQuality": {
+    "zh-CN": "预览精度",
+    "en": "Preview quality",
+    "zh-TW": "預覽精度"
+  },
+  "Xaml.OutputSizePx": {
+    "zh-CN": "导出尺寸 (px)",
+    "en": "Output size (px)",
+    "zh-TW": "匯出尺寸 (px)"
+  },
+  "Xaml.SamplesPerSector": {
+    "zh-CN": "每扇区采样",
+    "en": "Samples/sector",
+    "zh-TW": "每磁區取樣"
+  },
+  "Xaml.LargerSizesShowMoreDetailButTakeLongerTo": {
+    "zh-CN": "尺寸越大投影越细，刷新越慢。",
+    "en": "Larger sizes show more detail but take longer to refresh.",
+    "zh-TW": "尺寸越大，投影越精細，重新整理所需時間也越長。"
+  },
+  "Xaml.Deinterleave": {
+    "zh-CN": "逆交织",
+    "en": "Deinterleave",
+    "zh-TW": "解交錯"
+  },
+  "Xaml.EnableThisIfTheAudioTrackWasGeneratedWith": {
+    "zh-CN": "若音轨生成时启用了延迟交织，则应勾选该选项。",
+    "en": "Enable this if the audio track was generated with delay interleaving.",
+    "zh-TW": "若音軌產生時啟用了延遲交錯，則應勾選該選項。"
+  },
+  "Xaml.RefreshPreview": {
+    "zh-CN": "刷新预览",
+    "en": "Refresh preview",
+    "zh-TW": "重新整理預覽"
+  },
+  "Xaml.ExportPreview": {
+    "zh-CN": "导出预览",
+    "en": "Export preview",
+    "zh-TW": "匯出預覽"
+  },
+  "Xaml.ExportTheCurrentPreviewToTheInputSourceFolder": {
+    "zh-CN": "导出当前预览图到输入来源所在文件夹",
+    "en": "Export the current preview to the input source folder",
+    "zh-TW": "匯出目前預覽圖到輸入來源所在資料夾"
+  },
+  "Xaml.YellowFileAreaIncludingFilesystem": {
+    "zh-CN": "黄色：文件区（含文件系统）",
+    "en": "Yellow: file area (including filesystem)",
+    "zh-TW": "黃色：檔案區（含檔案系統）"
+  },
+  "Xaml.CreateAndBurnVisibleArtworkOnOpticalDiscs": {
+    "zh-CN": "全能的光盘盘面可见图像生成与刻录工作台",
+    "en": "Create and burn visible artwork on optical discs",
+    "zh-TW": "整合光碟表面圖像製作與燒錄的工作台"
+  },
+  "Xaml.ReturnToTheOpenProjectAndContinueInDesign": {
+    "zh-CN": "回到打开的工程，从设计工作区继续。",
+    "en": "Return to the open project and continue in Design.",
+    "zh-TW": "回到開啟的專案，從設計工作區繼續。"
+  },
+  "Xaml.BackToProject": {
+    "zh-CN": "返回工程",
+    "en": "Back to project",
+    "zh-TW": "返回專案"
+  },
+  "Xaml.OpenProject": {
+    "zh-CN": "打开工程",
+    "en": "Open project",
+    "zh-TW": "開啟專案"
+  },
+  "Xaml.StartFromATemplate": {
+    "zh-CN": "从模板开始",
+    "en": "Start from a template",
+    "zh-TW": "從範本開始"
+  },
+  "Xaml.RecentProjects": {
+    "zh-CN": "最近工程",
+    "en": "Recent projects",
+    "zh-TW": "最近專案"
+  },
+  "Xaml.Clear": {
+    "zh-CN": "清空",
+    "en": "Clear",
+    "zh-TW": "清除"
+  },
+  "Xaml.RemoveFromList": {
+    "zh-CN": "从列表中移除",
+    "en": "Remove from list",
+    "zh-TW": "從清單中移除"
+  },
+  "Xaml.Calibration2": {
+    "zh-CN": "辅助标定",
+    "en": "Calibration",
+    "zh-TW": "輔助校準"
+  },
+  "Xaml.UseDiscImageStudioSBuiltInAlgorithmsTo": {
+    "zh-CN": "通过 Disc Image Studio 内置的智能算法，您可以利用数张实拍图片轻松确定盘片的真实物理数据",
+    "en": "Use Disc Image Studio's built-in algorithms to determine physical disc parameters from photographs.",
+    "zh-TW": "利用 Disc Image Studio 內建的智慧演算法，只需數張實拍相片，即可輕鬆確定光碟的實際物理參數。"
+  },
+  "Xaml.CalibrationPhoto": {
+    "zh-CN": "标定照片",
+    "en": "Calibration photo",
+    "zh-TW": "校準相片"
+  },
+  "Xaml.ZoomOut": {
+    "zh-CN": "缩小",
+    "en": "Zoom out",
+    "zh-TW": "縮小"
+  },
+  "Xaml.ZoomIn": {
+    "zh-CN": "放大",
+    "en": "Zoom in",
+    "zh-TW": "放大"
+  },
+  "Xaml.FitToWindow": {
+    "zh-CN": "适合窗口",
+    "en": "Fit to window",
+    "zh-TW": "符合視窗大小"
+  },
+  "Xaml.ShowBurnPattern": {
+    "zh-CN": "查看刻录图案",
+    "en": "Burn pattern",
+    "zh-TW": "檢視燒錄圖案"
+  },
+  "Xaml.ShowRectifiedPreview": {
+    "zh-CN": "查看矫正预览",
+    "en": "Rectified preview",
+    "zh-TW": "檢視校正預覽"
+  },
+  "Xaml.OverlayFittedCurves": {
+    "zh-CN": "叠加拟合曲线",
+    "en": "Fitted curves",
+    "zh-TW": "疊加擬合曲線"
+  },
+  "Xaml.ScrollToZoomRightDragToPanDragPoints": {
+    "zh-CN": "滚轮缩放，右键平移。拖动已有点修正位置；描线时点击添加点，Delete 删除选中点。",
+    "en": "Scroll to zoom; right-drag to pan. Drag points to adjust them. Click to add trace points; press Delete to remove the selected point.",
+    "zh-TW": "以滾輪縮放、右鍵拖曳平移。拖曳現有點可修正位置；描線時按一下可新增點，按 Delete 刪除選取點。"
+  },
+  "Xaml.PhysicalOuterEdge": {
+    "zh-CN": "实体外缘",
+    "en": "Physical outer edge",
+    "zh-TW": "實體外緣"
+  },
+  "Xaml.PhysicalInnerEdge": {
+    "zh-CN": "实体内缘",
+    "en": "Physical inner edge",
+    "zh-TW": "實體內緣"
+  },
+  "Xaml.DeletePoint": {
+    "zh-CN": "删除选中点",
+    "en": "Delete point",
+    "zh-TW": "刪除選取點"
+  },
+  "Xaml.ClearCurves": {
+    "zh-CN": "清空曲线",
+    "en": "Clear curves",
+    "zh-TW": "清除曲線"
+  },
+  "Xaml.Photograph": {
+    "zh-CN": "实拍输入",
+    "en": "Photograph",
+    "zh-TW": "實拍輸入"
+  },
+  "Xaml.Prediction": {
+    "zh-CN": "参数预测",
+    "en": "Prediction",
+    "zh-TW": "參數預測"
+  },
+  "Xaml.LargeDeviation": {
+    "zh-CN": "偏离较大",
+    "en": "Large deviation",
+    "zh-TW": "偏離較大"
+  },
+  "Xaml.CreateCalibrationDisc": {
+    "zh-CN": "生成标定盘",
+    "en": "Create target",
+    "zh-TW": "產生校準光碟"
+  },
+  "Xaml.CreateTargetFromParameters": {
+    "zh-CN": "从当前参数新建标靶",
+    "en": "Create target from parameters",
+    "zh-TW": "從目前參數新增標靶"
+  },
+  "Xaml.OpenStreamingBurn": {
+    "zh-CN": "前往流式刻录",
+    "en": "Open streaming burn",
+    "zh-TW": "前往串流燒錄"
+  },
+  "Xaml.OpenBurnToSelectARecorderAndConfirmWriting": {
+    "zh-CN": "前往刻录工作区，选择设备并确认写入。",
+    "en": "Open Burn to select a recorder and confirm writing.",
+    "zh-TW": "前往燒錄工作區，選擇裝置並確認寫入。"
+  },
+  "Xaml.ExternalBurning": {
+    "zh-CN": "外部刻录",
+    "en": "External burning",
+    "zh-TW": "外部燒錄"
+  },
+  "Xaml.GenerateAnImageOrAudioTrackForExternalBurning": {
+    "zh-CN": "生成镜像或音轨，用外部刻录软件写入。",
+    "en": "Generate an image or audio track for external burning software.",
+    "zh-TW": "產生映像或音軌，用外部燒錄軟體寫入。"
+  },
+  "Xaml.ChooseLocation": {
+    "zh-CN": "选择位置",
+    "en": "Choose location",
+    "zh-TW": "選擇位置"
+  },
+  "Xaml.GenerateImageTrack": {
+    "zh-CN": "生成镜像／音轨",
+    "en": "Generate image / track",
+    "zh-TW": "產生映像／音軌"
+  },
+  "Xaml.ExportPatternPNG": {
+    "zh-CN": "导出图案 PNG",
+    "en": "Export pattern PNG",
+    "zh-TW": "匯出圖案 PNG"
+  },
+  "Xaml.CalibrationSessionAdvanced": {
+    "zh-CN": "标定记录（高级）",
+    "en": "Calibration session (advanced)",
+    "zh-TW": "校準記錄（進階）"
+  },
+  "Xaml.SaveCalibrationSession": {
+    "zh-CN": "保存标定记录",
+    "en": "Save calibration session",
+    "zh-TW": "儲存校準記錄"
+  },
+  "Xaml.OpenCalibrationSession": {
+    "zh-CN": "打开标定记录",
+    "en": "Open calibration session",
+    "zh-TW": "開啟校準記錄"
+  },
+  "Xaml.RectifyPhoto": {
+    "zh-CN": "照片矫正",
+    "en": "Rectify photo",
+    "zh-TW": "相片校正"
+  },
+  "Xaml.PhotographBothPhysicalEdgesAndAtLeastOneRadial": {
+    "zh-CN": "拍清外缘、内缘和至少一条径向曲线。合理打光，无需涂黑；控制点定位于实体外缘与内缘。",
+    "en": "Photograph both physical edges and at least one radial curve clearly. Use suitable lighting; no black coating is needed. Place control points on the physical edges.",
+    "zh-TW": "清楚拍攝外緣、內緣與至少一條徑向曲線。適當打光，無須塗黑；控制點應位於實體外緣與內緣。"
+  },
+  "Xaml.ImportDiscPhoto": {
+    "zh-CN": "导入盘片照片",
+    "en": "Import disc photo",
+    "zh-TW": "匯入光碟片相片"
+  },
+  "Xaml.DiscSize": {
+    "zh-CN": "盘片尺寸",
+    "en": "Disc size",
+    "zh-TW": "光碟片尺寸"
+  },
+  "Xaml.CalculateRectification": {
+    "zh-CN": "计算矫正",
+    "en": "Calculate rectification",
+    "zh-TW": "計算校正"
+  },
+  "Xaml.ConfirmAndTraceCurves": {
+    "zh-CN": "确认矫正，开始描线",
+    "en": "Confirm and trace curves",
+    "zh-TW": "確認校正，開始描線"
+  },
+  "Xaml.TraceAndSolve": {
+    "zh-CN": "描曲线并反推",
+    "en": "Trace & solve",
+    "zh-TW": "描繪曲線並反推"
+  },
+  "Xaml.PlacePointsEvenlyAlongAClearCurveFromInside": {
+    "zh-CN": "沿清楚的曲线由内向外均匀打点，建议 16 点以上。",
+    "en": "Place points evenly along a clear curve from inside to outside; at least 16 points are recommended.",
+    "zh-TW": "沿清楚的曲線由內向外均勻打點，建議 16 點以上。"
+  },
+  "Xaml.BackToPhotoCorrection": {
+    "zh-CN": "返回修正照片",
+    "en": "Back to photo correction",
+    "zh-TW": "返回相片校正"
+  },
+  "Xaml.FitCubicDVDTrackPitch": {
+    "zh-CN": "拟合 DVD 三次轨距分布",
+    "en": "Fit cubic DVD track pitch",
+    "zh-TW": "擬合 DVD 三次軌距分佈"
+  },
+  "Xaml.UseAtLeast16PointsAtDifferentRadiiSpanning": {
+    "zh-CN": "至少 16 个不同半径的点，覆盖刻录环带宽度的 60% 以上。",
+    "en": "Use at least 16 points at different radii, spanning more than 60% of the recorded band width.",
+    "zh-TW": "至少需有 16 個不同半徑的點，涵蓋燒錄環帶寬度的 60% 以上。"
+  },
+  "Xaml.SolveParameters": {
+    "zh-CN": "反推参数",
+    "en": "Solve parameters",
+    "zh-TW": "反推參數"
+  },
+  "Xaml.CancelCalculation": {
+    "zh-CN": "取消计算",
+    "en": "Cancel calculation",
+    "zh-TW": "取消計算"
+  },
+  "Xaml.SelectACandidateToSeeItsPredictedCurvesOn": {
+    "zh-CN": "选择候选并查看照片上的预测曲线",
+    "en": "Select a candidate to see its predicted curves on the photo",
+    "zh-TW": "選擇候選並檢視相片上的預測曲線"
+  },
+  "Xaml.ICheckedTheFullCurveItsShapeAndTurns": {
+    "zh-CN": "已对照整条曲线，形状与绕圈一致",
+    "en": "I checked the full curve; its shape and turns match",
+    "zh-TW": "已對照整條曲線，形狀與繞圈一致"
+  },
+  "Xaml.ApplyCalibration": {
+    "zh-CN": "应用标定参数",
+    "en": "Apply calibration",
+    "zh-TW": "套用校準參數"
+  },
+  "Xaml.NotStarted": {
+    "zh-CN": "待开始",
+    "en": "Not started",
+    "zh-TW": "待開始"
+  },
+  "Xaml.InProgress": {
+    "zh-CN": "进行中",
+    "en": "In progress",
+    "zh-TW": "進行中"
+  },
+  "Xaml.Complete": {
+    "zh-CN": "已完成",
+    "en": "Complete",
+    "zh-TW": "已完成"
+  },
+  "Xaml.LayerName": {
+    "zh-CN": "图层名",
+    "en": "Layer name",
+    "zh-TW": "圖層名稱"
+  },
+  "Xaml.Rotation": {
+    "zh-CN": "旋转 (°)",
+    "en": "Rotation (°)",
+    "zh-TW": "旋轉 (°)"
+  },
+  "Xaml.Scale": {
+    "zh-CN": "缩放 (%)",
+    "en": "Scale (%)",
+    "zh-TW": "縮放 (%)"
+  },
+  "Xaml.NextPreview": {
+    "zh-CN": "下一步：预览",
+    "en": "Next: Preview",
+    "zh-TW": "下一步：預覽"
+  },
+  "Xaml.Layers": {
+    "zh-CN": "图层",
+    "en": "Layers",
+    "zh-TW": "圖層"
+  },
+  "Xaml.ShowOrHideLayer": {
+    "zh-CN": "显示或隐藏图层",
+    "en": "Show or hide layer",
+    "zh-TW": "顯示或隱藏圖層"
+  },
+  "Xaml.ShowHide": {
+    "zh-CN": "显示 / 隐藏",
+    "en": "Show / Hide",
+    "zh-TW": "顯示 / 隱藏"
+  },
+  "Xaml.MoveLayerUp": {
+    "zh-CN": "上移图层",
+    "en": "Move layer up",
+    "zh-TW": "上移圖層"
+  },
+  "Xaml.MoveUpOneLayer": {
+    "zh-CN": "上移一层",
+    "en": "Move up one layer",
+    "zh-TW": "上移一層"
+  },
+  "Xaml.MoveLayerDown": {
+    "zh-CN": "下移图层",
+    "en": "Move layer down",
+    "zh-TW": "下移圖層"
+  },
+  "Xaml.MoveDownOneLayer": {
+    "zh-CN": "下移一层",
+    "en": "Move down one layer",
+    "zh-TW": "下移一層"
+  },
+  "Xaml.DeleteLayer": {
+    "zh-CN": "删除图层",
+    "en": "Delete layer",
+    "zh-TW": "刪除圖層"
+  },
+  "Xaml.DeleteSelectedLayerDel": {
+    "zh-CN": "删除选中图层（Del）",
+    "en": "Delete selected layer (Del)",
+    "zh-TW": "刪除選取圖層（Del）"
+  },
+  "Xaml.ImportImages": {
+    "zh-CN": "导入图片",
+    "en": "Import images",
+    "zh-TW": "匯入圖片"
+  },
+  "Xaml.DiscFiles": {
+    "zh-CN": "随盘文件",
+    "en": "Disc files",
+    "zh-TW": "隨碟檔案"
+  },
+  "Xaml.Folder": {
+    "zh-CN": "文件夹",
+    "en": "Folder",
+    "zh-TW": "資料夾"
+  },
+  "Xaml.Browse3": {
+    "zh-CN": "选文件夹…",
+    "en": "Browse…",
+    "zh-TW": "選資料夾…"
+  },
+  "Xaml.FilePlacement": {
+    "zh-CN": "文件位置",
+    "en": "File placement",
+    "zh-TW": "檔案位置"
+  },
+  "Xaml.InnerRing": {
+    "zh-CN": "内圈",
+    "en": "Inner ring",
+    "zh-TW": "內圈"
+  },
+  "Xaml.OuterRing": {
+    "zh-CN": "外圈",
+    "en": "Outer ring",
+    "zh-TW": "外圈"
+  },
+  "Xaml.UsesAnAudioTrackWithoutFilesSwitchesToA": {
+    "zh-CN": "不附文件时使用音轨；附文件时自动使用数据盘。",
+    "en": "Uses an audio track without files; switches to a data disc when files are included.",
+    "zh-TW": "不附檔案時使用音軌；附檔案時自動使用資料光碟。"
+  },
+  "Xaml.FolderOptional": {
+    "zh-CN": "文件夹（留空则整盘只绘图）",
+    "en": "Folder (optional)",
+    "zh-TW": "資料夾（留空則整張光碟只繪圖）"
+  },
+  "Xaml.CtrlAltScrollToZoomMiddleDragToPan": {
+    "zh-CN": "Ctrl/Alt + 滚轮同样可以缩放；中键拖动平移",
+    "en": "Ctrl/Alt + scroll to zoom; middle-drag to pan",
+    "zh-TW": "Ctrl/Alt + 滾輪同樣可以縮放；中鍵拖曳平移"
+  },
+  "Xaml.FitToWindow2": {
+    "zh-CN": "适应窗口",
+    "en": "Fit to window",
+    "zh-TW": "符合視窗大小"
+  },
+  "Xaml.FitToWindowOrDoubleClickEmptySpace": {
+    "zh-CN": "适应窗口（双击空白处同样生效）",
+    "en": "Fit to window (or double-click empty space)",
+    "zh-TW": "符合視窗大小（也可按兩下空白處）"
+  },
+  "Xaml.Properties": {
+    "zh-CN": "属性",
+    "en": "Properties",
+    "zh-TW": "屬性"
+  },
+  "Xaml.SelectALayerOnTheCanvasToEditIts": {
+    "zh-CN": "在画布上点击一个图层以编辑它的位置、旋转与缩放。",
+    "en": "Select a layer on the canvas to edit its position, rotation, and scale.",
+    "zh-TW": "在畫布上選取圖層，即可編輯其位置、旋轉角度與縮放比例。"
+  },
+  "Xaml.Tone": {
+    "zh-CN": "影调",
+    "en": "Tone",
+    "zh-TW": "影調"
+  },
+  "Xaml.NoPreview": {
+    "zh-CN": "暂无预览",
+    "en": "No preview",
+    "zh-TW": "暫無預覽"
+  },
+  "Xaml.Dithering": {
+    "zh-CN": "抖动强度",
+    "en": "Dithering",
+    "zh-TW": "抖動強度"
+  },
+  "Xaml.Brightness": {
+    "zh-CN": "亮度",
+    "en": "Brightness",
+    "zh-TW": "亮度"
+  },
+  "Xaml.GrayLevels": {
+    "zh-CN": "灰阶档位",
+    "en": "Gray levels",
+    "zh-TW": "灰階級數"
+  },
+  "Xaml.2Levels": {
+    "zh-CN": "2 级",
+    "en": "2 levels",
+    "zh-TW": "2 級"
+  },
+  "Xaml.4Levels": {
+    "zh-CN": "4 级",
+    "en": "4 levels",
+    "zh-TW": "4 級"
+  },
+  "Xaml.FourLevelsUseFourTonesToRevealFinerDetails": {
+    "zh-CN": "4 级即四种颜色，可呈现出更好的图案细节。",
+    "en": "Four levels use four tones to reveal finer details.",
+    "zh-TW": "4 級即四種顏色，可呈現出更好的圖案細節。"
+  },
+  "Xaml.SRGBLinearizationGamma": {
+    "zh-CN": "sRGB 线性化（伽马校准）",
+    "en": "sRGB linearization (gamma)",
+    "zh-TW": "sRGB 線性化（Gamma 校正）"
+  },
+  "Xaml.SRGBLinearization": {
+    "zh-CN": "sRGB 线性化",
+    "en": "sRGB linearization",
+    "zh-TW": "sRGB 線性化"
+  },
+  "Xaml.MayImproveTheVisibilityOfTheDiscArtwork": {
+    "zh-CN": "可能使盘面上的图案更明显。",
+    "en": "May improve the visibility of the disc artwork.",
+    "zh-TW": "可能使碟面上的圖案更明顯。"
+  },
+  "Xaml.Invert3T6TMapping": {
+    "zh-CN": "反转 3T / 6T 映射",
+    "en": "Invert 3T / 6T mapping",
+    "zh-TW": "反轉 3T / 6T 映射"
+  },
+  "Xaml.SwapDarkAndLightRegionsActualDiscContrastDepends": {
+    "zh-CN": "交换暗部与亮部。实盘明暗仍以标定结果为准。",
+    "en": "Swap dark and light regions. Actual disc contrast depends on calibration.",
+    "zh-TW": "交換暗部與亮部。實際光碟的明暗仍以校準結果為準。"
+  },
+  "Xaml.ResetDefaults": {
+    "zh-CN": "恢复默认",
+    "en": "Reset defaults",
+    "zh-TW": "還原預設值"
+  },
+  "Xaml.DismissNotification": {
+    "zh-CN": "关闭通知",
+    "en": "Dismiss notification",
+    "zh-TW": "關閉通知"
+  },
+  "Xaml.Close": {
+    "zh-CN": "关闭",
+    "en": "Close",
+    "zh-TW": "關閉"
+  },
+  "Xaml.AppMenu": {
+    "zh-CN": "应用菜单",
+    "en": "App menu",
+    "zh-TW": "應用程式選單"
+  },
+  "Xaml.SettingsButton": {
+    "zh-CN": "设置",
+    "en": "Settings",
+    "zh-TW": "設定"
+  },
+  "Xaml.OpenSettingsShortcut": {
+    "zh-CN": "打开设置 (Ctrl+,)",
+    "en": "Open settings (Ctrl+,)",
+    "zh-TW": "開啟設定 (Ctrl+,)"
+  },
+  "Xaml.Minimize": {
+    "zh-CN": "最小化",
+    "en": "Minimize",
+    "zh-TW": "最小化"
+  },
+  "Xaml.Maximize": {
+    "zh-CN": "最大化",
+    "en": "Maximize",
+    "zh-TW": "最大化"
+  },
+  "Xaml.LayerCountFormat": {
+    "zh-CN": "{0} 层",
+    "en": "{0} layers",
+    "zh-TW": "{0} 層"
+  }
+}

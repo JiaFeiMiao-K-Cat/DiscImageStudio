@@ -1,6 +1,7 @@
 <UserControl x:Class="DiscImageStudio.Controls.TonePanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:DiscImageStudio.Localization"
              xmlns:controls="clr-namespace:DiscImageStudio.Controls">
     <!-- Tone module for the design page's 280 px rail and the full-width rail it becomes
          below the page breakpoint. The preview is a caption-less centered medallion: the
@@ -20,7 +21,7 @@
         </Grid.ColumnDefinitions>
 
         <TextBlock x:Name="ModuleTitle" Grid.Row="0" Grid.ColumnSpan="3"
-                   Text="影调" Style="{StaticResource PanelTitle}" Margin="0,0,0,12" />
+                   Text="{loc:Text Xaml.Tone}" Style="{StaticResource PanelTitle}" Margin="0,0,0,12" />
 
         <Border x:Name="TonePreviewCard" Grid.Row="1" Grid.Column="0"
                 Background="{DynamicResource Surface2Brush}"
@@ -61,7 +62,7 @@
                         </Style>
                     </Ellipse.Style>
                 </Ellipse>
-                <TextBlock Text="暂无预览" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="{loc:Text Xaml.NoPreview}" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock" BasedOn="{StaticResource MicroText}">
                             <Setter Property="Visibility" Value="Visible" />
@@ -80,54 +81,54 @@
 
         <StackPanel x:Name="ToneControls" Grid.Row="2" Grid.Column="0" Margin="0,14,0,0">
             <Grid>
-                <TextBlock Style="{StaticResource FieldLabel}" Margin="0" Text="抖动强度" />
+                <TextBlock Style="{StaticResource FieldLabel}" Margin="0" Text="{loc:Text Xaml.Dithering}" />
                 <TextBlock Style="{StaticResource RowText}" HorizontalAlignment="Right"
                            Text="{Binding State.ToneDitherText}" />
             </Grid>
             <Slider Style="{StaticResource ToneSlider}" Minimum="0" Maximum="1"
                     Value="{Binding State.ToneDitherStrength, Mode=TwoWay}"
-                    AutomationProperties.Name="抖动强度" />
+                    AutomationProperties.Name="{loc:Text Xaml.Dithering}" />
 
             <Grid Margin="0,12,0,0">
-                <TextBlock Style="{StaticResource FieldLabel}" Margin="0" Text="亮度" />
+                <TextBlock Style="{StaticResource FieldLabel}" Margin="0" Text="{loc:Text Xaml.Brightness}" />
                 <TextBlock Style="{StaticResource RowText}" HorizontalAlignment="Right"
                            Text="{Binding State.ToneBrightnessText}" />
             </Grid>
             <Slider Style="{StaticResource ToneBipolarSlider}" Minimum="-64" Maximum="64"
                     Value="{Binding State.ToneBrightness, Mode=TwoWay}"
-                    AutomationProperties.Name="亮度" />
+                    AutomationProperties.Name="{loc:Text Xaml.Brightness}" />
 
             <controls:VisibilityGate IsOpen="{Binding IsCd}" Margin="0,12,0,0">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource FieldLabel}" Margin="0" Text="灰阶档位" />
-                    <controls:SegmentedControl LabelA="2 级" LabelB="4 级"
+                    <TextBlock Style="{StaticResource FieldLabel}" Margin="0" Text="{loc:Text Xaml.GrayLevels}" />
+                    <controls:SegmentedControl LabelA="{loc:Text Xaml.2Levels}" LabelB="{loc:Text Xaml.4Levels}"
                                                HorizontalAlignment="Stretch"
                                                IsSecondSelected="{Binding State.IsFourLevelSelected}" />
                     <TextBlock Style="{StaticResource CompactHint}" Margin="0,4,0,0"
-                               Text="4 级即四种颜色，可呈现出更好的图案细节。" />
+                               Text="{loc:Text Xaml.FourLevelsUseFourTonesToRevealFinerDetails}" />
                 </StackPanel>
             </controls:VisibilityGate>
 
-            <CheckBox Margin="0,12,0,0" Content="sRGB 线性化（伽马校准）"
+            <CheckBox Margin="0,12,0,0" Content="{loc:Text Xaml.SRGBLinearizationGamma}"
                       IsChecked="{Binding State.ToneSrgbLinearization, Mode=TwoWay}"
-                      AutomationProperties.Name="sRGB 线性化" />
+                      AutomationProperties.Name="{loc:Text Xaml.SRGBLinearization}" />
             <TextBlock Style="{StaticResource CompactHint}" Margin="0,4,0,0"
-                       Text="可能使盘面上的图案更明显。" />
+                       Text="{loc:Text Xaml.MayImproveTheVisibilityOfTheDiscArtwork}" />
 
             <controls:VisibilityGate IsOpen="{Binding IsBluRay}" Margin="0,12,0,0">
                 <StackPanel>
-                    <CheckBox Content="反转 3T / 6T 映射"
+                    <CheckBox Content="{loc:Text Xaml.Invert3T6TMapping}"
                               IsChecked="{Binding State.BdInvertMapping, Mode=TwoWay}"
-                              AutomationProperties.Name="反转 3T / 6T 映射" />
+                              AutomationProperties.Name="{loc:Text Xaml.Invert3T6TMapping}" />
                     <TextBlock Style="{StaticResource CompactHint}" Margin="0,4,0,0"
-                               Text="交换暗部与亮部。实盘明暗仍以标定结果为准。" />
+                               Text="{loc:Text Xaml.SwapDarkAndLightRegionsActualDiscContrastDepends}" />
                 </StackPanel>
             </controls:VisibilityGate>
 
             <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                <Button Style="{StaticResource CompactButton}" Content="恢复默认"
+                <Button Style="{StaticResource CompactButton}" Content="{loc:Text Xaml.ResetDefaults}"
                         Command="{Binding ResetToneCommand}" />
-                <Button Style="{StaticResource CompactButton}" Content="刷新预览"
+                <Button Style="{StaticResource CompactButton}" Content="{loc:Text Xaml.RefreshPreview}"
                         Command="{Binding RefreshTonePreviewCommand}" Margin="8,0,0,0" />
             </StackPanel>
         </StackPanel>

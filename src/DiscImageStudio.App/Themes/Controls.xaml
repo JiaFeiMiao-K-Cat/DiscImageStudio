@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:loc="clr-namespace:DiscImageStudio.Localization"
                     xmlns:controls="clr-namespace:DiscImageStudio.Controls"
                     xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks">
 
@@ -1283,7 +1284,7 @@
                                                         Background="{DynamicResource Surface3Brush}" VerticalAlignment="Center"
                                                         Margin="10,0,0,0">
                                                     <TextBlock x:Name="StateChipText" Style="{StaticResource MicroText}"
-                                                               Text="待开始" />
+                                                               Text="{loc:Text Xaml.NotStarted}" />
                                                 </Border>
                                                 <iconPacks:PackIconLucide Grid.Column="3" x:Name="HeaderChevron" Kind="ChevronDown"
                                                                           Width="16" Height="16" Margin="10,0,0,0" VerticalAlignment="Center"
@@ -1307,7 +1308,7 @@
                                                          Value="Active">
                                                 <Setter TargetName="StepDot" Property="Background" Value="{DynamicResource PrimaryBrush}" />
                                                 <Setter TargetName="StepNumberText" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                                                <Setter TargetName="StateChipText" Property="Text" Value="进行中" />
+                                                <Setter TargetName="StateChipText" Property="Text" Value="{loc:Text Xaml.InProgress}" />
                                                 <Setter TargetName="StateChipText" Property="Foreground" Value="{DynamicResource PrimaryHoverBrush}" />
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding State, RelativeSource={RelativeSource AncestorType={x:Type controls:StepCard}}}"
@@ -1315,7 +1316,7 @@
                                                 <Setter TargetName="StepDot" Property="Background" Value="{DynamicResource SuccessSoftBrush}" />
                                                 <Setter TargetName="StepNumberText" Property="Visibility" Value="Collapsed" />
                                                 <Setter TargetName="DoneCheck" Property="Visibility" Value="Visible" />
-                                                <Setter TargetName="StateChipText" Property="Text" Value="已完成" />
+                                                <Setter TargetName="StateChipText" Property="Text" Value="{loc:Text Xaml.Complete}" />
                                                 <Setter TargetName="StateChipText" Property="Foreground" Value="{DynamicResource SuccessBrush}" />
                                             </DataTrigger>
                                         </ControlTemplate.Triggers>

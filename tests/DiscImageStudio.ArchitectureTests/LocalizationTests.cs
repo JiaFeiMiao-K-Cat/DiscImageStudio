@@ -1,0 +1,270 @@
+using System.Globalization;
+using System.IO;
+using System.Text;
+using DiscImageStudio.Localization;
+using DiscImageStudio.Services;
+using DiscImageStudio.ViewModels;
+
+/// <summary>Checks shipped translations and the language preference independently of WPF
+/// windows, including culture isolation and the save/cancel boundary.</summary>
+internal static class LocalizationTests
+{
+    private static readonly (int Index, string Language)[] LanguageChoices =
+    [
+        (0, L.SystemLanguage),
+        (1, L.Chinese),
+        (2, L.TraditionalChinese),
+        (3, L.English),
+    ];
+
+    public static void Run()
+    {
+        string originalLanguage = L.CurrentLanguage;
+        CultureInfo originalCulture = CultureInfo.CurrentCulture;
+        CultureInfo originalUiCulture = CultureInfo.CurrentUICulture;
+        CultureInfo? originalDefaultUiCulture = CultureInfo.DefaultThreadCurrentUICulture;
+        string directory = Path.Combine(Path.GetTempPath(), "disc-localization-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            TestCatalog();
+            TestLanguageResolution();
+            TestTranslationAndFormatting();
+            TestDefaultSettings(directory);
+            TestLanguageSettings(directory);
+            TestCancelledSettings(directory);
+            TestFailedSettings(directory);
+        }
+        finally
+        {
+            L.Initialize(originalLanguage);
+            CultureInfo.CurrentCulture = originalCulture;
+            CultureInfo.CurrentUICulture = originalUiCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = originalDefaultUiCulture;
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    private static void TestCatalog()
+    {
+        Require(L.Entries.Count > 0, "the published assembly embeds translation catalogs");
+        foreach ((string key, Dictionary<string, string> translations) in L.Entries)
+        {
+            Require(translations.TryGetValue(L.Chinese, out string? chinese)
+                    && !string.IsNullOrWhiteSpace(chinese), key + " has Simplified Chinese text");
+            HashSet<string> sourceArguments = ReadArguments(chinese!, key);
+            foreach (string language in new[] { L.TraditionalChinese, L.English })
+            {
+                Require(translations.TryGetValue(language, out string? translated)
+                        && !string.IsNullOrWhiteSpace(translated), key + " has " + language + " text");
+                HashSet<string> translatedArguments = ReadArguments(translated!, key);
+                Require(sourceArguments.SetEquals(translatedArguments),
+                    key + " preserves argument indices and numeric/date formats in " + language);
+            }
+        }
+    }
+
+    private static HashSet<string> ReadArguments(string text, string key)
+    {
+        try
+        {
+            // The runtime parser handles escaped braces, alignment, and format specifiers;
+            // recording arguments allows translations to reorder placeholders freely.
+            CompositeFormat format = CompositeFormat.Parse(text);
+            HashSet<string> seen = new(StringComparer.Ordinal);
+            object[] arguments = Enumerable.Range(0, format.MinimumArgumentCount)
+                .Select(index => (object)new RecordingArgument(index, seen)).ToArray();
+            _ = string.Format(CultureInfo.InvariantCulture, format, arguments);
+            return seen;
+        }
+        catch (FormatException exception)
+        {
+            throw new InvalidOperationException("Invalid localization format: " + key, exception);
+        }
+    }
+
+    private static void TestLanguageResolution()
+    {
+        Require(L.NormalizeLanguage(" EN-us ") == L.English, "English regional tags normalize");
+        Require(L.NormalizeLanguage("en-AU") == L.English, "other explicit English regions normalize to English");
+        Require(L.NormalizeLanguage("zh-Hans") == L.Chinese, "Simplified Chinese tags normalize");
+        Require(L.NormalizeLanguage("zh-Hans-TW") == L.Chinese,
+            "an explicit Simplified script takes precedence over a Traditional region");
+        foreach (string language in new[] { "zh-TW", "zh-HK", "zh-MO", "zh-Hant", "zh-Hant-HK" })
+        {
+            Require(L.NormalizeLanguage(language) == L.TraditionalChinese,
+                language + " normalizes to Traditional Chinese");
+            Require(L.ResolveLanguage(L.SystemLanguage, CultureInfo.GetCultureInfo(language)) == L.TraditionalChinese,
+                language + " system locale uses Traditional Chinese");
+        }
+        Require(L.NormalizeLanguage(" ZH-hAnT-tW ") == L.TraditionalChinese,
+            "Traditional Chinese normalization ignores case and surrounding space");
+        Require(L.NormalizeLanguage("zh-Hant-CN") == L.TraditionalChinese,
+            "an explicit Traditional script takes precedence over the region");
+        foreach (string language in new[] { "zh-CN", "zh-SG", "zh-Hans", "zh-Hans-SG" })
+        {
+            Require(L.ResolveLanguage(L.SystemLanguage, CultureInfo.GetCultureInfo(language)) == L.Chinese,
+                language + " system locale uses Simplified Chinese");
+        }
+        Require(L.NormalizeLanguage("SYSTEM") == L.SystemLanguage, "system preference normalizes");
+        foreach (string? language in new string?[] { null, "", "   ", "unknown" })
+        {
+            Require(L.NormalizeLanguage(language) == L.SystemLanguage,
+                "missing or invalid preferences follow the system language");
+            Require(L.ResolveLanguage(language, CultureInfo.GetCultureInfo("zh-TW")) == L.TraditionalChinese,
+                "missing or invalid preferences use a Traditional Chinese system locale");
+            Require(L.ResolveLanguage(language, CultureInfo.GetCultureInfo("ja-JP")) == L.English,
+                "missing or invalid preferences use English on a non-Chinese system");
+        }
+        foreach (string language in new[] { "en-US", "fr-FR", "ja-JP" })
+        {
+            Require(L.ResolveLanguage(L.SystemLanguage, CultureInfo.GetCultureInfo(language)) == L.English,
+                language + " system locale uses English");
+        }
+        Require(L.ResolveLanguage(L.English, CultureInfo.GetCultureInfo("zh-CN")) == L.English,
+            "explicit language overrides system language");
+        Require(L.ResolveLanguage("en-AU", CultureInfo.GetCultureInfo("zh-CN")) == L.English,
+            "an explicit English regional tag overrides a Chinese system");
+        Require(L.ResolveLanguage("zh-Hans-TW", CultureInfo.GetCultureInfo("zh-TW")) == L.Chinese,
+            "an explicit Simplified script overrides a Traditional Chinese system");
+        Require(L.ResolveLanguage(L.TraditionalChinese, CultureInfo.GetCultureInfo("en-US")) == L.TraditionalChinese,
+            "explicit Traditional Chinese overrides an English system");
+        Require(L.ResolveLanguage(L.Chinese, CultureInfo.GetCultureInfo("zh-TW")) == L.Chinese,
+            "explicit Simplified Chinese overrides a Traditional Chinese system");
+    }
+
+    private static void TestTranslationAndFormatting()
+    {
+        CultureInfo numericCulture = CultureInfo.GetCultureInfo("fr-FR");
+        CultureInfo.CurrentCulture = numericCulture;
+        L.Initialize(L.English);
+        Require(ReferenceEquals(CultureInfo.CurrentCulture, numericCulture),
+            "initialization does not alter numeric culture");
+        Require(CultureInfo.CurrentUICulture.Name == L.English, "UI culture follows the selected language");
+        Require(L.T("Xaml.Cancel") == "Cancel", "English text resolves from the embedded catalog");
+        Require(L.T("unregistered localization key") == "unregistered localization key",
+            "missing translation falls back to its key");
+
+        string action = "close";
+        string project = "Mosaic";
+        Require(L.F($"{action}之前要保存对「{project}」的更改吗？")
+                == "Save changes to “Mosaic” before continuing (close)?",
+            "interpolated arguments follow the translated order");
+        long expected = 12345;
+        long actual = 6789;
+        Require(L.F($"BD ISO 长度与总扇区数不符：需要 {expected:N0} 字节，实际 {actual:N0} 字节。")
+                == $"BD ISO size does not match the sector count: expected {expected:N0} bytes, found {actual:N0}.",
+            "interpolated numeric formats honor the existing numeric culture");
+        Require(L.Format("Xaml.LayerCountFormat", 3) == "3 layers", "named formats accept arguments");
+
+        L.Initialize(L.TraditionalChinese);
+        Require(L.CurrentLanguage == L.TraditionalChinese && CultureInfo.CurrentUICulture.Name == L.TraditionalChinese,
+            "Traditional Chinese initializes the requested UI culture");
+        Require(L.T("Xaml.SettingsButton") == "設定", "Traditional Chinese resolves from the embedded catalog");
+        Require(L.T("unregistered localization key") == "unregistered localization key",
+            "Traditional Chinese preserves the missing-key fallback");
+        Require(ReferenceEquals(CultureInfo.CurrentCulture, numericCulture),
+            "Traditional Chinese does not alter numeric culture");
+        string formattedTraditional = L.F($"BD ISO 长度与总扇区数不符：需要 {expected:N0} 字节，实际 {actual:N0} 字节。");
+        Require(formattedTraditional.Contains(expected.ToString("N0", numericCulture), StringComparison.Ordinal)
+                && formattedTraditional.Contains(actual.ToString("N0", numericCulture), StringComparison.Ordinal),
+            "Traditional Chinese interpolation preserves both formatted numeric arguments");
+
+        L.Initialize(L.Chinese);
+        Require(L.T("Xaml.Cancel") == "取消", "Chinese text is available after switching back");
+        Require(ReferenceEquals(CultureInfo.CurrentCulture, numericCulture),
+            "switching back does not alter numeric culture");
+        L.Initialize("unsupported");
+        Require(L.CurrentLanguage == L.ResolveLanguage(L.SystemLanguage),
+            "unknown language starts with the captured system UI language");
+        Require(ReferenceEquals(CultureInfo.CurrentCulture, numericCulture),
+            "following the system UI language does not alter numeric culture");
+    }
+
+    private static void TestDefaultSettings(string directory)
+    {
+        AppSettingsStore store = new(Path.Combine(directory, "default-settings.json"));
+        SettingsViewModel viewModel = new(new AppSettings(), store);
+        Require(viewModel.ThemeIndex == 2 && viewModel.LanguageIndex == 0,
+            "new settings select Follow system for both theme and language");
+        Require(viewModel.TrySave(), "default settings save successfully");
+        AppSettings saved = store.Load();
+        Require(saved.Theme == AppTheme.System && saved.Language == L.SystemLanguage,
+            "saving defaults preserves the system preferences");
+
+        SettingsViewModel normalized = new(new AppSettings { Theme = (AppTheme)99, Language = "unknown" }, store);
+        Require(normalized.ThemeIndex == 2 && normalized.LanguageIndex == 0,
+            "invalid stored values select the system options");
+        normalized.ThemeIndex = -1;
+        normalized.LanguageIndex = 99;
+        Require(normalized.TrySave(), "invalid selector indices normalize on save");
+        AppSettings normalizedSaved = store.Load();
+        Require(normalizedSaved.Theme == AppTheme.System && normalizedSaved.Language == L.SystemLanguage,
+            "invalid selector indices fall back to system preferences");
+    }
+
+    private static void TestLanguageSettings(string directory)
+    {
+        L.Initialize(L.Chinese);
+        foreach ((int index, string language) in LanguageChoices)
+        {
+            AppSettingsStore store = new(Path.Combine(directory, "language-" + index + ".json"));
+            SettingsViewModel viewModel = new(new AppSettings { Language = language }, store);
+            Require(viewModel.LanguageIndex == index, "saved language selects the matching option");
+            viewModel.LanguageIndex = index;
+            Require(viewModel.TrySave(), "language preference saves successfully");
+            Require(store.Load().Language == language && viewModel.SavedSettings?.Language == language,
+                "the selected language persists and is returned to the caller");
+            Require(L.CurrentLanguage == L.Chinese && CultureInfo.CurrentUICulture.Name == L.Chinese,
+                "saving a language does not partially switch the running application");
+        }
+    }
+
+    private static void TestCancelledSettings(string directory)
+    {
+        AppSettingsStore store = new(Path.Combine(directory, "cancel.json"));
+        AppSettings initial = new() { Language = L.Chinese, Theme = AppTheme.Light };
+        store.Save(initial);
+        string before = File.ReadAllText(store.FilePath);
+        foreach ((int index, string language) in LanguageChoices)
+        {
+            SettingsViewModel viewModel = new(store.Load(), store) { LanguageIndex = index, ThemeIndex = 0 };
+            Require(File.ReadAllText(store.FilePath) == before,
+                "editing " + language + " without Save leaves preferences unchanged");
+            Require(viewModel.SavedSettings is null, "an unconfirmed dialog exposes no saved settings");
+            Require(L.CurrentLanguage == L.Chinese, "cancelled language edits do not affect the session");
+        }
+    }
+
+    private static void TestFailedSettings(string directory)
+    {
+        string destination = Path.Combine(directory, "existing-directory");
+        Directory.CreateDirectory(destination);
+        foreach ((int index, string language) in LanguageChoices)
+        {
+            SettingsViewModel viewModel = new(new AppSettings(), new AppSettingsStore(destination))
+            {
+                LanguageIndex = index,
+            };
+            Require(!viewModel.TrySave(), "a directory cannot be overwritten with " + language + " preferences");
+            Require(viewModel.SavedSettings is null && viewModel.ErrorMessage.Length > 0,
+                "a failed save reports an error without exposing an applied preference");
+            Require(L.CurrentLanguage == L.Chinese, "a failed save preserves the running language");
+        }
+        Require(Directory.GetFiles(directory, "*.tmp").Length == 0, "failed saving cleans up its temporary file");
+    }
+
+    private sealed class RecordingArgument(int index, HashSet<string> seen) : IFormattable
+    {
+        public string ToString(string? format, IFormatProvider? formatProvider)
+        {
+            seen.Add(index.ToString(CultureInfo.InvariantCulture) + ":" + format);
+            return string.Empty;
+        }
+    }
+
+    private static void Require(bool condition, string name)
+    {
+        if (!condition) throw new InvalidOperationException("Localization check failed: " + name);
+    }
+}

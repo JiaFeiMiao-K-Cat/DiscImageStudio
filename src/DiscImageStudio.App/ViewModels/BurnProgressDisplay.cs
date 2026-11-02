@@ -1,3 +1,4 @@
+using DiscImageStudio.Localization;
 using System.Diagnostics;
 using DiscImageStudio.Burning;
 
@@ -30,9 +31,9 @@ internal sealed class BurnProgressDisplay
         ? _bytesPerSecond : null;
     internal double Percent => 100.0 * WrittenBytes / TotalBytes;
     internal string AmountText => TotalBytes >= 1024L * 1024 * 1024
-        ? $"已写入 {WrittenBytes / (1024.0 * 1024 * 1024):0.00} / {TotalBytes / (1024.0 * 1024 * 1024):0.00} GiB"
-        : $"已写入 {WrittenBytes / (1024.0 * 1024):0.0} / {TotalBytes / (1024.0 * 1024):0.0} MiB";
-    internal string RateText => BytesPerSecond is { } rate ? $"实时 {rate / (1024 * 1024):0.00} MiB/s" : "实时 — MiB/s";
+        ? L.F($"已写入 {WrittenBytes / (1024.0 * 1024 * 1024):0.00} / {TotalBytes / (1024.0 * 1024 * 1024):0.00} GiB")
+        : L.F($"已写入 {WrittenBytes / (1024.0 * 1024):0.0} / {TotalBytes / (1024.0 * 1024):0.0} MiB");
+    internal string RateText => BytesPerSecond is { } rate ? L.F($"实时 {rate / (1024 * 1024):0.00} MiB/s") : L.T("实时 — MiB/s");
     internal string MultiplierText
     {
         get

@@ -1,3 +1,4 @@
+using DiscImageStudio.Localization;
 using DiscImageStudio.Core;
 using DiscImageStudio.Core.Calibration;
 
@@ -12,7 +13,7 @@ internal static class DvdPitchDisplay
             parameters.TrackLengthMm, parameters.PitchLinear, parameters.PitchQuadratic, parameters.PitchCubic);
         double scale = geometry.TrackPitchMm * 1000;
         string Number(double value) => ParameterNumberText.ForSummary(value, 10);
-        return $"轨距 p(x) = {Number(scale)} + ({Number(scale * parameters.PitchLinear)})x"
+        return L.F($"轨距 p(x) = {Number(scale)} + ({Number(scale * parameters.PitchLinear)})x")
             + $" + ({Number(scale * parameters.PitchQuadratic)})x² + ({Number(scale * parameters.PitchCubic)})x³ μm";
     }
 }

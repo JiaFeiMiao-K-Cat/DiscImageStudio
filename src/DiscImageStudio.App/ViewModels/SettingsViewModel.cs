@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DiscImageStudio.Core;
 using DiscImageStudio.Services;
+using DiscImageStudio.Localization;
 
 namespace DiscImageStudio.ViewModels;
 
@@ -18,6 +19,9 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private int _themeIndex;
+
+    [ObservableProperty]
+    private int _languageIndex;
 
     [ObservableProperty]
     private string _defaultProjectDirectory = string.Empty;
@@ -44,11 +48,19 @@ public partial class SettingsViewModel : ObservableObject
     {
         _store = store;
         AppSettings normalized = settings.Normalize();
+        LanguageIndex = normalized.Language switch
+        {
+            L.SystemLanguage => 0,
+            L.TraditionalChinese => 2,
+            L.English => 3,
+            L.Chinese => 1,
+            _ => 0,
+        };
         ThemeIndex = normalized.Theme switch
         {
             AppTheme.Light => 1,
-            AppTheme.System => 2,
-            _ => 0,
+            AppTheme.Dark => 0,
+            _ => 2,
         };
         DefaultProjectDirectory = normalized.DefaultProjectDirectory;
         CacheDirectory = normalized.CacheDirectory;
@@ -78,7 +90,7 @@ public partial class SettingsViewModel : ObservableObject
     public void RefreshCacheUsage()
     {
         ActiveCacheDirectory = TempFiles.LivePreviewDirectory;
-        CacheUsageText = "已用 " + FormatSize(TempFiles.GetCacheSize());
+        CacheUsageText = L.T("已用 ") + FormatSize(TempFiles.GetCacheSize());
     }
 
     /// <summary>Validates the fields, persists the settings and reports whether the dialog may
@@ -102,11 +114,20 @@ public partial class SettingsViewModel : ObservableObject
 
         AppSettings settings = new()
         {
+            Language = LanguageIndex switch
+            {
+                0 => L.SystemLanguage,
+                2 => L.TraditionalChinese,
+                3 => L.English,
+                1 => L.Chinese,
+                _ => L.SystemLanguage,
+            },
             Theme = ThemeIndex switch
             {
                 1 => AppTheme.Light,
                 2 => AppTheme.System,
-                _ => AppTheme.Dark,
+                0 => AppTheme.Dark,
+                _ => AppTheme.System,
             },
             DefaultProjectDirectory = projectDirectory,
             CacheDirectory = cacheDirectory,
@@ -122,7 +143,7 @@ public partial class SettingsViewModel : ObservableObject
                                               or ArgumentException
                                               or SecurityException)
         {
-            ErrorMessage = "无法保存设置：" + exception.Message;
+            ErrorMessage = L.T("无法保存设置：") + exception.Message;
             return false;
         }
 
@@ -136,7 +157,7 @@ public partial class SettingsViewModel : ObservableObject
         string start = string.IsNullOrWhiteSpace(DefaultProjectDirectory)
             ? DefaultProjectDirectoryPlaceholder
             : DefaultProjectDirectory;
-        string? picked = PickDirectory?.Invoke("选择默认工程位置", start);
+        string? picked = PickDirectory?.Invoke(L.T("选择默认工程位置"), start);
         if (!string.IsNullOrWhiteSpace(picked))
         {
             DefaultProjectDirectory = picked;
@@ -152,7 +173,7 @@ public partial class SettingsViewModel : ObservableObject
         string start = string.IsNullOrWhiteSpace(CacheDirectory)
             ? DefaultCacheDirectoryPlaceholder
             : CacheDirectory;
-        string? picked = PickDirectory?.Invoke("选择缓存位置", start);
+        string? picked = PickDirectory?.Invoke(L.T("选择缓存位置"), start);
         if (!string.IsNullOrWhiteSpace(picked))
         {
             CacheDirectory = picked;
@@ -173,8 +194,8 @@ public partial class SettingsViewModel : ObservableObject
         int removed = TempFiles.ClearCache();
         RefreshCacheUsage();
         CacheMessage = removed > 0
-            ? $"已删除 {removed} 个缓存文件。"
-            : "缓存目录中没有可清理的文件。";
+            ? L.F($"已删除 {removed} 个缓存文件。")
+            : L.T("缓存目录中没有可清理的文件。");
     }
 
     private bool CanClearCache() => !IsBusy;
@@ -198,7 +219,7 @@ public partial class SettingsViewModel : ObservableObject
                                               or UnauthorizedAccessException
                                               or System.ComponentModel.Win32Exception)
         {
-            ErrorMessage = "无法打开应用数据目录：" + exception.Message;
+            ErrorMessage = L.T("无法打开应用数据目录：") + exception.Message;
         }
     }
 
@@ -220,7 +241,7 @@ public partial class SettingsViewModel : ObservableObject
         string trimmed = value.Trim();
         if (!Path.IsPathRooted(trimmed))
         {
-            error = "请填写绝对路径。";
+            error = L.T("请填写绝对路径。");
             return false;
         }
 
@@ -233,13 +254,13 @@ public partial class SettingsViewModel : ObservableObject
                                               or NotSupportedException
                                               or SecurityException)
         {
-            error = "路径无效：" + trimmed;
+            error = L.T("路径无效：") + trimmed;
             return false;
         }
 
         if (requireExisting && !Directory.Exists(fullPath))
         {
-            error = "目录不存在：" + fullPath;
+            error = L.T("目录不存在：") + fullPath;
             return false;
         }
 

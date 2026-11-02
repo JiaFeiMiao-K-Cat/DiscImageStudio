@@ -1,3 +1,4 @@
+using DiscImageStudio.Localization;
 using System.ComponentModel;
 using System.IO;
 using System.Windows.Input;
@@ -62,16 +63,16 @@ public class PreviewInspectorViewModel : ObservableObject
 
     public string ArtifactLabel => _family switch
     {
-        OpticalDiscFamily.Dvd => "生成的 DVD ISO",
-        OpticalDiscFamily.BluRay => "生成的蓝光 ISO",
-        _ => "生成的 CD 音轨或 ISO",
+        OpticalDiscFamily.Dvd => L.T("生成的 DVD ISO"),
+        OpticalDiscFamily.BluRay => L.T("生成的蓝光 ISO"),
+        _ => L.T("生成的 CD 音轨或 ISO"),
     };
 
     public string ArtifactHint => _family switch
     {
-        OpticalDiscFamily.Dvd => "可直接粘贴或浏览已生成的 ISO 镜像。",
-        OpticalDiscFamily.BluRay => "可直接粘贴或浏览已生成的 ISO；同名 sidecar 会带回几何与影调。",
-        _ => "可选择 WAV / RAW 音轨或 CD 数据盘 ISO。",
+        OpticalDiscFamily.Dvd => L.T("可直接粘贴或浏览已生成的 ISO 镜像。"),
+        OpticalDiscFamily.BluRay => L.T("可直接粘贴或浏览已生成的 ISO；同名 sidecar 会带回几何与影调。"),
+        _ => L.T("可选择 WAV / RAW 音轨或 CD 数据盘 ISO。"),
     };
 
     public ICommand BrowseArtifactCommand => _family switch

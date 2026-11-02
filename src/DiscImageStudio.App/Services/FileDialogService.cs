@@ -1,3 +1,4 @@
+using DiscImageStudio.Localization;
 using System.IO;
 using Microsoft.Win32;
 
@@ -18,8 +19,8 @@ internal sealed class FileDialogService
     {
         OpenFileDialog dialog = new()
         {
-            Title = "选择源图片",
-            Filter = "图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|所有文件|*.*",
+            Title = L.T("选择源图片"),
+            Filter = L.T("图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|所有文件|*.*"),
             CheckFileExists = true,
         };
         return dialog.ShowDialog(_ownerProvider()) == true ? dialog.FileName : null;
@@ -30,8 +31,8 @@ internal sealed class FileDialogService
     {
         OpenFileDialog dialog = new()
         {
-            Title = "导入图片",
-            Filter = "图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|所有文件|*.*",
+            Title = L.T("导入图片"),
+            Filter = L.T("图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|所有文件|*.*"),
             CheckFileExists = true,
             Multiselect = true,
         };
@@ -53,7 +54,7 @@ internal sealed class FileDialogService
     {
         SaveFileDialog dialog = new()
         {
-            Title = "选择输出位置",
+            Title = L.T("选择输出位置"),
             Filter = filter,
             DefaultExt = extension,
             AddExtension = true,

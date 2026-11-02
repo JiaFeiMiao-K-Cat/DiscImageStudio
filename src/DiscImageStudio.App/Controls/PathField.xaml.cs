@@ -1,3 +1,4 @@
+using DiscImageStudio.Localization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -20,7 +21,7 @@ public partial class PathField : UserControl
 
     public static readonly DependencyProperty ButtonLabelProperty = DependencyProperty.Register(
         nameof(ButtonLabel), typeof(string), typeof(PathField),
-        new PropertyMetadata("浏览", static (sender, _) => ((PathField)sender).UpdateTexts()));
+        new PropertyMetadata(L.T("浏览"), static (sender, _) => ((PathField)sender).UpdateTexts()));
 
     public static readonly DependencyProperty CommandProperty = DependencyProperty.Register(
         nameof(Command), typeof(ICommand), typeof(PathField),

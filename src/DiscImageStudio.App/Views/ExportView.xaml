@@ -1,15 +1,16 @@
 <UserControl x:Class="DiscImageStudio.Views.ExportView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:DiscImageStudio.Localization"
              xmlns:controls="clr-namespace:DiscImageStudio.Controls"
              xmlns:vm="clr-namespace:DiscImageStudio.ViewModels">
     <ScrollViewer controls:ScrollMaskBehavior.Enabled="True">
         <StackPanel Margin="{StaticResource PagePadding}">
-            <controls:PageHeader Title="导出" Badge="{Binding FamilyLabel}"
+            <controls:PageHeader Title="{loc:Text Xaml.Export}" Badge="{Binding FamilyLabel}"
                                  Workspace="{x:Static vm:Workspace.Export}"
-                                 Hint="导出设计页的合成图为可刻录的镜像。相关参数请在“工程设置”中修改">
+                                 Hint="{loc:Text Xaml.ExportTheDesignCompositeAsABurnableImageAdjust}">
                 <controls:PageHeader.Actions>
-                    <Button Style="{StaticResource CompactButton}" Content="下一步：刻录"
+                    <Button Style="{StaticResource CompactButton}" Content="{loc:Text Xaml.NextBurn}"
                             Command="{Binding NavigateCommand}"
                             CommandParameter="{x:Static vm:Workspace.Burn}" />
                 </controls:PageHeader.Actions>
@@ -18,22 +19,22 @@
             <!-- Source: the composite the design page renders. Export always writes the
                  project composite as-is, so this card applies unconditionally (the burn
                  workspace is where a different material can be picked). -->
-            <controls:SectionCard Header="源图片" IconKind="Image" Margin="0,0,0,24">
+            <controls:SectionCard Header="{loc:Text Xaml.SourceImage}" IconKind="Image" Margin="0,0,0,24">
                 <StackPanel>
                     <!-- The generation geometry is edited in the project settings, so the source
                          row carries the jump to its owner. -->
                     <controls:SourceChip Text="{Binding SourceSummary}">
                         <controls:SourceChip.Actions>
-                            <Button Style="{StaticResource CompactButton}" Content="工程设置…"
+                            <Button Style="{StaticResource CompactButton}" Content="{loc:Text Xaml.ProjectSettings2}"
                                     Command="{Binding OpenProjectSettingsCommand}"
-                                    ToolTip="几何参数（半径、扇区、轨距）在工程设置中修改。" />
+                                    ToolTip="{loc:Text Xaml.EditGeometryRadiiSectorsAndTrackPitchInProject}" />
                         </controls:SourceChip.Actions>
                     </controls:SourceChip>
                     <!-- Empty source: the sentence above says what is missing; this says where
                          to fix it. Once layers exist the jump goes away with the gap. -->
                     <controls:VisibilityGate IsOpen="{Binding HasLayers}" Inverted="True">
                         <Button Style="{StaticResource CompactButton}" Margin="0,12,0,0"
-                                HorizontalAlignment="Left" Content="前往设计导入图片"
+                                HorizontalAlignment="Left" Content="{loc:Text Xaml.ImportImagesInDesign}"
                                 Command="{Binding NavigateCommand}"
                                 CommandParameter="{x:Static vm:Workspace.Design}" />
                     </controls:VisibilityGate>
@@ -42,30 +43,30 @@
 
             <!-- The artifact's file options. The on-disc folder (随盘文件) is configured on
                  the design page next to the composite; this card only names the output file. -->
-            <controls:SectionCard Header="输出文件" IconKind="Folder">
+            <controls:SectionCard Header="{loc:Text Xaml.OutputFile}" IconKind="Folder">
                 <StackPanel>
                     <controls:VisibilityGate IsOpen="{Binding IsCd}">
                         <StackPanel>
                             <controls:PathField Label="{Binding State.CdOutputLabel}"
                                                 Text="{Binding State.CdOutputPath}"
-                                                ButtonLabel="选择…"
+                                                ButtonLabel="{loc:Text Xaml.Select}"
                                                 Hint="{Binding State.CdOutputHint}"
                                                 Command="{Binding BrowseOutputCommand}" />
                             <controls:VisibilityGate IsOpen="{Binding State.HasCdFiles}">
                                 <StackPanel Margin="0,14,0,0">
-                                    <TextBlock Style="{StaticResource FieldLabel}" Margin="0,0,0,6" Text="卷标" />
+                                    <TextBlock Style="{StaticResource FieldLabel}" Margin="0,0,0,6" Text="{loc:Text Xaml.VolumeLabel}" />
                                     <TextBox Text="{Binding State.CdVolumeLabel, UpdateSourceTrigger=PropertyChanged}" MaxLength="32" />
                                 </StackPanel>
                             </controls:VisibilityGate>
                             <controls:VisibilityGate IsOpen="{Binding State.IsCdAudioMode}">
                                 <StackPanel Margin="0,14,0,0">
                                     <TextBlock Style="{StaticResource FieldLabel}" Margin="0,0,0,2"
-                                               Text="CD-DA 编码" />
+                                               Text="{loc:Text Xaml.CDDAEncoding}" />
                                     <controls:InterleaveToggle IsChecked="{Binding State.CdInterleave}"
-                                                               Hint="生成音轨时按 CD-DA 标准做延迟交织。不清楚请默认勾选此项。"
-                                                               AutomationProperties.Name="启用 CD-DA 延迟交织" />
+                                                               Hint="{loc:Text Xaml.ApplyCDDADelayInterleavingWhenGeneratingAudioTracks}"
+                                                               AutomationProperties.Name="{loc:Text Xaml.EnableCDDADelayInterleaving}" />
                                     <controls:VisibilityGate IsOpen="{Binding State.IsCdWaveOutput}" Margin="0,12,0,0">
-                                        <CheckBox Content="同时导出 CUE 文件" IsChecked="{Binding State.CdWriteCue}" />
+                                        <CheckBox Content="{loc:Text Xaml.AlsoExportACUEFile}" IsChecked="{Binding State.CdWriteCue}" />
                                     </controls:VisibilityGate>
                                 </StackPanel>
                             </controls:VisibilityGate>
@@ -74,22 +75,22 @@
 
                     <controls:VisibilityGate IsOpen="{Binding IsDvd}">
                         <StackPanel>
-                            <controls:PathField Label="输出 ISO"
+                            <controls:PathField Label="{loc:Text Xaml.OutputISO}"
                                                 Text="{Binding State.DvdOutputPath}"
-                                                ButtonLabel="选择…"
+                                                ButtonLabel="{loc:Text Xaml.Select}"
                                                 Command="{Binding BrowseOutputCommand}" />
-                            <TextBlock Style="{StaticResource FieldLabel}" Margin="0,14,0,6" Text="卷标" />
+                            <TextBlock Style="{StaticResource FieldLabel}" Margin="0,14,0,6" Text="{loc:Text Xaml.VolumeLabel}" />
                             <TextBox Text="{Binding State.DvdVolumeLabel, UpdateSourceTrigger=PropertyChanged}" MaxLength="32" />
                         </StackPanel>
                     </controls:VisibilityGate>
 
                     <controls:VisibilityGate IsOpen="{Binding IsBluRay}">
                         <StackPanel>
-                            <controls:PathField Label="输出 ISO"
+                            <controls:PathField Label="{loc:Text Xaml.OutputISO}"
                                                 Text="{Binding State.BdOutputPath}"
-                                                ButtonLabel="选择…"
+                                                ButtonLabel="{loc:Text Xaml.Select}"
                                                 Command="{Binding BrowseOutputCommand}" />
-                            <TextBlock Style="{StaticResource FieldLabel}" Margin="0,14,0,6" Text="卷标" />
+                            <TextBlock Style="{StaticResource FieldLabel}" Margin="0,14,0,6" Text="{loc:Text Xaml.VolumeLabel}" />
                             <TextBox Text="{Binding State.BdVolumeLabel, UpdateSourceTrigger=PropertyChanged}" MaxLength="32" />
                         </StackPanel>
                     </controls:VisibilityGate>
@@ -98,7 +99,7 @@
                         <Button Style="{StaticResource PrimaryButton}" Content="{Binding GenerateButtonText}"
                                 Command="{Binding GenerateCommand}" />
                         <TextBlock Style="{StaticResource HintText}" VerticalAlignment="Center" Margin="10,0,0,0"
-                                   Text="写入文件不会改动盘片。" />
+                                   Text="{loc:Text Xaml.WritingAFileDoesNotModifyTheDisc}" />
                     </StackPanel>
                 </StackPanel>
             </controls:SectionCard>

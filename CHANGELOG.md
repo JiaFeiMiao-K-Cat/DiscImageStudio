@@ -2,12 +2,29 @@
 
 ## Unreleased
 
-- CD、DVD 与蓝光预览的分辨率上限统一为 8192×8192，设计投影、成品读回及导出预览图均适用；各盘型的默认预览尺寸保持不变。
-- 标题栏新增「…」应用菜单，提供「设置…」（Ctrl+,）与「关于…」，主页和工程态均可用；侧边栏底部的「关于」入口移除。
-- 新增设置窗口，分「通用」「存储」两类：深色／浅色／跟随系统主题保存后立即应用到所有窗口，代码绘制的侧边栏、分段控件、盘面画布与任务坞同步刷新。
-- 新增默认工程位置与缓存位置设置：默认工程位置作为新建工程对话框的初始目录，留空使用系统文档目录；缓存位置用于设计合成图、缩略图与预览图，可查看占用、清空本应用缓存文件或打开应用数据目录。清空缓存只删除白名单内的缓存图片与 sidecar，工程和导出文件不受影响，任务运行期间按钮禁用。
-- 应用设置保存在 `%LOCALAPPDATA%\DiscImageStudio\settings.json`，缺失、损坏或更高版本的文件自动回落到默认值；设置不写入 `.discproj`。
-- 开发截图命令 `ui-snapshot` 新增 `--theme dark|light|system`、`--settings-dialog`（默认 760×600，使用一次性设置文件，不改动真实配置）与 `--settings-view general|storage`。
+## [1.3.4] - 2026-11-02
+
+### 中文
+
+- 新增简体中文、繁體中文与英文界面，在「设置 → 通用 → 语言」选择跟随系统或指定语言；保存后重启生效，取消不修改偏好。系统语言为台湾、香港、澳门或 `zh-Hant` 时使用繁体，其他中文系统使用简体，其余使用英文。导航、工作区、弹窗和应用状态提示共用嵌入式翻译资源，工程数据与数值格式保持不变；底层模块与操作系统返回的诊断信息保留原文。
+- 语言与主题默认跟随系统；缺失或无效的偏好回落到跟随系统，已保存的有效选择继续保留。设置保存在 `%LOCALAPPDATA%\DiscImageStudio\settings.json`，损坏或更高版本的设置文件回落到默认值，不写入 `.discproj`。
+- 标题栏右侧新增常驻「齿轮 + 设置」按钮，主页和所有工作区均可直接打开设置，并保留 Ctrl+, 快捷键。长工程名自动省略；「…」菜单提供「关于…」，移除重复的设置菜单项和原侧栏「关于」入口。
+- 新增「通用」「存储」两类设置。深色、浅色与跟随系统主题保存后立即应用到所有窗口，侧边栏、分段控件、盘面画布与任务坞同步刷新。
+- 新增默认工程位置与缓存位置设置，留空分别使用系统文档目录和临时目录。可查看缓存占用、清空本应用缓存或打开应用数据目录；清空操作仅删除白名单内的缓存图片与 sidecar，不影响工程和导出文件，任务运行期间禁用。
+- CD、DVD 与蓝光预览的分辨率上限统一为 8192×8192，覆盖设计投影、成品读回及导出预览图；各盘型的默认预览尺寸保持不变。
+- 新增完整英文与繁体中文 README，三份 README 顶部均提供语言切换链接，并补充语言配置与翻译资源维护说明。
+- 开发截图命令 `ui-snapshot` 新增 `--language zh-CN|zh-TW|en|system`、`--theme dark|light|system`、`--settings-dialog` 和 `--settings-view general|storage`，可验证不同语言、主题和设置分类的布局。设置窗口截图默认 760×600，使用一次性设置文件，不修改真实配置。
+
+### English
+
+- Added Simplified Chinese, Traditional Chinese, and English interfaces. Choose a language or follow the system under Settings → General → Language; save and restart to apply it, or cancel to leave preferences unchanged. System locales for Taiwan, Hong Kong, Macao, or `zh-Hant` use Traditional Chinese; other Chinese locales use Simplified Chinese, and all others use English. Navigation, workspaces, dialogs, and application status messages share embedded translation resources. Project data and numeric formatting are unchanged; diagnostics returned by lower-level modules and the operating system retain their original language.
+- Language and theme now follow the system by default. Missing or invalid preferences fall back to the system, while existing valid saved choices are preserved. Settings are stored in `%LOCALAPPDATA%\DiscImageStudio\settings.json`; corrupt files or files with a newer schema fall back to defaults. Settings are not written to `.discproj` files.
+- Added a persistent gear-and-Settings button on the right of the title bar, available on the home page and every workspace, while retaining the Ctrl+, shortcut. Long project names are truncated. The “…” menu provides About; the duplicate Settings menu item and former sidebar About entry were removed.
+- Added General and Storage settings categories. Dark, light, and system themes apply immediately to all windows after saving, including the sidebar, segmented controls, disc canvas, and job dock.
+- Added default project and cache folder settings, using the system Documents and temporary folders respectively when left empty. View cache usage, clear the app’s cache, or open the application data folder. Cache clearing deletes only allowlisted cached images and sidecars, leaves projects and exported files untouched, and is disabled while a job is running.
+- Unified the maximum CD, DVD, and Blu-ray preview resolution at 8192×8192 for design projections, artifact readback, and exported previews. Default preview sizes for each media type remain unchanged.
+- Added complete English and Traditional Chinese READMEs, with language links at the top of all three versions, plus documentation for language configuration and translation resource maintenance.
+- Extended the developer `ui-snapshot` command with `--language zh-CN|zh-TW|en|system`, `--theme dark|light|system`, `--settings-dialog`, and `--settings-view general|storage` to verify layouts across languages, themes, and settings categories. Settings dialog snapshots default to 760×600 and use a temporary settings file without modifying real preferences.
 
 ## [1.3.3] - 2026-10-28
 

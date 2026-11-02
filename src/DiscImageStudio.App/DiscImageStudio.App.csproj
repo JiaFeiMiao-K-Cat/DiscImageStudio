@@ -42,6 +42,7 @@
     <Resource Include="Assets\DiscImageStudio-256.png" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Localization\Catalogs\*.json" />
     <EmbeddedResource Include="..\..\LICENSE" LogicalName="DiscImageStudio.Licenses.GPL" />
     <EmbeddedResource Include="..\..\THIRD-PARTY-NOTICES.txt" LogicalName="DiscImageStudio.Licenses.ThirdParty" />
     <EmbeddedResource Include="Assets\Fonts\HarmonyOS-Sans-LICENSE.txt" LogicalName="DiscImageStudio.Licenses.HarmonyOS" />

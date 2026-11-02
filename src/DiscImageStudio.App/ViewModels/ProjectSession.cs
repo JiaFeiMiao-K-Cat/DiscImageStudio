@@ -1,3 +1,4 @@
+using DiscImageStudio.Localization;
 using System.Globalization;
 using DiscImageStudio.Core;
 using DiscImageStudio.Services;
@@ -90,22 +91,22 @@ internal static class ProjectSession
         {
             case OpticalDiscFamily.Dvd:
                 return new ProjectGeometry(
-                    ParameterParser.ParsePositiveDouble(state.DvdInnerRadius, "DVD 内半径"),
-                    ParameterParser.ParsePositiveDouble(state.DvdOuterRadius, "DVD 外半径"),
-                    ParameterParser.ParsePositiveLong(state.DvdTotalSectors, "DVD 总扇区数"),
-                    ParameterParser.ParseDouble(state.DvdPitchLinear, "DVD 相对一次项"),
-                    ParameterParser.ParseDouble(state.DvdPitchQuadratic, "DVD 相对二次项"),
-                    ParameterParser.ParseDouble(state.DvdPitchCubic, "DVD 相对三次项"));
+                    ParameterParser.ParsePositiveDouble(state.DvdInnerRadius, L.T("DVD 内半径")),
+                    ParameterParser.ParsePositiveDouble(state.DvdOuterRadius, L.T("DVD 外半径")),
+                    ParameterParser.ParsePositiveLong(state.DvdTotalSectors, L.T("DVD 总扇区数")),
+                    ParameterParser.ParseDouble(state.DvdPitchLinear, L.T("DVD 相对一次项")),
+                    ParameterParser.ParseDouble(state.DvdPitchQuadratic, L.T("DVD 相对二次项")),
+                    ParameterParser.ParseDouble(state.DvdPitchCubic, L.T("DVD 相对三次项")));
             case OpticalDiscFamily.BluRay:
                 return new ProjectGeometry(
-                    ParameterParser.ParsePositiveDouble(state.BdInnerRadius, "蓝光内半径"),
-                    ParameterParser.ParsePositiveDouble(state.BdOuterRadius, "蓝光外半径"),
-                    ParameterParser.ParsePositiveLong(state.BdTotalSectors, "蓝光总扇区数"));
+                    ParameterParser.ParsePositiveDouble(state.BdInnerRadius, L.T("蓝光内半径")),
+                    ParameterParser.ParsePositiveDouble(state.BdOuterRadius, L.T("蓝光外半径")),
+                    ParameterParser.ParsePositiveLong(state.BdTotalSectors, L.T("蓝光总扇区数")));
             default:
                 return new ProjectGeometry(
-                    ParameterParser.ParsePositiveDouble(state.CdInnerRadius, "CD 内半径"),
-                    ParameterParser.ParsePositiveDouble(state.CdOuterRadius, "CD 外半径"),
-                    ParameterParser.ParsePositiveLong(state.CdSectors, "CD 扇区数"));
+                    ParameterParser.ParsePositiveDouble(state.CdInnerRadius, L.T("CD 内半径")),
+                    ParameterParser.ParsePositiveDouble(state.CdOuterRadius, L.T("CD 外半径")),
+                    ParameterParser.ParsePositiveLong(state.CdSectors, L.T("CD 扇区数")));
         }
     }
 
@@ -115,7 +116,7 @@ internal static class ProjectSession
         {
             case OpticalDiscFamily.Dvd:
                 return new ProjectOutputs(
-                    RequireOutput(state.DvdOutputPath, "DVD ISO 输出位置"),
+                    RequireOutput(state.DvdOutputPath, L.T("DVD ISO 输出位置")),
                     WriteCue: false,
                     state.DvdDataDirectory,
                     state.DvdVolumeLabel,
@@ -123,7 +124,7 @@ internal static class ProjectSession
                     FilesAtOuterRing: state.DvdFilesAtOuterRing);
             case OpticalDiscFamily.BluRay:
                 return new ProjectOutputs(
-                    RequireOutput(state.BdOutputPath, "蓝光 ISO 输出位置"),
+                    RequireOutput(state.BdOutputPath, L.T("蓝光 ISO 输出位置")),
                     WriteCue: false,
                     state.BdDataDirectory,
                     state.BdVolumeLabel,
@@ -131,7 +132,7 @@ internal static class ProjectSession
                     FilesAtOuterRing: state.BdFilesAtOuterRing);
             default:
                 return new ProjectOutputs(
-                    RequireOutput(state.CdOutputPath, state.HasCdFiles ? "CD ISO 输出位置" : "CD 音轨输出位置"),
+                    RequireOutput(state.CdOutputPath, state.HasCdFiles ? L.T("CD ISO 输出位置") : L.T("CD 音轨输出位置")),
                     state.CdWriteCue,
                     state.CdDataDirectory,
                     state.CdVolumeLabel,
@@ -163,6 +164,6 @@ internal static class ProjectSession
     private static string RequireOutput(string raw, string field)
     {
         string value = raw.Trim();
-        return value.Length == 0 ? throw new ArgumentException($"请填写{field}。") : value;
+        return value.Length == 0 ? throw new ArgumentException(L.F($"请填写{field}。")) : value;
     }
 }
