@@ -816,10 +816,10 @@
     "ja": "言語"
   },
   "Settings.LanguageChangesTakeEffectAfterRestartingTheAppSystemUse": {
-    "zh-CN": "语言将在重启应用后生效。跟随系统时区分简体和繁体中文，其他语言使用 English。",
-    "en": "Language changes take effect after restarting. System follows Simplified or Traditional Chinese; other system languages use English.",
-    "zh-TW": "語言會在重新啟動應用程式後生效。跟隨系統時會區分簡體與繁體中文，其他語言使用 English。",
-    "ja": "言語の変更はアプリの再起動後に反映されます。「システムに従う」の場合、簡体字中国語と繁体字中国語を区別し、その他の言語では English を使用します。"
+    "zh-CN": "语言将在重启应用后生效。跟随系统时区分简体和繁体中文，日文系统使用日本語，其他语言使用 English。",
+    "en": "Language changes take effect after restarting. System follows Simplified or Traditional Chinese, or Japanese; other system languages use English.",
+    "zh-TW": "語言會在重新啟動應用程式後生效。跟隨系統時會區分簡體與繁體中文，日文系統使用日本語，其他語言使用 English。",
+    "ja": "言語の変更はアプリの再起動後に反映されます。「システムに従う」の場合、簡体字中国語・繁体字中国語・日本語を判別し、その他の言語では English を使用します。"
   },
   "Settings.DefaultLocationsForNewProjectsAndTemporaryFiles": {
     "zh-CN": "新建工程与临时缓存的默认位置。",

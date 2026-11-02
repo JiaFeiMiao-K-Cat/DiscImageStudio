@@ -15,7 +15,7 @@
     "zh-CN": "Disc Image Studio是帮助您在光盘表面印刷图案的一站式工作台。",
     "en": "Disc Image Studio is an all-in-one workspace for creating visible artwork on optical discs.",
     "zh-TW": "Disc Image Studio 是協助您在光碟表面製作圖案的整合工作台。",
-    "ja": "Disc Image Studio は、ディスクの表面に図柄を描き出すためのオールインワン ワークスペースです。"
+    "ja": "Disc Image Studio は、ディスクの記録面に図柄を描き出すためのオールインワン ワークスペースです。"
   },
   "Xaml.ReleasedUnderTheGNUGeneralPublicLicenseV30": {
     "zh-CN": "本项目以 GNU General Public License v3.0 or later 发布；重新分发须随附对应源代码并保留第三方声明。",
@@ -507,7 +507,7 @@
     "zh-CN": "“设计投影”按工程参数将源图投到盘面上，速度快；“成品读回”则读取已生成的镜像文件还原。生成几何参数请在工程设置中修改。",
     "en": "Design projection quickly maps the source image using project parameters. Output readback reconstructs a generated image file. Edit generation geometry in Project settings.",
     "zh-TW": "「設計投影」依專案參數將來源圖片投影至碟面，速度較快；「成品讀回」則讀取已產生的映像檔來還原。請在專案設定中修改產生映像所用的幾何參數。",
-    "ja": "「デザイン投影」はプロジェクトのパラメーターに基づいてソース画像をレーベル面に高速に投影します。「出力の読み戻し」は生成済みのイメージ ファイルを読み取って復元します。生成のジオメトリ パラメーターはプロジェクトの設定で変更してください。"
+    "ja": "「デザイン投影」はプロジェクトのパラメーターに基づいてソース画像を記録面に高速に投影します。「出力の読み戻し」は生成済みのイメージ ファイルを読み取って復元します。生成のジオメトリ パラメーターはプロジェクトの設定で変更してください。"
   },
   "Xaml.NextExport": {
     "zh-CN": "下一步：导出",
@@ -615,7 +615,7 @@
     "zh-CN": "全能的光盘盘面可见图像生成与刻录工作台",
     "en": "Create and burn visible artwork on optical discs",
     "zh-TW": "整合光碟表面圖像製作與燒錄的工作台",
-    "ja": "ディスクのレーベル面に見えるアートワークを作成・書き込みするオールインワン ワークスペース"
+    "ja": "ディスクの記録面に見えるアートワークを作成・書き込みするオールインワン ワークスペース"
   },
   "Xaml.ReturnToTheOpenProjectAndContinueInDesign": {
     "zh-CN": "回到打开的工程，从设计工作区继续。",
@@ -693,25 +693,25 @@
     "zh-CN": "适合窗口",
     "en": "Fit to window",
     "zh-TW": "符合視窗大小",
-    "ja": "ウィンドウに合わせる"
+    "ja": "全体表示"
   },
   "Xaml.ShowBurnPattern": {
     "zh-CN": "查看刻录图案",
     "en": "Burn pattern",
     "zh-TW": "檢視燒錄圖案",
-    "ja": "書き込みパターンを表示"
+    "ja": "書き込みパターン"
   },
   "Xaml.ShowRectifiedPreview": {
     "zh-CN": "查看矫正预览",
     "en": "Rectified preview",
     "zh-TW": "檢視校正預覽",
-    "ja": "補正後のプレビューを表示"
+    "ja": "補正プレビュー"
   },
   "Xaml.OverlayFittedCurves": {
     "zh-CN": "叠加拟合曲线",
     "en": "Fitted curves",
     "zh-TW": "疊加擬合曲線",
-    "ja": "フィット曲線を重ねて表示"
+    "ja": "フィット曲線"
   },
   "Xaml.ScrollToZoomRightDragToPanDragPoints": {
     "zh-CN": "滚轮缩放，右键平移。拖动已有点修正位置；描线时点击添加点，Delete 删除选中点。",
@@ -1173,7 +1173,7 @@
     "zh-CN": "可能使盘面上的图案更明显。",
     "en": "May improve the visibility of the disc artwork.",
     "zh-TW": "可能使碟面上的圖案更明顯。",
-    "ja": "レーベル面のアートワークが見やすくなる場合があります。"
+    "ja": "記録面のアートワークが見やすくなる場合があります。"
   },
   "Xaml.Invert3T6TMapping": {
     "zh-CN": "反转 3T / 6T 映射",
