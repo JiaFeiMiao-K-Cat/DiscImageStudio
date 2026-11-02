@@ -108,12 +108,23 @@ public sealed class DvdHybridStreamingPlan
     internal DvdHybridStreamingPlan(
         HybridIsoImageWriter.LayoutPlan isoLayout,
         uint drawingStartLba,
-        uint drawingEndLbaExclusive)
+        uint drawingEndLbaExclusive,
+        uint fileRegionStartLba = 0,
+        uint fileRegionEndLbaExclusive = 0)
     {
         IsoLayout = isoLayout;
         DrawingStartLba = drawingStartLba;
         DrawingEndLbaExclusive = drawingEndLbaExclusive;
+        FileRegionStartLba = fileRegionStartLba;
+        FileRegionEndLbaExclusive = fileRegionEndLbaExclusive;
     }
+
+    /// <summary>True when files sit in a transparent part of the picture, between two drawing segments.</summary>
+    public bool FilesInTransparentRegion => FileRegionEndLbaExclusive > FileRegionStartLba;
+
+    public uint FileRegionStartLba { get; }
+
+    public uint FileRegionEndLbaExclusive { get; }
 
     internal HybridIsoImageWriter.LayoutPlan IsoLayout { get; }
 
@@ -167,6 +178,42 @@ public static class DvdStreamingGenerator
         }
 
         return new DvdHybridStreamingPlan(isoLayout, drawingStartLba, drawingEndLba);
+    }
+
+    /// <summary>
+    /// Lays the files out inside the largest run of ECC Blocks that the picture leaves fully
+    /// transparent, so the picture stays intact on both sides of the file region.
+    /// </summary>
+    public static DvdHybridStreamingPlan PrepareHybridInTransparency(
+        string dataDirectory,
+        string imagePath,
+        DvdStreamingOptions options,
+        string volumeLabel = "DVD_IMAGE",
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
+        ArgumentException.ThrowIfNullOrWhiteSpace(imagePath);
+        ArgumentNullException.ThrowIfNull(options);
+        options.Validate();
+        HybridIsoImageWriter.LayoutPlan probe = HybridIsoImageWriter.Plan(
+            dataDirectory, options.TotalSectors, volumeLabel);
+        uint drawingStartLba = AlignToEccBlock(probe.MetadataEndLbaExclusive, PsnOffset);
+        uint fileSectors = probe.DataEndLbaExclusive - probe.MetadataEndLbaExclusive;
+        if (fileSectors == 0)
+            return new DvdHybridStreamingPlan(probe, drawingStartLba, options.TotalSectors);
+        uint needed = checked((fileSectors + DvdEccBlockEncoder.SectorCount - 1)
+            / DvdEccBlockEncoder.SectorCount * DvdEccBlockEncoder.SectorCount);
+        IReadOnlyList<DvdFreeRegion> runs = DvdTransparencyScanner.FindFreeRuns(
+            imagePath, CreateImageMapping(options), drawingStartLba, cancellationToken);
+        DvdFreeRegion region = DvdTransparencyScanner.ChooseRegion(runs, needed)
+            ?? throw new ArgumentException(
+                $"The picture has no fully transparent area of {needed} sectors for the files; "
+                + (runs.Count == 0 ? "no transparent area was found." : $"the largest is {runs[0].Sectors} sectors."),
+                nameof(imagePath));
+        HybridIsoImageWriter.LayoutPlan isoLayout = HybridIsoImageWriter.Plan(
+            dataDirectory, options.TotalSectors, volumeLabel, fileDataStartLba: region.StartLba);
+        return new DvdHybridStreamingPlan(isoLayout, drawingStartLba, options.TotalSectors,
+            region.StartLba, region.StartLba + needed);
     }
 
     public static DvdStreamingSummary Generate(
@@ -265,6 +312,8 @@ public static class DvdStreamingGenerator
 
         string sourceFullPath = Path.GetFullPath(imagePath);
         Stopwatch stopwatch = Stopwatch.StartNew();
+        if (plan.FilesInTransparentRegion)
+            return GenerateHybridInRegion(sourceFullPath, output, options, plan, progress, stopwatch, cancellationToken);
         if (plan.FilesAtOuterRing)
             HybridIsoImageWriter.WriteOuterRingPrefix(plan.IsoLayout, output, plan.DrawingStartLba, cancellationToken);
         else
@@ -310,10 +359,50 @@ public static class DvdStreamingGenerator
             stopwatch.Elapsed);
     }
 
-    private static MultiBlockSolveOptions CreateSolveOptions(
+    private static DvdStreamingSummary GenerateHybridInRegion(
+        string sourceFullPath,
+        Stream output,
         DvdStreamingOptions options,
-        uint startLba,
-        uint fillSectors)
+        DvdHybridStreamingPlan plan,
+        Action<DvdStreamingProgress>? progress,
+        Stopwatch stopwatch,
+        CancellationToken cancellationToken)
+    {
+        HybridIsoImageWriter.WriteRegionPrefix(plan.IsoLayout, output, plan.DrawingStartLba, cancellationToken);
+        int totalBlocks = checked((int)(options.TotalSectors / DvdEccBlockEncoder.SectorCount));
+        long controlledWords = 0;
+
+        void Report(uint lba, long segmentBytes, int segmentBlocks, uint segmentStart)
+            => progress?.Invoke(new DvdStreamingProgress(
+                checked((long)segmentStart * DvdEccBlockEncoder.PayloadBytesPerSector + segmentBytes),
+                options.ContentLength,
+                checked((int)(segmentStart / DvdEccBlockEncoder.SectorCount) + segmentBlocks),
+                totalBlocks,
+                stopwatch.Elapsed));
+
+        void Draw(uint startLba, uint endLbaExclusive)
+        {
+            if (endLbaExclusive <= startLba) return;
+            Report(startLba, 0, 0, startLba);
+            MultiBlockSolveOptions solveOptions = CreateSolveOptions(options, startLba, endLbaExclusive - startLba);
+            FastDvdStreamSummary drawing = FastDispersionImageWriter.WriteStream(
+                sourceFullPath, output, solveOptions,
+                value => Report(startLba, value.BytesWritten, value.CompletedBlocks, startLba),
+                cancellationToken);
+            controlledWords += drawing.ControlledWords;
+        }
+
+        Draw(plan.DrawingStartLba, plan.FileRegionStartLba);
+        HybridIsoImageWriter.WriteFileRegion(plan.IsoLayout, output, plan.FileRegionEndLbaExclusive, cancellationToken);
+        Draw(plan.FileRegionEndLbaExclusive, plan.DrawingEndLbaExclusive);
+        progress?.Invoke(new DvdStreamingProgress(options.ContentLength, options.ContentLength,
+            totalBlocks, totalBlocks, stopwatch.Elapsed));
+        stopwatch.Stop();
+        return new DvdStreamingSummary(
+            sourceFullPath, options.TotalSectors, options.ContentLength, controlledWords, stopwatch.Elapsed);
+    }
+
+    private static ImageMappingOptions CreateImageMapping(DvdStreamingOptions options)
     {
         ImageMappingOptions imageMapping = new(
             options.TotalSectors,
@@ -329,6 +418,15 @@ public static class DvdStreamingGenerator
             PitchQuadratic: options.PitchQuadratic,
             PitchCubic: options.PitchCubic,
             Tone: options.Tone);
+        return imageMapping;
+    }
+
+    private static MultiBlockSolveOptions CreateSolveOptions(
+        DvdStreamingOptions options,
+        uint startLba,
+        uint fillSectors)
+    {
+        ImageMappingOptions imageMapping = CreateImageMapping(options);
         return new MultiBlockSolveOptions(
             startLba,
             fillSectors,

@@ -415,6 +415,8 @@ internal static class Program
     {
         bool hybridMode = arguments.Has("data-dir");
         bool filesAtOuterRing = ReadFilesAtOuterRing(arguments);
+        bool filesInTransparency = ReadFilesInTransparency(arguments);
+        DvdFreeRegion? transparentRegion = null;
         if (!arguments.Has("image") || arguments.Has("target"))
         {
             throw new ArgumentException("Range or fast output requires --image and does not accept --target.");
@@ -489,12 +491,48 @@ internal static class Program
                     "Hybrid mode requires --psn-offset to be aligned to a 16-sector ECC Block.");
             }
 
-            HybridIsoImageWriter.LayoutPlan isoLayout = HybridIsoImageWriter.Plan(
-                arguments.Require("data-dir"),
-                imageMapping.TotalSectors,
-                arguments.Get("volume-label", "DVD_IMAGE"),
-                filesAtOuterRing);
-            uint minimumDrawingLba = AlignToEccBlock(filesAtOuterRing
+            HybridIsoImageWriter.LayoutPlan isoLayout;
+            DvdFreeRegion? fileRegion = null;
+            if (filesInTransparency)
+            {
+                if (!fastOutput)
+                    throw new ArgumentException("--file-position transparent requires --fast-output true.");
+                if (arguments.Has("drawing-start-lba"))
+                    throw new ArgumentException("--drawing-start-lba cannot be combined with --file-position transparent.");
+                HybridIsoImageWriter.LayoutPlan probe = HybridIsoImageWriter.Plan(
+                    arguments.Require("data-dir"), imageMapping.TotalSectors,
+                    arguments.Get("volume-label", "DVD_IMAGE"));
+                uint probeStart = AlignToEccBlock(probe.MetadataEndLbaExclusive, psnOffset);
+                uint fileSectors = probe.DataEndLbaExclusive - probe.MetadataEndLbaExclusive;
+                if (fileSectors == 0)
+                {
+                    isoLayout = probe;
+                }
+                else
+                {
+                    uint needed = checked((fileSectors + DvdEccBlockEncoder.SectorCount - 1)
+                        / DvdEccBlockEncoder.SectorCount * DvdEccBlockEncoder.SectorCount);
+                    IReadOnlyList<DvdFreeRegion> runs = DvdTransparencyScanner.FindFreeRuns(
+                        arguments.Require("image"), imageMapping, probeStart);
+                    DvdFreeRegion chosen = DvdTransparencyScanner.ChooseRegion(runs, needed)
+                        ?? throw new ArgumentException(
+                            $"The picture has no fully transparent area of {needed} sectors for the files; "
+                            + (runs.Count == 0 ? "no transparent area was found." : $"the largest is {runs[0].Sectors} sectors."));
+                    fileRegion = new DvdFreeRegion(chosen.StartLba, chosen.StartLba + needed);
+                    isoLayout = HybridIsoImageWriter.Plan(
+                        arguments.Require("data-dir"), imageMapping.TotalSectors,
+                        arguments.Get("volume-label", "DVD_IMAGE"), fileDataStartLba: chosen.StartLba);
+                }
+            }
+            else
+            {
+                isoLayout = HybridIsoImageWriter.Plan(
+                    arguments.Require("data-dir"),
+                    imageMapping.TotalSectors,
+                    arguments.Get("volume-label", "DVD_IMAGE"),
+                    filesAtOuterRing);
+            }
+            uint minimumDrawingLba = AlignToEccBlock(filesAtOuterRing || isoLayout.FilesInRegion
                 ? isoLayout.MetadataEndLbaExclusive : isoLayout.DataEndLbaExclusive, psnOffset);
             lba = arguments.Has("drawing-start-lba")
                 ? arguments.GetUInt("drawing-start-lba", 0)
@@ -533,12 +571,13 @@ internal static class Program
                     "The filesystem leaves no complete ECC Block for drawing in the selected file layout.");
             }
 
+            transparentRegion = fileRegion;
             hybridIso = HybridIsoImageWriter.Create(isoLayout, isoOutputPath);
 
             Console.WriteLine(
                 $"hybrid ISO: files={hybridIso.FileCount}, directories={hybridIso.DirectoryCount}, "
                 + $"data={hybridIso.FileBytes} bytes, filesystem end LBA={hybridIso.DataEndLbaExclusive}, "
-                + $"files={(filesAtOuterRing ? "outer" : "inner")}, drawing LBA {lba}..{lba + fillSectors - 1}");
+                + $"files={(filesAtOuterRing ? "outer" : transparentRegion is { } r ? $"transparent LBA {r.StartLba}..{r.EndLbaExclusive - 1}" : "inner")}, drawing LBA {lba}..{lba + fillSectors - 1}");
             if (!fastOutput)
             {
                 Console.WriteLine($"replaying inner-ring modulation boundary: 0..{lba - 1}");
@@ -587,7 +626,8 @@ internal static class Program
                 isoOutputPath,
                 options,
                 progressEvery,
-                hybridIso);
+                hybridIso,
+                transparentRegion);
         }
 
         Console.WriteLine(
@@ -755,23 +795,29 @@ internal static class Program
 
     private static bool ReadFilesAtOuterRing(CliArguments arguments)
     {
-        bool outer = arguments.Get("file-position", "inner") switch
+        string position = arguments.Get("file-position", "inner");
+        bool outer = position switch
         {
             "inner" => false,
             "outer" => true,
-            _ => throw new ArgumentException("--file-position must be 'inner' or 'outer'."),
+            "transparent" => false,
+            _ => throw new ArgumentException("--file-position must be 'inner', 'outer' or 'transparent'."),
         };
-        if (outer && !arguments.Has("data-dir"))
-            throw new ArgumentException("--file-position outer requires --data-dir.");
+        if ((outer || position == "transparent") && !arguments.Has("data-dir"))
+            throw new ArgumentException($"--file-position {position} requires --data-dir.");
         return outer;
     }
+
+    private static bool ReadFilesInTransparency(CliArguments arguments)
+        => arguments.Get("file-position", "inner") == "transparent";
 
     private static int WriteFastDispersionImage(
         CliArguments arguments,
         string isoOutputPath,
         MultiBlockSolveOptions options,
         int progressEvery,
-        HybridIsoWriteSummary? hybridIso)
+        HybridIsoWriteSummary? hybridIso,
+        DvdFreeRegion? transparentRegion = null)
     {
         Console.WriteLine(
             $"fast raw ISO fill: LBA {options.StartLba}.."
@@ -783,28 +829,53 @@ internal static class Program
             DispersionPaletteDescription() + ", "
             + "image sampled at every payload code-word center");
 
-        FastDispersionWriteResult result = FastDispersionImageWriter.Write(
-            arguments.Require("image"),
-            isoOutputPath,
-            options,
-            progress =>
+        void Report(FastDispersionProgress progress, int offsetBlocks, int allBlocks)
+        {
+            int done = offsetBlocks + progress.CompletedBlocks;
+            if (done == 1 || done == allBlocks || done % progressEvery == 0)
             {
-                if (progress.CompletedBlocks == 1
-                    || progress.CompletedBlocks == progress.TotalBlocks
-                    || progress.CompletedBlocks % progressEvery == 0)
-                {
-                    double mebibytes = progress.CompletedBlocks
-                        * (double)DvdEccBlockEncoder.PayloadBytesPerBlock
-                        / (1024 * 1024);
-                    double rate = progress.Elapsed.TotalSeconds <= 0
-                        ? 0
-                        : mebibytes / progress.Elapsed.TotalSeconds;
-                    Console.WriteLine(
-                        $"block {progress.CompletedBlocks}/{progress.TotalBlocks}, "
-                        + $"LBA={progress.BlockLba}, controlled={progress.ControlledWords}, "
-                        + $"rate={rate:F2} MiB/s, elapsed={progress.Elapsed.TotalSeconds:F1}s");
-                }
-            });
+                double mebibytes = done * (double)DvdEccBlockEncoder.PayloadBytesPerBlock / (1024 * 1024);
+                double rate = progress.Elapsed.TotalSeconds <= 0 ? 0 : mebibytes / progress.Elapsed.TotalSeconds;
+                Console.WriteLine(
+                    $"block {done}/{allBlocks}, "
+                    + $"LBA={progress.BlockLba}, controlled={progress.ControlledWords}, "
+                    + $"rate={rate:F2} MiB/s, elapsed={progress.Elapsed.TotalSeconds:F1}s");
+            }
+        }
+
+        string imagePath = arguments.Require("image");
+        FastDispersionWriteResult result;
+        if (transparentRegion is { } region)
+        {
+            uint drawingEnd = options.StartLba + options.FillSectors;
+            MultiBlockSolveOptions head = options with { FillSectors = region.StartLba - options.StartLba };
+            MultiBlockSolveOptions tail = options with
+            {
+                StartLba = region.EndLbaExclusive,
+                FillSectors = drawingEnd - region.EndLbaExclusive,
+            };
+            int headBlocks = (int)(head.FillSectors / DvdEccBlockEncoder.SectorCount);
+            int allBlocks = headBlocks + (int)(tail.FillSectors / DvdEccBlockEncoder.SectorCount);
+            FastDispersionWriteResult? first = headBlocks > 0
+                ? FastDispersionImageWriter.Write(imagePath, isoOutputPath, head, p => Report(p, 0, allBlocks))
+                : null;
+            FastDispersionWriteResult? second = tail.FillSectors > 0
+                ? FastDispersionImageWriter.Write(imagePath, isoOutputPath, tail, p => Report(p, headBlocks, allBlocks))
+                : null;
+            result = new FastDispersionWriteResult(
+                allBlocks,
+                options.FillSectors,
+                (first?.ControlledWords ?? 0) + (second?.ControlledWords ?? 0),
+                (first?.Elapsed ?? TimeSpan.Zero) + (second?.Elapsed ?? TimeSpan.Zero),
+                (first ?? second)?.SparseIso ?? false,
+                (first ?? second)?.IsoSectors ?? options.ImageMapping.TotalSectors);
+        }
+        else
+        {
+            int allBlocks = (int)(options.FillSectors / DvdEccBlockEncoder.SectorCount);
+            result = FastDispersionImageWriter.Write(
+                imagePath, isoOutputPath, options, p => Report(p, 0, allBlocks));
+        }
 
         ImageMappingOptions imageMapping = options.ImageMapping;
         var metadata = new
@@ -814,6 +885,8 @@ internal static class Program
             isoOutput = Path.GetFullPath(isoOutputPath),
             startLba = options.StartLba,
             filesAtOuterRing = hybridIso?.FilesAtOuterRing ?? false,
+            fileRegionStartLba = transparentRegion?.StartLba ?? 0u,
+            fileRegionEndLbaExclusive = transparentRegion?.EndLbaExclusive ?? 0u,
             fillSectors = options.FillSectors,
             totalSectors = imageMapping.TotalSectors,
             psnOffset = $"0x{options.PsnOffset:X}",

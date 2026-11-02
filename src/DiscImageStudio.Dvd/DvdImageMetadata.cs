@@ -20,8 +20,13 @@ public sealed record DvdImageMetadata(
     bool FilesAtOuterRing = false,
     uint DrawingStartLba = 0,
     uint DrawingEndLbaExclusive = 0,
-    bool HasFileSystem = false)
+    bool HasFileSystem = false,
+    uint FileRegionStartLba = 0,
+    uint FileRegionEndLbaExclusive = 0)
 {
+    /// <summary>True when the files sit in a transparent part of the picture, between two drawing segments.</summary>
+    public bool FilesInTransparentRegion => FileRegionEndLbaExclusive > FileRegionStartLba;
+
     /// <summary>Reads the sidecar of an ISO, or null when it is absent or unreadable.</summary>
     public static DvdImageMetadata? TryLoad(string isoPath)
     {
@@ -59,11 +64,16 @@ public sealed record DvdImageMetadata(
                 && iso.ValueKind == JsonValueKind.Object
                 && iso.TryGetProperty("mountableFilesystem", out JsonElement mountable)
                 && mountable.ValueKind == JsonValueKind.True;
+            uint regionStart = GetUInt32(document.RootElement, "fileRegionStartLba");
+            uint regionEnd = GetUInt32(document.RootElement, "fileRegionEndLbaExclusive");
+            if (regionEnd != 0 && (regionEnd <= regionStart || regionEnd > totalSectors))
+                return null;
             DvdTrackGeometry.ValidatePitchCoefficients(linear, quadratic, cubic);
             return totalSectors > 0 && double.IsFinite(innerRadius) && double.IsFinite(outerRadius)
                 && innerRadius > 0 && outerRadius > innerRadius
                 ? new DvdImageMetadata(totalSectors, innerRadius, outerRadius, linear, quadratic, cubic,
-                    filesAtOuterRing, drawingStart, drawingStart + drawingSectors, hasFileSystem)
+                    filesAtOuterRing, drawingStart, drawingStart + drawingSectors, hasFileSystem,
+                    regionStart, regionEnd)
                 : null;
         }
         catch (Exception exception) when (exception is JsonException or IOException or ArgumentException)

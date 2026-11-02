@@ -65,6 +65,9 @@ public static class Iso9660ImageWriter
         public uint FileDataStartLba => _layout.FileDataStartLba;
 
         public bool FilesAtOuterRing => _layout.FilesAtOuterRing;
+
+        /// <summary>True when the files occupy a caller-chosen block range inside the volume.</summary>
+        public bool FilesInRegion => _layout.FilesInRegion;
     }
 
     public static LayoutPlan Plan(
@@ -72,8 +75,11 @@ public static class Iso9660ImageWriter
         uint volumeSectors,
         string volumeLabel,
         DateTimeOffset? timestamp = null,
-        bool filesAtOuterRing = false)
+        bool filesAtOuterRing = false,
+        uint? fileDataStartLba = null)
     {
+        if (fileDataStartLba.HasValue && filesAtOuterRing)
+            throw new ArgumentException("A fixed file start cannot be combined with outer-ring placement.");
         if (volumeSectors <= FirstMetadataLba)
         {
             throw new ArgumentOutOfRangeException(
@@ -93,7 +99,7 @@ public static class Iso9660ImageWriter
             : ReadTree(sourceFullPath);
         List<IsoNode> directories = AssignDirectoryNumbers(root);
         AssignIdentifiers(directories);
-        Layout layout = BuildLayout(directories, volumeSectors, filesAtOuterRing);
+        Layout layout = BuildLayout(directories, volumeSectors, filesAtOuterRing, fileDataStartLba);
         return new LayoutPlan(
             sourceFullPath,
             volumeSectors,
@@ -162,6 +168,36 @@ public static class Iso9660ImageWriter
         SequentialIsoWriter writer = new(output, cancellationToken, startLba);
         WriteFiles(plan, writer);
         writer.PadToLba(plan.VolumeSectors);
+    }
+
+    /// <summary>Writes only the front metadata of a fixed-region layout.</summary>
+    public static void WriteRegionPrefix(LayoutPlan plan, Stream output, uint endLbaExclusive,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(output);
+        if (!output.CanWrite) throw new ArgumentException("ISO output must be writable.", nameof(output));
+        if (!plan.FilesInRegion || endLbaExclusive < plan.MetadataEndLbaExclusive || endLbaExclusive > plan.FileDataStartLba)
+            throw new ArgumentOutOfRangeException(nameof(endLbaExclusive), "Metadata boundary overlaps the file region.");
+        ValidateSources(plan, cancellationToken);
+        SequentialIsoWriter writer = new(output, cancellationToken);
+        WriteMetadata(plan, writer);
+        writer.PadToLba(endLbaExclusive);
+    }
+
+    /// <summary>Writes only the file contents of a fixed region, padding to its end.</summary>
+    public static void WriteFileRegion(LayoutPlan plan, Stream output, uint endLbaExclusive,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(output);
+        if (!output.CanWrite) throw new ArgumentException("ISO output must be writable.", nameof(output));
+        if (!plan.FilesInRegion || endLbaExclusive < plan.DataEndLbaExclusive || endLbaExclusive > plan.VolumeSectors)
+            throw new ArgumentOutOfRangeException(nameof(endLbaExclusive), "File region end must cover the planned files.");
+        ValidateSources(plan, cancellationToken);
+        SequentialIsoWriter writer = new(output, cancellationToken, plan.FileDataStartLba);
+        WriteFiles(plan, writer);
+        writer.PadToLba(endLbaExclusive);
     }
 
     private static void ValidateOuterRange(LayoutPlan plan, Stream output, uint boundary)
@@ -359,7 +395,8 @@ public static class Iso9660ImageWriter
         }
     }
 
-    private static Layout BuildLayout(List<IsoNode> directories, uint volumeSectors, bool filesAtOuterRing)
+    private static Layout BuildLayout(List<IsoNode> directories, uint volumeSectors, bool filesAtOuterRing,
+        uint? fixedFileStart = null)
     {
         int primaryPathTableBytes = PathTableLength(directories, joliet: false);
         int jolietPathTableBytes = PathTableLength(directories, joliet: true);
@@ -387,11 +424,19 @@ public static class Iso9660ImageWriter
         foreach (IsoNode file in files) fileSectors = checked(fileSectors + SectorCount(file.DataLength));
         if ((ulong)metadataEnd + fileSectors > volumeSectors)
             throw new ArgumentException("Data directory and filesystem metadata exceed the disc capacity.");
+        bool separateFiles = filesAtOuterRing || fixedFileStart.HasValue;
         if (filesAtOuterRing) cursor = checked(volumeSectors - (uint)fileSectors);
+        if (fixedFileStart.HasValue)
+        {
+            if (fixedFileStart.Value < metadataEnd || (ulong)fixedFileStart.Value + fileSectors > volumeSectors)
+                throw new ArgumentOutOfRangeException(nameof(fixedFileStart),
+                    "Fixed file start must leave room for the files after the filesystem metadata.");
+            cursor = fixedFileStart.Value;
+        }
         uint fileDataStart = cursor;
         foreach (IsoNode file in files)
         {
-            file.DataLba = filesAtOuterRing && file.DataLength == 0 ? 0 : cursor;
+            file.DataLba = separateFiles && file.DataLength == 0 ? 0 : cursor;
             cursor = checked(cursor + SectorCount(file.DataLength));
         }
 
@@ -412,7 +457,8 @@ public static class Iso9660ImageWriter
             cursor,
             metadataEnd,
             fileDataStart,
-            filesAtOuterRing);
+            filesAtOuterRing,
+            fixedFileStart.HasValue);
     }
 
     private static uint Allocate(ref uint cursor, long byteCount)
@@ -943,5 +989,6 @@ public static class Iso9660ImageWriter
         uint DataEndLbaExclusive,
         uint MetadataEndLbaExclusive,
         uint FileDataStartLba,
-        bool FilesAtOuterRing);
+        bool FilesAtOuterRing,
+        bool FilesInRegion = false);
 }

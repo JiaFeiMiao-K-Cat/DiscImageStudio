@@ -50,6 +50,17 @@ internal sealed class RasterImage
         return new RasterImage(width, height, pixels);
     }
 
+    /// <summary>True when the pixel or any bilinear neighbour has alpha at or above the threshold.</summary>
+    internal bool AnyAlphaAtLeast(int x, int y, byte threshold)
+    {
+        int x1 = Math.Min(x + 1, Width - 1);
+        int y1 = Math.Min(y + 1, Height - 1);
+        return _bgra[(((y * Width) + x) * 4) + 3] >= threshold
+            || _bgra[(((y * Width) + x1) * 4) + 3] >= threshold
+            || _bgra[(((y1 * Width) + x) * 4) + 3] >= threshold
+            || _bgra[(((y1 * Width) + x1) * 4) + 3] >= threshold;
+    }
+
     internal PixelSample SampleDisc(
         double xMm, double yMm, double outerRadiusMm, bool preserveDiscreteGrayscale = false)
     {

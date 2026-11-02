@@ -248,6 +248,9 @@
                                                                Text="{loc:Text Xaml.FilePlacement}" Margin="0,0,0,6" />
                                                     <controls:SegmentedControl LabelA="{loc:Text Xaml.InnerRing}" LabelB="{loc:Text Xaml.OuterRing}"
                                                                                IsSecondSelected="{Binding State.DvdFilesAtOuterRing}" />
+                                                    <CheckBox Margin="0,8,0,0" Content="{loc:Text Xaml.FilesInTransparentArea}"
+                                                              ToolTip="{loc:Text Xaml.FilesInTransparentAreaTip}"
+                                                              IsChecked="{Binding State.DvdFilesInTransparency}" />
                                                 </StackPanel>
                                             </controls:VisibilityGate>
                                         </StackPanel>

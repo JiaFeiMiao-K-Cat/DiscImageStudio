@@ -329,7 +329,8 @@ public partial class LivePreviewViewModel : ObservableObject
             && state.DvdPitchLinear.Trim() == FormatNumber(metadata.PitchLinear)
             && state.DvdPitchQuadratic.Trim() == FormatNumber(metadata.PitchQuadratic)
             && state.DvdPitchCubic.Trim() == FormatNumber(metadata.PitchCubic)
-            && state.DvdFilesAtOuterRing == metadata.FilesAtOuterRing)
+            && state.DvdFilesAtOuterRing == metadata.FilesAtOuterRing
+            && state.DvdFilesInTransparency == metadata.FilesInTransparentRegion)
         {
             return;
         }
@@ -341,6 +342,7 @@ public partial class LivePreviewViewModel : ObservableObject
         state.DvdPitchQuadratic = FormatNumber(metadata.PitchQuadratic);
         state.DvdPitchCubic = FormatNumber(metadata.PitchCubic);
         state.DvdFilesAtOuterRing = metadata.FilesAtOuterRing;
+        state.DvdFilesInTransparency = metadata.FilesInTransparentRegion;
         _shell.AppendLog(
             L.F($"[{DateTime.Now:HH:mm:ss}] 已按 {System.IO.Path.GetFileName(isoPath)} 的生成参数载入标定几何：")
             + L.F($"r0={innerRadius} mm, r1={outerRadius} mm, {totalSectors} 总扇区；{state.DvdPitchSummary}\n"));
@@ -808,7 +810,8 @@ public partial class LivePreviewViewModel : ObservableObject
                 int result = UnifiedCommandRunner.Run(arguments);
                 if (result == 0 && overlay)
                     FileRegionPreviewOverlay.ApplyDvd(outputPath, actual,
-                        metadata!.DrawingStartLba, metadata.DrawingEndLbaExclusive, cancellationToken);
+                        metadata!.DrawingStartLba, metadata.DrawingEndLbaExclusive, cancellationToken,
+                        metadata.FileRegionStartLba, metadata.FileRegionEndLbaExclusive);
                 return result;
             });
             if (exitCode != 0)
@@ -881,7 +884,8 @@ public partial class LivePreviewViewModel : ObservableObject
                 int result = UnifiedCommandRunner.Run(arguments);
                 if (result == 0 && filePlan is not null)
                     FileRegionPreviewOverlay.ApplyDvd(outputPath, actual,
-                        filePlan.DrawingStartLba, filePlan.DrawingEndLbaExclusive, cancellationToken);
+                        filePlan.DrawingStartLba, filePlan.DrawingEndLbaExclusive, cancellationToken,
+                        filePlan.FileRegionStartLba, filePlan.FileRegionEndLbaExclusive);
                 return result;
             });
             if (exitCode != 0)
@@ -1438,9 +1442,11 @@ public partial class LivePreviewViewModel : ObservableObject
             if (dataDirectory.Length > 0)
             {
                 DvdStreamingOptions generated = ReadDvdPreviewGeometry(calibration: false);
-                filePlan = DvdStreamingGenerator.PrepareHybrid(dataDirectory, generated,
-                    string.IsNullOrWhiteSpace(_state.DvdVolumeLabel) ? "DISC_IMAGE" : _state.DvdVolumeLabel.Trim(),
-                    filesAtOuterRing: _state.DvdFilesAtOuterRing);
+                string volumeLabel = string.IsNullOrWhiteSpace(_state.DvdVolumeLabel) ? "DISC_IMAGE" : _state.DvdVolumeLabel.Trim();
+                filePlan = _state.DvdFilesInTransparency
+                    ? DvdStreamingGenerator.PrepareHybridInTransparency(dataDirectory, imagePath, generated, volumeLabel)
+                    : DvdStreamingGenerator.PrepareHybrid(dataDirectory, generated, volumeLabel,
+                        filesAtOuterRing: _state.DvdFilesAtOuterRing);
                 drawingStart = filePlan.DrawingStartLba;
                 drawingSectors = filePlan.DrawingSectors;
             }

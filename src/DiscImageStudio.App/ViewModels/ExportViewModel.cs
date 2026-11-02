@@ -281,7 +281,7 @@ public partial class ExportViewModel : ObservableObject
             arguments.Add("--data-dir");
             arguments.Add(_state.DvdDataDirectory.Trim());
             arguments.Add("--file-position");
-            arguments.Add(_state.DvdFilesAtOuterRing ? "outer" : "inner");
+            arguments.Add(_state.DvdFilesInTransparency ? "transparent" : _state.DvdFilesAtOuterRing ? "outer" : "inner");
         }
 
         await _shell.RunDiscJobAsync(

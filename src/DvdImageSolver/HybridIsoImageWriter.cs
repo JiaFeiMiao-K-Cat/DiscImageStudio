@@ -16,7 +16,8 @@ internal sealed record HybridIsoWriteSummary(
     bool Joliet,
     bool FilesAtOuterRing = false,
     uint MetadataEndLbaExclusive = 0,
-    uint FileDataStartLba = 0);
+    uint FileDataStartLba = 0,
+    bool FilesInRegion = false);
 
 /// <summary>Compatibility facade for the media-independent ISO9660/Joliet writer.</summary>
 public static class HybridIsoImageWriter
@@ -34,15 +35,24 @@ public static class HybridIsoImageWriter
         public uint MetadataEndLbaExclusive => Layout.MetadataEndLbaExclusive;
         public uint FileDataStartLba => Layout.FileDataStartLba;
         public bool FilesAtOuterRing => Layout.FilesAtOuterRing;
+        public bool FilesInRegion => Layout.FilesInRegion;
     }
 
     public static LayoutPlan Plan(string sourceDirectory, uint volumeSectors, string volumeLabel,
-        bool filesAtOuterRing = false)
+        bool filesAtOuterRing = false, uint? fileDataStartLba = null)
     {
         ArgumentNullException.ThrowIfNull(sourceDirectory);
         return new(Iso9660ImageWriter.Plan(sourceDirectory, volumeSectors, volumeLabel,
-            filesAtOuterRing: filesAtOuterRing));
+            filesAtOuterRing: filesAtOuterRing, fileDataStartLba: fileDataStartLba));
     }
+
+    public static void WriteRegionPrefix(LayoutPlan plan, Stream output, uint endLbaExclusive,
+        CancellationToken cancellationToken = default)
+        => Iso9660ImageWriter.WriteRegionPrefix(plan.Layout, output, endLbaExclusive, cancellationToken);
+
+    public static void WriteFileRegion(LayoutPlan plan, Stream output, uint endLbaExclusive,
+        CancellationToken cancellationToken = default)
+        => Iso9660ImageWriter.WriteFileRegion(plan.Layout, output, endLbaExclusive, cancellationToken);
 
     public static void WriteOuterRingPrefix(LayoutPlan plan, Stream output, uint endLbaExclusive,
         CancellationToken cancellationToken = default)
@@ -82,7 +92,13 @@ public static class HybridIsoImageWriter
             {
                 sparse = IsoImageWriter.TryMarkSparse(output.SafeFileHandle);
                 output.SetLength(checked((long)volumeSectors * IsoImageWriter.LogicalSectorBytes));
-                if (plan.FilesAtOuterRing)
+                if (plan.FilesInRegion)
+                {
+                    WriteRegionPrefix(plan, output, plan.MetadataEndLbaExclusive);
+                    output.Position = checked((long)plan.FileDataStartLba * IsoImageWriter.LogicalSectorBytes);
+                    WriteFileRegion(plan, output, plan.DataEndLbaExclusive);
+                }
+                else if (plan.FilesAtOuterRing)
                 {
                     WriteOuterRingPrefix(plan, output, plan.MetadataEndLbaExclusive);
                     output.Position = checked((long)plan.FileDataStartLba * IsoImageWriter.LogicalSectorBytes);
@@ -103,6 +119,6 @@ public static class HybridIsoImageWriter
         return new("hybrid-iso9660-joliet", volumeSectors, IsoImageWriter.LogicalSectorBytes,
             sourceFullPath, plan.FileCount, plan.DirectoryCount, plan.FileBytes,
             plan.DataEndLbaExclusive, sparse, Iso9660: true, Joliet: true,
-            plan.FilesAtOuterRing, plan.MetadataEndLbaExclusive, plan.FileDataStartLba);
+            plan.FilesAtOuterRing, plan.MetadataEndLbaExclusive, plan.FileDataStartLba, plan.FilesInRegion);
     }
 }
