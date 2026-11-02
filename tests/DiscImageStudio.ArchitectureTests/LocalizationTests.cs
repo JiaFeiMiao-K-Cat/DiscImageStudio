@@ -15,6 +15,7 @@ internal static class LocalizationTests
         (1, L.Chinese),
         (2, L.TraditionalChinese),
         (3, L.English),
+        (4, L.Japanese),
     ];
 
     public static void Run()
@@ -53,7 +54,7 @@ internal static class LocalizationTests
             Require(translations.TryGetValue(L.Chinese, out string? chinese)
                     && !string.IsNullOrWhiteSpace(chinese), key + " has Simplified Chinese text");
             HashSet<string> sourceArguments = ReadArguments(chinese!, key);
-            foreach (string language in new[] { L.TraditionalChinese, L.English })
+            foreach (string language in new[] { L.TraditionalChinese, L.English, L.Japanese })
             {
                 Require(translations.TryGetValue(language, out string? translated)
                         && !string.IsNullOrWhiteSpace(translated), key + " has " + language + " text");
@@ -113,10 +114,23 @@ internal static class LocalizationTests
                 "missing or invalid preferences follow the system language");
             Require(L.ResolveLanguage(language, CultureInfo.GetCultureInfo("zh-TW")) == L.TraditionalChinese,
                 "missing or invalid preferences use a Traditional Chinese system locale");
-            Require(L.ResolveLanguage(language, CultureInfo.GetCultureInfo("ja-JP")) == L.English,
-                "missing or invalid preferences use English on a non-Chinese system");
+            Require(L.ResolveLanguage(language, CultureInfo.GetCultureInfo("fr-FR")) == L.English,
+                "missing or invalid preferences use English on a non-Chinese, non-Japanese system");
+            Require(L.ResolveLanguage(language, CultureInfo.GetCultureInfo("ja-JP")) == L.Japanese,
+                "missing or invalid preferences use Japanese on a Japanese system");
         }
-        foreach (string language in new[] { "en-US", "fr-FR", "ja-JP" })
+        Require(L.NormalizeLanguage(" JA-jp ") == L.Japanese, "Japanese regional tags normalize");
+        Require(L.NormalizeLanguage("ja") == L.Japanese, "Japanese normalizes");
+        foreach (string language in new[] { "ja", "ja-JP" })
+        {
+            Require(L.ResolveLanguage(L.SystemLanguage, CultureInfo.GetCultureInfo(language)) == L.Japanese,
+                language + " system locale uses Japanese");
+        }
+        Require(L.ResolveLanguage(L.Japanese, CultureInfo.GetCultureInfo("zh-CN")) == L.Japanese,
+            "explicit Japanese overrides a Chinese system");
+        Require(L.ResolveLanguage(L.English, CultureInfo.GetCultureInfo("ja-JP")) == L.English,
+            "explicit English overrides a Japanese system");
+        foreach (string language in new[] { "en-US", "fr-FR", "ko-KR" })
         {
             Require(L.ResolveLanguage(L.SystemLanguage, CultureInfo.GetCultureInfo(language)) == L.English,
                 language + " system locale uses English");
@@ -169,6 +183,17 @@ internal static class LocalizationTests
         Require(formattedTraditional.Contains(expected.ToString("N0", numericCulture), StringComparison.Ordinal)
                 && formattedTraditional.Contains(actual.ToString("N0", numericCulture), StringComparison.Ordinal),
             "Traditional Chinese interpolation preserves both formatted numeric arguments");
+
+        L.Initialize(L.Japanese);
+        Require(L.CurrentLanguage == L.Japanese && CultureInfo.CurrentUICulture.Name == L.Japanese,
+            "Japanese initializes the requested UI culture");
+        Require(L.T("Xaml.Cancel") == "キャンセル", "Japanese resolves from the embedded catalog");
+        Require(ReferenceEquals(CultureInfo.CurrentCulture, numericCulture),
+            "Japanese does not alter numeric culture");
+        string formattedJapanese = L.F($"BD ISO 长度与总扇区数不符：需要 {expected:N0} 字节，实际 {actual:N0} 字节。");
+        Require(formattedJapanese.Contains(expected.ToString("N0", numericCulture), StringComparison.Ordinal)
+                && formattedJapanese.Contains(actual.ToString("N0", numericCulture), StringComparison.Ordinal),
+            "Japanese interpolation preserves both formatted numeric arguments");
 
         L.Initialize(L.Chinese);
         Require(L.T("Xaml.Cancel") == "取消", "Chinese text is available after switching back");
