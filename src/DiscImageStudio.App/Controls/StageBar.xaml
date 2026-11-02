@@ -15,7 +15,7 @@
             <DataTemplate>
                 <StackPanel Orientation="Horizontal">
                     <!-- The branch divider separates calibration from the linear chain. -->
-                    <Rectangle Width="1" Height="14" Fill="{StaticResource DividerBrush}"
+                    <Rectangle Width="1" Height="14" Fill="{DynamicResource DividerBrush}"
                                Margin="12,0,6,0" VerticalAlignment="Center"
                                Visibility="{Binding BranchVisibility}" />
                     <Button Click="Stage_Click" Focusable="False" Cursor="Hand"
@@ -28,26 +28,26 @@
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="Hot" Property="Background" Value="{StaticResource HoverOverlayBrush}" />
+                                        <Setter TargetName="Hot" Property="Background" Value="{DynamicResource HoverOverlayBrush}" />
                                     </Trigger>
                                     <Trigger Property="IsPressed" Value="True">
-                                        <Setter TargetName="Hot" Property="Background" Value="{StaticResource PressedOverlayBrush}" />
+                                        <Setter TargetName="Hot" Property="Background" Value="{DynamicResource PressedOverlayBrush}" />
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
                         </Button.Template>
                         <StackPanel Orientation="Horizontal">
                             <Grid Width="18" Height="18">
-                                <Border x:Name="Dot" CornerRadius="9" Background="{StaticResource Surface2Brush}" />
+                                <Border x:Name="Dot" CornerRadius="9" Background="{DynamicResource Surface2Brush}" />
                                 <TextBlock x:Name="IndexText" Text="{Binding IndexText}" Style="{StaticResource MicroText}"
                                            FontWeight="Bold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           Foreground="{StaticResource TextMutedBrush}" />
+                                           Foreground="{DynamicResource TextMutedBrush}" />
                             </Grid>
                             <TextBlock x:Name="StageLabel" Text="{Binding Label}" Style="{StaticResource InlineText}"
                                        Margin="7,0,2,0"
                                        VerticalAlignment="Center"
-                                       Foreground="{StaticResource TextMutedBrush}" />
+                                       Foreground="{DynamicResource TextMutedBrush}" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -56,9 +56,11 @@
                          their muted number instead of a check mark, because reaching a stage is
                          not the same as having completed it. -->
                     <DataTrigger Binding="{Binding IsCurrent}" Value="True">
-                        <Setter TargetName="Dot" Property="Background" Value="{StaticResource PrimaryBrush}" />
-                        <Setter TargetName="IndexText" Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
-                        <Setter TargetName="StageLabel" Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                        <Setter TargetName="Dot" Property="Background" Value="{DynamicResource PrimaryBrush}" />
+                        <!-- The number sits on the blue fill, so it takes the on-primary
+                             label white; TextPrimaryBrush turns dark in the light theme. -->
+                        <Setter TargetName="IndexText" Property="Foreground" Value="White" />
+                        <Setter TargetName="StageLabel" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                         <Setter TargetName="StageLabel" Property="FontWeight" Value="Medium" />
                     </DataTrigger>
                 </DataTemplate.Triggers>

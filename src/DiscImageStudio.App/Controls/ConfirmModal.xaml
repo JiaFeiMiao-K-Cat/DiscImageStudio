@@ -4,21 +4,21 @@
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              Focusable="False">
     <Grid x:Name="Root" Visibility="Collapsed">
-        <Rectangle x:Name="Backdrop" Fill="{StaticResource BackdropBrush}" />
+        <Rectangle x:Name="Backdrop" Fill="{DynamicResource BackdropBrush}" />
         <Border x:Name="DialogCard" Width="480" HorizontalAlignment="Center" VerticalAlignment="Center"
-                Background="{StaticResource Surface1Brush}"
-                BorderBrush="{StaticResource DividerBrush}" BorderThickness="1"
+                Background="{DynamicResource Surface1Brush}"
+                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
                 CornerRadius="{StaticResource RadiusCard}" Padding="18" SnapsToDevicePixels="True"
                 Effect="{StaticResource ModalShadow}">
             <StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <iconPacks:PackIconLucide x:Name="HeaderIcon" Kind="TriangleAlert" Width="24" Height="24"
-                                              Foreground="{StaticResource DangerBrush}" />
+                                              Foreground="{DynamicResource DangerBrush}" />
                     <TextBlock x:Name="TitleText" Style="{StaticResource CardTitle}"
                                Margin="10,0,0,0" VerticalAlignment="Center" />
                 </StackPanel>
                 <TextBlock x:Name="MessageText" Style="{StaticResource BodyText}" Margin="0,14,0,0"
-                           Foreground="{StaticResource TextSecondaryBrush}" />
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
                 <Grid Margin="0,24,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />

@@ -70,15 +70,6 @@ public class RecentProjectCard : Button
     // Wall-clock guard: a >0.5 s rendering gap (window drag, machine sleep) must not jump the disc.
     private const double MaxSpinStepSeconds = 0.5;
 
-    // Path marquee: 30 px/s reads as a scan rather than a flash; the bounds keep a barely
-    // overflowing path from snapping to the end and a very long one from crawling. The dwell
-    // is a readable beat at each end: without it the path starts travelling back the instant
-    // it reaches the head, so the head is never actually legible.
-    private const double MarqueePixelsPerSecond = 30;
-    private const double MarqueeMinimumSeconds = 1.8;
-    private const double MarqueeMaximumSeconds = 12;
-    private const double MarqueeDwellSeconds = 1.0;
-
     private TranslateTransform? _cardTranslate;
     private TranslateTransform? _discTranslate;
     private RotateTransform? _discRotate;
@@ -146,35 +137,17 @@ public class RecentProjectCard : Button
         }
 
         double overflow = _locationText.DesiredSize.Width - _locationViewport.ActualWidth;
-        if (!double.IsFinite(overflow) || overflow <= 1)
+        if (!double.IsFinite(overflow) || overflow <= Marquee.OverflowTolerance)
         {
             return;
         }
 
-        double seconds = Math.Clamp(
-            overflow / MarqueePixelsPerSecond, MarqueeMinimumSeconds, MarqueeMaximumSeconds);
-        var leg = TimeSpan.FromSeconds(seconds);
-        var hold = TimeSpan.FromSeconds(MarqueeDwellSeconds);
-        // Two independent eased legs plus a dwell at each end. AutoReverse cannot do this:
-        // it reverses the eased value, so the return leg accelerates into the head and the
-        // next forward leg starts immediately, leaving the head unreadable.
-        var animation = new DoubleAnimationUsingKeyFrames
-        {
-            Duration = new Duration(leg + leg + hold + hold),
-            RepeatBehavior = RepeatBehavior.Forever,
-        };
-        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero), Motion.EaseOut));
-        animation.KeyFrames.Add(new EasingDoubleKeyFrame(-overflow, KeyTime.FromTimeSpan(leg), Motion.EaseOut));
-        animation.KeyFrames.Add(new LinearDoubleKeyFrame(-overflow, KeyTime.FromTimeSpan(leg + hold)));
-        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(leg + leg + hold), Motion.EaseOut));
-        animation.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(leg + leg + hold + hold)));
-        _locationTranslate.BeginAnimation(TranslateTransform.XProperty, animation);
+        Marquee.Begin(_locationTranslate, overflow);
     }
 
     /// <summary>Dropping the animation restores the base offset, so the next hover starts at
     /// the path's beginning again.</summary>
-    private void StopLocationMarquee()
-        => _locationTranslate?.BeginAnimation(TranslateTransform.XProperty, null);
+    private void StopLocationMarquee() => Marquee.Stop(_locationTranslate);
 
     private void StopSpin()
     {

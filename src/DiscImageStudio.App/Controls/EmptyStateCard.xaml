@@ -7,12 +7,12 @@
          this only makes the next step reachable from where the user is standing. -->
     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="380">
         <Border Width="64" Height="64" CornerRadius="{StaticResource RadiusPanel}"
-                Background="{StaticResource Surface2Brush}"
-                BorderBrush="{StaticResource DividerBrush}" BorderThickness="1"
+                Background="{DynamicResource Surface2Brush}"
+                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
                 HorizontalAlignment="Center">
             <iconPacks:PackIconLucide x:Name="IconHost" Width="28" Height="28"
                                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                                      Foreground="{StaticResource TextMutedBrush}" />
+                                      Foreground="{DynamicResource TextMutedBrush}" />
         </Border>
         <TextBlock x:Name="TitleText" Style="{StaticResource RowText}" FontWeight="Medium"
                    HorizontalAlignment="Center" Margin="0,14,0,0" />

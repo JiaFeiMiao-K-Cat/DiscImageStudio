@@ -8,7 +8,7 @@
     <!-- Shell-level task strip. It lives in the window chrome rather than on a page so a job
          never navigates the user away from the workspace it was started from: the collapsed
          strip shows what is running and what it produced, and the expanded strip is the log. -->
-    <Border Background="{StaticResource Surface1Brush}" BorderBrush="{StaticResource DividerBrush}"
+    <Border Background="{DynamicResource Surface1Brush}" BorderBrush="{DynamicResource DividerBrush}"
             BorderThickness="0,1,0,0">
         <Grid>
             <Grid.RowDefinitions>
@@ -27,9 +27,9 @@
                 </Grid.ColumnDefinitions>
                 <iconPacks:PackIconLucide x:Name="StatusIcon" Grid.Column="0" Kind="CircleCheck"
                                           Width="16" Height="16" VerticalAlignment="Center"
-                                          Foreground="{StaticResource TextMutedBrush}" />
+                                          Foreground="{DynamicResource TextMutedBrush}" />
                 <TextBlock Grid.Column="1" Text="{Binding JobTitle}" Style="{StaticResource CompactText}"
-                           VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}"
+                           VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}"
                            Margin="10,0,10,0" />
                 <TextBlock Grid.Column="2" Text="{Binding JobStatusText}"
                            VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
@@ -85,7 +85,7 @@
                              (tap to collapse), matching every bottom-dock convention. -->
                         <iconPacks:PackIconLucide Kind="ChevronUp" Width="16" Height="16"
                                                   RenderTransformOrigin="0.5,0.5"
-                                                  Foreground="{StaticResource TextSecondaryBrush}">
+                                                  Foreground="{DynamicResource TextSecondaryBrush}">
                             <iconPacks:PackIconLucide.Style>
                                 <Style TargetType="iconPacks:PackIconLucide">
                                     <Setter Property="RenderTransform">
@@ -112,7 +112,7 @@
             <StackPanel Grid.Row="1" Margin="14,0,14,10"
                         Visibility="{Binding IsBurnTelemetryVisible, Converter={StaticResource BoolToVisibility}}">
                 <WrapPanel Margin="0,0,0,8" TextElement.FontFamily="{StaticResource MonoFontFamily}"
-                           TextElement.FontSize="12" TextElement.Foreground="{StaticResource TextPrimaryBrush}">
+                           TextElement.FontSize="12" TextElement.Foreground="{DynamicResource TextPrimaryBrush}">
                     <TextBlock Text="{Binding BurnAmountText}" Margin="0,0,24,0" />
                     <TextBlock Text="{Binding BurnRateText}" Margin="0,0,24,0" />
                     <TextBlock Text="{Binding BurnMultiplierText}" />
@@ -121,13 +121,13 @@
                              Value="{Binding JobProgressValue, Mode=OneWay}" IsIndeterminate="False" />
             </StackPanel>
 
-            <Border Grid.Row="2" x:Name="LogHost" Height="200" Background="{StaticResource BackgroundBrush}"
-                    BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,1,0,0"
+            <Border Grid.Row="2" x:Name="LogHost" Height="200" Background="{DynamicResource BackgroundBrush}"
+                    BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0"
                     Visibility="{Binding IsJobDockExpanded, Converter={StaticResource BoolToVisibility}}">
                 <TextBox x:Name="LogTextBox" Style="{StaticResource BareTextBox}" IsReadOnly="True"
                          AcceptsReturn="True" VerticalAlignment="Stretch"
                          FontFamily="{StaticResource MonoFontFamily}" FontSize="12"
-                         Foreground="{StaticResource TextPrimaryBrush}"
+                         Foreground="{DynamicResource TextPrimaryBrush}"
                          Background="Transparent" BorderThickness="0"
                          HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
                          TextWrapping="Wrap" Padding="14,8,14,8" />

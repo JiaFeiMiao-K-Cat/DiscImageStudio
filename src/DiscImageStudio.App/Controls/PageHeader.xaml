@@ -20,7 +20,7 @@
                 <StackPanel Orientation="Horizontal">
                     <TextBlock x:Name="TitleText" Style="{StaticResource H1Title}" />
                     <Border x:Name="BadgeChip" Margin="10,0,0,4" Padding="6,2" CornerRadius="6"
-                            Background="{StaticResource Surface3Brush}" VerticalAlignment="Bottom"
+                            Background="{DynamicResource Surface3Brush}" VerticalAlignment="Bottom"
                             Visibility="Collapsed">
                         <TextBlock x:Name="BadgeText" Style="{StaticResource BadgeText}" />
                     </Border>

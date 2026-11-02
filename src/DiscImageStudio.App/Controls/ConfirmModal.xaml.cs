@@ -23,6 +23,10 @@ public partial class ConfirmModal : UserControl
         };
     }
 
+    /// <summary>True while a confirmation is awaiting an answer; the window uses this to keep
+    /// page-level shortcuts away from the modal's keyboard.</summary>
+    internal bool IsOpen => _pending is not null || _pendingThreeWay is not null;
+
     /// Shows the modal and completes with the user's choice; the default is refusal.
     public Task<bool> ShowAsync(string title, string message, string confirmLabel)
     {

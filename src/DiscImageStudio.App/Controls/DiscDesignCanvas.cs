@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using DiscImageStudio.Services;
 using DiscImageStudio.ViewModels;
 
 namespace DiscImageStudio.Controls;
@@ -58,9 +59,22 @@ public class DiscDesignCanvas : FrameworkElement
         Focusable = true;
         Cursor = Cursors.Arrow;
         DataContextChanged += (_, _) => AttachDesign();
-        Loaded += (_, _) => { AttachDesign(); InvalidateVisual(); };
-        Unloaded += (_, _) => DetachDesign();
+        Loaded += (_, _) =>
+        {
+            AttachDesign();
+            // The palette is resolved inside OnRender, so a theme switch only needs a repaint.
+            ThemeResolver.Changed -= ThemeResolver_Changed;
+            ThemeResolver.Changed += ThemeResolver_Changed;
+            InvalidateVisual();
+        };
+        Unloaded += (_, _) =>
+        {
+            ThemeResolver.Changed -= ThemeResolver_Changed;
+            DetachDesign();
+        };
     }
+
+    private void ThemeResolver_Changed(object? sender, EventArgs e) => InvalidateVisual();
 
     /// <summary>Zoom on top of the fit-to-view scale. 1 shows the whole disc; the +/- buttons
     /// and Ctrl/Alt+wheel change it, middle-drag pans, the refresh button or double-clicking

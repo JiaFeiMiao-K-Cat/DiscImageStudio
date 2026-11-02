@@ -1,0 +1,23 @@
+<UserControl x:Class="DiscImageStudio.Controls.MarqueeText"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root">
+    <!-- Single-line label that centres itself inside the available width and, when the text
+         overruns it, scrolls to the tail while IsActive and carries the full text as a
+         tooltip. The viewport clips the line; the horizontal StackPanel measures the label
+         without a width constraint, so the whole text exists as one drawable line. A
+         TextBlock laid out under the viewport's own constraint would trim at the clip edge
+         and there would be no tail to scroll to. -->
+    <Grid x:Name="Viewport" ClipToBounds="True">
+        <StackPanel Orientation="Horizontal">
+            <TextBlock x:Name="LabelText"
+                       Text="{Binding Text, ElementName=Root}"
+                       Style="{StaticResource RowText}" TextTrimming="None"
+                       TextWrapping="NoWrap" VerticalAlignment="Center">
+                <TextBlock.RenderTransform>
+                    <TranslateTransform x:Name="LabelTranslate" />
+                </TextBlock.RenderTransform>
+            </TextBlock>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -8,7 +8,7 @@
                 <!-- 15px matches the MonitorCard header icon: one icon size for all card heads. -->
                 <iconPacks:PackIconLucide x:Name="HeaderIcon" Width="15" Height="15" Visibility="Collapsed"
                                           VerticalAlignment="Center"
-                                          Foreground="{StaticResource TextSecondaryBrush}" />
+                                          Foreground="{DynamicResource TextSecondaryBrush}" />
                 <TextBlock x:Name="HeaderText" Style="{StaticResource CardTitle}" VerticalAlignment="Center" />
             </StackPanel>
             <ContentPresenter x:Name="BodyPresenter" />

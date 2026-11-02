@@ -8,7 +8,7 @@
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
         WindowStyle="None" ResizeMode="CanResize"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource AppFontFamily}"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
     <WindowChrome.WindowChrome>
@@ -16,13 +16,23 @@
                       ResizeBorderThickness="7" UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
 
+    <Window.Resources>
+        <!-- Application menu shared by the home screen and every workspace. The window
+             owns it because both entries act on the window (settings dialog, about dialog). -->
+        <ContextMenu x:Key="AppMenu">
+            <MenuItem Header="设置…" InputGestureText="Ctrl+," Click="AppMenuSettings_Click" />
+            <MenuItem Header="关于…" Click="AppMenuAbout_Click" />
+        </ContextMenu>
+    </Window.Resources>
+
     <Grid x:Name="RootGrid">
         <Grid.RowDefinitions>
             <RowDefinition Height="32" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <controls:TitleBar Grid.Row="0" ProjectTitle="{Binding ProjectTitleDisplay}" />
+        <controls:TitleBar Grid.Row="0" ProjectTitle="{Binding ProjectTitleDisplay}"
+                           ShowAppMenu="True" AppMenuRequested="TitleBar_AppMenuRequested" />
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -33,13 +43,12 @@
             <!-- Sidebar: the workspace switcher, visible exactly when a workspace shows (the
                  home start screen owns the whole window). -->
             <Border x:Name="SidebarBorder" Grid.Column="0" Width="{StaticResource SidebarWidth}"
-                    Background="{StaticResource BackgroundBrush}"
-                    BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,1,0" ClipToBounds="True"
+                    Background="{DynamicResource BackgroundBrush}"
+                    BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,1,0" ClipToBounds="True"
                     Visibility="Collapsed">
                 <Grid x:Name="SidebarGrid" Margin="24,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
@@ -56,7 +65,7 @@
                                     AutomationProperties.Name="返回主页" ToolTip="返回主页"
                                     Command="{Binding BackHomeCommand}">
                                 <iconPacks:PackIconLucide Kind="ChevronLeft" Width="17" Height="17"
-                                                          Foreground="{StaticResource TextSecondaryBrush}" />
+                                                          Foreground="{DynamicResource TextSecondaryBrush}" />
                             </Button>
                             <Grid x:Name="ProjectHeaderHost" Grid.Column="1" Margin="8,0,0,0">
                                 <Button x:Name="ProjectHeaderButton" Style="{StaticResource TileButton}"
@@ -66,16 +75,16 @@
                                     <StackPanel>
                                         <TextBlock x:Name="ProjectNameText" FontSize="14" FontWeight="Bold"
                                                    TextTrimming="CharacterEllipsis"
-                                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
                                         <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
                                             <Border Padding="5,1" CornerRadius="5"
-                                                    Background="{StaticResource Surface3Brush}">
+                                                    Background="{DynamicResource Surface3Brush}">
                                                 <TextBlock x:Name="ProjectFamilyText"
                                                            Style="{StaticResource BadgeText}" />
                                             </Border>
                                             <TextBlock x:Name="ProjectDirtyText" Text="未保存"
                                                        Style="{StaticResource MicroText}"
-                                                       Foreground="{StaticResource WarningBrush}"
+                                                       Foreground="{DynamicResource WarningBrush}"
                                                        Margin="6,0,0,0" Visibility="Collapsed" />
                                         </StackPanel>
                                     </StackPanel>
@@ -90,11 +99,11 @@
                                                HorizontalAlignment="Left">
                                         <Rectangle.Fill>
                                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                <GradientStop Color="#00FFFFFF" Offset="0" />
-                                                <GradientStop Color="#26FFFFFF" Offset="0.42" />
-                                                <GradientStop Color="#66FFFFFF" Offset="0.5" />
-                                                <GradientStop Color="#26FFFFFF" Offset="0.58" />
-                                                <GradientStop Color="#00FFFFFF" Offset="1" />
+                                                <GradientStop Color="{DynamicResource ShineClearColor}" Offset="0" />
+                                                <GradientStop Color="{DynamicResource ShineSoftColor}" Offset="0.42" />
+                                                <GradientStop Color="{DynamicResource ShineCoreColor}" Offset="0.5" />
+                                                <GradientStop Color="{DynamicResource ShineSoftColor}" Offset="0.58" />
+                                                <GradientStop Color="{DynamicResource ShineClearColor}" Offset="1" />
                                             </LinearGradientBrush>
                                         </Rectangle.Fill>
                                         <Rectangle.RenderTransform>
@@ -108,15 +117,15 @@
                                 <Border x:Name="ProjectUpdateBadge" HorizontalAlignment="Right"
                                         VerticalAlignment="Bottom" Margin="0,0,4,1"
                                         Padding="6,2" CornerRadius="{StaticResource RadiusChip}"
-                                        Background="{StaticResource SuccessSoftBrush}"
-                                        BorderBrush="{StaticResource SuccessBrush}" BorderThickness="1"
+                                        Background="{DynamicResource SuccessSoftBrush}"
+                                        BorderBrush="{DynamicResource SuccessBrush}" BorderThickness="1"
                                         IsHitTestVisible="False" Opacity="0">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconLucide Kind="Check" Width="10" Height="10"
                                                                   VerticalAlignment="Center"
-                                                                  Foreground="{StaticResource SuccessBrush}" />
+                                                                  Foreground="{DynamicResource SuccessBrush}" />
                                         <TextBlock Text="参数已更新" Style="{StaticResource BadgeText}"
-                                                   Foreground="{StaticResource SuccessBrush}"
+                                                   Foreground="{DynamicResource SuccessBrush}"
                                                    VerticalAlignment="Center" Margin="4,0,0,0" />
                                     </StackPanel>
                                 </Border>
@@ -126,13 +135,12 @@
                                      stroke reads as a comet instead of a uniform ring. The
                                      applied-calibration sweep above remains the louder signal. -->
                                 <controls:ProjectSaveTrail x:Name="ProjectSaveTrail"
-                                                           Stroke="{StaticResource SuccessBrush}"
+                                                           Stroke="{DynamicResource SuccessBrush}"
                                                            CornerRadius="8" />
                             </Grid>
                         </Grid>
 
-                        <!-- Icon-only rows keep the collapsed 72px bar a flat rail, matching
-                             the About entry below. -->
+                        <!-- Icon-only rows keep the collapsed 60px bar a flat rail. -->
                         <controls:SideNavItem x:Name="NavDesign" LabelText="设计"
                                               IconKind="Palette" />
                         <controls:SideNavItem x:Name="NavPreview" LabelText="预览"
@@ -145,21 +153,16 @@
                                               IconKind="Crosshair" />
                     </StackPanel>
 
-                    <StackPanel x:Name="BottomNavPanel" Grid.Row="1" VerticalAlignment="Bottom">
-                        <controls:SideNavItem x:Name="NavAbout" LabelText="关于" IconKind="Info"
-                                              Activated="NavAbout_Activated" />
-                    </StackPanel>
-
-                    <Button x:Name="SidebarCollapseToggle" Grid.Row="2" Height="40" Margin="0,8,0,16"
+                    <Button x:Name="SidebarCollapseToggle" Grid.Row="1" Height="40" Margin="0,8,0,16"
                             Style="{StaticResource GhostButton}" Padding="0" Focusable="False"
                             ToolTip="收起侧边栏" Click="SidebarCollapseToggle_Click">
                         <Grid>
                             <iconPacks:PackIconLucide x:Name="CollapseLeftIcon" Kind="ChevronLeft"
                                                       Width="20" Height="20" HorizontalAlignment="Left"
-                                                      Margin="12,0,0,0" Foreground="{StaticResource TextSecondaryBrush}" />
+                                                      Margin="12,0,0,0" Foreground="{DynamicResource TextSecondaryBrush}" />
                             <iconPacks:PackIconLucide x:Name="CollapseRightIcon" Kind="ChevronRight"
                                                       Width="20" Height="20" HorizontalAlignment="Center"
-                                                      Visibility="Collapsed" Foreground="{StaticResource TextSecondaryBrush}" />
+                                                      Visibility="Collapsed" Foreground="{DynamicResource TextSecondaryBrush}" />
                         </Grid>
                     </Button>
                 </Grid>

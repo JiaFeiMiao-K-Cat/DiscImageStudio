@@ -41,12 +41,12 @@
                             <Button Style="{StaticResource IconButton}" Click="OnZoomOut" ToolTip="缩小"
                                     Margin="0,0,4,0" AutomationProperties.Name="缩小">
                                 <iconPacks:PackIconLucide Kind="Minus" Width="16" Height="16"
-                                                          Foreground="{StaticResource TextSecondaryBrush}" />
+                                                          Foreground="{DynamicResource TextSecondaryBrush}" />
                             </Button>
                             <Button Style="{StaticResource IconButton}" Click="OnZoomIn" ToolTip="放大"
                                     Margin="0,0,8,0" AutomationProperties.Name="放大">
                                 <iconPacks:PackIconLucide Kind="Plus" Width="16" Height="16"
-                                                          Foreground="{StaticResource TextSecondaryBrush}" />
+                                                          Foreground="{DynamicResource TextSecondaryBrush}" />
                             </Button>
                             <Button Content="适合窗口" Style="{StaticResource CompactButton}"
                                     Click="OnResetView" Margin="0,0,8,0" />
@@ -106,12 +106,12 @@
                                 <WrapPanel>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
                                         <Ellipse Style="{StaticResource LegendDot}"
-                                                 Fill="{StaticResource CalibrationEdgeBrush}" Margin="0,0,6,0" />
+                                                 Fill="{DynamicResource CalibrationEdgeBrush}" Margin="0,0,6,0" />
                                         <TextBlock Text="实体外缘" Style="{StaticResource LegendLabel}" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <Ellipse Style="{StaticResource LegendDot}"
-                                                 Fill="{StaticResource CalibrationHubOutlineBrush}" Margin="0,0,6,0" />
+                                                 Fill="{DynamicResource CalibrationHubOutlineBrush}" Margin="0,0,6,0" />
                                         <TextBlock Text="实体内缘" Style="{StaticResource LegendLabel}" />
                                     </StackPanel>
                                 </WrapPanel>
@@ -123,16 +123,16 @@
                                     <Button Content="清空曲线" Command="{Binding ClearTracesCommand}"
                                             Style="{StaticResource CompactButton}" Margin="0,0,8,0" />
                                     <TextBlock Text="{Binding TraceSummary}" Style="{StaticResource CompactText}"
-                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
                                                VerticalAlignment="Center" Margin="0,0,16,0" />
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
                                         <Ellipse Style="{StaticResource LegendDot}"
-                                                 Fill="{StaticResource CalibrationTraceBrush}" Margin="0,0,6,0" />
+                                                 Fill="{DynamicResource CalibrationTraceBrush}" Margin="0,0,6,0" />
                                         <TextBlock Text="实拍输入" Style="{StaticResource LegendLabel}" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
                                         <Ellipse Style="{StaticResource LegendDot}"
-                                                 Fill="{StaticResource CalibrationPredictionBrush}" Margin="0,0,6,0" />
+                                                 Fill="{DynamicResource CalibrationPredictionBrush}" Margin="0,0,6,0" />
                                         <TextBlock Text="参数预测" Style="{StaticResource LegendLabel}" />
                                     </StackPanel>
                                     <!-- Only appears when the fit marks points whose distance
@@ -141,7 +141,7 @@
                                                              VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                             <Ellipse Style="{StaticResource LegendDot}"
-                                                     Fill="{StaticResource DangerBrush}" Margin="0,0,6,0" />
+                                                     Fill="{DynamicResource DangerBrush}" Margin="0,0,6,0" />
                                             <TextBlock Text="偏离较大" Style="{StaticResource LegendLabel}" />
                                         </StackPanel>
                                     </controls:VisibilityGate>
@@ -251,7 +251,7 @@
                                      escape hatch, so it lives folded instead of occupying the
                                      card on every fit. The header still names the current mode. -->
                                 <Expander Header="{Binding SearchRangeHeader}" IsExpanded="False"
-                                          FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                                          FontSize="12" Foreground="{DynamicResource TextMutedBrush}"
                                           Margin="0,0,0,10">
                                     <StackPanel>
                                         <ComboBox Style="{StaticResource CompactComboBox}"

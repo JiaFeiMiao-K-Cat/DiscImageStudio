@@ -9,8 +9,8 @@
     <Grid x:Name="LayoutRoot" Height="{StaticResource ControlHeight}">
         <!-- Rounded-rect track one level above the card surface, divider hairline;
              8px radius matches the TextBox/ComboBox field language (not a pill) -->
-        <Border CornerRadius="8" Background="{StaticResource Surface2Brush}"
-                BorderBrush="{StaticResource DividerBrush}" BorderThickness="1" />
+        <Border CornerRadius="8" Background="{DynamicResource Surface2Brush}"
+                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1" />
         <!-- Inner well: inset 3 keeps thumb and focus ring inside the rounded silhouette -->
         <Grid x:Name="Cells" Margin="3">
             <Grid.ColumnDefinitions>
@@ -22,8 +22,8 @@
                  The selected cell is the brand fill, not a neutral raised surface: on a dark
                  track a gray thumb reads as "disabled" rather than "chosen". -->
             <Border x:Name="Thumb" Grid.Column="0" Margin="3" CornerRadius="6"
-                    Background="{StaticResource PrimaryBrush}"
-                    BorderBrush="{StaticResource PrimaryBrush}" BorderThickness="1">
+                    Background="{DynamicResource PrimaryBrush}"
+                    BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="1">
                 <Border.RenderTransform>
                     <TranslateTransform x:Name="ThumbShift" />
                 </Border.RenderTransform>
@@ -43,7 +43,7 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="FocusRing" Property="BorderBrush" Value="{StaticResource TextPrimaryBrush}" />
+                                <Setter TargetName="FocusRing" Property="BorderBrush" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.45" />
@@ -68,7 +68,7 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="FocusRing" Property="BorderBrush" Value="{StaticResource TextPrimaryBrush}" />
+                                <Setter TargetName="FocusRing" Property="BorderBrush" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.45" />
@@ -94,7 +94,7 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="FocusRing" Property="BorderBrush" Value="{StaticResource TextPrimaryBrush}" />
+                                <Setter TargetName="FocusRing" Property="BorderBrush" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.45" />

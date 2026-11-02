@@ -136,7 +136,7 @@
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
                                                 <Border Grid.Column="0" Width="40" Height="40" CornerRadius="{StaticResource RadiusChip}"
-                                                        Background="{StaticResource Surface2Brush}">
+                                                        Background="{DynamicResource Surface2Brush}">
                                                     <Image Source="{Binding Thumbnail}" Width="36" Height="36"
                                                            Stretch="Uniform" />
                                                 </Border>
@@ -159,11 +159,11 @@
                                                     <iconPacks:PackIconLucide Kind="Eye" Width="15" Height="15">
                                                         <iconPacks:PackIconLucide.Style>
                                                             <Style TargetType="iconPacks:PackIconLucide">
-                                                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                                                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding IsVisible}" Value="False">
                                                                         <Setter Property="Kind" Value="EyeOff" />
-                                                                        <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+                                                                        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
@@ -181,19 +181,19 @@
                                         <Button Style="{StaticResource IconButton}" Command="{Binding MoveSelectedUpCommand}"
                                                 AutomationProperties.Name="上移图层" ToolTip="上移一层">
                                             <iconPacks:PackIconLucide Kind="ArrowUp" Width="15" Height="15"
-                                                                      Foreground="{StaticResource TextSecondaryBrush}" />
+                                                                      Foreground="{DynamicResource TextSecondaryBrush}" />
                                         </Button>
                                         <Button Style="{StaticResource IconButton}" Margin="6,0,0,0"
                                                 Command="{Binding MoveSelectedDownCommand}"
                                                 AutomationProperties.Name="下移图层" ToolTip="下移一层">
                                             <iconPacks:PackIconLucide Kind="ArrowDown" Width="15" Height="15"
-                                                                      Foreground="{StaticResource TextSecondaryBrush}" />
+                                                                      Foreground="{DynamicResource TextSecondaryBrush}" />
                                         </Button>
                                         <Button Style="{StaticResource IconButton}" Margin="6,0,0,0"
                                                 Command="{Binding RemoveSelectedCommand}"
                                                 AutomationProperties.Name="删除图层" ToolTip="删除选中图层（Del）">
                                             <iconPacks:PackIconLucide Kind="Trash2" Width="15" Height="15"
-                                                                      Foreground="{StaticResource TextSecondaryBrush}" />
+                                                                      Foreground="{DynamicResource TextSecondaryBrush}" />
                                         </Button>
                                     </StackPanel>
                                     <Button Style="{StaticResource SecondaryButton}" Height="{StaticResource ControlHeight}"
@@ -276,8 +276,8 @@
 
                 <!-- Center: the mm canvas -->
                 <Border x:Name="CanvasCard" Grid.Row="0" Grid.Column="2"
-                        Background="{StaticResource Surface1Brush}"
-                        BorderBrush="{StaticResource DividerBrush}" BorderThickness="1"
+                        Background="{DynamicResource Surface1Brush}"
+                        BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
                         CornerRadius="{StaticResource RadiusCard}"
                         ClipToBounds="True">
                     <Grid>
@@ -286,15 +286,15 @@
                              so hiding the bar at fit zoom would hide the feature itself. -->
                         <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"
                                 Margin="0,0,10,10" Padding="3"
-                                Background="{StaticResource Surface2Brush}"
-                                BorderBrush="{StaticResource DividerBrush}" BorderThickness="1"
+                                Background="{DynamicResource Surface2Brush}"
+                                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
                                 CornerRadius="{StaticResource RadiusChip}"
                                 ToolTip="Ctrl/Alt + 滚轮同样可以缩放；中键拖动平移">
                             <StackPanel Orientation="Horizontal">
                                 <Button Style="{StaticResource IconButton}" Click="ZoomOutClick"
                                         AutomationProperties.Name="缩小" ToolTip="缩小">
                                     <iconPacks:PackIconLucide Kind="Minus" Width="14" Height="14"
-                                                              Foreground="{StaticResource TextSecondaryBrush}" />
+                                                              Foreground="{DynamicResource TextSecondaryBrush}" />
                                 </Button>
                                 <TextBlock Text="{Binding ZoomPercent, ElementName=DesignCanvas}"
                                            Style="{StaticResource MicroText}" MinWidth="40"
@@ -302,14 +302,14 @@
                                 <Button Style="{StaticResource IconButton}" Click="ZoomInClick"
                                         AutomationProperties.Name="放大" ToolTip="放大">
                                     <iconPacks:PackIconLucide Kind="Plus" Width="14" Height="14"
-                                                              Foreground="{StaticResource TextSecondaryBrush}" />
+                                                              Foreground="{DynamicResource TextSecondaryBrush}" />
                                 </Button>
                                 <Border Width="1" Height="16" Margin="3,0" VerticalAlignment="Center"
-                                        Background="{StaticResource DividerBrush}" />
+                                        Background="{DynamicResource DividerBrush}" />
                                 <Button Style="{StaticResource IconButton}" Click="ResetCanvasZoomClick"
                                         AutomationProperties.Name="适应窗口" ToolTip="适应窗口（双击空白处同样生效）">
                                     <iconPacks:PackIconLucide Kind="RefreshCcw" Width="14" Height="14"
-                                                              Foreground="{StaticResource TextSecondaryBrush}" />
+                                                              Foreground="{DynamicResource TextSecondaryBrush}" />
                                 </Button>
                             </StackPanel>
                         </Border>

@@ -7,7 +7,7 @@
         MaxHeight="720"
         WindowStartupLocation="CenterOwner"
         WindowStyle="None" ResizeMode="NoResize"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource AppFontFamily}"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
     <WindowChrome.WindowChrome>
@@ -32,7 +32,7 @@
                     <Image Source="{StaticResource AppIconSource}" Width="64" Height="64" VerticalAlignment="Center" />
                     <StackPanel Margin="16,0,0,0" VerticalAlignment="Center">
                         <TextBlock Text="Disc Image Studio" Style="{StaticResource CardTitle}" FontWeight="Medium"
-                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                                   Foreground="{DynamicResource TextPrimaryBrush}" />
                         <TextBlock Text="{Binding VersionText}" Style="{StaticResource HintText}" Margin="0,6,0,0" />
                     </StackPanel>
                 </StackPanel>

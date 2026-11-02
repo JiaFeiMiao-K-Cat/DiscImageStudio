@@ -60,6 +60,7 @@ internal static class UnifiedCommandRunner
                         "Tabs: 0 home, 1 design, 2 preview, 3 export, 4 burn, 5 calibration.");
                 }
 
+                bool settingsDialog = HasOption(snapshotArguments, "settings-dialog");
                 return UiPreviewRenderer.Render(
                     RequireOption(snapshotArguments, "output"),
                     (Workspace)workspaceIndex,
@@ -67,8 +68,8 @@ internal static class UnifiedCommandRunner
                     FindOption(snapshotArguments, "live-input"),
                     FindOption(snapshotArguments, "live-disc"),
                     FindOption(snapshotArguments, "live-mode"),
-                    int.Parse(FindOption(snapshotArguments, "width") ?? "1366"),
-                    int.Parse(FindOption(snapshotArguments, "height") ?? "768"),
+                    int.Parse(FindOption(snapshotArguments, "width") ?? (settingsDialog ? "760" : "1366")),
+                    int.Parse(FindOption(snapshotArguments, "height") ?? (settingsDialog ? "600" : "768")),
                     FindOption(snapshotArguments, "calibration-session"),
                     FindOption(snapshotArguments, "calibration-view"),
                     FindOption(snapshotArguments, "project"),
@@ -83,7 +84,10 @@ internal static class UnifiedCommandRunner
                     HasOption(snapshotArguments, "project-update"),
                     HasOption(snapshotArguments, "project-save"),
                     HasOption(snapshotArguments, "tone-preview"),
-                    FindOption(snapshotArguments, "burn-progress"));
+                    FindOption(snapshotArguments, "burn-progress"),
+                    FindOption(snapshotArguments, "theme"),
+                    settingsDialog,
+                    FindOption(snapshotArguments, "settings-view"));
             }
 
             if (command == "burn-devices")
@@ -166,7 +170,9 @@ internal static class UnifiedCommandRunner
               ui-snapshot --output SCREENSHOT.png [--tab N] [--width 1366] [--height 768]
                           [--project FILE.discproj] [--live-input IMAGE --live-disc cd|dvd]
                           [--dock] [--burn-source project|calibration]
-                          [--about-dialog] [--preset-dialog] [--expand] [--scroll N] [--home-hover]
+                          [--about-dialog] [--preset-dialog] [--settings-dialog]
+                          [--settings-view general|storage] [--theme dark|light|system]
+                          [--expand] [--scroll N] [--home-hover]
                           [--burn-progress write|buffer|finalize]
                           [--project-update] [--project-save] [--tone-preview]
               burn-devices
@@ -179,7 +185,10 @@ internal static class UnifiedCommandRunner
             part below the viewport can be captured; --project-update plays the applied-
             calibration header acknowledgement; --project-save paints the saved-project
             header trail at a fixed point in its lap; --tone-preview waits for the design
-            page's tone module and switches the snapshot to that page.
+            page's tone module and switches the snapshot to that page; --theme picks the
+            palette before the window is created; --settings-dialog captures the settings
+            window at 760x600 by default and never touches the real settings file;
+            --settings-view picks its category.
 
             Blu-ray: bd-info exports parameters; bd-probe exports raw payload tests;
             bd-encode exports one ECC cluster; bd-generate maps dark to 3T and light to 6T run-count bias.

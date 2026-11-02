@@ -4,7 +4,7 @@
 
 <h2>全能的光盘盘面可见图像生成与刻录工具</h2>
 
-Disc Image Studio 是一个运行在 Windows 的光盘盘面图像生成与刻录工具，帮助您在符合规格的 DVD / CD / 蓝光 光盘上刻蚀出肉眼可见的图像。
+Disc Image Studio 是一个运行在 Windows 的光盘盘面图像生成与刻录工具，帮助您使用**任何**刻录光驱在**任何** DVD / CD / 蓝光 光盘上刻蚀出肉眼可见的图像。
 
 ![.NET 版本](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)
 ![运行平台](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078d6?style=flat-square)
@@ -31,11 +31,11 @@ Disc Image Studio 可将一张图片转换成符合 CD、DVD 与单层 BD-R 光�
 
 ## 界面预览
 
-![](docs/images/tab-0.png)
+![主页：模板与最近工程](docs/images/ui-home.png)
 
-![](docs/images/tab-3-2.png)
+![设计页：图层画布与影调](docs/images/ui-design.png)
 
-![](docs/images/tab-1.png)
+![导出页：浅色主题与输出镜像](docs/images/ui-export.png)
 
 ---
 
@@ -53,7 +53,7 @@ Disc Image Studio 可将一张图片转换成符合 CD、DVD 与单层 BD-R 光�
 
 ### 3. 预览与导出
 
-在预览页核对盘面投影，在导出页生成 ISO / RAW / WAV+CUE，或直接写入空白盘片。
+在预览页核对盘面投影，在导出页生成 ISO / RAW / WAV+CUE，或使用即时刻录功能直接写入空白盘片。
 
 即时刻录为实验性功能，请只使用可报废的测试介质。
 
@@ -61,16 +61,14 @@ Disc Image Studio 可将一张图片转换成符合 CD、DVD 与单层 BD-R 光�
 
 ### 光盘数据生成
 
-- **CD-DA 支持**：可导出带格式头的 WAV 音轨及配套 CUE，兼容 cdrecord, ImgBurn等刻录软件；也允许导出 RAW 音轨。详见 [CD 刻录兼容说明](docs/CD_AUDIO_COMPATIBILITY.md)。
-- **CD 文件模式**：选择随盘文件夹后生成 ISO9660/Joliet 数据盘，支持文件内圈／外圈布局；未选择时生成音轨。
-- **DVD 支持**：支持导出 ISO 纯绘图盘及文件与图案混合盘，文件位置可选内圈或外圈。
-- **蓝光支持**：单层 BD-R 25 GB，支持纯绘图与 UDF 2.01 文件。详见 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。
+- **CD 支持**：支持任何 CD 。您可导出带格式头的 WAV 音轨及配套 CUE，兼容 cdrecord, ImgBurn等刻录软件；也允许导出 RAW 音轨。详见 [CD 刻录兼容说明](docs/CD_AUDIO_COMPATIBILITY.md)。
+- **DVD 支持**：支持任何 DVD。您可导出 ISO 镜像。
+- **蓝光支持**：支持任何单层 BD-R 25 GB，支持纯绘图与 UDF 2.01 文件。详见 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。
 - **随盘文件**：CD／DVD／蓝光可在设计页直接选择要保存的文件夹及内圈／外圈位置，也可在导出页调整；设置随工程保存。
 - **文件区域预览**：混合盘的设计投影和成品读回用黄色标出文件区（含文件系统）。
 - **介质灰度方案**：CD 与 DVD 均使用黑白二阶，CD 使用 `0D / AA`，DVD 扰码域使用 `A5 / 92`。详见 [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md)。
 - **灰度抖动工具**：独立程序也可将原图处理为 `0/255` 黑白二阶 PNG；支持打开或拖入原图、并排预览及无损 PNG 导出。详见[使用与构建说明](tools/FourLevelDither/README.md)。
-- **DVD 三次轨距模型**：支持轨距随半径变化，生成、预览和辅助标定共用同一套几何。详见 [DVD_ENGINE.md](docs/DVD_ENGINE.md)。
-- **盘片预设**：内置 JSON + 用户层 JSON 分层配置，覆盖 CD／DVD／BD。详见[预设维护说明](docs/DISC_PRESETS.md)。
+- **盘片预设**：内置数个品牌的光盘参数，覆盖 CD／DVD／BD。您也可将自己标定好的数据贡献给我们，详见[预设维护说明](docs/DISC_PRESETS.md)。
 
 ### 辅助标定
 

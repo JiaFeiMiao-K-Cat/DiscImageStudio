@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -23,6 +24,8 @@ public partial class MainWindow : Window
     private readonly UserControl[] _pages;
     private readonly (SideNavItem Item, Workspace Workspace)[] _navItems;
     private readonly PageHeader?[] _pageHeaders = new PageHeader?[6];
+    private readonly AppSettingsStore _settingsStore;
+    private AppSettings _settings;
     private bool _isSidebarCollapsed;
     private bool _isManuallyCollapsed;
     private bool _closeApproved;
@@ -30,7 +33,14 @@ public partial class MainWindow : Window
     private int _projectUpdateRevision;
 
     public MainWindow()
+        : this(new AppSettings(), new AppSettingsStore())
     {
+    }
+
+    internal MainWindow(AppSettings settings, AppSettingsStore settingsStore)
+    {
+        _settings = settings;
+        _settingsStore = settingsStore;
         InitializeComponent();
         _workArea = new WindowWorkArea(this);
         _shell = new ShellViewModel(Dispatcher)
@@ -410,13 +420,26 @@ public partial class MainWindow : Window
 
     private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Escape)
+        if (BurnConfirmModal.IsOpen)
         {
+            // The modal owns the keyboard surface; do not run save/settings shortcuts behind it.
             if (BurnConfirmModal.HandleKeyDown(e.Key))
             {
-                // The modal consumed the key; pages must not react to it behind its back.
                 e.Handled = true;
             }
+
+            return;
+        }
+
+        if (e.Key == Key.Escape)
+        {
+            return;
+        }
+
+        if (e.Key == Key.OemComma && Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            e.Handled = true;
+            OpenSettingsDialog();
             return;
         }
 
@@ -534,10 +557,80 @@ public partial class MainWindow : Window
         ProjectUpdateBadge.BeginAnimation(OpacityProperty, badge);
     }
 
-    private void NavAbout_Activated(object sender, RoutedEventArgs e)
+    // ---- Application menu (title bar) ----
+
+    private void TitleBar_AppMenuRequested(object sender, RoutedEventArgs e)
+    {
+        if (FindResource("AppMenu") is not ContextMenu menu || sender is not TitleBar titleBar)
+        {
+            return;
+        }
+
+        FrameworkElement target = titleBar.AppMenuAnchor;
+        menu.PlacementTarget = target;
+        menu.Placement = PlacementMode.Bottom;
+        menu.HorizontalOffset = 0;
+        menu.IsOpen = true;
+        // The menu is wider than the 46px title-bar button; align its right edge with the
+        // button's right edge so it stays inside the window instead of hanging off-screen.
+        menu.HorizontalOffset = Math.Min(0, target.ActualWidth - menu.ActualWidth);
+    }
+
+    private void AppMenuSettings_Click(object sender, RoutedEventArgs e) => OpenSettingsDialog();
+
+    private void AppMenuAbout_Click(object sender, RoutedEventArgs e)
     {
         AboutWindow window = new(_shell.About) { Owner = this };
         window.ShowDialog();
+    }
+
+    /// <summary>Opens the settings modal. A successful Save applies the theme immediately and
+    /// points new cache writes at the chosen folder.</summary>
+    private void OpenSettingsDialog()
+    {
+        SettingsViewModel viewModel = new(_settings, _settingsStore)
+        {
+            IsBusyProvider = () => _shell.IsBusy,
+        };
+        SettingsWindow window = new(viewModel) { Owner = this };
+
+        // The clear-cache command must follow the shell's busy flag while the dialog is open.
+        PropertyChangedEventHandler busyHandler = (_, args) =>
+        {
+            if (args.PropertyName == nameof(ShellViewModel.IsBusy))
+            {
+                viewModel.RefreshBusyState();
+            }
+        };
+        _shell.PropertyChanged += busyHandler;
+        viewModel.RefreshBusyState();
+        try
+        {
+            if (window.ShowDialog() == true && viewModel.SavedSettings is { } settings)
+            {
+                ApplySettings(settings);
+            }
+        }
+        finally
+        {
+            _shell.PropertyChanged -= busyHandler;
+        }
+    }
+
+    private void ApplySettings(AppSettings settings)
+    {
+        _settings = settings;
+        if (Application.Current is { } application)
+        {
+            ThemeResolver.Apply(application, settings.Theme);
+        }
+
+        string cacheDirectory = TempFiles.TryConfigureCacheDirectory(settings.CacheDirectory);
+        if (settings.CacheDirectory.Length > 0
+            && !string.Equals(cacheDirectory, settings.CacheDirectory, StringComparison.OrdinalIgnoreCase))
+        {
+            _shell.ShowToast("缓存位置不可用", "已改用系统临时目录。", ToastKind.Warning);
+        }
     }
 
     private void UpdateProjectHeader()
@@ -662,7 +755,11 @@ public partial class MainWindow : Window
 
     private ProjectDialogResult? ShowProjectDialog(ProjectDialogRequest request)
     {
-        ProjectDialogViewModel viewModel = new(_shell.State, request);
+        ProjectDialogViewModel viewModel = new(
+            _shell.State,
+            request,
+            new RecentTemplateStore(),
+            _settings.DefaultProjectDirectory);
         if (request.EditMode && _shell.CurrentProject is { } project)
         {
             // Prefill from State so calibration-updated geometry shows its live values.
@@ -785,7 +882,6 @@ public partial class MainWindow : Window
             item.IsCollapsed = collapsed;
         }
 
-        NavAbout.IsCollapsed = collapsed;
         ProjectHeaderButton.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
         // 16 matches the expanded margin in MainWindow.xaml; a different value here made the
         // whole nav jump on the first toggle.

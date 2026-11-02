@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using DiscImageStudio.Services;
 using MahApps.Metro.IconPacks;
 
 namespace DiscImageStudio.Controls;
@@ -43,11 +44,11 @@ public partial class SideNavItem : UserControl
     // the sidebar cannot drift from the shared palette; the idle background keeps the hover
     // color's RGB at alpha 0 because a ColorAnimation interpolates every ARGB channel and
     // transparent->dark would pass ~50% white mid-flight (see Motion/ThemeValues).
-    private readonly Color _activeTextColor;
-    private readonly Color _idleTextColor;
-    private readonly Color _activeBackgroundColor;
-    private readonly Color _hoverBackgroundColor;
-    private readonly Color _idleBackgroundColor;
+    private Color _activeTextColor;
+    private Color _idleTextColor;
+    private Color _activeBackgroundColor;
+    private Color _hoverBackgroundColor;
+    private Color _idleBackgroundColor;
 
     private readonly SolidColorBrush _textBrush;
     private readonly SolidColorBrush _backgroundBrush;
@@ -118,7 +119,31 @@ public partial class SideNavItem : UserControl
         MouseEnter += (_, _) => UpdateVisual();
         MouseLeave += (_, _) => UpdateVisual();
         MouseLeftButtonUp += (_, _) => RaiseEvent(new RoutedEventArgs(ActivatedEvent, this));
-        Loaded += (_, _) => UpdateVisual(animate: false);
+        Loaded += (_, _) =>
+        {
+            ThemeResolver.Changed -= ThemeResolver_Changed;
+            ThemeResolver.Changed += ThemeResolver_Changed;
+            RefreshThemeColors();
+            UpdateVisual(animate: false);
+        };
+        Unloaded += (_, _) => ThemeResolver.Changed -= ThemeResolver_Changed;
+    }
+
+    private void ThemeResolver_Changed(object? sender, EventArgs e)
+    {
+        RefreshThemeColors();
+        // Animate: the switch keeps the item's live hover/active state but fades the palette
+        // change instead of snapping both brushes at once.
+        UpdateVisual(animate: true);
+    }
+
+    private void RefreshThemeColors()
+    {
+        _activeTextColor = ThemeValues.Color("TextPrimaryColor", Color.FromRgb(0xFA, 0xFA, 0xFA));
+        _idleTextColor = ThemeValues.Color("TextSecondaryColor", Color.FromRgb(0xA1, 0xA1, 0xAA));
+        _activeBackgroundColor = ThemeValues.Color("Surface2Color", Color.FromRgb(0x26, 0x26, 0x2B));
+        _hoverBackgroundColor = ThemeValues.Color("SurfaceHoverColor", Color.FromRgb(0x1B, 0x1B, 0x1C));
+        _idleBackgroundColor = ThemeValues.WithAlpha(_hoverBackgroundColor, 0);
     }
 
     private void UpdateVisual(bool animate = true)

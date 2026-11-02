@@ -12,7 +12,7 @@
             <iconPacks:PackIconLucide x:Name="Icon" Width="20" Height="20" Visibility="Collapsed" />
             <TextBlock x:Name="LabelTextBlock" Text="{Binding LabelText, RelativeSource={RelativeSource AncestorType=UserControl}}"
                        FontSize="14" FontWeight="Medium" Margin="9,0,0,0" VerticalAlignment="Center"
-                       Foreground="{StaticResource TextSecondaryBrush}" />
+                       Foreground="{DynamicResource TextSecondaryBrush}" />
         </StackPanel>
     </Border>
 </UserControl>

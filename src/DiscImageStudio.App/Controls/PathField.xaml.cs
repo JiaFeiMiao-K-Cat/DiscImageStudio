@@ -37,6 +37,10 @@ public partial class PathField : UserControl
         nameof(Hint), typeof(string), typeof(PathField),
         new PropertyMetadata(string.Empty, static (sender, _) => ((PathField)sender).UpdateTexts()));
 
+    public static readonly DependencyProperty PlaceholderProperty = DependencyProperty.Register(
+        nameof(Placeholder), typeof(string), typeof(PathField),
+        new PropertyMetadata(string.Empty, static (sender, _) => ((PathField)sender).UpdateTexts()));
+
     public PathField()
     {
         InitializeComponent();
@@ -96,6 +100,14 @@ public partial class PathField : UserControl
         set => SetValue(HintProperty, value);
     }
 
+    /// <summary>Muted watermark shown while the field is empty and unfocused, for fields
+    /// whose empty value stands for an effective default (a system folder, for example).</summary>
+    public string Placeholder
+    {
+        get => (string)GetValue(PlaceholderProperty);
+        set => SetValue(PlaceholderProperty, value);
+    }
+
     private void UpdateTexts()
     {
         LabelText.Text = Label;
@@ -103,5 +115,6 @@ public partial class PathField : UserControl
         BrowseButton.Content = ButtonLabel;
         HintTextBlock.Text = Hint;
         HintTextBlock.Visibility = string.IsNullOrWhiteSpace(Hint) ? Visibility.Collapsed : Visibility.Visible;
+        PlaceholderTextBlock.Text = Placeholder;
     }
 }

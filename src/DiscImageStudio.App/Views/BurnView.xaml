@@ -20,7 +20,7 @@
                     <controls:SegmentedControl HorizontalAlignment="Stretch" Margin="0,0,0,14"
                                                LabelA="设计页合成图" LabelB="辅助标定图案"
                                                IsSecondSelected="{Binding UseCalibrationPattern}" />
-                    <Border Background="{StaticResource Surface2Brush}" BorderBrush="{StaticResource DividerBrush}"
+                    <Border Background="{DynamicResource Surface2Brush}" BorderBrush="{DynamicResource DividerBrush}"
                             BorderThickness="1" CornerRadius="{StaticResource RadiusPanel}" Padding="14">
                         <StackPanel>
                             <TextBlock Text="{Binding SourceTitle}" Style="{StaticResource PanelTitle}" />
@@ -90,11 +90,11 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <iconPacks:PackIconLucide Kind="TriangleAlert" Width="24" Height="24"
-                                                  Foreground="{StaticResource WarningBrush}" />
+                                                  Foreground="{DynamicResource WarningBrush}" />
                         <TextBlock Text="刻录前确认" Style="{StaticResource CardTitle}" Margin="10,0,0,0"
                                    VerticalAlignment="Center" />
                     </StackPanel>
-                    <TextBlock Style="{StaticResource BodyText}" Foreground="{StaticResource WarningTextBrush}"
+                    <TextBlock Style="{StaticResource BodyText}" Foreground="{DynamicResource WarningTextBrush}"
                                Text="流式刻录仅支持空白介质。刻录开始后，中断、断电或生成速度不足都可能导致盘片报废。" />
                     <CheckBox Content="我确认已放入正确的空白盘"
                               IsChecked="{Binding ConfirmChecked}" Margin="0,14,0,0"

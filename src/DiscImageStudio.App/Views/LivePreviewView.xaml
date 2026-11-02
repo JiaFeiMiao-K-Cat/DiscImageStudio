@@ -244,7 +244,7 @@
                     <controls:VisibilityGate Grid.Row="1" IsOpen="{Binding HasFileRegionOverlay}">
                         <StackPanel Orientation="Horizontal" Margin="18,0,18,14">
                             <Rectangle Width="12" Height="12" Fill="#FACC15" RadiusX="2" RadiusY="2" Margin="0,0,8,0" />
-                            <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                            <TextBlock Foreground="{DynamicResource TextSecondaryBrush}"
                                        Text="黄色：文件区（含文件系统）" />
                         </StackPanel>
                     </controls:VisibilityGate>
