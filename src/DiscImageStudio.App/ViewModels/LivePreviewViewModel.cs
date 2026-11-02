@@ -25,6 +25,8 @@ namespace DiscImageStudio.ViewModels;
 ///   carries. One parameter set describes the measured disc geometry.
 public partial class LivePreviewViewModel : ObservableObject
 {
+    private const int MaximumPreviewSize = 8192;
+
     private readonly DispatcherTimer _livePreviewTimer;
     private readonly DiscParametersState _state;
     private readonly ShellViewModel _shell;
@@ -963,7 +965,7 @@ public partial class LivePreviewViewModel : ObservableObject
             actual = ReadBluRayDisc(_state.BdTotalSectors,
                 _state.BdActualInnerRadius, _state.BdActualOuterRadius);
             outputSize = Math.Clamp(
-                ParameterParser.ParsePositiveInt(_state.BdPreviewSize, "预览尺寸"), 64, 8192);
+                ParameterParser.ParsePositiveInt(_state.BdPreviewSize, "预览尺寸"), 64, MaximumPreviewSize);
             tone = _state.BluRayTone;
             invert = _state.BdInvertMapping;
             plan = PrepareBluRayProjectionPlan(generated);
@@ -1066,7 +1068,7 @@ public partial class LivePreviewViewModel : ObservableObject
             actual = ReadBluRayDisc(_state.BdTotalSectors,
                 _state.BdActualInnerRadius, _state.BdActualOuterRadius);
             outputSize = Math.Clamp(
-                ParameterParser.ParsePositiveInt(_state.BdPreviewSize, "预览尺寸"), 64, 8192);
+                ParameterParser.ParsePositiveInt(_state.BdPreviewSize, "预览尺寸"), 64, MaximumPreviewSize);
         }
         catch (Exception exception) when (exception is FormatException
                                               or OverflowException
@@ -1220,7 +1222,7 @@ public partial class LivePreviewViewModel : ObservableObject
 
             int configuredSize = ParameterParser.ParsePositiveInt(_state.CdPreviewSize, "预览尺寸");
             int configuredSamples = ParameterParser.ParsePositiveInt(_state.CdSamplesPerSector, "每扇区采样");
-            outputSize = Math.Clamp(configuredSize, 256, 1600);
+            outputSize = Math.Clamp(configuredSize, 256, MaximumPreviewSize);
             samplesPerSector = Math.Clamp(configuredSamples, 1, 32);
 
             message = string.Empty;
@@ -1281,7 +1283,7 @@ public partial class LivePreviewViewModel : ObservableObject
 
             int configuredSize = ParameterParser.ParsePositiveInt(_state.CdPreviewSize, "预览尺寸");
             int configuredSamples = ParameterParser.ParsePositiveInt(_state.CdSamplesPerSector, "每扇区采样");
-            outputSize = Math.Clamp(configuredSize, 256, 1600);
+            outputSize = Math.Clamp(configuredSize, 256, MaximumPreviewSize);
             samplesPerSector = Math.Clamp(configuredSamples, 1, 32);
 
             message = string.Empty;
@@ -1336,7 +1338,7 @@ public partial class LivePreviewViewModel : ObservableObject
             outputSize = Math.Clamp(
                 ParameterParser.ParsePositiveInt(_state.DvdPreviewSize, "预览尺寸"),
                 256,
-                1600);
+                MaximumPreviewSize);
             samplesPerSector = Math.Clamp(
                 ParameterParser.ParsePositiveInt(_state.DvdSamplesPerSector, "每扇区采样"),
                 1,
@@ -1421,7 +1423,7 @@ public partial class LivePreviewViewModel : ObservableObject
             outputSize = Math.Clamp(
                 ParameterParser.ParsePositiveInt(_state.DvdPreviewSize, "预览尺寸"),
                 256,
-                1600);
+                MaximumPreviewSize);
             samplesPerSector = Math.Clamp(
                 ParameterParser.ParsePositiveInt(_state.DvdSamplesPerSector, "每扇区采样"),
                 1,

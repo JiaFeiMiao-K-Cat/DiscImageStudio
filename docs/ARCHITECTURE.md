@@ -55,6 +55,8 @@ flowchart LR
 
 预览页的参数面板由 `PreviewInspectorViewModel` 提供：它把 CD、DVD、BD 三套参数集投影成同一组行（`ArtifactPath`、`ArtifactLabel`、`MeasuredInnerRadius`、`PreviewSize`、`SamplesPerSector` …）。盘型没有页内开关——投影预览严格跟随工程盘型，打开工程时由 `SetDiscType` 指定，检查器只是把这组行重新指向当前盘型，而不是换上第二份面板副本。只读组（生成几何）以 `DiscParametersState` 组合好的文案呈现并跳转到拥有者；成品读回模式额外提供「逆交织」开关，直接绑定共享的 `CdInterleave`，让外部音轨（没有 sidecar）按用户声明的交织方式读回；BD 没有每扇区采样项。预览自有组（实测半径与轨距、预览精度）的写入会落到当前显示的盘型，并折叠进「实测参数与预览精度（高级）」展开器。BD 的成品读回会自动读取同名 sidecar，恢复总扇区、半径、绘图起止、极性与影调；没有 sidecar 的外部 ISO 仍按当前工程几何读回。
 
+预览页的设计投影与成品读回共用 8192×8192 的分辨率上限：CD/DVD 为 256–8192 px，BD 为 64–8192 px，超出范围时按边界值渲染。默认尺寸仍为 CD 1600、DVD 1200、BD 2048 px；用户可在高级参数中的「导出尺寸 (px)」提高精度。「导出预览」保存当前渲染的 PNG，因此沿用该尺寸。
+
 参数归属与渐进披露：
 
 - **生成几何**（r0、r1、扇区、DVD 三项轨距）只在工程设置对话框里编辑。其他工作区显示只读摘要（`GeometrySummary`）和「编辑…」直达按钮，不再各自提供一份编辑器。
