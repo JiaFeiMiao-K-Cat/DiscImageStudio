@@ -5,10 +5,12 @@
 ### 中文
 
 - 新增日文界面：在「设置 → 通用 → 语言」可选择「日本語」；系统语言为日文（`ja`、`ja-JP`）时跟随系统也使用日文。所有翻译资源新增 `ja` 文本，`ui-snapshot --language` 支持 `ja`。
+- 新增日文 README（`README.ja.md`），所有 README 顶部的语言切换链接加入日本語。
 
 ### English
 
 - Added a Japanese interface. Choose 日本語 under Settings → General → Language; Japanese system locales (`ja`, `ja-JP`) now use Japanese when following the system. Every translation entry gains `ja` text, and `ui-snapshot --language` accepts `ja`.
+- Added a Japanese README (`README.ja.md`) and a 日本語 link to the language switcher at the top of every README.
 
 ## [1.3.4] - 2026-11-02
 
