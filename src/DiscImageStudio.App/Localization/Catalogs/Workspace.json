@@ -53,7 +53,7 @@
     "en": "WAV audio track (recommended)|*.wav|RAW audio track (legacy)|*.raw|All files|*.*",
     "zh-TW": "WAV 音軌（建議）|*.wav|RAW 音軌（舊格式）|*.raw|所有檔案|*.*",
     "ja": "WAV オーディオ トラック (推奨)|*.wav|RAW オーディオ トラック (旧形式)|*.raw|すべてのファイル|*.*",
-    "es": "Pista de audio WAV (recomendado)|*.wav|Pista de audio RAW (heredado)|*.raw|Todos los archivos|*.*"
+    "es": "Pista de audio WAV (recomendada)|*.wav|Pista de audio RAW (formato anterior)|*.raw|Todos los archivos|*.*"
   },
   "[{0:HH:mm:ss}] 任务失败：退出码 {1}，未生成 {2}\n": {
     "zh-CN": "[{0:HH:mm:ss}] 任务失败：退出码 {1}，未生成 {2}\n",

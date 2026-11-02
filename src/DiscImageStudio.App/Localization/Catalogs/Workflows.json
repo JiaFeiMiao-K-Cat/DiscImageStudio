@@ -1026,7 +1026,7 @@
     "en": "The calibration parameters do not describe a Blu-ray target.",
     "zh-TW": "校準參數不是藍光目標。",
     "ja": "キャリブレーション パラメーターは Blu-ray 用ではありません。",
-    "es": "Los parámetros de calibración no describen un destino Blu-ray."
+    "es": "Los parámetros de calibración no corresponden a un patrón Blu-ray."
   },
   "标定图案 · {0} · {1}": {
     "zh-CN": "标定图案 · {0} · {1}",
@@ -1264,14 +1264,14 @@
     "en": "Generated inner radius",
     "zh-TW": "產生時的內半徑",
     "ja": "生成内半径",
-    "es": "Radio interior generado"
+    "es": "Radio interior de generación"
   },
   "生成外半径": {
     "zh-CN": "生成外半径",
     "en": "Generated outer radius",
     "zh-TW": "產生時的外半徑",
     "ja": "生成外半径",
-    "es": "Radio exterior generado"
+    "es": "Radio exterior de generación"
   },
   "生成的 CD 音轨或 ISO": {
     "zh-CN": "生成的 CD 音轨或 ISO",

@@ -298,7 +298,7 @@
     "en": "Open Calibration",
     "zh-TW": "開啟校準工作區",
     "ja": "キャリブレーションを開く",
-    "es": "Abrir Calibrar"
+    "es": "Ir a Calibrar"
   },
   "Xaml.RecorderAndSpeed": {
     "zh-CN": "刻录机与速度",
@@ -690,7 +690,7 @@
     "en": "Refresh preview",
     "zh-TW": "重新整理預覽",
     "ja": "プレビューを更新",
-    "es": "Actualizar vista previa"
+    "es": "Actualizar"
   },
   "Xaml.ExportPreview": {
     "zh-CN": "导出预览",
@@ -893,14 +893,14 @@
     "en": "Create target",
     "zh-TW": "產生校準光碟",
     "ja": "キャリブレーション ディスクを作成",
-    "es": "Crear objetivo"
+    "es": "Crear patrón"
   },
   "Xaml.CreateTargetFromParameters": {
     "zh-CN": "从当前参数新建标靶",
     "en": "Create target from parameters",
     "zh-TW": "從目前參數新增標靶",
     "ja": "現在のパラメーターからターゲットを作成",
-    "es": "Crear objetivo a partir de parámetros"
+    "es": "Crear patrón con los parámetros"
   },
   "Xaml.OpenStreamingBurn": {
     "zh-CN": "前往流式刻录",
@@ -1040,7 +1040,7 @@
     "en": "Fit cubic DVD track pitch",
     "zh-TW": "擬合 DVD 三次軌距分佈",
     "ja": "DVD のトラック ピッチを 3 次式でフィット",
-    "es": "Ajustar paso de pista DVD cúbico"
+    "es": "Ajustar paso cúbico de pista DVD"
   },
   "Xaml.UseAtLeast16PointsAtDifferentRadiiSpanning": {
     "zh-CN": "至少 16 个不同半径的点，覆盖刻录环带宽度的 60% 以上。",
@@ -1390,7 +1390,7 @@
     "en": "Reset defaults",
     "zh-TW": "還原預設值",
     "ja": "既定値に戻す",
-    "es": "Restablecer valores predeterminados"
+    "es": "Restablecer"
   },
   "Xaml.DismissNotification": {
     "zh-CN": "关闭通知",
