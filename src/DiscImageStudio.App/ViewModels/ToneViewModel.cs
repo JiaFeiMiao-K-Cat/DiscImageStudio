@@ -1,3 +1,4 @@
+using DiscImageStudio.Localization;
 using System.IO;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -67,7 +68,7 @@ public partial class ToneViewModel : ObservableObject
     private bool _hasTonePreview;
 
     [ObservableProperty]
-    private string _tonePreviewStatus = "导入图片后自动生成预览。";
+    private string _tonePreviewStatus = L.T("导入图片后自动生成预览。");
 
     internal bool IsTonePreviewReady => _tonePreviewReady;
 
@@ -217,7 +218,7 @@ public partial class ToneViewModel : ObservableObject
         {
             await Task.Delay(180, cancellationToken);
             Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-            TonePreviewStatus = "正在按当前影调渲染…";
+            TonePreviewStatus = L.T("正在按当前影调渲染…");
 
             int samplesPerSector;
             if (IsBluRay)
@@ -312,7 +313,7 @@ public partial class ToneViewModel : ObservableObject
             TonePreviewImage = bitmap;
             HasTonePreview = true;
             _tonePreviewReady = true;
-            TonePreviewStatus = "实时更新";
+            TonePreviewStatus = L.T("实时更新");
             TempFiles.TryDeleteTemporaryFile(previousPath);
         }
         catch (OperationCanceledException)
@@ -320,7 +321,7 @@ public partial class ToneViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            TonePreviewStatus = $"影调预览失败：{exception.Message}";
+            TonePreviewStatus = L.F($"影调预览失败：{exception.Message}");
         }
         finally
         {
@@ -341,7 +342,7 @@ public partial class ToneViewModel : ObservableObject
         TonePreviewImage = null;
         HasTonePreview = false;
         _tonePreviewReady = false;
-        TonePreviewStatus = "导入图片后自动生成预览。";
+        TonePreviewStatus = L.T("导入图片后自动生成预览。");
         TempFiles.TryDeleteTemporaryFile(_lastTonePreviewPath);
         _lastTonePreviewPath = null;
     }
@@ -356,17 +357,17 @@ public partial class ToneViewModel : ObservableObject
 
     private BluRayDiscParameters ReadBluRayPreviewParameters()
     {
-        long totalSectors = ParameterParser.ParsePositiveLong(_state.BdTotalSectors, "蓝光总扇区数");
+        long totalSectors = ParameterParser.ParsePositiveLong(_state.BdTotalSectors, L.T("蓝光总扇区数"));
         if (totalSectors > uint.MaxValue)
         {
-            throw new ArgumentOutOfRangeException("蓝光总扇区数", "总扇区数超出蓝光引擎支持范围。");
+            throw new ArgumentOutOfRangeException(L.T("蓝光总扇区数"), L.T("总扇区数超出蓝光引擎支持范围。"));
         }
 
         BluRayDiscParameters parameters = new(
             checked((uint)totalSectors),
             1,
-            ParameterParser.ParsePositiveDouble(_state.BdInnerRadius, "蓝光内半径"),
-            ParameterParser.ParsePositiveDouble(_state.BdOuterRadius, "蓝光外半径"));
+            ParameterParser.ParsePositiveDouble(_state.BdInnerRadius, L.T("蓝光内半径")),
+            ParameterParser.ParsePositiveDouble(_state.BdOuterRadius, L.T("蓝光外半径")));
         parameters.Validate();
         return parameters;
     }
@@ -374,28 +375,28 @@ public partial class ToneViewModel : ObservableObject
     private CdDiscParameters ReadCdPreviewParameters()
     {
         CdDiscParameters parameters = new(
-            ParameterParser.ParsePositiveDouble(_state.CdInnerRadius, "内半径"),
-            ParameterParser.ParsePositiveDouble(_state.CdOuterRadius, "外半径"),
-            ParameterParser.ParsePositiveLong(_state.CdSectors, "扇区数"));
+            ParameterParser.ParsePositiveDouble(_state.CdInnerRadius, L.T("内半径")),
+            ParameterParser.ParsePositiveDouble(_state.CdOuterRadius, L.T("外半径")),
+            ParameterParser.ParsePositiveLong(_state.CdSectors, L.T("扇区数")));
         parameters.Validate();
         return parameters;
     }
 
     private DvdStreamingOptions ReadDvdPreviewOptions()
     {
-        long totalSectors = ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, "总扇区数");
+        long totalSectors = ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, L.T("总扇区数"));
         if (totalSectors > uint.MaxValue)
         {
-            throw new ArgumentOutOfRangeException("总扇区数", "总扇区数超出 DVD 引擎支持范围。");
+            throw new ArgumentOutOfRangeException(L.T("总扇区数"), L.T("总扇区数超出 DVD 引擎支持范围。"));
         }
 
         DvdStreamingOptions options = new(
             checked((uint)totalSectors),
-            ParameterParser.ParsePositiveDouble(_state.DvdInnerRadius, "内半径"),
-            ParameterParser.ParsePositiveDouble(_state.DvdOuterRadius, "外半径"),
-            PitchLinear: ParameterParser.ParseDouble(_state.DvdPitchLinear, "DVD 轨距一次项"),
-            PitchQuadratic: ParameterParser.ParseDouble(_state.DvdPitchQuadratic, "DVD 轨距二次项"),
-            PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, "DVD 轨距三次项"),
+            ParameterParser.ParsePositiveDouble(_state.DvdInnerRadius, L.T("内半径")),
+            ParameterParser.ParsePositiveDouble(_state.DvdOuterRadius, L.T("外半径")),
+            PitchLinear: ParameterParser.ParseDouble(_state.DvdPitchLinear, L.T("DVD 轨距一次项")),
+            PitchQuadratic: ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("DVD 轨距二次项")),
+            PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("DVD 轨距三次项")),
             Tone: _state.DvdTone);
         options.Validate();
         return options;

@@ -1,3 +1,4 @@
+using DiscImageStudio.Localization;
 using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -14,14 +15,14 @@ public static class CalibrationPhotoService
     public static BitmapSource Load(string path, int maxDimension = 2000, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (string.IsNullOrWhiteSpace(path)) throw new ArgumentException("请选择一张盘片照片。", nameof(path));
-        if (maxDimension is < 64 or > 4096) throw new ArgumentOutOfRangeException(nameof(maxDimension), "照片尺寸上限应为 64–4096 像素。");
+        if (string.IsNullOrWhiteSpace(path)) throw new ArgumentException(L.T("请选择一张盘片照片。"), nameof(path));
+        if (maxDimension is < 64 or > 4096) throw new ArgumentOutOfRangeException(nameof(maxDimension), L.T("照片尺寸上限应为 64–4096 像素。"));
         using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-        if (stream.Length > 256L * 1024 * 1024) throw new ArgumentException("照片文件过大，请使用小于 256 MB 的图片。");
+        if (stream.Length > 256L * 1024 * 1024) throw new ArgumentException(L.T("照片文件过大，请使用小于 256 MB 的图片。"));
         BitmapDecoder decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.OnDemand);
-        if (decoder.Frames.Count == 0) throw new ArgumentException("照片没有可读取的图像。");
+        if (decoder.Frames.Count == 0) throw new ArgumentException(L.T("照片没有可读取的图像。"));
         int width = decoder.Frames[0].PixelWidth, height = decoder.Frames[0].PixelHeight;
-        if (width <= 0 || height <= 0) throw new ArgumentException("照片尺寸无效。");
+        if (width <= 0 || height <= 0) throw new ArgumentException(L.T("照片尺寸无效。"));
         cancellationToken.ThrowIfCancellationRequested();
         stream.Position = 0;
         var image = new BitmapImage();
@@ -45,8 +46,8 @@ public static class CalibrationPhotoService
     {
         ArgumentNullException.ThrowIfNull(image);
         cancellationToken.ThrowIfCancellationRequested();
-        if (count is < 5 or > 64) throw new ArgumentOutOfRangeException(nameof(count), "每条初始轮廓应有 5–64 个点。");
-        if (image.PixelWidth < 16 || image.PixelHeight < 16) throw new ArgumentException("照片太小，无法输入轮廓。");
+        if (count is < 5 or > 64) throw new ArgumentOutOfRangeException(nameof(count), L.T("每条初始轮廓应有 5–64 个点。"));
+        if (image.PixelWidth < 16 || image.PixelHeight < 16) throw new ArgumentException(L.T("照片太小，无法输入轮廓。"));
         double cx = (image.PixelWidth - 1) / 2.0, cy = (image.PixelHeight - 1) / 2.0;
         double rx = image.PixelWidth * 0.43, ry = image.PixelHeight * 0.43;
         CalibrationPoint[] Make(double ratio) => Enumerable.Range(0, count).Select(index =>
@@ -65,11 +66,11 @@ public static class CalibrationPhotoService
         ArgumentNullException.ThrowIfNull(transform);
         cancellationToken.ThrowIfCancellationRequested();
         if (!double.IsFinite(canvasOuterRadiusMm) || canvasOuterRadiusMm is <= 0 or > 150)
-            throw new ArgumentOutOfRangeException(nameof(canvasOuterRadiusMm), "矫正画布半径无效。");
-        if (pixelSize is < 32 or > 4096) throw new ArgumentOutOfRangeException(nameof(pixelSize), "矫正图片尺寸应为 32–4096 像素。");
+            throw new ArgumentOutOfRangeException(nameof(canvasOuterRadiusMm), L.T("矫正画布半径无效。"));
+        if (pixelSize is < 32 or > 4096) throw new ArgumentOutOfRangeException(nameof(pixelSize), L.T("矫正图片尺寸应为 32–4096 像素。"));
         if (image.PixelWidth is < 1 or > 4096 || image.PixelHeight is < 1 or > 4096)
-            throw new ArgumentException("请先按照片尺寸上限载入图片，再进行矫正。");
-        if (!transform.IsValidForDisc(canvasOuterRadiusMm)) throw new ArgumentException("照片变换在当前画布内退化，请重新矫正轮廓或缩小画布。");
+            throw new ArgumentException(L.T("请先按照片尺寸上限载入图片，再进行矫正。"));
+        if (!transform.IsValidForDisc(canvasOuterRadiusMm)) throw new ArgumentException(L.T("照片变换在当前画布内退化，请重新矫正轮廓或缩小画布。"));
         BitmapSource converted = image.Format == PixelFormats.Bgra32 ? image
             : new FormatConvertedBitmap(image, PixelFormats.Bgra32, null, 0);
         int width = converted.PixelWidth, height = converted.PixelHeight;

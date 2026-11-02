@@ -1,3 +1,4 @@
+using DiscImageStudio.Localization;
 using System.IO;
 using System.Numerics;
 using System.Windows.Media;
@@ -101,7 +102,7 @@ public static class BluRayPreviewRenderer
         using FileStream source = new(Path.GetFullPath(isoPath), FileMode.Open, FileAccess.Read,
             FileShare.Read, bufferSize: 1, FileOptions.RandomAccess);
         if (source.Length != actual.ContentLength)
-            throw new ArgumentException($"BD ISO 长度与总扇区数不符：需要 {actual.ContentLength:N0} 字节，实际 {source.Length:N0} 字节。", nameof(isoPath));
+            throw new ArgumentException(L.F($"BD ISO 长度与总扇区数不符：需要 {actual.ContentLength:N0} 字节，实际 {source.Length:N0} 字节。"), nameof(isoPath));
 
         PixelProjection projection = new(actual, outputSize);
         byte[] pixels = new byte[checked(outputSize * outputSize * 4)];

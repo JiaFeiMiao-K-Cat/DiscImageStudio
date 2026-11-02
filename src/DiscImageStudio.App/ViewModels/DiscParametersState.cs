@@ -1,3 +1,4 @@
+using DiscImageStudio.Localization;
 using System.Collections.ObjectModel;
 using System.IO;
 using DiscImageStudio.BluRay;
@@ -19,6 +20,23 @@ public partial class DiscParametersState : ObservableObject
     private const string DefaultDvdVolumeLabel = "DISC_IMAGE";
     private const string DefaultBluRayVolumeLabel = "BD_IMAGE";
 
+    private static CdDiscPreset ManualCdPreset => CdDiscPreset.Manual with
+    {
+        DisplayName = L.T(CdDiscPreset.Manual.DisplayName),
+        Description = L.T(CdDiscPreset.Manual.Description),
+    };
+
+    private static DvdDiscPreset ManualDvdPreset => DvdDiscPreset.Manual with
+    {
+        DisplayName = L.T(DvdDiscPreset.Manual.DisplayName),
+        Description = L.T(DvdDiscPreset.Manual.Description),
+    };
+
+    private static BluRayDiscPreset ManualBluRayPreset => BluRayDiscPreset.Manual with
+    {
+        DisplayName = L.T(BluRayDiscPreset.Manual.DisplayName),
+    };
+
     private readonly string _discPresetJsonPath;
 
     // The path overload is what keeps preset-editing tests off the real user catalog.
@@ -33,9 +51,9 @@ public partial class DiscParametersState : ObservableObject
         _discPresetJsonPath = discPresetJsonPath;
     }
 
-    private IReadOnlyList<CdDiscPreset> _cdPresets = [CdDiscPreset.Manual];
-    private IReadOnlyList<DvdDiscPreset> _dvdPresets = [DvdDiscPreset.Manual];
-    private IReadOnlyList<BluRayDiscPreset> _bluRayPresets = [BluRayDiscPreset.Manual];
+    private IReadOnlyList<CdDiscPreset> _cdPresets = [ManualCdPreset];
+    private IReadOnlyList<DvdDiscPreset> _dvdPresets = [ManualDvdPreset];
+    private IReadOnlyList<BluRayDiscPreset> _bluRayPresets = [ManualBluRayPreset];
 
     private bool _isApplyingDiscPreset;
 
@@ -115,9 +133,9 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty] private string _cdPresetHint = string.Empty;
     [ObservableProperty] private string _dvdPresetHint = string.Empty;
     [ObservableProperty] private string _bluRayPresetHint = string.Empty;
-    [ObservableProperty] private CdDiscPreset _selectedCdPreset = CdDiscPreset.Manual;
-    [ObservableProperty] private DvdDiscPreset _selectedDvdPreset = DvdDiscPreset.Manual;
-    [ObservableProperty] private BluRayDiscPreset _selectedBluRayPreset = BluRayDiscPreset.Manual;
+    [ObservableProperty] private CdDiscPreset _selectedCdPreset = ManualCdPreset;
+    [ObservableProperty] private DvdDiscPreset _selectedDvdPreset = ManualDvdPreset;
+    [ObservableProperty] private BluRayDiscPreset _selectedBluRayPreset = ManualBluRayPreset;
 
     // Tone mapping shared by both families. New projects open at 75% dither: enough to keep
     // midtones at viewing distance without the grain full strength adds. A project file
@@ -169,8 +187,8 @@ public partial class DiscParametersState : ObservableObject
         ? $"+{ToneBrightness:0}"
         : $"{ToneBrightness:0}";
 
-    public string ToneSummary => $"{ToneLevels} 级 · {ToneDitherText} 抖动"
-        + (ToneSrgbLinearization ? " · sRGB 线性化" : string.Empty);
+    public string ToneSummary => L.F($"{ToneLevels} 级 · {ToneDitherText} 抖动")
+        + (ToneSrgbLinearization ? L.T(" · sRGB 线性化") : string.Empty);
 
     /// <summary>A CUE sheet only accompanies PCM WAV tracks, so the CD page offers its
     /// toggle only while the chosen output is a .wav file.</summary>
@@ -183,11 +201,11 @@ public partial class DiscParametersState : ObservableObject
 
     /// <summary>Label of the CD output the design page's pipeline card offers; the artifact
     /// switches between a data ISO and an audio track as the on-disc folder appears.</summary>
-    public string CdOutputLabel => HasCdFiles ? "输出数据盘 (.iso)" : "输出音轨 (.wav / .raw)";
+    public string CdOutputLabel => HasCdFiles ? L.T("输出数据盘 (.iso)") : L.T("输出音轨 (.wav / .raw)");
 
     public string CdOutputHint => HasCdFiles
-        ? "包含随盘文件，导出为 CD 数据盘 ISO。"
-        : "无随盘文件时生成音轨，推荐 WAV 格式。";
+        ? L.T("包含随盘文件，导出为 CD 数据盘 ISO。")
+        : L.T("无随盘文件时生成音轨，推荐 WAV 格式。");
 
     partial void OnCdDataDirectoryChanged(string value) => NormalizeCdOutputFormat();
 
@@ -219,17 +237,17 @@ public partial class DiscParametersState : ObservableObject
         try
         {
             return DvdPitchDisplay.Format(new(CalibrationDiscKind.Dvd,
-                ParameterParser.ParsePositiveDouble(actual ? DvdActualInnerRadius : DvdInnerRadius, "内半径"),
-                ParameterParser.ParsePositiveDouble(actual ? DvdActualOuterRadius : DvdOuterRadius, "外半径"),
-                ParameterParser.ParsePositiveLong(DvdTotalSectors, "总扇区数"),
+                ParameterParser.ParsePositiveDouble(actual ? DvdActualInnerRadius : DvdInnerRadius, L.T("内半径")),
+                ParameterParser.ParsePositiveDouble(actual ? DvdActualOuterRadius : DvdOuterRadius, L.T("外半径")),
+                ParameterParser.ParsePositiveLong(DvdTotalSectors, L.T("总扇区数")),
                 DvdStreamingOptions.StandardChannelBitLengthNm,
-                ParameterParser.ParseDouble(actual ? DvdActualPitchLinear : DvdPitchLinear, "相对一次项"),
-                ParameterParser.ParseDouble(actual ? DvdActualPitchQuadratic : DvdPitchQuadratic, "相对二次项"),
-                ParameterParser.ParseDouble(actual ? DvdActualPitchCubic : DvdPitchCubic, "相对三次项")));
+                ParameterParser.ParseDouble(actual ? DvdActualPitchLinear : DvdPitchLinear, L.T("相对一次项")),
+                ParameterParser.ParseDouble(actual ? DvdActualPitchQuadratic : DvdPitchQuadratic, L.T("相对二次项")),
+                ParameterParser.ParseDouble(actual ? DvdActualPitchCubic : DvdPitchCubic, L.T("相对三次项"))));
         }
         catch (Exception exception) when (exception is ArgumentException or FormatException or OverflowException)
         {
-            return "轨距模型无效：请检查半径、扇区数及系数，整个刻录区的轨距必须为正。";
+            return L.T("轨距模型无效：请检查半径、扇区数及系数，整个刻录区的轨距必须为正。");
         }
     }
 
@@ -273,7 +291,7 @@ public partial class DiscParametersState : ObservableObject
                 FallbackLanguage: "zh-CN",
                 BluRayPresets: []);
             ApplyPresetDocuments(MergePresets(builtIn, emptyUser));
-            return $"用户预设 JSON 无法加载，已继续使用程序内置参数。\n\n{exception.Message}\n\n文件位置：\n{_discPresetJsonPath}";
+            return L.F($"用户预设 JSON 无法加载，已继续使用程序内置参数。\n\n{exception.Message}\n\n文件位置：\n{_discPresetJsonPath}");
         }
     }
 
@@ -311,7 +329,7 @@ public partial class DiscParametersState : ObservableObject
         string name = displayName.Trim();
         if (name.Length == 0)
         {
-            throw new ArgumentException("请填写预设名称。", nameof(displayName));
+            throw new ArgumentException(L.T("请填写预设名称。"), nameof(displayName));
         }
 
         EnsurePresetsJsonExists();
@@ -396,7 +414,7 @@ public partial class DiscParametersState : ObservableObject
         ArgumentException.ThrowIfNullOrWhiteSpace(presetId);
         if (!presetId.StartsWith("user-", StringComparison.Ordinal))
         {
-            throw new InvalidOperationException("内置预设不能删除。");
+            throw new InvalidOperationException(L.T("内置预设不能删除。"));
         }
 
         EnsurePresetsJsonExists();
@@ -426,21 +444,25 @@ public partial class DiscParametersState : ObservableObject
         List<CdDiscPreset> cdPresets = merged.CdPresets
             .Select(value => new CdDiscPreset(
                 value.Id,
-                value.DisplayName,
-                value.Description,
+                LocalizeBuiltInText(value.DisplayName,
+                    builtIn.CdPresets.FirstOrDefault(preset => preset.Id == value.Id)?.DisplayName),
+                LocalizeBuiltInText(value.Description,
+                    builtIn.CdPresets.FirstOrDefault(preset => preset.Id == value.Id)?.Description),
                 value.Sectors,
                 value.InnerRadiusMm,
                 value.OuterRadiusMm,
                 value.DisplayNameResourceKey,
                 value.DescriptionResourceKey))
             .ToList();
-        cdPresets.Add(CdDiscPreset.Manual);
+        cdPresets.Add(ManualCdPreset);
 
         List<DvdDiscPreset> dvdPresets = merged.DvdPresets
             .Select(value => new DvdDiscPreset(
                 value.Id,
-                value.DisplayName,
-                value.Description,
+                LocalizeBuiltInText(value.DisplayName,
+                    builtIn.DvdPresets.FirstOrDefault(preset => preset.Id == value.Id)?.DisplayName),
+                LocalizeBuiltInText(value.Description,
+                    builtIn.DvdPresets.FirstOrDefault(preset => preset.Id == value.Id)?.Description),
                 value.TotalSectors,
                 value.InnerRadiusMm,
                 value.OuterRadiusMm,
@@ -450,12 +472,13 @@ public partial class DiscParametersState : ObservableObject
                 PitchQuadratic: value.PitchQuadratic,
                 PitchCubic: value.PitchCubic))
             .ToList();
-        dvdPresets.Add(DvdDiscPreset.Manual);
+        dvdPresets.Add(ManualDvdPreset);
 
         List<BluRayDiscPreset> bluRayPresets = (merged.BluRayPresets ?? [])
             .Select(value => new BluRayDiscPreset(
                 value.Id,
-                value.DisplayName,
+                LocalizeBuiltInText(value.DisplayName,
+                    builtIn.BluRayPresets?.FirstOrDefault(preset => preset.Id == value.Id)?.DisplayName),
                 1,
                 new BluRayDiscParameters(
                     value.TotalSectors,
@@ -464,9 +487,13 @@ public partial class DiscParametersState : ObservableObject
                     value.OuterRadiusMm),
                 value.InvertMapping))
             .ToList();
-        bluRayPresets.Add(BluRayDiscPreset.Manual);
+        bluRayPresets.Add(ManualBluRayPreset);
         return (cdPresets, dvdPresets, bluRayPresets);
     }
+
+    // User-edited names and descriptions remain content. Only unchanged built-in text is translated.
+    private static string LocalizeBuiltInText(string value, string? builtInValue)
+        => value == builtInValue ? L.T(value) : value;
 
     private void ApplyPresetDocuments(
         (IReadOnlyList<CdDiscPreset> Cd, IReadOnlyList<DvdDiscPreset> Dvd, IReadOnlyList<BluRayDiscPreset> BluRay) presets)
@@ -545,7 +572,7 @@ public partial class DiscParametersState : ObservableObject
             return;
         }
 
-        SelectedCdPreset = CdDiscPreset.Manual;
+        SelectedCdPreset = ManualCdPreset;
     }
 
     private void OnDvdParameterEdited(bool presetField)
@@ -555,7 +582,7 @@ public partial class DiscParametersState : ObservableObject
             return;
         }
 
-        SelectedDvdPreset = DvdDiscPreset.Manual;
+        SelectedDvdPreset = ManualDvdPreset;
     }
 
     private void OnBluRayParameterEdited()
@@ -565,7 +592,7 @@ public partial class DiscParametersState : ObservableObject
             return;
         }
 
-        SelectedBluRayPreset = BluRayDiscPreset.Manual;
+        SelectedBluRayPreset = ManualBluRayPreset;
     }
 
     public void ApplyCdDiscPreset(CdDiscPreset preset)

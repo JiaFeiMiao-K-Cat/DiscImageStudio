@@ -1,3 +1,4 @@
+using DiscImageStudio.Localization;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -10,7 +11,7 @@ public partial class SourceChip : UserControl
 {
     public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
         nameof(Text), typeof(string), typeof(SourceChip),
-        new PropertyMetadata("来自设计页合成图", static (sender, _) => ((SourceChip)sender).ChipText.Text = ((SourceChip)sender).Text));
+        new PropertyMetadata(L.T("来自设计页合成图"), static (sender, _) => ((SourceChip)sender).ChipText.Text = ((SourceChip)sender).Text));
 
     public static readonly DependencyProperty ActionsProperty = DependencyProperty.Register(
         nameof(Actions), typeof(object), typeof(SourceChip),

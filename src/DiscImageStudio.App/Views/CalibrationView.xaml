@@ -1,6 +1,7 @@
 <UserControl x:Class="DiscImageStudio.Views.CalibrationView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:DiscImageStudio.Localization"
              xmlns:controls="clr-namespace:DiscImageStudio.Controls"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:vm="clr-namespace:DiscImageStudio.ViewModels"
@@ -13,9 +14,9 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <controls:PageHeader Grid.Row="0" Title="辅助标定"
+        <controls:PageHeader Grid.Row="0" Title="{loc:Text Xaml.Calibration2}"
                              Workspace="{x:Static vm:Workspace.Calibration}"
-                             Hint="通过 Disc Image Studio 内置的智能算法，您可以利用数张实拍图片轻松确定盘片的真实物理数据" />
+                             Hint="{loc:Text Xaml.UseDiscImageStudioSBuiltInAlgorithmsTo}" />
         <!-- One scroll surface: in the wide layout the work area is exactly the viewport tall
              (the step column is an accordion that never grows past it), in the narrow layout
              it stacks and the page scrolls as one. -->
@@ -34,36 +35,36 @@
                 </Grid.RowDefinitions>
 
                 <controls:MonitorCard x:Name="StageCard" Grid.Column="0"
-                                      Title="标定照片" IconKind="Image"
+                                      Title="{loc:Text Xaml.CalibrationPhoto}" IconKind="Image"
                                       StatusText="{Binding SelectionDescription, ElementName=PhotoCanvas}">
                     <controls:MonitorCard.Actions>
                         <StackPanel Orientation="Horizontal">
-                            <Button Style="{StaticResource IconButton}" Click="OnZoomOut" ToolTip="缩小"
-                                    Margin="0,0,4,0" AutomationProperties.Name="缩小">
+                            <Button Style="{StaticResource IconButton}" Click="OnZoomOut" ToolTip="{loc:Text Xaml.ZoomOut}"
+                                    Margin="0,0,4,0" AutomationProperties.Name="{loc:Text Xaml.ZoomOut}">
                                 <iconPacks:PackIconLucide Kind="Minus" Width="16" Height="16"
                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
                             </Button>
-                            <Button Style="{StaticResource IconButton}" Click="OnZoomIn" ToolTip="放大"
-                                    Margin="0,0,8,0" AutomationProperties.Name="放大">
+                            <Button Style="{StaticResource IconButton}" Click="OnZoomIn" ToolTip="{loc:Text Xaml.ZoomIn}"
+                                    Margin="0,0,8,0" AutomationProperties.Name="{loc:Text Xaml.ZoomIn}">
                                 <iconPacks:PackIconLucide Kind="Plus" Width="16" Height="16"
                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
                             </Button>
-                            <Button Content="适合窗口" Style="{StaticResource CompactButton}"
+                            <Button Content="{loc:Text Xaml.FitToWindow}" Style="{StaticResource CompactButton}"
                                     Click="OnResetView" Margin="0,0,8,0" />
                             <TextBlock Text="{Binding ViewDescription, ElementName=PhotoCanvas}"
                                        Style="{StaticResource CompactText}" VerticalAlignment="Center"
                                        MinWidth="42" Margin="0,0,8,0" />
-                            <CheckBox Content="查看刻录图案" IsChecked="{Binding ShowTargetPreview}"
+                            <CheckBox Content="{loc:Text Xaml.ShowBurnPattern}" IsChecked="{Binding ShowTargetPreview}"
                                       Style="{StaticResource CompactCheckBox}" VerticalAlignment="Center"
                                       Margin="0,0,8,0" />
                             <controls:VisibilityGate IsOpen="{Binding IsPhotoStep}">
-                                <CheckBox Content="查看矫正预览" IsChecked="{Binding PreviewRectification, Mode=TwoWay}"
+                                <CheckBox Content="{loc:Text Xaml.ShowRectifiedPreview}" IsChecked="{Binding PreviewRectification, Mode=TwoWay}"
                                           IsEnabled="{Binding IsRectificationReady}"
                                           Style="{StaticResource CompactCheckBox}" VerticalAlignment="Center"
                                           Margin="0,0,8,0" />
                             </controls:VisibilityGate>
                             <controls:VisibilityGate IsOpen="{Binding IsTraceStep}">
-                                <CheckBox Content="叠加拟合曲线" IsChecked="{Binding ShowPrediction}"
+                                <CheckBox Content="{loc:Text Xaml.OverlayFittedCurves}" IsChecked="{Binding ShowPrediction}"
                                           Style="{StaticResource CompactCheckBox}" VerticalAlignment="Center" />
                             </controls:VisibilityGate>
                         </StackPanel>
@@ -84,7 +85,7 @@
                             SelectedTraceArm="{Binding SelectedTraceArm}" PredictionContours="{Binding CrossPredictionContours}"
                             OutlierTracePointIndices="{Binding OutlierTracePointIndices}"
                             ShowPrediction="{Binding ShowPrediction}"
-                            ToolTip="滚轮缩放，右键平移。拖动已有点修正位置；描线时点击添加点，Delete 删除选中点。">
+                            ToolTip="{loc:Text Xaml.ScrollToZoomRightDragToPanDragPoints}">
                             <controls:CalibrationPhotoCanvas.Style>
                                 <Style TargetType="controls:CalibrationPhotoCanvas">
                                     <Setter Property="Image" Value="{Binding PhotoImage}" />
@@ -107,20 +108,20 @@
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
                                         <Ellipse Style="{StaticResource LegendDot}"
                                                  Fill="{DynamicResource CalibrationEdgeBrush}" Margin="0,0,6,0" />
-                                        <TextBlock Text="实体外缘" Style="{StaticResource LegendLabel}" />
+                                        <TextBlock Text="{loc:Text Xaml.PhysicalOuterEdge}" Style="{StaticResource LegendLabel}" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <Ellipse Style="{StaticResource LegendDot}"
                                                  Fill="{DynamicResource CalibrationHubOutlineBrush}" Margin="0,0,6,0" />
-                                        <TextBlock Text="实体内缘" Style="{StaticResource LegendLabel}" />
+                                        <TextBlock Text="{loc:Text Xaml.PhysicalInnerEdge}" Style="{StaticResource LegendLabel}" />
                                     </StackPanel>
                                 </WrapPanel>
                             </controls:VisibilityGate>
                             <controls:VisibilityGate IsOpen="{Binding IsTraceStep}">
                                 <WrapPanel>
-                                    <Button Content="删除选中点" Click="OnRemoveTracePoint"
+                                    <Button Content="{loc:Text Xaml.DeletePoint}" Click="OnRemoveTracePoint"
                                             Style="{StaticResource CompactButton}" Margin="0,0,8,0" />
-                                    <Button Content="清空曲线" Command="{Binding ClearTracesCommand}"
+                                    <Button Content="{loc:Text Xaml.ClearCurves}" Command="{Binding ClearTracesCommand}"
                                             Style="{StaticResource CompactButton}" Margin="0,0,8,0" />
                                     <TextBlock Text="{Binding TraceSummary}" Style="{StaticResource CompactText}"
                                                Foreground="{DynamicResource TextPrimaryBrush}"
@@ -128,12 +129,12 @@
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
                                         <Ellipse Style="{StaticResource LegendDot}"
                                                  Fill="{DynamicResource CalibrationTraceBrush}" Margin="0,0,6,0" />
-                                        <TextBlock Text="实拍输入" Style="{StaticResource LegendLabel}" />
+                                        <TextBlock Text="{loc:Text Xaml.Photograph}" Style="{StaticResource LegendLabel}" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
                                         <Ellipse Style="{StaticResource LegendDot}"
                                                  Fill="{DynamicResource CalibrationPredictionBrush}" Margin="0,0,6,0" />
-                                        <TextBlock Text="参数预测" Style="{StaticResource LegendLabel}" />
+                                        <TextBlock Text="{loc:Text Xaml.Prediction}" Style="{StaticResource LegendLabel}" />
                                     </StackPanel>
                                     <!-- Only appears when the fit marks points whose distance
                                          to the predicted curve exceeds the noise allowance. -->
@@ -142,7 +143,7 @@
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                             <Ellipse Style="{StaticResource LegendDot}"
                                                      Fill="{DynamicResource DangerBrush}" Margin="0,0,6,0" />
-                                            <TextBlock Text="偏离较大" Style="{StaticResource LegendLabel}" />
+                                            <TextBlock Text="{loc:Text Xaml.LargeDeviation}" Style="{StaticResource LegendLabel}" />
                                         </StackPanel>
                                     </controls:VisibilityGate>
                                 </WrapPanel>
@@ -163,14 +164,14 @@
                     <!-- Stage 1 is the disc itself: without a burned target there is nothing
                          to photograph. It starts expanded and active; installing a target
                          finishes it and hands the column to stage 2. -->
-                    <controls:StepCard StepNumber="1" StepTitle="生成标定盘" Grid.Row="0" Margin="0,0,0,12"
+                    <controls:StepCard StepNumber="1" StepTitle="{loc:Text Xaml.CreateCalibrationDisc}" Grid.Row="0" Margin="0,0,0,12"
                                        State="{Binding StepOneState}"
                                        IsExpanded="{Binding StepOneExpanded, Mode=TwoWay}">
                             <StackPanel>
                                 <!-- The target follows the project family (no manual disc-type
                                      switch): the line under the button names the parameters a
                                      new target is built from. -->
-                                <Button Content="从当前参数新建标靶" Command="{Binding CreateTargetCommand}"
+                                <Button Content="{loc:Text Xaml.CreateTargetFromParameters}" Command="{Binding CreateTargetCommand}"
                                         Style="{StaticResource CompactPrimaryButton}" HorizontalAlignment="Stretch"
                                         Margin="0,0,0,10" />
                                 <TextBlock Text="{Binding CurrentParametersSummary}" Style="{StaticResource CompactHint}"
@@ -178,72 +179,72 @@
 
                                 <!-- Two delivery paths, named by what the user does next:
                                      burn here, or take a generated file to another burner. -->
-                                <TextBlock Text="刻录" Style="{StaticResource FieldLabel}" Margin="0,14,0,6" />
-                                <Button Content="前往流式刻录" Command="{Binding StreamBurnCommand}"
+                                <TextBlock Text="{loc:Text Xaml.Burn}" Style="{StaticResource FieldLabel}" Margin="0,14,0,6" />
+                                <Button Content="{loc:Text Xaml.OpenStreamingBurn}" Command="{Binding StreamBurnCommand}"
                                         Style="{StaticResource CompactButton}" HorizontalAlignment="Left"
-                                        ToolTip="前往刻录工作区，选择设备并确认写入。" />
+                                        ToolTip="{loc:Text Xaml.OpenBurnToSelectARecorderAndConfirmWriting}" />
 
-                                <TextBlock Text="外部刻录" Style="{StaticResource FieldLabel}" Margin="0,14,0,6" />
-                                <TextBlock Text="生成镜像或音轨，用外部刻录软件写入。"
+                                <TextBlock Text="{loc:Text Xaml.ExternalBurning}" Style="{StaticResource FieldLabel}" Margin="0,14,0,6" />
+                                <TextBlock Text="{loc:Text Xaml.GenerateAnImageOrAudioTrackForExternalBurning}"
                                            Style="{StaticResource CompactHint}" Margin="0,0,0,8" />
                                 <controls:PathField Compact="True" Margin="0,0,0,12"
-                                                    Text="{Binding OutputPath}" ButtonLabel="选择位置"
+                                                    Text="{Binding OutputPath}" ButtonLabel="{loc:Text Xaml.ChooseLocation}"
                                                     Command="{Binding BrowseOutputCommand}" />
                                 <WrapPanel Margin="0,0,0,12">
-                                    <Button Content="生成镜像／音轨" Command="{Binding GenerateImageCommand}"
+                                    <Button Content="{loc:Text Xaml.GenerateImageTrack}" Command="{Binding GenerateImageCommand}"
                                             Style="{StaticResource CompactButton}" Margin="0,0,8,0" />
-                                    <Button Content="导出图案 PNG" Command="{Binding ExportPngCommand}"
+                                    <Button Content="{loc:Text Xaml.ExportPatternPNG}" Command="{Binding ExportPngCommand}"
                                             Style="{StaticResource CompactButton}" />
                                 </WrapPanel>
 
-                                <Expander Header="标定记录（高级）" IsExpanded="False">
+                                <Expander Header="{loc:Text Xaml.CalibrationSessionAdvanced}" IsExpanded="False">
                                     <WrapPanel Margin="0,4,0,0">
-                                        <Button Content="保存标定记录" Command="{Binding SaveSessionCommand}"
+                                        <Button Content="{loc:Text Xaml.SaveCalibrationSession}" Command="{Binding SaveSessionCommand}"
                                                 Style="{StaticResource CompactButton}" Margin="0,0,8,0" />
-                                        <Button Content="打开标定记录" Command="{Binding OpenSessionCommand}"
+                                        <Button Content="{loc:Text Xaml.OpenCalibrationSession}" Command="{Binding OpenSessionCommand}"
                                                 Style="{StaticResource CompactButton}" />
                                     </WrapPanel>
                                 </Expander>
                             </StackPanel>
                         </controls:StepCard>
 
-                        <controls:StepCard StepNumber="2" StepTitle="照片矫正" Grid.Row="1" Margin="0,0,0,12"
+                        <controls:StepCard StepNumber="2" StepTitle="{loc:Text Xaml.RectifyPhoto}" Grid.Row="1" Margin="0,0,0,12"
                                            State="{Binding StepTwoState}"
                                            IsExpanded="{Binding StepTwoExpanded, Mode=TwoWay}">
                             <StackPanel>
-                                <TextBlock Text="拍清外缘、内缘和至少一条径向曲线。合理打光，无需涂黑；控制点定位于实体外缘与内缘。"
+                                <TextBlock Text="{loc:Text Xaml.PhotographBothPhysicalEdgesAndAtLeastOneRadial}"
                                            Style="{StaticResource CompactHint}" Margin="0,0,0,8" />
-                                <Button Content="导入盘片照片" Command="{Binding ImportPhotoCommand}"
+                                <Button Content="{loc:Text Xaml.ImportDiscPhoto}" Command="{Binding ImportPhotoCommand}"
                                         Style="{StaticResource CompactPrimaryButton}" Margin="0,0,0,8"
                                         HorizontalAlignment="Stretch" />
                                 <DockPanel Margin="0,0,0,10">
-                                    <TextBlock Text="盘片尺寸" Style="{StaticResource CompactText}" VerticalAlignment="Center"
+                                    <TextBlock Text="{loc:Text Xaml.DiscSize}" Style="{StaticResource CompactText}" VerticalAlignment="Center"
                                                DockPanel.Dock="Left" Margin="0,0,10,0" />
                                     <ComboBox Style="{StaticResource CompactComboBox}"
                                               ItemsSource="{Binding PhysicalDiscSizeChoices}" SelectedItem="{Binding SelectedPhysicalDiscSize, Mode=TwoWay}" DisplayMemberPath="Label" />
                                 </DockPanel>
-                                <Button Content="计算矫正" Command="{Binding RectifyPhotoCommand}"
+                                <Button Content="{loc:Text Xaml.CalculateRectification}" Command="{Binding RectifyPhotoCommand}"
                                         Style="{StaticResource CompactButton}" HorizontalAlignment="Stretch" Margin="0,0,0,8" />
-                                <Button Content="确认矫正，开始描线" Command="{Binding ConfirmRectificationCommand}"
+                                <Button Content="{loc:Text Xaml.ConfirmAndTraceCurves}" Command="{Binding ConfirmRectificationCommand}"
                                         IsEnabled="{Binding IsRectificationReady}"
                                         Style="{StaticResource CompactPrimaryButton}" HorizontalAlignment="Stretch" />
                                 <TextBlock Text="{Binding RectificationSummary}" Style="{StaticResource CompactHint}" Margin="0,10,0,0" />
                             </StackPanel>
                         </controls:StepCard>
 
-                        <controls:StepCard StepNumber="3" StepTitle="描曲线并反推" Grid.Row="2"
+                        <controls:StepCard StepNumber="3" StepTitle="{loc:Text Xaml.TraceAndSolve}" Grid.Row="2"
                                            State="{Binding StepThreeState}"
                                            IsExpanded="{Binding StepThreeExpanded, Mode=TwoWay}">
                             <StackPanel>
-                                <TextBlock Text="沿清楚的曲线由内向外均匀打点，建议 16 点以上。"
+                                <TextBlock Text="{loc:Text Xaml.PlacePointsEvenlyAlongAClearCurveFromInside}"
                                            Style="{StaticResource CompactHint}" Margin="0,0,0,8" />
-                                <Button Content="返回修正照片" Command="{Binding BackToPhotoCommand}"
+                                <Button Content="{loc:Text Xaml.BackToPhotoCorrection}" Command="{Binding BackToPhotoCommand}"
                                         Style="{StaticResource CompactButton}" HorizontalAlignment="Stretch" Margin="0,0,0,10" />
                                 <controls:VisibilityGate IsOpen="{Binding IsDvdTarget}">
                                     <StackPanel Margin="0,0,0,10">
-                                        <CheckBox IsChecked="{Binding FitDvdPitch, Mode=TwoWay}" Content="拟合 DVD 三次轨距分布"
+                                        <CheckBox IsChecked="{Binding FitDvdPitch, Mode=TwoWay}" Content="{loc:Text Xaml.FitCubicDVDTrackPitch}"
                                                   Style="{StaticResource CompactCheckBox}" Margin="0,0,0,8" />
-                                        <TextBlock Text="至少 16 个不同半径的点，覆盖刻录环带宽度的 60% 以上。"
+                                        <TextBlock Text="{loc:Text Xaml.UseAtLeast16PointsAtDifferentRadiiSpanning}"
                                                    Style="{StaticResource CompactHint}" />
                                     </StackPanel>
                                 </controls:VisibilityGate>
@@ -261,21 +262,21 @@
                                     </StackPanel>
                                 </Expander>
                                 <WrapPanel Margin="0,0,0,10">
-                                    <Button Content="反推参数" Command="{Binding SolveCommand}"
+                                    <Button Content="{loc:Text Xaml.SolveParameters}" Command="{Binding SolveCommand}"
                                             Style="{StaticResource CompactPrimaryButton}" Margin="0,0,8,0" />
-                                    <Button Content="取消计算" Command="{Binding CancelCommand}"
+                                    <Button Content="{loc:Text Xaml.CancelCalculation}" Command="{Binding CancelCommand}"
                                             Style="{StaticResource CompactButton}" />
                                 </WrapPanel>
                                 <ComboBox Style="{StaticResource CompactComboBox}" ItemsSource="{Binding CoarseCandidates}"
                                           SelectedItem="{Binding SelectedCoarseCandidate, Mode=TwoWay}" DisplayMemberPath="Label"
-                                          MaxDropDownHeight="180" Margin="0,0,0,8" ToolTip="选择候选并查看照片上的预测曲线" />
+                                          MaxDropDownHeight="180" Margin="0,0,0,8" ToolTip="{loc:Text Xaml.SelectACandidateToSeeItsPredictedCurvesOn}" />
                                 <!-- One status line: FitAssessment carries the current verdict;
                                      failures log their details to the log page. -->
                                 <TextBlock Text="{Binding FitAssessment}" Style="{StaticResource CompactHint}" Margin="0,0,0,10" />
                                 <CheckBox IsChecked="{Binding ContourConfirmed, Mode=TwoWay}" Style="{StaticResource CompactCheckBox}" Margin="0,0,0,10">
-                                    <TextBlock Text="已对照整条曲线，形状与绕圈一致" TextWrapping="Wrap" />
+                                    <TextBlock Text="{loc:Text Xaml.ICheckedTheFullCurveItsShapeAndTurns}" TextWrapping="Wrap" />
                                 </CheckBox>
-                                <Button Content="应用标定参数" Command="{Binding ApplyParametersCommand}"
+                                <Button Content="{loc:Text Xaml.ApplyCalibration}" Command="{Binding ApplyParametersCommand}"
                                         Style="{StaticResource CompactPrimaryButton}" HorizontalAlignment="Stretch" />
                             </StackPanel>
                         </controls:StepCard>

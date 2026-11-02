@@ -1,5 +1,7 @@
 <div align="center">
 
+**简体中文** | [繁體中文](README.zh-TW.md) | [English](README.en.md)
+
 ![Banner](docs/images/DiscImageStudio_Banner_2.png)
 
 <h2>全能的光盘盘面可见图像生成与刻录工具</h2>
@@ -90,6 +92,7 @@ Disc Image Studio 提供了一套智能且精准的辅助标定流程，相较�
 
 ### 应用形态
 
+- 多语言界面：点击右上角「设置」按钮，在「通用 → 语言」选择简体中文、繁體中文、English 或跟随系统，保存并重启应用后生效。语言和主题默认均跟随系统，已保存的明确选择继续保留；跟随系统时区分简体和繁体中文，其他系统语言使用英文。
 - 双入口：不带参数将打开 GUI；带参数则进入统一命令行。
 - 模块化：CD、DVD 与蓝光通过 `IOpticalDiscModule` 接入，统一命令目录与任务契约，详见[架构说明](docs/ARCHITECTURE.md)。
 
@@ -157,6 +160,7 @@ docs/                        架构、引擎、预设、发布等文档
 | 文档 | 内容 |
 | --- | --- |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | 模块抽象、层间边界与扩展规则 |
+| [LOCALIZATION.md](docs/LOCALIZATION.md) | 界面语言配置、系统语言回退与翻译资源维护 |
 | [DVD_ENGINE.md](docs/DVD_ENGINE.md) | DVD NRZI 图像约束求解器的约定、编码链与自检覆盖 |
 | [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | CD 音轨格式、字节序与重影排查 |
 | [ADDING_BLURAY.md](docs/ADDING_BLURAY.md) | 蓝光模块的物理模型、生成/刻录链路与扩展点 |

@@ -1,6 +1,7 @@
 <UserControl x:Class="DiscImageStudio.Controls.ToastHost"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:DiscImageStudio.Localization"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              IsHitTestVisible="False">
     <ItemsControl x:Name="ToastList" ItemsSource="{Binding Toasts}">
@@ -51,7 +52,7 @@
                         <!-- Manual dismiss: the host itself stays hit-test-invisible so empty
                              toast area keeps passing clicks through to the page underneath. -->
                         <Button Grid.Column="2" Style="{StaticResource IconButton}" VerticalAlignment="Top"
-                                AutomationProperties.Name="关闭通知" ToolTip="关闭"
+                                AutomationProperties.Name="{loc:Text Xaml.DismissNotification}" ToolTip="{loc:Text Xaml.Close}"
                                 Click="CloseToast_Click">
                             <iconPacks:PackIconLucide Kind="X" Width="14" Height="14"
                                                       Foreground="{DynamicResource TextMutedBrush}" />

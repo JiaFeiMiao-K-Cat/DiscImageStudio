@@ -1,0 +1,757 @@
+{
+  "滚轮缩放，右键平移；拖动控制点贴合边缘。": {
+    "zh-CN": "滚轮缩放，右键平移；拖动控制点贴合边缘。",
+    "en": "Scroll to zoom, right-drag to pan; drag control points to fit the edge.",
+    "zh-TW": "滾輪縮放，右鍵平移；拖曳控制點貼合邊緣。"
+  },
+  "拖到盘片实体外缘；不要沿刻录区边界。": {
+    "zh-CN": "拖到盘片实体外缘；不要沿刻录区边界。",
+    "en": "Drag to the physical outer edge of the disc, not the recorded area.",
+    "zh-TW": "拖到碟片實體外緣；不要沿燒錄區邊界。"
+  },
+  "拖到实体内缘；不要沿透明塑料环。": {
+    "zh-CN": "拖到实体内缘；不要沿透明塑料环。",
+    "en": "Drag to the physical inner edge, not the transparent plastic ring.",
+    "zh-TW": "拖到實體內緣；不要沿透明塑膠環。"
+  },
+  "已删除此点；点击照片继续描当前曲线。": {
+    "zh-CN": "已删除此点；点击照片继续描当前曲线。",
+    "en": "Point deleted. Click the photo to continue tracing this curve.",
+    "zh-TW": "已刪除此點；點選相片繼續描目前曲線。"
+  },
+  "点 {0}": {
+    "zh-CN": "点 {0}",
+    "en": "Point {0}",
+    "zh-TW": "點 {0}"
+  },
+  "标靶预览 · 导入照片后开始矫正": {
+    "zh-CN": "标靶预览 · 导入照片后开始矫正",
+    "en": "Target preview · Import a photo to start rectification",
+    "zh-TW": "標靶預覽 · 匯入相片後開始校正"
+  },
+  "刻录图案预览 · 关闭预览后继续照片标定": {
+    "zh-CN": "刻录图案预览 · 关闭预览后继续照片标定",
+    "en": "Burn pattern preview · Close the preview to continue photo calibration",
+    "zh-TW": "燒錄圖案預覽 · 關閉預覽後繼續相片校準"
+  },
+  "矫正预览 · 确认后开始描线": {
+    "zh-CN": "矫正预览 · 确认后开始描线",
+    "en": "Rectification preview · Confirm to start tracing",
+    "zh-TW": "校正預覽 · 確認後開始描線"
+  },
+  "已选曲线上的点 {0} · 直接拖动修正，Delete 删除": {
+    "zh-CN": "已选曲线上的点 {0} · 直接拖动修正，Delete 删除",
+    "en": "Curve point {0} selected · Drag to adjust, Delete to remove",
+    "zh-TW": "已選曲線上的點 {0} · 直接拖曳修正，Delete 刪除"
+  },
+  "点击照片上同一条可见曲线，由内向外连续描点。": {
+    "zh-CN": "点击照片上同一条可见曲线，由内向外连续描点。",
+    "en": "Trace the same visible curve in the photo, placing points from inside out.",
+    "zh-TW": "點選相片上同一條可見曲線，由內向外連續描點。"
+  },
+  "滚轮缩放，右键平移；点击添加点，拖动已有点修正位置。": {
+    "zh-CN": "滚轮缩放，右键平移；点击添加点，拖动已有点修正位置。",
+    "en": "Scroll to zoom, right-drag to pan; click to add points, drag to adjust.",
+    "zh-TW": "滾輪縮放，右鍵平移；點選添加點，拖曳已有點修正位置。"
+  },
+  "点击左侧「导入图片」开始设计": {
+    "zh-CN": "点击左侧「导入图片」开始设计",
+    "en": "Click Import images on the left to start designing",
+    "zh-TW": "點選左側「匯入圖片」開始設計"
+  },
+  "盘片几何": {
+    "zh-CN": "盘片几何",
+    "en": "Disc geometry",
+    "zh-TW": "碟片幾何"
+  },
+  "编辑…": {
+    "zh-CN": "编辑…",
+    "en": "Edit…",
+    "zh-TW": "編輯…"
+  },
+  "启用 CD-DA 延迟交织": {
+    "zh-CN": "启用 CD-DA 延迟交织",
+    "en": "Enable CD-DA delay interleaving",
+    "zh-TW": "啟用 CD-DA 延遲交織"
+  },
+  "如您在盘片制作时勾选了“启用 CD-DA 延迟交织”，则应勾选该选项。": {
+    "zh-CN": "如您在盘片制作时勾选了“启用 CD-DA 延迟交织”，则应勾选该选项。",
+    "en": "Select this option if CD-DA delay interleaving was enabled when generating the disc.",
+    "zh-TW": "如您在碟片製作時勾選了“啟用 CD-DA 延遲交織”，則應勾選該選項。"
+  },
+  "浏览": {
+    "zh-CN": "浏览",
+    "en": "Browse",
+    "zh-TW": "瀏覽"
+  },
+  "来自设计页合成图": {
+    "zh-CN": "来自设计页合成图",
+    "en": "Composite from Design",
+    "zh-TW": "來自設計頁合成圖"
+  },
+  "设计": {
+    "zh-CN": "设计",
+    "en": "Design",
+    "zh-TW": "設計"
+  },
+  "预览": {
+    "zh-CN": "预览",
+    "en": "Preview",
+    "zh-TW": "預覽"
+  },
+  "导出": {
+    "zh-CN": "导出",
+    "en": "Export",
+    "zh-TW": "匯出"
+  },
+  "刻录": {
+    "zh-CN": "刻录",
+    "en": "Burn",
+    "zh-TW": "燒錄"
+  },
+  "标定": {
+    "zh-CN": "标定",
+    "en": "Calibrate",
+    "zh-TW": "校準"
+  },
+  "还原": {
+    "zh-CN": "还原",
+    "en": "Restore",
+    "zh-TW": "還原"
+  },
+  "最大化": {
+    "zh-CN": "最大化",
+    "en": "Maximize",
+    "zh-TW": "最大化"
+  },
+  "请选择蓝光预设库或之前导出的蓝光参数 JSON（缺少 parameters）。": {
+    "zh-CN": "请选择蓝光预设库或之前导出的蓝光参数 JSON（缺少 parameters）。",
+    "en": "Select a Blu-ray preset library or an exported Blu-ray parameter JSON file (parameters is missing).",
+    "zh-TW": "請選擇藍光預設庫或之前匯出的藍光參數 JSON（缺少 parameters）。"
+  },
+  "蓝光 parameters 不能为空。": {
+    "zh-CN": "蓝光 parameters 不能为空。",
+    "en": "Blu-ray parameters cannot be null.",
+    "zh-TW": "藍光 parameters 不能為空。"
+  },
+  "蓝光 luminanceMapping.invert 必须是布尔值。": {
+    "zh-CN": "蓝光 luminanceMapping.invert 必须是布尔值。",
+    "en": "Blu-ray luminanceMapping.invert must be a boolean.",
+    "zh-TW": "藍光 luminanceMapping.invert 必須是布林值。"
+  },
+  "该文件没有可导入的蓝光预设。": {
+    "zh-CN": "该文件没有可导入的蓝光预设。",
+    "en": "This file has no Blu-ray presets to import.",
+    "zh-TW": "該檔案沒有可匯入的藍光預設。"
+  },
+  "蓝光预设缺少 parameters。": {
+    "zh-CN": "蓝光预设缺少 parameters。",
+    "en": "The Blu-ray preset is missing parameters.",
+    "zh-TW": "藍光預設缺少 parameters。"
+  },
+  "蓝光预设 JSON 不能为空。": {
+    "zh-CN": "蓝光预设 JSON 不能为空。",
+    "en": "Blu-ray preset JSON cannot be null.",
+    "zh-TW": "藍光預設 JSON 不能為空。"
+  },
+  "蓝光预设 JSON 格式无效。": {
+    "zh-CN": "蓝光预设 JSON 格式无效。",
+    "en": "Invalid Blu-ray preset JSON.",
+    "zh-TW": "藍光預設 JSON 格式無效。"
+  },
+  "蓝光预设 JSON 必须包含 schemaVersion: 1 和 presets 列表。": {
+    "zh-CN": "蓝光预设 JSON 必须包含 schemaVersion: 1 和 presets 列表。",
+    "en": "Blu-ray preset JSON must contain schemaVersion: 1 and a presets list.",
+    "zh-TW": "藍光預設 JSON 必須包含 schemaVersion: 1 和 presets 清單。"
+  },
+  "蓝光预设 ID 重复：{0}": {
+    "zh-CN": "蓝光预设 ID 重复：{0}",
+    "en": "Duplicate Blu-ray preset ID: {0}",
+    "zh-TW": "藍光預設 ID 重複：{0}"
+  },
+  "蓝光预设必须包含独立 ID、名称和参数，不能使用内置或未保存预设的 ID。": {
+    "zh-CN": "蓝光预设必须包含独立 ID、名称和参数，不能使用内置或未保存预设的 ID。",
+    "en": "A Blu-ray preset needs a unique ID, a name and parameters. IDs of built-in or unsaved presets cannot be used.",
+    "zh-TW": "藍光預設必須包含獨立 ID、名稱和參數，不能使用內建或未儲存預設的 ID。"
+  },
+  "当前蓝光制作与标定仅支持起始角 0°；此 JSON 的非零起始角不能导入，也不会自动改为 0°。": {
+    "zh-CN": "当前蓝光制作与标定仅支持起始角 0°；此 JSON 的非零起始角不能导入，也不会自动改为 0°。",
+    "en": "Blu-ray generation and calibration currently require a 0° start angle. The nonzero angle in this JSON cannot be imported or automatically reset to 0°.",
+    "zh-TW": "目前藍光製作與校準僅支援起始角 0°；此 JSON 的非零起始角不能匯入，也不會自動改為 0°。"
+  },
+  "蓝光 parameters 缺少 {0}，不能使用默认值替代导入的参数。": {
+    "zh-CN": "蓝光 parameters 缺少 {0}，不能使用默认值替代导入的参数。",
+    "en": "Blu-ray parameters is missing {0}. Imported parameters cannot be replaced with defaults.",
+    "zh-TW": "藍光 parameters 缺少 {0}，不能使用預設值替代匯入的參數。"
+  },
+  "BD ISO 长度与总扇区数不符：需要 {0:N0} 字节，实际 {1:N0} 字节。": {
+    "zh-CN": "BD ISO 长度与总扇区数不符：需要 {0:N0} 字节，实际 {1:N0} 字节。",
+    "en": "BD ISO size does not match the sector count: expected {0:N0} bytes, found {1:N0}.",
+    "zh-TW": "BD ISO 長度與總磁區數不符：需要 {0:N0} 位元組，實際 {1:N0} 位元組。"
+  },
+  "生成暂存目录与输出目录不能相同，输出目录也不能位于暂存目录内部。": {
+    "zh-CN": "生成暂存目录与输出目录不能相同，输出目录也不能位于暂存目录内部。",
+    "en": "The output directory must differ from the staging directory and cannot be inside it.",
+    "zh-TW": "產生暫存資料夾與輸出資料夾不能相同，輸出資料夾也不能位於暫存資料夾內部。"
+  },
+  "生成暂存目录不存在：": {
+    "zh-CN": "生成暂存目录不存在：",
+    "en": "Staging directory does not exist: ",
+    "zh-TW": "產生暫存資料夾不存在："
+  },
+  "生成暂存目录应只包含本次作业的顶层输出文件。": {
+    "zh-CN": "生成暂存目录应只包含本次作业的顶层输出文件。",
+    "en": "The staging directory must contain only top-level output files from this job.",
+    "zh-TW": "產生暫存資料夾應只包含本次作業的最上層輸出檔案。"
+  },
+  "没有可发布的标定输出文件。": {
+    "zh-CN": "没有可发布的标定输出文件。",
+    "en": "No calibration output files are available to publish.",
+    "zh-TW": "沒有可發佈的校準輸出檔案。"
+  },
+  "生成文件名存在大小写重名，无法安全发布。": {
+    "zh-CN": "生成文件名存在大小写重名，无法安全发布。",
+    "en": "Output names differ only by case and cannot be published safely.",
+    "zh-TW": "產生檔名存在大小寫重名，無法安全發佈。"
+  },
+  "输出文件路径与暂存路径冲突。": {
+    "zh-CN": "输出文件路径与暂存路径冲突。",
+    "en": "An output path conflicts with a staging path.",
+    "zh-TW": "輸出檔案路徑與暫存路徑衝突。"
+  },
+  "同名输出路径已是目录：": {
+    "zh-CN": "同名输出路径已是目录：",
+    "en": "An output path is already a directory: ",
+    "zh-TW": "同名輸出路徑已是資料夾："
+  },
+  "标定文件发布失败，部分文件未能恢复。备份保留在 ": {
+    "zh-CN": "标定文件发布失败，部分文件未能恢复。备份保留在 ",
+    "en": "Calibration publishing failed and some files could not be restored. Backups remain at ",
+    "zh-TW": "校準檔案發佈失敗，部分檔案未能恢復。備份保留在 "
+  },
+  "；请保留该目录并检查文件占用后恢复。": {
+    "zh-CN": "；请保留该目录并检查文件占用后恢复。",
+    "en": ". Keep this directory, check for locked files, and restore the backups.",
+    "zh-TW": "；請保留該資料夾並檢查檔案占用後恢復。"
+  },
+  "发布路径不能是符号链接或目录联接：": {
+    "zh-CN": "发布路径不能是符号链接或目录联接：",
+    "en": "A publishing path cannot be a symbolic link or junction: ",
+    "zh-TW": "發佈路徑不能是符號連結或目錄連接點："
+  },
+  "请选择一张盘片照片。": {
+    "zh-CN": "请选择一张盘片照片。",
+    "en": "Select a disc photo.",
+    "zh-TW": "請選擇一張碟片相片。"
+  },
+  "照片尺寸上限应为 64–4096 像素。": {
+    "zh-CN": "照片尺寸上限应为 64–4096 像素。",
+    "en": "The photo dimension limit must be 64–4096 pixels.",
+    "zh-TW": "相片尺寸上限應為 64–4096 像素。"
+  },
+  "照片文件过大，请使用小于 256 MB 的图片。": {
+    "zh-CN": "照片文件过大，请使用小于 256 MB 的图片。",
+    "en": "The photo is too large. Use an image smaller than 256 MB.",
+    "zh-TW": "相片檔案過大，請使用小於 256 MB 的圖片。"
+  },
+  "照片没有可读取的图像。": {
+    "zh-CN": "照片没有可读取的图像。",
+    "en": "The photo contains no readable image.",
+    "zh-TW": "相片沒有可讀取的圖像。"
+  },
+  "照片尺寸无效。": {
+    "zh-CN": "照片尺寸无效。",
+    "en": "Invalid photo dimensions.",
+    "zh-TW": "相片尺寸無效。"
+  },
+  "每条初始轮廓应有 5–64 个点。": {
+    "zh-CN": "每条初始轮廓应有 5–64 个点。",
+    "en": "Each initial contour must have 5–64 points.",
+    "zh-TW": "每條初始輪廓應有 5–64 個點。"
+  },
+  "照片太小，无法输入轮廓。": {
+    "zh-CN": "照片太小，无法输入轮廓。",
+    "en": "The photo is too small to enter contours.",
+    "zh-TW": "相片太小，無法輸入輪廓。"
+  },
+  "矫正画布半径无效。": {
+    "zh-CN": "矫正画布半径无效。",
+    "en": "Invalid rectification canvas radius.",
+    "zh-TW": "校正畫布半徑無效。"
+  },
+  "矫正图片尺寸应为 32–4096 像素。": {
+    "zh-CN": "矫正图片尺寸应为 32–4096 像素。",
+    "en": "Rectified image dimensions must be 32–4096 pixels.",
+    "zh-TW": "校正圖片尺寸應為 32–4096 像素。"
+  },
+  "请先按照片尺寸上限载入图片，再进行矫正。": {
+    "zh-CN": "请先按照片尺寸上限载入图片，再进行矫正。",
+    "en": "Load the image within the photo dimension limit before rectifying it.",
+    "zh-TW": "請先按相片尺寸上限載入圖片，再進行校正。"
+  },
+  "照片变换在当前画布内退化，请重新矫正轮廓或缩小画布。": {
+    "zh-CN": "照片变换在当前画布内退化，请重新矫正轮廓或缩小画布。",
+    "en": "The photo transform is degenerate within this canvas. Adjust the contours or reduce the canvas.",
+    "zh-TW": "相片變換在目前畫布內退化，請重新校正輪廓或縮小畫布。"
+  },
+  "完整数据区半径（创建图案时）：{0}–{1} mm": {
+    "zh-CN": "完整数据区半径（创建图案时）：{0}–{1} mm",
+    "en": "Full data area radii (at pattern creation): {0}–{1} mm",
+    "zh-TW": "完整資料區半徑（建立圖案時）：{0}–{1} mm"
+  },
+  "轨距 p(x) = {0} + ({1})x": {
+    "zh-CN": "轨距 p(x) = {0} + ({1})x",
+    "en": "Pitch p(x) = {0} + ({1})x",
+    "zh-TW": "軌距 p(x) = {0} + ({1})x"
+  },
+  "选择源图片": {
+    "zh-CN": "选择源图片",
+    "en": "Select source image",
+    "zh-TW": "選擇來源圖片"
+  },
+  "图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|所有文件|*.*": {
+    "zh-CN": "图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|所有文件|*.*",
+    "en": "Image files|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|All files|*.*",
+    "zh-TW": "圖片檔案|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|所有檔案|*.*"
+  },
+  "导入图片": {
+    "zh-CN": "导入图片",
+    "en": "Import images",
+    "zh-TW": "匯入圖片"
+  },
+  "选择输出位置": {
+    "zh-CN": "选择输出位置",
+    "en": "Select output location",
+    "zh-TW": "選擇輸出位置"
+  },
+  "{0}不是有效数字。": {
+    "zh-CN": "{0}不是有效数字。",
+    "en": "{0} is not a valid number.",
+    "zh-TW": "{0}不是有效數字。"
+  },
+  "{0}必须大于 0。": {
+    "zh-CN": "{0}必须大于 0。",
+    "en": "{0} must be greater than 0.",
+    "zh-TW": "{0}必須大於 0。"
+  },
+  "{0}必须是正整数。": {
+    "zh-CN": "{0}必须是正整数。",
+    "en": "{0} must be a positive integer.",
+    "zh-TW": "{0}必須是正整數。"
+  },
+  "{0}必须是非负整数。": {
+    "zh-CN": "{0}必须是非负整数。",
+    "en": "{0} must be a nonnegative integer.",
+    "zh-TW": "{0}必須是非負整數。"
+  },
+  "预览尺寸": {
+    "zh-CN": "预览尺寸",
+    "en": "Preview size",
+    "zh-TW": "預覽尺寸"
+  },
+  "预览尺寸必须在 64–8192 px 之间。": {
+    "zh-CN": "预览尺寸必须在 64–8192 px 之间。",
+    "en": "Preview size must be between 64 and 8192 px.",
+    "zh-TW": "預覽尺寸必須在 64–8192 px 之間。"
+  },
+  "每扇区采样": {
+    "zh-CN": "每扇区采样",
+    "en": "Samples per sector",
+    "zh-TW": "每磁區取樣"
+  },
+  "每扇区采样必须在 1–{0} 之间。": {
+    "zh-CN": "每扇区采样必须在 1–{0} 之间。",
+    "en": "Samples per sector must be between 1 and {0}.",
+    "zh-TW": "每磁區取樣必須在 1–{0} 之間。"
+  },
+  "正在准备防断流缓冲区…": {
+    "zh-CN": "正在准备防断流缓冲区…",
+    "en": "Preparing the underrun protection buffer…",
+    "zh-TW": "正在準備防斷流緩衝區…"
+  },
+  "刻录机开始写入。": {
+    "zh-CN": "刻录机开始写入。",
+    "en": "The recorder has started writing.",
+    "zh-TW": "燒錄機開始寫入。"
+  },
+  "正在刷新缓存并关闭刻录会话…": {
+    "zh-CN": "正在刷新缓存并关闭刻录会话…",
+    "en": "Flushing the cache and closing the burn session…",
+    "zh-TW": "正在寫出快取並關閉燒錄工作階段…"
+  },
+  "标定参数已应用": {
+    "zh-CN": "标定参数已应用",
+    "en": "Calibration applied",
+    "zh-TW": "校準參數已套用"
+  },
+  "本工程的参数已更新。": {
+    "zh-CN": "本工程的参数已更新。",
+    "en": "The project parameters have been updated.",
+    "zh-TW": "本專案的參數已更新。"
+  },
+  "语言设置已保存": {
+    "zh-CN": "语言设置已保存",
+    "en": "Language preference saved",
+    "zh-TW": "語言設定已儲存"
+  },
+  "重启应用后生效。": {
+    "zh-CN": "重启应用后生效。",
+    "en": "Takes effect after restarting the app.",
+    "zh-TW": "重新啟動應用程式後生效。"
+  },
+  "缓存位置不可用": {
+    "zh-CN": "缓存位置不可用",
+    "en": "Cache location unavailable",
+    "zh-TW": "無法使用快取位置"
+  },
+  "已改用系统临时目录。": {
+    "zh-CN": "已改用系统临时目录。",
+    "en": "Using the system temporary directory.",
+    "zh-TW": "已改用系統暫存資料夾。"
+  },
+  "展开侧边栏": {
+    "zh-CN": "展开侧边栏",
+    "en": "Expand sidebar",
+    "zh-TW": "展開側邊欄"
+  },
+  "收起侧边栏": {
+    "zh-CN": "收起侧边栏",
+    "en": "Collapse sidebar",
+    "zh-TW": "收起側邊欄"
+  },
+  "切换预设": {
+    "zh-CN": "切换预设",
+    "en": "Switch preset",
+    "zh-TW": "切換預設"
+  },
+  "切换为“{0}”会用该预设的几何参数覆盖当前参数，确认后无法撤销。是否继续？": {
+    "zh-CN": "切换为“{0}”会用该预设的几何参数覆盖当前参数，确认后无法撤销。是否继续？",
+    "en": "Switching to “{0}” will replace the current geometry with this preset. This cannot be undone. Continue?",
+    "zh-TW": "切換為“{0}”會用該預設的幾何參數覆蓋目前參數，確認後無法復原。是否繼續？"
+  },
+  "覆盖参数": {
+    "zh-CN": "覆盖参数",
+    "en": "Replace parameters",
+    "zh-TW": "覆蓋參數"
+  },
+  "选择工程保存位置": {
+    "zh-CN": "选择工程保存位置",
+    "en": "Select project location",
+    "zh-TW": "選擇專案儲存位置"
+  },
+  "清空缓存": {
+    "zh-CN": "清空缓存",
+    "en": "Clear cache",
+    "zh-TW": "清空快取"
+  },
+  "将删除本应用写入缓存目录的缩略图、合成图与预览图片。工程文件与导出文件不受影响。": {
+    "zh-CN": "将删除本应用写入缓存目录的缩略图、合成图与预览图片。工程文件与导出文件不受影响。",
+    "en": "Delete thumbnails, composites and preview images created by this app in the cache directory. Project and export files are kept.",
+    "zh-TW": "將刪除本應用程式寫入快取資料夾的縮圖、合成圖與預覽圖片。專案檔案與匯出檔案不受影響。"
+  },
+  "已用 ": {
+    "zh-CN": "已用 ",
+    "en": "Used: ",
+    "zh-TW": "已用 "
+  },
+  "无法保存设置：": {
+    "zh-CN": "无法保存设置：",
+    "en": "Could not save settings: ",
+    "zh-TW": "無法儲存設定："
+  },
+  "选择默认工程位置": {
+    "zh-CN": "选择默认工程位置",
+    "en": "Select default project location",
+    "zh-TW": "選擇預設專案位置"
+  },
+  "选择缓存位置": {
+    "zh-CN": "选择缓存位置",
+    "en": "Select cache location",
+    "zh-TW": "選擇快取位置"
+  },
+  "已删除 {0} 个缓存文件。": {
+    "zh-CN": "已删除 {0} 个缓存文件。",
+    "en": "Deleted cache files: {0}.",
+    "zh-TW": "已刪除 {0} 個快取檔案。"
+  },
+  "缓存目录中没有可清理的文件。": {
+    "zh-CN": "缓存目录中没有可清理的文件。",
+    "en": "There are no files to clear in the cache directory.",
+    "zh-TW": "快取資料夾中沒有可清理的檔案。"
+  },
+  "无法打开应用数据目录：": {
+    "zh-CN": "无法打开应用数据目录：",
+    "en": "Could not open the app data folder: ",
+    "zh-TW": "無法開啟應用程式資料目錄："
+  },
+  "请填写绝对路径。": {
+    "zh-CN": "请填写绝对路径。",
+    "en": "Enter an absolute path.",
+    "zh-TW": "請填寫絕對路徑。"
+  },
+  "路径无效：": {
+    "zh-CN": "路径无效：",
+    "en": "Invalid path: ",
+    "zh-TW": "路徑無效："
+  },
+  "目录不存在：": {
+    "zh-CN": "目录不存在：",
+    "en": "Directory does not exist: ",
+    "zh-TW": "資料夾不存在："
+  },
+  "设置": {
+    "zh-CN": "设置",
+    "en": "Settings",
+    "zh-TW": "設定"
+  },
+  "通用": {
+    "zh-CN": "通用",
+    "en": "General",
+    "zh-TW": "一般"
+  },
+  "存储": {
+    "zh-CN": "存储",
+    "en": "Storage",
+    "zh-TW": "儲存空間"
+  },
+  "界面外观偏好。": {
+    "zh-CN": "界面外观偏好。",
+    "en": "Appearance and language preferences.",
+    "zh-TW": "介面外觀偏好。"
+  },
+  "外观": {
+    "zh-CN": "外观",
+    "en": "Appearance",
+    "zh-TW": "外觀"
+  },
+  "主题": {
+    "zh-CN": "主题",
+    "en": "Theme",
+    "zh-TW": "主題"
+  },
+  "深色": {
+    "zh-CN": "深色",
+    "en": "Dark",
+    "zh-TW": "深色"
+  },
+  "浅色": {
+    "zh-CN": "浅色",
+    "en": "Light",
+    "zh-TW": "淺色"
+  },
+  "跟随系统": {
+    "zh-CN": "跟随系统",
+    "en": "System",
+    "zh-TW": "跟隨系統"
+  },
+  "保存后立即应用到所有窗口。": {
+    "zh-CN": "保存后立即应用到所有窗口。",
+    "en": "Applied to all windows after saving.",
+    "zh-TW": "儲存後立即套用至所有視窗。"
+  },
+  "语言": {
+    "zh-CN": "语言",
+    "en": "Language",
+    "zh-TW": "語言"
+  },
+  "简体中文": {
+    "zh-CN": "简体中文",
+    "en": "简体中文",
+    "zh-TW": "简体中文"
+  },
+  "English": {
+    "zh-CN": "English",
+    "en": "English",
+    "zh-TW": "English"
+  },
+  "语言将在重启应用后生效；跟随系统时，中文系统使用简体中文，其他系统使用 English。": {
+    "zh-CN": "语言将在重启应用后生效。跟随系统时区分简体和繁体中文，其他语言使用 English。",
+    "en": "Language changes take effect after restarting. System follows Simplified or Traditional Chinese; other system languages use English.",
+    "zh-TW": "語言會在重新啟動應用程式後生效。跟隨系統時會區分簡體與繁體中文，其他語言使用 English。"
+  },
+  "新建工程与临时缓存的默认位置。": {
+    "zh-CN": "新建工程与临时缓存的默认位置。",
+    "en": "Default locations for new projects and temporary files.",
+    "zh-TW": "新專案與暫存快取的預設位置。"
+  },
+  "位置": {
+    "zh-CN": "位置",
+    "en": "Locations",
+    "zh-TW": "位置"
+  },
+  "默认工程位置": {
+    "zh-CN": "默认工程位置",
+    "en": "Default project location",
+    "zh-TW": "預設專案位置"
+  },
+  "恢复默认": {
+    "zh-CN": "恢复默认",
+    "en": "Reset",
+    "zh-TW": "還原預設值"
+  },
+  "仅作为新建工程对话框的默认位置；留空使用系统文档目录。": {
+    "zh-CN": "仅作为新建工程对话框的默认位置；留空使用系统文档目录。",
+    "en": "Default location for new projects. Leave blank to use the system Documents folder.",
+    "zh-TW": "僅作為新專案對話框的預設位置；留空使用系統「文件」資料夾。"
+  },
+  "缓存位置": {
+    "zh-CN": "缓存位置",
+    "en": "Cache location",
+    "zh-TW": "快取位置"
+  },
+  "用于设计合成图、预览渲染与缩略图；留空使用系统临时目录，切换后新任务使用新位置，旧缓存不会自动迁移。": {
+    "zh-CN": "用于设计合成图、预览渲染与缩略图；留空使用系统临时目录，切换后新任务使用新位置，旧缓存不会自动迁移。",
+    "en": "Used for composites, previews and thumbnails. Leave blank to use the system temporary folder. New jobs use the new location; existing cache files stay in place.",
+    "zh-TW": "用於設計合成圖、預覽算繪與縮圖；留空使用系統暫存資料夾，切換後新工作使用新位置，舊快取不會自動遷移。"
+  },
+  "缓存": {
+    "zh-CN": "缓存",
+    "en": "Cache",
+    "zh-TW": "快取"
+  },
+  "打开应用数据目录": {
+    "zh-CN": "打开应用数据目录",
+    "en": "Open app data folder",
+    "zh-TW": "開啟應用程式資料目錄"
+  },
+  "取消": {
+    "zh-CN": "取消",
+    "en": "Cancel",
+    "zh-TW": "取消"
+  },
+  "保存": {
+    "zh-CN": "保存",
+    "en": "Save",
+    "zh-TW": "儲存"
+  },
+  "Settings.Settings": {
+    "zh-CN": "设置",
+    "en": "Settings",
+    "zh-TW": "設定"
+  },
+  "Settings.General": {
+    "zh-CN": "通用",
+    "en": "General",
+    "zh-TW": "一般"
+  },
+  "Settings.Storage": {
+    "zh-CN": "存储",
+    "en": "Storage",
+    "zh-TW": "儲存空間"
+  },
+  "Settings.AppearanceAndLanguagePreferences": {
+    "zh-CN": "界面外观与语言偏好。",
+    "en": "Appearance and language preferences.",
+    "zh-TW": "介面外觀與語言偏好。"
+  },
+  "Settings.Appearance": {
+    "zh-CN": "外观",
+    "en": "Appearance",
+    "zh-TW": "外觀"
+  },
+  "Settings.Theme": {
+    "zh-CN": "主题",
+    "en": "Theme",
+    "zh-TW": "主題"
+  },
+  "Settings.Dark": {
+    "zh-CN": "深色",
+    "en": "Dark",
+    "zh-TW": "深色"
+  },
+  "Settings.Light": {
+    "zh-CN": "浅色",
+    "en": "Light",
+    "zh-TW": "淺色"
+  },
+  "Settings.System": {
+    "zh-CN": "跟随系统",
+    "en": "System",
+    "zh-TW": "跟隨系統"
+  },
+  "Settings.AppliedToAllWindowsAfterSaving": {
+    "zh-CN": "保存后立即应用到所有窗口。",
+    "en": "Applied to all windows after saving.",
+    "zh-TW": "儲存後立即套用至所有視窗。"
+  },
+  "Settings.Language": {
+    "zh-CN": "语言",
+    "en": "Language",
+    "zh-TW": "語言"
+  },
+  "Settings.LanguageChangesTakeEffectAfterRestartingTheAppSystemUse": {
+    "zh-CN": "语言将在重启应用后生效。跟随系统时区分简体和繁体中文，其他语言使用 English。",
+    "en": "Language changes take effect after restarting. System follows Simplified or Traditional Chinese; other system languages use English.",
+    "zh-TW": "語言會在重新啟動應用程式後生效。跟隨系統時會區分簡體與繁體中文，其他語言使用 English。"
+  },
+  "Settings.DefaultLocationsForNewProjectsAndTemporaryFiles": {
+    "zh-CN": "新建工程与临时缓存的默认位置。",
+    "en": "Default locations for new projects and temporary files.",
+    "zh-TW": "新專案與暫存快取的預設位置。"
+  },
+  "Settings.Locations": {
+    "zh-CN": "位置",
+    "en": "Locations",
+    "zh-TW": "位置"
+  },
+  "Settings.DefaultProjectLocation": {
+    "zh-CN": "默认工程位置",
+    "en": "Default project location",
+    "zh-TW": "預設專案位置"
+  },
+  "Settings.Reset": {
+    "zh-CN": "恢复默认",
+    "en": "Reset",
+    "zh-TW": "還原預設值"
+  },
+  "Settings.DefaultLocationForNewProjectsLeaveBlankToUseTheSystemDo": {
+    "zh-CN": "仅作为新建工程对话框的默认位置；留空使用系统文档目录。",
+    "en": "Default location for new projects. Leave blank to use the system Documents folder.",
+    "zh-TW": "僅作為新專案對話框的預設位置；留空使用系統「文件」資料夾。"
+  },
+  "Settings.CacheLocation": {
+    "zh-CN": "缓存位置",
+    "en": "Cache location",
+    "zh-TW": "快取位置"
+  },
+  "Settings.UsedForCompositesPreviewsAndThumbnailsLeaveBlankToUseTh": {
+    "zh-CN": "用于设计合成图、预览渲染与缩略图；留空使用系统临时目录，切换后新任务使用新位置，旧缓存不会自动迁移。",
+    "en": "Used for composites, previews and thumbnails. Leave blank to use the system temporary folder. New jobs use the new location; existing cache files stay in place.",
+    "zh-TW": "用於設計合成圖、預覽算繪與縮圖；留空使用系統暫存資料夾，切換後新工作使用新位置，舊快取不會自動遷移。"
+  },
+  "Settings.Cache": {
+    "zh-CN": "缓存",
+    "en": "Cache",
+    "zh-TW": "快取"
+  },
+  "Settings.ClearCache": {
+    "zh-CN": "清空缓存",
+    "en": "Clear cache",
+    "zh-TW": "清空快取"
+  },
+  "Settings.OpenAppDataFolder": {
+    "zh-CN": "打开应用数据目录",
+    "en": "Open app data folder",
+    "zh-TW": "開啟應用程式資料目錄"
+  },
+  "Settings.Cancel": {
+    "zh-CN": "取消",
+    "en": "Cancel",
+    "zh-TW": "取消"
+  },
+  "Settings.Save": {
+    "zh-CN": "保存",
+    "en": "Save",
+    "zh-TW": "儲存"
+  },
+  "Settings.SimplifiedChinese": {
+    "zh-CN": "简体中文",
+    "en": "简体中文",
+    "zh-TW": "简体中文"
+  },
+  "Settings.TraditionalChinese": {
+    "zh-CN": "繁體中文",
+    "en": "繁體中文",
+    "zh-TW": "繁體中文"
+  }
+}

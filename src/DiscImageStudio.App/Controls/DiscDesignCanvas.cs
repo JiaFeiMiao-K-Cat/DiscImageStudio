@@ -1,3 +1,4 @@
+using DiscImageStudio.Localization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -429,7 +430,7 @@ public class DiscDesignCanvas : FrameworkElement
     private void DrawEmptyHint(DrawingContext context, Point center)
     {
         FormattedText text = DiscRenderCore.CreateText(
-            "点击左侧「导入图片」开始设计",
+            L.T("点击左侧「导入图片」开始设计"),
             14,
             DiscTheme.Guide,
             VisualTreeHelper.GetDpi(this).PixelsPerDip);

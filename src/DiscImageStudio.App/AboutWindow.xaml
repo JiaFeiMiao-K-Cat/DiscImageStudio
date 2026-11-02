@@ -1,8 +1,9 @@
 <Window x:Class="DiscImageStudio.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:DiscImageStudio.Localization"
         xmlns:controls="clr-namespace:DiscImageStudio.Controls"
-        Title="关于 Disc Image Studio"
+        Title="{loc:Text Xaml.AboutDiscImageStudio}"
         Width="720" SizeToContent="Height"
         MaxHeight="720"
         WindowStartupLocation="CenterOwner"
@@ -21,7 +22,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <controls:TitleBar Grid.Row="0" ProjectTitle="关于"
+        <controls:TitleBar Grid.Row="0" ProjectTitle="{loc:Text Xaml.About}"
                            ShowMinimizeButton="False" ShowMaximizeButton="False" />
 
         <!-- About is a dialog, not a workspace: it has no task of its own and does not belong
@@ -38,35 +39,35 @@
                 </StackPanel>
 
                 <TextBlock Style="{StaticResource BodyText}" Margin="0,24,0,0"
-                           Text="Disc Image Studio是帮助您在光盘表面印刷图案的一站式工作台。" />
+                           Text="{loc:Text Xaml.DiscImageStudioIsAnAllInOneWorkspace}" />
                 <TextBlock Style="{StaticResource CompactHint}" Margin="0,8,0,0" TextWrapping="Wrap"
-                           Text="本项目以 GNU General Public License v3.0 or later 发布；重新分发须随附对应源代码并保留第三方声明。" />
+                           Text="{loc:Text Xaml.ReleasedUnderTheGNUGeneralPublicLicenseV30}" />
 
                 <StackPanel Margin="0,20,0,0">
-                    <TextBlock Style="{StaticResource FieldLabel}" Text="开源组件" />
+                    <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.OpenSourceComponents}" />
                     <TextBlock Style="{StaticResource BodyText}"
-                               Text="HarmonyOS Sans SC — HarmonyOS Sans 字体许可协议" />
+                               Text="{loc:Text Xaml.HarmonyOSSansSCHarmonyOSSansFontLicense}" />
                     <TextBlock Style="{StaticResource BodyText}" Margin="0,4,0,0"
-                               Text="MahApps.Metro.IconPacks.Lucide（Lucide Icons）— MIT 许可协议" />
+                               Text="{loc:Text Xaml.MahAppsMetroIconPacksLucideLucideIconsMITLicense}" />
                     <TextBlock Style="{StaticResource BodyText}" Margin="0,4,0,0"
-                               Text="CommunityToolkit.Mvvm — Apache 许可协议 2.0" />
+                               Text="{loc:Text Xaml.CommunityToolkitMvvmApacheLicense20}" />
                 </StackPanel>
 
-                <Expander Header="GNU GPL v3.0 或更新版本（项目许可证）" Margin="0,20,0,0">
+                <Expander Header="{loc:Text Xaml.GNUGPLV30OrLaterProjectLicense}" Margin="0,20,0,0">
                     <TextBox Text="{Binding LicenseText, Mode=OneWay}" IsReadOnly="True" Height="240"
                              Margin="0,8,0,0" Style="{StaticResource BareTextBox}"
                              FontFamily="{StaticResource MonoFontFamily}" FontSize="11"
                              TextWrapping="NoWrap"
                              HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
                 </Expander>
-                <Expander Header="第三方声明" Margin="0,8,0,0">
+                <Expander Header="{loc:Text Xaml.ThirdPartyNotices}" Margin="0,8,0,0">
                     <TextBox Text="{Binding ThirdPartyNoticesText, Mode=OneWay}" IsReadOnly="True" Height="240"
                              Margin="0,8,0,0" Style="{StaticResource BareTextBox}"
                              FontFamily="{StaticResource MonoFontFamily}" FontSize="11"
                              TextWrapping="NoWrap"
                              HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
                 </Expander>
-                <Expander Header="HarmonyOS Sans 字体协议" Margin="0,8,0,0">
+                <Expander Header="{loc:Text Xaml.HarmonyOSSansFontLicense}" Margin="0,8,0,0">
                     <TextBox Text="{Binding FontLicenseText, Mode=OneWay}" IsReadOnly="True" Height="180"
                              Margin="0,8,0,0" Style="{StaticResource BareTextBox}"
                              FontFamily="{StaticResource MonoFontFamily}" FontSize="11"

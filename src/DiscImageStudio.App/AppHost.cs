@@ -1,5 +1,6 @@
 using System.Windows;
 using DiscImageStudio.Services;
+using DiscImageStudio.Localization;
 
 namespace DiscImageStudio;
 
@@ -9,7 +10,7 @@ internal static class AppHost
     {
         AppSettingsStore store = new();
         AppSettings settings = store.Load();
-        Application application = CreateApplication(ShutdownMode.OnMainWindowClose, settings.Theme);
+        Application application = CreateApplication(ShutdownMode.OnMainWindowClose, settings.Theme, settings.Language);
         // New jobs must honor the saved cache folder; previously written files keep their
         // paths, which is why switching never migrates old cache.
         TempFiles.TryConfigureCacheDirectory(settings.CacheDirectory);
@@ -21,8 +22,10 @@ internal static class AppHost
     /// control template, and embedded UserControl can resolve resource lookups. The light
     /// palette overlays Tokens when requested; Controls is added last so its references see
     /// the finished order Tokens -> Light (optional) -> Controls.</summary>
-    internal static Application CreateApplication(ShutdownMode shutdownMode, AppTheme theme = AppTheme.Dark)
+    internal static Application CreateApplication(ShutdownMode shutdownMode, AppTheme theme = AppTheme.System,
+        string language = L.SystemLanguage)
     {
+        L.Initialize(language);
         Application application = new()
         {
             ShutdownMode = shutdownMode,

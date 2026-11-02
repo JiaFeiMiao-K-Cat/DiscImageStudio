@@ -6,6 +6,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using DiscImageStudio.Core;
 using DiscImageStudio.Services;
+using DiscImageStudio.Localization;
 using DiscImageStudio.ViewModels;
 
 namespace DiscImageStudio;
@@ -38,7 +39,8 @@ internal static class UiPreviewRenderer
         string? burnProgress = null,
         string? theme = null,
         bool settingsDialog = false,
-        string? settingsView = null)
+        string? settingsView = null,
+        string? language = null)
     {
         // The settings window is 760 px wide, so its snapshots relax the page minimum.
         int minimumWidth = settingsDialog ? 640 : 800;
@@ -53,10 +55,14 @@ internal static class UiPreviewRenderer
             "system" => AppTheme.System,
             _ => throw new ArgumentException("Snapshot theme must be dark, light or system.", nameof(theme)),
         };
-        Application application = AppHost.CreateApplication(ShutdownMode.OnExplicitShutdown, requestedTheme);
+        if (language is not (null or "zh-CN" or "zh-TW" or "en" or "system"))
+            throw new ArgumentException("Snapshot language must be zh-CN, zh-TW, en or system.", nameof(language));
+        Application application = AppHost.CreateApplication(ShutdownMode.OnExplicitShutdown, requestedTheme,
+            language ?? L.Chinese);
         if (settingsDialog)
         {
-            return RenderSettingsDialog(outputPath, width, height, settingsView, application);
+            return RenderSettingsDialog(outputPath, width, height, settingsView, application,
+                new AppSettings { Theme = requestedTheme, Language = language ?? L.Chinese });
         }
         if (projectDialog is not null)
         {
@@ -239,7 +245,8 @@ internal static class UiPreviewRenderer
         int width,
         int height,
         string? view,
-        Application application)
+        Application application,
+        AppSettings settings)
     {
         int category = view?.ToLowerInvariant() switch
         {
@@ -250,7 +257,7 @@ internal static class UiPreviewRenderer
         AppSettingsStore store = new(Path.Combine(
             Path.GetTempPath(),
             "disc-settings-snapshot-" + Guid.NewGuid().ToString("N") + ".json"));
-        SettingsViewModel viewModel = new(new AppSettings(), store);
+        SettingsViewModel viewModel = new(settings, store);
         SettingsWindow window = new(viewModel)
         {
             Width = width,

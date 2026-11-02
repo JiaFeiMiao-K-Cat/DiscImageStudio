@@ -1,0 +1,687 @@
+{
+  " · sRGB 线性化": {
+    "zh-CN": " · sRGB 线性化",
+    "en": " · sRGB linearization",
+    "zh-TW": " · sRGB 線性化"
+  },
+  "CD ISO 输出位置": {
+    "zh-CN": "CD ISO 输出位置",
+    "en": "CD ISO output location",
+    "zh-TW": "CD ISO 輸出位置"
+  },
+  "CD 音轨或镜像|*.wav;*.raw;*.iso|WAV 音轨|*.wav|RAW 音轨|*.raw|ISO 数据盘|*.iso|所有文件|*.*": {
+    "zh-CN": "CD 音轨或镜像|*.wav;*.raw;*.iso|WAV 音轨|*.wav|RAW 音轨|*.raw|ISO 数据盘|*.iso|所有文件|*.*",
+    "en": "CD track or image|*.wav;*.raw;*.iso|WAV audio track|*.wav|RAW audio track|*.raw|ISO data disc|*.iso|All files|*.*",
+    "zh-TW": "CD 音軌或映像檔|*.wav;*.raw;*.iso|WAV 音軌|*.wav|RAW 音軌|*.raw|ISO 資料光碟|*.iso|所有檔案|*.*"
+  },
+  "CD 音轨输出位置": {
+    "zh-CN": "CD 音轨输出位置",
+    "en": "CD track output location",
+    "zh-TW": "CD 音軌輸出位置"
+  },
+  "DVD ISO 输出位置": {
+    "zh-CN": "DVD ISO 输出位置",
+    "en": "DVD ISO output location",
+    "zh-TW": "DVD ISO 輸出位置"
+  },
+  "DVD 的扇区数必须是 16 的倍数。": {
+    "zh-CN": "DVD 的扇区数必须是 16 的倍数。",
+    "en": "The DVD sector count must be a multiple of 16.",
+    "zh-TW": "DVD 的磁區數必須是 16 的倍數。"
+  },
+  "ISO 镜像|*.iso|所有文件|*.*": {
+    "zh-CN": "ISO 镜像|*.iso|所有文件|*.*",
+    "en": "ISO image|*.iso|All files|*.*",
+    "zh-TW": "ISO 映像檔|*.iso|所有檔案|*.*"
+  },
+  "WAV 音轨（推荐）|*.wav|RAW 音轨（旧格式）|*.raw|所有文件|*.*": {
+    "zh-CN": "WAV 音轨（推荐）|*.wav|RAW 音轨（旧格式）|*.raw|所有文件|*.*",
+    "en": "WAV audio track (recommended)|*.wav|RAW audio track (legacy)|*.raw|All files|*.*",
+    "zh-TW": "WAV 音軌（建議）|*.wav|RAW 音軌（舊格式）|*.raw|所有檔案|*.*"
+  },
+  "[{0:HH:mm:ss}] 任务失败：退出码 {1}，未生成 {2}\n": {
+    "zh-CN": "[{0:HH:mm:ss}] 任务失败：退出码 {1}，未生成 {2}\n",
+    "en": "[{0:HH:mm:ss}] Job failed: exit code {1}; {2} was not generated\n",
+    "zh-TW": "[{0:HH:mm:ss}] 工作失敗：結束代碼 {1}，未產生 {2}\n"
+  },
+  "[{0:HH:mm:ss}] 任务已取消\n": {
+    "zh-CN": "[{0:HH:mm:ss}] 任务已取消\n",
+    "en": "[{0:HH:mm:ss}] Job cancelled\n",
+    "zh-TW": "[{0:HH:mm:ss}] 工作已取消\n"
+  },
+  "[{0:HH:mm:ss}] 任务异常：{1}\n": {
+    "zh-CN": "[{0:HH:mm:ss}] 任务异常：{1}\n",
+    "en": "[{0:HH:mm:ss}] Job error: {1}\n",
+    "zh-TW": "[{0:HH:mm:ss}] 工作異常：{1}\n"
+  },
+  "[{0:HH:mm:ss}] 完成：{1}\n": {
+    "zh-CN": "[{0:HH:mm:ss}] 完成：{1}\n",
+    "en": "[{0:HH:mm:ss}] Completed: {1}\n",
+    "zh-TW": "[{0:HH:mm:ss}] 完成：{1}\n"
+  },
+  "[{0:HH:mm:ss}] 设计合成失败：{1}\n": {
+    "zh-CN": "[{0:HH:mm:ss}] 设计合成失败：{1}\n",
+    "en": "[{0:HH:mm:ss}] Design composition failed: {1}\n",
+    "zh-TW": "[{0:HH:mm:ss}] 設計合成失敗：{1}\n"
+  },
+  "{0:N0} 扇区 · {1:0.#}–{2:0.#} mm": {
+    "zh-CN": "{0:N0} 扇区 · {1:0.#}–{2:0.#} mm",
+    "en": "{0:N0} sectors · {1:0.#}–{2:0.#} mm",
+    "zh-TW": "{0:N0} 磁區 · {1:0.#}–{2:0.#} mm"
+  },
+  "{0}\n\n文件位置：\n{1}": {
+    "zh-CN": "{0}\n\n文件位置：\n{1}",
+    "en": "{0}\n\nFile location:\n{1}",
+    "zh-TW": "{0}\n\n檔案位置：\n{1}"
+  },
+  "{0}\n最近打开：{1:yyyy-MM-dd HH:mm}": {
+    "zh-CN": "{0}\n最近打开：{1:yyyy-MM-dd HH:mm}",
+    "en": "{0}\nLast opened: {1:yyyy-MM-dd HH:mm}",
+    "zh-TW": "{0}\n最近開啟：{1:yyyy-MM-dd HH:mm}"
+  },
+  "{0} 级 · {1} 抖动": {
+    "zh-CN": "{0} 级 · {1} 抖动",
+    "en": "{0} levels · {1} dithering",
+    "zh-TW": "{0} 級 · {1} 抖動"
+  },
+  "{0}之前要保存对「{1}」的更改吗？": {
+    "zh-CN": "{0}之前要保存对「{1}」的更改吗？",
+    "en": "Save changes to “{1}” before continuing ({0})?",
+    "zh-TW": "{0}之前要儲存對「{1}」的變更嗎？"
+  },
+  "不保存": {
+    "zh-CN": "不保存",
+    "en": "Don't save",
+    "zh-TW": "不儲存"
+  },
+  "从默认参数开始": {
+    "zh-CN": "从默认参数开始",
+    "en": "Start with default parameters",
+    "zh-TW": "從預設參數開始"
+  },
+  "任务已取消": {
+    "zh-CN": "任务已取消",
+    "en": "Job cancelled",
+    "zh-TW": "工作已取消"
+  },
+  "任务未完成": {
+    "zh-CN": "任务未完成",
+    "en": "Job incomplete",
+    "zh-TW": "工作未完成"
+  },
+  "关闭": {
+    "zh-CN": "关闭",
+    "en": "Close",
+    "zh-TW": "關閉"
+  },
+  "内置预设不能删除。": {
+    "zh-CN": "内置预设不能删除。",
+    "en": "Built-in presets cannot be deleted.",
+    "zh-TW": "內建預設不能刪除。"
+  },
+  "创建工程": {
+    "zh-CN": "创建工程",
+    "en": "Create project",
+    "zh-TW": "建立專案"
+  },
+  "刻录完成": {
+    "zh-CN": "刻录完成",
+    "en": "Burn complete",
+    "zh-TW": "燒錄完成"
+  },
+  "包含随盘文件，导出为 CD 数据盘 ISO。": {
+    "zh-CN": "包含随盘文件，导出为 CD 数据盘 ISO。",
+    "en": "Files are included; export as a CD data disc ISO.",
+    "zh-TW": "包含隨碟檔案，匯出為 CD 資料光碟 ISO。"
+  },
+  "可直接粘贴或浏览已生成的 ISO 镜像。": {
+    "zh-CN": "可直接粘贴或浏览已生成的 ISO 镜像。",
+    "en": "Paste a path or browse for a generated ISO image.",
+    "zh-TW": "可直接貼上或瀏覽已產生的 ISO 映像檔。"
+  },
+  "可直接粘贴或浏览已生成的 ISO；同名 sidecar 会带回几何与影调。": {
+    "zh-CN": "可直接粘贴或浏览已生成的 ISO；同名 sidecar 会带回几何与影调。",
+    "en": "Paste a path or browse for a generated ISO; its sidecar restores geometry and tone settings.",
+    "zh-TW": "可直接貼上或瀏覽已產生的 ISO；同名 sidecar 會帶回幾何與影調。"
+  },
+  "可选择 WAV / RAW 音轨或 CD 数据盘 ISO。": {
+    "zh-CN": "可选择 WAV / RAW 音轨或 CD 数据盘 ISO。",
+    "en": "Select a WAV / RAW audio track or a CD data disc ISO.",
+    "zh-TW": "可選擇 WAV / RAW 音軌或 CD 資料光碟 ISO。"
+  },
+  "图片无法导入": {
+    "zh-CN": "图片无法导入",
+    "en": "Cannot import image",
+    "zh-TW": "圖片無法匯入"
+  },
+  "外半径必须大于内半径。": {
+    "zh-CN": "外半径必须大于内半径。",
+    "en": "The outer radius must be greater than the inner radius.",
+    "zh-TW": "外半徑必須大於內半徑。"
+  },
+  "失败：退出码 {0}": {
+    "zh-CN": "失败：退出码 {0}",
+    "en": "Failed: exit code {0}",
+    "zh-TW": "失敗：結束代碼 {0}"
+  },
+  "完成：": {
+    "zh-CN": "完成：",
+    "en": "Completed: ",
+    "zh-TW": "完成："
+  },
+  "实时 {0:0.00} MiB/s": {
+    "zh-CN": "实时 {0:0.00} MiB/s",
+    "en": "Current {0:0.00} MiB/s",
+    "zh-TW": "即時 {0:0.00} MiB/s"
+  },
+  "实时 — MiB/s": {
+    "zh-CN": "实时 — MiB/s",
+    "en": "Current — MiB/s",
+    "zh-TW": "即時 — MiB/s"
+  },
+  "实时更新": {
+    "zh-CN": "实时更新",
+    "en": "Live update",
+    "zh-TW": "即時更新"
+  },
+  "导入图片后自动生成预览。": {
+    "zh-CN": "导入图片后自动生成预览。",
+    "en": "Import an image to generate a preview automatically.",
+    "zh-TW": "匯入圖片後自動產生預覽。"
+  },
+  "将保存为：{0}{1}": {
+    "zh-CN": "将保存为：{0}{1}",
+    "en": "Will save as: {0}{1}",
+    "zh-TW": "將儲存為：{0}{1}"
+  },
+  "尚未运行任务。": {
+    "zh-CN": "尚未运行任务。",
+    "en": "No jobs have run yet.",
+    "zh-TW": "尚未執行工作。"
+  },
+  "就绪": {
+    "zh-CN": "就绪",
+    "en": "Ready",
+    "zh-TW": "就緒"
+  },
+  "工程": {
+    "zh-CN": "工程",
+    "en": "Project",
+    "zh-TW": "專案"
+  },
+  "工程已创建": {
+    "zh-CN": "工程已创建",
+    "en": "Project created",
+    "zh-TW": "專案已建立"
+  },
+  "工程文件已移动或删除": {
+    "zh-CN": "工程文件已移动或删除",
+    "en": "Project file moved or deleted",
+    "zh-TW": "專案檔案已移動或刪除"
+  },
+  "工程文件已移动或删除：\n{0}": {
+    "zh-CN": "工程文件已移动或删除：\n{0}",
+    "en": "The project file has been moved or deleted:\n{0}",
+    "zh-TW": "專案檔案已移動或刪除：\n{0}"
+  },
+  "工程设置": {
+    "zh-CN": "工程设置",
+    "en": "Project settings",
+    "zh-TW": "專案設定"
+  },
+  "已保存为预设：{0}": {
+    "zh-CN": "已保存为预设：{0}",
+    "en": "Saved as preset: {0}",
+    "zh-TW": "已儲存為預設：{0}"
+  },
+  "已写入 {0:0.00} / {1:0.00} GiB": {
+    "zh-CN": "已写入 {0:0.00} / {1:0.00} GiB",
+    "en": "Written {0:0.00} / {1:0.00} GiB",
+    "zh-TW": "已寫入 {0:0.00} / {1:0.00} GiB"
+  },
+  "已写入 {0:0.0} / {1:0.0} MiB": {
+    "zh-CN": "已写入 {0:0.0} / {1:0.0} MiB",
+    "en": "Written {0:0.0} / {1:0.0} MiB",
+    "zh-TW": "已寫入 {0:0.0} / {1:0.0} MiB"
+  },
+  "已删除预设：{0}": {
+    "zh-CN": "已删除预设：{0}",
+    "en": "Deleted preset: {0}",
+    "zh-TW": "已刪除預設：{0}"
+  },
+  "已取消": {
+    "zh-CN": "已取消",
+    "en": "Cancelled",
+    "zh-TW": "已取消"
+  },
+  "影调预览失败：{0}": {
+    "zh-CN": "影调预览失败：{0}",
+    "en": "Tone preview failed: {0}",
+    "zh-TW": "影調預覽失敗：{0}"
+  },
+  "恢复该盘型的默认几何": {
+    "zh-CN": "恢复该盘型的默认几何",
+    "en": "Restore default geometry for this disc type",
+    "zh-TW": "還原該光碟類型的預設幾何"
+  },
+  "扇区数必须是正整数。": {
+    "zh-CN": "扇区数必须是正整数。",
+    "en": "The sector count must be a positive integer.",
+    "zh-TW": "磁區數必須是正整數。"
+  },
+  "打开其他工程": {
+    "zh-CN": "打开其他工程",
+    "en": "Open another project",
+    "zh-TW": "開啟其他專案"
+  },
+  "打开工程": {
+    "zh-CN": "打开工程",
+    "en": "Open project",
+    "zh-TW": "開啟專案"
+  },
+  "新建工程": {
+    "zh-CN": "新建工程",
+    "en": "New project",
+    "zh-TW": "新增專案"
+  },
+  "无法保存工程": {
+    "zh-CN": "无法保存工程",
+    "en": "Cannot save project",
+    "zh-TW": "無法儲存專案"
+  },
+  "无法保存预设：{0}": {
+    "zh-CN": "无法保存预设：{0}",
+    "en": "Cannot save preset: {0}",
+    "zh-TW": "無法儲存預設：{0}"
+  },
+  "无法创建工程": {
+    "zh-CN": "无法创建工程",
+    "en": "Cannot create project",
+    "zh-TW": "無法建立專案"
+  },
+  "无法删除预设：{0}": {
+    "zh-CN": "无法删除预设：{0}",
+    "en": "Cannot delete preset: {0}",
+    "zh-TW": "無法刪除預設：{0}"
+  },
+  "无法打开工程": {
+    "zh-CN": "无法打开工程",
+    "en": "Cannot open project",
+    "zh-TW": "無法開啟專案"
+  },
+  "无随盘文件时生成音轨，推荐 WAV 格式。": {
+    "zh-CN": "无随盘文件时生成音轨，推荐 WAV 格式。",
+    "en": "Without included files, an audio track is generated. WAV format is recommended.",
+    "zh-TW": "無隨碟檔案時產生音軌，建議 WAV 格式。"
+  },
+  "最近": {
+    "zh-CN": "最近",
+    "en": "Recent",
+    "zh-TW": "最近"
+  },
+  "有未保存的更改": {
+    "zh-CN": "有未保存的更改",
+    "en": "Unsaved changes",
+    "zh-TW": "有未儲存的變更"
+  },
+  "未命名": {
+    "zh-CN": "未命名",
+    "en": "Untitled",
+    "zh-TW": "未命名"
+  },
+  "未完成的输出文件可能留在磁盘上。": {
+    "zh-CN": "未完成的输出文件可能留在磁盘上。",
+    "en": "Incomplete output files may remain on disk.",
+    "zh-TW": "未完成的輸出檔案可能留在磁碟上。"
+  },
+  "正在取消…": {
+    "zh-CN": "正在取消…",
+    "en": "Cancelling…",
+    "zh-TW": "正在取消…"
+  },
+  "正在按当前影调渲染…": {
+    "zh-CN": "正在按当前影调渲染…",
+    "en": "Rendering with the current tone settings…",
+    "zh-TW": "正在按目前影調算繪…"
+  },
+  "正在生成 CD 数据盘 ISO…": {
+    "zh-CN": "正在生成 CD 数据盘 ISO…",
+    "en": "Generating CD data disc ISO…",
+    "zh-TW": "正在產生 CD 資料光碟 ISO…"
+  },
+  "正在生成 CD 音轨…": {
+    "zh-CN": "正在生成 CD 音轨…",
+    "en": "Generating CD audio track…",
+    "zh-TW": "正在產生 CD 音軌…"
+  },
+  "正在生成 DVD ISO…": {
+    "zh-CN": "正在生成 DVD ISO…",
+    "en": "Generating DVD ISO…",
+    "zh-TW": "正在產生 DVD ISO…"
+  },
+  "正在生成蓝光 ISO…": {
+    "zh-CN": "正在生成蓝光 ISO…",
+    "en": "Generating Blu-ray ISO…",
+    "zh-TW": "正在產生藍光 ISO…"
+  },
+  "正在运行…": {
+    "zh-CN": "正在运行…",
+    "en": "Running…",
+    "zh-TW": "正在執行…"
+  },
+  "流式刻录": {
+    "zh-CN": "流式刻录",
+    "en": "Streaming burn",
+    "zh-TW": "串流燒錄"
+  },
+  "版本 {0}": {
+    "zh-CN": "版本 {0}",
+    "en": "Version {0}",
+    "zh-TW": "版本 {0}"
+  },
+  "生成镜像": {
+    "zh-CN": "生成镜像",
+    "en": "Generate image",
+    "zh-TW": "產生映像檔"
+  },
+  "生成音轨": {
+    "zh-CN": "生成音轨",
+    "en": "Generate track",
+    "zh-TW": "產生音軌"
+  },
+  "用户预设 JSON 无法加载，已继续使用程序内置参数。\n\n{0}\n\n文件位置：\n{1}": {
+    "zh-CN": "用户预设 JSON 无法加载，已继续使用程序内置参数。\n\n{0}\n\n文件位置：\n{1}",
+    "en": "The user preset JSON could not be loaded. Built-in parameters are being used.\n\n{0}\n\nFile location:\n{1}",
+    "zh-TW": "使用者預設 JSON 無法載入，已繼續使用程式內建參數。\n\n{0}\n\n檔案位置：\n{1}"
+  },
+  "确定": {
+    "zh-CN": "确定",
+    "en": "OK",
+    "zh-TW": "確定"
+  },
+  "空白工程": {
+    "zh-CN": "空白工程",
+    "en": "Blank project",
+    "zh-TW": "空白專案"
+  },
+  "蓝光": {
+    "zh-CN": "蓝光",
+    "en": "Blu-ray",
+    "zh-TW": "藍光"
+  },
+  "蓝光 ISO 输出位置": {
+    "zh-CN": "蓝光 ISO 输出位置",
+    "en": "Blu-ray ISO output location",
+    "zh-TW": "藍光 ISO 輸出位置"
+  },
+  "蓝光外半径不能超过 60 mm。": {
+    "zh-CN": "蓝光外半径不能超过 60 mm。",
+    "en": "The Blu-ray outer radius cannot exceed 60 mm.",
+    "zh-TW": "藍光外半徑不能超過 60 mm。"
+  },
+  "蓝光扇区数不能超过单层容量 {0:N0}。": {
+    "zh-CN": "蓝光扇区数不能超过单层容量 {0:N0}。",
+    "en": "The Blu-ray sector count cannot exceed the single-layer capacity of {0:N0}.",
+    "zh-TW": "藍光磁區數不能超過單層容量 {0:N0}。"
+  },
+  "蓝光的扇区数必须是 32 的倍数。": {
+    "zh-CN": "蓝光的扇区数必须是 32 的倍数。",
+    "en": "The Blu-ray sector count must be a multiple of 32.",
+    "zh-TW": "藍光的磁區數必須是 32 的倍數。"
+  },
+  "设计合成失败": {
+    "zh-CN": "设计合成失败",
+    "en": "Design composition failed",
+    "zh-TW": "設計合成失敗"
+  },
+  "设计页合成图源（{0} px）": {
+    "zh-CN": "设计页合成图源（{0} px）",
+    "en": "Design composite ({0} px)",
+    "zh-TW": "設計頁合成圖源（{0} px）"
+  },
+  "详情见窗口底部的任务日志。": {
+    "zh-CN": "详情见窗口底部的任务日志。",
+    "en": "See the job log at the bottom of the window for details.",
+    "zh-TW": "詳情見視窗底部的工作記錄。"
+  },
+  "请先在设计页导入图片。": {
+    "zh-CN": "请先在设计页导入图片。",
+    "en": "Import an image on the Design page first.",
+    "zh-TW": "請先在設計頁匯入圖片。"
+  },
+  "请先打开或新建一个工程。": {
+    "zh-CN": "请先打开或新建一个工程。",
+    "en": "Open or create a project first.",
+    "zh-TW": "請先開啟或新增一個專案。"
+  },
+  "请填写{0}。": {
+    "zh-CN": "请填写{0}。",
+    "en": "Enter {0}.",
+    "zh-TW": "請填寫{0}。"
+  },
+  "请填写工程名。": {
+    "zh-CN": "请填写工程名。",
+    "en": "Enter a project name.",
+    "zh-TW": "請填寫專案名。"
+  },
+  "请填写预设名称。": {
+    "zh-CN": "请填写预设名称。",
+    "en": "Enter a preset name.",
+    "zh-TW": "請填寫預設名稱。"
+  },
+  "请检查输入": {
+    "zh-CN": "请检查输入",
+    "en": "Check your input",
+    "zh-TW": "請檢查輸入"
+  },
+  "请选择 CD ISO 输出位置。": {
+    "zh-CN": "请选择 CD ISO 输出位置。",
+    "en": "Choose an output location for the CD ISO.",
+    "zh-TW": "請選擇 CD ISO 輸出位置。"
+  },
+  "请选择 CD 音轨输出位置。": {
+    "zh-CN": "请选择 CD 音轨输出位置。",
+    "en": "Choose an output location for the CD audio track.",
+    "zh-TW": "請選擇 CD 音軌輸出位置。"
+  },
+  "请选择 DVD ISO 输出位置。": {
+    "zh-CN": "请选择 DVD ISO 输出位置。",
+    "en": "Choose an output location for the DVD ISO.",
+    "zh-TW": "請選擇 DVD ISO 輸出位置。"
+  },
+  "请选择保存位置。": {
+    "zh-CN": "请选择保存位置。",
+    "en": "Choose a save location.",
+    "zh-TW": "請選擇儲存位置。"
+  },
+  "请选择蓝光 ISO 输出位置。": {
+    "zh-CN": "请选择蓝光 ISO 输出位置。",
+    "en": "Choose an output location for the Blu-ray ISO.",
+    "zh-TW": "請選擇藍光 ISO 輸出位置。"
+  },
+  "轨距模型无效：请检查半径、扇区数及系数，整个刻录区的轨距必须为正。": {
+    "zh-CN": "轨距模型无效：请检查半径、扇区数及系数，整个刻录区的轨距必须为正。",
+    "en": "Invalid track pitch model: check the radii, sector count and coefficients. Track pitch must be positive throughout the recording area.",
+    "zh-TW": "軌距模型無效：請檢查半徑、磁區數及系數，整個燒錄區的軌距必須為正。"
+  },
+  "输出数据盘 (.iso)": {
+    "zh-CN": "输出数据盘 (.iso)",
+    "en": "Data disc output (.iso)",
+    "zh-TW": "輸出資料光碟 (.iso)"
+  },
+  "输出音轨 (.wav / .raw)": {
+    "zh-CN": "输出音轨 (.wav / .raw)",
+    "en": "Audio track output (.wav / .raw)",
+    "zh-TW": "輸出音軌 (.wav / .raw)"
+  },
+  "返回主页": {
+    "zh-CN": "返回主页",
+    "en": "Return home",
+    "zh-TW": "返回首頁"
+  },
+  "还没有最近使用的模板。": {
+    "zh-CN": "还没有最近使用的模板。",
+    "en": "No recently used templates yet.",
+    "zh-TW": "還沒有最近使用的範本。"
+  },
+  "选择生成的 CD 音轨或数据盘": {
+    "zh-CN": "选择生成的 CD 音轨或数据盘",
+    "en": "Select a generated CD track or data disc",
+    "zh-TW": "選擇產生的 CD 音軌或資料光碟"
+  },
+  "选择生成的 DVD ISO": {
+    "zh-CN": "选择生成的 DVD ISO",
+    "en": "Select a generated DVD ISO",
+    "zh-TW": "選擇產生的 DVD ISO"
+  },
+  "选择生成的蓝光 ISO": {
+    "zh-CN": "选择生成的蓝光 ISO",
+    "en": "Select a generated Blu-ray ISO",
+    "zh-TW": "選擇產生的藍光 ISO"
+  },
+  "选择要放入 CD 数据盘的文件夹": {
+    "zh-CN": "选择要放入 CD 数据盘的文件夹",
+    "en": "Select a folder to include on the CD data disc",
+    "zh-TW": "選擇要放入 CD 資料光碟的資料夾"
+  },
+  "选择要放入 DVD 的文件夹": {
+    "zh-CN": "选择要放入 DVD 的文件夹",
+    "en": "Select a folder to include on the DVD",
+    "zh-TW": "選擇要放入 DVD 的資料夾"
+  },
+  "选择要放入蓝光盘的文件夹": {
+    "zh-CN": "选择要放入蓝光盘的文件夹",
+    "en": "Select a folder to include on the Blu-ray disc",
+    "zh-TW": "選擇要放入藍光光碟的資料夾"
+  },
+  "部分图层图片无法读取": {
+    "zh-CN": "部分图层图片无法读取",
+    "en": "Some layer images could not be read",
+    "zh-TW": "部分圖層圖片無法讀取"
+  },
+  "预设加载失败": {
+    "zh-CN": "预设加载失败",
+    "en": "Preset loading failed",
+    "zh-TW": "預設載入失敗"
+  },
+  "默认参数": {
+    "zh-CN": "默认参数",
+    "en": "Default parameters",
+    "zh-TW": "預設參數"
+  },
+  "Disc Image Studio 工程|*.discproj": {
+    "zh-CN": "Disc Image Studio 工程|*.discproj",
+    "en": "Disc Image Studio project|*.discproj",
+    "zh-TW": "Disc Image Studio 專案|*.discproj"
+  },
+  "标准 80min CD": {
+    "zh-CN": "标准 80min CD",
+    "en": "Standard 80 min CD",
+    "zh-TW": "標準 80min CD"
+  },
+  "ECMA-130／ISO/IEC 10149 标准速度 1200 mm/s；120 mm 盘、约 80 分钟，359,849 扇区（24.5–56.8 mm）。": {
+    "zh-CN": "ECMA-130／ISO/IEC 10149 标准速度 1200 mm/s；120 mm 盘、约 80 分钟，359,849 扇区（24.5–56.8 mm）。",
+    "en": "ECMA-130 / ISO/IEC 10149 standard scanning speed: 1200 mm/s; 120 mm disc, about 80 minutes, 359,849 sectors (24.5–56.8 mm).",
+    "zh-TW": "ECMA-130／ISO/IEC 10149 標準速度 1200 mm/s；120 mm 光碟、約 80 分鐘，359,849 磁區（24.5–56.8 mm）。"
+  },
+  "铼德医疗水蓝盘（实测）": {
+    "zh-CN": "铼德医疗水蓝盘（实测）",
+    "en": "Ritek Medical Aqua (measured)",
+    "zh-TW": "錸德醫療水藍盤（實測）"
+  },
+  "实测参数：内半径 24.911275 mm、外半径 57.931155 mm、359,845 扇区；扫描速度采用 1200 mm/s。": {
+    "zh-CN": "实测参数：内半径 24.911275 mm、外半径 57.931155 mm、359,845 扇区；扫描速度采用 1200 mm/s。",
+    "en": "Measured parameters: inner radius 24.911275 mm, outer radius 57.931155 mm, 359,845 sectors; scanning speed 1200 mm/s.",
+    "zh-TW": "實測參數：內半徑 24.911275 mm、外半徑 57.931155 mm、359,845 磁區；掃描速度採用 1200 mm/s。"
+  },
+  "Verbatim CD-R AZO (43438)（实测）": {
+    "zh-CN": "Verbatim CD-R AZO (43438)（实测）",
+    "en": "Verbatim CD-R AZO (43438) (measured)",
+    "zh-TW": "Verbatim CD-R AZO (43438)（實測）"
+  },
+  "实测参数：内半径 24.837775 mm、外半径 58.020875 mm、359,848 扇区；扫描速度采用 1200 mm/s。": {
+    "zh-CN": "实测参数：内半径 24.837775 mm、外半径 58.020875 mm、359,848 扇区；扫描速度采用 1200 mm/s。",
+    "en": "Measured parameters: inner radius 24.837775 mm, outer radius 58.020875 mm, 359,848 sectors; scanning speed 1200 mm/s.",
+    "zh-TW": "實測參數：內半徑 24.837775 mm、外半徑 58.020875 mm、359,848 磁區；掃描速度採用 1200 mm/s。"
+  },
+  "标准 74min CD": {
+    "zh-CN": "标准 74min CD",
+    "en": "Standard 74 min CD",
+    "zh-TW": "標準 74min CD"
+  },
+  "ECMA-130／ISO/IEC 10149 标准速度 1200 mm/s；120 mm 盘、约 74 分钟，333,000 扇区（24.5–56.8 mm）。": {
+    "zh-CN": "ECMA-130／ISO/IEC 10149 标准速度 1200 mm/s；120 mm 盘、约 74 分钟，333,000 扇区（24.5–56.8 mm）。",
+    "en": "ECMA-130 / ISO/IEC 10149 standard scanning speed: 1200 mm/s; 120 mm disc, about 74 minutes, 333,000 sectors (24.5–56.8 mm).",
+    "zh-TW": "ECMA-130／ISO/IEC 10149 標準速度 1200 mm/s；120 mm 光碟、約 74 分鐘，333,000 磁區（24.5–56.8 mm）。"
+  },
+  "标准 12cm 单层 DVD": {
+    "zh-CN": "标准 12cm 单层 DVD",
+    "en": "Standard 12 cm single-layer DVD",
+    "zh-TW": "標準 12cm 單層 DVD"
+  },
+  "ISO/IEC 16448 标准单层 120 mm DVD（DVD-5）数据区：24–58 mm，共 2,295,104 个扇区。": {
+    "zh-CN": "ISO/IEC 16448 标准单层 120 mm DVD（DVD-5）数据区：24–58 mm，共 2,295,104 个扇区。",
+    "en": "ISO/IEC 16448 standard single-layer 120 mm DVD (DVD-5) data area: 24–58 mm, 2,295,104 sectors.",
+    "zh-TW": "ISO/IEC 16448 標準單層 120 mm DVD（DVD-5）資料區：24–58 mm，共 2,295,104 個磁區。"
+  },
+  "Verbatim DVD-R AZO (43533)（实测）": {
+    "zh-CN": "Verbatim DVD-R AZO (43533)（实测）",
+    "en": "Verbatim DVD-R AZO (43533) (measured)",
+    "zh-TW": "Verbatim DVD-R AZO (43533)（實測）"
+  },
+  "Verbatim DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。": {
+    "zh-CN": "Verbatim DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
+    "en": "Verified Verbatim DVD-R AZO 43533 calibration: 23.9914606277–57.9648936579 mm, 2,297,888 sectors; cubic track pitch distribution.",
+    "zh-TW": "Verbatim DVD-R AZO 43533 已驗證校準參數：23.9914606277–57.9648936579 mm，共 2,297,888 個磁區；採用三次軌距分布。"
+  },
+  "标准 8cm 单层 DVD": {
+    "zh-CN": "标准 8cm 单层 DVD",
+    "en": "Standard 8 cm single-layer DVD",
+    "zh-TW": "標準 8cm 單層 DVD"
+  },
+  "ISO/IEC 16448 标准单层 80 mm DVD 数据区：24–38 mm，共 714,544 个扇区。": {
+    "zh-CN": "ISO/IEC 16448 标准单层 80 mm DVD 数据区：24–38 mm，共 714,544 个扇区。",
+    "en": "ISO/IEC 16448 standard single-layer 80 mm DVD data area: 24–38 mm, 714,544 sectors.",
+    "zh-TW": "ISO/IEC 16448 標準單層 80 mm DVD 資料區：24–38 mm，共 714,544 個磁區。"
+  },
+  "标准 25GB 单层 BD": {
+    "zh-CN": "标准 25GB 单层 BD",
+    "en": "Standard 25 GB single-layer BD",
+    "zh-TW": "標準 25GB 單層 BD"
+  },
+  "ISO/IEC 30190 标准单层 BD-R 数据区：24–58 mm，共 12,219,392 个扇区。": {
+    "zh-CN": "ISO/IEC 30190 标准单层 BD-R 数据区：24–58 mm，共 12,219,392 个扇区。",
+    "en": "ISO/IEC 30190 standard single-layer BD-R data area: 24–58 mm, 12,219,392 sectors.",
+    "zh-TW": "ISO/IEC 30190 標準單層 BD-R 資料區：24–58 mm，共 12,219,392 個磁區。"
+  },
+  "铼德 BD-R 10x（实测）": {
+    "zh-CN": "铼德 BD-R 10x（实测）",
+    "en": "Ritek BD-R 10x (measured)",
+    "zh-TW": "錸德 BD-R 10x（實測）"
+  },
+  "实测参数：内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 扇区。": {
+    "zh-CN": "实测参数：内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 扇区。",
+    "en": "Measured parameters: inner radius 23.988221 mm, outer radius 58.023235 mm, 12,219,392 sectors.",
+    "zh-TW": "實測參數：內半徑 23.988221 mm、外半徑 58.023235 mm、12,219,392 磁區。"
+  },
+  "Verbatim BD-R (64099)（实测）": {
+    "zh-CN": "Verbatim BD-R (64099)（实测）",
+    "en": "Verbatim BD-R (64099) (measured)",
+    "zh-TW": "Verbatim BD-R (64099)（實測）"
+  },
+  "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。": {
+    "zh-CN": "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。",
+    "en": "Measured parameters: inner radius 23.987042 mm, outer radius 57.987960 mm, 12,219,392 sectors.",
+    "zh-TW": "實測參數：內半徑 23.987042 mm、外半徑 57.987960 mm、12,219,392 磁區。"
+  },
+  "自定义参数（未保存）": {
+    "zh-CN": "自定义参数（未保存）",
+    "en": "Custom parameters (unsaved)",
+    "zh-TW": "自訂參數（未儲存）"
+  },
+  "生成参数已在界面中手动调整；如需长期保存，请写入用户预设 JSON。": {
+    "zh-CN": "生成参数已在界面中手动调整；如需长期保存，请写入用户预设 JSON。",
+    "en": "Generation parameters have been adjusted manually. Save them as a user preset to keep them.",
+    "zh-TW": "產生參數已在介面中手動調整；如需長期儲存，請寫入使用者預設 JSON。"
+  }
+}

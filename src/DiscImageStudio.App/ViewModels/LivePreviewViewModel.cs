@@ -1,3 +1,4 @@
+using DiscImageStudio.Localization;
 using System.IO;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -25,6 +26,8 @@ namespace DiscImageStudio.ViewModels;
 ///   carries. One parameter set describes the measured disc geometry.
 public partial class LivePreviewViewModel : ObservableObject
 {
+    private const int MaximumPreviewSize = 8192;
+
     private readonly DispatcherTimer _livePreviewTimer;
     private readonly DiscParametersState _state;
     private readonly ShellViewModel _shell;
@@ -96,16 +99,16 @@ public partial class LivePreviewViewModel : ObservableObject
     }
 
     [ObservableProperty]
-    private string _resultPreviewTitle = "预览 - CD";
+    private string _resultPreviewTitle = L.T("预览 - CD");
 
     [ObservableProperty]
     private string _resultPreviewPath = string.Empty;
 
     [ObservableProperty]
-    private string _resultPreviewPlaceholderText = "请先选择生成的 CD 音轨或 ISO。";
+    private string _resultPreviewPlaceholderText = L.T("请先选择生成的 CD 音轨或 ISO。");
 
     [ObservableProperty]
-    private string _statusText = "等待生成的 CD 音轨或 ISO";
+    private string _statusText = L.T("等待生成的 CD 音轨或 ISO");
 
     [ObservableProperty]
     private System.Windows.Media.Imaging.BitmapSource? _resultImage;
@@ -223,8 +226,8 @@ public partial class LivePreviewViewModel : ObservableObject
     /// hidden instead of navigating to a null workspace.</summary>
     public string EmptyStateActionLabel => EmptyStateActionWorkspace switch
     {
-        Workspace.Design => "前往设计",
-        Workspace.Export => "前往导出",
+        Workspace.Design => L.T("前往设计"),
+        Workspace.Export => L.T("前往导出"),
         _ => string.Empty,
     };
 
@@ -256,7 +259,7 @@ public partial class LivePreviewViewModel : ObservableObject
             _state.ToneLevels = dataTone.Levels;
             _state.ToneBrightness = dataTone.Brightness;
             _state.ToneSrgbLinearization = dataTone.SrgbLinearization;
-            _shell.AppendLog($"[{DateTime.Now:HH:mm:ss}] 已载入 {Path.GetFileName(trackPath)} 的 CD 数据盘几何与文件位置。\n");
+            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 已载入 {Path.GetFileName(trackPath)} 的 CD 数据盘几何与文件位置。\n"));
             return;
         }
         CdTrackMetadata? metadata = CdTrackMetadata.TryLoad(trackPath);
@@ -295,9 +298,9 @@ public partial class LivePreviewViewModel : ObservableObject
         state.ToneBrightness = tone.Brightness;
         state.ToneSrgbLinearization = tone.SrgbLinearization;
         _shell.AppendLog(
-            $"[{DateTime.Now:HH:mm:ss}] 已按 {System.IO.Path.GetFileName(trackPath)} 的生成参数载入标定几何："
-            + $"r0={innerRadius} mm, r1={outerRadius} mm, {sectors} 扇区，交织={metadata.Interleaved}，"
-            + $"影调={tone.Levels} 级/{tone.DitherStrength * 100:0}% 抖动。\n");
+            L.F($"[{DateTime.Now:HH:mm:ss}] 已按 {System.IO.Path.GetFileName(trackPath)} 的生成参数载入标定几何：")
+            + L.F($"r0={innerRadius} mm, r1={outerRadius} mm, {sectors} 扇区，交织={metadata.Interleaved}，")
+            + L.F($"影调={tone.Levels} 级/{tone.DitherStrength * 100:0}% 抖动。\n"));
     }
 
     private void AdoptIsoMetadata(string isoPath)
@@ -339,8 +342,8 @@ public partial class LivePreviewViewModel : ObservableObject
         state.DvdPitchCubic = FormatNumber(metadata.PitchCubic);
         state.DvdFilesAtOuterRing = metadata.FilesAtOuterRing;
         _shell.AppendLog(
-            $"[{DateTime.Now:HH:mm:ss}] 已按 {System.IO.Path.GetFileName(isoPath)} 的生成参数载入标定几何："
-            + $"r0={innerRadius} mm, r1={outerRadius} mm, {totalSectors} 总扇区；{state.DvdPitchSummary}\n");
+            L.F($"[{DateTime.Now:HH:mm:ss}] 已按 {System.IO.Path.GetFileName(isoPath)} 的生成参数载入标定几何：")
+            + L.F($"r0={innerRadius} mm, r1={outerRadius} mm, {totalSectors} 总扇区；{state.DvdPitchSummary}\n"));
     }
 
     /// <summary>The BD sidecar restores the geometry, drawing range and mapping polarity used
@@ -359,8 +362,8 @@ public partial class LivePreviewViewModel : ObservableObject
         if (metadata is null)
         {
             _shell.AppendLog(
-                $"[{DateTime.Now:HH:mm:ss}] {System.IO.Path.GetFileName(isoPath)} 没有可用的蓝光 sidecar，"
-                + "预览继续使用当前工程几何。\n");
+                L.F($"[{DateTime.Now:HH:mm:ss}] {System.IO.Path.GetFileName(isoPath)} 没有可用的蓝光 sidecar，")
+                + L.T("预览继续使用当前工程几何。\n"));
             return;
         }
 
@@ -385,10 +388,10 @@ public partial class LivePreviewViewModel : ObservableObject
         state.ToneBrightness = metadata.Tone.Brightness;
         state.ToneSrgbLinearization = metadata.Tone.SrgbLinearization;
         _shell.AppendLog(
-            $"[{DateTime.Now:HH:mm:ss}] 已按 {System.IO.Path.GetFileName(isoPath)} 的 sidecar 载入几何："
-            + $"r0={innerRadius} mm, r1={outerRadius} mm, {sectors} 扇区，"
-            + $"绘图 {metadata.DrawingStartSector}..{metadata.DrawingEndSectorExclusive - 1}，"
-            + $"极性={(metadata.InvertMapping ? "反转 3T/6T" : "标准 3T/6T")}。\n");
+            L.F($"[{DateTime.Now:HH:mm:ss}] 已按 {System.IO.Path.GetFileName(isoPath)} 的 sidecar 载入几何：")
+            + L.F($"r0={innerRadius} mm, r1={outerRadius} mm, {sectors} 扇区，")
+            + L.F($"绘图 {metadata.DrawingStartSector}..{metadata.DrawingEndSectorExclusive - 1}，")
+            + L.F($"极性={(metadata.InvertMapping ? L.T("反转 3T/6T") : L.T("标准 3T/6T"))}。\n"));
     }
 
     private static string FormatNumber(double value)
@@ -468,16 +471,16 @@ public partial class LivePreviewViewModel : ObservableObject
         Inspector.SetFamily(SelectedFamily);
         string discName = DiscFamilyLabel;
         string inputName = IsCalibrationPreview
-            ? $"{discName} 源图片"
+            ? L.F($"{discName} 源图片")
             : SelectedFamily switch
             {
-                OpticalDiscFamily.Dvd => "生成的 DVD ISO",
-                OpticalDiscFamily.BluRay => "生成的蓝光 ISO",
-                _ => "生成的 CD 音轨或 ISO",
+                OpticalDiscFamily.Dvd => L.T("生成的 DVD ISO"),
+                OpticalDiscFamily.BluRay => L.T("生成的蓝光 ISO"),
+                _ => L.T("生成的 CD 音轨或 ISO"),
             };
-        ResultPreviewTitle = $"预览 - {discName}";
-        ResultPreviewPlaceholderText = $"请先选择 {inputName}。";
-        StatusText = $"等待 {inputName}";
+        ResultPreviewTitle = L.F($"预览 - {discName}");
+        ResultPreviewPlaceholderText = L.F($"请先选择 {inputName}。");
+        StatusText = L.F($"等待 {inputName}");
         RaiseEmptyStateAction();
 
         if (!clearResult)
@@ -507,7 +510,7 @@ public partial class LivePreviewViewModel : ObservableObject
         _livePreviewTimer.Stop();
         _livePreviewRevision++;
         _isLivePreviewReady = false;
-        StatusText = "参数已变化，准备刷新…";
+        StatusText = L.T("参数已变化，准备刷新…");
         _livePreviewTimer.Start();
     }
 
@@ -605,7 +608,7 @@ public partial class LivePreviewViewModel : ObservableObject
         string outputPath = Path.Combine(
             TempFiles.LivePreviewDirectory,
             $"cd-live-preview-{revision}.png");
-        StatusText = $"正在刷新 {outputSize} px 实时预览…";
+        StatusText = L.F($"正在刷新 {outputSize} px 实时预览…");
         bool keepOutput = false;
         try
         {
@@ -644,18 +647,18 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, trackPath, "预览 - CD", overlay);
+            PublishPreview(outputPath, trackPath, L.T("预览 - CD"), overlay);
             keepOutput = true;
-            StatusText = $"已实时更新 · 读回模拟 · {(dataImage ? "CD 数据盘" : deinterleave ? "逆交织" : "纯音轨")}"
-                + $" · {outputSize} px · 每扇区 {samplesPerSector} 个采样";
+            StatusText = L.F($"已实时更新 · 读回模拟 · {(dataImage ? L.T("CD 数据盘") : deinterleave ? L.T("逆交织") : L.T("纯音轨"))}")
+                + L.F($" · {outputSize} px · 每扇区 {samplesPerSector} 个采样");
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception exception)
         {
-            StatusText = $"实时预览失败：{exception.Message}";
-            _shell.AppendLog($"[{DateTime.Now:HH:mm:ss}] 实时预览失败：{exception}\n");
+            StatusText = L.F($"实时预览失败：{exception.Message}");
+            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 实时预览失败：{exception}\n"));
         }
         finally
         {
@@ -693,7 +696,7 @@ public partial class LivePreviewViewModel : ObservableObject
         string outputPath = Path.Combine(
             TempFiles.LivePreviewDirectory,
             $"cd-live-warp-{revision}.png");
-        StatusText = $"正在刷新 {outputSize} px 标定预览…";
+        StatusText = L.F($"正在刷新 {outputSize} px 标定预览…");
         bool keepOutput = false;
         try
         {
@@ -727,19 +730,19 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, imagePath, "预览 - CD", plan is not null);
+            PublishPreview(outputPath, imagePath, L.T("预览 - CD"), plan is not null);
             keepOutput = true;
-            StatusText = $"已实时更新 · 标定预览 · 灰度 {tone.Levels} 级"
-                + $" · 抖动 {tone.DitherStrength * 100:0}% · {outputSize} px"
-                + $" · 每扇区 {samplesPerSector} 个采样";
+            StatusText = L.F($"已实时更新 · 标定预览 · 灰度 {tone.Levels} 级")
+                + L.F($" · 抖动 {tone.DitherStrength * 100:0}% · {outputSize} px")
+                + L.F($" · 每扇区 {samplesPerSector} 个采样");
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception exception)
         {
-            StatusText = $"实时预览失败：{exception.Message}";
-            _shell.AppendLog($"[{DateTime.Now:HH:mm:ss}] 实时预览失败：{exception}\n");
+            StatusText = L.F($"实时预览失败：{exception.Message}");
+            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 实时预览失败：{exception}\n"));
         }
         finally
         {
@@ -793,7 +796,7 @@ public partial class LivePreviewViewModel : ObservableObject
             return;
         }
 
-        StatusText = $"正在刷新 {outputSize} px DVD 实时预览…";
+        StatusText = L.F($"正在刷新 {outputSize} px DVD 实时预览…");
         bool keepOutput = false;
         try
         {
@@ -810,7 +813,7 @@ public partial class LivePreviewViewModel : ObservableObject
             });
             if (exitCode != 0)
             {
-                throw new InvalidOperationException("DVD 读回模拟引擎未能完成渲染。");
+                throw new InvalidOperationException(L.T("DVD 读回模拟引擎未能完成渲染。"));
             }
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -819,17 +822,17 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, isoPath, "预览 - DVD", overlay);
+            PublishPreview(outputPath, isoPath, L.T("预览 - DVD"), overlay);
             keepOutput = true;
-            StatusText = $"已实时更新 · 读回模拟 · CW · {outputSize} px · 每扇区 {samplesPerSector} 个采样";
+            StatusText = L.F($"已实时更新 · 读回模拟 · CW · {outputSize} px · 每扇区 {samplesPerSector} 个采样");
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception exception)
         {
-            StatusText = $"实时预览失败：{exception.Message}";
-            _shell.AppendLog($"[{DateTime.Now:HH:mm:ss}] DVD 实时预览失败：{exception}\n");
+            StatusText = L.F($"实时预览失败：{exception.Message}");
+            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] DVD 实时预览失败：{exception}\n"));
         }
         finally
         {
@@ -868,7 +871,7 @@ public partial class LivePreviewViewModel : ObservableObject
             return;
         }
 
-        StatusText = $"正在刷新 {outputSize} px DVD 标定预览…";
+        StatusText = L.F($"正在刷新 {outputSize} px DVD 标定预览…");
         bool keepOutput = false;
         try
         {
@@ -883,7 +886,7 @@ public partial class LivePreviewViewModel : ObservableObject
             });
             if (exitCode != 0)
             {
-                throw new InvalidOperationException("DVD 标定预览引擎未能完成渲染。");
+                throw new InvalidOperationException(L.T("DVD 标定预览引擎未能完成渲染。"));
             }
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -892,18 +895,18 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, imagePath, "预览 - DVD", filePlan is not null);
+            PublishPreview(outputPath, imagePath, L.T("预览 - DVD"), filePlan is not null);
             keepOutput = true;
-            StatusText = $"已实时更新 · 标定预览 · CW · 抖动 {_state.DvdTone.DitherStrength * 100:0}%"
-                + $" · {outputSize} px · 每扇区 {samplesPerSector} 个采样";
+            StatusText = L.F($"已实时更新 · 标定预览 · CW · 抖动 {_state.DvdTone.DitherStrength * 100:0}%")
+                + L.F($" · {outputSize} px · 每扇区 {samplesPerSector} 个采样");
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception exception)
         {
-            StatusText = $"实时预览失败：{exception.Message}";
-            _shell.AppendLog($"[{DateTime.Now:HH:mm:ss}] DVD 实时预览失败：{exception}\n");
+            StatusText = L.F($"实时预览失败：{exception.Message}");
+            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] DVD 实时预览失败：{exception}\n"));
         }
         finally
         {
@@ -941,8 +944,8 @@ public partial class LivePreviewViewModel : ObservableObject
         if (imagePath.Length == 0 || !File.Exists(imagePath))
         {
             string message = imagePath.Length == 0
-                ? "请先在设计页导入图片，合成图会自动填入。"
-                : "蓝光源图片不存在。";
+                ? L.T("请先在设计页导入图片，合成图会自动填入。")
+                : L.T("蓝光源图片不存在。");
             StatusText = message;
             if (!HasResultImage)
             {
@@ -963,7 +966,7 @@ public partial class LivePreviewViewModel : ObservableObject
             actual = ReadBluRayDisc(_state.BdTotalSectors,
                 _state.BdActualInnerRadius, _state.BdActualOuterRadius);
             outputSize = Math.Clamp(
-                ParameterParser.ParsePositiveInt(_state.BdPreviewSize, "预览尺寸"), 64, 8192);
+                ParameterParser.ParsePositiveInt(_state.BdPreviewSize, L.T("预览尺寸")), 64, MaximumPreviewSize);
             tone = _state.BluRayTone;
             invert = _state.BdInvertMapping;
             plan = PrepareBluRayProjectionPlan(generated);
@@ -988,7 +991,7 @@ public partial class LivePreviewViewModel : ObservableObject
         string outputPath = Path.Combine(
             TempFiles.LivePreviewDirectory,
             $"bd-live-projection-{revision}.png");
-        StatusText = $"正在刷新 {outputSize} px 蓝光设计投影…";
+        StatusText = L.F($"正在刷新 {outputSize} px 蓝光设计投影…");
         bool keepOutput = false;
         try
         {
@@ -1016,19 +1019,19 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, imagePath, "预览 - BD", plan.HasFileSystem);
+            PublishPreview(outputPath, imagePath, L.T("预览 - BD"), plan.HasFileSystem);
             keepOutput = true;
-            StatusText = $"已实时更新 · 设计投影 · 3T/6T 类别图"
-                + $" · {(invert ? "反转 3T/6T" : "标准 3T/6T")}"
-                + $" · {(tone.SrgbLinearization ? "sRGB 线性化 · " : string.Empty)}{outputSize} px";
+            StatusText = L.F($"已实时更新 · 设计投影 · 3T/6T 类别图")
+                + $" · {(invert ? L.T("反转 3T/6T") : L.T("标准 3T/6T"))}"
+                + $" · {(tone.SrgbLinearization ? L.T("sRGB 线性化 · ") : string.Empty)}{outputSize} px";
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception exception)
         {
-            StatusText = $"实时预览失败：{exception.Message}";
-            _shell.AppendLog($"[{DateTime.Now:HH:mm:ss}] 蓝光实时预览失败：{exception}\n");
+            StatusText = L.F($"实时预览失败：{exception.Message}");
+            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 蓝光实时预览失败：{exception}\n"));
         }
         finally
         {
@@ -1048,8 +1051,8 @@ public partial class LivePreviewViewModel : ObservableObject
         if (isoPath.Length == 0 || !File.Exists(isoPath))
         {
             string message = isoPath.Length == 0
-                ? "请先选择生成的蓝光 ISO（导出页生成后自动填入）。"
-                : "蓝光 ISO 文件不存在。";
+                ? L.T("请先选择生成的蓝光 ISO（导出页生成后自动填入）。")
+                : L.T("蓝光 ISO 文件不存在。");
             StatusText = message;
             if (!HasResultImage)
             {
@@ -1066,7 +1069,7 @@ public partial class LivePreviewViewModel : ObservableObject
             actual = ReadBluRayDisc(_state.BdTotalSectors,
                 _state.BdActualInnerRadius, _state.BdActualOuterRadius);
             outputSize = Math.Clamp(
-                ParameterParser.ParsePositiveInt(_state.BdPreviewSize, "预览尺寸"), 64, 8192);
+                ParameterParser.ParsePositiveInt(_state.BdPreviewSize, L.T("预览尺寸")), 64, MaximumPreviewSize);
         }
         catch (Exception exception) when (exception is FormatException
                                               or OverflowException
@@ -1085,7 +1088,7 @@ public partial class LivePreviewViewModel : ObservableObject
         string outputPath = Path.Combine(
             TempFiles.LivePreviewDirectory,
             $"bd-live-readback-{revision}.png");
-        StatusText = $"正在刷新 {outputSize} px 蓝光成品读回…";
+        StatusText = L.F($"正在刷新 {outputSize} px 蓝光成品读回…");
         bool keepOutput = false;
         try
         {
@@ -1107,17 +1110,17 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, isoPath, "预览 - BD", overlay);
+            PublishPreview(outputPath, isoPath, L.T("预览 - BD"), overlay);
             keepOutput = true;
-            StatusText = $"已实时更新 · 成品读回 · 3T/6T 类别图（非反射亮度） · {outputSize} px";
+            StatusText = L.F($"已实时更新 · 成品读回 · 3T/6T 类别图（非反射亮度） · {outputSize} px");
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception exception)
         {
-            StatusText = $"实时预览失败：{exception.Message}";
-            _shell.AppendLog($"[{DateTime.Now:HH:mm:ss}] 蓝光成品读回失败：{exception}\n");
+            StatusText = L.F($"实时预览失败：{exception.Message}");
+            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 蓝光成品读回失败：{exception}\n"));
         }
         finally
         {
@@ -1141,13 +1144,13 @@ public partial class LivePreviewViewModel : ObservableObject
 
     private DvdStreamingOptions ReadDvdPreviewGeometry(bool calibration)
     {
-        uint sectors = checked((uint)ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, "总扇区数"));
+        uint sectors = checked((uint)ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, L.T("总扇区数")));
         DvdStreamingOptions options = new(sectors,
-            ParameterParser.ParsePositiveDouble(calibration ? _state.DvdActualInnerRadius : _state.DvdInnerRadius, "内半径"),
-            ParameterParser.ParsePositiveDouble(calibration ? _state.DvdActualOuterRadius : _state.DvdOuterRadius, "外半径"),
-            PitchLinear: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchLinear : _state.DvdPitchLinear, "相对一次项"),
-            PitchQuadratic: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchQuadratic : _state.DvdPitchQuadratic, "相对二次项"),
-            PitchCubic: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchCubic : _state.DvdPitchCubic, "相对三次项"));
+            ParameterParser.ParsePositiveDouble(calibration ? _state.DvdActualInnerRadius : _state.DvdInnerRadius, L.T("内半径")),
+            ParameterParser.ParsePositiveDouble(calibration ? _state.DvdActualOuterRadius : _state.DvdOuterRadius, L.T("外半径")),
+            PitchLinear: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchLinear : _state.DvdPitchLinear, L.T("相对一次项")),
+            PitchQuadratic: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchQuadratic : _state.DvdPitchQuadratic, L.T("相对二次项")),
+            PitchCubic: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchCubic : _state.DvdPitchCubic, L.T("相对三次项")));
         options.Validate();
         return options;
     }
@@ -1155,17 +1158,17 @@ public partial class LivePreviewViewModel : ObservableObject
     private static BluRayDiscParameters ReadBluRayDisc(
         string sectorsText, string innerText, string outerText)
     {
-        long sectors = ParameterParser.ParsePositiveLong(sectorsText, "蓝光总扇区数");
+        long sectors = ParameterParser.ParsePositiveLong(sectorsText, L.T("蓝光总扇区数"));
         if (sectors > uint.MaxValue)
         {
-            throw new ArgumentOutOfRangeException("蓝光总扇区数", "总扇区数超出蓝光引擎支持范围。");
+            throw new ArgumentOutOfRangeException(L.T("蓝光总扇区数"), L.T("总扇区数超出蓝光引擎支持范围。"));
         }
 
         BluRayDiscParameters disc = new(
             checked((uint)sectors),
             1,
-            ParameterParser.ParsePositiveDouble(innerText, "蓝光内半径"),
-            ParameterParser.ParsePositiveDouble(outerText, "蓝光外半径"));
+            ParameterParser.ParsePositiveDouble(innerText, L.T("蓝光内半径")),
+            ParameterParser.ParsePositiveDouble(outerText, L.T("蓝光外半径")));
         disc.Validate();
         return disc;
     }
@@ -1199,28 +1202,28 @@ public partial class LivePreviewViewModel : ObservableObject
         samplesPerSector = 0;
         if (trackPath.Length == 0)
         {
-            message = "请先选择生成的 CD 音轨或 ISO（导出页生成后自动填入）。";
+            message = L.T("请先选择生成的 CD 音轨或 ISO（导出页生成后自动填入）。");
             return false;
         }
 
         if (!File.Exists(trackPath))
         {
-            message = "CD 音轨或 ISO 文件不存在。";
+            message = L.T("CD 音轨或 ISO 文件不存在。");
             return false;
         }
 
         try
         {
-            long sectors = ParameterParser.ParsePositiveLong(_state.CdSectors, "扇区数");
+            long sectors = ParameterParser.ParsePositiveLong(_state.CdSectors, L.T("扇区数"));
             parameters = new CdDiscParameters(
-                ParameterParser.ParsePositiveDouble(_state.CdInnerRadius, "内半径"),
-                ParameterParser.ParsePositiveDouble(_state.CdOuterRadius, "外半径"),
+                ParameterParser.ParsePositiveDouble(_state.CdInnerRadius, L.T("内半径")),
+                ParameterParser.ParsePositiveDouble(_state.CdOuterRadius, L.T("外半径")),
                 sectors);
             parameters.Validate();
 
-            int configuredSize = ParameterParser.ParsePositiveInt(_state.CdPreviewSize, "预览尺寸");
-            int configuredSamples = ParameterParser.ParsePositiveInt(_state.CdSamplesPerSector, "每扇区采样");
-            outputSize = Math.Clamp(configuredSize, 256, 1600);
+            int configuredSize = ParameterParser.ParsePositiveInt(_state.CdPreviewSize, L.T("预览尺寸"));
+            int configuredSamples = ParameterParser.ParsePositiveInt(_state.CdSamplesPerSector, L.T("每扇区采样"));
+            outputSize = Math.Clamp(configuredSize, 256, MaximumPreviewSize);
             samplesPerSector = Math.Clamp(configuredSamples, 1, 32);
 
             message = string.Empty;
@@ -1255,33 +1258,33 @@ public partial class LivePreviewViewModel : ObservableObject
         tone = _state.Tone;
         if (imagePath.Length == 0)
         {
-            message = "请先在设计页导入图片，合成图会自动填入。";
+            message = L.T("请先在设计页导入图片，合成图会自动填入。");
             return false;
         }
 
         if (!File.Exists(imagePath))
         {
-            message = "CD 源图片不存在。";
+            message = L.T("CD 源图片不存在。");
             return false;
         }
 
         try
         {
-            long sectors = ParameterParser.ParsePositiveLong(_state.CdSectors, "扇区数");
+            long sectors = ParameterParser.ParsePositiveLong(_state.CdSectors, L.T("扇区数"));
             generated = new CdDiscParameters(
-                ParameterParser.ParsePositiveDouble(_state.CdInnerRadius, "生成内半径"),
-                ParameterParser.ParsePositiveDouble(_state.CdOuterRadius, "生成外半径"),
+                ParameterParser.ParsePositiveDouble(_state.CdInnerRadius, L.T("生成内半径")),
+                ParameterParser.ParsePositiveDouble(_state.CdOuterRadius, L.T("生成外半径")),
                 sectors);
             actual = new CdDiscParameters(
-                ParameterParser.ParsePositiveDouble(_state.CdActualInnerRadius, "实测内半径"),
-                ParameterParser.ParsePositiveDouble(_state.CdActualOuterRadius, "实测外半径"),
+                ParameterParser.ParsePositiveDouble(_state.CdActualInnerRadius, L.T("实测内半径")),
+                ParameterParser.ParsePositiveDouble(_state.CdActualOuterRadius, L.T("实测外半径")),
                 sectors);
             generated.Validate();
             actual.Validate();
 
-            int configuredSize = ParameterParser.ParsePositiveInt(_state.CdPreviewSize, "预览尺寸");
-            int configuredSamples = ParameterParser.ParsePositiveInt(_state.CdSamplesPerSector, "每扇区采样");
-            outputSize = Math.Clamp(configuredSize, 256, 1600);
+            int configuredSize = ParameterParser.ParsePositiveInt(_state.CdPreviewSize, L.T("预览尺寸"));
+            int configuredSamples = ParameterParser.ParsePositiveInt(_state.CdSamplesPerSector, L.T("每扇区采样"));
+            outputSize = Math.Clamp(configuredSize, 256, MaximumPreviewSize);
             samplesPerSector = Math.Clamp(configuredSamples, 1, 32);
 
             message = string.Empty;
@@ -1308,37 +1311,37 @@ public partial class LivePreviewViewModel : ObservableObject
         samplesPerSector = 0;
         if (isoPath.Length == 0)
         {
-            message = "请先选择生成的 DVD ISO（导出页生成后自动填入）。";
+            message = L.T("请先选择生成的 DVD ISO（导出页生成后自动填入）。");
             return false;
         }
 
         if (!File.Exists(isoPath))
         {
-            message = "DVD ISO 文件不存在。";
+            message = L.T("DVD ISO 文件不存在。");
             return false;
         }
 
         try
         {
-            long totalSectorsValue = ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, "总扇区数");
+            long totalSectorsValue = ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, L.T("总扇区数"));
             if (totalSectorsValue > uint.MaxValue)
             {
-                throw new ArgumentOutOfRangeException("总扇区数", "总扇区数超出 DVD 引擎支持范围。");
+                throw new ArgumentOutOfRangeException(L.T("总扇区数"), L.T("总扇区数超出 DVD 引擎支持范围。"));
             }
 
-            double innerRadius = ParameterParser.ParsePositiveDouble(_state.DvdInnerRadius, "内半径");
-            double outerRadius = ParameterParser.ParsePositiveDouble(_state.DvdOuterRadius, "外半径");
+            double innerRadius = ParameterParser.ParsePositiveDouble(_state.DvdInnerRadius, L.T("内半径"));
+            double outerRadius = ParameterParser.ParsePositiveDouble(_state.DvdOuterRadius, L.T("外半径"));
             if (innerRadius >= outerRadius)
             {
-                throw new ArgumentOutOfRangeException("半径", "内半径必须小于外半径。");
+                throw new ArgumentOutOfRangeException(L.T("半径"), L.T("内半径必须小于外半径。"));
             }
 
             outputSize = Math.Clamp(
-                ParameterParser.ParsePositiveInt(_state.DvdPreviewSize, "预览尺寸"),
+                ParameterParser.ParsePositiveInt(_state.DvdPreviewSize, L.T("预览尺寸")),
                 256,
-                1600);
+                MaximumPreviewSize);
             samplesPerSector = Math.Clamp(
-                ParameterParser.ParsePositiveInt(_state.DvdSamplesPerSector, "每扇区采样"),
+                ParameterParser.ParsePositiveInt(_state.DvdSamplesPerSector, L.T("每扇区采样")),
                 1,
                 16);
 
@@ -1391,39 +1394,39 @@ public partial class LivePreviewViewModel : ObservableObject
         filePlan = null;
         if (imagePath.Length == 0)
         {
-            message = "请先在设计页导入图片，合成图会自动填入。";
+            message = L.T("请先在设计页导入图片，合成图会自动填入。");
             return false;
         }
 
         if (!File.Exists(imagePath))
         {
-            message = "DVD 源图片不存在。";
+            message = L.T("DVD 源图片不存在。");
             return false;
         }
 
         try
         {
-            long totalSectorsValue = ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, "总扇区数");
+            long totalSectorsValue = ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, L.T("总扇区数"));
             if (totalSectorsValue > uint.MaxValue)
             {
-                throw new ArgumentOutOfRangeException("总扇区数", "总扇区数超出 DVD 引擎支持范围。");
+                throw new ArgumentOutOfRangeException(L.T("总扇区数"), L.T("总扇区数超出 DVD 引擎支持范围。"));
             }
 
-            double generatedInner = ParameterParser.ParsePositiveDouble(_state.DvdInnerRadius, "生成内半径");
-            double generatedOuter = ParameterParser.ParsePositiveDouble(_state.DvdOuterRadius, "生成外半径");
-            double actualInner = ParameterParser.ParsePositiveDouble(_state.DvdActualInnerRadius, "实测内半径");
-            double actualOuter = ParameterParser.ParsePositiveDouble(_state.DvdActualOuterRadius, "实测外半径");
+            double generatedInner = ParameterParser.ParsePositiveDouble(_state.DvdInnerRadius, L.T("生成内半径"));
+            double generatedOuter = ParameterParser.ParsePositiveDouble(_state.DvdOuterRadius, L.T("生成外半径"));
+            double actualInner = ParameterParser.ParsePositiveDouble(_state.DvdActualInnerRadius, L.T("实测内半径"));
+            double actualOuter = ParameterParser.ParsePositiveDouble(_state.DvdActualOuterRadius, L.T("实测外半径"));
             if (generatedInner >= generatedOuter || actualInner >= actualOuter)
             {
-                throw new ArgumentOutOfRangeException("半径", "内半径必须小于外半径。");
+                throw new ArgumentOutOfRangeException(L.T("半径"), L.T("内半径必须小于外半径。"));
             }
 
             outputSize = Math.Clamp(
-                ParameterParser.ParsePositiveInt(_state.DvdPreviewSize, "预览尺寸"),
+                ParameterParser.ParsePositiveInt(_state.DvdPreviewSize, L.T("预览尺寸")),
                 256,
-                1600);
+                MaximumPreviewSize);
             samplesPerSector = Math.Clamp(
-                ParameterParser.ParsePositiveInt(_state.DvdSamplesPerSector, "每扇区采样"),
+                ParameterParser.ParsePositiveInt(_state.DvdSamplesPerSector, L.T("每扇区采样")),
                 1,
                 16);
 
@@ -1500,11 +1503,11 @@ public partial class LivePreviewViewModel : ObservableObject
         ResultImage = null;
         HasResultImage = false;
         _downloadablePreview = false;
-        ResultPreviewTitle = "输出预览";
+        ResultPreviewTitle = L.T("输出预览");
         ResultPreviewPath = string.Empty;
         ResultPreviewPlaceholderText = ShellViewModel.IsPngPath(outputPath)
-            ? "正在生成图片预览…"
-            : "当前任务生成文件，不包含可视图片预览。";
+            ? L.T("正在生成图片预览…")
+            : L.T("当前任务生成文件，不包含可视图片预览。");
     }
 
     internal bool ShowResultPreview(string outputPath)
@@ -1532,8 +1535,8 @@ public partial class LivePreviewViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            ResultPreviewPlaceholderText = "图片已生成，但无法在界面中加载。";
-            _shell.AppendLog($"[{DateTime.Now:HH:mm:ss}] 预览加载失败：{exception.Message}\n");
+            ResultPreviewPlaceholderText = L.T("图片已生成，但无法在界面中加载。");
+            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 预览加载失败：{exception.Message}\n"));
             return false;
         }
     }
@@ -1581,14 +1584,14 @@ public partial class LivePreviewViewModel : ObservableObject
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            _shell.ShowToast("导出失败", exception.Message, ToastKind.Error);
-            _shell.AppendLog($"[{DateTime.Now:HH:mm:ss}] 预览导出失败：{exception.Message}\n");
+            _shell.ShowToast(L.T("导出失败"), exception.Message, ToastKind.Error);
+            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 预览导出失败：{exception.Message}\n"));
             return;
         }
 
         _shell.SetLastOutputPath(destination);
-        _shell.ShowToast("预览已导出", destination, ToastKind.Success);
-        _shell.AppendLog($"[{DateTime.Now:HH:mm:ss}] 预览已导出：{destination}\n");
+        _shell.ShowToast(L.T("预览已导出"), destination, ToastKind.Success);
+        _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 预览已导出：{destination}\n"));
     }
 
     /// <summary>The picture the preview is derived from: the artifact being read back, or the

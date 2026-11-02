@@ -1,4 +1,5 @@
 using System.IO;
+using DiscImageStudio.Localization;
 
 namespace DiscImageStudio.Services;
 
@@ -17,7 +18,10 @@ public sealed record AppSettings
 
     public int SchemaVersion { get; init; } = CurrentSchemaVersion;
 
-    public AppTheme Theme { get; init; } = AppTheme.Dark;
+    public AppTheme Theme { get; init; } = AppTheme.System;
+
+    /// <summary>UI language: zh-CN, zh-TW, en, or system. Unset preferences follow the system.</summary>
+    public string Language { get; init; } = L.SystemLanguage;
 
     /// <summary>Default folder for the new-project dialog; empty means the system Documents
     /// folder (see <see cref="Core.ProjectJsonStore.GetDefaultProjectsDirectory"/>).</summary>
@@ -33,7 +37,8 @@ public sealed record AppSettings
     public AppSettings Normalize() => this with
     {
         SchemaVersion = CurrentSchemaVersion,
-        Theme = Enum.IsDefined(Theme) ? Theme : AppTheme.Dark,
+        Theme = Enum.IsDefined(Theme) ? Theme : AppTheme.System,
+        Language = L.NormalizeLanguage(Language),
         DefaultProjectDirectory = NormalizeDirectory(DefaultProjectDirectory),
         CacheDirectory = NormalizeDirectory(CacheDirectory),
     };

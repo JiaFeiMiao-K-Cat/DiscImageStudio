@@ -1,3 +1,4 @@
+using DiscImageStudio.Localization;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -234,11 +235,11 @@ public partial class MainWindow : Window
             : kind == DiscImageStudio.Burning.OpticalBurnMediaKind.BluRayData ? 12219392L * 2048 : 2295104L * 2048;
         _shell.SetBusy(true);
         _shell.BeginBurnDockJob(kind, total);
-        _shell.ReportBurnProgress(new("buffer", "正在准备防断流缓冲区…", 0, total));
+        _shell.ReportBurnProgress(new("buffer", L.T("正在准备防断流缓冲区…"), 0, total));
         if (phase != "buffer")
-            _shell.ReportBurnProgress(new("write", "刻录机开始写入。", total / 3, total, 8.25 * 1024 * 1024));
+            _shell.ReportBurnProgress(new("write", L.T("刻录机开始写入。"), total / 3, total, 8.25 * 1024 * 1024));
         if (phase == "finalize")
-            _shell.ReportBurnProgress(new("finalize", "正在刷新缓存并关闭刻录会话…", total / 3, total));
+            _shell.ReportBurnProgress(new("finalize", L.T("正在刷新缓存并关闭刻录会话…"), total / 3, total));
     }
 
     /// <summary>Snapshot hook: forces the hovered state on the first recent-project card
@@ -504,7 +505,7 @@ public partial class MainWindow : Window
         if (!_shell.IsProjectOpen || SidebarBorder.Visibility != Visibility.Visible
             || ProjectHeaderButton.Visibility != Visibility.Visible)
         {
-            _shell.ShowToast("标定参数已应用", "本工程的参数已更新。", ToastKind.Success);
+            _shell.ShowToast(L.T("标定参数已应用"), L.T("本工程的参数已更新。"), ToastKind.Success);
             return;
         }
 
@@ -576,7 +577,7 @@ public partial class MainWindow : Window
         menu.HorizontalOffset = Math.Min(0, target.ActualWidth - menu.ActualWidth);
     }
 
-    private void AppMenuSettings_Click(object sender, RoutedEventArgs e) => OpenSettingsDialog();
+    private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettingsDialog();
 
     private void AppMenuAbout_Click(object sender, RoutedEventArgs e)
     {
@@ -588,6 +589,8 @@ public partial class MainWindow : Window
     /// points new cache writes at the chosen folder.</summary>
     private void OpenSettingsDialog()
     {
+        if (BurnConfirmModal.IsOpen) return;
+
         SettingsViewModel viewModel = new(_settings, _settingsStore)
         {
             IsBusyProvider = () => _shell.IsBusy,
@@ -619,17 +622,24 @@ public partial class MainWindow : Window
 
     private void ApplySettings(AppSettings settings)
     {
+        bool languageChanged = _settings.Language != settings.Language;
         _settings = settings;
         if (Application.Current is { } application)
         {
             ThemeResolver.Apply(application, settings.Theme);
         }
 
+        if (languageChanged)
+        {
+            _shell.ShowToast(Localization.L.T("语言设置已保存"),
+                Localization.L.T("重启应用后生效。"), ToastKind.Info);
+        }
+
         string cacheDirectory = TempFiles.TryConfigureCacheDirectory(settings.CacheDirectory);
         if (settings.CacheDirectory.Length > 0
             && !string.Equals(cacheDirectory, settings.CacheDirectory, StringComparison.OrdinalIgnoreCase))
         {
-            _shell.ShowToast("缓存位置不可用", "已改用系统临时目录。", ToastKind.Warning);
+            _shell.ShowToast(L.T("缓存位置不可用"), L.T("已改用系统临时目录。"), ToastKind.Warning);
         }
     }
 
@@ -890,6 +900,6 @@ public partial class MainWindow : Window
         BackHomeButton.HorizontalAlignment = collapsed ? HorizontalAlignment.Center : HorizontalAlignment.Left;
         CollapseLeftIcon.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
         CollapseRightIcon.Visibility = collapsed ? Visibility.Visible : Visibility.Collapsed;
-        SidebarCollapseToggle.ToolTip = collapsed ? "展开侧边栏" : "收起侧边栏";
+        SidebarCollapseToggle.ToolTip = collapsed ? L.T("展开侧边栏") : L.T("收起侧边栏");
     }
 }

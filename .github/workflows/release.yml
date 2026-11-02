@@ -126,18 +126,35 @@ jobs:
           $notes = @(
             $metadata.Notes
             ''
-            '### 下载与运行'
+            '### 下载与运行 / Download and run'
             ''
             '下载下方 win-x64.exe 后直接运行，支持 Windows 10 2004+ / Windows 11 x64，已内置 .NET 运行时。'
             '此便携 EXE 未进行代码签名。即时流式刻录仍为实验性功能；硬件实测范围以仓库验证记录为准。'
             ''
+            'Download the win-x64.exe below and run it directly on Windows 10 2004+ / Windows 11 x64. The .NET runtime is included.'
+            'This portable EXE is unsigned. Live streaming burn remains experimental; see the repository validation records for tested hardware coverage.'
+            ''
             '### SHA-256'
+            ''
+            '下载后运行以下命令，并将结果与下方校验值比较。'
+            'After downloading, run this command and compare the result with the checksum below.'
+            ''
+            '```powershell'
+            "Get-FileHash .\DiscImageStudio-$($metadata.Tag)-win-x64.exe -Algorithm SHA256"
+            '```'
             ''
             '```text'
             $checksum
             '```'
             ''
-            "Source commit: $env:RELEASE_COMMIT"
+            '### 源代码与构建 / Source and build'
+            ''
+            '从本页的 Source code (zip / tar.gz) 下载完整对应源代码；构建说明见下方 README 链接。'
+            'Download the complete corresponding source from Source code (zip / tar.gz) on this page. Build instructions are in the README linked below.'
+            ''
+            "构建说明 / Build instructions: [简体中文 README]($env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/blob/$env:RELEASE_COMMIT/README.md) | [English README]($env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/blob/$env:RELEASE_COMMIT/README.en.md)"
+            ''
+            "源码提交 / Source commit: $env:RELEASE_COMMIT"
           ) -join "`n"
           Set-Content -LiteralPath (Join-Path $directory 'release-notes.md') -Value $notes -Encoding utf8
         env:

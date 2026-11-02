@@ -1,6 +1,7 @@
 <Window x:Class="DiscImageStudio.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:DiscImageStudio.Localization"
         xmlns:controls="clr-namespace:DiscImageStudio.Controls"
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         Title="Disc Image Studio"
@@ -17,11 +18,9 @@
     </WindowChrome.WindowChrome>
 
     <Window.Resources>
-        <!-- Application menu shared by the home screen and every workspace. The window
-             owns it because both entries act on the window (settings dialog, about dialog). -->
+        <!-- About remains in the shared application menu. Settings has a direct title-bar button. -->
         <ContextMenu x:Key="AppMenu">
-            <MenuItem Header="设置…" InputGestureText="Ctrl+," Click="AppMenuSettings_Click" />
-            <MenuItem Header="关于…" Click="AppMenuAbout_Click" />
+            <MenuItem Header="{loc:Text Xaml.About2}" Click="AppMenuAbout_Click" />
         </ContextMenu>
     </Window.Resources>
 
@@ -32,6 +31,7 @@
         </Grid.RowDefinitions>
 
         <controls:TitleBar Grid.Row="0" ProjectTitle="{Binding ProjectTitleDisplay}"
+                           ShowSettingsButton="True" SettingsRequested="Settings_Click"
                            ShowAppMenu="True" AppMenuRequested="TitleBar_AppMenuRequested" />
 
         <Grid Grid.Row="1">
@@ -62,7 +62,7 @@
                             </Grid.ColumnDefinitions>
                             <Button x:Name="BackHomeButton" Style="{StaticResource GhostButton}"
                                     Width="32" Height="32" Padding="0" Focusable="False"
-                                    AutomationProperties.Name="返回主页" ToolTip="返回主页"
+                                    AutomationProperties.Name="{loc:Text Xaml.BackToHome}" ToolTip="{loc:Text Xaml.BackToHome}"
                                     Command="{Binding BackHomeCommand}">
                                 <iconPacks:PackIconLucide Kind="ChevronLeft" Width="17" Height="17"
                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
@@ -70,7 +70,7 @@
                             <Grid x:Name="ProjectHeaderHost" Grid.Column="1" Margin="8,0,0,0">
                                 <Button x:Name="ProjectHeaderButton" Style="{StaticResource TileButton}"
                                         Padding="6,2" Focusable="False"
-                                        ToolTip="工程设置"
+                                        ToolTip="{loc:Text Xaml.ProjectSettings}"
                                         Click="EditProject_Click">
                                     <StackPanel>
                                         <TextBlock x:Name="ProjectNameText" FontSize="14" FontWeight="Bold"
@@ -82,7 +82,7 @@
                                                 <TextBlock x:Name="ProjectFamilyText"
                                                            Style="{StaticResource BadgeText}" />
                                             </Border>
-                                            <TextBlock x:Name="ProjectDirtyText" Text="未保存"
+                                            <TextBlock x:Name="ProjectDirtyText" Text="{loc:Text Xaml.Unsaved}"
                                                        Style="{StaticResource MicroText}"
                                                        Foreground="{DynamicResource WarningBrush}"
                                                        Margin="6,0,0,0" Visibility="Collapsed" />
@@ -124,7 +124,7 @@
                                         <iconPacks:PackIconLucide Kind="Check" Width="10" Height="10"
                                                                   VerticalAlignment="Center"
                                                                   Foreground="{DynamicResource SuccessBrush}" />
-                                        <TextBlock Text="参数已更新" Style="{StaticResource BadgeText}"
+                                        <TextBlock Text="{loc:Text Xaml.ParametersUpdated}" Style="{StaticResource BadgeText}"
                                                    Foreground="{DynamicResource SuccessBrush}"
                                                    VerticalAlignment="Center" Margin="4,0,0,0" />
                                     </StackPanel>
@@ -141,21 +141,21 @@
                         </Grid>
 
                         <!-- Icon-only rows keep the collapsed 60px bar a flat rail. -->
-                        <controls:SideNavItem x:Name="NavDesign" LabelText="设计"
+                        <controls:SideNavItem x:Name="NavDesign" LabelText="{loc:Text Xaml.Design}"
                                               IconKind="Palette" />
-                        <controls:SideNavItem x:Name="NavPreview" LabelText="预览"
+                        <controls:SideNavItem x:Name="NavPreview" LabelText="{loc:Text Xaml.Preview}"
                                               IconKind="Eye" />
-                        <controls:SideNavItem x:Name="NavExport" LabelText="导出"
+                        <controls:SideNavItem x:Name="NavExport" LabelText="{loc:Text Xaml.Export}"
                                               IconKind="FileDown" />
-                        <controls:SideNavItem x:Name="NavBurn" LabelText="刻录"
+                        <controls:SideNavItem x:Name="NavBurn" LabelText="{loc:Text Xaml.Burn}"
                                               IconKind="Flame" />
-                        <controls:SideNavItem x:Name="NavCalibration" LabelText="标定"
+                        <controls:SideNavItem x:Name="NavCalibration" LabelText="{loc:Text Xaml.Calibration}"
                                               IconKind="Crosshair" />
                     </StackPanel>
 
                     <Button x:Name="SidebarCollapseToggle" Grid.Row="1" Height="40" Margin="0,8,0,16"
                             Style="{StaticResource GhostButton}" Padding="0" Focusable="False"
-                            ToolTip="收起侧边栏" Click="SidebarCollapseToggle_Click">
+                            ToolTip="{loc:Text Xaml.CollapseSidebar}" Click="SidebarCollapseToggle_Click">
                         <Grid>
                             <iconPacks:PackIconLucide x:Name="CollapseLeftIcon" Kind="ChevronLeft"
                                                       Width="20" Height="20" HorizontalAlignment="Left"
