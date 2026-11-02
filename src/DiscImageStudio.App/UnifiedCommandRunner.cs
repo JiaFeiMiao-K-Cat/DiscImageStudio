@@ -1,20 +1,12 @@
 using DiscImageStudio.Burning;
-using DiscImageStudio.BluRay;
-using DiscImageStudio.Cd;
 using DiscImageStudio.Core;
-using DiscImageStudio.Dvd;
 using DiscImageStudio.ViewModels;
 
 namespace DiscImageStudio;
 
 internal static class UnifiedCommandRunner
 {
-    private static readonly DiscModuleCatalog Modules = new(
-    [
-        new CdDiscModule(),
-        new DvdDiscModule(),
-        new BluRayDiscModule((path, token) => Services.BluRayImageLoader.Load(path, token)),
-    ]);
+    private static DiscModuleCatalog Modules => ConsoleModuleRunner.Catalog;
 
     internal static bool SupportsCancellation(string command)
         => Modules.Resolve(command).Descriptor.SupportsCancellation;
@@ -101,38 +93,7 @@ internal static class UnifiedCommandRunner
                 return PrintBurnBuildInfo();
             }
 
-            DiscJobRequest request = new(command, arguments.Skip(1));
-            ImmediateProgress progress = new(value =>
-            {
-                if (!string.IsNullOrWhiteSpace(value.Message))
-                {
-                    Console.WriteLine(value.Message);
-                }
-            });
-            using CancellationTokenSource cancellation = new();
-            bool supportsCancellation = Modules.Resolve(command).Descriptor.SupportsCancellation;
-            ConsoleCancelEventHandler cancelHandler = (_, e) =>
-            {
-                if (!supportsCancellation) return;
-                e.Cancel = true;
-                cancellation.Cancel();
-            };
-            DiscJobResult result;
-            Console.CancelKeyPress += cancelHandler;
-            try
-            {
-                result = Modules.ExecuteAsync(request, progress, cancellation.Token).GetAwaiter().GetResult();
-            }
-            finally
-            {
-                Console.CancelKeyPress -= cancelHandler;
-            }
-            if (!string.IsNullOrWhiteSpace(result.Summary))
-            {
-                Console.WriteLine(result.Summary);
-            }
-
-            return result.ExitCode;
+            return ConsoleModuleRunner.Run(arguments);
         }
         catch (OperationCanceledException)
         {
@@ -287,9 +248,4 @@ internal static class UnifiedCommandRunner
         return false;
     }
 
-    private sealed class ImmediateProgress(Action<DiscJobProgress> report)
-        : IProgress<DiscJobProgress>
-    {
-        public void Report(DiscJobProgress value) => report(value);
-    }
 }

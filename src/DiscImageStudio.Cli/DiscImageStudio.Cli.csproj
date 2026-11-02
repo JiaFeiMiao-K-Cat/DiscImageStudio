@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>disc-image-studio</AssemblyName>
+    <RootNamespace>DiscImageStudio.Cli</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DiscImageStudio.Core/DiscImageStudio.Core.csproj" />
+    <ProjectReference Include="../DiscImageStudio.ImageIO/DiscImageStudio.ImageIO.csproj" />
+    <ProjectReference Include="../DiscImageStudio.Cd/DiscImageStudio.Cd.csproj" />
+    <ProjectReference Include="../DiscImageStudio.Dvd/DiscImageStudio.Dvd.csproj" />
+    <ProjectReference Include="../DiscImageStudio.BluRay/DiscImageStudio.BluRay.csproj" />
+    <Compile Include="../Shared/BluRayImageLoader.cs" Link="Services/BluRayImageLoader.cs" />
+    <Compile Include="../Shared/ConsoleModuleRunner.cs" Link="ConsoleModuleRunner.cs" />
+  </ItemGroup>
+</Project>

@@ -16,7 +16,7 @@
 
 GitHub Actions 从配置读取完整版本，自动创建对应的 `vA.B.C` 或 `vA.B.C-rc.N` 等标签。发布 EXE 的信息版本保留预发布后缀；文件版本与程序集版本使用四段数字 `A.B.C.0`。仓库数字段限制为 `0..65534`，以兼容 .NET 程序集版本；提交 Microsoft Store 时第一段还必须大于 `0`，MSIX 版本为 `A.B.C.0`。
 
-## GitHub Actions 发布 EXE
+## GitHub Actions 发布 Windows 应用和跨平台 CLI
 
 ### 准备发布
 
@@ -57,26 +57,33 @@ GitHub Actions 从配置读取完整版本，自动创建对应的 `vA.B.C` 或 
 
 `Get-ReleaseMetadata.ps1` 提取整个版本段，仅在下一条 `## ` 标题或文件末尾停止，因此 `### 中文` 和 `### English` 都会完整进入 Release 说明。不要将语言标题写成 `## 中文` 或 `## English`，否则会提前结束版本段。当前元数据检查验证版本段唯一、日期有效且内容非空；两种语言是否齐全、条目是否一致仍需发布评审确认。
 
-工作流在双语日志之后附加中英文下载与运行说明、SHA-256 核对命令，以及对应源代码和构建说明。下载要求、未签名状态和实验性刻录限制在两种语言中保持一致。
+工作流在双语日志之后附加中英文下载与运行说明、SHA-256 核对命令，以及对应源代码和构建说明。下载说明须用两种语言明确标注 Linux 和 macOS CLI 为实验性功能，并分别说明 Windows EXE 的签名状态及即时刻录的实验性限制。
 
 ### 自动检查与草稿
 
 `.github/workflows/release.yml` 关注 `main` 上对 `Directory.Build.props` 或 `CHANGELOG.md` 的变更，但只有该次 push **同时修改版本配置与发布日志，且完整版本变化**才进入发布流程。普通代码 push 只运行常规构建检查；仅补充 `Unreleased` 或未改版本的配置调整不会生成 Release。
 
-工作流从配置读取完整版本，校验格式及对应的非空、带日期 Changelog 段，确认发布提交属于 `origin/main`，并复用 `build.yml` 的构建与回归检查。全部通过后才生成发布 EXE、对应版本标签与草稿，无需手动创建或推送标签。
+工作流从配置读取完整版本，校验格式及对应的非空、带日期 Changelog 段，确认发布提交属于 `origin/main`，并复用 `build.yml` 的构建与回归检查。全部通过后才创建对应版本标签与草稿。
 
-GitHub Actions 生成包含 .NET 运行时的 Windows x64 单文件 EXE，无需另装 .NET。打包后将最终 EXE 单独放入隔离目录运行，执行自检、两扇区 RAW/WAV 生成检查及 GUI 截图检查，确认下载单个文件即可使用，再计算 SHA-256。GitHub Release 只附加该 EXE，例如：
+Windows x64 继续提供自包含的单文件 EXE。打包脚本在隔离目录运行最终 EXE，执行自检、两扇区 RAW/WAV 生成检查及 GUI 截图检查。
+
+Linux 与 macOS 的实验性离线 CLI 在各自的 x64、Arm64 runner 上构建，发布包自带 .NET 运行时。每个 runner 解开刚生成的 tar.gz，在仓库目录外运行 `--help`、DVD 自检以及 CD 音轨、DVD 镜像和蓝光镜像生成测试。发布流程收集通过这些测试的原始压缩包，并将它们与 Windows EXE 一同附加到草稿。例如：
 
 ```text
-DiscImageStudio-v1.0.27-win-x64.exe
+DiscImageStudio-v1.3.6-win-x64.exe
+DiscImageStudio-CLI-v1.3.6-linux-x64.tar.gz
+DiscImageStudio-CLI-v1.3.6-linux-arm64.tar.gz
+DiscImageStudio-CLI-v1.3.6-osx-x64.tar.gz
+DiscImageStudio-CLI-v1.3.6-osx-arm64.tar.gz
+SHA256SUMS.txt
 ```
 
-SHA-256 校验值写入 Release 说明，供下载后核对。工作流使用内置 `GITHUB_TOKEN` 创建 **GitHub Release 草稿**，无需配置个人访问令牌（PAT）。预发布标签自动设置 prerelease 标志；正式标签创建正式版草稿。它不会自动公开草稿，也不会提交到 Microsoft Store 或发布自签名测试证书。
+工作流合并并验证各平台的 SHA-256 校验值，写入 Release 说明和附件 `SHA256SUMS.txt`。工作流使用内置 `GITHUB_TOKEN` 创建 **GitHub Release 草稿**，无需配置个人访问令牌（PAT）。预发布标签自动设置 prerelease 标志，正式标签创建正式版草稿。
 
-维护者在 GitHub 的 [Releases 页面](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases) 检查草稿中的版本、发布说明、EXE 和校验值，并下载验证启动后，再手动公开。可用下列命令计算下载文件的 SHA-256，与 Release 说明中的值比较：
+维护者在 GitHub 的 [Releases 页面](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases) 检查草稿中的版本、发布说明、各平台附件和校验值，并下载验证启动后，再手动公开。可用下列命令计算 Windows 下载文件的 SHA-256，与 Release 说明中的值比较：
 
 ```powershell
-Get-FileHash .\DiscImageStudio-v1.0.27-win-x64.exe -Algorithm SHA256
+Get-FileHash .\DiscImageStudio-v1.3.6-win-x64.exe -Algorithm SHA256
 ```
 
 ### 失败重试与更正
@@ -95,7 +102,7 @@ Get-FileHash .\DiscImageStudio-v1.0.27-win-x64.exe -Algorithm SHA256
 powershell -ExecutionPolicy Bypass -File packaging/Build-Release.ps1
 ```
 
-脚本自动使用 `Directory.Build.props` 中的版本。例如配置为 `1.0.26` 时，输出目录为 `artifacts/release/v1.0.26/`。脚本构建并单独验证自包含 `win-x64` EXE，生成 `DiscImageStudio-v1.0.26-win-x64.exe` 和 `SHA256SUMS.txt`；校验文件供本地检查和工作流生成 Release 说明使用，不作为 Release 附件。本地演练不要求已有版本标签或 Changelog 发布段，也不会创建 GitHub Release；正式发布必须满足上面的全部检查。
+脚本自动使用 `Directory.Build.props` 中的版本。例如配置为 `1.0.26` 时，输出目录为 `artifacts/release/v1.0.26/`。脚本构建并单独验证自包含 `win-x64` EXE，生成 `DiscImageStudio-v1.0.26-win-x64.exe` 和该文件的 `SHA256SUMS.txt`。正式发布时，工作流将四个平台 CLI 压缩包的校验值追加到清单中。
 
 ## Microsoft Store MSIX
 

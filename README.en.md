@@ -6,10 +6,10 @@
 
 <h2>An all-in-one tool for generating and burning visible images onto optical discs</h2>
 
-Disc Image Studio is a Windows tool for generating and burning images onto optical disc surfaces. It helps you etch images visible to the naked eye onto **any** DVD / CD / Blu-ray disc using **any** optical disc recorder.
+The Windows desktop app designs and burns disc images. The **experimental Linux and macOS CLI** generates CD, DVD and Blu-ray images offline.
 
 ![.NET version](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)
-![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078d6?style=flat-square)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-0078d6?style=flat-square)
 ![Language](https://img.shields.io/badge/Language-C%23-68217A?style=flat-square)
 ![GitHub Repo size](https://img.shields.io/github/repo-size/JiaFeiMiao-K-Cat/DiscImageStudio?style=flat-square&color=3cb371)
 ![Contributions welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=flat-square)
@@ -43,7 +43,7 @@ Disc Image Studio converts an image into data that meets the physical-layer cons
 
 ## Quick Start
 
-Download the Release EXE from [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases), extract it, and run it directly. The EXE includes the .NET runtime.
+On Windows, download and run `win-x64.exe`. On Linux or macOS, download the **experimental CLI** archive for your CPU, extract it and run `./disc-image-studio --help`. Each release package includes the .NET runtime. [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 ### 1. Create a Project
 
@@ -98,7 +98,7 @@ See the [assisted calibration guide](docs/CALIBRATION.md) for the workflow and p
 
 ## System and Hardware Requirements
 
-- Windows 10 2004 (2004/20H1, 19041) or later, or Windows 11.
+- The desktop app requires Windows 10 2004 (2004/20H1, 19041) or later, or Windows 11.
 - Building: .NET 10 SDK (`global.json` pins 10.0.x). A non-self-contained GUI built from source requires the .NET 10 Windows Desktop Runtime. The Release EXE includes the runtime, so a separate .NET installation is unnecessary.
 - Live burning requires a CD / DVD / BD recorder recognized by Windows and blank media. BD-R requires a blank single-layer disc that supports sequential writing.
 
@@ -120,7 +120,19 @@ See the [release guide](docs/RELEASING.md) for versioning rules, CI-generated EX
 
 ## Command Line
 
-The unified program opens the GUI when launched without arguments and serves as an automation tool when arguments are supplied:
+For Linux with glibc, select `linux-x64` or `linux-arm64`. For macOS, select `osx-arm64` for Apple Silicon or `osx-x64` for Intel. The CLI writes image files and audio tracks that you can burn with a compatible tool.
+
+Run the CLI from source with the .NET 10 SDK
+
+```sh
+dotnet run --project src/DiscImageStudio.Cli -c Release -- --help
+```
+
+The CLI reads PNG, JPEG, BMP and GIF, using the first frame of animated images. To check your installation, generate a two-sector audio track and its matching CUE sheet.
+
+```sh
+./disc-image-studio cd-generate --input picture.png --output sample.wav --sectors 2
+```
 
 | Command | Description |
 | --- | --- |
@@ -140,6 +152,8 @@ See the corresponding documentation for each command’s complete parameters.
 ## Source Layout
 
 ```text
+src/DiscImageStudio.Cli/     Offline Linux and macOS command-line host
+src/DiscImageStudio.ImageIO/ WIC and cross-platform image codecs
 src/DiscImageStudio.Core/    Media-independent module contracts, project/preset models, job and command catalog
 src/DiscImageStudio.Imaging/ Image preprocessing and dithering helpers shared by CD/DVD/BD
 src/DiscImageStudio.Burning/ Windows IMAPI2 device enumeration, stream buffering, and safe burning layer

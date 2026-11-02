@@ -1,5 +1,4 @@
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using DiscImageStudio.ImageIO;
 using DvdImageSolver.Encoding;
 
 namespace DvdImageSolver.Solver;
@@ -190,7 +189,7 @@ internal static class IsoReadbackRenderer
             pixels[offset + 2] = level;
         }
 
-        WritePng(Path.GetFullPath(outputPath), size, pixels, stride);
+        WritePng(Path.GetFullPath(outputPath), size, pixels);
         return new IsoReadbackSummary(
             isoFullPath,
             Path.GetFullPath(outputPath),
@@ -214,7 +213,7 @@ internal static class IsoReadbackRenderer
             options.PitchCubic);
     }
 
-    private static void WritePng(string outputPath, int size, byte[] pixels, int stride)
+    private static void WritePng(string outputPath, int size, byte[] pixels)
     {
         string? directory = Path.GetDirectoryName(outputPath);
         if (directory is not null)
@@ -222,19 +221,7 @@ internal static class IsoReadbackRenderer
             Directory.CreateDirectory(directory);
         }
 
-        BitmapSource bitmap = BitmapSource.Create(
-            size,
-            size,
-            96,
-            96,
-            PixelFormats.Bgra32,
-            palette: null,
-            pixels,
-            stride);
-        PngBitmapEncoder encoder = new();
-        encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        using FileStream output = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.None);
-        encoder.Save(output);
+        RasterCodec.SavePng(outputPath, size, size, pixels, grayscale: false);
     }
 
     private static void Validate(IsoReadbackOptions options)
