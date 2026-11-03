@@ -219,6 +219,7 @@ jobs:
       - name: Build Sequoia SQ with OpenSSL
         shell: bash
         run: |
+          apt install -y clang nettle-dev pkg-config libssl-dev capnproto libsqlite3-dev
           cargo install sequoia-sq \
             --locked \
             --no-default-features \
