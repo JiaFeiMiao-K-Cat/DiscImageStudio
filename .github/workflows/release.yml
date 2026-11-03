@@ -211,11 +211,21 @@ jobs:
         with:
           name: release-${{ needs.metadata.outputs.tag }}
           path: release
-
+      
       - name: Verify release attachments
         working-directory: release
         shell: bash
         run: sha256sum --strict --check SHA256SUMS.txt
+      - name: Build Sequoia SQ with OpenSSL
+        shell: bash
+        run: |
+          cargo install sequoia-sq \
+            --locked \
+            --no-default-features \
+            --features crypto-openssl \
+            --root "$RUNNER_TEMP/sequoia"
+
+          echo "$RUNNER_TEMP/sequoia/bin" >> "$GITHUB_PATH"
       - name: Sign release artifacts
         shell: bash
         env:
@@ -226,16 +236,15 @@ jobs:
           trap 'shred -n 32 -u private_key.pgp; echo "Cleaned up private key."' EXIT
           umask 077
           printf '%s\n' "$SIGN_PRIVATE_KEY" >private_key.pgp
-    
           files=(release/*.exe release/*.tar.gz)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No files found to sign"
             exit 1
           fi
-          docker pull registry.gitlab.com/sequoia-pgp/sequoia-sq:latest
+          
           for file in "${files[@]}"; do
             # Sign file with sequoia sq
-            docker run --network none -v "$PWD:/work" -w /work --rm registry.gitlab.com/sequoia-pgp/sequoia-sq:latest sign --signer-file /work/private_key.pgp --signature-file="/work/${file}.sig" "/work/${file}"
+            sq sign --signer-file private_key.pgp --signature-file="${file}.sig" "${file}"
           done
       - name: Create or refresh draft with all release attachments
         run: |
