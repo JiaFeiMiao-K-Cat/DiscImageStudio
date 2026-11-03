@@ -187,12 +187,20 @@
     <Geometry x:Key="WinMaximizeIcon">M0.5,0.5 H9.5 V9.5 H0.5 Z</Geometry>
     <Geometry x:Key="WinRestoreIcon">M0.5,2.5 H7.5 V9.5 H0.5 Z M2.5,2.5 V0.5 H9.5 V7.5 H7.5</Geometry>
     <Geometry x:Key="WinCloseIcon">M0,0 L10,10 M10,0 L0,10</Geometry>
-    <!-- App-menu ellipsis: three 2px dots on a 4px pitch. The icon grid's dots read heavier
-         than the 1px window-control strokes, so this one is drawn at chrome weight. -->
-    <GeometryGroup x:Key="WinEllipsisIcon">
-        <EllipseGeometry Center="1,1" RadiusX="1" RadiusY="1" />
-        <EllipseGeometry Center="5,1" RadiusX="1" RadiusY="1" />
-        <EllipseGeometry Center="9,1" RadiusX="1" RadiusY="1" />
+    <!-- App-menu gear: ring, hub and eight teeth. The icon set's gear reads far too heavy
+         next to the window controls, so this one is drawn at chrome weight: 1px strokes on
+         the same 10x10 grid, teeth reaching the same 0..10 extent as the maximize glyph. -->
+    <GeometryGroup x:Key="WinGearIcon">
+        <EllipseGeometry Center="5,5" RadiusX="3.4" RadiusY="3.4" />
+        <EllipseGeometry Center="5,5" RadiusX="1" RadiusY="1" />
+        <LineGeometry StartPoint="5,1.8" EndPoint="5,0.5" />
+        <LineGeometry StartPoint="5,8.2" EndPoint="5,9.5" />
+        <LineGeometry StartPoint="1.8,5" EndPoint="0.5,5" />
+        <LineGeometry StartPoint="8.2,5" EndPoint="9.5,5" />
+        <LineGeometry StartPoint="2.74,2.74" EndPoint="1.82,1.82" />
+        <LineGeometry StartPoint="7.26,2.74" EndPoint="8.18,1.82" />
+        <LineGeometry StartPoint="2.74,7.26" EndPoint="1.82,8.18" />
+        <LineGeometry StartPoint="7.26,7.26" EndPoint="8.18,8.18" />
     </GeometryGroup>
 
 </ResourceDictionary>

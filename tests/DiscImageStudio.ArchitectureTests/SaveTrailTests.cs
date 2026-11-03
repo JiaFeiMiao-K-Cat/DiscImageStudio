@@ -2,8 +2,8 @@ using DiscImageStudio.Controls;
 
 /// <summary>The saved-project trail is code-drawn, so its timing lives in the control rather
 /// than in a storyboard. These checks pin the two visible properties: the head runs the lap
-/// once in order, and the tail stretches with the Bezier speed instead of staying a fixed
-/// dash.</summary>
+/// once in order, and the solid segment still stretches with the Bezier speed instead of
+/// staying a fixed dash.</summary>
 internal static class SaveTrailTests
 {
     internal static void Run()
@@ -20,13 +20,13 @@ internal static class SaveTrailTests
             previous = progress;
         }
 
-        double start = ProjectSaveTrail.TrailLengthAt(0, 60);
-        double middle = ProjectSaveTrail.TrailLengthAt(0.5, 60);
-        double end = ProjectSaveTrail.TrailLengthAt(1, 60);
-        True(middle > start * 2, "the tail stretches through the fast middle of the lap");
-        True(middle > end * 2, "the tail contracts again as the head eases out");
-        True(middle <= 60.001, "the tail never exceeds the requested trail length");
-        True(start >= 20.99 && end >= 20.99, "the tail keeps a readable minimum length");
+        double slowStart = ProjectSaveTrail.TrailLengthAt(0, 60);
+        double fastMiddle = ProjectSaveTrail.TrailLengthAt(0.5, 60);
+        double slowEnd = ProjectSaveTrail.TrailLengthAt(1, 60);
+        True(fastMiddle > slowStart * 2, "the segment stretches through the fast middle of the lap");
+        True(fastMiddle > slowEnd * 2, "the segment contracts again as the head eases out");
+        True(fastMiddle <= 60.001, "the segment never exceeds the requested trail length");
+        True(slowStart >= 20.99 && slowEnd >= 20.99, "the segment keeps a readable minimum length");
     }
 
     private static void Equal(double expected, double actual, string name)

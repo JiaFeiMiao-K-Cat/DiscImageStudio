@@ -168,6 +168,15 @@
                                                                   Width="28" Height="28"
                                                                   HorizontalAlignment="Center"
                                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                        <iconPacks:PackIconLucide Kind="Sprout" Width="13" Height="13"
+                                                                  HorizontalAlignment="Left" VerticalAlignment="Top"
+                                                                  Margin="0,-3,0,0"
+                                                                  Foreground="{DynamicResource PrimaryBrush}"
+                                                                  Visibility="{Binding ContributorVisibility}"
+                                                                  ToolTip="{Binding ContributorToolTip}"
+                                                                  ToolTipService.Placement="Bottom"
+                                                                  ToolTipService.InitialShowDelay="0"
+                                                                  ToolTipService.BetweenShowDelay="0" />
                                         <Border HorizontalAlignment="Right" VerticalAlignment="Top"
                                                 Padding="4,1" CornerRadius="{StaticResource RadiusChip}"
                                                 Background="{DynamicResource Surface3Brush}"

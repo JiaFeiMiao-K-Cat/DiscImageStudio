@@ -12,7 +12,8 @@ public sealed record DvdDiscPreset(
     bool IsCustom = false,
     double PitchLinear = 0,
     double PitchQuadratic = 0,
-    double PitchCubic = 0)
+    double PitchCubic = 0,
+    string? Contributor = null)
 {
     public static DvdDiscPreset Manual { get; } = new(
         "__manual__",

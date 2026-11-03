@@ -559,6 +559,22 @@
     "ja": "アプリの再起動後に反映されます。",
     "tr": "Uygulama yeniden başlatıldıktan sonra geçerli olur."
   },
+  "界面文字已立即更新。": {
+    "zh-CN": "界面文字已立即更新。",
+    "en": "The interface text has been updated immediately.",
+    "zh-TW": "介面文字已立即更新。",
+    "ja": "画面のテキストをすぐに更新しました。",
+    "tr": "Arayüz metni hemen güncellendi.",
+    "es": "El texto de la interfaz se actualizó inmediatamente."
+  },
+  "贡献者：{0}": {
+    "zh-CN": "贡献者：{0}",
+    "en": "Contributor: {0}",
+    "zh-TW": "貢獻者：{0}",
+    "ja": "貢献者: {0}",
+    "tr": "Katkıda bulunan: {0}",
+    "es": "Colaborador: {0}"
+  },
   "缓存位置不可用": {
     "zh-CN": "缓存位置不可用",
     "en": "Cache location unavailable",
@@ -677,6 +693,14 @@
     "zh-TW": "無法開啟應用程式資料目錄：",
     "ja": "アプリ データ フォルダーを開けません: ",
     "tr": "Uygulama veri klasörü açılamadı: "
+  },
+  "无法打开 GitHub：": {
+    "zh-CN": "无法打开 GitHub：",
+    "en": "Could not open GitHub: ",
+    "zh-TW": "無法開啟 GitHub：",
+    "ja": "GitHub を開けません: ",
+    "tr": "GitHub açılamadı: ",
+    "es": "No se pudo abrir GitHub: "
   },
   "请填写绝对路径。": {
     "zh-CN": "请填写绝对路径。",
@@ -952,10 +976,10 @@
     "tr": "Dil"
   },
   "Settings.LanguageChangesTakeEffectAfterRestartingTheAppSystemUse": {
-    "zh-CN": "语言将在重启应用后生效。跟随系统时区分简体和繁体中文，日文系统使用日本語，土耳其语系统使用 Türkçe，其他语言使用 English。",
-    "en": "Language changes take effect after restarting. System follows Simplified or Traditional Chinese, Japanese, or Turkish; other system languages use English.",
-    "zh-TW": "語言會在重新啟動應用程式後生效。跟隨系統時會區分簡體與繁體中文，日文系統使用日本語，土耳其語系統使用 Türkçe，其他語言使用 English。",
-    "ja": "言語の変更はアプリの再起動後に反映されます。「システムに従う」の場合、簡体字中国語・繁体字中国語・日本語・トルコ語を判別し、その他の言語では English を使用します。",
+    "zh-CN": "语言将在重启应用后生效。跟随系统时区分简体和繁体中文，日文系统使用日本語，其他语言使用 English。",
+    "en": "Language changes take effect after restarting. System follows Simplified or Traditional Chinese, or Japanese; other system languages use English.",
+    "zh-TW": "語言會在重新啟動應用程式後生效。跟隨系統時會區分簡體與繁體中文，日文系統使用日本語，其他語言使用 English。",
+    "ja": "言語の変更はアプリの再起動後に反映されます。「システムに従う」の場合、簡体字中国語・繁体字中国語・日本語を判別し、その他の言語では English を使用します。",
     "tr": "Dil değişiklikleri yeniden başlatıldıktan sonra geçerli olur. Sistem dili Basitleştirilmiş veya Geleneksel Çince, Japonca ya da Türkçe ise ilgili dili izler; diğer sistem dillerinde English kullanılır."
   },
   "Settings.DefaultLocationsForNewProjectsAndTemporaryFiles": {

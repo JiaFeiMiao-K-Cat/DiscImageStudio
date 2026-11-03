@@ -1,4 +1,5 @@
 using DiscImageStudio.Localization;
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
@@ -13,6 +14,8 @@ namespace DiscImageStudio.ViewModels;
 public partial class CalibrationViewModel
 {
     private CalibrationPhotoTransform? _photoTransform;
+    // Kept so the rectification summary can be re-worded after a language switch.
+    private CalibrationPhotoFitResult? _rectificationFit;
     private string? _photoPng;
     private bool _restoringPhoto;
     private long _photoRevision;
@@ -44,9 +47,12 @@ public partial class CalibrationViewModel
     /// exists. This is the only line under 确认矫正.</summary>
     [ObservableProperty] private string _rectificationSummary = string.Empty;
     public string TraceSummary => L.F($"已保留 {TracePoints.Count} 点 · 偏离点自动标红");
-    public IReadOnlyList<PhotoDiscSize> PhysicalDiscSizeChoices { get; } =
-        [new(L.T("标准光盘 · 12 cm"), 60), new(L.T("小光盘 · 8 cm"), 40)];
-    [ObservableProperty] private PhotoDiscSize _selectedPhysicalDiscSize = new(L.T("标准光盘 · 12 cm"), 60);
+    public IReadOnlyList<PhotoDiscSize> PhysicalDiscSizeChoices { get; } = PhotoDiscSizes;
+    // The default must be the same instance the ComboBox lists: PhotoDiscSize is a reference
+    // type, and a separate equal-looking object leaves SelectedIndex at -1. Selecting the
+    // listed item later would then look like a fresh value and invalidate the rectification.
+    [ObservableProperty] private PhotoDiscSize _selectedPhysicalDiscSize = PhotoDiscSizes[0];
+    private static readonly IReadOnlyList<PhotoDiscSize> PhotoDiscSizes = [new(60), new(40)];
 
     public IAsyncRelayCommand ImportPhotoCommand { get; private set; } = null!;
     public IAsyncRelayCommand RectifyPhotoCommand { get; private set; } = null!;
@@ -118,10 +124,26 @@ public partial class CalibrationViewModel
         BoundaryEditedCommand?.NotifyCanExecuteChanged(); TraceEditedCommand?.NotifyCanExecuteChanged();
     }
 
+    /// <summary>Re-reads the photo step's labels and measurement line. The choice labels are
+    /// refreshed in place so the ComboBox selection and the imported photo stay untouched.</summary>
+    private void RelocalizePhoto()
+    {
+        foreach (PhotoDiscSize size in PhysicalDiscSizeChoices)
+        {
+            size.RefreshLabel();
+        }
+
+        OnPropertyChanged(nameof(TraceSummary));
+        if (_rectificationFit is { } fit)
+        {
+            RectificationSummary = L.F($"外缘偏差 {fit.OuterRmsPixels:0.0} 像素 · 内缘偏差 {fit.HoleRmsPixels:0.0} 像素");
+        }
+    }
+
     private void ResetPhoto()
     {
         _photoRevision++;
-        _photoTransform = null; _photoPng = null;
+        _photoTransform = null; _rectificationFit = null; _photoPng = null;
         PhotoImage = null; RectifiedPhoto = null;
         PhotoBoundaryPoints = []; PhotoBoundaryContours = [];
         TracePoints = []; CrossPredictionContours = [];
@@ -133,7 +155,7 @@ public partial class CalibrationViewModel
     private void InvalidatePhotoRectification()
     {
         _photoRevision++;
-        _photoTransform = null; RectifiedPhoto = null;
+        _photoTransform = null; _rectificationFit = null; RectifiedPhoto = null;
         IsRectificationReady = false; PreviewRectification = false; IsPhotoStep = true;
         PhotoBoundaryContours = []; TracePoints = [];
         InvalidateFit();
@@ -202,6 +224,7 @@ public partial class CalibrationViewModel
             token.ThrowIfCancellationRequested();
             if (revision != _photoRevision || !ReferenceEquals(image, PhotoImage)) throw new OperationCanceledException();
             _photoTransform = fit.Transform;
+            _rectificationFit = fit;
             RectifiedPhoto = corrected;
             PhotoBoundaryContours = BoundaryContours(fit.Transform, radius);
             RectificationSummary = L.F($"外缘偏差 {fit.OuterRmsPixels:0.0} 像素 · 内缘偏差 {fit.HoleRmsPixels:0.0} 像素");
@@ -325,6 +348,7 @@ public partial class CalibrationViewModel
                 finally { _restoringPhoto = false; }
                 PhotoImage = prepared.Image; RectifiedPhoto = prepared.Rectified; _photoPng = photo.ImagePngBase64;
                 _photoTransform = prepared.Fit?.Transform;
+                _rectificationFit = prepared.Fit;
                 SetBoundaryPoints(photo.OuterBoundary, photo.HoleBoundary);
                 IsRectificationReady = _photoTransform is not null;
                 if (_photoTransform is not null) PhotoBoundaryContours = BoundaryContours(_photoTransform, photo.PhysicalOuterRadiusMm);
@@ -341,5 +365,22 @@ public partial class CalibrationViewModel
         });
     }
 
-    public sealed record PhotoDiscSize(string Label, double OuterRadiusMm);
+    /// <summary>Physical disc size choice for the photo step. The label is computed from the
+    /// radius so it follows the language without replacing the items.</summary>
+    public sealed class PhotoDiscSize : INotifyPropertyChanged
+    {
+        public PhotoDiscSize(double outerRadiusMm) => OuterRadiusMm = outerRadiusMm;
+
+        public string Label => OuterRadiusMm >= 60
+            ? L.T("标准光盘 · 12 cm")
+            : L.T("小光盘 · 8 cm");
+
+        public double OuterRadiusMm { get; }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        internal void RefreshLabel()
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Label)));
+    }
+
 }

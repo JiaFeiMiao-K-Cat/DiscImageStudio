@@ -67,6 +67,15 @@ public partial class LivePreviewViewModel : ObservableObject
     // read-back simulation or the calibration projection. A job's own PNG output takes the
     // canvas over without a file of its own to export, so the action falls back to disabled.
     private bool _downloadablePreview;
+    // Catalog key of the canvas title while a result is showing, so a language switch can
+    // re-resolve it without rebuilding the picture.
+    private string? _resultTitleKey;
+    // Completion line of the result currently on screen. It is composed again after a
+    // language switch; recomputing the picture itself would cancel a read-back for text only.
+    private Func<string>? _readyStatus;
+    // Failure line of the most recent refresh, kept for the same reason: a switch must
+    // re-word the error rather than replace it with the idle hint.
+    private string? _livePreviewFailure;
     private string? _calibratedTrackPath;
     private string? _calibratedIsoPath;
     private string? _calibratedBluRayPath;
@@ -463,9 +472,52 @@ public partial class LivePreviewViewModel : ObservableObject
         Schedule();
     }
 
+    /// <summary>Re-reads the titles, placeholder and inspector hint after a language switch.
+    /// A rendered picture is kept; only its caption changes.</summary>
+    internal void Relocalize()
+    {
+        Inspector.Relocalize();
+        RaiseEmptyStateAction();
+        if (!HasResultImage)
+        {
+            // A scheduled or running refresh owns the status line; resetting the empty state
+            // here would claim the preview is idle while the read-back is still working.
+            if (!_livePreviewRefreshRunning && !_livePreviewTimer.IsEnabled)
+            {
+                // The error line is state, not chrome: UpdateMode drops it with the rest of
+                // the empty-state text, so it is put back in the new language.
+                string? failure = _livePreviewFailure;
+                UpdateMode(clearResult: false);
+                if (failure is not null)
+                {
+                    _livePreviewFailure = failure;
+                    StatusText = L.F($"实时预览失败：{failure}");
+                }
+            }
+
+            return;
+        }
+
+        if (_livePreviewFailure is { } failed)
+        {
+            StatusText = L.F($"实时预览失败：{failed}");
+        }
+        else if (_readyStatus is not null)
+        {
+            StatusText = _readyStatus();
+        }
+
+        if (_resultTitleKey is { } key)
+        {
+            ResultPreviewTitle = L.T(key);
+        }
+    }
+
     internal void UpdateMode(bool clearResult)
     {
         HasFileRegionOverlay = false;
+        _readyStatus = null;
+        _livePreviewFailure = null;
         // The inspector is a lens over both families; every mode change routes through here, so
         // this is where it is re-pointed.
         Inspector.SetFamily(SelectedFamily);
@@ -481,6 +533,7 @@ public partial class LivePreviewViewModel : ObservableObject
         ResultPreviewTitle = L.F($"预览 - {discName}");
         ResultPreviewPlaceholderText = L.F($"请先选择 {inputName}。");
         StatusText = L.F($"等待 {inputName}");
+        _resultTitleKey = null;
         RaiseEmptyStateAction();
 
         if (!clearResult)
@@ -498,9 +551,23 @@ public partial class LivePreviewViewModel : ObservableObject
         TempFiles.TryDeleteTemporaryFile(previousPath);
     }
 
+    private void SetReadyStatus(Func<string> compose)
+    {
+        _readyStatus = compose;
+        StatusText = compose();
+    }
+
+    private void SetLivePreviewFailure(Exception exception)
+    {
+        _livePreviewFailure = exception.Message;
+        StatusText = L.F($"实时预览失败：{exception.Message}");
+    }
+
     internal void Schedule()
     {
         HasFileRegionOverlay = false;
+        _readyStatus = null;
+        _livePreviewFailure = null;
         if (!_shell.IsWindowLoaded)
         {
             return;
@@ -517,6 +584,8 @@ public partial class LivePreviewViewModel : ObservableObject
     internal void RefreshNow()
     {
         HasFileRegionOverlay = false;
+        _readyStatus = null;
+        _livePreviewFailure = null;
         _livePreviewTimer.Stop();
         _livePreviewCancellation?.Cancel();
         _livePreviewRevision++;
@@ -537,6 +606,8 @@ public partial class LivePreviewViewModel : ObservableObject
             do
             {
                 HasFileRegionOverlay = false;
+                _readyStatus = null;
+                _livePreviewFailure = null;
                 _livePreviewRefreshPending = false;
                 int revision = _livePreviewRevision;
                 switch (SelectedFamily)
@@ -647,17 +718,17 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, trackPath, L.T("预览 - CD"), overlay);
+            PublishPreview(outputPath, trackPath, "预览 - CD", overlay);
             keepOutput = true;
-            StatusText = L.F($"已实时更新 · 读回模拟 · {(dataImage ? L.T("CD 数据盘") : deinterleave ? L.T("逆交织") : L.T("纯音轨"))}")
-                + L.F($" · {outputSize} px · 每扇区 {samplesPerSector} 个采样");
+            SetReadyStatus(() => L.F($"已实时更新 · 读回模拟 · {(dataImage ? L.T("CD 数据盘") : deinterleave ? L.T("逆交织") : L.T("纯音轨"))}")
+                + L.F($" · {outputSize} px · 每扇区 {samplesPerSector} 个采样"));
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception exception)
         {
-            StatusText = L.F($"实时预览失败：{exception.Message}");
+            SetLivePreviewFailure(exception);
             _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 实时预览失败：{exception}\n"));
         }
         finally
@@ -730,18 +801,18 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, imagePath, L.T("预览 - CD"), plan is not null);
+            PublishPreview(outputPath, imagePath, "预览 - CD", plan is not null);
             keepOutput = true;
-            StatusText = L.F($"已实时更新 · 标定预览 · 灰度 {tone.Levels} 级")
+            SetReadyStatus(() => L.F($"已实时更新 · 标定预览 · 灰度 {tone.Levels} 级")
                 + L.F($" · 抖动 {tone.DitherStrength * 100:0}% · {outputSize} px")
-                + L.F($" · 每扇区 {samplesPerSector} 个采样");
+                + L.F($" · 每扇区 {samplesPerSector} 个采样"));
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception exception)
         {
-            StatusText = L.F($"实时预览失败：{exception.Message}");
+            SetLivePreviewFailure(exception);
             _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 实时预览失败：{exception}\n"));
         }
         finally
@@ -822,16 +893,16 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, isoPath, L.T("预览 - DVD"), overlay);
+            PublishPreview(outputPath, isoPath, "预览 - DVD", overlay);
             keepOutput = true;
-            StatusText = L.F($"已实时更新 · 读回模拟 · CW · {outputSize} px · 每扇区 {samplesPerSector} 个采样");
+            SetReadyStatus(() => L.F($"已实时更新 · 读回模拟 · CW · {outputSize} px · 每扇区 {samplesPerSector} 个采样"));
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception exception)
         {
-            StatusText = L.F($"实时预览失败：{exception.Message}");
+            SetLivePreviewFailure(exception);
             _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] DVD 实时预览失败：{exception}\n"));
         }
         finally
@@ -897,15 +968,15 @@ public partial class LivePreviewViewModel : ObservableObject
 
             PublishPreview(outputPath, imagePath, L.T("预览 - DVD"), filePlan is not null);
             keepOutput = true;
-            StatusText = L.F($"已实时更新 · 标定预览 · CW · 抖动 {_state.DvdTone.DitherStrength * 100:0}%")
-                + L.F($" · {outputSize} px · 每扇区 {samplesPerSector} 个采样");
+            SetReadyStatus(() => L.F($"已实时更新 · 标定预览 · CW · 抖动 {_state.DvdTone.DitherStrength * 100:0}%")
+                + L.F($" · {outputSize} px · 每扇区 {samplesPerSector} 个采样"));
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception exception)
         {
-            StatusText = L.F($"实时预览失败：{exception.Message}");
+            SetLivePreviewFailure(exception);
             _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] DVD 实时预览失败：{exception}\n"));
         }
         finally
@@ -1019,18 +1090,18 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, imagePath, L.T("预览 - BD"), plan.HasFileSystem);
+            PublishPreview(outputPath, imagePath, "预览 - BD", plan.HasFileSystem);
             keepOutput = true;
-            StatusText = L.F($"已实时更新 · 设计投影 · 3T/6T 类别图")
+            SetReadyStatus(() => L.F($"已实时更新 · 设计投影 · 3T/6T 类别图")
                 + $" · {(invert ? L.T("反转 3T/6T") : L.T("标准 3T/6T"))}"
-                + $" · {(tone.SrgbLinearization ? L.T("sRGB 线性化 · ") : string.Empty)}{outputSize} px";
+                + $" · {(tone.SrgbLinearization ? L.T("sRGB 线性化 · ") : string.Empty)}{outputSize} px");
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception exception)
         {
-            StatusText = L.F($"实时预览失败：{exception.Message}");
+            SetLivePreviewFailure(exception);
             _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 蓝光实时预览失败：{exception}\n"));
         }
         finally
@@ -1110,16 +1181,16 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, isoPath, L.T("预览 - BD"), overlay);
+            PublishPreview(outputPath, isoPath, "预览 - BD", overlay);
             keepOutput = true;
-            StatusText = L.F($"已实时更新 · 成品读回 · 3T/6T 类别图（非反射亮度） · {outputSize} px");
+            SetReadyStatus(() => L.F($"已实时更新 · 成品读回 · 3T/6T 类别图（非反射亮度） · {outputSize} px"));
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception exception)
         {
-            StatusText = L.F($"实时预览失败：{exception.Message}");
+            SetLivePreviewFailure(exception);
             _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 蓝光成品读回失败：{exception}\n"));
         }
         finally
@@ -1175,7 +1246,7 @@ public partial class LivePreviewViewModel : ObservableObject
 
     /// <summary>Adopts a rendered preview as the canvas content and the export source, and
     /// retires the previous temporary file.</summary>
-    private void PublishPreview(string outputPath, string inputPath, string title,
+    private void PublishPreview(string outputPath, string inputPath, string titleKey,
         bool hasFileRegionOverlay = false)
     {
         string? previousPath = _lastLivePreviewPath;
@@ -1184,7 +1255,8 @@ public partial class LivePreviewViewModel : ObservableObject
         bool loaded = ShowResultPreview(outputPath);
         HasFileRegionOverlay = hasFileRegionOverlay && loaded;
         _isLivePreviewReady = true;
-        ResultPreviewTitle = title;
+        _resultTitleKey = titleKey;
+        ResultPreviewTitle = L.T(titleKey);
         ResultPreviewPath = Path.GetFileName(inputPath);
         TempFiles.TryDeleteTemporaryFile(previousPath);
     }
@@ -1502,7 +1574,11 @@ public partial class LivePreviewViewModel : ObservableObject
         HasFileRegionOverlay = false;
         ResultImage = null;
         HasResultImage = false;
+        // The job output replaces the live result, so its completion line must not be
+        // restored by a later language switch.
+        _readyStatus = null;
         _downloadablePreview = false;
+        _resultTitleKey = "输出预览";
         ResultPreviewTitle = L.T("输出预览");
         ResultPreviewPath = string.Empty;
         ResultPreviewPlaceholderText = ShellViewModel.IsPngPath(outputPath)

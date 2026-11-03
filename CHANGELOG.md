@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### 中文
+
+- 新增威宝 BD-R (64293) 内置预设，参数与 64099 相同，贡献者 bczhc。
+- 新增威宝 DVD+R AZO (43498) 内置预设，贡献者 Disappear9。
+- 新增铼德 DVD-R E时代系列内置预设，贡献者 bczhc。
+- 新增铼德 BD-R 12x 内置预设：内半径 23.98795 mm、外半径 58.02236 mm，贡献者 DeepAQ。
+- 新增铼德 DVD+R E时代系列内置预设。
+- 新建工程不再按模板自动填充工程名，输入框保持为空；填写名称后才能创建。
+- 侧栏工程头卡片右侧新增软盘保存按钮。
+
+### English
+
+- Added a built-in Verbatim BD-R (64293) preset with the same parameters as 64099, contributed by bczhc.
+- Added a built-in Verbatim DVD+R AZO (43498) preset, contributed by Disappear9.
+- Added a built-in Ritek DVD-R E-Series preset, contributed by bczhc.
+- Added a built-in Ritek BD-R 12x preset with inner radius 23.98795 mm and outer radius 58.02236 mm, contributed by DeepAQ.
+- Added a built-in Ritek DVD+R E-Series preset.
+- New projects leave the project name empty instead of filling it from the selected template; the project can be created once a name is entered.
+- Added a floppy-disk Save button on the right of the sidebar project header.
+
 ## [1.3.6] - 2026-11-02
 
 ### 中文

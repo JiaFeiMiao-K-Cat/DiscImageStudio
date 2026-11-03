@@ -154,8 +154,10 @@ public partial class ProjectDialogViewModel : ObservableObject
     {
         get
         {
-            string name = string.IsNullOrWhiteSpace(Name) ? L.T("未命名") : Name.Trim();
-            return L.F($"将保存为：{SanitizeFileName(name)}{ProjectJsonStore.FileExtension}");
+            string name = Name.Trim();
+            return name.Length == 0
+                ? L.T("请填写工程名。")
+                : L.F($"将保存为：{SanitizeFileName(name)}{ProjectJsonStore.FileExtension}");
         }
     }
 
@@ -438,7 +440,8 @@ public partial class ProjectDialogViewModel : ObservableObject
                 preset.Id,
                 preset.DisplayName,
                 L.F($"{preset.Sectors:N0} 扇区 · {preset.InnerRadiusMm:0.#}–{preset.OuterRadiusMm:0.#} mm"),
-                OpticalDiscFamily.CompactDisc));
+                OpticalDiscFamily.CompactDisc,
+                preset.Contributor));
         }
 
         templates.Add(BlankTileFor(OpticalDiscFamily.Dvd));
@@ -448,7 +451,8 @@ public partial class ProjectDialogViewModel : ObservableObject
                 preset.Id,
                 preset.DisplayName,
                 L.F($"{preset.TotalSectors:N0} 扇区 · {preset.InnerRadiusMm:0.#}–{preset.OuterRadiusMm:0.#} mm"),
-                OpticalDiscFamily.Dvd));
+                OpticalDiscFamily.Dvd,
+                preset.Contributor));
         }
 
         templates.Add(BlankTileFor(OpticalDiscFamily.BluRay));
@@ -460,7 +464,8 @@ public partial class ProjectDialogViewModel : ObservableObject
                 preset.DisplayName,
                 L.F($"{geometry.TotalSectors:N0} 扇区 · {geometry.InnerRadiusMm:0.#}–{geometry.OuterRadiusMm:0.#} mm")
                 + (preset.InvertMapping ? L.T(" · 反转 3T/6T") : string.Empty),
-                OpticalDiscFamily.BluRay));
+                OpticalDiscFamily.BluRay,
+                preset.Contributor));
         }
 
         AllTemplates = templates;
@@ -497,16 +502,11 @@ public partial class ProjectDialogViewModel : ObservableObject
     }
 
     /// <summary>Template or family switches write the preset's geometry into the fields;
-    /// keeping them as text lets the user adjust before confirming. The project name only
-    /// follows the template on the create path: project settings keep the open name.</summary>
+    /// keeping them as text lets the user adjust before confirming. The project name stays
+    /// as the user typed it: a new project starts with an empty name.</summary>
     private void ApplyTemplate()
     {
         ProjectTemplateTile? tile = SelectedTemplate;
-        if (!_editMode && tile is not null && string.IsNullOrWhiteSpace(Name))
-        {
-            Name = tile.PresetId is null ? L.T("未命名") : tile.Title;
-        }
-
         _templateInvertMapping = Family == OpticalDiscFamily.BluRay && _state.BdInvertMapping;
         if (tile?.PresetId is null)
         {
@@ -890,7 +890,8 @@ public sealed record ProjectTemplateTile(
     string? PresetId,
     string Title,
     string Detail,
-    OpticalDiscFamily Family)
+    OpticalDiscFamily Family,
+    string? Contributor = null)
 {
     public string FamilyLabel => Family switch
     {
@@ -900,6 +901,14 @@ public sealed record ProjectTemplateTile(
     };
 
     public bool IsUserPreset => PresetId?.StartsWith("user-", StringComparison.Ordinal) == true;
+
+    public bool HasContributor => !string.IsNullOrWhiteSpace(Contributor);
+
+    public System.Windows.Visibility ContributorVisibility => HasContributor
+        ? System.Windows.Visibility.Visible
+        : System.Windows.Visibility.Collapsed;
+
+    public string ContributorToolTip => L.F($"贡献者：{Contributor}");
 
     public System.Windows.Visibility UserBadgeVisibility => IsUserPreset
         ? System.Windows.Visibility.Visible

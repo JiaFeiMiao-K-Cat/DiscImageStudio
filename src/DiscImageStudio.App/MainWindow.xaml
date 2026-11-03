@@ -17,12 +17,8 @@
                       ResizeBorderThickness="7" UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
 
-    <Window.Resources>
-        <!-- About remains in the shared application menu. Settings has a direct title-bar button. -->
-        <ContextMenu x:Key="AppMenu">
-            <MenuItem Header="{loc:Text Xaml.About2}" Click="AppMenuAbout_Click" />
-        </ContextMenu>
-    </Window.Resources>
+    <!-- About lives inside the settings window as its third category, so the title bar's
+         gear opens the settings dialog directly — no intermediate menu. -->
 
     <Grid x:Name="RootGrid">
         <Grid.RowDefinitions>
@@ -31,8 +27,7 @@
         </Grid.RowDefinitions>
 
         <controls:TitleBar Grid.Row="0" ProjectTitle="{Binding ProjectTitleDisplay}"
-                           ShowSettingsButton="True" SettingsRequested="Settings_Click"
-                           ShowAppMenu="True" AppMenuRequested="TitleBar_AppMenuRequested" />
+                           ShowSettingsButton="True" SettingsRequested="Settings_Click" />
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -72,7 +67,7 @@
                                         Padding="6,2" Focusable="False"
                                         ToolTip="{loc:Text Xaml.ProjectSettings}"
                                         Click="EditProject_Click">
-                                    <StackPanel>
+                                    <StackPanel Margin="0,0,30,0">
                                         <TextBlock x:Name="ProjectNameText" FontSize="14" FontWeight="Bold"
                                                    TextTrimming="CharacterEllipsis"
                                                    Foreground="{DynamicResource TextPrimaryBrush}" />
@@ -129,26 +124,48 @@
                                                    VerticalAlignment="Center" Margin="4,0,0,0" />
                                     </StackPanel>
                                 </Border>
-                                <!-- Saved acknowledgement: one green segment runs a single
-                                     lap around the header. The head follows a cubic Bezier
-                                     timing curve and the tail stretches with its speed, so the
-                                     stroke reads as a comet instead of a uniform ring. The
-                                     applied-calibration sweep above remains the louder signal. -->
+                                <!-- Saved acknowledgement: one solid line segment runs a
+                                     single lap around the header. No fading tail, halo or
+                                     glow; the unsaved mark vanishing is the durable signal
+                                     and the applied-calibration sweep above stays the
+                                     louder one. -->
                                 <controls:ProjectSaveTrail x:Name="ProjectSaveTrail"
                                                            Stroke="{DynamicResource SuccessBrush}"
                                                            CornerRadius="8" />
+                                <!-- Save lives on the header itself, not only on Ctrl+S:
+                                     a flat floppy button at the right edge. Its transparent
+                                     rest surface matches the card; hover adds one overlay
+                                     step, so it brightens without breaking the card. -->
+                                <Button x:Name="SaveProjectButton" Style="{StaticResource HeaderActionButton}"
+                                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                                        AutomationProperties.Name="{loc:Text Xaml.Save}"
+                                        ToolTip="{loc:Text Xaml.Save}" ToolTipService.InitialShowDelay="0"
+                                        Command="{Binding SaveProjectCommand}">
+                                    <iconPacks:PackIconLucide Kind="Save" Width="15" Height="15"
+                                                              Foreground="{DynamicResource TextSecondaryBrush}" />
+                                </Button>
                             </Grid>
                         </Grid>
 
-                        <!-- Icon-only rows keep the collapsed 60px bar a flat rail. -->
+                        <!-- Nav groups: disc-making workspaces and the calibration pair.
+                             The groups carry no numbers — the flow order is the visual
+                             order — and the header disappears with the collapsed rail. -->
+                        <TextBlock x:Name="DiscMakingGroupHeader" Text="{loc:Text Xaml.GroupDiscMaking}"
+                                   Style="{StaticResource MicroText}"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   Margin="12,6,0,4" />
                         <controls:SideNavItem x:Name="NavDesign" LabelText="{loc:Text Xaml.Design}"
                                               IconKind="Palette" />
-                        <controls:SideNavItem x:Name="NavPreview" LabelText="{loc:Text Xaml.Preview}"
-                                              IconKind="Eye" />
                         <controls:SideNavItem x:Name="NavExport" LabelText="{loc:Text Xaml.Export}"
                                               IconKind="FileDown" />
                         <controls:SideNavItem x:Name="NavBurn" LabelText="{loc:Text Xaml.Burn}"
                                               IconKind="Flame" />
+                        <TextBlock x:Name="CalibrationGroupHeader" Text="{loc:Text Xaml.GroupCalibration}"
+                                   Style="{StaticResource MicroText}"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   Margin="12,14,0,4" />
+                        <controls:SideNavItem x:Name="NavPreview" LabelText="{loc:Text Xaml.Preview}"
+                                              IconKind="Eye" />
                         <controls:SideNavItem x:Name="NavCalibration" LabelText="{loc:Text Xaml.Calibration}"
                                               IconKind="Crosshair" />
                     </StackPanel>

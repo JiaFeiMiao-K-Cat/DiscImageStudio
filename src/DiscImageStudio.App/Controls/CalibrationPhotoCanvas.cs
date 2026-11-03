@@ -38,7 +38,9 @@ public sealed class CalibrationPhotoCanvas : FrameworkElement
     public static readonly DependencyProperty ShowPredictionProperty = DependencyProperty.Register(nameof(ShowPrediction), typeof(bool), typeof(CalibrationPhotoCanvas), new FrameworkPropertyMetadata(true, Render));
     private static readonly DependencyPropertyKey ViewDescriptionPropertyKey = DependencyProperty.RegisterReadOnly(nameof(ViewDescription), typeof(string), typeof(CalibrationPhotoCanvas), new PropertyMetadata("100%"));
     public static readonly DependencyProperty ViewDescriptionProperty = ViewDescriptionPropertyKey.DependencyProperty;
-    private static readonly DependencyPropertyKey SelectionDescriptionPropertyKey = DependencyProperty.RegisterReadOnly(nameof(SelectionDescription), typeof(string), typeof(CalibrationPhotoCanvas), new PropertyMetadata(L.T("滚轮缩放，右键平移；拖动控制点贴合边缘。")));
+    // The default stays empty: metadata is initialized once, so a localized default would
+    // keep the language that happened to be active when this type was first touched.
+    private static readonly DependencyPropertyKey SelectionDescriptionPropertyKey = DependencyProperty.RegisterReadOnly(nameof(SelectionDescription), typeof(string), typeof(CalibrationPhotoCanvas), new PropertyMetadata(string.Empty));
     public static readonly DependencyProperty SelectionDescriptionProperty = SelectionDescriptionPropertyKey.DependencyProperty;
 
     public BitmapSource? Image { get => (BitmapSource?)GetValue(ImageProperty); set => SetValue(ImageProperty, value); }
@@ -112,12 +114,44 @@ public sealed class CalibrationPhotoCanvas : FrameworkElement
         {
             ThemeResolver.Changed -= ThemeResolver_Changed;
             ThemeResolver.Changed += ThemeResolver_Changed;
+            L.LanguageChanged -= Language_LanguageChanged;
+            L.LanguageChanged += Language_LanguageChanged;
+            RefreshSelectionDescription();
             InvalidateVisual();
         };
-        Unloaded += (_, _) => ThemeResolver.Changed -= ThemeResolver_Changed;
+        Unloaded += (_, _) =>
+        {
+            ThemeResolver.Changed -= ThemeResolver_Changed;
+            L.LanguageChanged -= Language_LanguageChanged;
+        };
     }
 
     private void ThemeResolver_Changed(object? sender, EventArgs e) => InvalidateVisual();
+
+    private void Language_LanguageChanged(object? sender, EventArgs e)
+    {
+        RefreshSelectionDescription();
+        InvalidateVisual();
+    }
+
+    private void RefreshSelectionDescription()
+    {
+        if (_boundaryDrag is { } boundary)
+        {
+            SetValue(SelectionDescriptionPropertyKey, boundary.Boundary == CalibrationPhotoBoundaryKind.OuterEdge
+                ? L.T("拖到盘片实体外缘；不要沿刻录区边界。") : L.T("拖到实体内缘；不要沿透明塑料环。"));
+        }
+        else if (_selectedTrace is not null)
+        {
+            UpdateTraceDescription();
+        }
+        else
+        {
+            SetValue(SelectionDescriptionPropertyKey, IsPhotoStep
+                ? L.T("滚轮缩放，右键平移；拖动控制点贴合边缘。")
+                : L.T("滚轮缩放，右键平移；点击添加点，拖动已有点修正位置。"));
+        }
+    }
 
     public Point WorldToView(Point point) => ViewMatrix.Transform(point);
     public Point ViewToWorld(Point point) { var matrix = ViewMatrix; matrix.Invert(); return matrix.Transform(point); }
