@@ -112,7 +112,7 @@ done
 case "$CONFIGURATION" in
   release|Release) CONFIGURATION="release" ;;
   debug|Debug) CONFIGURATION="debug" ;;
-  *) die "不支持的配置：$CONFIGURATION（只支持 release 或 debug）" ;;
+  *) die "不支持的配置：${CONFIGURATION}（只支持 release 或 debug）" ;;
 esac
 
 [[ -f "$INFO_TEMPLATE" ]] || die "找不到 Info.plist 模板：$INFO_TEMPLATE"
@@ -155,7 +155,7 @@ COPYRIGHT="Copyright © $(date +%Y) Disc Image Studio contributors · GPL-3.0-or
 
 note "仓库          : $REPO_ROOT"
 note "配置          : $CONFIGURATION"
-note "版本          : $VERSION（CFBundleVersion=$BUILD_NUMBER）"
+note "版本          : ${VERSION}（CFBundleVersion=${BUILD_NUMBER}）"
 note ""
 
 # ---------------------------------------------------------------- Swift 构建
@@ -268,11 +268,11 @@ if [[ "$BUNDLE_CLI" -eq 1 ]]; then
     case "$(uname -m)" in
       arm64)
         [[ "$cli_archs" == *arm64* ]] \
-          || warn "内置 CLI 不含 arm64 架构（$cli_archs），在 Apple Silicon 上需要 Rosetta；建议用 --rid osx-arm64 重新构建。"
+          || warn "内置 CLI 不含 arm64 架构（${cli_archs}），在 Apple Silicon 上需要 Rosetta；建议用 --rid osx-arm64 重新构建。"
         ;;
       x86_64)
         [[ "$cli_archs" == *x86_64* ]] \
-          || warn "内置 CLI 不含 x86_64 架构（$cli_archs），在 Intel 上无法直接运行；建议用 --rid osx-x64 重新构建。"
+          || warn "内置 CLI 不含 x86_64 架构（${cli_archs}），在 Intel 上无法直接运行；建议用 --rid osx-x64 重新构建。"
         ;;
     esac
 
@@ -280,7 +280,7 @@ if [[ "$BUNDLE_CLI" -eq 1 ]]; then
       if [[ -f "$REPO_ROOT/$doc" ]]; then
         cp -p "$REPO_ROOT/$doc" "$APP/Contents/Resources/$doc"
       else
-        warn "缺少 $doc，发布包可能不满足 GPL 的声明要求"
+        warn "缺少 ${doc}，发布包可能不满足 GPL 的声明要求"
       fi
     done
     note "内置 CLI      : $CLI_PATH"
@@ -303,7 +303,7 @@ BURN_HELPER_PRODUCT="disc-burn-stream"
 if swift package dump-package --package-path "$MACOS_DIR" 2>/dev/null \
     | grep -q "\"$BURN_HELPER_PRODUCT\""; then
   note ""
-  note "==> swift build --product $BURN_HELPER_PRODUCT（流式刻录助手）"
+  note "==> swift build --product ${BURN_HELPER_PRODUCT}（流式刻录助手）"
   if ! swift build -c "$CONFIGURATION" --package-path "$MACOS_DIR" --product "$BURN_HELPER_PRODUCT"; then
     die "disc-burn-stream 构建失败（文件模式仍可用，但流式刻录会缺少助手）。"
   fi
@@ -315,7 +315,7 @@ if swift package dump-package --package-path "$MACOS_DIR" 2>/dev/null \
     BUNDLED_HELPER_PATH="$APP/Contents/Resources/bin/$BURN_HELPER_PRODUCT"
     note "内置 helper   : $BUNDLED_HELPER_PATH"
   else
-    warn "swift build 完成但没找到 $HELPER_EXECUTABLE，跳过流式刻录助手"
+    warn "swift build 完成但没找到 ${HELPER_EXECUTABLE}，跳过流式刻录助手"
   fi
 else
   warn "Package.swift 未声明 $BURN_HELPER_PRODUCT product，跳过流式刻录助手（文件模式仍可用）"

@@ -122,18 +122,18 @@ fi
 
 case "$RID" in
   osx-arm64|osx-x64) ;;
-  *) die "不支持的 RID：$RID（只支持 osx-arm64 或 osx-x64）" ;;
+  *) die "不支持的 RID：${RID}（只支持 osx-arm64 或 osx-x64）" ;;
 esac
 
 case "$CONFIGURATION" in
   Release|release) CONFIGURATION="Release" ;;
   Debug|debug) CONFIGURATION="Debug" ;;
-  *) die "不支持的配置：$CONFIGURATION（只支持 Release 或 Debug）" ;;
+  *) die "不支持的配置：${CONFIGURATION}（只支持 Release 或 Debug）" ;;
 esac
 
 HOST_ARCH="$(uname -m)"
 if [[ ("$RID" == "osx-arm64" && "$HOST_ARCH" == "x86_64") || ("$RID" == "osx-x64" && "$HOST_ARCH" == "arm64") ]]; then
-  note "提示：当前主机是 $HOST_ARCH，却要构建 $RID。dotnet publish 会交叉发布，但产出的 CLI 只能在本机通过 Rosetta 或目标机器上运行，本脚本最后的 --help 校验可能失败。"
+  note "提示：当前主机是 ${HOST_ARCH}，却要构建 ${RID}。dotnet publish 会交叉发布，但产出的 CLI 只能在本机通过 Rosetta 或目标机器上运行，本脚本最后的 --help 校验可能失败。"
 fi
 
 if [[ -z "$OUTPUT" ]]; then
@@ -216,7 +216,7 @@ note "==> dotnet publish（自包含单文件）"
 )
 
 BINARY="$OUTPUT/disc-image-studio"
-[[ -f "$BINARY" ]] || die "发布结束但没找到 $BINARY（发布是否失败？）"
+[[ -f "$BINARY" ]] || die "发布结束但没找到 ${BINARY}（发布是否失败？）"
 chmod +x "$BINARY"
 
 BINARY_BYTES="$(stat -f '%z' "$BINARY" 2>/dev/null || stat -c '%s' "$BINARY")"
@@ -244,11 +244,11 @@ if [[ "$UPDATE_FIXTURES" -eq 1 ]]; then
     die "catalog --json 没有输出任何内容；快照未改动。"
   fi
   mv -f -- "$TMP_FIXTURE" "$FIXTURE_FILE"
-  note "已写入：$FIXTURE_FILE（$(du -h "$FIXTURE_FILE" | awk '{print $1}')）"
+  note "已写入：${FIXTURE_FILE}（$(du -h "$FIXTURE_FILE" | awk '{print $1}')）"
 fi
 
 note ""
 note "完成。"
 note "CLI   : $BINARY"
-note "大小  : $BINARY_SIZE（$BINARY_BYTES 字节）"
+note "大小  : ${BINARY_SIZE}（$BINARY_BYTES 字节）"
 note "目录  : $OUTPUT"

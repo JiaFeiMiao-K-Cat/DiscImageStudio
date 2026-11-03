@@ -80,7 +80,7 @@ if [[ -d "$APP" ]]; then
   note "打开 $APP"
   open "$APP"
 else
-  note "未找到 $APP，改用 swift run（debug 构建，前台运行）"
+  note "未找到 ${APP}，改用 swift run（debug 构建，前台运行）"
   note "提示：打包过的应用请用 macos/scripts/build-app.sh 生成，再运行本脚本。"
   exec swift run --package-path "$MACOS_DIR" DiscImageStudioMac
 fi

@@ -107,7 +107,7 @@ done
 [[ -n "$RID" ]] || RID="$(default_rid)" || exit 1
 case "$RID" in
   osx-arm64|osx-x64) ;;
-  *) die "不支持的 RID：$RID（只支持 osx-arm64 或 osx-x64）" ;;
+  *) die "不支持的 RID：${RID}（只支持 osx-arm64 或 osx-x64）" ;;
 esac
 
 case "$APP_PATH" in
@@ -119,7 +119,7 @@ case "$OUTPUT_DIR" in
   *) OUTPUT_DIR="$REPO_ROOT/$OUTPUT_DIR" ;;
 esac
 
-[[ -d "$APP_PATH" ]] || die "找不到 .app：$APP_PATH（先运行 macos/scripts/build-app.sh）"
+[[ -d "$APP_PATH" ]] || die "找不到 .app：${APP_PATH}（先运行 macos/scripts/build-app.sh）"
 [[ -f "$VERSION_PROPS" ]] || die "找不到版本配置：$VERSION_PROPS"
 
 VERSION_PREFIX="$(
