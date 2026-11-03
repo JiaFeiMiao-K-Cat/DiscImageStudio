@@ -1247,7 +1247,8 @@ internal static class SelfTests
                         destination[offset] = checked((byte)((sector + (uint)(offset % DvdEccBlockEncoder.PayloadBytesPerSector)) % 251));
                     }
                 },
-                new ModulationBoundary(1, 0, IsLand: true));
+                new ModulationBoundary(1, 0, IsLand: true),
+                replayPhysicalBoundary: true);
 
             Equal(4, summary.CompletedBlocks, "hybrid ECC block count");
             Equal((long)64 * DvdEccBlockEncoder.PayloadBytesPerSector, summary.BytesWritten, "hybrid payload bytes");
@@ -1266,6 +1267,7 @@ internal static class SelfTests
                 }
             }
 
+            ModulationBoundary expectedBoundary = new(1, 0, IsLand: true);
             for (int block = 0; block < 4; block++)
             {
                 byte[] payloads = bytes.AsSpan(
@@ -1274,7 +1276,23 @@ internal static class SelfTests
                 byte[] ecc = DvdEccBlockEncoder.BuildEccBytes(payloads, checked(options.PsnOffset + (uint)(block * 16)));
                 for (int row = 0; row < 208; row++)
                     True(ReedSolomon.HasZeroRemainder(ecc.AsSpan(row * 182, 182), 10), $"hybrid PI block {block} row {row}");
+                expectedBoundary = DvdEccBlockEncoder.ReplayPayloadBoundary(
+                    payloads,
+                    checked(options.PsnOffset + (uint)(block * 16)),
+                    expectedBoundary);
             }
+            True(summary.FinalBoundary is not null, "hybrid exact boundary is present");
+            Equal(expectedBoundary, summary.FinalBoundary!.Value, "hybrid exact boundary chain");
+
+            using MemoryStream fastOutput = new();
+            FastDvdStreamSummary fastSummary = FastDispersionImageWriter.WriteStreamEccAware(
+                imagePath,
+                fastOutput,
+                options,
+                Array.Empty<(uint StartLba, uint EndLbaExclusive)>(),
+                (_, destination) => destination.Clear(),
+                new ModulationBoundary(1, 0, IsLand: true));
+            True(fastSummary.FinalBoundary is null, "fast hybrid mode omits exact boundary by default");
 
             using CancellationTokenSource cancelled = new();
             cancelled.Cancel();

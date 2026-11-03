@@ -463,6 +463,10 @@ internal static class Program
             arguments,
             hybridMode ? "dispersion" : "full");
         bool fastOutput = ReadBoolean(arguments, "fast-output", fallback: hybridMode);
+        bool exactPhysicalChain = ReadBoolean(
+            arguments,
+            "exact-physical-chain",
+            fallback: filesInTransparency);
         if (fastOutput && algorithm != SolverAlgorithm.Dispersion)
         {
             throw new ArgumentException("--fast-output true requires --algorithm dispersion.");
@@ -633,7 +637,8 @@ internal static class Program
                 options,
                 progressEvery,
                 hybridIso,
-                fileSegments);
+                fileSegments,
+                exactPhysicalChain);
         }
 
         Console.WriteLine(
@@ -823,7 +828,8 @@ internal static class Program
         MultiBlockSolveOptions options,
         int progressEvery,
         HybridIsoWriteSummary? hybridIso,
-        IReadOnlyList<(uint StartLba, uint EndLbaExclusive)>? fileSegments = null)
+        IReadOnlyList<(uint StartLba, uint EndLbaExclusive)>? fileSegments = null,
+        bool exactPhysicalChain = false)
     {
         Console.WriteLine(
             $"fast raw ISO fill: LBA {options.StartLba}.."
@@ -850,6 +856,8 @@ internal static class Program
         }
 
         string imagePath = arguments.Require("image");
+        ModulationBoundary? finalBoundary = null;
+        bool exactReplay = false;
         FastDispersionWriteResult result;
         if (fileSegments is { Count: > 0 })
         {
@@ -869,7 +877,10 @@ internal static class Program
                 new ModulationBoundary(1, 0, IsLand: true),
                 value => Console.WriteLine(
                     $"block {value.CompletedBlocks}/{value.TotalBlocks}, LBA={value.BlockLba}, "
-                    + $"elapsed={value.Elapsed.TotalSeconds:F1}s"));
+                    + $"elapsed={value.Elapsed.TotalSeconds:F1}s"),
+                replayPhysicalBoundary: exactPhysicalChain);
+            finalBoundary = summary.FinalBoundary;
+            exactReplay = exactPhysicalChain && finalBoundary is not null;
             result = new FastDispersionWriteResult(
                 summary.CompletedBlocks, summary.SectorsWritten, summary.ControlledWords,
                 summary.Elapsed, SparseIso: false, options.ImageMapping.TotalSectors);
@@ -898,8 +909,13 @@ internal static class Program
             fastParallelism = options.FastParallelism == 0
                 ? Environment.ProcessorCount
                 : options.FastParallelism,
-            exactEccEfmReplay = false,
-            finalBoundary = (object?)null,
+            exactEccEfmReplay = exactReplay,
+            finalBoundary = finalBoundary is { } boundary ? new
+            {
+                state = boundary.State,
+                dsv = boundary.Dsv,
+                level = boundary.LevelName,
+            } : null,
             dispersionPool = DispersionPaletteMetadata(),
             constraintStep = imageMapping.SampleEveryChannelBits,
             constraintStepUsed = false,
@@ -929,7 +945,7 @@ internal static class Program
             : totalMebibytes / result.Elapsed.TotalSeconds;
         Console.WriteLine(
             $"done: blocks={result.CompletedBlocks}, controlled={result.ControlledWords}, "
-            + "payload-transition-class-error=0, boundary=not replayed, "
+            + $"payload-transition-class-error=0, boundary={(exactReplay ? "replayed" : "not replayed")}, "
             + $"rate={finalRate:F2} MiB/s, elapsed={result.Elapsed.TotalSeconds:F1}s, "
             + $"output={isoOutputPath}");
         return 0;
@@ -1535,8 +1551,9 @@ internal static class Program
               --data-dir DIR            Hybrid disc: store this directory together with the drawing
               --file-position MODE      inner (default) or outer; outer requires --data-dir
               --drawing-start-lba N     Hybrid override; must follow all files and align to an ECC Block
-              --fast-output true|false Direct dispersion ISO output without ECC/EFM replay
-                                        (default false; true in hybrid mode)
+              --fast-output true|false Direct dispersion ISO output (default false; true in hybrid mode)
+              --exact-physical-chain true|false Replay ECC/EFM boundary across every output block
+                                        (default true for transparent file embedding)
               --fast-parallelism 0..64 Fast-output workers; 0 selects processor count (default 0)
               --iterations-per-block N  Full/state-control passes; dispersion ignores search (defaults 100/3/1)
               --iso-output FILE         Write a directly burnable 2048-byte/sector ISO image
@@ -1577,8 +1594,9 @@ internal static class Program
             black/white images use nearest-neighbor sampling to preserve their dither pattern.
             Other images retain alpha-weighted bilinear sampling. Q=0x66 and 0xB9 are not
             generated; old ISOs retain readback of 66 as black and B9 as nominal dark gray 85.
-            With --fast-output true, payload selection is unchanged but final ECC/EFM boundary and
-            DSV verification are skipped; the JSON finalBoundary is therefore null.
+            With --fast-output true, payload selection remains the same. By default the fast path
+            skips ECC/EFM boundary replay; --exact-physical-chain true restores the sequential
+            boundary chain and records finalBoundary in the JSON sidecar.
 
             Hybrid --data-dir mode builds a mountable ISO9660/Joliet filesystem. Files default to the inner ring;
             --file-position outer reserves the outer ring for files and draws between front metadata and files.

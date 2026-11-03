@@ -28,7 +28,10 @@ public sealed record FastDvdStreamSummary(
     uint SectorsWritten,
     long BytesWritten,
     long ControlledWords,
-    TimeSpan Elapsed);
+    TimeSpan Elapsed)
+{
+    public ModulationBoundary? FinalBoundary { get; init; }
+}
 
 internal sealed record FastDispersionWriteResult(
     int CompletedBlocks,
@@ -129,7 +132,8 @@ public static class FastDispersionImageWriter
         SectorFill fill,
         ModulationBoundary initialBoundary,
         Action<FastDvdStreamProgress>? progress = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool replayPhysicalBoundary = false)
     {
         ArgumentNullException.ThrowIfNull(fileSectors);
         ArgumentNullException.ThrowIfNull(fill);
@@ -184,9 +188,14 @@ public static class FastDispersionImageWriter
                         bytesWritten + value.BytesWritten,
                         totalBytes,
                         stopwatch.Elapsed)),
-                    cancellationToken);
+                    cancellationToken,
+                    replayPhysicalBoundary ? boundary : null,
+                    replayPhysicalBoundary);
                 bytesWritten += fast.BytesWritten;
                 controlledWords += fast.ControlledWords;
+                if (replayPhysicalBoundary)
+                    boundary = fast.FinalBoundary
+                        ?? throw new InvalidOperationException("Exact physical boundary replay returned no final boundary.");
                 continue;
             }
 
@@ -256,7 +265,8 @@ public static class FastDispersionImageWriter
 
         output.Flush();
         stopwatch.Stop();
-        return new FastDvdStreamSummary(totalBlocks, options.FillSectors, bytesWritten, controlledWords, stopwatch.Elapsed);
+        FastDvdStreamSummary summary = new(totalBlocks, options.FillSectors, bytesWritten, controlledWords, stopwatch.Elapsed);
+        return replayPhysicalBoundary ? summary with { FinalBoundary = boundary } : summary;
     }
 
     /// <summary>
@@ -337,8 +347,15 @@ public static class FastDispersionImageWriter
         Stream output,
         MultiBlockSolveOptions options,
         Action<FastDvdStreamProgress>? progress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ModulationBoundary? initialBoundary = null,
+        bool replayPhysicalBoundary = false)
     {
+        if (replayPhysicalBoundary && initialBoundary is null)
+            throw new ArgumentException(
+                "An initial modulation boundary is required for exact physical replay.",
+                nameof(initialBoundary));
+        ModulationBoundary boundary = initialBoundary ?? default;
         int totalBlocks = checked((int)(options.FillSectors / DvdEccBlockEncoder.SectorCount));
         int parallelism = options.FastParallelism == 0
             ? Environment.ProcessorCount
@@ -369,6 +386,13 @@ public static class FastDispersionImageWriter
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 GeneratedBlock block = generated[batchOffset];
+                if (replayPhysicalBoundary)
+                {
+                    boundary = DvdEccBlockEncoder.ReplayPayloadBoundary(
+                        block.Payloads,
+                        checked(block.Lba + options.PsnOffset),
+                        boundary);
+                }
                 output.Write(block.Payloads);
                 bytesWritten = checked(bytesWritten + block.Payloads.Length);
                 controlledWords += block.ControlledWords;
@@ -380,8 +404,9 @@ public static class FastDispersionImageWriter
 
         output.Flush();
         stopwatch.Stop();
-        return new FastDvdStreamSummary(
+        FastDvdStreamSummary summary = new(
             totalBlocks, options.FillSectors, bytesWritten, controlledWords, stopwatch.Elapsed);
+        return replayPhysicalBoundary ? summary with { FinalBoundary = boundary } : summary;
     }
 
     private static GeneratedBlock[] CreateBatchBuffers(int count)

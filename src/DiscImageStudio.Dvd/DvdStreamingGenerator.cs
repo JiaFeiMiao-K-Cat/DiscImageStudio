@@ -457,7 +457,8 @@ public static class DvdStreamingGenerator
                 checked(prefixBlocks + value.CompletedBlocks),
                 totalBlocks,
                 stopwatch.Elapsed)),
-            cancellationToken);
+            cancellationToken,
+            replayPhysicalBoundary: true);
         if (!files.Completed)
             throw new InvalidOperationException("File data did not fit in the planned segments.");
         progress?.Invoke(new DvdStreamingProgress(options.ContentLength, options.ContentLength,
