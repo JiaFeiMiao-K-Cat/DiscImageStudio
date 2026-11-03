@@ -850,8 +850,35 @@ internal static class Program
         }
 
         string imagePath = arguments.Require("image");
-        FastDispersionWriteResult result = FastDispersionImageWriter.Write(
-            imagePath, isoOutputPath, options, p => Report(p, 0, p.TotalBlocks), fileSegments);
+        FastDispersionWriteResult result;
+        if (fileSegments is { Count: > 0 })
+        {
+            HybridIsoImageWriter.LayoutPlan regionPlan = HybridIsoImageWriter.Plan(
+                arguments.Require("data-dir"), options.ImageMapping.TotalSectors,
+                arguments.Get("volume-label", "DVD_IMAGE"),
+                candidateSegments: fileSegments.Select(s =>
+                    new Iso9660ImageWriter.IsoSegment(s.StartLba, s.EndLbaExclusive)).ToList());
+            using FileStream raw = new(isoOutputPath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read,
+                bufferSize: 128 * 1024, FileOptions.RandomAccess);
+            raw.Position = checked((long)options.StartLba * IsoImageWriter.LogicalSectorBytes);
+            using Iso9660ImageWriter.FileRegionWriter files = HybridIsoImageWriter.CreateFileRegionWriter(regionPlan);
+            MultiBlockSolveOptions eccOptions = options with { PreserveExistingIso = false };
+            FastDvdStreamSummary summary = FastDispersionImageWriter.WriteStreamEccAware(
+                imagePath, raw, eccOptions, fileSegments,
+                (startLba, sectors) => files.FillSectors(sectors),
+                new ModulationBoundary(1, 0, IsLand: true),
+                value => Console.WriteLine(
+                    $"block {value.CompletedBlocks}/{value.TotalBlocks}, LBA={value.BlockLba}, "
+                    + $"elapsed={value.Elapsed.TotalSeconds:F1}s"));
+            result = new FastDispersionWriteResult(
+                summary.CompletedBlocks, summary.SectorsWritten, summary.ControlledWords,
+                summary.Elapsed, SparseIso: false, options.ImageMapping.TotalSectors);
+        }
+        else
+        {
+            result = FastDispersionImageWriter.Write(
+                imagePath, isoOutputPath, options, p => Report(p, 0, p.TotalBlocks));
+        }
 
         ImageMappingOptions imageMapping = options.ImageMapping;
         var metadata = new

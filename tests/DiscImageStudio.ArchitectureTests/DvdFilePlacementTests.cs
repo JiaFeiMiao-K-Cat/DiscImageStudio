@@ -140,6 +140,8 @@ internal static class DvdFilePlacementTests
             && plan.FileSegments.All(s => s.StartLba >= plan.DrawingStartLba
                 && s.EndLbaExclusive <= plan.DrawingEndLbaExclusive),
             "transparent segments are inside the drawing interval");
+        Require(plan.FileSegments.Any(s => s.StartLba % 16 != 0 || s.EndLbaExclusive % 16 != 0),
+            "test exercises a mixed ECC block at a non-block-aligned file boundary");
         Require(plan.FileSegments[0].StartLba > plan.DrawingStartLba
             && plan.FileSegments[^1].EndLbaExclusive < plan.DrawingEndLbaExclusive,
             "picture remains on both sides of the file segments");

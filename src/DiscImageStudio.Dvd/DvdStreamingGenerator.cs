@@ -445,10 +445,12 @@ public static class DvdStreamingGenerator
             HybridIsoImageWriter.CreateFileRegionWriter(plan.IsoLayout, cancellationToken);
         MultiBlockSolveOptions solveOptions = CreateSolveOptions(
             options, plan.DrawingStartLba, plan.DrawingSectors);
-        // Fill is called once per file interval in ascending order, so the writer streams the files in order.
-        FastDvdStreamSummary drawing = FastDispersionImageWriter.WriteStreamOverlay(
+        // File sectors are fixed before solving each mixed ECC block; no payload is overwritten
+        // after the block's ECC/EFM calculation.
+        FastDvdStreamSummary drawing = FastDispersionImageWriter.WriteStreamEccAware(
             sourceFullPath, output, solveOptions, fileSectors,
             (startLba, sectors) => files.FillSectors(sectors),
+            new ModulationBoundary(1, 0, IsLand: true),
             value => progress?.Invoke(new DvdStreamingProgress(
                 checked(prefixBytes + value.BytesWritten),
                 options.ContentLength,
