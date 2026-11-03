@@ -242,7 +242,7 @@ jobs:
           trap 'shred -n 32 -u private_key.pgp; echo "Cleaned up private key."' EXIT
           umask 077
           printf '%s\n' "$SIGN_PRIVATE_KEY" >private_key.pgp
-          files=(release/*.exe release/*.tar.gz)
+          files=(release/*.exe release/*.tar.gz release/SHA256SUMS.txt)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No files found to sign"
             exit 1
@@ -252,6 +252,10 @@ jobs:
             # Sign file with sequoia sq
             sq sign --signer-file private_key.pgp --signature-file="${file}.sig" "${file}"
           done
+          # Export Public Key
+          sq key delete \
+            --cert-file private_key.pgp \
+            --output release/public_key.pgp
       - name: Create or refresh draft with all release attachments
         run: |
           # Never replace assets on an already published release.
@@ -285,7 +289,7 @@ jobs:
             throw 'The release tag already points to a different commit. Use a new version.'
           }
 
-          $assets = @(Get-ChildItem -Path 'release/*.exe','release/*.tar.gz','release/*.sig' -File | ForEach-Object FullName)
+          $assets = @(Get-ChildItem -Path 'release/*.exe','release/*.tar.gz','release/*.sig','release/public_key.pgp' -File | ForEach-Object FullName)
           $assets += 'release/SHA256SUMS.txt'
           $options = @('--title', "Disc Image Studio $env:RELEASE_TAG", '--notes-file', 'release/release-notes.md')
           if ($existing.Count -eq 1) {
