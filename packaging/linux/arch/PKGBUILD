@@ -27,7 +27,9 @@ depends=(
   'libxi'
   'libxrandr'
 )
-makedepends=('dotnet-sdk>=10.0.100')
+# Arch versions the SDK as <runtime>.sdk<band> (for example 10.0.3.sdk103), which pacman
+# orders below "10.0.100"; compare the major version only.
+makedepends=('dotnet-sdk>=10')
 optdepends=(
   'cdrtools: burn CD audio tracks and CD data images (cdrecord)'
   'dvd+rw-tools: burn DVD and BD-R images (growisofs)'
