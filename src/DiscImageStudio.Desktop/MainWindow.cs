@@ -8,6 +8,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Avalonia.Automation;
 using DiscImageStudio.BluRay;
 using DiscImageStudio.Core;
 using DiscImageStudio.Localization;
@@ -19,12 +20,12 @@ public sealed partial class MainWindow : Window
 {
     internal readonly ProjectSession Session = new();
     private readonly ContentControl _page = new();
-    private readonly TextBlock _projectTitle = Text("Disc Image Studio", 16, true);
+    private readonly TextBlock _projectTitle = Text("Disc Image Studio", 14, true);
     private readonly TextBlock _status = Text("就绪", 12);
     private readonly TextBox _log = new() { IsReadOnly = true, AcceptsReturn = true, Height = 105, TextWrapping = TextWrapping.Wrap };
-    private readonly ProgressBar _progress = new() { Minimum = 0, Maximum = 100, Height = 4 };
+    private readonly ProgressBar _progress = new() { Minimum = 0, Maximum = 100, Height = 3, IsVisible = false };
     private readonly Button _cancel = new() { Content = L.T("取消"), IsVisible = false };
-    private readonly StackPanel _navigation = new() { Spacing = 8, Margin = new Thickness(14, 22) };
+    private readonly StackPanel _navigation = new() { Spacing = 5, Margin = new Thickness(14, 20) };
     private readonly List<Button> _navButtons = [];
     private readonly List<DiscCanvas> _canvases = [];
     private readonly DispatcherTimer _composeTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
@@ -48,40 +49,73 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         LoadSettings();
+        string[] args = Environment.GetCommandLineArgs();
+        int snapshot = Array.IndexOf(args, "--ui-snapshot");
+        if (snapshot >= 0)
+        {
+            _recent = [];
+            _settings.Dark = args.Contains("--snapshot-dark");
+        }
         L.Initialize(_settings.Language);
         _status.Text = L.T("就绪"); _cancel.Content = L.T("取消");
         if (Application.Current is { } app) app.RequestedThemeVariant = _settings.Dark
             ? Avalonia.Styling.ThemeVariant.Dark : Avalonia.Styling.ThemeVariant.Light;
         Title = "Disc Image Studio · macOS";
-        Width = 1280; Height = 850; MinWidth = 900; MinHeight = 650;
+        Width = snapshot >= 0 && args.Contains("--snapshot-narrow") ? 960 : 1280; Height = 850; MinWidth = 900; MinHeight = 650;
         FontFamily = new FontFamily("avares://DiscImageStudio.Desktop/Assets/Fonts#HarmonyOS Sans SC");
         Background = Surface("#F5F5F7", "#101318");
         Foreground = Surface("#18181B", "#ECEEF4");
         var root = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto") };
-        var toolbar = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(22, 12) };
-        toolbar.Children.Add(_projectTitle);
-        var actions = Row(Button("新建工程", () => NewProject()), Button("打开工程", OpenProject), Button("保存", () => SaveProject()), Button("另存为", () => SaveProject(true)), Button("工程设置", EditGeometry), Button("设置", ShowSettings));
-        Grid.SetColumn(actions, 1); toolbar.Children.Add(actions);
-        root.Children.Add(toolbar);
-        var middle = new Grid { ColumnDefinitions = new ColumnDefinitions("176,*") };
+        var toolbar = new Grid { ColumnDefinitions = new ColumnDefinitions("190,*,Auto"), Margin = new Thickness(22, 12), ColumnSpacing = 18 };
+        var brand = Row(new DiscMark { Width = 34, Height = 34 }, Column(Text("Disc Image", 14, true), Muted("STUDIO", 9)));
+        brand.VerticalAlignment = VerticalAlignment.Center;
+        toolbar.Children.Add(brand);
+        _projectTitle.VerticalAlignment = VerticalAlignment.Center;
+        _projectTitle.TextTrimming = TextTrimming.CharacterEllipsis;
+        _projectTitle.TextWrapping = TextWrapping.NoWrap;
+        Grid.SetColumn(_projectTitle, 1); toolbar.Children.Add(_projectTitle);
+        var more = IconButton("more", "更多操作", () => { });
+        var saveAs = new MenuItem { Header = L.T("另存为") };
+        saveAs.Click += async (_, _) => await Guard(() => SaveProject(true));
+        var projectSettings = new MenuItem { Header = L.T("工程设置") };
+        projectSettings.Click += async (_, _) => await Guard(EditGeometry);
+        more.ContextMenu = new ContextMenu { ItemsSource = new[] { saveAs, projectSettings } };
+        more.Click += (_, _) => more.ContextMenu.Open(more);
+        var actions = Row(Quiet(Button("新建工程", () => NewProject())), Quiet(Button("打开工程", OpenProject)),
+            Button("保存", () => SaveProject()), more, IconButton("settings", "设置", ShowSettings));
+        actions.VerticalAlignment = VerticalAlignment.Center;
+        Grid.SetColumn(actions, 2); toolbar.Children.Add(actions);
+        root.Children.Add(new Border { Child = toolbar, BorderBrush = Surface("#E6E9F0", "#2B3444"), BorderThickness = new Thickness(0, 0, 0, 1) });
+        var middle = new Grid { ColumnDefinitions = new ColumnDefinitions("204,*") };
         Grid.SetRow(middle, 1);
-        foreach (var (label, glyph) in new[] { ("主页", "⌂"), ("设计", "◈"), ("预览", "◎"), ("导出", "↗"), ("刻录", "◉"), ("标定", "⌖") })
+        _navigation.Children.Add(new Border { Padding = new Thickness(14, 0, 0, 12), Child = Muted("工作空间", 11) });
+        foreach (var (label, symbol) in new[] { ("主页", "home"), ("设计", "design"), ("预览", "preview"), ("导出", "export"), ("刻录", "burn"), ("标定", "calibrate") })
         {
-            var item = Button($"{glyph}   {L.T(label)}", () => Navigate(label));
-            item.HorizontalAlignment = HorizontalAlignment.Stretch;
-            item.HorizontalContentAlignment = HorizontalAlignment.Left;
-            item.MinHeight = 44;
+            var item = Quiet(Button(label, () => Navigate(label)));
+            item.Content = Row(Glyph(symbol, 18), Text(label, 13));
+            item.Classes.Add("nav");
             _navigation.Children.Add(item); _navButtons.Add(item);
         }
-        middle.Children.Add(new Border { Background = Surface("#ECECEF", "#171B23"), Child = _navigation });
+        var sidebar = new Grid { RowDefinitions = new RowDefinitions("*,Auto") };
+        sidebar.Children.Add(_navigation);
+        var sidebarFooter = new Border { Margin = new Thickness(28, 20), Child = Muted("macOS 桌面版", 11) };
+        Grid.SetRow(sidebarFooter, 1); sidebar.Children.Add(sidebarFooter);
+        middle.Children.Add(new Border { Background = Surface("#F0F2F7", "#171D29"), Child = sidebar,
+            BorderBrush = Surface("#E6E9F0", "#2B3444"), BorderThickness = new Thickness(0, 0, 1, 0) });
         Grid.SetColumn(_page, 1); middle.Children.Add(_page); root.Children.Add(middle);
-        var dock = new StackPanel { Spacing = 5, Margin = new Thickness(20, 8) };
+        var dock = new StackPanel { Spacing = 8, Margin = new Thickness(22, 5) };
         var statusRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
-        statusRow.Children.Add(_status); Grid.SetColumn(_cancel, 1); statusRow.Children.Add(_cancel);
+        var status = Row(Glyph("check", 14), _status); status.VerticalAlignment = VerticalAlignment.Center;
+        statusRow.Children.Add(status);
+        var logToggle = Quiet(Button("任务日志", () => _log.IsVisible = !_log.IsVisible));
+        var dockActions = Row(_cancel, logToggle);
+        Grid.SetColumn(dockActions, 1); statusRow.Children.Add(dockActions);
         _cancel.Click += (_, _) => _cancellation?.Cancel();
-        dock.Children.Add(statusRow); dock.Children.Add(_progress);
-        dock.Children.Add(new Expander { Header = L.T("任务日志"), Content = _log });
-        Grid.SetRow(dock, 2); root.Children.Add(dock);
+        _log.IsVisible = false;
+        dock.Children.Add(statusRow); dock.Children.Add(_progress); dock.Children.Add(_log);
+        var dockBorder = new Border { Child = dock, Background = Surface("#FFFFFF", "#1C212B"),
+            BorderBrush = Surface("#E6E9F0", "#2B3444"), BorderThickness = new Thickness(0, 1, 0, 0) };
+        Grid.SetRow(dockBorder, 2); root.Children.Add(dockBorder);
         Content = root;
         Session.Changed += () =>
         {
@@ -106,8 +140,6 @@ public sealed partial class MainWindow : Window
         Closed += (_, _) => { _composeTimer.Stop(); Session.CleanCache(); DisposeCanvases(); _photoCanvas?.Dispose(); };
         Navigate("主页");
         // Deterministic snapshots are an explicit developer entry point, never a normal startup side effect.
-        string[] args = Environment.GetCommandLineArgs();
-        int snapshot = Array.IndexOf(args, "--ui-snapshot");
         if (snapshot >= 0 && snapshot + 1 < args.Length)
             Opened += async (_, _) => await CaptureSnapshots(args[snapshot + 1]);
     }
@@ -117,13 +149,27 @@ public sealed partial class MainWindow : Window
     internal Button Button(string title, Action action) => Button(title, () => { action(); return Task.CompletedTask; });
     internal Button Button(string title, Func<Task> action)
     {
-        var button = new Button { Content = L.T(title), Padding = new Thickness(14, 8), MinHeight = 36,
-            CornerRadius = new CornerRadius(7), Background = Surface("#FFFFFF", "#282F3C"),
-            BorderBrush = Surface("#D6D9E0", "#454F62"), BorderThickness = new Thickness(1) };
-        if (title.StartsWith("下一步", StringComparison.Ordinal) || title is "生成文件" or "渲染预览" or "创建工程")
+        var button = new Button();
+        button.Classes.Add("action");
+        bool primary = title.StartsWith("下一步", StringComparison.Ordinal) || title is "生成文件" or "渲染预览" or "创建工程";
+        if (primary) button.Classes.Add("primary");
+        string? symbol = title switch
         {
-            button.Background = Brush.Parse("#2569CC"); button.Foreground = Brushes.White; button.BorderThickness = new Thickness(0);
+            "新建工程" or "创建工程" => "plus", "打开工程" => "open", "保存" or "另存为" => "save",
+            "导入图片" or "导入照片" => "image", "删除" => "trash", "↑" => "up", "↓" => "down",
+            "工程设置" => "geometry", "刷新设备" => "refresh", "任务日志" => "log",
+            "生成文件" or "导出预览" => "export", "渲染预览" => "preview",
+            _ when title.StartsWith("下一步", StringComparison.Ordinal) => "arrow", _ => null
+        };
+        bool iconOnly = title is "↑" or "↓";
+        if (symbol is null) button.Content = L.T(title);
+        else
+        {
+            var icon = Glyph(symbol, 16); if (primary) icon.Ink = Brushes.White;
+            button.Content = iconOnly ? icon : Row(icon, new TextBlock { Text = L.T(title), VerticalAlignment = VerticalAlignment.Center });
+            if (iconOnly) ToolTip.SetTip(button, title == "↑" ? "上移图层" : "下移图层");
         }
+        AutomationProperties.SetName(button, L.T(title));
         button.Click += async (_, _) => await Guard(action);
         return button;
     }
@@ -142,8 +188,8 @@ public sealed partial class MainWindow : Window
     private static IBrush Surface(string light, string dark) => Brush.Parse(Application.Current?.RequestedThemeVariant == Avalonia.Styling.ThemeVariant.Dark ? dark : light);
     internal static Border Card(string title, Control content) => new()
     {
-        Background = Surface("#FFFFFF", "#1C212B"), BorderBrush = Surface("#E2E2E6", "#343B49"), BorderThickness = new Thickness(1),
-        CornerRadius = new CornerRadius(12), Padding = new Thickness(18), Child = Column(Text(title, 16, true), content)
+        Background = Surface("#FFFFFF", "#1C212B"), BorderBrush = Surface("#E6EAF2", "#343B49"), BorderThickness = new Thickness(1),
+        CornerRadius = new CornerRadius(14), Padding = new Thickness(20), Child = Column(Text(title, 14, true), content)
     };
     internal NumericUpDown Number(string title, double value, double minimum, double maximum, Action<double> changed,
         StackPanel parent, double increment = 0.1)
@@ -217,28 +263,51 @@ public sealed partial class MainWindow : Window
         if (page != "主页" && Session.Document is null) { _status.Text = L.T("请先新建或打开工程。"); return; }
         _composeTimer.Stop(); DisposeCanvases(); _photoCanvas?.Dispose(); _photoCanvas = null; _workspace = page;
         for (int i = 0; i < _navButtons.Count; i++)
-            _navButtons[i].Background = new[] { "主页", "设计", "预览", "导出", "刻录", "标定" }[i] == page ? Surface("#D9E8FF", "#204A78") : Brushes.Transparent;
+        {
+            bool selected = new[] { "主页", "设计", "预览", "导出", "刻录", "标定" }[i] == page;
+            _navButtons[i].Classes.Set("selected", selected);
+            if (_navButtons[i].Content is StackPanel row && row.Children[0] is StudioIcon icon)
+            {
+                icon.Ink = selected ? Surface("#4269CC", "#A8BEFF") : Surface("#7B859A", "#AAB5CD");
+                icon.InvalidateVisual();
+                if (row.Children[1] is TextBlock label) label.Foreground = selected ? Surface("#365BC5", "#C3D2FF") : Surface("#59647A", "#D8DFEF");
+            }
+        }
         var body = page switch { "主页" => Home(), "设计" => Design(), "预览" => Preview(), "导出" => Export(), "刻录" => Burn(), _ => Calibration() };
-        var content = Column(Text(page == "主页" ? "把图像刻进光盘" : page, 28, true),
-            Text(page == "主页" ? "选择盘片，开始你的下一个设计。" : $"{Session.Document!.FamilyLabel}  ·  {Session.Document.Geometry.InnerRadiusMm:G8}–{Session.Document.Geometry.OuterRadiusMm:G8} mm  ·  {Session.Document.Geometry.Sectors:N0} sectors", 12));
-        if (page != "主页") content.Children.Add(Row(Button("设计", () => Navigate("设计")), Button("预览", () => Navigate("预览")),
-            Button("导出", () => Navigate("导出")), Button("刻录", () => Navigate("刻录")), Button("标定", () => Navigate("标定"))));
+        var content = Column(Muted(page == "主页" ? "DISC IMAGE STUDIO" : "工作空间  /  " + L.T(page), 10),
+            Text(page == "主页" ? "把图像刻进光盘" : page, 27, true),
+            Muted(page == "主页" ? "从一张图片，开始一张独一无二的光盘。" : $"{Session.Document!.FamilyLabel}  ·  {Session.Document.Geometry.InnerRadiusMm:G8}–{Session.Document.Geometry.OuterRadiusMm:G8} mm  ·  {Session.Document.Geometry.Sectors:N0} sectors", 12));
+        content.Spacing = 10;
+        body.Margin = new Thickness(0, 16, 0, 0);
         content.Children.Add(body);
-        _page.Content = new ScrollViewer { Content = content, Padding = new Thickness(28, 24) };
+        _page.Content = new ScrollViewer { Content = content, Padding = new Thickness(28, 26) };
     }
     private Control Home()
     {
         var cards = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*") };
         foreach (var (family, title, subtitle, index) in new[] { ("cd", "CD", "WAV + CUE / RAW / ISO", 0), ("dvd", "DVD", "ISO · 4.7 GB", 1), ("bd", "Blu-ray", "BD-R · 25 GB", 2) })
         {
-            var card = Card(title, Column(Text(subtitle, 13), Button("新建工程", () => NewProject(family))));
-            card.Margin = new Thickness(0, 0, 12, 0); Grid.SetColumn(card, index); cards.Children.Add(card);
+            var create = Button("新建工程", () => NewProject(family));
+            create.HorizontalAlignment = HorizontalAlignment.Stretch;
+            create.HorizontalContentAlignment = HorizontalAlignment.Center;
+            var iconPlate = new Border { Background = Surface("#EEF2FF", "#273650"), CornerRadius = new CornerRadius(12),
+                Width = 48, Height = 48, HorizontalAlignment = HorizontalAlignment.Left,
+                Child = new StudioIcon { Symbol = "disc", Width = 26, Height = 26, Ink = Surface("#5B78D7", "#A8BEFF"), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } };
+            var cardContent = Column(iconPlate, Text(title, 21, true), Muted(subtitle, 12), create);
+            cardContent.Spacing = 18;
+            var card = new Border { Child = cardContent, Background = Surface("#FFFFFF", "#1C212B"), Padding = new Thickness(24),
+                BorderBrush = Surface("#E6EAF2", "#343B49"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(16) };
+            card.Margin = new Thickness(0, 0, index < 2 ? 16 : 0, 0); Grid.SetColumn(card, index); cards.Children.Add(card);
         }
         var recent = Column();
         foreach (string path in _recent.Where(File.Exists).Take(8))
             recent.Children.Add(Button(Path.GetFileNameWithoutExtension(path), () => OpenProjectPath(path)));
-        if (recent.Children.Count == 0) recent.Children.Add(Text("还没有最近工程。"));
-        return Column(cards, Card("最近工程", recent), Text("macOS 桌面版 · 复用 Windows 版工程与编码算法", 12));
+        if (recent.Children.Count == 0)
+        {
+            var empty = Row(Glyph("open", 22), Column(Text("还没有最近工程。", 13), Muted("创建一个新工程，或打开已有的 .discproj 文件。", 12)));
+            empty.Margin = new Thickness(4, 16); recent.Children.Add(empty);
+        }
+        var home = Column(cards, Card("最近工程", recent)); home.Spacing = 22; return home;
     }
     internal async Task NewProject(string family = "cd")
     {
@@ -322,7 +391,7 @@ public sealed partial class MainWindow : Window
                 SaveSettings();
                 if (Application.Current is { } app) app.RequestedThemeVariant = _settings.Dark ? Avalonia.Styling.ThemeVariant.Dark : Avalonia.Styling.ThemeVariant.Light;
                 Background = Surface("#F5F5F7", "#101318"); Foreground = Surface("#18181B", "#ECEEF4");
-                if (_navigation.Parent is Border nav) nav.Background = Surface("#ECECEF", "#171B23");
+                if (_navigation.Parent?.Parent is Border nav) nav.Background = Surface("#F0F2F7", "#171D29");
                 Navigate(_workspace); dialog.Close();
             })));
         await dialog.ShowDialog(this);

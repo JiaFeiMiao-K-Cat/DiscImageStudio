@@ -38,7 +38,7 @@ public sealed partial class MainWindow
         var canvas = Canvas(true);
         var stage = Card("盘面设计", Column(canvas, Text("拖动移动 · 滚轮缩放 · Shift + 滚轮旋转", 12)));
         var props = Column(Card("属性", _layerEditor), TonePanel());
-        var layout = new Grid { ColumnDefinitions = new ColumnDefinitions("220,*,260"), ColumnSpacing = 14 };
+        var layout = new Grid { ColumnDefinitions = new ColumnDefinitions("220,*,260"), ColumnSpacing = 14, RowSpacing = 14 };
         layout.Children.Add(layers); Grid.SetColumn(stage, 1); layout.Children.Add(stage); Grid.SetColumn(props, 2); layout.Children.Add(props);
         layout.SizeChanged += (_, _) =>
         {
@@ -63,7 +63,9 @@ public sealed partial class MainWindow
     private void RefreshLayers()
     {
         if (_layerList is null) return;
-        _layerList.ItemsSource = Session.Document!.Layers.Select(l => (l.Visible ? "◉ " : "○ ") + l.Name).ToArray();
+        _layerList.ItemsSource = Session.Document!.Layers.Select(l => Row(Glyph(l.Visible ? "image" : "preview", 15),
+            new TextBlock { Text = l.Name, FontSize = 12, TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis,
+                VerticalAlignment = VerticalAlignment.Center })).ToArray();
         _layerList.SelectedIndex = _selectedLayer;
         ShowLayerEditor();
     }
@@ -189,7 +191,7 @@ public sealed partial class MainWindow
         }));
         fields.Children.Add(Text("读回是编码数据的投影，实盘可见度仍需刻录确认。", 12));
         var panel = Card("预览参数", fields); var stage = Card("盘面预览", Column(canvas, Button("下一步：导出", () => Navigate("导出"))));
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,290"), ColumnSpacing = 14 };
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,290"), ColumnSpacing = 14, RowSpacing = 14 };
         grid.Children.Add(stage); Grid.SetColumn(panel, 1); grid.Children.Add(panel);
         grid.SizeChanged += (_, _) =>
         {
@@ -255,7 +257,7 @@ public sealed partial class MainWindow
     internal async Task RunWork(string title, bool canCancel, Func<CancellationToken, Task> work)
     {
         if (_busy) return;
-        _busy = true; _status.Text = L.T(title); _progress.IsIndeterminate = true; _progress.Value = 0;
+        _busy = true; _status.Text = L.T(title); _progress.IsVisible = true; _progress.IsIndeterminate = true; _progress.Value = 0;
         _cancel.IsVisible = canCancel;
         using var cancellation = new CancellationTokenSource(); _cancellation = cancellation;
         _page.IsEnabled = false; _navigation.IsEnabled = false;

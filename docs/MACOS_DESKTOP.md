@@ -57,7 +57,7 @@ CI uploads app ZIPs, SHA-256 files and actual native-window screenshots as build
    Embedded-photo calibration records can be saved and reopened with either desktop shell.
 
 Cmd/Ctrl+N, O and S create, open and save. Unsaved project changes are guarded on close/open.
-The toolbar also supports Save As. Themes and language selection are saved in
+The toolbar’s More menu also supports Save As and project settings. Outline icons retain accessible names and tooltips; primary actions use the accent fill while navigation and utility actions use quiet styles. Themes and language selection are saved in
 `Environment.SpecialFolder.LocalApplicationData/DiscImageStudio/desktop-settings.json`;
 the existing translation catalogue is shared, with new Mac-specific diagnostic text currently
 falling back to Chinese. Temporary files live in a unique per-process cache directory and
@@ -95,7 +95,7 @@ placements and file payload integrity, protected-region overlays, CUE links, exa
 WAV→AIFF sample bytes, blank/over-capacity refusal, actual `drutil` discovery on macOS,
 Core calibration/session compatibility, and six real page renders under Avalonia.Headless/Skia.
 These tests never start a burn. `--ui-snapshot` uses a disposable fixture and does not save
-projects, recent-file entries or settings. Run it into a new output directory.
+projects, recent-file entries or settings. It hides the real recent-file list. Add `--snapshot-dark` or `--snapshot-narrow` to inspect the dark theme or a 960px window without changing saved preferences. Run it into a new output directory.
 
 The existing Windows solution build, architecture suite, DVD selftest, release-tooling
 checks and WPF snapshot remain in CI. The added macOS matrix runs portable tests, packages

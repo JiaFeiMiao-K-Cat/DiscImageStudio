@@ -26,6 +26,11 @@ public sealed class DiscCanvas : Control, IDisposable
     public override void Render(DrawingContext context)
     {
         base.Render(context);
+        bool dark = Application.Current?.RequestedThemeVariant == Avalonia.Styling.ThemeVariant.Dark;
+        context.DrawRectangle(Brush.Parse(dark ? "#151C28" : "#F7F9FC"), null, new RoundedRect(Bounds, 10));
+        var dotBrush = Brush.Parse(dark ? "#303D55" : "#DCE3EF");
+        for (double y = 16; y < Bounds.Height; y += 24)
+            for (double x = 16; x < Bounds.Width; x += 24) context.DrawEllipse(dotBrush, null, new Point(x, y), 0.65, 0.65);
         double side = Math.Max(10, Math.Min(Bounds.Width, Bounds.Height) - 56);
         var rect = new Rect((Bounds.Width - side) / 2, (Bounds.Height - side) / 2, side, side);
         context.DrawEllipse(Brushes.White, new Pen(Brush.Parse("#D6D9E0"), 1), rect.Center, side / 2, side / 2);

@@ -1,0 +1,118 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="StudioInk">#59647A</SolidColorBrush>
+          <SolidColorBrush x:Key="StudioButton">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="StudioBorder">#E1E5ED</SolidColorBrush>
+          <SolidColorBrush x:Key="StudioHover">#F0F3F9</SolidColorBrush>
+          <SolidColorBrush x:Key="StudioPressed">#E7ECF6</SolidColorBrush>
+          <SolidColorBrush x:Key="StudioText">#25304A</SolidColorBrush>
+          <SolidColorBrush x:Key="StudioSelection">#E9EFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="StudioAccentInk">#3B60C8</SolidColorBrush>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="StudioInk">#AAB5CD</SolidColorBrush>
+          <SolidColorBrush x:Key="StudioButton">#232B3A</SolidColorBrush>
+          <SolidColorBrush x:Key="StudioBorder">#344056</SolidColorBrush>
+          <SolidColorBrush x:Key="StudioHover">#2C374B</SolidColorBrush>
+          <SolidColorBrush x:Key="StudioPressed">#34425A</SolidColorBrush>
+          <SolidColorBrush x:Key="StudioText">#E3E9F6</SolidColorBrush>
+          <SolidColorBrush x:Key="StudioSelection">#253959</SolidColorBrush>
+          <SolidColorBrush x:Key="StudioAccentInk">#A8BEFF</SolidColorBrush>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+  <Style Selector="Button.action">
+    <Setter Property="Background" Value="{DynamicResource StudioButton}"/>
+    <Setter Property="Foreground" Value="{DynamicResource StudioText}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource StudioBorder}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="MinHeight" Value="36"/>
+    <Setter Property="Padding" Value="12,7"/>
+    <Setter Property="FontSize" Value="13"/>
+  </Style>
+  <Style Selector="Button.action:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource StudioHover}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource StudioBorder}"/>
+  </Style>
+  <Style Selector="Button.action:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource StudioPressed}"/>
+  </Style>
+  <Style Selector="Button.quiet">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+  </Style>
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="#4269DD"/>
+    <Setter Property="Foreground" Value="White"/>
+    <Setter Property="BorderThickness" Value="0"/>
+  </Style>
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#3559C4"/>
+  </Style>
+  <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#2B4BA9"/>
+  </Style>
+  <Style Selector="Button.nav">
+    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <Setter Property="Padding" Value="14,11"/>
+    <Setter Property="MinHeight" Value="43"/>
+    <Setter Property="CornerRadius" Value="9"/>
+  </Style>
+  <Style Selector="Button.nav.selected">
+    <Setter Property="Background" Value="{DynamicResource StudioSelection}"/>
+    <Setter Property="Foreground" Value="{DynamicResource StudioAccentInk}"/>
+  </Style>
+  <Style Selector="Button.nav.selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource StudioSelection}"/>
+  </Style>
+  <Style Selector="TextBox">
+    <Setter Property="CornerRadius" Value="7"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource StudioBorder}"/>
+    <Setter Property="MinHeight" Value="34"/>
+    <Setter Property="FontSize" Value="13"/>
+  </Style>
+  <Style Selector="ComboBox">
+    <Setter Property="CornerRadius" Value="7"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource StudioBorder}"/>
+    <Setter Property="MinHeight" Value="34"/>
+    <Setter Property="FontSize" Value="13"/>
+  </Style>
+  <Style Selector="ListBox">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="FontSize" Value="13"/>
+  </Style>
+  <Style Selector="NumericUpDown">
+    <Setter Property="CornerRadius" Value="7"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource StudioBorder}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Background" Value="{DynamicResource StudioButton}"/>
+    <Setter Property="Foreground" Value="{DynamicResource StudioText}"/>
+    <Setter Property="MinHeight" Value="34"/>
+    <Setter Property="FontSize" Value="13"/>
+  </Style>
+  <Style Selector="NumericUpDown /template/ ButtonSpinner /template/ RepeatButton">
+    <Setter Property="MinWidth" Value="24"/>
+    <Setter Property="Foreground" Value="{DynamicResource StudioInk}"/>
+  </Style>
+  <Style Selector="NumericUpDown /template/ ButtonSpinner /template/ RepeatButton PathIcon">
+    <Setter Property="Width" Value="11"/>
+    <Setter Property="Height" Value="6"/>
+  </Style>
+  <Style Selector="ListBoxItem">
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="10,10"/>
+    <Setter Property="Margin" Value="0,2"/>
+  </Style>
+  <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource StudioSelection}"/>
+    <Setter Property="Foreground" Value="{DynamicResource StudioAccentInk}"/>
+  </Style>
+</Styles>

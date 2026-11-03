@@ -19,10 +19,11 @@ version="$(sed -n 's/.*<VersionPrefix>\(.*\)<\/VersionPrefix>.*/\1/p' "$root/Dir
 cp "$root/LICENSE" "$root/THIRD-PARTY-NOTICES.txt" "$root/src/DiscImageStudio.App/Assets/Fonts/HarmonyOS-Sans-LICENSE.txt" "$app/Contents/Resources/"
 iconset="$output/DiscImageStudio.iconset"
 mkdir "$iconset"
+"$app/Contents/MacOS/DiscImageStudio.Desktop" --render-app-icon "$output/app-icon.png"
 for size in 16 32 128 256 512; do
-  sips -z "$size" "$size" "$root/src/DiscImageStudio.App/Assets/DiscImageStudio-256.png" --out "$iconset/icon_${size}x${size}.png" >/dev/null
+  sips -z "$size" "$size" "$output/app-icon.png" --out "$iconset/icon_${size}x${size}.png" >/dev/null
   double=$((size * 2))
-  sips -z "$double" "$double" "$root/src/DiscImageStudio.App/Assets/DiscImageStudio-256.png" --out "$iconset/icon_${size}x${size}@2x.png" >/dev/null
+  sips -z "$double" "$double" "$output/app-icon.png" --out "$iconset/icon_${size}x${size}@2x.png" >/dev/null
 done
 iconutil -c icns "$iconset" -o "$app/Contents/Resources/DiscImageStudio.icns"
 rm -r "$iconset"

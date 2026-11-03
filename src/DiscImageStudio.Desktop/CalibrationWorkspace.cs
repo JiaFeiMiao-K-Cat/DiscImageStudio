@@ -120,7 +120,7 @@ public sealed partial class MainWindow
             _status.Text = "参数已更新；已有标定记录保持原生成参数。";
         }));
         SetMode();
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,330"), ColumnSpacing = 14 };
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,330"), ColumnSpacing = 14, RowSpacing = 14 };
         grid.Children.Add(Card("标定照片", _photoCanvas)); var panel = Card("辅助标定", fields); Grid.SetColumn(panel, 1); grid.Children.Add(panel);
         grid.SizeChanged += (_, _) =>
         {
