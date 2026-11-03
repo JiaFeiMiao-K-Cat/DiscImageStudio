@@ -1,6 +1,10 @@
 using System.IO;
+#if PORTABLE_DESKTOP
+using DiscImageStudio.ImageIO;
+#else
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+#endif
 using DiscImageStudio.BluRay;
 using DiscImageStudio.Cd;
 using DiscImageStudio.Core;
@@ -60,6 +64,13 @@ internal static class FileRegionPreviewOverlay
         double? cdImageOuterRadius = null)
     {
         token.ThrowIfCancellationRequested();
+#if PORTABLE_DESKTOP
+        BgraRaster source = RasterCodec.LoadBgra32(path);
+        if (source.Width != source.Height) throw new ArgumentException("Disc previews must be square.", nameof(path));
+        int size = source.Width;
+        int stride = checked(size * 4);
+        byte[] pixels = source.Pixels;
+#else
         BitmapSource source;
         using (FileStream input = File.OpenRead(path))
         {
@@ -75,6 +86,7 @@ internal static class FileRegionPreviewOverlay
         int stride = checked(size * 4);
         byte[] pixels = new byte[checked(stride * size)];
         source.CopyPixels(pixels, stride, 0);
+ #endif
         double centre = cdImageOuterRadius.HasValue ? size / 2.0 : (size - 1) / 2.0;
         double mmPerPixel = (cdImageOuterRadius ?? outer) * 2 / (dvdPixelCoordinates ? size - 1 : size);
         double innerSquared = inner * inner, outerSquared = outer * outer;
@@ -101,11 +113,15 @@ internal static class FileRegionPreviewOverlay
             }
         }
         token.ThrowIfCancellationRequested();
+#if PORTABLE_DESKTOP
+        RasterCodec.SavePng(path, size, size, pixels, grayscale: false);
+#else
         BitmapSource result = BitmapSource.Create(size, size, source.DpiX, source.DpiY,
             PixelFormats.Bgra32, null, pixels, stride);
         PngBitmapEncoder encoder = new();
         encoder.Frames.Add(BitmapFrame.Create(result));
         using FileStream output = File.Create(path);
         encoder.Save(output);
+#endif
     }
 }

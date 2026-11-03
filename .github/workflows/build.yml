@@ -74,6 +74,45 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  macos-desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: macos-15-intel, rid: osx-x64 }
+          - { runner: macos-15, rid: osx-arm64 }
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Test desktop workflows without a physical disc
+        run: dotnet run --project tests/DiscImageStudio.DesktopTests -c Release
+      - name: Package the self-contained Mac app
+        run: bash packaging/macos/package.sh ${{ matrix.rid }}
+      - name: Render the actual packaged app
+        run: |
+          mkdir -p artifacts/desktop-ui
+          "artifacts/macos-${{ matrix.rid }}/Disc Image Studio.app/Contents/MacOS/DiscImageStudio.Desktop" --ui-snapshot "$PWD/artifacts/desktop-ui"
+          test ! -f artifacts/desktop-ui/error.txt
+          test "$(find artifacts/desktop-ui -name '*.png' | wc -l | tr -d ' ')" = 6
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-desktop-${{ matrix.rid }}
+          path: |
+            artifacts/macos-${{ matrix.rid }}/*.zip
+            artifacts/macos-${{ matrix.rid }}/*.sha256
+            artifacts/desktop-ui/
+          compression-level: 0
+
   windows:
     runs-on: windows-latest
     timeout-minutes: 30
@@ -102,6 +141,9 @@ jobs:
 
       - name: Test module architecture
         run: dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Release --no-build
+
+      - name: Test portable desktop workflows
+        run: dotnet run --project tests/DiscImageStudio.DesktopTests --configuration Release --no-build
 
       - name: Test original DVD engine
         run: dotnet run --project src/DvdImageSolver --configuration Release --no-build -- selftest

@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### 中文
+
+- 新增实验性 macOS 桌面入口（Avalonia），提供工程与图层编辑、三种盘型的预览/导出、混合文件布局及照片标定，复用现有编码与标定算法。保留 Windows WPF 与 IMAPI 实现。
+- 新增 Mac CD/DVD 文件刻录入口（系统 DiscRecording）：检查空白介质和容量、无损 PCM 音轨转换与写前确认。尚未验证实盘；BD-R 刻录和即时流式写入仍不支持。
+- 新增 Intel/Apple Silicon `.app` 打包、桌面回归测试与原生窗口截图 CI。开发包仅本地签名，尚未公证。详细差异见 `docs/MACOS_DESKTOP.md`。
+
+### English
+
+- Add an experimental Avalonia macOS desktop with projects/layers, CD/DVD/BD preview and export, hybrid file layouts and photo calibration using the existing optical modules and Core calibration model. Preserve Windows WPF and IMAPI.
+- Add a Mac CD/DVD artifact-recording entry point through system DiscRecording, with blank/capacity checks, lossless PCM conversion and write confirmation. Physical media remain unverified; BD-R recording and streaming writes are not supported.
+- Add Intel/Apple Silicon app packaging, portable regression tests and native-window screenshot CI. Development bundles are ad-hoc signed, not notarized. See `docs/MACOS_DESKTOP.md` for parity limits.
+
 ## [1.3.6] - 2026-11-02
 
 ### 中文
