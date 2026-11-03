@@ -132,7 +132,7 @@ jobs:
           $directory = Join-Path 'artifacts/release' $metadata.Tag
           $manifest = Join-Path $directory 'SHA256SUMS.txt'
           $hashes = @((Get-Content -LiteralPath $manifest -Raw).Trim())
-          foreach ($rid in 'linux-x64','linux-arm64','osx-x64') {
+          foreach ($rid in 'linux-x64','linux-arm64','osx-x64','osx-arm64') {
             $archive = "DiscImageStudio-CLI-$($metadata.Tag)-$rid.tar.gz"
             $path = Join-Path $directory $archive
             $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
