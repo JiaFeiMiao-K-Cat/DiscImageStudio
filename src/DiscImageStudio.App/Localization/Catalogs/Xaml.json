@@ -606,14 +606,14 @@
     "en": "Design projection",
     "zh-TW": "設計投影",
     "ja": "デザイン投影",
-    "es": "Proyección del diseño"
+    "es": "Proyección"
   },
   "Xaml.OutputReadback": {
     "zh-CN": "成品读回",
     "en": "Output readback",
     "zh-TW": "成品讀回",
     "ja": "出力の読み戻し",
-    "es": "Relectura de salida"
+    "es": "Relectura"
   },
   "Xaml.ProjectParameters": {
     "zh-CN": "当前工程参数",
@@ -627,7 +627,7 @@
     "en": "Advanced preview settings",
     "zh-TW": "實測參數與預覽精度（進階）",
     "ja": "実測パラメーターとプレビュー精度 (詳細)",
-    "es": "Ajustes avanzados de vista previa"
+    "es": "Ajustes avanzados"
   },
   "Xaml.InnerRadiusMm": {
     "zh-CN": "内半径 (mm)",
@@ -809,21 +809,21 @@
     "en": "Fit to window",
     "zh-TW": "符合視窗大小",
     "ja": "全体表示",
-    "es": "Ajustar a la ventana"
+    "es": "Ajustar"
   },
   "Xaml.ShowBurnPattern": {
     "zh-CN": "查看刻录图案",
     "en": "Burn pattern",
     "zh-TW": "檢視燒錄圖案",
     "ja": "書き込みパターン",
-    "es": "Patrón de grabación"
+    "es": "Patrón"
   },
   "Xaml.ShowRectifiedPreview": {
     "zh-CN": "查看矫正预览",
     "en": "Rectified preview",
     "zh-TW": "檢視校正預覽",
     "ja": "補正プレビュー",
-    "es": "Vista previa rectificada"
+    "es": "Rectificada"
   },
   "Xaml.OverlayFittedCurves": {
     "zh-CN": "叠加拟合曲线",
