@@ -79,8 +79,7 @@ public sealed partial class MainWindow : Window
         saveAs.Click += async (_, _) => await Guard(() => SaveProject(true));
         var projectSettings = new MenuItem { Header = L.T("工程设置") };
         projectSettings.Click += async (_, _) => await Guard(EditGeometry);
-        more.ContextMenu = new ContextMenu { ItemsSource = new[] { saveAs, projectSettings } };
-        more.Click += (_, _) => more.ContextMenu.Open(more);
+        more.Flyout = new MenuFlyout { ItemsSource = new[] { saveAs, projectSettings } };
         var actions = Row(Quiet(Button("新建工程", () => NewProject())), Quiet(Button("打开工程", OpenProject)),
             Button("保存", () => SaveProject()), more, IconButton("settings", "设置", ShowSettings));
         actions.VerticalAlignment = VerticalAlignment.Center;

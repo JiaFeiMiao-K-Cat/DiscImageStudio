@@ -4,6 +4,9 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
+using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using DiscImageStudio;
 using DiscImageStudio.Core;
 using DiscImageStudio.Core.Calibration;
@@ -133,6 +136,10 @@ try
         string path = Path.Combine(work, "ui-" + page + ".png"); bitmap.Save(path);
         Check(new FileInfo(path).Length > 5000, "Empty UI page: " + page);
     }
+    var more = window.GetVisualDescendants().OfType<Button>().Single(b => AutomationProperties.GetName(b) == "更多操作");
+    new ButtonAutomationPeer(more).Invoke(); Dispatcher.UIThread.RunJobs();
+    Check(more.Flyout is MenuFlyout { IsOpen: true }, "More button did not expose Save As/project settings");
+    more.Flyout!.Hide();
     Console.WriteLine($"Portable desktop: {checks} checks passed.");
     window.CloseForTest();
 }
