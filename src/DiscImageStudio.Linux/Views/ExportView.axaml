@@ -1,0 +1,124 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DiscImageStudio.Linux.ViewModels"
+             xmlns:views="using:DiscImageStudio.Linux.Views"
+             xmlns:c="using:DiscImageStudio.Linux.Controls"
+             x:Class="DiscImageStudio.Linux.Views.ExportView"
+             x:DataType="vm:ExportViewModel">
+  <ScrollViewer>
+    <Grid Margin="28,10,28,24" ColumnDefinitions="*,380" ColumnSpacing="18" MaxWidth="1300" HorizontalAlignment="Left">
+      <StackPanel Spacing="14">
+        <Border Classes="card">
+          <StackPanel Spacing="12">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <c:LucideIcon Data="{x:Static c:Icons.Download}" Width="16" Height="16" Foreground="{DynamicResource TextSecondaryBrush}" />
+              <TextBlock Classes="h3" Text="Output" />
+            </StackPanel>
+            <TextBlock Classes="muted" Text="{Binding OutputKind}" TextWrapping="Wrap" />
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Text="{Binding Project.OutputPath, FallbackValue=''}" PlaceholderText="Choose where to write the file" />
+              <Button Grid.Column="1" Margin="6,0,0,0" Content="Browse…" Command="{Binding BrowseOutputCommand}" />
+            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="16">
+              <TextBlock Classes="caption">
+                <Run Text="Size:" />
+                <Run Text="{Binding EstimatedSize}" FontWeight="SemiBold" />
+              </TextBlock>
+              <TextBlock Classes="caption" Text="{Binding SpaceInfo}" />
+            </StackPanel>
+            <Border Classes="warning" IsVisible="{Binding SpaceWarning}">
+              <TextBlock FontSize="12" TextWrapping="Wrap" Text="There may not be enough free space for the output on this drive." />
+            </Border>
+
+            <StackPanel Spacing="6" IsVisible="{Binding Project.IsCd, FallbackValue=False}">
+              <StackPanel Spacing="6" IsVisible="{Binding !Project.HasFiles, FallbackValue=False}">
+                <ToggleSwitch IsChecked="{Binding Project.WriteCue, FallbackValue=True}" OnContent="Write a CUE sheet next to the WAV" OffContent="Write a CUE sheet next to the WAV" />
+                <ToggleSwitch IsChecked="{Binding Project.Interleave, FallbackValue=True}" OnContent="CD-DA delay interleave (leave on)" OffContent="CD-DA delay interleave (leave on)"
+                              ToolTip.Tip="Pre-compensates the CIRC interleave the recorder applies. Turning it off smears the picture along the track." />
+              </StackPanel>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <views:FilesCard DataContext="{Binding $parent[Window].((vm:MainViewModel)DataContext).Design}" />
+
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Classes="h3" Text="What will be generated" />
+              <Button Grid.Column="1" Classes="ghost" Content="Project settings…" Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).EditProjectCommand}" />
+            </Grid>
+            <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
+              <TextBlock Classes="muted" Text="Disc" />
+              <TextBlock Grid.Column="1" Text="{Binding Project.FamilyLabel, FallbackValue=''}" />
+              <TextBlock Grid.Row="1" Classes="muted" Text="Geometry" />
+              <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Project.GeometrySummary, FallbackValue=''}" TextWrapping="Wrap" />
+              <TextBlock Grid.Row="2" Classes="muted" Text="Tone" />
+              <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Project.ToneSummary, FallbackValue=''}" TextWrapping="Wrap" />
+              <TextBlock Grid.Row="3" Classes="muted" Text="Design" />
+              <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Project.LayerCountText, FallbackValue=''}" />
+            </Grid>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+
+      <StackPanel Grid.Column="1" Spacing="14">
+        <Border Classes="card" Padding="20">
+          <StackPanel Spacing="14">
+            <TextBlock Classes="h2" Text="Generate" />
+            <TextBlock Classes="caption" Text="The design is composed at 8192 × 8192 px and encoded by the same engine as the Windows app and the CLI. A full disc takes from under a minute (CD) to several minutes (BD-R)." />
+            <Button Classes="accent big" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding GenerateCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <c:LucideIcon Data="{x:Static c:Icons.Play}" Width="17" Height="17" />
+                <TextBlock Text="{Binding GenerateText}" />
+              </StackPanel>
+            </Button>
+            <TextBlock Classes="caption" IsVisible="{Binding !CancelSupported}" Text="DVD generation cannot be cancelled once it starts." />
+            <ProgressBar Value="{Binding $parent[Window].((vm:MainViewModel)DataContext).JobProgress}"
+                         IsIndeterminate="{Binding $parent[Window].((vm:MainViewModel)DataContext).JobIndeterminate}"
+                         IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).IsBusy}" Height="6" />
+            <TextBlock Classes="caption" Text="{Binding $parent[Window].((vm:MainViewModel)DataContext).JobStatus}"
+                       IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).IsBusy}" />
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card" IsVisible="{Binding HasLastOutput}">
+          <StackPanel Spacing="10">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <c:LucideIcon Data="{x:Static c:Icons.CircleCheck}" Width="18" Height="18" Foreground="{DynamicResource SuccessBrush}" />
+              <TextBlock Classes="h3" Text="Output ready" />
+            </StackPanel>
+            <SelectableTextBlock Classes="mono" Text="{Binding LastOutput}" TextWrapping="Wrap" />
+            <SelectableTextBlock Classes="caption" Text="{Binding LastSummary}" TextWrapping="Wrap" />
+            <WrapPanel>
+              <Button Margin="0,0,8,8" Command="{Binding ShowReadbackCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="7">
+                  <c:LucideIcon Data="{x:Static c:Icons.ScanEye}" Width="15" Height="15" />
+                  <TextBlock Text="Preview read-back" />
+                </StackPanel>
+              </Button>
+              <Button Margin="0,0,8,8" Command="{Binding RevealOutputCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="7">
+                  <c:LucideIcon Data="{x:Static c:Icons.FolderOpen}" Width="15" Height="15" />
+                  <TextBlock Text="Show in folder" />
+                </StackPanel>
+              </Button>
+              <Button Margin="0,0,8,8" Command="{Binding GoBurnCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="7">
+                  <c:LucideIcon Data="{x:Static c:Icons.Flame}" Width="15" Height="15" />
+                  <TextBlock Text="Burn…" />
+                </StackPanel>
+              </Button>
+              <Button Margin="0,0,8,8" Command="{Binding CopyCommandLineCommand}" ToolTip.Tip="The equivalent disc-image-studio CLI command">
+                <StackPanel Orientation="Horizontal" Spacing="7">
+                  <c:LucideIcon Data="{x:Static c:Icons.Terminal}" Width="15" Height="15" />
+                  <TextBlock Text="Copy command" />
+                </StackPanel>
+              </Button>
+            </WrapPanel>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </Grid>
+  </ScrollViewer>
+</UserControl>

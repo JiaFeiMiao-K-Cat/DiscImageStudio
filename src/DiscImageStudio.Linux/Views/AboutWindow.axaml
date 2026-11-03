@@ -1,0 +1,40 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DiscImageStudio.Linux.Views.AboutWindow"
+        Title="About Disc Image Studio" Width="680" Height="600" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+  <Grid RowDefinitions="Auto,*,Auto" Margin="26,22,26,20" RowSpacing="16">
+    <StackPanel Orientation="Horizontal" Spacing="16">
+      <Image Source="/Assets/DiscImageStudio-256.png" Width="64" Height="64" />
+      <StackPanel VerticalAlignment="Center" Spacing="3">
+        <TextBlock Classes="h2" Text="Disc Image Studio" />
+        <TextBlock Name="VersionText" Classes="muted" />
+        <TextBlock Classes="caption" Text="Free software under the GNU General Public License v3.0 or later." />
+      </StackPanel>
+    </StackPanel>
+    <TabControl Grid.Row="1">
+      <TabItem Header="About">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,10,0,0">
+            <TextBlock TextWrapping="Wrap" Text="Converts a picture into data that meets the physical-layer constraints of CD, DVD and single-layer BD-R discs. After burning, the recording surface shows the picture." />
+            <TextBlock TextWrapping="Wrap" Classes="muted" Text="The Linux interface hosts the same CD, DVD and Blu-ray engines as the Windows app and the command-line tool, and reads and writes the same .discproj project files." />
+            <TextBlock TextWrapping="Wrap" Classes="muted" Text="The CD interleaving is ported from CDImage by arduinocelentano. The interface uses Avalonia, SkiaSharp, the Inter typeface and Lucide icons; see the third-party notices." />
+            <SelectableTextBlock Classes="mono" Text="https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio" />
+            <TextBlock TextWrapping="Wrap" Classes="caption" Text="Disc Image Studio does not access the network, upload files or collect telemetry." />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="License">
+        <ScrollViewer Margin="0,10,0,0">
+          <SelectableTextBlock Name="LicenseText" Classes="mono" TextWrapping="Wrap" />
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Third-party notices">
+        <ScrollViewer Margin="0,10,0,0">
+          <SelectableTextBlock Name="NoticesText" Classes="mono" TextWrapping="Wrap" />
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+    <Button Grid.Row="2" HorizontalAlignment="Right" Classes="accent" Content="Close" IsDefault="True" IsCancel="True" Name="CloseButton" />
+  </Grid>
+</Window>

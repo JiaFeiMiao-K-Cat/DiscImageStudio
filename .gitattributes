@@ -5,3 +5,7 @@
 *.slnx text eol=crlf
 *.png binary
 *.ico binary
+*.axaml text eol=crlf
+*.sh text eol=lf
+PKGBUILD text eol=lf
+*.desktop text eol=lf

@@ -1,0 +1,121 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DiscImageStudio.Linux.ViewModels"
+             xmlns:c="using:DiscImageStudio.Linux.Controls"
+             x:Class="DiscImageStudio.Linux.Views.BurnView"
+             x:DataType="vm:BurnViewModel">
+  <ScrollViewer>
+    <Grid Margin="28,10,28,24" ColumnDefinitions="*,380" ColumnSpacing="18" MaxWidth="1300" HorizontalAlignment="Left">
+      <StackPanel Spacing="14">
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <c:LucideIcon Data="{x:Static c:Icons.Disc3}" Width="16" Height="16" Foreground="{DynamicResource TextSecondaryBrush}" />
+              <TextBlock Classes="h3" Text="What to burn" />
+            </StackPanel>
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Text="{Binding SourceFile}" PlaceholderText="Generated .wav, .raw or .iso" />
+              <Button Grid.Column="1" Margin="6,0,0,0" Content="Browse…" Command="{Binding BrowseSourceCommand}" />
+            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="{Binding MaterialText}" FontWeight="Medium" TextWrapping="Wrap" />
+              <TextBlock Classes="caption" Text="{Binding SourceInfo}" VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock Classes="caption" Text="{Binding MediaAdvice}" />
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <c:LucideIcon Data="{x:Static c:Icons.HardDrive}" Width="16" Height="16" Foreground="{DynamicResource TextSecondaryBrush}" />
+              <TextBlock Classes="h3" Text="Recorder" />
+            </StackPanel>
+            <Grid ColumnDefinitions="*,Auto">
+              <ComboBox ItemsSource="{Binding Drives}" SelectedItem="{Binding SelectedDrive}" PlaceholderText="No optical drive found" />
+              <Button Grid.Column="1" Classes="icon" Margin="4,0,0,0" Command="{Binding RefreshDrivesCommand}" ToolTip.Tip="Look for drives again">
+                <c:LucideIcon Data="{x:Static c:Icons.RefreshCw}" Width="15" Height="15" />
+              </Button>
+            </Grid>
+            <TextBlock Classes="caption" IsVisible="{Binding !HasDrives}" Text="Connect a CD/DVD/BD recorder. Drives appear as /dev/sr0, /dev/sr1 … USB recorders work too." />
+            <Border Classes="warning" IsVisible="{Binding PermissionWarning, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <SelectableTextBlock FontSize="12" TextWrapping="Wrap" Text="{Binding PermissionWarning}" />
+            </Border>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="Disc information" Command="{Binding MediaInfoCommand}" ToolTip.Tip="Show what is in the drive (it should be blank)" />
+              <Button Content="Eject" Command="{Binding EjectDiscCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <c:LucideIcon Data="{x:Static c:Icons.Terminal}" Width="16" Height="16" Foreground="{DynamicResource TextSecondaryBrush}" />
+              <TextBlock Classes="h3" Text="Recording program" />
+            </StackPanel>
+            <Grid ColumnDefinitions="*,140" ColumnSpacing="10">
+              <StackPanel>
+                <TextBlock Classes="label" Text="Program" />
+                <ComboBox ItemsSource="{Binding Tools}" SelectedItem="{Binding SelectedTool}" PlaceholderText="None installed" />
+              </StackPanel>
+              <StackPanel Grid.Column="1">
+                <TextBlock Classes="label" Text="Speed (×)" />
+                <ComboBox ItemsSource="{Binding Speeds}" SelectedItem="{Binding SelectedSpeed}" />
+              </StackPanel>
+            </Grid>
+            <Border Classes="warning" IsVisible="{Binding ToolHint, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <SelectableTextBlock FontSize="12" TextWrapping="Wrap" Text="{Binding ToolHint}" />
+            </Border>
+            <ToggleSwitch IsChecked="{Binding Simulate}" OnContent="Test run with the laser off" OffContent="Test run with the laser off" />
+            <ToggleSwitch IsChecked="{Binding Eject}" OnContent="Eject when finished" OffContent="Eject when finished" />
+            <TextBlock Classes="label" Text="Command" Margin="0,4,0,0" />
+            <Border Classes="inset">
+              <Grid ColumnDefinitions="*,Auto">
+                <SelectableTextBlock Classes="mono" Text="{Binding CommandText}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                <Button Grid.Column="1" Classes="icon" Command="{Binding CopyCommandCommand}" ToolTip.Tip="Copy to run it in a terminal" VerticalAlignment="Top">
+                  <c:LucideIcon Data="{x:Static c:Icons.Copy}" Width="15" Height="15" />
+                </Button>
+              </Grid>
+            </Border>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+
+      <StackPanel Grid.Column="1" Spacing="14">
+        <Border Classes="card" Padding="20">
+          <StackPanel Spacing="14">
+            <TextBlock Classes="h2" Text="Burn" />
+            <Border Classes="warning">
+              <Grid ColumnDefinitions="Auto,*">
+                <c:LucideIcon Data="{x:Static c:Icons.TriangleAlert}" Width="16" Height="16" Margin="0,1,10,0" VerticalAlignment="Top" />
+                <TextBlock Grid.Column="1" FontSize="12" TextWrapping="Wrap"
+                           Text="Experimental. Use a blank disc you can afford to lose: an interrupted or too-slow burn usually ruins it, and BD-R written without spare areas cannot be resumed." />
+              </Grid>
+            </Border>
+            <CheckBox IsChecked="{Binding Acknowledged}" Content="The disc is blank and expendable" />
+            <Button Classes="danger big" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding BurnCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <c:LucideIcon Data="{x:Static c:Icons.Flame}" Width="17" Height="17" />
+                <TextBlock Text="Start burning" />
+              </StackPanel>
+            </Button>
+            <ProgressBar Value="{Binding $parent[Window].((vm:MainViewModel)DataContext).JobProgress}"
+                         IsIndeterminate="{Binding $parent[Window].((vm:MainViewModel)DataContext).JobIndeterminate}"
+                         IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).IsBusy}" Height="6" />
+            <TextBlock Classes="caption" Text="{Binding $parent[Window].((vm:MainViewModel)DataContext).JobStatus}"
+                       IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).IsBusy}" />
+            <TextBlock Classes="caption" Text="Cancel stops the recorder cleanly (SIGINT); the disc is still lost. Open the log (Ctrl+L) to follow the program's output." />
+          </StackPanel>
+        </Border>
+        <Border Classes="card">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h3" Text="Seeing the picture" />
+            <TextBlock Classes="caption" Text="Look at the recording side under a single point light (a phone flashlight or the sun) and tilt the disc slowly. Diffuse light hides the contrast." />
+            <TextBlock Classes="caption" Text="If the picture looks bent, measure the real disc and use calibrated radii. Measured presets are in docs/DISC_PRESETS.md." />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </Grid>
+  </ScrollViewer>
+</UserControl>

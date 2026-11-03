@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Linux desktop GUI. Avalonia renders through Skia on X11 (and XWayland), so the same
+       build runs on every glibc or musl distribution. It hosts the portable CD/DVD/BD
+       modules in-process, exactly like the CLI, and reads and writes the same .discproj
+       files as the Windows app. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>disc-image-studio-gui</AssemblyName>
+    <RootNamespace>DiscImageStudio.Linux</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- No libicu runtime dependency: every number the UI parses or prints is invariant. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- Avalonia's build step otherwise sends anonymous build statistics to avaloniaui.net.
+         Clearing the product list skips that task, so builds (including offline distro
+         package builds) never contact the network. -->
+    <UsedAvaloniaProducts></UsedAvaloniaProducts>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <Title>Disc Image Studio</Title>
+    <Product>Disc Image Studio</Product>
+    <Description>Design, generate and burn visible pictures on CD, DVD and BD-R discs.</Description>
+    <Company>Disc Image Studio</Company>
+    <Copyright>Copyright © 2026</Copyright>
+    <DebugType>embedded</DebugType>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.5" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DiscImageStudio.LinuxTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../DiscImageStudio.Core/DiscImageStudio.Core.csproj" />
+    <ProjectReference Include="../DiscImageStudio.ImageIO/DiscImageStudio.ImageIO.csproj" />
+    <ProjectReference Include="../DiscImageStudio.Cd/DiscImageStudio.Cd.csproj" />
+    <ProjectReference Include="../DiscImageStudio.Dvd/DiscImageStudio.Dvd.csproj" />
+    <ProjectReference Include="../DiscImageStudio.BluRay/DiscImageStudio.BluRay.csproj" />
+    <Compile Include="../Shared/BluRayImageLoader.cs" Link="Services/BluRayImageLoader.cs" />
+    <Compile Include="../Shared/ConsoleModuleRunner.cs" Link="Services/ConsoleModuleRunner.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/**" />
+    <AvaloniaResource Include="../DiscImageStudio.App/Assets/DiscImageStudio-256.png" Link="Assets/DiscImageStudio-256.png" />
+    <!-- The Windows catalogs translate the built-in preset names and engine messages. -->
+    <EmbeddedResource Include="../DiscImageStudio.App/Localization/Catalogs/*.json"
+                      LogicalName="DiscImageStudio.Linux.Catalogs.%(Filename).json" />
+    <EmbeddedResource Include="../../LICENSE" LogicalName="DiscImageStudio.Linux.Licenses.GPL" />
+    <EmbeddedResource Include="../../THIRD-PARTY-NOTICES.txt" LogicalName="DiscImageStudio.Linux.Licenses.ThirdParty" />
+  </ItemGroup>
+</Project>

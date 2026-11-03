@@ -6,7 +6,7 @@
 
 <h2>An all-in-one tool for generating and burning visible images onto optical discs</h2>
 
-The Windows desktop app designs and burns disc images. The **experimental Linux and macOS CLI** generates CD, DVD and Blu-ray images offline.
+The Windows desktop app and the **experimental Linux desktop app** design and burn disc images. The **experimental Linux and macOS CLI** generates CD, DVD and Blu-ray images offline.
 
 ![.NET version](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-0078d6?style=flat-square)
@@ -39,11 +39,15 @@ Disc Image Studio converts an image into data that meets the physical-layer cons
 
 ![Export: light theme and output image](docs/images/ui-export.png)
 
+![Linux desktop app: design page](docs/images/linux-design.png)
+
 ---
 
 ## Quick Start
 
 On Windows, download and run `win-x64.exe`. On Linux or macOS, download the **experimental CLI** archive for your CPU, extract it and run `./disc-image-studio --help`. Each release package includes the .NET runtime. [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+
+On Linux you can also install the **experimental desktop app**. It covers the same Design, Preview, Export and Burn workflow, and burns with cdrecord, growisofs or xorriso. On Arch Linux, run `makepkg -si` in `packaging/linux/arch`. On any distribution, extract a `DiscImageStudio-Linux-…tar.gz` release and run `./install.sh`, or build from source with `./packaging/linux/build.sh --install`. See the [Linux guide](docs/LINUX.md).
 
 ### 1. Create a Project
 
@@ -99,6 +103,7 @@ See the [assisted calibration guide](docs/CALIBRATION.md) for the workflow and p
 ## System and Hardware Requirements
 
 - The desktop app requires Windows 10 2004 (2004/20H1, 19041) or later, or Windows 11.
+- The Linux desktop app runs on x86_64 and aarch64 distributions with an X11 or Wayland (XWayland) session; see the [Linux guide](docs/LINUX.md).
 - Building: .NET 10 SDK (`global.json` pins 10.0.x). A non-self-contained GUI built from source requires the .NET 10 Windows Desktop Runtime. The Release EXE includes the runtime, so a separate .NET installation is unnecessary.
 - Live burning requires a CD / DVD / BD recorder recognized by Windows and blank media. BD-R requires a blank single-layer disc that supports sequential writing.
 
@@ -107,6 +112,13 @@ See the [assisted calibration guide](docs/CALIBRATION.md) for the workflow and p
 ```powershell
 dotnet build DiscImageStudio.slnx --configuration Release
 dotnet run --project src/DiscImageStudio.App --configuration Release
+```
+
+On Linux, build and run the desktop app from its project (the solution also contains the Windows-only projects):
+
+```sh
+dotnet run --project src/DiscImageStudio.Linux --configuration Release
+./packaging/linux/build.sh --install   # self-contained build, installed for the current user
 ```
 
 Build regression checks:
@@ -153,6 +165,7 @@ See the corresponding documentation for each command’s complete parameters.
 
 ```text
 src/DiscImageStudio.Cli/     Offline Linux and macOS command-line host
+src/DiscImageStudio.Linux/   Avalonia Linux desktop app (GUI + CLI in one binary)
 src/DiscImageStudio.ImageIO/ WIC and cross-platform image codecs
 src/DiscImageStudio.Core/    Media-independent module contracts, project/preset models, job and command catalog
 src/DiscImageStudio.Imaging/ Image preprocessing and dithering helpers shared by CD/DVD/BD
@@ -164,7 +177,7 @@ src/DiscImageStudio.Iso/     UDF 2.01 / ISO9660 writers
 src/DiscImageStudio.App/     WPF GUI, unified command line, and Store assets
 src/DvdImageSolver/          Isolated DVD encoding/solving engine
 tests/                       Architecture regression tests without a third-party test framework
-packaging/                   MSIX manifest and packaging scripts
+packaging/                   MSIX manifest and packaging scripts; packaging/linux holds the Linux installer, desktop files and Arch PKGBUILD
 tools/                       Standalone utilities and asset generation scripts
 docs/                        Architecture, engine, preset, release, and other documentation
 ```
@@ -173,6 +186,7 @@ docs/                        Architecture, engine, preset, release, and other do
 
 | Document | Contents |
 | --- | --- |
+| [LINUX.md](docs/LINUX.md) | Linux desktop app: installation on Arch and other distributions, building from source, burning with Linux tools, troubleshooting |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Module abstractions, boundaries between layers, and extension rules |
 | [LOCALIZATION.md](docs/LOCALIZATION.md) | Language settings and translation resource maintenance |
 | [DVD_ENGINE.md](docs/DVD_ENGINE.md) | DVD NRZI image constraint solver conventions, encoding chain, and self-test coverage |
@@ -200,7 +214,7 @@ The common CD encoding components also reference [ECMA-130, 2nd edition (CD-ROM,
 
 ## Burning and Media Safety
 
-- Disc Image Studio does not install drivers or services. Live burning uses Windows’ built-in IMAPI2 and rejects non-blank media.
+- Disc Image Studio does not install drivers or services. Live burning uses Windows’ built-in IMAPI2 and rejects non-blank media. The Linux desktop app writes the generated image with cdrecord, growisofs or xorriso and always shows the command first.
 - Live burning has received some feedback from physical disc tests, but validation coverage across different devices, media, and burning paths remains limited. It is experimental; use only expendable test media. Interrupted burning, power loss, or insufficient generation speed may still render a disc unusable!
 - The actual visible result depends on the disc, recorder, firmware, and write strategy.
 - For hybrid discs, the source folder is scanned and its layout is fixed before burning starts. If a source file’s size changes during the operation, the job is safely terminated; a disc that has already started writing may still become unusable.

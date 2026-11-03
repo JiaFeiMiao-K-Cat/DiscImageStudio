@@ -1,0 +1,79 @@
+# Builds Disc Image Studio (Linux GUI + CLI) from the checkout this file lives in:
+#
+#   git clone https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio.git
+#   cd DiscImageStudio/packaging/linux/arch
+#   makepkg -si
+#
+# The version follows Directory.Build.props, so pulling and re-running makepkg upgrades.
+
+_root="$(realpath "${startdir:-.}/../../..")"
+pkgname=disc-image-studio
+pkgver="$(sed -n 's:.*<VersionPrefix>\(.*\)</VersionPrefix>.*:\1:p' "$_root/Directory.Build.props" 2>/dev/null | head -n1)"
+pkgver="${pkgver:-0.0.0}"
+pkgrel=1
+pkgdesc='Design, generate and burn pictures visible on CD, DVD and BD-R discs (GUI and CLI)'
+arch=('x86_64' 'aarch64')
+url='https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio'
+license=('GPL-3.0-or-later')
+depends=(
+  'fontconfig'
+  'gcc-libs'
+  'glibc'
+  'hicolor-icon-theme'
+  'libice'
+  'libsm'
+  'libx11'
+  'libxcursor'
+  'libxi'
+  'libxrandr'
+)
+makedepends=('dotnet-sdk>=10.0.100')
+optdepends=(
+  'cdrtools: burn CD audio tracks and CD data images (cdrecord)'
+  'dvd+rw-tools: burn DVD and BD-R images (growisofs)'
+  'libisoburn: alternative burner for CD, DVD and BD-R (xorriso)'
+  'xdg-desktop-portal: native file chooser dialogs'
+)
+# .NET assemblies and the bundled runtime must not be stripped.
+options=('!strip' '!debug')
+source=()
+sha256sums=()
+
+prepare() {
+  # Build from a clean copy so the checkout keeps no bin/obj folders owned by the build user.
+  rm -rf "$srcdir/discimagestudio"
+  mkdir -p "$srcdir/discimagestudio"
+  tar -C "$_root" \
+    --exclude=./.git --exclude=./artifacts --exclude=./packaging/linux/arch/src \
+    --exclude=./packaging/linux/arch/pkg --exclude='*.pkg.tar.*' \
+    --exclude=bin --exclude=obj -cf - . | tar -C "$srcdir/discimagestudio" -xf -
+  # global.json pins the 10.0 SDK band; Arch may already ship a newer SDK, which builds the
+  # net10.0 projects just as well.
+  sed -i -E 's/("rollForward"[[:space:]]*:[[:space:]]*)"latestFeature"/\1"latestMajor"/' \
+    "$srcdir/discimagestudio/global.json"
+}
+
+build() {
+  cd "$srcdir/discimagestudio"
+  export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+  export NUGET_PACKAGES="$srcdir/nuget-packages"
+  local rid
+  case "$CARCH" in
+    x86_64) rid=linux-x64 ;;
+    aarch64) rid=linux-arm64 ;;
+    *) echo "Unsupported architecture: $CARCH" >&2; return 1 ;;
+  esac
+  ./packaging/linux/build.sh --rid "$rid" --no-archive --output "$srcdir/stage"
+}
+
+check() {
+  local app=("$srcdir"/stage/DiscImageStudio-*/app/disc-image-studio-gui)
+  "${app[0]}" selftest
+}
+
+package() {
+  local bundle=("$srcdir"/stage/DiscImageStudio-*)
+  "${bundle[0]}/install.sh" --prefix /usr --destdir "$pkgdir" --no-post-install
+  install -Dm644 "${bundle[0]}/LICENSE-NOTICE.md" "${bundle[0]}/THIRD-PARTY-NOTICES.txt" \
+    -t "$pkgdir/usr/share/licenses/$pkgname/"
+}

@@ -74,6 +74,78 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  linux-gui:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: ubuntu-24.04, rid: linux-x64 }
+          - { runner: ubuntu-24.04-arm, rid: linux-arm64 }
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+      RID: ${{ matrix.rid }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb xauth desktop-file-utils appstream shellcheck
+
+      - name: Lint packaging scripts and desktop metadata
+        run: |
+          shellcheck packaging/linux/build.sh
+          shellcheck -s sh packaging/linux/install.sh
+          shellcheck -s bash -e SC2034,SC2154,SC2164 packaging/linux/arch/PKGBUILD
+          desktop-file-validate packaging/linux/data/*.desktop
+          appstreamcli validate --no-net packaging/linux/data/*.metainfo.xml
+
+      - name: Test the Linux GUI services and view models
+        run: dotnet run --project tests/DiscImageStudio.LinuxTests --configuration Release
+
+      - name: Build the self-contained Linux bundle
+        run: ./packaging/linux/build.sh --rid "$RID" --output artifacts/linux-gui
+
+      - name: Install into a scratch prefix and test the installed app
+        run: |
+          bundle=(artifacts/linux-gui/DiscImageStudio-*-"$RID")
+          prefix="$RUNNER_TEMP/prefix"
+          "${bundle[0]}/install.sh" --prefix "$prefix"
+          desktop-file-validate "$prefix"/share/applications/*.desktop
+          python3 tests/test_cli_package.py "$prefix/bin/disc-image-studio"
+          xvfb-run -a -s "-screen 0 1600x1000x24" \
+            "$prefix/bin/disc-image-studio-gui" --screenshot artifacts/linux-gui/screenshots --theme dark
+          "${bundle[0]}/install.sh" --prefix "$prefix" --uninstall
+          test ! -e "$prefix/bin/disc-image-studio-gui"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-gui-screenshots-${{ matrix.rid }}
+          path: artifacts/linux-gui/screenshots/
+          if-no-files-found: error
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.release_tag != ''
+        with:
+          name: linux-gui-${{ inputs.release_tag }}-${{ matrix.rid }}
+          path: |
+            artifacts/linux-gui/*.tar.gz
+            artifacts/linux-gui/*.tar.gz.sha256
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 14
+
   windows:
     runs-on: windows-latest
     timeout-minutes: 30

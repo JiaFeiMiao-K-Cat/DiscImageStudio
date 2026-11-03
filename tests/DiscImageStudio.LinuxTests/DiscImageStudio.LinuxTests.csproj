@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Linux GUI regression checks without a third-party test framework, in the style of
+       DiscImageStudio.ArchitectureTests. Avalonia runs headless, so no display is needed. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- Avalonia's build step otherwise sends anonymous build statistics to avaloniaui.net.
+         Clearing the product list skips that task, so builds (including offline distro
+         package builds) never contact the network. -->
+    <UsedAvaloniaProducts></UsedAvaloniaProducts>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Skia" Version="12.1.5" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/DiscImageStudio.Linux/DiscImageStudio.Linux.csproj" />
+  </ItemGroup>
+</Project>

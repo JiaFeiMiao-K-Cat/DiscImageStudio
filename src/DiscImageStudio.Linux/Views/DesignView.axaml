@@ -1,0 +1,186 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DiscImageStudio.Linux.ViewModels"
+             xmlns:views="using:DiscImageStudio.Linux.Views"
+             xmlns:c="using:DiscImageStudio.Linux.Controls"
+             x:Class="DiscImageStudio.Linux.Views.DesignView"
+             x:DataType="vm:DesignViewModel">
+  <Grid Margin="28,10,28,20" ColumnDefinitions="290,*,330" ColumnSpacing="18">
+
+    <!-- Left: layers and files -->
+    <Grid Grid.Column="0" RowDefinitions="*,Auto" RowSpacing="14">
+      <Border Classes="card" Padding="12,14">
+        <Grid RowDefinitions="Auto,*,Auto,Auto">
+          <Grid ColumnDefinitions="*,Auto" Margin="6,0,6,8">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <c:LucideIcon Data="{x:Static c:Icons.Layers}" Width="16" Height="16" Foreground="{DynamicResource TextSecondaryBrush}" />
+              <TextBlock Classes="h3" Text="Layers" />
+            </StackPanel>
+            <TextBlock Grid.Column="1" Classes="caption" Text="{Binding Project.LayerCountText, FallbackValue=''}" />
+          </Grid>
+          <ListBox Grid.Row="1" Classes="layers" ItemsSource="{Binding Project.Layers, FallbackValue={x:Null}}" SelectedItem="{Binding Project.SelectedLayer, FallbackValue={x:Null}}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:LayerViewModel">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <Border Width="42" Height="42" CornerRadius="6" ClipToBounds="True" Background="{DynamicResource Surface3Brush}" Margin="0,0,10,0">
+                    <Panel>
+                      <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" />
+                      <c:LucideIcon Data="{x:Static c:Icons.TriangleAlert}" Width="16" Height="16" Foreground="{DynamicResource WarningBrush}" IsVisible="{Binding IsMissing}" />
+                    </Panel>
+                  </Border>
+                  <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="{Binding Name}" FontWeight="Medium" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding PositionText}" Classes="caption" IsVisible="{Binding HasImage}" />
+                    <TextBlock Text="Image file missing" FontSize="12" Foreground="{DynamicResource WarningBrush}" IsVisible="{Binding IsMissing}" />
+                  </StackPanel>
+                  <Button Grid.Column="2" Classes="icon" Padding="5" VerticalAlignment="Center"
+                          Command="{Binding $parent[ListBox].((vm:DesignViewModel)DataContext).ToggleVisibilityCommand}" CommandParameter="{Binding}"
+                          ToolTip.Tip="Show or hide">
+                    <Panel>
+                      <c:LucideIcon Data="{x:Static c:Icons.Eye}" Width="16" Height="16" IsVisible="{Binding IsVisible}" />
+                      <c:LucideIcon Data="{x:Static c:Icons.EyeOff}" Width="16" Height="16" IsVisible="{Binding !IsVisible}" />
+                    </Panel>
+                  </Button>
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="10" IsVisible="{Binding !Project.HasLayers, FallbackValue=True}" Margin="10">
+            <c:LucideIcon Data="{x:Static c:Icons.ImagePlus}" Width="34" Height="34" StrokeThickness="1.5" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" />
+            <TextBlock Classes="caption" TextAlignment="Center" Text="No layers yet. Import a picture, or drop image files on the disc." />
+          </StackPanel>
+          <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="2" Margin="0,8,0,8">
+            <Button Classes="icon" Command="{Binding MoveUpCommand}" ToolTip.Tip="Move up"><c:LucideIcon Data="{x:Static c:Icons.ArrowUp}" Width="16" Height="16" /></Button>
+            <Button Classes="icon" Command="{Binding MoveDownCommand}" ToolTip.Tip="Move down"><c:LucideIcon Data="{x:Static c:Icons.ArrowDown}" Width="16" Height="16" /></Button>
+            <Button Classes="icon" Command="{Binding RemoveSelectedCommand}" ToolTip.Tip="Delete layer (Delete)"><c:LucideIcon Data="{x:Static c:Icons.Trash2}" Width="16" Height="16" /></Button>
+          </StackPanel>
+          <Button Grid.Row="3" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding ImportImagesCommand}" ToolTip.Tip="Ctrl+I">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <c:LucideIcon Data="{x:Static c:Icons.ImagePlus}" Width="16" Height="16" />
+              <TextBlock Text="Import image…" />
+            </StackPanel>
+          </Button>
+        </Grid>
+      </Border>
+      <views:FilesCard Grid.Row="1" />
+    </Grid>
+
+    <!-- Centre: canvas -->
+    <Border Grid.Column="1" CornerRadius="12" ClipToBounds="True" Background="{DynamicResource CanvasBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1">
+      <Panel>
+        <c:DiscCanvas Name="Canvas" DragDrop.AllowDrop="True"
+                      Layers="{Binding Project.Layers, FallbackValue={x:Null}}"
+                      SelectedLayer="{Binding Project.SelectedLayer, FallbackValue={x:Null}}"
+                      InnerRadiusMm="{Binding Project.InnerRadiusMm, FallbackValue=24.5}"
+                      OuterRadiusMm="{Binding Project.OuterRadiusMm, FallbackValue=56.8}"
+                      FileBands="{Binding FileBands}" />
+        <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12" Classes="inset" Padding="10,6" Opacity="0.92">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Border Width="14" Height="2" Background="#993385FF" VerticalAlignment="Center" />
+            <TextBlock FontSize="11" Classes="muted" Text="{Binding Project.GeometrySummary, FallbackValue=''}" />
+          </StackPanel>
+        </Border>
+        <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="12" Classes="inset" Padding="4">
+          <StackPanel Orientation="Horizontal" Spacing="2">
+            <Button Classes="icon" Padding="6" Click="ZoomOut" ToolTip.Tip="Zoom out (scroll wheel)"><c:LucideIcon Data="{x:Static c:Icons.ZoomOut}" Width="15" Height="15" /></Button>
+            <TextBlock Name="ZoomLabel" Text="100%" FontSize="12" Width="44" TextAlignment="Center" VerticalAlignment="Center" Classes="muted" />
+            <Button Classes="icon" Padding="6" Click="ZoomIn" ToolTip.Tip="Zoom in"><c:LucideIcon Data="{x:Static c:Icons.ZoomIn}" Width="15" Height="15" /></Button>
+            <Button Classes="icon" Padding="6" Click="ResetZoom" ToolTip.Tip="Fit the disc (double-click the background)"><c:LucideIcon Data="{x:Static c:Icons.Maximize}" Width="15" Height="15" /></Button>
+          </StackPanel>
+        </Border>
+        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="14,0,14,12" Classes="caption" Opacity="0.75" TextAlignment="Center"
+                   Text="Drag to move · corners scale · top handle rotates (Shift snaps) · scroll zooms · right-drag pans" />
+      </Panel>
+    </Border>
+
+    <!-- Right: properties and tone -->
+    <ScrollViewer Grid.Column="2" Padding="0,0,6,0">
+      <StackPanel Spacing="14">
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="h3" Text="Layer" />
+            <TextBlock Classes="caption" Text="Select a layer to edit its placement." IsVisible="{Binding Project.SelectedLayer, Converter={x:Static ObjectConverters.IsNull}, FallbackValue=True}" />
+            <StackPanel Spacing="10" IsVisible="{Binding Project.SelectedLayer, Converter={x:Static ObjectConverters.IsNotNull}, FallbackValue=False}">
+              <StackPanel>
+                <TextBlock Classes="label" Text="Name" />
+                <TextBox Text="{Binding Project.SelectedLayer.Name, FallbackValue=''}" />
+              </StackPanel>
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="10" RowDefinitions="Auto,Auto" RowSpacing="10">
+                <StackPanel>
+                  <TextBlock Classes="label" Text="X (mm)" />
+                  <NumericUpDown Value="{Binding Project.SelectedLayer.TranslateXMm, FallbackValue=0}" Increment="0.5" FormatString="0.00" />
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                  <TextBlock Classes="label" Text="Y (mm)" />
+                  <NumericUpDown Value="{Binding Project.SelectedLayer.TranslateYMm, FallbackValue=0}" Increment="0.5" FormatString="0.00" />
+                </StackPanel>
+                <StackPanel Grid.Row="1">
+                  <TextBlock Classes="label" Text="Rotation (°)" />
+                  <NumericUpDown Value="{Binding Project.SelectedLayer.RotationDeg, FallbackValue=0}" Increment="1" FormatString="0.0" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="1">
+                  <TextBlock Classes="label" Text="Scale (%)" />
+                  <NumericUpDown Value="{Binding Project.SelectedLayer.ScalePercent, FallbackValue=100}" Increment="1" Minimum="1" FormatString="0.0" />
+                </StackPanel>
+              </Grid>
+              <SelectableTextBlock Classes="caption" Text="{Binding Project.SelectedLayer.ShortPath, FallbackValue=''}" TextWrapping="Wrap" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Center" Command="{Binding CenterSelectedCommand}" />
+                <Button Content="Reset" Command="{Binding ResetSelectedCommand}" ToolTip.Tip="Center, no rotation, 100 %" />
+              </StackPanel>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <StackPanel Spacing="12">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Classes="h3" Text="Tone" VerticalAlignment="Center" />
+              <Button Grid.Column="1" Classes="icon" Command="{Binding RefreshTonePreviewCommand}" ToolTip.Tip="Render the preview again">
+                <c:LucideIcon Data="{x:Static c:Icons.RefreshCw}" Width="15" Height="15" />
+              </Button>
+            </Grid>
+            <Border Height="270" CornerRadius="10" Background="{DynamicResource CanvasBrush}" ClipToBounds="True">
+              <Panel>
+                <c:PreviewSurface Source="{Binding TonePreview.Image}" Info="{Binding TonePreview.Info}" Margin="6" />
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8" Margin="18" IsVisible="{Binding !TonePreview.HasImage}">
+                  <c:LucideIcon Data="{x:Static c:Icons.ScanEye}" Width="30" Height="30" StrokeThickness="1.5" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" />
+                  <TextBlock Classes="caption" TextAlignment="Center" Text="{Binding TonePreview.Status}" />
+                </StackPanel>
+                <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="8" Classes="chip" IsVisible="{Binding TonePreview.IsRendering}">
+                  <TextBlock Text="Rendering…" />
+                </Border>
+              </Panel>
+            </Border>
+            <TextBlock Classes="caption" Foreground="{DynamicResource DangerBrush}" Text="{Binding TonePreview.Status}" IsVisible="{Binding TonePreview.HasError}" />
+
+            <StackPanel>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="label" Text="Dither strength" />
+                <TextBlock Grid.Column="1" Classes="label" Text="{Binding Project.DitherPercent, StringFormat='{}{0:0}%', FallbackValue=''}" />
+              </Grid>
+              <Slider Minimum="0" Maximum="100" SmallChange="5" LargeChange="25" Value="{Binding Project.DitherPercent, FallbackValue=0}" />
+              <TextBlock Classes="caption" Text="0 % is a hard black/white threshold; higher values mix the two recordable levels so midtones survive." />
+            </StackPanel>
+            <StackPanel>
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="label" Text="Brightness" />
+                <TextBlock Grid.Column="1" Classes="label" Text="{Binding Project.Brightness, StringFormat='{}{0:+0;-0;0}', FallbackValue=''}" />
+              </Grid>
+              <Slider Minimum="-64" Maximum="64" SmallChange="1" LargeChange="8" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding Project.Brightness, FallbackValue=0}" />
+            </StackPanel>
+            <ToggleSwitch IsChecked="{Binding Project.SrgbLinearization, FallbackValue=False}" OnContent="sRGB linearization" OffContent="sRGB linearization" />
+            <ToggleSwitch IsChecked="{Binding Project.FourLevels, FallbackValue=False}" OnContent="Four grey levels (CD)" OffContent="Four grey levels (CD)"
+                          IsVisible="{Binding Project.IsCd, FallbackValue=False}" />
+            <ToggleSwitch IsChecked="{Binding Project.InvertMapping, FallbackValue=False}" OnContent="Swap 3T/6T polarity" OffContent="Swap 3T/6T polarity"
+                          IsVisible="{Binding Project.IsBluRay, FallbackValue=False}" ToolTip.Tip="Dark pixels drive 6T runs instead of 3T. Use when a disc shows the picture inverted." />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="Photo (75 %)" Command="{Binding PhotoToneCommand}" ToolTip.Tip="Recommended start for photographs" />
+              <Button Content="Hard threshold" Command="{Binding HardThresholdToneCommand}" ToolTip.Tip="Pure black/white, no dithering" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

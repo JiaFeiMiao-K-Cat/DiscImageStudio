@@ -1,0 +1,79 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="DiscImageStudio.Linux.App"
+             Name="Disc Image Studio"
+             RequestedThemeVariant="Default">
+  <Application.Resources>
+    <ResourceDictionary>
+      <!-- Design tokens shared with the Windows app (Themes/Tokens.xaml and Palette.Light.xaml). -->
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+          <Color x:Key="AppBackgroundColor">#121212</Color>
+          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#121212" />
+          <SolidColorBrush x:Key="SidebarBrush" Color="#161618" />
+          <SolidColorBrush x:Key="SidebarRaisedBrush" Color="#26262B" />
+          <SolidColorBrush x:Key="Surface1Brush" Color="#18181B" />
+          <SolidColorBrush x:Key="Surface2Brush" Color="#26262B" />
+          <SolidColorBrush x:Key="Surface3Brush" Color="#2E2E33" />
+          <SolidColorBrush x:Key="DividerBrush" Color="#1FFFFFFF" />
+          <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FAFAFA" />
+          <SolidColorBrush x:Key="TextSecondaryBrush" Color="#A1A1AA" />
+          <SolidColorBrush x:Key="TextMutedBrush" Color="#8C8C92" />
+          <SolidColorBrush x:Key="PrimaryBrush" Color="#3385FF" />
+          <SolidColorBrush x:Key="PrimarySoftBrush" Color="#263385FF" />
+          <SolidColorBrush x:Key="OnPrimaryBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="DangerBrush" Color="#F31260" />
+          <SolidColorBrush x:Key="DangerSoftBrush" Color="#1FF31260" />
+          <SolidColorBrush x:Key="WarningBrush" Color="#F5A524" />
+          <SolidColorBrush x:Key="WarningSoftBrush" Color="#14F5A524" />
+          <SolidColorBrush x:Key="WarningBorderBrush" Color="#4DF5A524" />
+          <SolidColorBrush x:Key="WarningTextBrush" Color="#E5C783" />
+          <SolidColorBrush x:Key="SuccessBrush" Color="#17C964" />
+          <SolidColorBrush x:Key="SuccessSoftBrush" Color="#1F17C964" />
+          <SolidColorBrush x:Key="HoverOverlayBrush" Color="#0FFFFFFF" />
+          <SolidColorBrush x:Key="PressedOverlayBrush" Color="#1FFFFFFF" />
+          <SolidColorBrush x:Key="CanvasBrush" Color="#0B0B0D" />
+          <SolidColorBrush x:Key="LogBrush" Color="#0E0E10" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+          <Color x:Key="AppBackgroundColor">#F5F5F7</Color>
+          <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F5F5F7" />
+          <SolidColorBrush x:Key="SidebarBrush" Color="#EDEDF0" />
+          <SolidColorBrush x:Key="SidebarRaisedBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="Surface1Brush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="Surface2Brush" Color="#ECECEF" />
+          <SolidColorBrush x:Key="Surface3Brush" Color="#E2E2E6" />
+          <SolidColorBrush x:Key="DividerBrush" Color="#1A000000" />
+          <SolidColorBrush x:Key="TextPrimaryBrush" Color="#18181B" />
+          <SolidColorBrush x:Key="TextSecondaryBrush" Color="#52525B" />
+          <SolidColorBrush x:Key="TextMutedBrush" Color="#71717A" />
+          <SolidColorBrush x:Key="PrimaryBrush" Color="#2569CC" />
+          <SolidColorBrush x:Key="PrimarySoftBrush" Color="#1F2569CC" />
+          <SolidColorBrush x:Key="OnPrimaryBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="DangerBrush" Color="#D61F4E" />
+          <SolidColorBrush x:Key="DangerSoftBrush" Color="#14D61F4E" />
+          <SolidColorBrush x:Key="WarningBrush" Color="#B45309" />
+          <SolidColorBrush x:Key="WarningSoftBrush" Color="#14B45309" />
+          <SolidColorBrush x:Key="WarningBorderBrush" Color="#4DB45309" />
+          <SolidColorBrush x:Key="WarningTextBrush" Color="#8A4B0A" />
+          <SolidColorBrush x:Key="SuccessBrush" Color="#15803D" />
+          <SolidColorBrush x:Key="SuccessSoftBrush" Color="#1415803D" />
+          <SolidColorBrush x:Key="HoverOverlayBrush" Color="#0A000000" />
+          <SolidColorBrush x:Key="PressedOverlayBrush" Color="#14000000" />
+          <SolidColorBrush x:Key="CanvasBrush" Color="#E4E4E8" />
+          <SolidColorBrush x:Key="LogBrush" Color="#FAFAFB" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+      <FontFamily x:Key="MonoFont">monospace</FontFamily>
+    </ResourceDictionary>
+  </Application.Resources>
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Dark" Accent="#3385FF" RegionColor="#121212" />
+        <ColorPaletteResources x:Key="Light" Accent="#2569CC" RegionColor="#F5F5F7" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="avares://disc-image-studio-gui/Styles/AppStyles.axaml" />
+  </Application.Styles>
+</Application>

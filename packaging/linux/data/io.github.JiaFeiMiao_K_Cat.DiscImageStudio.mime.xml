@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-discimagestudio-project">
+    <comment>Disc Image Studio project</comment>
+    <sub-class-of type="application/json"/>
+    <generic-icon name="application-x-generic"/>
+    <glob pattern="*.discproj"/>
+  </mime-type>
+</mime-info>

@@ -6,7 +6,7 @@
 
 <h2>光ディスクの記録面に可視画像を生成・書き込みするオールインワンツール</h2>
 
-Windows デスクトップ版では、光ディスクの記録面に描く画像をデザインして書き込めます。Linux と macOS 向けの**実験的な CLI** では、CD、DVD、Blu-ray のイメージをオフラインで生成できます。
+Windows デスクトップ版と **Linux デスクトップ版（実験的）** では、光ディスクの記録面に描く画像をデザインして書き込めます。Linux と macOS 向けの**実験的な CLI** では、CD、DVD、Blu-ray のイメージをオフラインで生成できます。
 
 ![.NET バージョン](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)
 ![対応プラットフォーム](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-0078d6?style=flat-square)
@@ -44,6 +44,8 @@ Disc Image Studio は、1 枚の画像を CD、DVD、片面一層 BD-R ディス
 ## クイックスタート
 
 Windows では `win-x64.exe` で終わるファイルをダウンロードして実行します。Linux または macOS では、CPU に合った**実験的な CLI** のアーカイブを展開し、`./disc-image-studio --help` を実行してください。いずれも .NET ランタイムを同梱しています。[GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+
+Linux では**実験的なデスクトップ版**も使えます。デザイン、プレビュー、エクスポート、書き込みの流れは同じで、書き込みには cdrecord、growisofs または xorriso を使います。Arch Linux では `packaging/linux/arch` で `makepkg -si` を実行します。その他のディストリビューションでは `DiscImageStudio-Linux-…tar.gz` を展開して `./install.sh` を実行するか、`./packaging/linux/build.sh --install` でソースからビルドしてください。詳しくは [Linux ガイド（英語）](docs/LINUX.md) を参照してください。
 
 ### 1. プロジェクトを新規作成
 
@@ -153,6 +155,7 @@ CLI は PNG、JPEG、BMP、GIF を読み込み、アニメーション画像に�
 
 ```text
 src/DiscImageStudio.Cli/     Linux / macOS 用のオフライン CLI
+src/DiscImageStudio.Linux/   Avalonia 製 Linux デスクトップ版（GUI と CLI を 1 つのバイナリで提供）
 src/DiscImageStudio.ImageIO/  WIC とクロスプラットフォームの画像コーデック
 src/DiscImageStudio.Core/    メディア非依存のモジュール契約、プロジェクト/プリセットモデル、ジョブとコマンドカタログ
 src/DiscImageStudio.Imaging/ CD/DVD/BD 共通の画像前処理とディザリング補助

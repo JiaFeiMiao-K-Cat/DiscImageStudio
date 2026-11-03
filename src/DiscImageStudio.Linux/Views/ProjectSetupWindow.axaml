@@ -1,0 +1,116 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:DiscImageStudio.Linux.ViewModels"
+        xmlns:s="using:DiscImageStudio.Linux.Services"
+        xmlns:c="using:DiscImageStudio.Linux.Controls"
+        x:Class="DiscImageStudio.Linux.Views.ProjectSetupWindow"
+        x:DataType="vm:ProjectSetupViewModel"
+        Title="{Binding Title}" Width="620" SizeToContent="Height" CanResize="False" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+  <StackPanel Margin="26,22,26,22" Spacing="16">
+    <TextBlock Classes="h2" Text="{Binding Title}" />
+
+    <StackPanel Spacing="6">
+      <TextBlock Classes="label" Text="Disc type" />
+      <Border Classes="segments" IsEnabled="{Binding IsCreateMode}">
+        <UniformGrid Columns="3">
+          <RadioButton Classes="segment" IsChecked="{Binding IsCd}" Padding="10,10">
+            <StackPanel Spacing="4">
+              <c:LucideIcon Data="{x:Static c:Icons.Disc3}" Width="22" Height="22" HorizontalAlignment="Center" />
+              <TextBlock Text="CD-R" FontWeight="SemiBold" HorizontalAlignment="Center" />
+              <TextBlock Text="audio track or data" FontSize="11" Opacity="0.75" HorizontalAlignment="Center" />
+            </StackPanel>
+          </RadioButton>
+          <RadioButton Classes="segment" IsChecked="{Binding IsDvd}" Padding="10,10">
+            <StackPanel Spacing="4">
+              <c:LucideIcon Data="{x:Static c:Icons.Disc}" Width="22" Height="22" HorizontalAlignment="Center" />
+              <TextBlock Text="DVD±R" FontWeight="SemiBold" HorizontalAlignment="Center" />
+              <TextBlock Text="single layer ISO" FontSize="11" Opacity="0.75" HorizontalAlignment="Center" />
+            </StackPanel>
+          </RadioButton>
+          <RadioButton Classes="segment" IsChecked="{Binding IsBluRay}" Padding="10,10">
+            <StackPanel Spacing="4">
+              <c:LucideIcon Data="{x:Static c:Icons.DiscAlbum}" Width="22" Height="22" HorizontalAlignment="Center" />
+              <TextBlock Text="BD-R" FontWeight="SemiBold" HorizontalAlignment="Center" />
+              <TextBlock Text="25 GB single layer" FontSize="11" Opacity="0.75" HorizontalAlignment="Center" />
+            </StackPanel>
+          </RadioButton>
+        </UniformGrid>
+      </Border>
+    </StackPanel>
+
+    <StackPanel Spacing="6">
+      <TextBlock Classes="label" Text="Disc preset" />
+      <ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset}">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="s:DiscPreset">
+            <TextBlock Text="{Binding Name}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <TextBlock Classes="caption" Text="{Binding PresetDescription}" />
+    </StackPanel>
+
+    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+      <StackPanel>
+        <TextBlock Classes="label" Text="Inner radius (mm)" />
+        <TextBox Text="{Binding InnerText}" />
+      </StackPanel>
+      <StackPanel Grid.Column="1">
+        <TextBlock Classes="label" Text="Outer radius (mm)" />
+        <TextBox Text="{Binding OuterText}" />
+      </StackPanel>
+      <StackPanel Grid.Column="2">
+        <TextBlock Classes="label" Text="{Binding SectorsLabel}" />
+        <TextBox Text="{Binding SectorsText}" />
+      </StackPanel>
+    </Grid>
+    <TextBlock Classes="caption" Text="{Binding SectorsHint}" Margin="0,-8,0,0" />
+
+    <Expander Header="Calibrated track pitch (DVD)" IsVisible="{Binding IsDvd}" HorizontalAlignment="Stretch">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="caption" Text="Relative linear, quadratic and cubic pitch terms from assisted calibration. Leave at 0 for constant pitch." />
+        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+          <StackPanel>
+            <TextBlock Classes="label" Text="Linear" />
+            <TextBox Text="{Binding PitchLinearText}" />
+          </StackPanel>
+          <StackPanel Grid.Column="1">
+            <TextBlock Classes="label" Text="Quadratic" />
+            <TextBox Text="{Binding PitchQuadraticText}" />
+          </StackPanel>
+          <StackPanel Grid.Column="2">
+            <TextBlock Classes="label" Text="Cubic" />
+            <TextBox Text="{Binding PitchCubicText}" />
+          </StackPanel>
+        </Grid>
+      </StackPanel>
+    </Expander>
+
+    <ToggleSwitch IsVisible="{Binding IsBluRay}" IsChecked="{Binding InvertMapping}" OnContent="Swap 3T/6T polarity" OffContent="Swap 3T/6T polarity" />
+
+    <StackPanel Spacing="6">
+      <TextBlock Classes="label" Text="Project name" />
+      <TextBox Text="{Binding Name}" />
+    </StackPanel>
+
+    <StackPanel Spacing="6" IsVisible="{Binding IsCreateMode}">
+      <TextBlock Classes="label" Text="Save in" />
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBox Text="{Binding Folder}" />
+        <Button Grid.Column="1" Margin="6,0,0,0" Content="Choose…" Command="{Binding BrowseFolderCommand}" />
+      </Grid>
+      <TextBlock Classes="caption" Text="{Binding ProjectFilePath}" />
+      <TextBlock FontSize="12" Foreground="{DynamicResource WarningBrush}" IsVisible="{Binding ProjectFileExists}" Text="A project with this name already exists in the folder." />
+    </StackPanel>
+
+    <Border Classes="danger" IsVisible="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" Foreground="{DynamicResource DangerBrush}" />
+    </Border>
+
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}" />
+      <Button Classes="accent" Content="{Binding ConfirmText}" IsDefault="True" Command="{Binding ConfirmCommand}" />
+    </StackPanel>
+  </StackPanel>
+</Window>

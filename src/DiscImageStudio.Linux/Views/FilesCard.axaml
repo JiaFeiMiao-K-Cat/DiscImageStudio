@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DiscImageStudio.Linux.ViewModels"
+             xmlns:c="using:DiscImageStudio.Linux.Controls"
+             x:Class="DiscImageStudio.Linux.Views.FilesCard"
+             x:DataType="vm:DesignViewModel">
+  <!-- Shared by the Design and Export pages: a folder written next to the picture. -->
+  <Border Classes="card">
+    <StackPanel Spacing="10">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <c:LucideIcon Data="{x:Static c:Icons.Folder}" Width="16" Height="16" Foreground="{DynamicResource TextSecondaryBrush}" />
+        <TextBlock Classes="h3" Text="Files on the disc" />
+      </StackPanel>
+      <TextBlock Classes="caption" Text="Optional. The folder becomes a readable filesystem in one ring; the picture fills the rest. Leave empty to draw on the whole disc." />
+      <Grid ColumnDefinitions="*,Auto,Auto">
+        <TextBox Text="{Binding Project.DataDirectory, FallbackValue=''}" PlaceholderText="No folder: picture only" IsReadOnly="True" />
+        <Button Grid.Column="1" Margin="6,0,0,0" Content="Choose…" Command="{Binding BrowseDataCommand}" />
+        <Button Grid.Column="2" Classes="icon" Margin="2,0,0,0" Command="{Binding ClearDataCommand}" IsVisible="{Binding Project.HasFiles, FallbackValue=False}" ToolTip.Tip="Remove the folder">
+          <c:LucideIcon Data="{x:Static c:Icons.X}" Width="15" Height="15" />
+        </Button>
+      </Grid>
+      <StackPanel Spacing="10" IsVisible="{Binding Project.HasFiles, FallbackValue=False}">
+        <Border Classes="segments">
+          <UniformGrid Columns="2">
+            <RadioButton Classes="segment" Content="Inner ring" IsChecked="{Binding Project.FilesAtInnerRing, FallbackValue=True}" />
+            <RadioButton Classes="segment" Content="Outer ring" IsChecked="{Binding Project.FilesAtOuterRing, FallbackValue=False}" />
+          </UniformGrid>
+        </Border>
+        <StackPanel>
+          <TextBlock Classes="label" Text="Volume label" />
+          <TextBox Text="{Binding Project.VolumeLabel, FallbackValue=''}" PlaceholderText="Default" MaxLength="32" />
+        </StackPanel>
+        <Grid ColumnDefinitions="Auto,*">
+          <Border Width="12" Height="12" CornerRadius="3" Background="#B0FACC15" VerticalAlignment="Top" Margin="0,2,8,0" />
+          <TextBlock Grid.Column="1" Classes="caption" Text="Yellow on the canvas and previews marks the filesystem area." />
+        </Grid>
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</UserControl>
