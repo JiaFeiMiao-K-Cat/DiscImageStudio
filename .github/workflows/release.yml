@@ -235,9 +235,8 @@ jobs:
           docker pull registry.gitlab.com/sequoia-pgp/sequoia-sq:latest
           for file in "${files[@]}"; do
             # Sign file with sequoia sq
-            docker run -v "$PWD:/work" -w /work --rm registry.gitlab.com/sequoia-pgp/sequoia-sq:latest sign --signer-file /work/private_key.pgp --signature-file="/work/${file}.sig" "/work/${file}"
+            docker run --network none -v "$PWD:/work" -w /work --rm registry.gitlab.com/sequoia-pgp/sequoia-sq:latest sign --signer-file /work/private_key.pgp --signature-file="/work/${file}.sig" "/work/${file}"
           done
-          rm -f private_key.pgp
       - name: Create or refresh draft with all release attachments
         run: |
           # Never replace assets on an already published release.
