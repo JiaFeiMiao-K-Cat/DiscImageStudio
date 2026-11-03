@@ -211,7 +211,7 @@ jobs:
         with:
           name: release-${{ needs.metadata.outputs.tag }}
           path: release
-      
+
       - name: Verify release attachments
         working-directory: release
         shell: bash
