@@ -218,6 +218,9 @@ jobs:
         run: sha256sum --strict --check SHA256SUMS.txt
       - name: Build Sequoia SQ with OpenSSL
         shell: bash
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
+        if: ${{ env.SIGN_PRIVATE_KEY != '' }}
         run: |
           sudo apt-get update
           sudo apt-get install -y clang nettle-dev pkg-config libssl-dev capnproto libsqlite3-dev
@@ -232,6 +235,7 @@ jobs:
         shell: bash
         env:
           SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
+        if: ${{ env.SIGN_PRIVATE_KEY != '' }}
         run: |
           set -euo pipefail
           shopt -s nullglob
