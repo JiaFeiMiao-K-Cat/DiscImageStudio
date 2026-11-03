@@ -255,7 +255,7 @@ jobs:
           # Export Public Key
           sq key delete \
             --cert-file private_key.pgp \
-            --output release/public_key.pgp
+            --output release/public_key.asc
       - name: Create or refresh draft with all release attachments
         run: |
           # Never replace assets on an already published release.
@@ -289,7 +289,7 @@ jobs:
             throw 'The release tag already points to a different commit. Use a new version.'
           }
 
-          $assets = @(Get-ChildItem -Path 'release/*.exe','release/*.tar.gz','release/*.sig','release/*.pgp' -File | ForEach-Object FullName)
+          $assets = @(Get-ChildItem -Path 'release/*.exe','release/*.tar.gz','release/*.sig','release/*.asc' -File | ForEach-Object FullName)
           $assets += 'release/SHA256SUMS.txt'
           $options = @('--title', "Disc Image Studio $env:RELEASE_TAG", '--notes-file', 'release/release-notes.md')
           if ($existing.Count -eq 1) {
