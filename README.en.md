@@ -120,7 +120,7 @@ dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Rel
 
 ### macOS GUI (experimental)
 
-macOS also has a native SwiftUI GUI that reuses the same CLI and the same disc-generation algorithms, with the same workflow as the Windows desktop app: home with templates and recent projects, design for layers and tone, preview for design projection and artifact read-back, export for CD audio tracks or data discs and DVD/BD ISOs, burn through the system drutil (file mode) or DiscRecording (streaming, experimental) stack, and calibration for measured radii. Project files are `.discproj`, interoperable with Windows, and all encoding still runs through the CLI, with logs and progress streamed into the window.
+macOS also has a native SwiftUI GUI that reuses the same CLI and the same disc-generation algorithms, with the same workflow as the Windows desktop app: home with templates and recent projects, design for layers and tone, preview for design projection and artifact read-back, export for CD audio tracks or data discs and DVD/BD ISOs, burn through the system drutil (file mode) or DiscRecording (streaming, experimental) stack, and calibration for the assisted target-to-geometry wizard. Project files are `.discproj`, interoperable with Windows, and all encoding still runs through the CLI, with logs and progress streamed into the window. That assisted calibration flow matches Windows and adds the issue #49 two-disc approach (a half-black/half-white coarse disc, then a fine disc generated from the built-in target).
 
 ```sh
 # 1. Publish the self-contained CLI (requires the .NET 10 SDK)

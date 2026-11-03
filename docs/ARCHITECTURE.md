@@ -21,7 +21,7 @@ flowchart LR
     BD --> Iso[DiscImageStudio.Iso / UDF 2.01]
 ```
 
-`DiscImageStudio.Cli` 和 Windows 桌面程序从同一份模块目录执行离线命令；Linux/macOS CLI 还通过 `catalog --json` 把这份目录（模块、介质家族、命令能力与参数定义）投影给 `macos/` 的 SwiftUI 客户端，两边共享同一份命令描述，不在 Swift 侧重复维护参数表。主页模板与预览页另有辅助命令：`presets --json` 输出内置+用户合并后的 schema 4 预设目录，`bd-preview` / `bd-preview-readback` 在 net10.0 侧离线渲染蓝光设计投影与成品读回 PNG（以 `DiscImageStudio.ImageIO` 解码/编码，不依赖 WPF）。`DiscImageStudio.ImageIO` 在 Windows 桌面目标使用 WIC，在通用 `net10.0` 目标使用 StbImageSharp 读图、StbImageWriteSharp 写 PNG。两个后端都向生成器提供相同顺序的 BGRA 像素。蓝光共用透明度合成和灰度转换代码，CD 和 DVD 也分别共用各自原有的采样算法。
+`DiscImageStudio.Cli` 和 Windows 桌面程序从同一份模块目录执行离线命令；Linux/macOS CLI 还通过 `catalog --json` 把这份目录（模块、介质家族、命令能力与参数定义）投影给 `macos/` 的 SwiftUI 客户端，两边共享同一份命令描述，不在 Swift 侧重复维护参数表。主页模板与预览页另有辅助命令：`presets --json` 输出内置+用户合并后的 schema 4 预设目录，`bd-preview` / `bd-preview-readback` 在 net10.0 侧离线渲染蓝光设计投影与成品读回 PNG（以 `DiscImageStudio.ImageIO` 解码/编码，不依赖 WPF）。标定流程同样由 CLI 承载：`calibration-target`/`calibration-coarse-target` 生成图案与 schema 6 会话骨架，`calibration-photo` 做照片缩放与双椭圆联合透视矫正，`calibration-fit`（精调）与 `calibration-coarse-fit`（issue #49 粗调，恒定轨距近似）反推半径并给出预测折线，`calibration-session-write`/`calibration-session-read` 读写 Windows 兼容会话；几何与拟合数学都在 `DiscImageStudio.Core.Calibration`，渲染与重采样复用 `DiscImageStudio.ImageIO`。`DiscImageStudio.ImageIO` 在 Windows 桌面目标使用 WIC，在通用 `net10.0` 目标使用 StbImageSharp 读图、StbImageWriteSharp 写 PNG。两个后端都向生成器提供相同顺序的 BGRA 像素。蓝光共用透明度合成和灰度转换代码，CD 和 DVD 也分别共用各自原有的采样算法。
 
 ## Core 契约
 

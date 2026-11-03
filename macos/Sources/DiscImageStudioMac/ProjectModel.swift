@@ -182,6 +182,7 @@ final class ProjectModel {
     @ObservationIgnored private var composedRevision = -1
     @ObservationIgnored private var exportCompositeURL: URL?
     @ObservationIgnored private var onPersisted: ((ProjectDocument, URL) -> Void)?
+    @ObservationIgnored private var _calibrationModel: CalibrationModel?
 
     /// 清理上次会话遗留的导出合成图和预览 PNG（设计合成图固定名称，会被覆盖）。
     private static func removeStaleCacheArtifacts() {
@@ -235,6 +236,14 @@ final class ProjectModel {
 
     func updateCLI(_ invocation: CliInvocation?) {
         cliInvocation = invocation
+    }
+
+    /// 同一工程复用同一个标定模型，切换页面不丢向导状态。
+    func calibrationModel() -> CalibrationModel {
+        if let _calibrationModel { return _calibrationModel }
+        let model = CalibrationModel(project: self)
+        _calibrationModel = model
+        return model
     }
 
     func handleCacheCleared() {
@@ -592,6 +601,33 @@ final class ProjectModel {
                 to: destination
             )
         }.value
+    }
+
+    // MARK: - 标定
+
+    /// 应用标定候选：更新工程几何、同步预览实测参数、写入会话路径并立即保存。
+    func applyCalibration(_ candidate: CalibrationCandidate, canonicalSessionURL: URL?) {
+        document = document.applyingCalibration(candidate)
+        if let canonicalSessionURL {
+            document.calibrationSessionPath = canonicalSessionURL.path
+        }
+        actualInnerRadiusMm = candidate.innerRadiusMm
+        actualOuterRadiusMm = candidate.outerRadiusMm
+        if family == .dvd {
+            actualPitchLinear = candidate.pitchLinear
+            actualPitchQuadratic = candidate.pitchQuadratic
+            actualPitchCubic = candidate.pitchCubic
+        }
+        if family == .bd {
+            let invert = candidate.invertMapping ?? document.bluRaySettings.invertMapping
+            invertMapping = invert
+            document.bluRay = ProjectBluRaySettings(invertMapping: invert)
+        }
+        // 应用会改变生成几何；预览与导出需要重新计算。
+        previewURL = nil
+        previewRevision += 1
+        markDirty()
+        saveNow()
     }
 
     // MARK: - 保存

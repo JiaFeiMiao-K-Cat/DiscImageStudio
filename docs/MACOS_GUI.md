@@ -13,12 +13,12 @@ macOS 客户端（`macos/`，SwiftPM 包）与 Windows 桌面版是**同一套�
 - **预览**：「设计投影」把图层合成图按几何投到盘面；「成品读回」从已生成的音轨或 ISO 渲染校验图；可调实测内/外半径、DVD 三次项、BD 极性与预览尺寸，并显示生成几何与实测几何的偏差。
 - **导出**：CD 写音轨（WAV+CUE 或 RAW）或数据盘（ISO，可带随盘文件），DVD/BD 写 ISO；输出路径、交织、卷标、随盘文件位置都在这一页，生成成功即回填到预览的「成品读回」。
 - **刻录**：文件模式（系统 `drutil`）与实验性流式模式（DiscRecording `DRTrack` + `DRBurn`，经内置助手 `disc-burn-stream`），详见[刻录](#刻录)。
-- **标定**（本轮简化版）：说明拍摄与框选要点，允许手工填写实测内/外半径（DVD 另含三次项）并写回工程；照片框选与曲线拟合留到后续迭代。
+- **标定**：完整辅助标定向导——生成精调靶标或粗调半黑白图案、照片双椭圆矫正、沿曲线/分界描点反推（精调/粗调）、按阈值应用实测参数；支持 issue #49 的「两张法」（粗调 → 精调），标定会话与 Windows 双向兼容。详见[辅助标定（完整流程）](#辅助标定完整流程)。
 - **设置 / 关于**：外观、默认工程位置、缓存位置、CLI 路径（自动/自定义/源码 `dotnet run`）；版本、GPL-3.0-or-later、上游仓库与第三方声明。
 
 工程文件是 `.discproj`（UTF-8 JSON，schemaVersion 2），**与 Windows 桌面版双向兼容**：字段名、单位、图层与影调定义一致，同一工程可以在两个平台打开；读 schema 1 时按 CD/DVD 处理，保存统一写 2。
 
-所有编码只由 `disc-image-studio` 子进程完成（`cd-generate`、`solve`、`bd-generate`、`cd-preview-warp`、`cd-preview-track`、`calibrate`、`simulate`、`bd-preview`、`bd-preview-readback`）。Swift 侧只做工程模型、图层合成、参数拼装与进程管理，参数构造逐字对齐 Windows 的 `ExportViewModel` / `LivePreviewViewModel`。本轮 CLI 新增 `presets --json`、`bd-preview`、`bd-preview-readback`，`catalog --json` 保留用于命令自检、快照回归与排障。
+所有编码只由 `disc-image-studio` 子进程完成（`cd-generate`、`solve`、`bd-generate`、`cd-preview-warp`、`cd-preview-track`、`calibrate`、`simulate`、`bd-preview`、`bd-preview-readback`，以及标定命令组 `calibration-target` / `calibration-photo` / `calibration-fit` / `calibration-coarse-target` / `calibration-coarse-fit` / `calibration-session-write` / `calibration-session-read`）。Swift 侧只做工程模型、图层合成、参数拼装与进程管理，参数构造逐字对齐 Windows 的 `ExportViewModel` / `LivePreviewViewModel`。本轮 CLI 新增 `presets --json`、`bd-preview`、`bd-preview-readback` 与标定命令组，`catalog --json` 保留用于命令自检、快照回归与排障。
 
 ## 界面预览
 
@@ -30,9 +30,11 @@ macOS 客户端（`macos/`，SwiftPM 包）与 Windows 桌面版是**同一套�
 
 ![导出页：输出设置与结果](images/macos-export.png)
 
+![标定页：标靶生成与三步向导](images/macos-calibration.png)
+
 ## 架构
 
-SwiftUI 视图 → Kit 工作流层（工程、设计合成、导出/预览/刻录）→ CLI 子进程。编解码、纠错与文件系统写入仍然只在 C# 一侧。
+SwiftUI 视图 → Kit 工作流层（工程、设计合成、导出/预览/刻录/标定）→ CLI 子进程。编解码、纠错与文件系统写入仍然只在 C# 一侧。
 
 ```mermaid
 flowchart TB
@@ -51,6 +53,7 @@ flowchart TB
         ExportSvc["ExportService"]
         PreviewSvc["PreviewService"]
         BurnSvc["BurnService / BurnStreamService"]
+        CalibSvc["CalibrationService<br/>calibration-* 命令组"]
         Runner["CliRunner<br/>Process + Pipe"]
     end
     Home --> Doc
@@ -62,7 +65,9 @@ flowchart TB
     Export --> ExportSvc
     Preview --> PreviewSvc
     Burn --> BurnSvc
+    Calib --> CalibSvc
     Calib --> Doc
+    CalibSvc --> Runner
     ExportSvc --> Runner
     PreviewSvc --> Runner
     Runner --> CLI["disc-image-studio<br/>（自包含 CLI）"]
@@ -75,6 +80,7 @@ flowchart TB
 - **工程层**：`ProjectDocument` + `ProjectStore` 读写 `.discproj`（camelCase、schemaVersion 2、原子写、忽略未知字段、读 1 视为 CD/DVD），与 Windows 的 `ProjectJsonStore` 同一格式；`RecentProjectsStore` 管理最近工程与缩略图，`PresetLoader` 用 `presets --json` 读预设目录。
 - **设计层**：`DesignComposer` 按图层顺序自下而上合成正方形 PNG（中心即盘心、mm 坐标；预览 2048 px、导出 8192 px）；合成图是预览与导出共用的唯一输入，因此预览验证的素材就是写入盘片的素材。
 - **命令层**：`ExportService` / `PreviewService` 把工程与参数拼成 `ExportPlan` / `PreviewPlan`，`CliRunner` 启动子进程并逐行回传日志与进度（取消先 `SIGTERM`，3 秒后 `SIGKILL`）；`BurnService` 驱动 `/usr/bin/drutil`，`BurnStreamService` 驱动内置 `disc-burn-stream`。
+- **标定层**：`CalibrationService` 封装标定命令组（靶标/粗调图案生成、照片矫正、精调与粗调反推、会话读写），`CalibrationRecord` / `CalibrationRecordStore` 保存 GUI 侧的 `.mac.json` 记录；标定会话 `.calibration.json` 由 CLI 写，与 Windows 双向兼容。
 - **契约层**：命令行与参数的权威实现在 Windows 的 `ExportViewModel` / `LivePreviewViewModel`，macOS 侧逐字对齐；`catalog.json` 快照与 Kit 单测防止 CLI 输出漂移。
 - 子进程工作目录固定为用户主目录，环境变量强制 `DOTNET_CLI_TELEMETRY_OPTOUT=1`、`DOTNET_NOLOGO=1`、`DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1`。
 
@@ -295,6 +301,78 @@ macos/build/cli/osx-arm64/disc-image-studio cd-generate \
 - 介质不是空白时：界面直接拒绝写入并显示现有轨道信息（`drutil toc`），不做「擦除后继续」的隐式操作。
 - 蓝光介质：`BurnKind.kind(forMediaType:)` 返回 nil，界面提示改用镜像文件与第三方软件，绝不尝试写入。
 
+## 辅助标定（完整流程）
+
+标定页覆盖与 Windows 版相同的「生成标定盘 → 照片矫正 → 曲线标定」流程，并额外提供 issue #49 的**粗调**入口。权威契约是 [`macos/CALIBRATION.md`](../macos/CALIBRATION.md)（GUI 交互、Kit 接口、CLI 参数与 JSON 字段）；产品说明、公式与判定阈值的来源是 [`docs/CALIBRATION.md`](CALIBRATION.md)。
+
+### 三步向导
+
+顶部固定显示工程盘型与生成几何摘要。三步是串行依赖的：修改轮廓、盘片规格或任一描点后，后面的「已确认矫正 / 拟合结果」全部失效，必须重做（与 Windows 一致）。
+
+1. **标靶**：分段控件选「精调靶标」（内置同心圆 + 十字）或「粗调图案」（半黑白，issue #49）。
+   - 精调 → `calibration-target`：按当前几何把内置 `target_slim.png` 缩放并裁切刻录环带，输出 2400×2400 灰度 PNG 和 `.calibration.json` 会话骨架（schema 6）。
+   - 粗调 → `calibration-coarse-target`：输出「左黑右白、分界过盘心」的图案与 P0 记录（`p0.json`：family、r0/r1、sectors、density、pitch、drawing 起止）。
+   - 快捷动作：导出到项目 `calibration/`、跳导出页刻录、跳刻录页；每次生成都新建带时间戳/短 ID 的文件，不覆盖旧记录。
+2. **照片矫正**：导入照片并选择 12 cm / 8 cm。
+   - CLI（`calibration-photo`）先把照片缩到最长边 2000 px 并返回 `--resized-out`；**所有轮廓点坐标都基于这张缩小图**。
+   - 在照片上拖动 8 个外缘控制点 + 8 个中心孔控制点（初始按图像范围 0.43 / 0.125 布置），支持缩放、平移、重置轮廓。
+   - 「计算矫正」→ 双椭圆联合拟合 + 透视重采样，输出正方形矫正图（中心即盘心、+x 右、+y 下）；「确认矫正」进入下一步。失败时显示中文原因，并保留缩小照片供继续调整。
+3. **标定反推 → 应用参数**：
+   - 精调：在矫正图上沿一条径向曲线从内到外描点（最少 6 点；DVD 建议 ≥12 点并覆盖环带 ≥60%）→ `calibration-fit`。
+   - 粗调：沿黑白分界描点（≥8 点，覆盖生成环带径向宽度 ≥30%）→ `calibration-coarse-fit`。
+   - 候选列表展示平均偏差、最大偏差、偏离点数、是否被搜索边界限制以及 `warnings`；选中候选后在矫正图上叠加预测折线（青色=描点、橙色=预测、偏离点红色）。
+   - 「应用参数」：更新工程几何（CD/DVD/BD 半径、DVD 三次项、扇区保持不变、BD 极性按会话），同步预览页的实测参数，写 Windows 兼容 `.calibration.json`（`calibration-session-write`），更新工程 `calibrationSessionPath`，并把工程标记为脏。
+
+### 判定阈值
+
+| 项目 | 阈值 | 说明 |
+| --- | --- | --- |
+| 精调平均偏差 | ≤ 0.35 mm | 超过则禁用「应用参数」 |
+| 精调最大偏差 | ≤ 0.8 mm | 超过则禁用「应用参数」 |
+| 粗调 | `succeeded` 为真且 `warnings` 为空 | 只用于把累计绕圈降到可继续精调；应用前必须核对叠加图 |
+
+阈值与 Windows 版、`docs/CALIBRATION.md` 一致。CLI 只返回数据（平均/最大偏差、偏离点数、边界限制标志），是否允许应用由界面判定。
+
+### 两张法（粗调 → 精调）
+
+依据上游 issue #41（实测经验：粗标定三次 + 精标定两次）与 issue #49（半黑白粗调盘 + 内置靶标精调盘，附录给出粗调拟合公式）。完整公式与参数见 `docs/CALIBRATION.md` 和 `macos/CALIBRATION.md` §1.5。
+
+1. **粗调盘（P0 → P1）**：用当前（通常是名义）几何执行 `calibration-coarse-target`，刻录半黑白图案；拍摄并完成照片矫正后，沿**黑白分界**从内到外描点（≥8 点、覆盖 ≥30% 环带径向宽度）；`calibration-coarse-fit` 在恒定轨距近似下反推内外半径与整体旋转，返回最多 5 个候选。
+2. **叠加核对**：把候选的 `predicted` 折线叠到矫正照片上，检查分界是否贴合。`warnings` 非空（例如方向/绕数无法唯一确定、`bestIndex: -1`）时禁止应用，需要补点或重拍。
+3. **应用 P1**：把粗调结果写入工程几何，再用这套新参数（P1）回到步骤 1 重新生成**精调靶标**并刻录第二张盘。应用 P1 后不能继续使用旧标靶。
+4. **精调盘（P1 → P2）**：在矫正图上沿一条径向曲线描点（CD ≥6 点、建议 20+；DVD ≥12 点且覆盖 ≥60%），`calibration-fit` 反推内外半径、DVD 三次项与整体旋转，按上面的阈值检查后应用 P2 参数。
+
+- 粗调用恒定轨距近似，只求「把累计绕圈降到可继续精调」；精调才拟合 DVD 三次轨距与最终半径。
+- 标定图案与刻录必须在同一生成参数下进行；每张盘都要用生成时保存的记录，改参不会改写已有记录的含义。
+- 常见重拍原因：照片里看不清分界/曲线、轮廓点贴错（把刻录区边界当成实体边缘）、描点覆盖范围不足。
+
+### 会话文件与记录
+
+```text
+<项目目录>/
+├── <project>.discproj               # 工程，calibrationSessionPath 指向下方会话文件
+├── calibration/
+│   ├── target-<id>.png              # 精调标靶 2400×2400（按生成几何裁切环带）
+│   ├── coarse-<id>.png              # 粗调半黑白图案
+│   ├── <session>.calibration.json   # Windows 兼容会话（schema 6，由 CLI 读写）
+│   ├── photo-<id>.png               # 缩小后的原照片（最长边 ≤2000 px）
+│   ├── rectified-<id>.png           # 矫正后盘面图（正方形，中心即盘心）
+│   └── <session>.mac.json           # GUI 补充状态（候选、选中项、参数快照）
+└── <输出文件>
+```
+
+- `.calibration.json` 是 **Windows 双向兼容**的标定会话（schema 6：内嵌照片、轮廓点、描线点与生成参数），只由 CLI 写（`calibration-session-write`），GUI 不手写；工程用 `calibrationSessionPath` 指向它，重开工程时据此恢复。
+- `.mac.json` 只是 GUI 的补充状态。丢失时（例如从 Windows 拷来 `.calibration.json`）目前只能通过 `calibration-session-read` 显示摘要，需要在 GUI 重新导入照片并描点；后续会支持从会话解码照片与描线自动恢复。
+- 页脚是**本工程的标定记录列表**（生成时间、盘型、r0/r1、候选 RMS、是否已应用）；每条可以打开（恢复 UI 状态）、删除（只删本工程 `calibration/` 下的记录）或导出会话。
+- 修改轮廓或盘片规格会让「已确认矫正 + 描线 + 拟合」全部失效；修改任一曲线点或搜索范围会让旧拟合失效。
+
+### 限制
+
+- **不内置「密集环相位自动提取」**：粗调必须人工沿黑白分界描点，精调也必须人工沿一条径向曲线描点；没有自动识别同心圆或环数的能力。
+- **需要实机刻录与拍摄**：CI 与脚本只能验证图案生成、矫正算法、拟合计算与命令拼装；真实盘面的可见度、镜头状态、描点精度和最终物理标定精度无法在构建机上回归。
+- 矫正只处理拍摄角度引起的透视形变，不估计镜头径向畸变；严重广角畸变、遮挡或误选边界会降低可靠性。
+- 应用参数会改变工程几何（因此改变生成结果），必须提示并标记脏；不会自动重新生成已有镜像。
+
 ## CLI 发现顺序
 
 应用启动时按以下顺序挑选**第一个存在且可执行**的候选，界面状态栏显示实际来源：
@@ -322,8 +400,10 @@ macos/
 ├── Package.swift                    SwiftPM 清单（6.0 工具链、macOS 14、Swift 6 语言模式）
 ├── Sources/
 │   ├── DiscImageStudioKit/          工作流层：ProjectStore / PresetLoader / DesignComposer /
-│   │                                ExportService / PreviewService / BurnService / CliRunner …
+│   │                                ExportService / PreviewService / BurnService / CliRunner /
+│   │                                CalibrationService / CalibrationRecord / CalibrationModels …
 │   ├── DiscImageStudioMac/          SwiftUI 界面：主页、设计、预览、导出、刻录、标定、设置、关于
+│   │                                （标定为 CalibrationView.swift 向导）
 │   └── DiscBurnStream/              流式刻录助手 disc-burn-stream（Objective-C + DiscRecording）
 ├── Tests/DiscImageStudioKitTests/
 │   ├── Fixtures/catalog.json        catalog --json 快照
@@ -340,10 +420,12 @@ macos/
 
 应用包内的对应位置：`Contents/Resources/cli/disc-image-studio`（编码后端）与 `Contents/Resources/bin/disc-burn-stream`（流式刻录助手）。`BurnService` 负责文件模式（`drutil`），`BurnStreamService` 负责流式模式（子进程 + stdin 管道）。
 
+Kit 的 `CalibrationService` / `CalibrationRecord` / `CalibrationModels` 封装 CLI 的标定命令组：`calibration-target`、`calibration-photo`、`calibration-fit`、`calibration-coarse-target`、`calibration-coarse-fit`、`calibration-session-write`、`calibration-session-read`。工作目录是 `<项目目录>/calibration/`，照片轮廓点用缩小照片的像素坐标，描线点与预测折线用毫米坐标（+x 右、+y 下，原点盘心）。
+
 ## 测试
 
 ```sh
-# Swift 侧：工程读写、设计合成、导出/预览参数拼装、CLI 发现、设置、进度解析、BurnService 命令拼装
+# Swift 侧：工程读写、设计合成、导出/预览/标定参数拼装、CLI 发现、设置、进度解析、BurnService 命令拼装
 cd macos && swift test
 
 # 发布后的 CLI 冒烟测试（在仓库目录之外跑真实生成任务）
@@ -357,7 +439,7 @@ cd macos && swift test
 macos/build/DiscImageStudio.app/Contents/Resources/bin/disc-burn-stream --list-drives
 ```
 
-`tests/test_cli_package.py` 依次运行 `--help`、`selftest`、catalog 目录检查和 CD 音轨、DVD 镜像、蓝光镜像的最小生成任务，并核对输出字节数；它在临时目录里执行，不依赖仓库内的相对路径。CI 中该脚本在当前构建产出的 CLI 上运行。新增的 `presets --json`、`bd-preview`、`bd-preview-readback` 由同一套冒烟测试逐步覆盖。
+`tests/test_cli_package.py` 依次运行 `--help`、`selftest`、catalog 目录检查和 CD 音轨、DVD 镜像、蓝光镜像的最小生成任务，并核对输出字节数；它在临时目录里执行，不依赖仓库内的相对路径。CI 中该脚本在当前构建产出的 CLI 上运行。新增的 `presets --json`、`bd-preview`、`bd-preview-readback` 由同一套冒烟测试逐步覆盖；标定命令组（`calibration-*`）的图案生成、矫正、拟合与会话读写计划由 CLI 单测与 `macos/Tests` 的合成照片用例覆盖（随实现落地补充），真实刻录与拍摄不在自动化范围。
 
 刻录相关的验证边界：CI 与脚本只能确认 `disc-burn-stream` 能构建、能启动、能列出刻录机；`drutil` 的实际写入需要实机刻录机与空白介质，无法在构建机上回归。`swift test` 覆盖 `BurnService` 的参数拼装与 `drutil` 输出解析（纯逻辑部分），不驱动真实硬件。
 
@@ -402,8 +484,9 @@ macos/build/DiscImageStudio.app/Contents/Resources/bin/disc-burn-stream --list-d
 - **实验性**：与上游发布说明一致，macOS/Linux CLI 及本图形界面均为实验性功能，行为可能随版本变化。
 - **刻录覆盖范围有限**：文件模式复用系统 `drutil`，可写 CD-DA 与 CD/DVD 数据镜像；流式模式（`disc-burn-stream`）覆盖 CD-DA 与 DVD 数据；**BD-R 不在支持范围**（Apple 的 DiscRecording 未提供可靠的 BD 写入路径，请生成 ISO 后用第三方软件）。刻录属于实验性功能，只能使用空白或可报废介质。
 - **随盘文件工程的投影范围是近似值**：DVD `calibrate` 需要显式的绘图起止（`--lba/--fill-sectors`），当前 GUI 固定按整盘（0..总扇区）预览；BD `bd-preview` 同样固定整盘绘图区间。未选择随盘文件时与真实生成完全一致，选择文件夹后预览的文件区高亮可能偏大，以导出后的成品读回为准。
-- **标定本轮为简化版**：只提供拍摄/框选说明与手工填写实测内/外半径（DVD 另含三次项），没有照片框选与曲线拟合；完整标定沿用 Windows 的 `CalibrationPhotoCanvas` 流程，后续迭代提供。
-- **页面按 WORKFLOW.md 分阶段补齐**：刻录与标定当前是最小可用/实验性实现，其余页面按工程设计逐步对齐 Windows 桌面版。
+- **标定不内置自动环数识别**：粗调需人工沿黑白分界描点，精调需人工沿一条径向曲线描点；没有「密集环相位自动提取」，也不自动识别同心圆。
+- **标定需要实机刻录与拍摄**：自动化只能覆盖图案生成、矫正与拟合算法；真实盘面可见度、镜头状态与描点精度需人工确认。
+- **页面逐步对齐 Windows**：各工作流页面按 `macos/WORKFLOW.md` 与 `macos/CALIBRATION.md` 落地；标定向导依赖 UI/CLI 合并后可用，命令与字段以契约为准。
 - **刻录无法在构建机验证**：CI 与脚本只能确认助手能构建、能启动、能列出刻录机；真正的写入需要实机刻录机与空白介质，相关分支（无介质、非空白、写入中断）只能靠人工回归。
 - **仅简体中文界面**：`Package.swift` 的 `defaultLocalization` 为 `zh-Hans`，界面文案尚未提供其他语言；CLI 输出保持英文。
 - **无公证、ad-hoc 签名**：只保证完整性，不提供开发者身份验证；首次运行需要手动放行。

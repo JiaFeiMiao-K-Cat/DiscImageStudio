@@ -121,7 +121,7 @@ dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Rel
 
 ### macOS 圖形介面（實驗性）
 
-macOS 上另有原生 SwiftUI 圖形介面，沿用同一份 CLI 與同一套碟面產生演算法，介面形態與 Windows 桌面版一致：首頁從範本或最近專案開始，設計頁編輯圖層與影調，預覽頁做設計投影或成品讀回，匯出頁產生 CD 音軌／資料碟或 DVD/BD ISO，燒錄頁以系統 `drutil`（檔案模式）或 DiscRecording（串流，實驗性）寫入，校正頁記錄實測半徑。專案檔 `.discproj` 與 Windows 雙向相容；所有編碼仍由 CLI 完成，執行時逐行轉送日誌與進度。
+macOS 上另有原生 SwiftUI 圖形介面，沿用同一份 CLI 與同一套碟面產生演算法，介面形態與 Windows 桌面版一致：首頁從範本或最近專案開始，設計頁編輯圖層與影調，預覽頁做設計投影或成品讀回，匯出頁產生 CD 音軌／資料碟或 DVD/BD ISO，燒錄頁以系統 `drutil`（檔案模式）或 DiscRecording（串流，實驗性）寫入，校正頁完成輔助校正精靈（靶標、照片矯正、反推、套用）。專案檔 `.discproj` 與 Windows 雙向相容；所有編碼仍由 CLI 完成，執行時逐行轉送日誌與進度。該流程與 Windows 相同，並額外支援 issue #49 的「兩張法」（半黑白粗調碟 → 內建靶標精調碟）。
 
 ```sh
 # 1. 發布自包含 CLI（需要 .NET 10 SDK）
