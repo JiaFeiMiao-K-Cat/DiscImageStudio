@@ -21,7 +21,7 @@ flowchart LR
     BD --> Iso[DiscImageStudio.Iso / UDF 2.01]
 ```
 
-`DiscImageStudio.Cli` 和 Windows 桌面程序从同一份模块目录执行离线命令。`DiscImageStudio.ImageIO` 在 Windows 桌面目标使用 WIC，在通用 `net10.0` 目标使用 StbImageSharp 读图、StbImageWriteSharp 写 PNG。两个后端都向生成器提供相同顺序的 BGRA 像素。蓝光共用透明度合成和灰度转换代码，CD 和 DVD 也分别共用各自原有的采样算法。
+`DiscImageStudio.Cli` 和 Windows 桌面程序从同一份模块目录执行离线命令；Linux/macOS CLI 还通过 `catalog --json` 把这份目录（模块、介质家族、命令能力与参数定义）投影给 `macos/` 的 SwiftUI 客户端，两边共享同一份命令描述，不在 Swift 侧重复维护参数表。主页模板与预览页另有辅助命令：`presets --json` 输出内置+用户合并后的 schema 4 预设目录，`bd-preview` / `bd-preview-readback` 在 net10.0 侧离线渲染蓝光设计投影与成品读回 PNG（以 `DiscImageStudio.ImageIO` 解码/编码，不依赖 WPF）。`DiscImageStudio.ImageIO` 在 Windows 桌面目标使用 WIC，在通用 `net10.0` 目标使用 StbImageSharp 读图、StbImageWriteSharp 写 PNG。两个后端都向生成器提供相同顺序的 BGRA 像素。蓝光共用透明度合成和灰度转换代码，CD 和 DVD 也分别共用各自原有的采样算法。
 
 ## Core 契约
 
@@ -29,7 +29,7 @@ flowchart LR
 
 - `IOpticalDiscModule`：模块执行边界。
 - `DiscModuleDescriptor`：模块 ID、介质家族、取消能力和命令元数据。
-- `DiscCommandDescriptor`：命令、能力和选项定义，可供未来动态生成界面。
+- `DiscCommandDescriptor`：命令、能力和选项定义，经 CLI 的 `catalog --json` 供 macOS SwiftUI 客户端动态生成界面。
 - `DiscJobRequest`：统一命令与参数载体。
 - `DiscJobProgress`：介质无关的进度、阶段、完成量和耗时。
 - `DiscJobResult`：退出码、摘要和输出路径。
@@ -83,6 +83,8 @@ flowchart LR
 ## 流式刻录层
 
 CD 的 `OpticalBurnRequest.ProduceContent` 明确要求无头的 44.1 kHz、16 位、双声道小端 PCM，`ContentLength` 只计音频数据。CD 生成器的默认无头流保留旧大端输出，调用 IMAPI 时由外壳显式选择 `CdAudioByteOrder.LittleEndian`；转换在延迟交织完成后的整扇区输出处进行。文件生成根据 `.wav` / `.raw` 后缀选择格式：WAV 使用同样的小端音频数据，额外写入 44 字节 RIFF 头和同名 WAVE CUE；旧 RAW 保持大端。Windows RAW 镜像构造器实测原样保留传入字节，不负责修正字节序。详见 [CD 刻录兼容说明](CD_AUDIO_COMPATIBILITY.md)。
+
+CLI 提供 `--output -` 的 stdout 流式模式，供 macOS 端管道式流式刻录：`cd-generate` 只输出原始 CD-DA 块（每扇区 2352 字节、大端、按 `--interleave` 交织，无 WAV 头/CUE，不能与 `--data-dir` 同用），`bd-generate` 输出完整 BD-R ISO 字节流（不落文件、不写 sidecar）；进度与摘要全部改走 stderr，`-` 不会被当作文件名。
 
 `DiscImageStudio.Burning` 只负责 Windows IMAPI2 设备枚举、介质检查、COM `IStream` 适配、64 MiB 有界内存缓冲（开刻前预填充 32 MiB）和刻录生命周期。自动速度会在真正开始 CD/DVD 刻录时重新读取当前盘片的写入配置并选择最低值，手动选择仍保持原值；设备不报告速度时使用刻录接口的保守回退。CD/DVD 生成器仍拥有介质格式：CD 顺序产生 2352 字节音频扇区，DVD 快速算法顺序产生 2048 字节数据扇区。刻录器按需读取这些块，因此磁盘上不出现完整镜像。原文件输出入口不经过该层，失败时不会破坏原工作流。
 

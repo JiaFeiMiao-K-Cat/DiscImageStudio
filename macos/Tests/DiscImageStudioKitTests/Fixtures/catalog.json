@@ -1,0 +1,995 @@
+{
+  "schemaVersion": 1,
+  "toolVersion": "1.3.6",
+  "modules": [
+    {
+      "id": "cd-da",
+      "displayName": "CD",
+      "family": "CompactDisc",
+      "description": "CD audio tracks or Mode 1 ISO9660/Joliet data images with CLV geometry previews.",
+      "supportsCancellation": true,
+      "commands": [
+        {
+          "name": "cd-generate",
+          "displayName": "Generate CD audio or data image",
+          "description": "Without files, writes WAV/CUE or RAW audio; with --data-dir, writes a Mode 1 ISO with inner/outer-ring files.",
+          "capabilities": [
+            "RawTrackGeneration",
+            "DataImageGeneration",
+            "HybridFilesystem"
+          ],
+          "options": [
+            {
+              "name": "input",
+              "displayName": "Source image",
+              "valueType": "InputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "output",
+              "displayName": "Audio track (.wav/.raw) or data image (.iso)",
+              "valueType": "OutputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "data-dir",
+              "displayName": "Files to include; omitted for audio",
+              "valueType": "InputFolder",
+              "required": false,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "volume-label",
+              "displayName": "Data volume label",
+              "valueType": "String",
+              "required": false,
+              "defaultValue": "CD_IMAGE",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "file-position",
+              "displayName": "File position",
+              "valueType": "Choice",
+              "required": false,
+              "defaultValue": "inner",
+              "unit": null,
+              "choices": [
+                "inner",
+                "outer"
+              ]
+            },
+            {
+              "name": "r0",
+              "displayName": "Inner radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "24.5",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "r1",
+              "displayName": "Outer radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "56.8",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "sectors",
+              "displayName": "Program sectors",
+              "valueType": "Integer",
+              "required": false,
+              "defaultValue": "359849",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "velocity",
+              "displayName": "Linear velocity",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "1200",
+              "unit": "mm/s",
+              "choices": null
+            },
+            {
+              "name": "theta0",
+              "displayName": "Start angle",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "0",
+              "unit": "degrees",
+              "choices": null
+            },
+            {
+              "name": "outer",
+              "displayName": "Image outer radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "57.5",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "interleave",
+              "displayName": "CD-DA delay interleave",
+              "valueType": "Boolean",
+              "required": false,
+              "defaultValue": "true",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "cue",
+              "displayName": "Write a CUE sheet next to the WAV track",
+              "valueType": "Boolean",
+              "required": false,
+              "defaultValue": "true",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "tone-dither",
+              "displayName": "Dither strength",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "0",
+              "unit": "0..1",
+              "choices": null
+            },
+            {
+              "name": "tone-levels",
+              "displayName": "Palette levels",
+              "valueType": "Integer",
+              "required": false,
+              "defaultValue": "2",
+              "unit": "2 or 4",
+              "choices": null
+            },
+            {
+              "name": "tone-brightness",
+              "displayName": "Tone brightness",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "0",
+              "unit": "-64..64",
+              "choices": null
+            },
+            {
+              "name": "tone-gamma",
+              "displayName": "sRGB linearization",
+              "valueType": "Boolean",
+              "required": false,
+              "defaultValue": "false",
+              "unit": null,
+              "choices": null
+            }
+          ]
+        },
+        {
+          "name": "cd-preview-warp",
+          "displayName": "Preview CD geometry",
+          "description": "Projects generated geometry onto measured disc geometry.",
+          "capabilities": [
+            "GeometryPreview"
+          ],
+          "options": [
+            {
+              "name": "input",
+              "displayName": "Source image",
+              "valueType": "InputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "output",
+              "displayName": "Preview PNG",
+              "valueType": "OutputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "r0",
+              "displayName": "Inner radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "24.5",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "r1",
+              "displayName": "Outer radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "56.8",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "sectors",
+              "displayName": "Program sectors",
+              "valueType": "Integer",
+              "required": false,
+              "defaultValue": "359849",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "velocity",
+              "displayName": "Linear velocity",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "1200",
+              "unit": "mm/s",
+              "choices": null
+            },
+            {
+              "name": "theta0",
+              "displayName": "Start angle",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "0",
+              "unit": "degrees",
+              "choices": null
+            },
+            {
+              "name": "outer",
+              "displayName": "Image outer radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "57.5",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "actual-r0",
+              "displayName": "Measured inner radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "24.3",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "actual-r1",
+              "displayName": "Measured outer radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "56.6",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "tone-dither",
+              "displayName": "Dither strength",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "0",
+              "unit": "0..1",
+              "choices": null
+            },
+            {
+              "name": "tone-levels",
+              "displayName": "Palette levels",
+              "valueType": "Integer",
+              "required": false,
+              "defaultValue": "2",
+              "unit": "2 or 4",
+              "choices": null
+            },
+            {
+              "name": "tone-brightness",
+              "displayName": "Tone brightness",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "0",
+              "unit": "-64..64",
+              "choices": null
+            },
+            {
+              "name": "tone-gamma",
+              "displayName": "sRGB linearization",
+              "valueType": "Boolean",
+              "required": false,
+              "defaultValue": "false",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "data-dir",
+              "displayName": "Data files for drawing-range preview",
+              "valueType": "InputFolder",
+              "required": false,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "volume-label",
+              "displayName": "Data volume label",
+              "valueType": "String",
+              "required": false,
+              "defaultValue": "CD_IMAGE",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "file-position",
+              "displayName": "File position",
+              "valueType": "Choice",
+              "required": false,
+              "defaultValue": "inner",
+              "unit": null,
+              "choices": [
+                "inner",
+                "outer"
+              ]
+            },
+            {
+              "name": "size",
+              "displayName": "Preview size",
+              "valueType": "Integer",
+              "required": false,
+              "defaultValue": "1600",
+              "unit": "px",
+              "choices": null
+            },
+            {
+              "name": "samples-per-sector",
+              "displayName": "Samples per sector",
+              "valueType": "Integer",
+              "required": false,
+              "defaultValue": "16",
+              "unit": null,
+              "choices": null
+            }
+          ]
+        },
+        {
+          "name": "cd-preview-track",
+          "displayName": "Preview CD audio or data image",
+          "description": "Renders WAV/RAW audio or a Mode 1 ISO with measured geometry.",
+          "capabilities": [
+            "EncodedOutputPreview"
+          ],
+          "options": [
+            {
+              "name": "track",
+              "displayName": "WAV/RAW track or Mode 1 ISO",
+              "valueType": "InputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "output",
+              "displayName": "Preview PNG",
+              "valueType": "OutputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "r0",
+              "displayName": "Inner radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "24.5",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "r1",
+              "displayName": "Outer radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "56.8",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "sectors",
+              "displayName": "Program sectors",
+              "valueType": "Integer",
+              "required": false,
+              "defaultValue": "359849",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "velocity",
+              "displayName": "Linear velocity",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "1200",
+              "unit": "mm/s",
+              "choices": null
+            },
+            {
+              "name": "theta0",
+              "displayName": "Start angle",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "0",
+              "unit": "degrees",
+              "choices": null
+            },
+            {
+              "name": "outer",
+              "displayName": "Image outer radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "57.5",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "size",
+              "displayName": "Preview size",
+              "valueType": "Integer",
+              "required": false,
+              "defaultValue": "1600",
+              "unit": "px",
+              "choices": null
+            },
+            {
+              "name": "byte-step",
+              "displayName": "Byte sampling interval",
+              "valueType": "Integer",
+              "required": false,
+              "defaultValue": "48",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "deinterleave",
+              "displayName": "Undo CD-DA delay interleave",
+              "valueType": "Boolean",
+              "required": false,
+              "defaultValue": "true",
+              "unit": null,
+              "choices": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dvd-data",
+      "displayName": "DVD data disc",
+      "family": "Dvd",
+      "description": "DVD fast-dispersion ISO writer and clockwise geometry calibration adapter.",
+      "supportsCancellation": false,
+      "commands": [
+        {
+          "name": "solve",
+          "displayName": "Generate DVD image",
+          "description": "Generates a DVD image with the fixed fast dispersion mapping in CW direction.",
+          "capabilities": [
+            "DataImageGeneration",
+            "HybridFilesystem",
+            "ErrorCorrectionEncoding"
+          ],
+          "options": [
+            {
+              "name": "image",
+              "displayName": "Source image",
+              "valueType": "InputFile",
+              "required": false,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "iso-output",
+              "displayName": "Output ISO",
+              "valueType": "OutputFile",
+              "required": false,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "data-dir",
+              "displayName": "Hybrid data folder",
+              "valueType": "InputFolder",
+              "required": false,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "file-position",
+              "displayName": "File placement",
+              "valueType": "Choice",
+              "required": false,
+              "defaultValue": "inner",
+              "unit": null,
+              "choices": [
+                "inner",
+                "outer"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "encode",
+          "displayName": "Encode DVD payload",
+          "description": "Encodes one DVD ECC block into packed NRZI channel levels.",
+          "capabilities": [
+            "ErrorCorrectionEncoding"
+          ],
+          "options": [
+            {
+              "name": "input",
+              "displayName": "Payload",
+              "valueType": "InputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "output",
+              "displayName": "Channel output",
+              "valueType": "OutputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            }
+          ]
+        },
+        {
+          "name": "calibrate",
+          "displayName": "Preview DVD geometry",
+          "description": "Renders generated geometry through measured disc radii.",
+          "capabilities": [
+            "GeometryPreview"
+          ],
+          "options": [
+            {
+              "name": "image",
+              "displayName": "Source image",
+              "valueType": "InputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "output",
+              "displayName": "Preview PNG",
+              "valueType": "OutputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            }
+          ]
+        },
+        {
+          "name": "simulate",
+          "displayName": "Simulate DVD read-back",
+          "description": "Renders a generated ISO\u0027s payload sectors under measured disc radii.",
+          "capabilities": [
+            "EncodedOutputPreview"
+          ],
+          "options": [
+            {
+              "name": "iso",
+              "displayName": "Generated ISO image",
+              "valueType": "InputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "output",
+              "displayName": "Preview PNG",
+              "valueType": "OutputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            }
+          ]
+        },
+        {
+          "name": "selftest",
+          "displayName": "Run DVD engine self-tests",
+          "description": "Runs the DVD engine\u0027s deterministic regression suite.",
+          "capabilities": [],
+          "options": []
+        }
+      ]
+    },
+    {
+      "id": "bluray-data",
+      "displayName": "Blu-ray BD-R",
+      "family": "BluRay",
+      "description": "ISO/IEC 30190 single-layer BD-R image generation using 3T/6T run-count bias, payload probes and ECC diagnostics.",
+      "supportsCancellation": true,
+      "commands": [
+        {
+          "name": "bd-info",
+          "displayName": "BD-R parameters",
+          "description": "Describe nominal BD-R geometry; optionally export JSON.",
+          "capabilities": [],
+          "options": [
+            {
+              "name": "preset",
+              "displayName": "BD-R preset",
+              "valueType": "Choice",
+              "required": false,
+              "defaultValue": "bd-r-sl-25gb",
+              "unit": null,
+              "choices": [
+                "bd-r-sl-25gb",
+                "bd-r-ritek-10x",
+                "bd-r-verbatim-64099"
+              ]
+            },
+            {
+              "name": "total-sectors",
+              "displayName": "Disc total sectors",
+              "valueType": "Integer",
+              "required": false,
+              "defaultValue": "12219392",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "r0",
+              "displayName": "Inner radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "24",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "r1",
+              "displayName": "Outer radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "58",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "start-angle",
+              "displayName": "Start angle",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "0",
+              "unit": "degrees",
+              "choices": null
+            },
+            {
+              "name": "output",
+              "displayName": "JSON output",
+              "valueType": "OutputFile",
+              "required": false,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "invert",
+              "displayName": "Swap 3T/6T assignment",
+              "valueType": "Boolean",
+              "required": false,
+              "defaultValue": "false",
+              "unit": null,
+              "choices": null
+            }
+          ]
+        },
+        {
+          "name": "bd-probe",
+          "displayName": "BD-R payload probe",
+          "description": "Export raw user sectors for an explicit scrambled-byte probe (no filesystem).",
+          "capabilities": [
+            "DataImageGeneration"
+          ],
+          "options": [
+            {
+              "name": "preset",
+              "displayName": "BD-R preset",
+              "valueType": "Choice",
+              "required": false,
+              "defaultValue": "bd-r-sl-25gb",
+              "unit": null,
+              "choices": [
+                "bd-r-sl-25gb",
+                "bd-r-ritek-10x",
+                "bd-r-verbatim-64099"
+              ]
+            },
+            {
+              "name": "total-sectors",
+              "displayName": "Disc total sectors",
+              "valueType": "Integer",
+              "required": false,
+              "defaultValue": "12219392",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "r0",
+              "displayName": "Inner radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "24",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "r1",
+              "displayName": "Outer radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "58",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "start-angle",
+              "displayName": "Start angle",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "0",
+              "unit": "degrees",
+              "choices": null
+            },
+            {
+              "name": "output",
+              "displayName": "Payload output",
+              "valueType": "OutputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "start-sector",
+              "displayName": "First sector",
+              "valueType": "Integer",
+              "required": false,
+              "defaultValue": "0",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "sectors",
+              "displayName": "Sector count",
+              "valueType": "Integer",
+              "required": false,
+              "defaultValue": "32",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "byte",
+              "displayName": "Scrambled byte",
+              "valueType": "String",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            }
+          ]
+        },
+        {
+          "name": "bd-encode",
+          "displayName": "BD-R ECC diagnostic",
+          "description": "Encode exactly 65536 payload bytes into 76880 ECC bytes; not a burn image.",
+          "capabilities": [
+            "ErrorCorrectionEncoding"
+          ],
+          "options": [
+            {
+              "name": "input",
+              "displayName": "Payload cluster",
+              "valueType": "InputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "output",
+              "displayName": "ECC cluster",
+              "valueType": "OutputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "psn",
+              "displayName": "First physical sector",
+              "valueType": "String",
+              "required": false,
+              "defaultValue": "0x100000",
+              "unit": null,
+              "choices": null
+            }
+          ]
+        },
+        {
+          "name": "bd-generate",
+          "displayName": "BD-R picture generation",
+          "description": "Draw the full user-data area; selecting a files directory adds a UDF 2.01 filesystem at the inner or outer ring.",
+          "capabilities": [
+            "DataImageGeneration"
+          ],
+          "options": [
+            {
+              "name": "preset",
+              "displayName": "BD-R preset",
+              "valueType": "Choice",
+              "required": false,
+              "defaultValue": "bd-r-sl-25gb",
+              "unit": null,
+              "choices": [
+                "bd-r-sl-25gb",
+                "bd-r-ritek-10x",
+                "bd-r-verbatim-64099"
+              ]
+            },
+            {
+              "name": "total-sectors",
+              "displayName": "Disc total sectors",
+              "valueType": "Integer",
+              "required": false,
+              "defaultValue": "12219392",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "r0",
+              "displayName": "Inner radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "24",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "r1",
+              "displayName": "Outer radius",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "58",
+              "unit": "mm",
+              "choices": null
+            },
+            {
+              "name": "start-angle",
+              "displayName": "Start angle",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "0",
+              "unit": "degrees",
+              "choices": null
+            },
+            {
+              "name": "input",
+              "displayName": "Source image",
+              "valueType": "InputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "output",
+              "displayName": "ISO output",
+              "valueType": "OutputFile",
+              "required": true,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "data-dir",
+              "displayName": "Files directory",
+              "valueType": "InputFolder",
+              "required": false,
+              "defaultValue": null,
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "file-position",
+              "displayName": "File placement",
+              "valueType": "Choice",
+              "required": false,
+              "defaultValue": "inner",
+              "unit": null,
+              "choices": [
+                "inner",
+                "outer"
+              ]
+            },
+            {
+              "name": "volume-label",
+              "displayName": "ISO volume label",
+              "valueType": "String",
+              "required": false,
+              "defaultValue": "BD_IMAGE",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "invert",
+              "displayName": "Swap 3T/6T assignment",
+              "valueType": "Boolean",
+              "required": false,
+              "defaultValue": "false",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "tone-dither",
+              "displayName": "Dither strength 0..1",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "0",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "tone-levels",
+              "displayName": "Tone levels (BD is binary)",
+              "valueType": "Integer",
+              "required": false,
+              "defaultValue": "2",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "tone-brightness",
+              "displayName": "Brightness offset -64..64",
+              "valueType": "Decimal",
+              "required": false,
+              "defaultValue": "0",
+              "unit": null,
+              "choices": null
+            },
+            {
+              "name": "tone-gamma",
+              "displayName": "sRGB linearization",
+              "valueType": "Boolean",
+              "required": false,
+              "defaultValue": "false",
+              "unit": null,
+              "choices": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

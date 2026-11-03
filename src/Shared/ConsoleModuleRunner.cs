@@ -15,6 +15,7 @@ internal static class ConsoleModuleRunner
     {
         DiscJobRequest request = new(arguments[0], arguments.Skip(1));
         IOpticalDiscModule module = Catalog.Resolve(request.Command);
+        bool streamsToStandardOutput = IsStandardOutputStream(request.Command, request.Arguments);
         using CancellationTokenSource cancellation = new();
         ConsoleCancelEventHandler cancelHandler = (_, e) =>
         {
@@ -25,9 +26,18 @@ internal static class ConsoleModuleRunner
         Console.CancelKeyPress += cancelHandler;
         try
         {
-            DiscJobResult result = module.ExecuteAsync(request, new ConsoleProgress(), cancellation.Token)
+            DiscJobResult result = module.ExecuteAsync(
+                    request,
+                    new ConsoleProgress(streamsToStandardOutput),
+                    cancellation.Token)
                 .GetAwaiter().GetResult();
-            if (!string.IsNullOrWhiteSpace(result.Summary)) Console.WriteLine(result.Summary);
+            if (!string.IsNullOrWhiteSpace(result.Summary))
+            {
+                // A binary payload may occupy stdout; keep every log line on stderr.
+                if (streamsToStandardOutput) Console.Error.WriteLine(result.Summary);
+                else Console.WriteLine(result.Summary);
+            }
+
             return result.ExitCode;
         }
         finally
@@ -36,11 +46,46 @@ internal static class ConsoleModuleRunner
         }
     }
 
+    /// <summary>
+    /// True when the command writes its payload to stdout instead of a file (<c>--output -</c>).
+    /// Mirrors the module-side check so progress and summaries never corrupt the byte stream.
+    /// </summary>
+    internal static bool IsStandardOutputStream(string command, IReadOnlyList<string> arguments)
+    {
+        if (!command.Equals("cd-generate", StringComparison.OrdinalIgnoreCase)
+            && !command.Equals("bd-generate", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        for (int index = 0; index < arguments.Count; index++)
+        {
+            string argument = arguments[index];
+            if (argument.Equals("--output", StringComparison.OrdinalIgnoreCase))
+            {
+                return index + 1 < arguments.Count && arguments[index + 1] == "-";
+            }
+
+            if (argument.StartsWith("--output=", StringComparison.OrdinalIgnoreCase))
+            {
+                return argument["--output=".Length..] == "-";
+            }
+        }
+
+        return false;
+    }
+
     private sealed class ConsoleProgress : IProgress<DiscJobProgress>
     {
+        private readonly bool _standardError;
+
+        internal ConsoleProgress(bool standardError) => _standardError = standardError;
+
         public void Report(DiscJobProgress value)
         {
-            if (!string.IsNullOrWhiteSpace(value.Message)) Console.WriteLine(value.Message);
+            if (string.IsNullOrWhiteSpace(value.Message)) return;
+            if (_standardError) Console.Error.WriteLine(value.Message);
+            else Console.WriteLine(value.Message);
         }
     }
 }

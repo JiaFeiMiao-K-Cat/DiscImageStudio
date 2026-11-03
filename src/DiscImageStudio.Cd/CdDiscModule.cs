@@ -102,6 +102,11 @@ public sealed class CdDiscModule : IOpticalDiscModule
         ArgumentNullException.ThrowIfNull(request);
         cancellationToken.ThrowIfCancellationRequested();
         CdCommandOptions options = CdCommandOptions.Parse(request.Arguments);
+        if (request.Command != "cd-generate" && options.GetString("output", string.Empty) == "-")
+        {
+            throw new ArgumentException("--output - (stdout) is supported only by cd-generate.");
+        }
+
         DiscJobResult result = request.Command switch
         {
             "cd-generate" => Generate(request, options, progress, cancellationToken),
@@ -123,6 +128,40 @@ public sealed class CdDiscModule : IOpticalDiscModule
         string output = options.Require("output");
         string dataDirectory = options.GetString("data-dir", string.Empty).Trim();
         bool outer = ReadFilePosition(options);
+        if (output == "-")
+        {
+            if (dataDirectory.Length > 0)
+            {
+                throw new ArgumentException(
+                    "cd-generate --output - streams raw CD-DA audio and cannot be combined with --data-dir.");
+            }
+
+            // The process owns standard output; flush it but never dispose it.
+            Stream standardOutput = Console.OpenStandardOutput();
+            CdGenerationSummary streamed = CdTrackGenerator.GenerateToStream(
+                options.Require("input"),
+                standardOutput,
+                ReadParameters(options),
+                options.GetBoolean("interleave", true),
+                value => progress?.Report(new DiscJobProgress(
+                    ModuleId,
+                    "generate",
+                    $"CD progress {value.Fraction:P1}",
+                    value.Fraction,
+                    value.CompletedBytes,
+                    value.TotalBytes,
+                    value.Elapsed)),
+                cancellationToken,
+                outputDescription: "stdout",
+                audioByteOrder: CdAudioByteOrder.BigEndian,
+                tone: ReadTone(options));
+            standardOutput.Flush();
+            return new DiscJobResult(ModuleId, request.Command, 0,
+                $"CD track complete: {streamed.Sectors} sectors, {streamed.BytesWritten} bytes, "
+                + $"interleave={streamed.Interleaved}, elapsed={streamed.Elapsed.TotalSeconds:F1}s, output=stdout",
+                "-");
+        }
+
         if (dataDirectory.Length > 0)
         {
             CdDiscParameters parameters = ReadParameters(options);

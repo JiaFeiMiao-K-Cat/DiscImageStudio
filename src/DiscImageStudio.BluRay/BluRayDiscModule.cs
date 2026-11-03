@@ -78,6 +78,9 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
             if (!options.ContainsKey(option.Name)) throw new ArgumentException($"Missing --{option.Name}.");
         string? output = options.GetValueOrDefault("output");
         if (output is not null) ArgumentException.ThrowIfNullOrWhiteSpace(output);
+        bool streamToStandardOutput = output == "-";
+        if (streamToStandardOutput && command.Name != "bd-generate")
+            throw new ArgumentException("--output - (stdout) is supported only by bd-generate.");
 
         if (command.Name == "bd-encode")
         {
@@ -157,7 +160,8 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
         if (isPicture)
         {
             string input = options["input"];
-            if (Path.GetFullPath(input).Equals(Path.GetFullPath(output!), StringComparison.OrdinalIgnoreCase))
+            if (!streamToStandardOutput
+                && Path.GetFullPath(input).Equals(Path.GetFullPath(output!), StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException("Input and output paths must be different.");
             generationInvert = options.TryGetValue("invert", out string? polarity)
                 ? Boolean(polarity, "invert") : preset.InvertMapping;
@@ -169,7 +173,8 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
             };
             isoPlan = BluRayIsoGenerator.PrepareDrawing(disc, options.GetValueOrDefault("data-dir"),
                 options.GetValueOrDefault("volume-label", "BD_IMAGE"), filesAtOuterRing: filesAtOuterRing);
-            BluRayIsoGenerator.ValidateOutputPath(output!, isoPlan);
+            if (!streamToStandardOutput)
+                BluRayIsoGenerator.ValidateOutputPath(output!, isoPlan);
             token.ThrowIfCancellationRequested();
             if (_imageLoader is null)
                 return new(Descriptor.Id, command.Name, 2,
@@ -208,10 +213,22 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
                 progress?.Report(new(Descriptor.Id, isPicture ? "iso" : "payload", $"BD {p.CompletedBytes}/{p.TotalBytes} bytes",
                     p.Fraction, p.CompletedBytes, p.TotalBytes, p.Elapsed));
             });
-        BluRayStreamingSummary summary = isPicture
-            ? BluRayIsoGenerator.GenerateFile(output!, isoPlan!, mapping, report, token)
-            : BluRayStreamingGenerator.GenerateFile(output!, streaming, mapping, report, token);
-        if (isPicture)
+        BluRayStreamingSummary summary;
+        if (isPicture && streamToStandardOutput)
+        {
+            // The process owns standard output; flush it but never dispose it.
+            Stream standardOutput = Console.OpenStandardOutput();
+            summary = BluRayIsoGenerator.GenerateToStream(standardOutput, isoPlan!, mapping, report, token);
+            standardOutput.Flush();
+        }
+        else
+        {
+            summary = isPicture
+                ? BluRayIsoGenerator.GenerateFile(output!, isoPlan!, mapping, report, token)
+                : BluRayStreamingGenerator.GenerateFile(output!, streaming, mapping, report, token);
+        }
+
+        if (isPicture && !streamToStandardOutput)
         {
             BluRayIsoMetadata.FromPlan(
                     isoPlan!, options["input"], output!, generationInvert, tone, DateTimeOffset.Now)
@@ -222,8 +239,9 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
         return new(Descriptor.Id, command.Name, 0,
             isPicture
                 ? $"BD {(isoPlan!.HasFileSystem ? "UDF 2.01" : "full-area drawing, no filesystem")}: {summary.BytesWritten} bytes, {disc.TotalSectors} sectors; {isoPlan.FileCount} {(isoPlan.FilesAtOuterRing ? "outer" : "inner")} files; drawing sectors {isoPlan.DrawingStartSector}..{isoPlan.DrawingEndSectorExclusive - 1}; {interpretation}."
+                    + (streamToStandardOutput ? " Output streamed to stdout." : string.Empty)
                 : $"BD probe: {summary.BytesWritten} raw payload bytes, sectors {start}..{start + count - 1}; {interpretation}. No filesystem.",
-            Path.GetFullPath(output!));
+            streamToStandardOutput ? "-" : Path.GetFullPath(output!));
     }
 
     private static Dictionary<string, string> Parse(IReadOnlyList<string> args, DiscCommandDescriptor command)
