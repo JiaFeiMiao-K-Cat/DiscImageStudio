@@ -492,10 +492,13 @@ struct DiscCanvas: View {
     }
 
     private func rotated(_ point: CGPoint, byDegrees degrees: Double) -> CGPoint {
-        let radians = degrees * .pi / 180
+        let radians = degrees * Double.pi / 180
+        // 显式用 Foundation 的 Double 版本，避免 CGFloat/Double 重载在旧编译器上歧义。
+        let cosine = CGFloat(Foundation.cos(radians))
+        let sine = CGFloat(Foundation.sin(radians))
         return CGPoint(
-            x: point.x * cos(radians) - point.y * sin(radians),
-            y: point.x * sin(radians) + point.y * cos(radians)
+            x: point.x * cosine - point.y * sine,
+            y: point.x * sine + point.y * cosine
         )
     }
 
