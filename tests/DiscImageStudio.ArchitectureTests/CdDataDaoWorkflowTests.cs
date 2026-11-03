@@ -37,7 +37,17 @@ internal static class CdDataDaoWorkflowTests
                 "capacity handling preserves all ISO sectors and the preset's lead-out");
             Require(operations.Contains("构造 CD DAO 数据轨") && operations.Contains("写入 CD DAO 数据轨"),
                 "data DAO is identified in diagnostics");
+            Require(session.RequestedSectorType == CdRawSectorType.SubcodeIsCooked
+                && image.ImageSectorType == CdRawSectorType.SubcodeIsCooked,
+                "data DAO keeps cooked R-W when the recorder does not list raw P-W");
         }
+        RecordingCdRawSession rawCapable = new() { LastLeadoutSector = sectors, ReportedSectorTypes = [1, 2, 3] };
+        using RecordingCdRawImageSession rawImage = new(rawCapable.Calls) { ImageStartOfLeadout = sectors };
+        WindowsImapiBurner.BurnCdDao(rawCapable, rawImage, content, request, CancellationToken.None);
+        Require(rawCapable.RequestedSectorType == CdRawSectorType.SubcodeIsRaw
+            && rawImage.ImageSectorType == CdRawSectorType.SubcodeIsRaw
+            && rawCapable.Calls[^1] == "ReleaseMedia",
+            "data DAO requests raw P-W and builds the matching template when the recorder lists it");
         RecordingCdRawSession tooSmall = new() { LastLeadoutSector = sectors - 4 };
         using RecordingCdRawImageSession tooLarge = new(tooSmall.Calls) { ImageStartOfLeadout = sectors };
         try
@@ -51,7 +61,7 @@ internal static class CdDataDaoWorkflowTests
                 && !tooSmall.Calls.Contains("WriteMedia") && tooSmall.Calls[^1] == "ReleaseMedia",
                 "data DAO retains the existing strict three-sector overburn bound and cleanup");
         }
-        Console.WriteLine("cd-data-dao-workflow: passed (Ritek 359845 sectors, shared audio DAO capacity/cleanup, unchanged ISO length; mock recorder only)");
+        Console.WriteLine("cd-data-dao-workflow: passed (Ritek 359845 sectors, shared audio DAO capacity/cleanup, unchanged ISO length, raw P-W preferred over cooked R-W; mock recorder only)");
     }
 
     private static void Require(bool condition, string message)
