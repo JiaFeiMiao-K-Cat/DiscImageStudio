@@ -2,12 +2,14 @@
 
 The Linux desktop app designs, previews, generates and burns disc pictures, like the Windows app. It hosts the same CD, DVD and Blu-ray engines as the Windows app and the command-line tool, and it reads and writes the same `.discproj` project files. A design started on one system opens on the other.
 
+The Linux app is developed in the fork **[oreo1298/discimagestudio](https://github.com/oreo1298/discimagestudio)** of [Disc Image Studio](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio). Every command below uses the fork. The Windows app and the standalone CLI archives are published on the [original project's Releases page](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases).
+
 ![Design page on Linux](images/linux-design.png)
 
 - [What you need](#what-you-need)
 - [Install on Arch Linux](#install-on-arch-linux)
-- [Install the prebuilt bundle (any distribution)](#install-the-prebuilt-bundle-any-distribution)
-- [Build from source (any distribution)](#build-from-source-any-distribution)
+- [Install on other distributions](#install-on-other-distributions)
+- [Install from a prebuilt archive](#install-from-a-prebuilt-archive)
 - [Using the app](#using-the-app)
 - [Burning discs on Linux](#burning-discs-on-linux)
 - [Files and folders](#files-and-folders)
@@ -20,7 +22,7 @@ The Linux desktop app designs, previews, generates and burns disc pictures, like
 ## What you need
 
 - A 64-bit x86 (x86_64) or ARM (aarch64) computer.
-- Any current distribution with glibc (Arch, Debian, Ubuntu, Fedora, openSUSE, Mint and others), or a musl distribution such as Alpine when you build it yourself.
+- Any current distribution with glibc (Arch, Debian, Ubuntu, Fedora, openSUSE, Mint and others). musl distributions such as Alpine should work when built from source, but have not been tested.
 - An X11 or Wayland desktop. On Wayland the app runs through XWayland, which GNOME, KDE Plasma and most compositors provide out of the box. Sway and Hyprland need the `xwayland` package.
 - These X11 and font libraries. Desktop installs already have them:
 
@@ -32,20 +34,20 @@ The Linux desktop app designs, previews, generates and burns disc pictures, like
   | openSUSE | `sudo zypper install libX11-6 libICE6 libSM6 libXi6 libXcursor1 libXrandr2 fontconfig` |
   | Alpine | `sudo apk add libx11 libice libsm libxi libxcursor libxrandr fontconfig font-dejavu` |
 
-The prebuilt bundle and the Arch package include the .NET runtime, so you do not need to install .NET to *run* the app. You need the .NET 10 SDK only to *build* it.
+The installed app includes its own .NET runtime, so you do not need .NET to *run* it. You need the .NET 10 SDK only to *build* it, and on Arch `makepkg` installs that for you.
 
 ## Install on Arch Linux
 
-The repository contains a PKGBUILD that builds a proper pacman package from the checkout. pacman can then upgrade or remove it like any other package.
+The fork contains a PKGBUILD that builds a proper pacman package from your checkout. pacman can then upgrade or remove it like any other package.
 
 ```sh
 sudo pacman -S --needed git base-devel
-git clone https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio.git
-cd DiscImageStudio/packaging/linux/arch
+git clone https://github.com/oreo1298/discimagestudio.git
+cd discimagestudio/packaging/linux/arch
 makepkg -si
 ```
 
-`makepkg` installs `dotnet-sdk` as a build dependency. The build takes a minute or two and downloads the NuGet packages it needs. The package installs:
+`makepkg -s` installs `dotnet-sdk` as a build dependency. The build takes a few minutes and downloads the NuGet packages it needs. The package installs:
 
 | Path | Contents |
 | --- | --- |
@@ -58,47 +60,30 @@ Install the burning tools you want; they are optional dependencies:
 
 ```sh
 sudo pacman -S cdrtools dvd+rw-tools libisoburn
-sudo usermod -aG optical "$USER"     # then log out and back in
 ```
 
-To update, run `git pull` in the repository and then `makepkg -si` again in `packaging/linux/arch`. The package version follows `Directory.Build.props`.
+To update later:
+
+```sh
+cd discimagestudio
+git pull
+cd packaging/linux/arch
+makepkg -sif
+```
+
+`-f` is needed because the package from the previous build is still in the folder, and the version number (from `Directory.Build.props`) usually stays the same between commits. pacman reinstalls the new build in place.
 
 > On aarch64 (for example Arch Linux ARM) the same PKGBUILD builds the arm64 variant.
 > If your `dotnet-sdk` is newer than 10 (for example after .NET 11 becomes the default), the PKGBUILD still builds, because it lets the newer SDK build the .NET 10 projects.
 
-## Install the prebuilt bundle (any distribution)
+## Install on other distributions
 
-Each release provides self-contained archives named `DiscImageStudio-Linux-v<version>-linux-x64.tar.gz` and `…-linux-arm64.tar.gz` on the [Releases page](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases).
-
-```sh
-tar -xzf DiscImageStudio-Linux-v*-linux-x64.tar.gz
-cd DiscImageStudio-*-linux-x64
-./install.sh                 # just for you: installs into ~/.local, no root needed
-# or
-sudo ./install.sh            # for every user: installs into /usr/local
-```
-
-Then open **Disc Image Studio** from your application menu, or run `disc-image-studio-gui`. The installer:
-
-- copies the app to `<prefix>/lib/disc-image-studio/`
-- adds `disc-image-studio-gui` and `disc-image-studio` to `<prefix>/bin/`
-- adds the menu entry, the icons in every size, the AppStream metadata and the `.discproj` file type
-- refreshes the desktop, MIME and icon caches when those tools are installed
-- warns if a required library is missing, or if you are not yet in the `optical`/`cdrom` group
-
-`./install.sh --help` lists the options. `--prefix /opt/disc-image-studio` installs elsewhere, and `--destdir` stages the files for distribution packaging. Running `./install.sh` again from a newer bundle upgrades in place.
-
-If `~/.local/bin` is not on your `PATH`, the menu entry still works. To type the commands in a terminal, add `export PATH="$HOME/.local/bin:$PATH"` to `~/.profile`.
-
-To check a download, compare it with the `.sha256` file or the release's `SHA256SUMS.txt`: `sha256sum -c DiscImageStudio-Linux-*.tar.gz.sha256`.
-
-## Build from source (any distribution)
+On other distributions, build the app from the fork's source and install it with the bundled installer.
 
 1. Install git and the .NET 10 SDK:
 
    | Distribution | Command |
    | --- | --- |
-   | Arch | `sudo pacman -S git dotnet-sdk` (or `dotnet-sdk-10.0` once a newer major is the default) |
    | Ubuntu 24.04 and later | `sudo apt install git dotnet-sdk-10.0` |
    | Fedora | `sudo dnf install git dotnet-sdk-10.0` |
    | Debian, openSUSE and others | Microsoft's package feeds: see [Install .NET on Linux](https://learn.microsoft.com/dotnet/core/install/linux) |
@@ -110,23 +95,60 @@ To check a download, compare it with the `.sha256` file or the release's `SHA256
    export PATH="$HOME/.dotnet:$PATH"
    ```
 
-2. Build and install for your user:
+2. Build and install for your user (no root needed):
 
    ```sh
-   git clone https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio.git
-   cd DiscImageStudio
+   git clone https://github.com/oreo1298/discimagestudio.git
+   cd discimagestudio
    ./packaging/linux/build.sh --install
    ```
 
-`build.sh` detects your CPU and C library (glibc or musl), publishes a self-contained build to `artifacts/linux/`, and runs a smoke test. With `--install` it then runs the bundled `install.sh`. Other options:
+Then open **Disc Image Studio** from your application menu, or run `disc-image-studio-gui`.
+
+`build.sh` detects your CPU and C library (glibc or musl) and publishes a self-contained build to `artifacts/linux/DiscImageStudio-<version>-<rid>/`. It also writes an archive of that folder next to it and runs a smoke test. `--install` then runs the bundled `install.sh`, which:
+
+- copies the app to `~/.local/lib/disc-image-studio/`
+- adds `disc-image-studio-gui` and `disc-image-studio` to `~/.local/bin/`
+- adds the menu entry, the icons in every size, the AppStream metadata and the `.discproj` file type
+- refreshes the desktop, MIME and icon caches when those tools are installed
+- warns if a required library is missing
+
+If `~/.local/bin` is not on your `PATH`, the menu entry still works. To type the commands in a terminal, add `export PATH="$HOME/.local/bin:$PATH"` to `~/.profile`.
+
+To install for every user instead, build without `--install` and run the installer with `sudo`. Do not run `build.sh` itself with `sudo`, or the build folders in your checkout end up owned by root.
+
+```sh
+./packaging/linux/build.sh
+sudo ./artifacts/linux/DiscImageStudio-*/install.sh      # installs into /usr/local
+```
+
+To update, run `git pull` and the same commands again. The installer replaces the previous version.
+
+Other `build.sh` options:
 
 | Option | Effect |
 | --- | --- |
-| `--install --prefix /usr/local` | system-wide install (run with `sudo`, or build first and run `sudo artifacts/linux/DiscImageStudio-*/install.sh`) |
+| `--install --prefix DIR` | install somewhere else, for example `--install --prefix /opt/disc-image-studio` (`--prefix` goes after `--install`) |
 | `--rid linux-arm64` | cross-build for another CPU: `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64` |
 | `--framework-dependent` | use a system-wide .NET 10 runtime instead of bundling it (smaller, about 40 MB) |
 | `--no-ready-to-run` | skip ahead-of-time compilation (faster build, slower start-up) |
 | `--no-archive` | skip writing the `.tar.gz` |
+
+## Install from a prebuilt archive
+
+A prebuilt archive is a self-contained `DiscImageStudio-Linux-v<version>-<rid>.tar.gz` that installs without .NET or a build. **The fork has not published one yet**, so check the fork's [Releases page](https://github.com/oreo1298/discimagestudio/releases). If no release there lists `DiscImageStudio-Linux-…` files, use one of the methods above. The Linux archives on the original project's releases contain only the command-line tool, not this app.
+
+`build.sh` writes the same archive to `artifacts/linux/`, so you can build once and copy it to other machines with the same CPU. To install an archive:
+
+```sh
+tar -xzf DiscImageStudio-Linux-v*-linux-x64.tar.gz
+cd DiscImageStudio-*-linux-x64
+./install.sh                 # just for you: installs into ~/.local, no root needed
+# or
+sudo ./install.sh            # for every user: installs into /usr/local
+```
+
+`./install.sh --help` lists the options. `--prefix /opt/disc-image-studio` installs elsewhere, and `--destdir` stages the files for distribution packaging. Running `./install.sh` again from a newer archive upgrades in place. A release download can be checked against the release's `SHA256SUMS.txt` with `sha256sum -c --ignore-missing SHA256SUMS.txt`.
 
 The build makes no network requests beyond downloading NuGet packages. Avalonia's optional build telemetry is switched off in the project file.
 
@@ -212,8 +234,8 @@ Projects store image paths as absolute paths. When you move a project to another
 | Installed with | Remove with |
 | --- | --- |
 | Arch package | `sudo pacman -R disc-image-studio` |
-| Bundle, for your user | `./install.sh --uninstall` from the extracted bundle |
-| Bundle, system-wide | `sudo ./install.sh --uninstall` (add `--prefix` if you used one) |
+| `build.sh --install` or `./install.sh`, for your user | `./artifacts/linux/DiscImageStudio-*/install.sh --uninstall` in your checkout, or `./install.sh --uninstall` in an extracted archive |
+| `sudo …/install.sh`, system-wide | the same command with `sudo` (add `--prefix` if you used one) |
 
 Uninstalling keeps your projects, settings and presets. Delete `~/.config/DiscImageStudio`, `~/.local/share/DiscImageStudio` and `~/.cache/DiscImageStudio` to remove them too.
 

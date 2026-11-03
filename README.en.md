@@ -47,7 +47,25 @@ Disc Image Studio converts an image into data that meets the physical-layer cons
 
 On Windows, download and run `win-x64.exe`. On Linux or macOS, download the **experimental CLI** archive for your CPU, extract it and run `./disc-image-studio --help`. Each release package includes the .NET runtime. [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
-On Linux you can also install the **experimental desktop app**. It covers the same Design, Preview, Export and Burn workflow, and burns with cdrecord, growisofs or xorriso. On Arch Linux, run `makepkg -si` in `packaging/linux/arch`. On any distribution, extract a `DiscImageStudio-Linux-…tar.gz` release and run `./install.sh`, or build from source with `./packaging/linux/build.sh --install`. See the [Linux guide](docs/LINUX.md).
+On Linux you can also install the **experimental desktop app** from the fork [oreo1298/discimagestudio](https://github.com/oreo1298/discimagestudio). It covers the same Design, Preview, Export and Burn workflow, and burns with cdrecord, growisofs or xorriso. It is built from source. No prebuilt archive has been published yet.
+
+Arch Linux:
+
+```sh
+git clone https://github.com/oreo1298/discimagestudio.git
+cd discimagestudio/packaging/linux/arch
+makepkg -si
+```
+
+Other distributions (needs the .NET 10 SDK):
+
+```sh
+git clone https://github.com/oreo1298/discimagestudio.git
+cd discimagestudio
+./packaging/linux/build.sh --install
+```
+
+See the [Linux guide](docs/LINUX.md) for requirements, updates and burning.
 
 ### 1. Create a Project
 

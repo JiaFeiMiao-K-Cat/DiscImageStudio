@@ -19,7 +19,14 @@
             <TextBlock TextWrapping="Wrap" Text="Converts a picture into data that meets the physical-layer constraints of CD, DVD and single-layer BD-R discs. After burning, the recording surface shows the picture." />
             <TextBlock TextWrapping="Wrap" Classes="muted" Text="The Linux interface hosts the same CD, DVD and Blu-ray engines as the Windows app and the command-line tool, and reads and writes the same .discproj project files." />
             <TextBlock TextWrapping="Wrap" Classes="muted" Text="The CD interleaving is ported from CDImage by arduinocelentano. The interface uses Avalonia, SkiaSharp, the Inter typeface and Lucide icons; see the third-party notices." />
-            <SelectableTextBlock Classes="mono" Text="https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio" />
+            <StackPanel Spacing="2">
+              <TextBlock Classes="caption" Text="Linux app" />
+              <SelectableTextBlock Classes="mono" Text="https://github.com/oreo1298/discimagestudio" />
+            </StackPanel>
+            <StackPanel Spacing="2">
+              <TextBlock Classes="caption" Text="Original project (Windows app and CLI)" />
+              <SelectableTextBlock Classes="mono" Text="https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio" />
+            </StackPanel>
             <TextBlock TextWrapping="Wrap" Classes="caption" Text="Disc Image Studio does not access the network, upload files or collect telemetry." />
           </StackPanel>
         </ScrollViewer>

@@ -1,10 +1,11 @@
 # Builds Disc Image Studio (Linux GUI + CLI) from the checkout this file lives in:
 #
-#   git clone https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio.git
-#   cd DiscImageStudio/packaging/linux/arch
+#   git clone https://github.com/oreo1298/discimagestudio.git
+#   cd discimagestudio/packaging/linux/arch
 #   makepkg -si
 #
-# The version follows Directory.Build.props, so pulling and re-running makepkg upgrades.
+# To update: git pull, then makepkg -sif here (-f replaces the package built last time).
+# The version follows Directory.Build.props.
 
 _root="$(realpath "${startdir:-.}/../../..")"
 pkgname=disc-image-studio
@@ -13,7 +14,7 @@ pkgver="${pkgver:-0.0.0}"
 pkgrel=1
 pkgdesc='Design, generate and burn pictures visible on CD, DVD and BD-R discs (GUI and CLI)'
 arch=('x86_64' 'aarch64')
-url='https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio'
+url='https://github.com/oreo1298/discimagestudio'
 license=('GPL-3.0-or-later')
 depends=(
   'fontconfig'
