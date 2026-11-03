@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### 中文
+- 新增土耳其语界面：在「设置 → 通用 → 语言」可选择「Türkçe」；系统语言为土耳其语（`tr`、`tr-TR`）时跟随系统也使用土耳其语。所有翻译资源新增 `tr` 文本，`ui-snapshot --language` 支持 `tr`。
+- 新增土耳其语 README（`README.tr.md`），所有 README 顶部的语言切换链接加入 Türkçe。
 
 - 新增威宝 BD-R (64293) 内置预设，参数与 64099 相同，贡献者 bczhc。
 - 新增威宝 DVD+R AZO (43498) 内置预设，贡献者 Disappear9。
@@ -13,6 +15,8 @@
 - 侧栏工程头卡片右侧新增软盘保存按钮。
 
 ### English
+- Added a Turkish interface. Choose Türkçe under Settings → General → Language; Turkish system locales (`tr`, `tr-TR`) now use Turkish when following the system. Every translation entry gains `tr` text, and `ui-snapshot --language` accepts `tr`.
+- Added a Turkish README (`README.tr.md`) and a Türkçe link to the language switcher at the top of every README.
 
 - Added a built-in Verbatim BD-R (64293) preset with the same parameters as 64099, contributed by bczhc.
 - Added a built-in Verbatim DVD+R AZO (43498) preset, contributed by Disappear9.

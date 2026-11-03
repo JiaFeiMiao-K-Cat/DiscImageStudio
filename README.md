@@ -1,6 +1,6 @@
 <div align="center">
 
-**简体中文** | [繁體中文](README.zh-TW.md) | [English](README.en.md) | [日本語](README.ja.md)
+**简体中文** | [繁體中文](README.zh-TW.md) | [English](README.en.md) | [日本語](README.ja.md) | [Türkçe](README.tr.md)
 
 ![Banner](docs/images/DiscImageStudio_Banner_2.png)
 
