@@ -220,10 +220,10 @@ jobs:
         shell: bash
         env:
           SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
-         run: |
+        run: |
           set -euo pipefail
           shopt -s nullglob
-          trap -f 'shred -n 32 -u private_key.pgp; echo "Cleaned up private key."' EXIT
+          trap 'shred -n 32 -u private_key.pgp; echo "Cleaned up private key."' EXIT
           umask 077
           printf '%s\n' "$SIGN_PRIVATE_KEY" >private_key.pgp
     
@@ -235,7 +235,7 @@ jobs:
           docker pull registry.gitlab.com/sequoia-pgp/sequoia-sq:latest
           for file in "${files[@]}"; do
             # Sign file with sequoia sq
-            docker run -v "$PWD:/work" -w /work --rm registry.gitlab.com/sequoia-pgp/sequoia-sq:latest --signer-file /work/private_key.pgp --signature-file="/work/${file}.sig" "/work/${file}"
+            docker run -v "$PWD:/work" -w /work --rm registry.gitlab.com/sequoia-pgp/sequoia-sq:latest sign --signer-file /work/private_key.pgp --signature-file="/work/${file}.sig" "/work/${file}"
           done
           rm -f private_key.pgp
       - name: Create or refresh draft with all release attachments
@@ -271,7 +271,7 @@ jobs:
             throw 'The release tag already points to a different commit. Use a new version.'
           }
 
-          $assets = @(Get-ChildItem -Path 'release/*.exe','release/*.tar.gz release/*.sig' -File | ForEach-Object FullName)
+          $assets = @(Get-ChildItem -Path 'release/*.exe','release/*.tar.gz','release/*.sig' -File | ForEach-Object FullName)
           $assets += 'release/SHA256SUMS.txt'
           $options = @('--title', "Disc Image Studio $env:RELEASE_TAG", '--notes-file', 'release/release-notes.md')
           if ($existing.Count -eq 1) {
