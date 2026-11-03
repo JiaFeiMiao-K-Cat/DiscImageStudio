@@ -45,7 +45,7 @@ Disc Image Studio は、1 枚の画像を CD、DVD、片面一層 BD-R ディス
 
 Windows では `win-x64.exe` で終わるファイルをダウンロードして実行します。Linux または macOS では、CPU に合った**実験的な CLI** のアーカイブを展開し、`./disc-image-studio --help` を実行してください。いずれも .NET ランタイムを同梱しています。[GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
-Linux では、フォーク [oreo1298/discimagestudio](https://github.com/oreo1298/discimagestudio) から**実験的なデスクトップ版**もインストールできます。デザイン、プレビュー、エクスポート、書き込みの流れは同じで、書き込みには cdrecord、growisofs または xorriso を使います。デスクトップ版はソースからビルドします。ビルド済みのアーカイブはまだ公開されていません。
+Linux では、フォーク [oreo1298/discimagestudio](https://github.com/oreo1298/discimagestudio) から**実験的なデスクトップ版**もインストールできます。デザイン、プレビュー、エクスポート、書き込み、補助キャリブレーションの流れは同じで、書き込みには cdrecord、growisofs または xorriso を使います。デスクトップ版はソースからビルドします。ビルド済みのアーカイブはまだ公開されていません。
 
 Arch Linux：
 

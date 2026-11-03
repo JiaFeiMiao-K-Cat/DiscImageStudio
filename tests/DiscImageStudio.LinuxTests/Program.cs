@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Avalonia;
 using Avalonia.Headless;
+using Avalonia.Threading;
 using DiscImageStudio.Core;
 using DiscImageStudio.Linux;
 using DiscImageStudio.Linux.Services;
@@ -9,7 +10,7 @@ using SkiaSharp;
 
 namespace DiscImageStudio.LinuxTests;
 
-internal static class Program
+internal static partial class Program
 {
     private static int _failures;
     private static int _passes;
@@ -20,9 +21,13 @@ internal static class Program
             .UseSkia()
             .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
             .SetupWithoutStarting();
-        // Avalonia installs its synchronization context on this, the UI thread, and nothing
-        // pumps the dispatcher here, so the checks run on the thread pool instead.
-        return Task.Run(RunAllAsync).GetAwaiter().GetResult();
+        // The checks run on the thread pool while this, the UI thread, pumps Avalonia's
+        // dispatcher; view-model checks hop onto it with Dispatcher.UIThread.InvokeAsync.
+        using CancellationTokenSource finished = new();
+        Task<int> run = Task.Run(RunAllAsync);
+        run.ContinueWith(_ => finished.Cancel(), TaskScheduler.Default);
+        Dispatcher.UIThread.MainLoop(finished.Token);
+        return run.GetAwaiter().GetResult();
     }
 
     private static async Task<int> RunAllAsync()
@@ -52,6 +57,10 @@ internal static class Program
             Run("burn commands follow the media rules", BurnCommands);
             Run("burn progress parsing", BurnProgress);
             Run("shell quoting", ShellQuoting);
+            Run("calibration messages are in English", CalibrationMessages);
+            Run("calibration targets follow the project geometry", CalibrationTargets);
+            await RunAsync("calibration target files for every family", () => CalibrationFiles(work));
+            await RunAsync("calibration from a photo recovers the disc geometry", () => OnUi(() => CalibrationEndToEnd(work)));
         }
         finally
         {

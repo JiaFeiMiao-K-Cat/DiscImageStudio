@@ -16,6 +16,7 @@ public enum AppPage
     Preview,
     Export,
     Burn,
+    Calibrate,
 }
 
 /// <summary>Handle a background job uses to report back to the status bar.</summary>
@@ -48,7 +49,7 @@ public partial class MainViewModel : ObservableObject
     private ProjectViewModel? _project;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsHomePage), nameof(IsDesignPage), nameof(IsPreviewPage), nameof(IsExportPage), nameof(IsBurnPage),
+    [NotifyPropertyChangedFor(nameof(IsHomePage), nameof(IsDesignPage), nameof(IsPreviewPage), nameof(IsExportPage), nameof(IsBurnPage), nameof(IsCalibratePage),
         nameof(IsProjectPage), nameof(PageTitle), nameof(PageSubtitle), nameof(NextPageText), nameof(HasNextPage))]
     private AppPage _currentPage = AppPage.Home;
 
@@ -72,6 +73,7 @@ public partial class MainViewModel : ObservableObject
         Preview = new PreviewViewModel(this);
         Export = new ExportViewModel(this);
         Burn = new BurnViewModel(this);
+        Calibration = new CalibrationViewModel(this);
         _flushTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(150), DispatcherPriority.Background, (_, _) => FlushLog());
         _flushTimer.Start();
         _elapsedTimer = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background,
@@ -96,6 +98,8 @@ public partial class MainViewModel : ObservableObject
 
     public BurnViewModel Burn { get; }
 
+    public CalibrationViewModel Calibration { get; }
+
     public ObservableCollection<ToastViewModel> Toasts { get; } = [];
 
     public bool HasProject => Project is not null;
@@ -110,6 +114,8 @@ public partial class MainViewModel : ObservableObject
 
     public bool IsBurnPage => CurrentPage == AppPage.Burn;
 
+    public bool IsCalibratePage => CurrentPage == AppPage.Calibrate;
+
     public bool IsProjectPage => CurrentPage != AppPage.Home;
 
     public string PageTitle => CurrentPage switch
@@ -118,6 +124,7 @@ public partial class MainViewModel : ObservableObject
         AppPage.Preview => "Preview",
         AppPage.Export => "Export",
         AppPage.Burn => "Burn",
+        AppPage.Calibrate => "Calibrate",
         _ => "Home",
     };
 
@@ -127,6 +134,7 @@ public partial class MainViewModel : ObservableObject
         AppPage.Preview => "Check the picture through the engine before spending a disc.",
         AppPage.Export => "Generate the audio track or disc image to burn.",
         AppPage.Burn => "Write the generated file to a blank disc with a Linux recording tool.",
+        AppPage.Calibrate => "Measure your drive's real disc geometry from a photo of a burned test disc.",
         _ => string.Empty,
     };
 
@@ -203,6 +211,10 @@ public partial class MainViewModel : ObservableObject
         else if (page == AppPage.Export)
         {
             Export.OnShown();
+        }
+        else if (page == AppPage.Calibrate)
+        {
+            Calibration.OnShown();
         }
     }
 

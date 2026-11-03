@@ -23,7 +23,7 @@ internal static class ScreenshotRunner
             Capture(window, Path.Combine(directory, "home.png"));
             if (model.Project is not null)
             {
-                foreach (AppPage page in new[] { AppPage.Design, AppPage.Preview, AppPage.Export, AppPage.Burn })
+                foreach (AppPage page in new[] { AppPage.Design, AppPage.Preview, AppPage.Export, AppPage.Burn, AppPage.Calibrate })
                 {
                     model.NavigateCommand.Execute(page);
                     await Settle(model);

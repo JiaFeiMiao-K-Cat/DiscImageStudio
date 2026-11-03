@@ -52,4 +52,8 @@ public static class Icons
     public const string Clock = "M12 6v6l4 2 M2 12a10 10 0 1 0 20 0a10 10 0 1 0 -20 0z";
     public const string PencilLine = "M13 21h8 M15 5 l4 4 M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z";
     public const string RulerDimensionLine = "M12 15v-3.014 M16 15v-3.014 M20 6H4 M20 8V4 M4 8V4 M8 15v-3.014 M4 12H20A1 1 0 0 1 21 13V18A1 1 0 0 1 20 19H4A1 1 0 0 1 3 18V13A1 1 0 0 1 4 12z";
+public const string Crosshair = "M2 12a10 10 0 1 0 20 0a10 10 0 1 0 -20 0z M22 12L18 12 M6 12L2 12 M12 6L12 2 M12 22L12 18";
+    public const string Image = "M5 3H19A2 2 0 0 1 21 5V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V5A2 2 0 0 1 5 3z M7 9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0z M21 15 l-3.086-3.086a2 2 0 0 0-2.828 0L6 21";
+    public const string Target = "M2 12a10 10 0 1 0 20 0a10 10 0 1 0 -20 0z M6 12a6 6 0 1 0 12 0a6 6 0 1 0 -12 0z M10 12a2 2 0 1 0 4 0a2 2 0 1 0 -4 0z";
+    public const string Spline = "M17 5a2 2 0 1 0 4 0a2 2 0 1 0 -4 0z M3 19a2 2 0 1 0 4 0a2 2 0 1 0 -4 0z M5 17A12 12 0 0 1 17 5";
 }

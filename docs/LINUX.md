@@ -166,10 +166,11 @@ The build makes no network requests beyond downloading NuGet packages. Avalonia'
 3. **Preview**: projects the design through the generation geometry at up to 3072 px. It can also project onto a disc with different *measured* radii, to see how a mismatch bends the picture, or decode a generated file (**Read-back**) the way a reader follows the spiral.
 4. **Export**: composes the design at 8192 × 8192 px and runs the engine. CD projects produce a WAV track with a CUE sheet (or legacy RAW), or a Mode 1 ISO when files are included. DVD and BD-R projects produce an ISO. The job log (Ctrl+L) shows the equivalent `disc-image-studio` command.
 5. **Burn**: writes the generated file with a Linux recording tool. See below.
+6. **Calibrate**: measures the geometry your drive really writes from a photo of a burned test disc, and applies it to the project. See [Calibrating your drive](#calibrating-your-drive).
 
 ![Preview page](images/linux-preview.png)
 
-Keyboard shortcuts: Ctrl+N new project, Ctrl+O open, Ctrl+S save, Ctrl+Shift+S save as, Ctrl+W close, Ctrl+1 … Ctrl+4 switch pages, Ctrl+0 home, Ctrl+L job log, Ctrl+, settings.
+Keyboard shortcuts: Ctrl+N new project, Ctrl+O open, Ctrl+S save, Ctrl+Shift+S save as, Ctrl+W close, Ctrl+1 … Ctrl+5 switch pages, Ctrl+0 home, Ctrl+L job log, Ctrl+, settings.
 
 Settings (bottom left) switch between the System, Dark and Light themes. System follows your desktop's dark-mode preference.
 
@@ -208,6 +209,18 @@ sudo usermod -aG cdrom "$USER"     # Debian, Ubuntu
 
 Use **Disc information** to confirm the disc is blank before burning. Close file managers that auto-mount discs while a burn is running.
 
+## Calibrating your drive
+
+Recorders write the spiral slightly differently from the nominal geometry, and a few micrometres are enough to bend a picture. The **Calibrate** page (Ctrl+5) is the same assisted workflow as the Windows app's, and it reads and writes the same `.calibration.json` records. [CALIBRATION.md](CALIBRATION.md) explains the method in detail.
+
+![Calibrate page, using the synthetic photo from the automated tests: a traced curve and its fitted prediction](images/linux-calibrate.png)
+
+1. **Burn a calibration target.** Opening the page builds a target from the project's geometry: nine thin circles and a cross. **Generate** writes it (a `.wav` and `.cue` for CD, an `.iso` for DVD and BD-R) together with a `.calibration.json` record. **Burn…** generates it if needed and opens it on the Burn page. Keep the record next to the file: **Open record…** (or dropping the `.calibration.json` onto the canvas) restores that exact target later.
+2. **Rectify a photo.** Photograph the recorded side of the burned disc as straight-on as you can, lit by one small light so the lines show. Import it with **Import photo…** or drop it onto the canvas. Drag the blue points onto the disc's *physical* outer edge and the orange points onto the edge of the centre hole, not onto the edge of the recorded area or the clear plastic ring. Choose 12 cm or 8 cm, then **Calculate rectification**. In the rectified preview the disc should look round and face-on, with its edges on the dashed circles. Confirm it to continue.
+3. **Trace and fit.** On the rectified photo, the arms of the cross are now curves. Pick one and click along it from the inside out: at least 6 points (12 for the DVD cubic pitch), and 20 or more is better. Keep neighbouring points close where the curve bends, so it cannot skip a turn between them. Drag a point to correct it, or select it and press Delete. **Fit parameters** fits the inner and outer radii (and the DVD track pitch). The orange curve shows what the result predicts; points far from it turn red. A result with a mean error above 0.35 mm or a maximum above 0.8 mm cannot be applied. When the curve follows the photo, tick the confirmation and **Apply to project**, then save the project.
+
+On the canvas, the scroll wheel zooms, right-drag (or Space + drag) pans, and 0 fits the view. **Burn pattern** shows what the target writes. The whole calculation runs locally; nothing is uploaded.
+
 ## Files and folders
 
 | What | Where |
@@ -227,7 +240,7 @@ Projects store image paths as absolute paths. When you move a project to another
 - **Chinese or Japanese file names show boxes.** Install a CJK font, for example `noto-fonts-cjk` (Arch) or `fonts-noto-cjk` (Debian/Ubuntu).
 - **`build.sh` says no .NET 10 SDK was found.** Your distribution may ship a newer SDK only. Install the 10.0 SDK side by side (for example `dotnet-sdk-10.0` or `dotnet-install.sh --channel 10.0`). The Arch PKGBUILD does not need this.
 - **The burn fails at once.** Open the log (Ctrl+L) for the program's own message. Common causes: the disc is not blank, the device is busy because it is mounted, or you are not in the drive's group.
-- **The picture on the disc is bent or smeared.** Generic presets use nominal geometry. Use a measured preset for your disc, or calibrate as described in [CALIBRATION.md](CALIBRATION.md). The assisted calibration workflow is currently only in the Windows app.
+- **The picture on the disc is bent or smeared.** Generic presets use nominal geometry. Use a measured preset for your disc, or measure your own drive on the Calibrate page ([Calibrating your drive](#calibrating-your-drive)).
 
 ## Uninstall
 

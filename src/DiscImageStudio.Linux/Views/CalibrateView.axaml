@@ -1,0 +1,279 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:DiscImageStudio.Linux.ViewModels"
+             xmlns:c="using:DiscImageStudio.Linux.Controls"
+             x:Class="DiscImageStudio.Linux.Views.CalibrateView"
+             x:DataType="vm:CalibrationViewModel">
+  <UserControl.Styles>
+    <Style Selector="Expander.step">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+      <Setter Property="CornerRadius" Value="10" />
+    </Style>
+    <Style Selector="Border.stepdot">
+      <Setter Property="Width" Value="22" />
+      <Setter Property="Height" Value="22" />
+      <Setter Property="CornerRadius" Value="11" />
+      <Setter Property="Background" Value="{DynamicResource Surface3Brush}" />
+    </Style>
+    <Style Selector="Border.stepdot > TextBlock">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.legend">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid Margin="28,10,28,20" ColumnDefinitions="*,390" ColumnSpacing="18">
+    <!-- Photo / trace canvas -->
+    <Border CornerRadius="12" ClipToBounds="True" Background="{DynamicResource CanvasBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1">
+      <Grid RowDefinitions="Auto,*,Auto">
+        <Border Grid.Row="0" Background="{DynamicResource Surface1Brush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1" Padding="10,6">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <StackPanel Orientation="Horizontal" Spacing="2">
+              <Button Classes="icon" Click="ZoomOut" ToolTip.Tip="Zoom out (−)"><c:LucideIcon Data="{x:Static c:Icons.ZoomOut}" Width="16" Height="16" /></Button>
+              <TextBlock Text="{Binding #Canvas.ViewDescription}" MinWidth="44" TextAlignment="Center" VerticalAlignment="Center" FontSize="12" />
+              <Button Classes="icon" Click="ZoomIn" ToolTip.Tip="Zoom in (+)"><c:LucideIcon Data="{x:Static c:Icons.ZoomIn}" Width="16" Height="16" /></Button>
+              <Button Classes="icon" Click="FitView" ToolTip.Tip="Fit to the window (0)"><c:LucideIcon Data="{x:Static c:Icons.Maximize}" Width="16" Height="16" /></Button>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
+              <ToggleButton IsChecked="{Binding ShowTargetPreview}" IsEnabled="{Binding HasTarget}" Padding="10,4"
+                            ToolTip.Tip="Show what the target writes on the disc">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <c:LucideIcon Data="{x:Static c:Icons.Target}" Width="14" Height="14" />
+                  <TextBlock Text="Burn pattern" FontSize="12" />
+                </StackPanel>
+              </ToggleButton>
+              <ToggleButton IsChecked="{Binding PreviewRectification}" IsVisible="{Binding IsPhotoStep}" IsEnabled="{Binding IsRectificationReady}" Padding="10,4"
+                            ToolTip.Tip="Compare the rectified photo with the outlined original">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <c:LucideIcon Data="{x:Static c:Icons.ScanEye}" Width="14" Height="14" />
+                  <TextBlock Text="Rectified preview" FontSize="12" />
+                </StackPanel>
+              </ToggleButton>
+              <ToggleButton IsChecked="{Binding ShowPrediction}" IsVisible="{Binding IsTraceStep}" Padding="10,4"
+                            ToolTip.Tip="Show the curve the fitted parameters predict">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <c:LucideIcon Data="{x:Static c:Icons.Spline}" Width="14" Height="14" />
+                  <TextBlock Text="Fitted curve" FontSize="12" />
+                </StackPanel>
+              </ToggleButton>
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <Panel Grid.Row="1">
+          <c:CalibrationCanvas Name="Canvas" DragDrop.AllowDrop="True"
+                               Image="{Binding CanvasImage}"
+                               FallbackImage="{Binding TargetImage}"
+                               IsPhotoStep="{Binding IsPhotoStep}"
+                               IsRectificationPreview="{Binding PreviewRectification}"
+                               IsTargetPreview="{Binding ShowTargetPreview}"
+                               CanvasRadiusMm="{Binding PhotoCanvasRadiusMm}"
+                               TargetCanvasRadiusMm="{Binding CanvasOuterRadiusMm}"
+                               PhysicalRadiusMm="{Binding SelectedPhysicalDiscSize.OuterRadiusMm}"
+                               BoundaryPoints="{Binding BoundaryPoints}"
+                               BoundaryContours="{Binding BoundaryContours}"
+                               TracePoints="{Binding TracePoints}"
+                               PredictionContours="{Binding PredictionContours}"
+                               OutlierIndices="{Binding OutlierIndices}"
+                               ShowPrediction="{Binding ShowPrediction}" />
+          <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10" MaxWidth="420" IsVisible="{Binding !HasTarget}">
+            <c:LucideIcon Data="{x:Static c:Icons.Crosshair}" Width="40" Height="40" StrokeThickness="1.4" Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Center" />
+            <TextBlock Classes="muted" TextAlignment="Center" TextWrapping="Wrap"
+                       Text="Create a calibration target in step 1, or open a saved .calibration.json record." />
+          </StackPanel>
+        </Panel>
+
+        <Border Grid.Row="2" Background="{DynamicResource Surface1Brush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0" Padding="12,7">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <TextBlock Classes="caption" Text="{Binding #Canvas.SelectionDescription}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" IsVisible="{Binding IsPhotoStep}">
+              <StackPanel Orientation="Horizontal" Spacing="5">
+                <Ellipse Width="9" Height="9" Fill="#74C0FF" VerticalAlignment="Center" />
+                <TextBlock Classes="legend" Text="Outer edge" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="5">
+                <Ellipse Width="9" Height="9" Fill="#F5A524" VerticalAlignment="Center" />
+                <TextBlock Classes="legend" Text="Centre hole" />
+              </StackPanel>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" IsVisible="{Binding IsTraceStep}">
+              <StackPanel Orientation="Horizontal" Spacing="5">
+                <Ellipse Width="9" Height="9" Fill="#22D3EE" VerticalAlignment="Center" />
+                <TextBlock Classes="legend" Text="Traced" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="5">
+                <Rectangle Width="14" Height="2" Fill="#FFA94D" VerticalAlignment="Center" />
+                <TextBlock Classes="legend" Text="Fitted curve" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding HasOutliers}">
+                <Ellipse Width="9" Height="9" Fill="#F31260" VerticalAlignment="Center" />
+                <TextBlock Classes="legend" Text="Off the curve" />
+              </StackPanel>
+            </StackPanel>
+          </Grid>
+        </Border>
+      </Grid>
+    </Border>
+
+    <!-- Steps -->
+    <ScrollViewer Grid.Column="1" Padding="0,0,6,0">
+      <StackPanel Spacing="10">
+        <Border Classes="inset" Padding="12,10">
+          <StackPanel Spacing="4">
+            <TextBlock Classes="label" Text="Project geometry" />
+            <TextBlock Text="{Binding ProjectParametersSummary}" TextWrapping="Wrap" FontSize="13" />
+            <TextBlock Classes="caption" Text="Drives write the spiral slightly differently. Calibration measures where yours really puts it, so pictures come out round and sharp." />
+          </StackPanel>
+        </Border>
+
+        <!-- Step 1 -->
+        <Expander Classes="step" IsExpanded="{Binding StepOneExpanded}">
+          <Expander.Header>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Border Classes="stepdot"><TextBlock Text="1" /></Border>
+              <TextBlock Text="Burn a calibration target" FontWeight="SemiBold" VerticalAlignment="Center" />
+              <Border Classes="chip" VerticalAlignment="Center"><TextBlock Text="{Binding StepOneState}" /></Border>
+            </StackPanel>
+          </Expander.Header>
+          <StackPanel Spacing="10">
+            <TextBlock Classes="caption" TextWrapping="Wrap"
+                       Text="The target is a test pattern built from the project geometry above. Burned on your drive, its curves show how far the real spiral is from that geometry." />
+            <Border Classes="inset" Padding="10,8">
+              <TextBlock Text="{Binding TargetSummary}" FontSize="12" TextWrapping="Wrap" />
+            </Border>
+            <StackPanel IsEnabled="{Binding HasTarget}" Spacing="4">
+              <TextBlock Classes="label" Text="Target file" />
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBox Text="{Binding OutputPath}" PlaceholderText="calibration-….wav / .iso" />
+                <Button Grid.Column="1" Margin="6,0,0,0" Content="Browse…" Command="{Binding BrowseOutputCommand}" />
+              </Grid>
+            </StackPanel>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+              <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding GenerateCommand}"
+                      ToolTip.Tip="Write the target file and its .calibration.json record">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <c:LucideIcon Data="{x:Static c:Icons.Download}" Width="15" Height="15" />
+                  <TextBlock Text="Generate" />
+                </StackPanel>
+              </Button>
+              <Button Grid.Column="1" Classes="accent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding BurnTargetCommand}"
+                      ToolTip.Tip="Generate the file if needed and open it on the Burn page">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <c:LucideIcon Data="{x:Static c:Icons.Flame}" Width="15" Height="15" />
+                  <TextBlock Text="Burn…" />
+                </StackPanel>
+              </Button>
+            </Grid>
+            <WrapPanel ItemSpacing="6" LineSpacing="6">
+              <Button Content="New target" Command="{Binding CreateTargetCommand}" ToolTip.Tip="Rebuild the target from the current project geometry" />
+              <Button Content="Open record…" Command="{Binding OpenSessionCommand}" ToolTip.Tip="Resume from a .calibration.json record" />
+              <Button Content="Save record…" Command="{Binding SaveSessionCommand}" ToolTip.Tip="Save the target, photo, outlines and traced points" />
+              <Button Content="Export PNG…" Command="{Binding ExportPngCommand}" ToolTip.Tip="Export the target pattern as an image" />
+            </WrapPanel>
+            <TextBlock Classes="caption" TextWrapping="Wrap"
+                       Text="Burn it slowly on a blank disc of the kind you will use. Keep the .calibration.json written next to the file: it restores this exact target later." />
+          </StackPanel>
+        </Expander>
+
+        <!-- Step 2 -->
+        <Expander Classes="step" IsExpanded="{Binding StepTwoExpanded}" IsEnabled="{Binding HasTarget}">
+          <Expander.Header>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Border Classes="stepdot"><TextBlock Text="2" /></Border>
+              <TextBlock Text="Rectify a photo" FontWeight="SemiBold" VerticalAlignment="Center" />
+              <Border Classes="chip" VerticalAlignment="Center"><TextBlock Text="{Binding StepTwoState}" /></Border>
+            </StackPanel>
+          </Expander.Header>
+          <StackPanel Spacing="10">
+            <TextBlock Classes="caption" TextWrapping="Wrap"
+                       Text="Photograph the recorded side as straight-on as you can, lit by one small light so the curves show. The whole disc edge and the centre hole must be visible." />
+            <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding ImportPhotoCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <c:LucideIcon Data="{x:Static c:Icons.Image}" Width="15" Height="15" />
+                <TextBlock Text="Import photo…" />
+              </StackPanel>
+            </Button>
+            <StackPanel Spacing="10" IsVisible="{Binding HasPhoto}">
+              <TextBlock Classes="caption" TextWrapping="Wrap"
+                         Text="Drag the blue points onto the disc's physical outer edge and the orange points onto the edge of the centre hole. Zoom in for accuracy." />
+              <StackPanel Spacing="4">
+                <TextBlock Classes="label" Text="Physical disc size" />
+                <ComboBox ItemsSource="{Binding PhysicalDiscSizes}" SelectedItem="{Binding SelectedPhysicalDiscSize}" HorizontalAlignment="Stretch" />
+              </StackPanel>
+              <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding RectifyCommand}" Content="Calculate rectification" />
+              <TextBlock Classes="caption" Text="{Binding RectificationSummary}" IsVisible="{Binding IsRectificationReady}" />
+              <TextBlock Classes="caption" TextWrapping="Wrap" IsVisible="{Binding IsRectificationReady}"
+                         Text="In the rectified preview the disc should look round and face-on, with its edges on the dashed circles." />
+              <Button Classes="accent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding ConfirmRectificationCommand}"
+                      Content="Looks right — start tracing" />
+            </StackPanel>
+          </StackPanel>
+        </Expander>
+
+        <!-- Step 3 -->
+        <Expander Classes="step" IsExpanded="{Binding StepThreeExpanded}" IsEnabled="{Binding IsTraceStep}">
+          <Expander.Header>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Border Classes="stepdot"><TextBlock Text="3" /></Border>
+              <TextBlock Text="Trace and fit" FontWeight="SemiBold" VerticalAlignment="Center" />
+              <Border Classes="chip" VerticalAlignment="Center"><TextBlock Text="{Binding StepThreeState}" /></Border>
+            </StackPanel>
+          </Expander.Header>
+          <StackPanel Spacing="10">
+            <TextBlock Classes="caption" TextWrapping="Wrap"
+                       Text="Pick one curve that runs across the pattern and click along it from the inside out: at least 6 points, more is better. Drag a point to correct it; select one and press Delete to remove it." />
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="{Binding TraceSummary}" VerticalAlignment="Center" FontWeight="Medium" />
+              <Button Grid.Column="1" Content="Clear" Command="{Binding ClearTracesCommand}" />
+            </Grid>
+            <StackPanel Spacing="4">
+              <TextBlock Classes="label" Text="{Binding SearchRangeHeader}" />
+              <ComboBox ItemsSource="{Binding SearchRanges}" SelectedItem="{Binding SelectedSearchRange}" HorizontalAlignment="Stretch" />
+            </StackPanel>
+            <CheckBox IsChecked="{Binding FitDvdPitch}" IsVisible="{Binding IsDvdTarget}" Content="Also fit the DVD track pitch (cubic)" />
+            <Button Classes="accent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding SolveCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <c:LucideIcon Data="{x:Static c:Icons.Crosshair}" Width="15" Height="15" />
+                <TextBlock Text="Fit parameters" />
+              </StackPanel>
+            </Button>
+            <StackPanel Spacing="4" IsVisible="{Binding HasCandidates}">
+              <TextBlock Classes="label" Text="Result" />
+              <ComboBox ItemsSource="{Binding Candidates}" SelectedItem="{Binding SelectedCandidate}" HorizontalAlignment="Stretch" />
+            </StackPanel>
+            <Border Classes="inset" Padding="10,8" IsVisible="{Binding !FitRejected}">
+              <TextBlock Text="{Binding FitAssessment}" FontSize="12" TextWrapping="Wrap" />
+            </Border>
+            <Border Classes="warning" IsVisible="{Binding FitRejected}">
+              <Grid ColumnDefinitions="Auto,*">
+                <c:LucideIcon Data="{x:Static c:Icons.TriangleAlert}" Width="16" Height="16" Margin="0,1,10,0" VerticalAlignment="Top" />
+                <TextBlock Grid.Column="1" FontSize="12" TextWrapping="Wrap" Text="{Binding FitAssessment}" />
+              </Grid>
+            </Border>
+            <CheckBox IsChecked="{Binding ContourConfirmed}" IsEnabled="{Binding SelectedCandidate, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <TextBlock Text="The orange curve follows the photographed curve" TextWrapping="Wrap" />
+            </CheckBox>
+            <Border Classes="warning" IsVisible="{Binding HasFamilyMismatch}">
+              <TextBlock FontSize="12" TextWrapping="Wrap" Text="{Binding FamilyMismatch}" />
+            </Border>
+            <Button Classes="accent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding ApplyCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <c:LucideIcon Data="{x:Static c:Icons.Check}" Width="15" Height="15" />
+                <TextBlock Text="Apply to project" />
+              </StackPanel>
+            </Button>
+            <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Command="{Binding BackToPhotoCommand}" Content="Back to the photo outlines" />
+          </StackPanel>
+        </Expander>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

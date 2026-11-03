@@ -25,7 +25,7 @@ flowchart LR
 
 `DiscImageStudio.Cli` 和 Windows 桌面程序从同一份模块目录执行离线命令。`DiscImageStudio.ImageIO` 在 Windows 桌面目标使用 WIC，在通用 `net10.0` 目标使用 StbImageSharp 读图、StbImageWriteSharp 写 PNG。两个后端都向生成器提供相同顺序的 BGRA 像素。蓝光共用透明度合成和灰度转换代码，CD 和 DVD 也分别共用各自原有的采样算法。
 
-`DiscImageStudio.Linux` 是基于 Avalonia 的 Linux 桌面外壳。它与 CLI 一样在进程内调用同一份模块目录，生成命令行与 Windows 导出页逐项一致；图层合成用 SkiaSharp 移植自 Windows 的 `DesignComposer`，沿用相同的毫米坐标、顺时针旋转、缩放和“长边贴合内容环直径”规则，并读写相同的 `.discproj` 工程。Linux 版不使用 IMAPI2，而是先生成镜像，再交给 cdrecord / wodim / cdrskin、growisofs 或 xorriso 刻录；蓝光保持未格式化、不分配备用区。安装与打包见 [LINUX.md](LINUX.md)，回归检查在 `tests/DiscImageStudio.LinuxTests`。
+`DiscImageStudio.Linux` 是基于 Avalonia 的 Linux 桌面外壳。它与 CLI 一样在进程内调用同一份模块目录，生成命令行与 Windows 导出页逐项一致；图层合成用 SkiaSharp 移植自 Windows 的 `DesignComposer`，沿用相同的毫米坐标、顺时针旋转、缩放和“长边贴合内容环直径”规则，并读写相同的 `.discproj` 工程。Linux 版不使用 IMAPI2，而是先生成镜像，再交给 cdrecord / wodim / cdrskin、growisofs 或 xorriso 刻录；蓝光保持未格式化、不分配备用区。标定页直接调用 `DiscImageStudio.Core.Calibration` 的照片矫正、曲线拟合与预测，并读写与 Windows 版相同的 `.calibration.json` 记录。安装与打包见 [LINUX.md](LINUX.md)，回归检查在 `tests/DiscImageStudio.LinuxTests`。
 
 ## Core 契约
 

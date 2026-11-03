@@ -7,6 +7,7 @@
 - **实验性功能：Linux 桌面版。** 基于 Avalonia 的图形界面提供设计、预览、导出与刻录完整流程：毫米精度的图层画布（拖动、缩放、旋转）、引擎实时影调预览、设计投影与生成文件读回预览、随盘文件区域高亮，以及深色/浅色主题。它在进程内调用与 CLI 相同的 CD/DVD/蓝光模块，并与 Windows 版读写同一份 `.discproj` 工程。
 - Linux 刻录通过 cdrecord / wodim / cdrskin、growisofs 或 xorriso 写入生成的文件，执行前显示完整命令：CD 音轨不加 `-swab`，数据镜像以 DAO 且不填充写入，BD-R 保持未格式化、不分配备用区。
 - Linux 安装：Arch Linux 可在 `packaging/linux/arch` 运行 `makepkg -si`；其他发行版可用自包含压缩包中的 `install.sh`（用户级或系统级安装、卸载），或用 `packaging/linux/build.sh --install` 从源码构建。安装包含菜单项、各尺寸图标、AppStream 元数据和 `.discproj` 文件类型。详见 `docs/LINUX.md`。
+- Linux 桌面版新增“标定”页，与 Windows 版相同的辅助标定流程：按工程参数生成标定盘并交给刻录页、导入照片并按实体外缘与中心孔矫正、沿一条曲线描点后拟合内外半径（DVD 可拟合三次轨距），确认预测曲线后应用到工程。标定记录与 Windows 版共用 `.calibration.json` 格式；照片与记录可直接拖到画布上打开。
 - CI 在 x64 与 Arm64 Linux 上运行新的 `DiscImageStudio.LinuxTests`，构建并安装桌面版后执行 CLI 包测试与界面截图；发布流程附加 `DiscImageStudio-Linux-<版本>-linux-x64/arm64.tar.gz`。
 
 ### English
@@ -14,6 +15,7 @@
 - **Experimental feature: Linux desktop app.** An Avalonia interface covers the full Design, Preview, Export and Burn workflow: a millimetre-accurate layer canvas (drag, scale, rotate), live engine tone previews, design projection and read-back previews of generated files, file-region highlighting, and dark and light themes. It runs the same CD, DVD and Blu-ray modules in-process as the CLI and reads and writes the same `.discproj` projects as the Windows app.
 - Burning on Linux writes the generated file with cdrecord, wodim, cdrskin, growisofs or xorriso and shows the full command first: CD audio without `-swab`, data images disc-at-once without padding, and BD-R left unformatted with no spare areas.
 - Linux installation: on Arch Linux, run `makepkg -si` in `packaging/linux/arch`. On other distributions, use `install.sh` from the self-contained archive (user or system install, and uninstall), or build from source with `packaging/linux/build.sh --install`. The install adds a menu entry, icons in every size, AppStream metadata and the `.discproj` file type. See `docs/LINUX.md`.
+- The Linux app adds a **Calibrate** page with the Windows app's assisted calibration workflow: generate a target from the project geometry and hand it to the Burn page, rectify a photo from the disc's physical outer edge and centre hole, trace one curve and fit the inner and outer radii (and the DVD cubic track pitch), then apply the result to the project once the predicted curve matches. Records use the same `.calibration.json` format as Windows; photos and records can be dropped onto the canvas.
 - CI runs the new `DiscImageStudio.LinuxTests` on x64 and Arm64 Linux, then builds and installs the desktop app and runs the CLI package test and UI screenshots against it. Releases attach `DiscImageStudio-Linux-<version>-linux-x64/arm64.tar.gz`.
 
 ## [1.3.6] - 2026-11-02

@@ -26,6 +26,7 @@
     <KeyBinding Gesture="Ctrl+D2" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:AppPage.Preview}" />
     <KeyBinding Gesture="Ctrl+D3" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:AppPage.Export}" />
     <KeyBinding Gesture="Ctrl+D4" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:AppPage.Burn}" />
+    <KeyBinding Gesture="Ctrl+D5" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:AppPage.Calibrate}" />
     <KeyBinding Gesture="Ctrl+OemComma" Command="{Binding OpenSettingsCommand}" />
   </Window.KeyBindings>
 
@@ -109,6 +110,13 @@
               <TextBlock Text="Burn" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
+          <Button Classes="nav" Classes.selected="{Binding IsCalibratePage}" IsEnabled="{Binding HasProject}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:AppPage.Calibrate}"
+                  ToolTip.Tip="Measure the disc geometry your drive really writes (Ctrl+5)">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <c:LucideIcon Data="{x:Static c:Icons.Crosshair}" />
+              <TextBlock Text="Calibrate" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
         </StackPanel>
       </DockPanel>
     </Border>
@@ -173,6 +181,7 @@
         <views:PreviewView DataContext="{Binding Preview}" IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).IsPreviewPage}" />
         <views:ExportView DataContext="{Binding Export}" IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).IsExportPage}" />
         <views:BurnView DataContext="{Binding Burn}" IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).IsBurnPage}" />
+        <views:CalibrateView DataContext="{Binding Calibration}" IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).IsCalibratePage}" />
 
         <!-- Notifications -->
         <ItemsControl ItemsSource="{Binding Toasts}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,24,16" Width="380">

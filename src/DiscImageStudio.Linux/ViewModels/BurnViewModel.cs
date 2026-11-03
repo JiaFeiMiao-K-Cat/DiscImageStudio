@@ -12,6 +12,7 @@ public partial class BurnViewModel : ObservableObject
 {
     private readonly MainViewModel _main;
     private ProjectViewModel? _project;
+    private OpticalDiscFamily? _familyOverride;
 
     [ObservableProperty] private string _sourceFile = string.Empty;
     [ObservableProperty] private OpticalDrive? _selectedDrive;
@@ -31,8 +32,10 @@ public partial class BurnViewModel : ObservableObject
         main.ProjectChanged += () =>
         {
             _project = main.Project;
+            _familyOverride = null;
             OnPropertyChanged(nameof(Project));
             SourceFile = _project?.OutputPath ?? string.Empty;
+            NotifyMaterialChanged();
         };
         main.PropertyChanged += (_, e) =>
         {
@@ -53,11 +56,16 @@ public partial class BurnViewModel : ObservableObject
 
     [ObservableProperty] private IReadOnlyList<string> _speeds = ["Auto"];
 
-    public BurnMaterial? Material => _project is null ? null : BurnService.MaterialFor(_project.Family, SourceFile);
+    /// <summary>The disc family the source is burned as: the project's, unless another page handed
+    /// over a file for a different family (a calibration target for a CD, say, while a DVD project is open).</summary>
+    public OpticalDiscFamily? Family => _familyOverride ?? _project?.Family;
+
+    public BurnMaterial? Material => Family is { } family ? BurnService.MaterialFor(family, SourceFile) : null;
 
     public string MaterialText => Material is { } material
         ? BurnService.Describe(material)
-        : _project is null ? "Open a project first." : $"Choose a generated {(_project.IsCd ? ".wav, .raw or .iso" : ".iso")} file for this {_project.FamilyLabel} project.";
+        : Family is not { } family ? "Open a project first."
+        : $"Choose a generated {(family == OpticalDiscFamily.CompactDisc ? ".wav, .raw or .iso" : ".iso")} file for this {DiscFamilies.Label(family)} {(_familyOverride is null ? "project" : "target")}.";
 
     public bool HasDrives => Drives.Count > 0;
 
@@ -83,17 +91,34 @@ public partial class BurnViewModel : ObservableObject
         RefreshTools();
     }
 
-    public void UseSource(string path)
+    /// <summary>Selects a file to burn. <paramref name="family"/> overrides the project's disc family
+    /// for this file, until the user browses for another one or opens a different project.</summary>
+    public void UseSource(string path, OpticalDiscFamily? family = null)
     {
-        SourceFile = path;
+        _familyOverride = family is { } value && value != _project?.Family ? value : null;
+        if (SourceFile == path)
+        {
+            NotifyMaterialChanged();
+            RefreshTools();
+        }
+        else
+        {
+            SourceFile = path;
+        }
+    }
+
+    private void NotifyMaterialChanged()
+    {
+        OnPropertyChanged(nameof(Family));
+        OnPropertyChanged(nameof(Material));
+        OnPropertyChanged(nameof(MaterialText));
+        OnPropertyChanged(nameof(MediaAdvice));
     }
 
     partial void OnSourceFileChanged(string value)
     {
-        OnPropertyChanged(nameof(Material));
-        OnPropertyChanged(nameof(MaterialText));
+        NotifyMaterialChanged();
         OnPropertyChanged(nameof(SourceExists));
-        OnPropertyChanged(nameof(MediaAdvice));
         SourceInfo = File.Exists(value) ? $"{Num.Bytes(new FileInfo(value).Length)} · modified {File.GetLastWriteTime(value):yyyy-MM-dd HH:mm}" : "File not found";
         RefreshTools();
     }
@@ -278,17 +303,18 @@ public partial class BurnViewModel : ObservableObject
     [RelayCommand]
     private async Task BrowseSource()
     {
-        if (_main.Ui is null || _project is null)
+        if (_main.Ui is null || Family is not { } family)
         {
             return;
         }
 
         IReadOnlyList<string> files = await _main.Ui.PickFilesAsync("Choose the file to burn",
-            _project.IsCd ? [FileTypes.Burnable, FileTypes.All] : [FileTypes.Iso, FileTypes.All],
-            Path.GetDirectoryName(SourceFile) ?? _project.Folder, allowMultiple: false);
+            family == OpticalDiscFamily.CompactDisc ? [FileTypes.Burnable, FileTypes.All] : [FileTypes.Iso, FileTypes.All],
+            Path.GetDirectoryName(SourceFile) ?? _project?.Folder, allowMultiple: false);
         if (files.Count == 1)
         {
-            SourceFile = files[0];
+            // A browsed file belongs to the open project; without one, keep the family we have.
+            UseSource(files[0], _project is null ? family : null);
         }
     }
 
