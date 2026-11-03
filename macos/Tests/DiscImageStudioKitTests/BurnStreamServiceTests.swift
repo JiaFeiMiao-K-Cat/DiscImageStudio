@@ -560,35 +560,35 @@ final class BurnStreamServiceTests: XCTestCase {
         let events: [StreamBurnEvent]
 
         var logs: [StreamLogLine] {
-            events.compactMap { event in
+            events.compactMap { (event: StreamBurnEvent) -> StreamLogLine? in
                 guard case .log(let line) = event else { return nil }
                 return line
             }
         }
 
         var progress: [StreamBurnProgress] {
-            events.compactMap { event in
+            events.compactMap { (event: StreamBurnEvent) -> StreamBurnProgress? in
                 guard case .progress(let progress) = event else { return nil }
                 return progress
             }
         }
 
         var finished: StreamBurnResult? {
-            events.compactMap { event in
+            events.compactMap { (event: StreamBurnEvent) -> StreamBurnResult? in
                 guard case .finished(let result) = event else { return nil }
                 return result
             }.last
         }
 
         var startedHelperCommandLine: String? {
-            events.compactMap { event in
+            events.compactMap { (event: StreamBurnEvent) -> String? in
                 guard case .started(let helper, _) = event else { return nil }
                 return helper
             }.first
         }
 
         var startedCLICommandLine: String? {
-            events.compactMap { event in
+            events.compactMap { (event: StreamBurnEvent) -> String? in
                 guard case .started(_, let cli) = event else { return nil }
                 return cli
             }.first

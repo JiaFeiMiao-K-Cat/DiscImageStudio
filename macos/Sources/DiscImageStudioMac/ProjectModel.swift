@@ -37,7 +37,7 @@ final class WorkspaceTask {
     }
 
     var stderrLines: [String] {
-        lines.compactMap { line in
+        lines.compactMap { (line: LogLine) -> String? in
             guard line.stream == .stderr else { return nil }
             let text = line.text.trimmingCharacters(in: .whitespacesAndNewlines)
             return text.isEmpty ? nil : line.text

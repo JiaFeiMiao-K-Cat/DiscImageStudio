@@ -111,14 +111,14 @@ struct CollectedEvents {
     let events: [CliEvent]
 
     var startedCommandLines: [String] {
-        events.compactMap { event in
+        events.compactMap { (event: CliEvent) -> String? in
             guard case .started(let commandLine) = event else { return nil }
             return commandLine
         }
     }
 
     var lines: [LogLine] {
-        events.compactMap { event in
+        events.compactMap { (event: CliEvent) -> LogLine? in
             guard case .line(let line) = event else { return nil }
             return line
         }
@@ -129,7 +129,7 @@ struct CollectedEvents {
     var systemLines: [String] { lines.filter { $0.stream == .system }.map(\.text) }
 
     var finished: CliResult? {
-        events.compactMap { event in
+        events.compactMap { (event: CliEvent) -> CliResult? in
             guard case .finished(let result) = event else { return nil }
             return result
         }.last
@@ -139,7 +139,7 @@ struct CollectedEvents {
     func assertWellFormed(file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertEqual(startedCommandLines.count, 1, "started 事件应恰好出现一次", file: file, line: line)
         XCTAssertEqual(
-            events.filter { if case .finished = $0 { return true } else { return false } }.count,
+            events.filter { (event: CliEvent) -> Bool in if case .finished = event { return true } else { return false } }.count,
             1,
             "finished 事件应恰好出现一次",
             file: file,
