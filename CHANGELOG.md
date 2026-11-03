@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### 中文
+
+- 新增捷克语界面（`cs`），在「设置 → 通用 → 语言」选择「Čeština」，保存并重启后生效。跟随系统时，`cs`、`cs-CZ` 等捷克语系统使用捷克语；捷克语缺少某条文案时回落到英文。`ui-snapshot --language` 支持 `cs`。
+- 流式刻录完成日志不再在所有语言末尾固定追加中文句号「。」。
+
+### English
+
+- Added a Czech interface (`cs`). Choose Čeština under Settings → General → Language, then save and restart. When following the system, Czech locales such as `cs` and `cs-CZ` use Czech; a Czech string that is missing falls back to English. `ui-snapshot --language` accepts `cs`.
+- The streaming-burn completion log line no longer ends with a hard-coded Chinese full stop in every language.
+
 ## [1.3.6] - 2026-11-02
 
 ### 中文

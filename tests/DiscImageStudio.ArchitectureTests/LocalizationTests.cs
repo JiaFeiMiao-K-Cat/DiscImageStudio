@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using DiscImageStudio.Localization;
 using DiscImageStudio.Services;
 using DiscImageStudio.ViewModels;
@@ -16,6 +17,32 @@ internal static class LocalizationTests
         (2, L.TraditionalChinese),
         (3, L.English),
         (4, L.Japanese),
+        (5, L.Czech),
+    ];
+
+    // An English term must come out as the matching Czech stem, so a Czech string cannot drift
+    // to another subject. Stems leave room for inflection (vrstva/vrstev, disk/discích).
+    private static readonly (Regex English, Regex Czech)[] CzechTerms =
+    [
+        (Term(@"\bpresets?\b"), Term("předvol")),
+        (Term(@"\blayers?\b"), Term("vrst")),
+        (Term(@"\bsectors?\b"), Term("sektor")),
+        (Term(@"\bcalibrat"), Term("kalibr")),
+        (Term(@"\bcache\b"), Term("mezipam")),
+        (Term(@"\brecorders?\b"), Term("vypalovač")),
+        (Term(@"\bburn"), Term("vypal|vypál")),
+        (Term(@"\bprojects?\b"), Term("projekt")),
+        (Term(@"\bpitch\b"), Term("rozteč")),
+        (Term("interleav"), Term("proklád")),
+        (Term(@"\bradi(us|i)\b"), Term("poloměr")),
+        (Term(@"\bphoto"), Term("fot|foť")),
+        (Term(@"\bpreview"), Term("náhled")),
+        (Term(@"\bcurves?\b"), Term("křiv")),
+        (Term(@"\bsettings\b"), Term("nastaven")),
+        (Term(@"\bthemes?\b"), Term("motiv")),
+        (Term(@"\btracks?\b"), Term("stop")),
+        (Term(@"\breadback"), Term("zpětn")),
+        (Term(@"\bdiscs?\b"), Term(@"dis[kc]|\b(CD|DVD|BD)\b|Blu-ray|médi")),
     ];
 
     public static void Run()
@@ -29,6 +56,7 @@ internal static class LocalizationTests
         try
         {
             TestCatalog();
+            TestCzechText();
             TestLanguageResolution();
             TestTranslationAndFormatting();
             TestDefaultSettings(directory);
@@ -54,7 +82,7 @@ internal static class LocalizationTests
             Require(translations.TryGetValue(L.Chinese, out string? chinese)
                     && !string.IsNullOrWhiteSpace(chinese), key + " has Simplified Chinese text");
             HashSet<string> sourceArguments = ReadArguments(chinese!, key);
-            foreach (string language in new[] { L.TraditionalChinese, L.English, L.Japanese })
+            foreach (string language in new[] { L.TraditionalChinese, L.English, L.Japanese, L.Czech })
             {
                 Require(translations.TryGetValue(language, out string? translated)
                         && !string.IsNullOrWhiteSpace(translated), key + " has " + language + " text");
@@ -64,6 +92,38 @@ internal static class LocalizationTests
             }
         }
     }
+
+    private static void TestCzechText()
+    {
+        Regex chinese = new(@"[\p{IsCJKUnifiedIdeographs}\p{IsCJKSymbolsandPunctuation}\p{IsHalfwidthandFullwidthForms}]");
+        Regex looseOneLetterWord = new(@"(?<![\w\-./\\{])[kKsSvVzZoOuUaAiI] (?=\S)");
+        foreach ((string key, Dictionary<string, string> translations) in L.Entries)
+        {
+            string english = translations[L.English];
+            string czech = translations[L.Czech];
+            string name = key + " (cs)";
+            Require(czech != english || !english.Contains(' '), name + " is translated, not copied from English");
+            Require(!chinese.IsMatch(czech) || czech == english, name + " contains no untranslated Chinese");
+            Require(!czech.Contains("...") && !czech.Contains('\u2014') && !czech.Contains('"') && !czech.Contains('\u201D'),
+                name + " uses Czech typography");
+            Require(czech.Count(c => c == '\u201E') == czech.Count(c => c == '\u201C'),
+                name + " closes every Czech quotation mark");
+            Require(char.IsWhiteSpace(czech[0]) == char.IsWhiteSpace(english[0])
+                    && char.IsWhiteSpace(czech[^1]) == char.IsWhiteSpace(english[^1]),
+                name + " keeps the edge spaces that concatenated fragments rely on");
+            Require(!looseOneLetterWord.IsMatch(czech),
+                name + " binds one-letter prepositions to the next word with U+00A0");
+            string englishSubject = english.Replace("Disc Image Studio", string.Empty, StringComparison.Ordinal);
+            string czechSubject = czech.Replace("Disc Image Studio", string.Empty, StringComparison.Ordinal);
+            foreach ((Regex englishTerm, Regex czechTerm) in CzechTerms)
+            {
+                Require(!englishTerm.IsMatch(englishSubject) || czechTerm.IsMatch(czechSubject),
+                    name + " translates /" + englishTerm + "/ as /" + czechTerm + "/");
+            }
+        }
+    }
+
+    private static Regex Term(string pattern) => new(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private static HashSet<string> ReadArguments(string text, string key)
     {
@@ -130,6 +190,18 @@ internal static class LocalizationTests
             "explicit Japanese overrides a Chinese system");
         Require(L.ResolveLanguage(L.English, CultureInfo.GetCultureInfo("ja-JP")) == L.English,
             "explicit English overrides a Japanese system");
+        foreach (string language in new[] { "cs", "CS-cz", " cs-CZ " })
+        {
+            Require(L.NormalizeLanguage(language) == L.Czech, language + " normalizes to Czech");
+        }
+        Require(L.ResolveLanguage(L.SystemLanguage, CultureInfo.GetCultureInfo("cs-CZ")) == L.Czech,
+            "cs-CZ system locale uses Czech");
+        Require(L.ResolveLanguage(null, CultureInfo.GetCultureInfo("cs-CZ")) == L.Czech,
+            "a missing preference uses Czech on a Czech system");
+        Require(L.ResolveLanguage(L.English, CultureInfo.GetCultureInfo("cs-CZ")) == L.English,
+            "explicit English overrides a Czech system");
+        Require(L.ResolveLanguage(L.Czech, CultureInfo.GetCultureInfo("ja-JP")) == L.Czech,
+            "explicit Czech overrides a Japanese system");
         foreach (string language in new[] { "en-US", "fr-FR", "ko-KR" })
         {
             Require(L.ResolveLanguage(L.SystemLanguage, CultureInfo.GetCultureInfo(language)) == L.English,
@@ -194,6 +266,18 @@ internal static class LocalizationTests
         Require(formattedJapanese.Contains(expected.ToString("N0", numericCulture), StringComparison.Ordinal)
                 && formattedJapanese.Contains(actual.ToString("N0", numericCulture), StringComparison.Ordinal),
             "Japanese interpolation preserves both formatted numeric arguments");
+
+        L.Initialize(L.Czech);
+        Require(L.CurrentLanguage == L.Czech && CultureInfo.CurrentUICulture.Name == L.Czech,
+            "Czech initializes the requested UI culture");
+        Require(L.T("Xaml.Cancel") == "Zrušit", "Czech resolves from the embedded catalog");
+        Require(L.Format("Xaml.LayerCountFormat", 3) == "Vrstvy: 3", "Czech named formats accept arguments");
+        Require(ReferenceEquals(CultureInfo.CurrentCulture, numericCulture),
+            "Czech does not alter numeric culture");
+        string formattedCzech = L.F($"BD ISO 长度与总扇区数不符：需要 {expected:N0} 字节，实际 {actual:N0} 字节。");
+        Require(formattedCzech.Contains(expected.ToString("N0", numericCulture), StringComparison.Ordinal)
+                && formattedCzech.Contains(actual.ToString("N0", numericCulture), StringComparison.Ordinal),
+            "Czech interpolation preserves both formatted numeric arguments");
 
         L.Initialize(L.Chinese);
         Require(L.T("Xaml.Cancel") == "取消", "Chinese text is available after switching back");

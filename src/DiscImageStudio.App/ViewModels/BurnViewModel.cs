@@ -626,7 +626,7 @@ public partial class BurnViewModel : ObservableObject
                 L.F($"[{DateTime.Now:HH:mm:ss}] 流式刻录完成：{result.BytesWritten} 字节，")
                 + L.F($"耗时 {result.Elapsed.TotalSeconds:F1} 秒")
                 + (result.ActualWriteSpeed is null
-                    ? "。\n"
+                    ? L.T("。\n")
                     : L.F($"，实际速度={FormatBurnWriteSpeed(result.ActualWriteSpeed, mediaKind)}。\n")));
             ConfirmChecked = false;
             _shell.ShowToast(L.T("流式刻录完成"), L.T("流式刻录已经完成，可以取出光盘。"), ToastKind.Success);
