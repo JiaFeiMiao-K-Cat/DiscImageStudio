@@ -694,25 +694,25 @@ struct CalibrationView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - 记录
+    // MARK: - 标定会话列表
 
     private func recordsCard(_ model: CalibrationModel) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("标定记录")
                     .font(.system(size: 13, weight: .semibold))
-                Text("\(model.records.count) 条")
+                Text("\(model.sessionEntries.count) 个会话")
                     .font(Typography.caption2)
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button("刷新") {
-                    model.records = CalibrationRecordStore(workspace: model.workspace).load()
+                    model.refreshSessionEntries()
                 }
                 .controlSize(.small)
             }
 
-            if model.records.isEmpty {
-                Text("本工程还没有标定记录。完成步骤 1 后会自动保存记录。")
+            if model.sessionEntries.isEmpty {
+                Text("本工程 calibration/ 下还没有 .calibration.json 会话。完成步骤 1 后会自动写入。")
                     .font(Typography.caption2)
                     .foregroundStyle(.tertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -720,8 +720,8 @@ struct CalibrationView: View {
             } else {
                 ScrollView {
                     VStack(spacing: 2) {
-                        ForEach(model.records) { record in
-                            recordRow(model, record: record)
+                        ForEach(model.sessionEntries) { entry in
+                            sessionRow(model, entry: entry)
                         }
                     }
                 }
@@ -732,52 +732,47 @@ struct CalibrationView: View {
         .cardSurface(padding: 12)
     }
 
-    private func recordRow(_ model: CalibrationModel, record: CalibrationRecord) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: record.mode == .fine ? "scope" : "circle.lefthalf.filled")
+    private func sessionRow(
+        _ model: CalibrationModel,
+        entry: CalibrationSessionCatalog.Entry
+    ) -> some View {
+        let isCurrent = model.sessionURL?.path == entry.path.path
+        return HStack(spacing: 8) {
+            Image(systemName: "scope")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .frame(width: 16)
-            Text(displayDate(record.createdAt))
+            Text(shortDate(entry.modifiedAt))
                 .font(Typography.monoSmall)
                 .foregroundStyle(.secondary)
                 .frame(width: 92, alignment: .leading)
-            Text(record.mode == .fine ? "精调" : "粗调")
-                .font(Typography.caption2)
-                .frame(width: 34, alignment: .leading)
-            Text(record.family.familyLabel)
+            Text(entry.family.familyLabel)
                 .font(Typography.caption2)
                 .frame(width: 28, alignment: .leading)
-            Text("r0 \(format(record.generatedGeometry.innerRadiusMm)) / r1 \(format(record.generatedGeometry.outerRadiusMm))")
+            Text("r0 \(format(entry.geometry.innerRadiusMm)) / r1 \(format(entry.geometry.outerRadiusMm))")
                 .font(Typography.monoSmall)
                 .lineLimit(1)
             Spacer(minLength: 0)
-            if let candidate = record.selectedCandidate {
-                Text(String(format: "RMS %.3f", candidate.rmsErrorMm))
-                    .font(Typography.caption2)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 82, alignment: .trailing)
+            Text("\(entry.tracePointCount) 点")
+                .font(Typography.caption2)
+                .foregroundStyle(.secondary)
+                .frame(width: 52, alignment: .trailing)
+            if entry.isConfirmed {
+                Chip(text: "已确认", systemImage: "checkmark.circle.fill", tint: .green)
             } else {
-                Text("未拟合")
-                    .font(Typography.caption2)
-                    .foregroundStyle(.tertiary)
-                    .frame(width: 82, alignment: .trailing)
+                Chip(text: "未确认", systemImage: "circle")
             }
-            if record.isApplied {
-                Chip(text: "已应用", systemImage: "checkmark.circle.fill", tint: .green)
-            } else {
-                Chip(text: "未应用", systemImage: "circle")
-            }
-            Button("打开") { model.openRecord(record) }
+            Button("打开") { model.openEntry(entry) }
                 .controlSize(.small)
-            Button("删除", role: .destructive) { model.deleteRecord(record) }
+            Button("删除", role: .destructive) { model.deleteEntry(entry) }
                 .controlSize(.small)
-            Button("导出") { model.exportRecord(record) }
+            Button("导出") { model.exportEntry(entry) }
                 .controlSize(.small)
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 4)
-        .background(record.id == model.currentRecord?.id ? DesignSystem.brand.opacity(0.1) : Color.clear, in: RoundedRectangle(cornerRadius: 5))
+        .background(isCurrent ? DesignSystem.brand.opacity(0.1) : Color.clear, in: RoundedRectangle(cornerRadius: 5))
+        .help(entry.path.path)
     }
 
     // MARK: - 工具
@@ -787,14 +782,7 @@ struct CalibrationView: View {
         return String(format: "%.3f", value)
     }
 
-    private func displayDate(_ text: String) -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let date = formatter.date(from: text) ?? {
-            formatter.formatOptions = [.withInternetDateTime]
-            return formatter.date(from: text)
-        }()
-        guard let date else { return text }
+    private func shortDate(_ date: Date) -> String {
         let output = DateFormatter()
         output.dateFormat = "MM-dd HH:mm"
         return output.string(from: date)

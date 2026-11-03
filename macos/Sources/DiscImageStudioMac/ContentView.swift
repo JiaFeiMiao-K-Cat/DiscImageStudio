@@ -54,7 +54,7 @@ struct ContentView: View {
                 WorkspaceShell(app: app, project: project) {
                     workspaceContent(project: project)
                 }
-                .id(project.fileURL.path)
+                .id(ObjectIdentifier(project))
             } else {
                 HomeView(app: app)
             }

@@ -374,3 +374,15 @@ public enum CalibrationContours {
         return (make(1), make(0.125))
     }
 }
+
+public enum CalibrationMode: String, Codable, Sendable, CaseIterable {
+    case fine
+    case coarse
+
+    public var displayName: String {
+        switch self {
+        case .fine: return "精调（内置靶标）"
+        case .coarse: return "粗调（半黑白盘）"
+        }
+    }
+}

@@ -238,6 +238,14 @@ final class ProjectModel {
         cliInvocation = invocation
     }
 
+    /// 工程当前引用的 Windows 兼容标定会话；nil 表示工程没有有效会话（如粗调后）。
+    func setCalibrationSessionPath(_ path: String?) {
+        guard document.calibrationSessionPath != path else { return }
+        document.calibrationSessionPath = path
+        markDirty()
+        saveNow()
+    }
+
     /// 同一工程复用同一个标定模型，切换页面不丢向导状态。
     func calibrationModel() -> CalibrationModel {
         if let _calibrationModel { return _calibrationModel }
@@ -608,9 +616,7 @@ final class ProjectModel {
     /// 应用标定候选：更新工程几何、同步预览实测参数、写入会话路径并立即保存。
     func applyCalibration(_ candidate: CalibrationCandidate, canonicalSessionURL: URL?) {
         document = document.applyingCalibration(candidate)
-        if let canonicalSessionURL {
-            document.calibrationSessionPath = canonicalSessionURL.path
-        }
+        document.calibrationSessionPath = canonicalSessionURL?.path
         actualInnerRadiusMm = candidate.innerRadiusMm
         actualOuterRadiusMm = candidate.outerRadiusMm
         if family == .dvd {

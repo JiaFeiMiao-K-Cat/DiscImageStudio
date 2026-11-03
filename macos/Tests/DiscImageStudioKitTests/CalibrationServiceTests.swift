@@ -548,7 +548,7 @@ final class CalibrationServiceTests: XCTestCase {
         XCTAssertEqual(summary.tracePointCount, 6)
 
         let arguments = try readArgv(argvURL)
-        XCTAssertEqual(Array(arguments.prefix(15)), [
+        XCTAssertEqual(Array(arguments.prefix(17)), [
             "calibration-session-write",
             "--session", sessionURL.path,
             "--photo", resizedURL.path,
@@ -556,10 +556,11 @@ final class CalibrationServiceTests: XCTestCase {
             "--outer", "1.0,2.0;1.0,2.0;1.0,2.0;1.0,2.0;1.0,2.0",
             "--hole", "0.5,0.5;0.5,0.5;0.5,0.5;0.5,0.5;0.5,0.5",
             "--points", "24.5,0.0;25.0,0.1;26.0,0.2;27.0,0.3;28.0,0.4;29.0,0.5",
+            "--confirmed", "true",
             "--output", canonicalURL.path,
         ])
         // 第二次调用是 calibration-session-read。
-        XCTAssertEqual(Array(arguments[15...18]), [
+        XCTAssertEqual(Array(arguments[17...20]), [
             "calibration-session-read",
             "--session", canonicalURL.path,
             "--json",

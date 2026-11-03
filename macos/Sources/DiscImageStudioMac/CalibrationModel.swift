@@ -1,9 +1,12 @@
 import AppKit
 import Foundation
+import ImageIO
 import Observation
 import DiscImageStudioKit
 
-/// 完整标定向导状态：标靶 → 照片矫正 → 描点/反推 → 应用 → 记录。
+/// 完整标定向导状态：标靶 → 照片矫正 → 描点/反推 → 应用。
+/// 持久化以工程 `calibration/<id>.calibration.json` 为唯一事实来源；
+/// 记录列表直接扫描该目录，不再维护 `.mac.json` 或 records 索引。
 @MainActor
 @Observable
 final class CalibrationModel {
@@ -36,17 +39,17 @@ final class CalibrationModel {
 
     unowned let project: ProjectModel
     let workspace: URL
-    let recordStore: CalibrationRecordStore
 
     var step: Step = .target
     var mode: CalibrationMode = .fine
-    var records: [CalibrationRecord] = []
+    var sessionEntries: [CalibrationSessionCatalog.Entry] = []
 
+    var sessionURL: URL?
+    var sessionID: String?
     var targetImageURL: URL?
+    var baseSessionURL: URL? { sessionURL }
     var targetResult: CalibrationTargetResult?
     var coarseTargetResult: CalibrationCoarseTargetResult?
-    var baseSessionURL: URL?
-    var canonicalSessionURL: URL?
 
     var photoOriginalURL: URL?
     var photoURL: URL?
@@ -77,32 +80,24 @@ final class CalibrationModel {
     var restoredSessionNote: String?
 
     @ObservationIgnored private var activeTask: Task<Void, Never>?
+    @ObservationIgnored private var sessionWriteTask: Task<Void, Never>?
     @ObservationIgnored private var didRestore = false
-    @ObservationIgnored private var currentRecordID: String?
-    @ObservationIgnored private var currentRecordCreatedAt: String?
-    @ObservationIgnored private var currentRecordAppliedAt: String?
 
     init(project: ProjectModel) {
         self.project = project
         self.workspace = CalibrationService.workspace(forProjectURL: project.fileURL)
-        self.recordStore = CalibrationRecordStore(workspace: workspace)
-        self.records = recordStore.load()
-        self.discSize = .standard
-        self.canvasOuterRadiusMm = CalibrationDiscSize.standard.physicalOuterRadiusMm
+        self.sessionEntries = CalibrationSessionCatalog(workspace: workspace).entries()
     }
 
-    // MARK: - 派生
+    // MARK: - 基础派生
 
     var family: DiscFamily { project.family }
     var density: Double { CalibrationDensity.default(for: project.family) }
+    var layout: CalibrationWorkspaceLayout { CalibrationWorkspaceLayout(workspace: workspace) }
+    var catalog: CalibrationSessionCatalog { CalibrationSessionCatalog(workspace: workspace) }
     var service: CalibrationService? {
         guard let invocation = project.cliInvocation else { return nil }
         return CalibrationService(cliInvocation: invocation, workspace: workspace)
-    }
-
-    var currentRecord: CalibrationRecord? {
-        guard let currentRecordID else { return nil }
-        return records.first { $0.id == currentRecordID }
     }
 
     var candidates: [CalibrationCandidate] {
@@ -132,17 +127,9 @@ final class CalibrationModel {
         }
     }
 
-    var boundaryLimited: Bool {
-        fitResult?.boundaryLimited == true
-    }
-
-    var minimumPointCount: Int {
-        mode == .fine ? 6 : 8
-    }
-
-    var recommendedPointCount: Int {
-        mode == .fine ? (family == .dvd ? 12 : 20) : 8
-    }
+    var boundaryLimited: Bool { fitResult?.boundaryLimited == true }
+    var minimumPointCount: Int { mode == .fine ? 6 : 8 }
+    var recommendedPointCount: Int { mode == .fine ? (family == .dvd ? 12 : 20) : 8 }
 
     var traceCoveragePercent: Double {
         let radii = tracePoints.map { hypot($0.x, $0.y) }
@@ -157,13 +144,10 @@ final class CalibrationModel {
 
     var traceSummary: String {
         let coverage = String(format: "%.0f", traceCoveragePercent)
-        let min = minimumPointCount
-        return "\(tracePoints.count) 点 · 覆盖 \(coverage)% · 至少 \(min) 点（建议 \(recommendedPointCount) 点 / ≥\(Int(recommendedCoveragePercent))%）"
+        return "\(tracePoints.count) 点 · 覆盖 \(coverage)% · 至少 \(minimumPointCount) 点（建议 \(recommendedPointCount) 点 / ≥\(Int(recommendedCoveragePercent))%）"
     }
 
-    var canApply: Bool {
-        applyDisabledReason == nil
-    }
+    var canApply: Bool { applyDisabledReason == nil }
 
     var applyDisabledReason: String? {
         guard let candidate = selectedCandidate else {
@@ -178,8 +162,8 @@ final class CalibrationModel {
             if candidate.maxErrorMm > CalibrationFitResult.applicableMaxMm {
                 return String(format: "最大偏差 %.3f mm 超过 0.8 mm。", candidate.maxErrorMm)
             }
-            if baseSessionURL == nil {
-                return "缺少标靶会话，无法写出 Windows 兼容会话。"
+            if sessionURL == nil {
+                return "缺少标定会话，无法写回参数。"
             }
             return nil
         case .coarse:
@@ -216,20 +200,17 @@ final class CalibrationModel {
 
     var monitorImageURL: URL? {
         switch step {
-        case .target:
-            return targetImageURL
+        case .target: return targetImageURL
         case .photo:
             if showRectifiedPreview, let rectifiedURL { return rectifiedURL }
             return photoURL
-        case .fit:
-            return rectifiedURL
+        case .fit: return rectifiedURL
         }
     }
 
     var monitorImageSize: CGSize {
         switch step {
-        case .target:
-            return CGSize(width: 2400, height: 2400)
+        case .target: return CGSize(width: 2400, height: 2400)
         case .photo:
             if showRectifiedPreview, rectifiedURL != nil {
                 return CGSize(width: rectifiedSize, height: rectifiedSize)
@@ -253,133 +234,158 @@ final class CalibrationModel {
         return parts.joined(separator: " · ")
     }
 
-    // MARK: - 恢复
+    // MARK: - 会话记录（扫描目录）
+
+    func refreshSessionEntries() {
+        sessionEntries = catalog.entries()
+    }
 
     func restoreIfNeeded() async {
         guard !didRestore else { return }
         didRestore = true
-        records = recordStore.load()
-
-        if let sessionPath = project.document.calibrationSessionPath,
-           let record = records.first(where: { $0.canonicalSessionPath == sessionPath }) {
-            restore(record)
-            statusMessage = "已从工程会话恢复标定记录。"
+        refreshSessionEntries()
+        guard let path = project.document.calibrationSessionPath,
+              FileManager.default.fileExists(atPath: path) else {
+            if let path = project.document.calibrationSessionPath {
+                restoredSessionNote = "工程引用的标定会话不存在：\(path)"
+            }
             return
         }
-
-        if let sessionPath = project.document.calibrationSessionPath {
-            if let service {
-                do {
-                    let summary = try await service.readSession(URL(fileURLWithPath: sessionPath))
-                    restoredSessionNote = "找到标定会话（\(summary.family ?? "未知")，r0 \(format(summary.innerRadiusMm ?? 0)) / r1 \(format(summary.outerRadiusMm ?? 0))），但缺少 GUI 记录（.mac.json），无法恢复照片与描点。请重新导入照片并完成步骤 2–3。"
-                } catch {
-                    restoredSessionNote = "工程引用的标定会话无法读取：\(error.localizedDescription)"
-                }
-            } else {
-                restoredSessionNote = "工程引用了标定会话，但未找到 CLI，无法读取会话摘要。"
-            }
-        } else if let latest = records.first {
-            restore(latest)
-            statusMessage = "已恢复最近一条标定记录。"
+        run("正在恢复标定会话…") {
+            try await self.restoreSession(at: URL(fileURLWithPath: path))
         }
     }
 
-    func restore(_ record: CalibrationRecord) {
-        mode = record.mode
-        step = record.tracePoints.isEmpty
-            ? (record.photoPath == nil ? .target : .photo)
-            : .fit
-        targetImageURL = URL(fileURLWithPath: record.targetImagePath)
-        baseSessionURL = record.baseSessionPath.map { URL(fileURLWithPath: $0) }
-        canonicalSessionURL = record.canonicalSessionPath.map { URL(fileURLWithPath: $0) }
-        photoURL = record.photoPath.map { URL(fileURLWithPath: $0) }
-        photoOriginalURL = record.photoPath.map { URL(fileURLWithPath: $0) }
-        photoWidth = record.photoWidth
-        photoHeight = record.photoHeight
-        discSize = CalibrationDiscSize(rawValue: record.discSize) ?? .standard
-        outerBoundary = record.outerBoundary
-        holeBoundary = record.holeBoundary
-        rectifiedURL = record.rectifiedPath.map { URL(fileURLWithPath: $0) }
-        rectifiedSize = record.rectifiedSize
-        canvasOuterRadiusMm = record.canvasOuterRadiusMm
-        rectificationConfirmed = record.rectifiedPath != nil
-        tracePoints = record.tracePoints
-        fitResult = record.fit
-        coarseFitResult = record.coarseFit
-        selectedCandidateIndex = record.selectedCandidateIndex
-        currentRecordID = record.id
-        currentRecordCreatedAt = record.createdAt
-        currentRecordAppliedAt = record.appliedAt
-        appliedMessage = record.isApplied
-            ? "此记录已应用：r0 \(format(record.appliedInnerRadiusMm ?? 0)) / r1 \(format(record.appliedOuterRadiusMm ?? 0)) mm"
-            : nil
-        selectedPointIndex = nil
-        showRectifiedPreview = record.rectifiedPath != nil
-        errorMessage = nil
+    func openEntry(_ entry: CalibrationSessionCatalog.Entry) {
+        run("正在打开标定会话…") {
+            try await self.restoreSession(at: entry.path)
+        }
+    }
+
+    private func restoreSession(at url: URL) async throws {
+        guard let service else {
+            throw CalibrationError.missingInput("未找到 CLI，无法恢复标定会话。")
+        }
+        let session = try catalog.loadSession(at: url)
+        guard session.target.parameters.family == project.family else {
+            throw CalibrationError.invalidGeometry(
+                "会话盘型 \(session.target.parameters.family.familyLabel) 与工程 \(family.familyLabel) 不一致。"
+            )
+        }
+
+        let id = CalibrationWorkspaceLayout.id(fromSessionURL: url)
+        sessionURL = url
+        sessionID = id
+        mode = .fine
         targetResult = nil
         coarseTargetResult = nil
-    }
+        fitResult = nil
+        coarseFitResult = nil
+        selectedCandidateIndex = 0
+        selectedPointIndex = nil
+        errorMessage = nil
+        appliedMessage = nil
 
-    func openRecord(_ record: CalibrationRecord) {
-        restore(record)
-        statusMessage = "已打开标定记录（\(record.createdAt)）。"
-    }
-
-    func deleteRecord(_ record: CalibrationRecord) {
-        do {
-            records = try recordStore.delete(id: record.id)
-            if currentRecordID == record.id {
-                currentRecordID = nil
-                currentRecordCreatedAt = nil
-                currentRecordAppliedAt = nil
-            }
-            statusMessage = "已删除记录。"
-        } catch {
-            errorMessage = "删除记录失败：\(error.localizedDescription)"
+        let parameters = session.target.parameters
+        let targetURL = layout.targetImageURL(id: id)
+        if !FileManager.default.fileExists(atPath: targetURL.path) {
+            let tempSession = workspace.appendingPathComponent(".restore-\(UUID().uuidString.lowercased()).calibration.json")
+            let request = CalibrationTargetRequest(
+                family: parameters.family,
+                geometry: parameters.projectGeometry,
+                density: parameters.density,
+                invertMapping: parameters.invertMapping,
+                drawingStart: parameters.drawingStart,
+                drawingEnd: parameters.drawingEnd,
+                size: 2400,
+                outputURL: targetURL,
+                sessionURL: tempSession
+            )
+            _ = try await service.generateTarget(request)
+            try? FileManager.default.removeItem(at: tempSession)
         }
-    }
+        try Task.checkCancellation()
+        targetImageURL = FileManager.default.fileExists(atPath: targetURL.path) ? targetURL : nil
 
-    func exportRecord(_ record: CalibrationRecord) {
-        if let canonical = record.canonicalSessionPath,
-           FileManager.default.fileExists(atPath: canonical) {
-            let source = URL(fileURLWithPath: canonical)
-            guard let destination = FilePanels.chooseOutputFile(
-                title: "导出标定会话",
-                currentPath: source.lastPathComponent,
-                defaultDirectory: workspace.path,
-                allowedExtensions: ["json"]
-            ) else { return }
+        if let photo = session.photo {
+            let embeddedPhoto = layout.photoURL(id: id)
+            try photo.writePhoto(to: embeddedPhoto)
+            photoURL = embeddedPhoto
+            photoOriginalURL = embeddedPhoto
+            photoWidth = max(photo.organicPhotoWidth, 1)
+            photoHeight = max(photo.organicPhotoHeight, 1)
+            outerBoundary = photo.outerBoundary
+            holeBoundary = photo.holeBoundary
+            discSize = photo.discSize
+            tracePoints = photo.polygonPoints
+            rectificationConfirmed = photo.rectificationConfirmed
+            showRectifiedPreview = true
+
+            let rectified = layout.rectifiedURL(id: id)
             do {
-                if FileManager.default.fileExists(atPath: destination.path) {
-                    try FileManager.default.removeItem(at: destination)
+                let result = try await service.rectifyPhoto(
+                    photoURL: embeddedPhoto,
+                    discSize: discSize,
+                    outer: outerBoundary,
+                    hole: holeBoundary,
+                    resizedOut: embeddedPhoto,
+                    rectifiedOut: rectified,
+                    size: 1200
+                )
+                try Task.checkCancellation()
+                if result.succeeded, FileManager.default.fileExists(atPath: rectified.path) {
+                    rectifiedURL = rectified
+                    rectifiedSize = result.rectifiedSize ?? 1200
+                    canvasOuterRadiusMm = result.canvasOuterRadiusMm ?? discSize.physicalOuterRadiusMm
+                } else {
+                    restoredSessionNote = result.message.isEmpty
+                        ? "会话已恢复，但矫正图重建失败。"
+                        : "会话已恢复，但矫正图重建失败：\(result.message)"
                 }
-                try FileManager.default.copyItem(at: source, to: destination)
-                statusMessage = "会话已导出：\(destination.lastPathComponent)"
             } catch {
-                errorMessage = "导出会话失败：\(error.localizedDescription)"
+                restoredSessionNote = "会话已恢复，但矫正图重建失败：\(error.localizedDescription)"
             }
-            return
+
+            if photo.rectificationConfirmed, tracePoints.count >= 6 {
+                step = .fit
+                do {
+                    let fit = try await service.fit(
+                        sessionURL: url,
+                        points: tracePoints,
+                        radiusRange: nil,
+                        autoRange: true,
+                        fitPitch: project.family == .dvd
+                    )
+                    try Task.checkCancellation()
+                    fitResult = fit
+                    selectedCandidateIndex = Self.validSelection(fit.bestIndex, count: fit.candidates.count)
+                } catch {
+                    self.errorMessage = "会话已恢复，但候选重算失败：\(error.localizedDescription)"
+                }
+            } else {
+                step = .photo
+            }
+        } else {
+            photoURL = nil
+            photoOriginalURL = nil
+            outerBoundary = []
+            holeBoundary = []
+            tracePoints = []
+            rectificationConfirmed = false
+            rectifiedURL = nil
+            step = .target
         }
-        guard let destination = FilePanels.chooseOutputFile(
-            title: "导出标定记录",
-            currentPath: "calibration-\(record.id).json",
-            defaultDirectory: workspace.path,
-            allowedExtensions: ["json"]
-        ) else { return }
-        do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            try encoder.encode(record).write(to: destination, options: .atomic)
-            statusMessage = "记录已导出：\(destination.lastPathComponent)"
-        } catch {
-            errorMessage = "导出记录失败：\(error.localizedDescription)"
-        }
+
+        project.setCalibrationSessionPath(url.path)
+        refreshSessionEntries()
+        statusMessage = "已从 \(url.lastPathComponent) 恢复标定会话。"
     }
 
-    // MARK: - 模式与步骤
+    // MARK: - 应用状态
 
     func setMode(_ newMode: CalibrationMode) {
         guard newMode != mode else { return }
+        sessionWriteTask?.cancel()
         mode = newMode
         resetAll()
         statusMessage = "已切换到\(newMode.displayName)，请重新生成标靶。"
@@ -404,7 +410,7 @@ final class CalibrationModel {
         }
     }
 
-    // MARK: - 步骤 1：标靶
+    // MARK: - 步骤 1
 
     func generateTarget() {
         guard let service else {
@@ -417,10 +423,10 @@ final class CalibrationModel {
         let invert = project.document.bluRaySettings.invertMapping
         let mode = mode
         let id = Self.shortID()
-        let targetURL = workspace.appendingPathComponent("target-\(id).png")
-        let sessionURL = workspace.appendingPathComponent("target-\(id).calibration.json")
-        let coarseURL = workspace.appendingPathComponent("coarse-\(id).png")
-        let p0URL = workspace.appendingPathComponent("coarse-\(id)-p0.json")
+        let targetURL = layout.targetImageURL(id: id)
+        let session = layout.sessionURL(id: id)
+        let coarseURL = layout.coarseImageURL(id: id)
+        let p0URL = layout.coarseP0URL(id: id)
 
         run("正在生成标靶…") {
             try FileManager.default.createDirectory(at: self.workspace, withIntermediateDirectories: true)
@@ -435,15 +441,16 @@ final class CalibrationModel {
                     drawingEnd: 0,
                     size: 2400,
                     outputURL: targetURL,
-                    sessionURL: sessionURL
+                    sessionURL: session
                 )
                 let result = try await service.generateTarget(request)
                 try Task.checkCancellation()
+                self.sessionID = id
+                self.sessionURL = result.sessionURL
                 self.targetImageURL = result.imageURL
                 self.targetResult = result
                 self.coarseTargetResult = nil
-                self.baseSessionURL = result.sessionURL
-                self.canonicalSessionURL = nil
+                self.project.setCalibrationSessionPath(result.sessionURL.path)
             case .coarse:
                 let result = try await service.generateCoarseTarget(
                     family: family,
@@ -454,17 +461,16 @@ final class CalibrationModel {
                     p0URL: p0URL
                 )
                 try Task.checkCancellation()
+                self.sessionID = id
+                self.sessionURL = nil
                 self.targetImageURL = result.imageURL
                 self.coarseTargetResult = result
                 self.targetResult = nil
-                self.baseSessionURL = nil
-                self.canonicalSessionURL = nil
             }
             self.resetPhotoAndFit()
             self.step = .target
-            self.beginNewRecord()
+            self.refreshSessionEntries()
             self.statusMessage = "标靶已生成：\(self.targetImageURL?.lastPathComponent ?? "")"
-            self.persistRecord()
         }
     }
 
@@ -478,7 +484,7 @@ final class CalibrationModel {
         NSWorkspace.shared.open(workspace)
     }
 
-    // MARK: - 步骤 2：照片矫正
+    // MARK: - 步骤 2
 
     func importPhoto() {
         guard targetImageURL != nil else {
@@ -492,7 +498,6 @@ final class CalibrationModel {
         loadPhoto(from: source)
     }
 
-    /// 供向导与自动测试使用：直接导入指定照片。
     func loadPhoto(from source: URL) {
         guard targetImageURL != nil else {
             errorMessage = "请先生成标靶，再导入对应的盘面照片。"
@@ -502,8 +507,9 @@ final class CalibrationModel {
             errorMessage = "未找到 CLI，无法处理照片。"
             return
         }
-        let id = Self.shortID()
-        let resized = workspace.appendingPathComponent("photo-\(id).png")
+        let id = sessionID ?? Self.shortID()
+        sessionID = id
+        let resized = layout.photoURL(id: id)
         let discSize = discSize
         run("正在准备照片…") {
             let result = try await service.preparePhoto(
@@ -535,10 +541,15 @@ final class CalibrationModel {
             self.step = .photo
             if !result.succeeded, !result.message.isEmpty {
                 self.errorMessage = result.message
-            } else {
-                self.statusMessage = "照片已准备：\(self.photoWidth)×\(self.photoHeight) px，拖动轮廓点对齐盘缘与中心孔。"
             }
-            self.persistRecord()
+            if self.mode == .fine {
+                do {
+                    try await self.writeSessionNow(confirmed: false, points: [])
+                } catch {
+                    self.errorMessage = "照片已导入，但会话保存失败：\(error.localizedDescription)"
+                }
+            }
+            self.statusMessage = "照片已准备：\(self.photoWidth)×\(self.photoHeight) px，拖动轮廓点对齐盘缘与中心孔。"
         }
     }
 
@@ -547,7 +558,6 @@ final class CalibrationModel {
         discSize = size
         invalidateAfterBoundaryChange()
         statusMessage = "盘片规格改为 \(size.displayName)，请重新计算矫正。"
-        persistRecord()
     }
 
     func moveBoundary(kind: BoundaryKind, index: Int, to point: CalibrationPoint) {
@@ -571,7 +581,6 @@ final class CalibrationModel {
     func resetBoundaries() {
         defaultBoundaries()
         invalidateAfterBoundaryChange()
-        persistRecord()
     }
 
     func rectifyPhoto() {
@@ -590,7 +599,7 @@ final class CalibrationModel {
         let discSize = discSize
         let outer = outerBoundary
         let hole = holeBoundary
-        let rectified = workspace.appendingPathComponent("rectified-\(Self.shortID()).png")
+        let rectified = layout.rectifiedURL(id: sessionID ?? Self.shortID())
         run("正在计算照片矫正…") {
             let result = try await service.rectifyPhoto(
                 photoURL: photoOriginalURL,
@@ -605,8 +614,7 @@ final class CalibrationModel {
             self.photoWidth = max(result.photoWidth, self.photoWidth)
             self.photoHeight = max(result.photoHeight, self.photoHeight)
             let rectifiedPath = result.rectifiedImagePath ?? rectified.path
-            if result.succeeded,
-               FileManager.default.fileExists(atPath: rectifiedPath) {
+            if result.succeeded, FileManager.default.fileExists(atPath: rectifiedPath) {
                 self.rectifiedURL = URL(fileURLWithPath: rectifiedPath)
                 self.rectifiedSize = result.rectifiedSize ?? 1200
                 self.canvasOuterRadiusMm = result.canvasOuterRadiusMm
@@ -620,10 +628,16 @@ final class CalibrationModel {
                 let holeRms = result.holeRmsPixels.map { String(format: "%.2f", $0) } ?? "—"
                 self.statusMessage = "矫正完成（外缘 RMS \(outerRms) px，中心孔 RMS \(holeRms) px）。请检查预览后确认。"
                 self.errorMessage = nil
+                if self.mode == .fine {
+                    do {
+                        try await self.writeSessionNow(confirmed: false, points: [])
+                    } catch {
+                        self.errorMessage = "矫正已计算，但会话保存失败：\(error.localizedDescription)"
+                    }
+                }
             } else {
                 self.errorMessage = result.message.isEmpty ? "照片矫正失败，请调整轮廓点。" : result.message
             }
-            self.persistRecord()
         }
     }
 
@@ -635,7 +649,14 @@ final class CalibrationModel {
         rectificationConfirmed = true
         step = .fit
         statusMessage = "矫正已确认，请在矫正图上沿一条清楚曲线打点。"
-        persistRecord()
+        guard mode == .fine else { return }
+        run("正在保存矫正状态…") {
+            do {
+                try await self.writeSessionNow(confirmed: true, points: self.tracePoints)
+            } catch {
+                self.errorMessage = "矫正已确认，但会话保存失败：\(error.localizedDescription)"
+            }
+        }
     }
 
     func backToPhoto() {
@@ -675,16 +696,17 @@ final class CalibrationModel {
         fitResult = nil
         coarseFitResult = nil
         selectedCandidateIndex = 0
+        appliedMessage = nil
     }
 
-    // MARK: - 步骤 3：描点与拟合
+    // MARK: - 步骤 3
 
     func addTracePoint(_ point: CalibrationPoint) {
         guard rectificationConfirmed else { return }
-        let clamped = clampToDisc(point)
-        tracePoints.append(clamped)
+        tracePoints.append(clampToDisc(point))
         selectedPointIndex = tracePoints.count - 1
         clearFitResults()
+        scheduleSessionWrite()
     }
 
     func moveTracePoint(index: Int, to point: CalibrationPoint) {
@@ -703,18 +725,18 @@ final class CalibrationModel {
         tracePoints.remove(at: index)
         selectedPointIndex = nil
         clearFitResults()
-        persistRecord()
+        scheduleSessionWrite()
     }
 
     func clearTracePoints() {
         tracePoints.removeAll()
         selectedPointIndex = nil
         clearFitResults()
-        persistRecord()
+        scheduleSessionWrite()
     }
 
     func persistAfterInteraction() {
-        persistRecord()
+        scheduleSessionWrite()
     }
 
     private func clearFitResults() {
@@ -737,22 +759,23 @@ final class CalibrationModel {
             errorMessage = "至少需要 \(minimumPointCount) 个点才能反推参数。"
             return
         }
+        sessionWriteTask?.cancel()
         let mode = mode
         let points = tracePoints
         let family = family
         let geometry = project.document.geometry
         let density = density
-        let baseSession = baseSessionURL
+        let sessionURL = sessionURL
 
         run("正在反推参数…") {
             switch mode {
             case .fine:
-                guard let baseSession else {
-                    self.errorMessage = "缺少标靶会话，无法反推。请重新生成精调标靶。"
+                guard let sessionURL else {
+                    self.errorMessage = "缺少标定会话，无法反推。请重新生成精调标靶。"
                     return
                 }
                 let result = try await service.fit(
-                    sessionURL: baseSession,
+                    sessionURL: sessionURL,
                     points: points,
                     radiusRange: nil,
                     autoRange: true,
@@ -765,7 +788,8 @@ final class CalibrationModel {
                 self.statusMessage = result.succeeded
                     ? "已得到 \(result.candidates.count) 个候选。"
                     : "拟合失败：\(result.warnings.joined(separator: "；"))"
-                self.errorMessage = result.succeeded ? nil : (result.warnings.joined(separator: "\n").isEmpty ? "拟合失败。" : nil)
+                self.errorMessage = result.succeeded ? nil : (result.warnings.isEmpty ? "拟合失败。" : nil)
+                self.refreshSessionEntries()
             case .coarse:
                 let result = try await service.fitCoarse(
                     family: family,
@@ -780,16 +804,14 @@ final class CalibrationModel {
                 self.statusMessage = result.succeeded
                     ? "已得到 \(result.candidates.count) 个粗调候选。"
                     : "粗调失败：\(result.warnings.joined(separator: "；"))"
-                self.errorMessage = result.succeeded ? nil : (result.warnings.joined(separator: "\n").isEmpty ? "粗调失败。" : nil)
+                self.errorMessage = result.succeeded ? nil : (result.warnings.isEmpty ? "粗调失败。" : nil)
             }
-            self.persistRecord()
         }
     }
 
     func selectCandidate(_ index: Int) {
         guard candidates.indices.contains(index) else { return }
         selectedCandidateIndex = index
-        persistRecord()
     }
 
     func applyParameters() {
@@ -798,93 +820,136 @@ final class CalibrationModel {
             return
         }
         let mode = mode
-        let baseSession = baseSessionURL
+        let sessionURL = sessionURL
+        let service = self.service
         let photoURL = photoURL
         let outer = outerBoundary
         let hole = holeBoundary
         let points = tracePoints
         let discSize = discSize
-        let canonical = workspace.appendingPathComponent("session-\(currentRecordID ?? Self.shortID()).calibration.json")
-        let service = self.service
 
         run("正在应用标定参数…") {
-            var canonicalURL: URL?
-            if mode == .fine, let service {
-                guard let baseSession, let photoURL else {
-                    self.errorMessage = "缺少标靶会话或照片，无法写出会话。"
+            switch mode {
+            case .fine:
+                guard let sessionURL, let service, let photoURL else {
+                    self.errorMessage = "缺少标定会话或照片，无法写回会话。"
                     return
                 }
                 _ = try await service.writeSession(
-                    baseSessionURL: baseSession,
+                    baseSessionURL: sessionURL,
                     photoURL: photoURL,
                     discSize: discSize,
                     outer: outer,
                     hole: hole,
                     points: points,
-                    outputURL: canonical
+                    outputURL: sessionURL,
+                    confirmed: true
                 )
                 try Task.checkCancellation()
-                canonicalURL = canonical
+                self.project.applyCalibration(candidate, canonicalSessionURL: sessionURL)
+                self.appliedMessage = String(
+                    format: "参数已更新：r0 %.3f mm / r1 %.3f mm",
+                    candidate.innerRadiusMm,
+                    candidate.outerRadiusMm
+                )
+            case .coarse:
+                self.project.applyCalibration(candidate, canonicalSessionURL: nil)
+                self.sessionURL = nil
+                self.appliedMessage = "参数已更新；粗调不单独保存会话。"
             }
-            self.project.applyCalibration(candidate, canonicalSessionURL: canonicalURL)
-            self.canonicalSessionURL = canonicalURL
-            self.currentRecordAppliedAt = ProjectDocument.timestamp()
-            self.appliedMessage = String(
-                format: "参数已更新：r0 %.3f mm / r1 %.3f mm",
-                candidate.innerRadiusMm,
-                candidate.outerRadiusMm
-            )
             self.statusMessage = self.appliedMessage
-            self.persistRecord()
+            self.refreshSessionEntries()
         }
     }
 
-    // MARK: - 记录
+    // MARK: - 会话写入
 
-    private func beginNewRecord() {
-        currentRecordID = Self.shortID()
-        currentRecordCreatedAt = ProjectDocument.timestamp()
-        currentRecordAppliedAt = nil
-        appliedMessage = nil
-    }
-
-    private func persistRecord() {
-        guard targetImageURL != nil else { return }
-        if currentRecordID == nil {
-            beginNewRecord()
-        }
-        let record = CalibrationRecord(
-            id: currentRecordID ?? Self.shortID(),
-            createdAt: currentRecordCreatedAt ?? ProjectDocument.timestamp(),
-            mode: mode,
-            family: family,
-            generatedGeometry: project.document.geometry,
-            density: density,
-            invertMapping: project.document.bluRaySettings.invertMapping,
-            targetImagePath: targetImageURL?.path ?? "",
-            baseSessionPath: baseSessionURL?.path,
-            canonicalSessionPath: canonicalSessionURL?.path,
-            photoPath: photoURL?.path,
-            photoWidth: photoWidth,
-            photoHeight: photoHeight,
-            discSize: discSize.rawValue,
-            outerBoundary: outerBoundary,
-            holeBoundary: holeBoundary,
-            rectifiedPath: rectifiedURL?.path,
-            rectifiedSize: rectifiedSize,
-            canvasOuterRadiusMm: canvasOuterRadiusMm,
-            tracePoints: tracePoints,
-            fit: fitResult,
-            coarseFit: coarseFitResult,
-            selectedCandidateIndex: selectedCandidateIndex,
-            appliedAt: currentRecordAppliedAt,
-            appliedInnerRadiusMm: currentRecordAppliedAt == nil ? nil : selectedCandidate?.innerRadiusMm,
-            appliedOuterRadiusMm: currentRecordAppliedAt == nil ? nil : selectedCandidate?.outerRadiusMm
+    private func writeSessionNow(confirmed: Bool, points: [CalibrationPoint]) async throws {
+        guard mode == .fine, let service, let sessionURL, let photoURL else { return }
+        _ = try await service.writeSession(
+            baseSessionURL: sessionURL,
+            photoURL: photoURL,
+            discSize: discSize,
+            outer: outerBoundary,
+            hole: holeBoundary,
+            points: points,
+            outputURL: sessionURL,
+            confirmed: confirmed
         )
+        refreshSessionEntries()
+    }
+
+    private func scheduleSessionWrite() {
+        guard mode == .fine, sessionURL != nil, photoURL != nil else { return }
+        sessionWriteTask?.cancel()
+        sessionWriteTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(450))
+            guard !Task.isCancelled, let self else { return }
+            guard let service = self.service,
+                  let sessionURL = self.sessionURL,
+                  let photoURL = self.photoURL else { return }
+            do {
+                _ = try await service.writeSession(
+                    baseSessionURL: sessionURL,
+                    photoURL: photoURL,
+                    discSize: self.discSize,
+                    outer: self.outerBoundary,
+                    hole: self.holeBoundary,
+                    points: self.tracePoints,
+                    outputURL: sessionURL,
+                    confirmed: self.rectificationConfirmed
+                )
+                self.refreshSessionEntries()
+                self.statusMessage = "标定会话已更新。"
+            } catch {
+                self.errorMessage = "保存标定会话失败：\(error.localizedDescription)"
+            }
+        }
+    }
+
+    // MARK: - 记录操作
+
+    func deleteEntry(_ entry: CalibrationSessionCatalog.Entry) {
         do {
-            records = try recordStore.save(record)
+            let id = CalibrationWorkspaceLayout.id(fromSessionURL: entry.path)
+            try catalog.delete(entry)
+            // 会话命名约定的配套文件也一并清理（Kit 的 delete 只处理记录文件时的兜底）。
+            for url in [
+                layout.targetImageURL(id: id),
+                layout.photoURL(id: id),
+                layout.rectifiedURL(id: id),
+                layout.coarseImageURL(id: id),
+                layout.coarseP0URL(id: id),
+            ] {
+                try? FileManager.default.removeItem(at: url)
+            }
+            if sessionURL?.path == entry.path.path {
+                project.setCalibrationSessionPath(nil)
+                sessionURL = nil
+                sessionID = nil
+                targetImageURL = nil
+                resetPhotoAndFit()
+                step = .target
+            }
+            refreshSessionEntries()
+            statusMessage = "已删除标定会话 \(entry.path.lastPathComponent)。"
         } catch {
-            errorMessage = "保存标定记录失败：\(error.localizedDescription)"
+            errorMessage = "删除标定会话失败：\(error.localizedDescription)"
+        }
+    }
+
+    func exportEntry(_ entry: CalibrationSessionCatalog.Entry) {
+        guard let destination = FilePanels.chooseOutputFile(
+            title: "导出标定会话",
+            currentPath: entry.path.lastPathComponent,
+            defaultDirectory: workspace.path,
+            allowedExtensions: ["json"]
+        ) else { return }
+        do {
+            try catalog.export(entry, to: destination)
+            statusMessage = "会话已导出：\(destination.lastPathComponent)"
+        } catch {
+            errorMessage = "导出标定会话失败：\(error.localizedDescription)"
         }
     }
 
@@ -961,30 +1026,14 @@ final class CalibrationModel {
     }
 
     private func resetAll() {
+        sessionURL = nil
+        sessionID = nil
         targetImageURL = nil
         targetResult = nil
         coarseTargetResult = nil
-        baseSessionURL = nil
-        canonicalSessionURL = nil
-        photoOriginalURL = nil
-        photoURL = nil
-        photoWidth = 0
-        photoHeight = 0
-        outerBoundary = []
-        holeBoundary = []
-        rectifiedURL = nil
-        rectificationConfirmed = false
-        tracePoints = []
-        selectedPointIndex = nil
-        fitResult = nil
-        coarseFitResult = nil
-        selectedCandidateIndex = 0
-        appliedMessage = nil
+        resetPhotoAndFit()
         errorMessage = nil
         statusMessage = nil
-        currentRecordID = nil
-        currentRecordCreatedAt = nil
-        currentRecordAppliedAt = nil
         step = .target
     }
 
@@ -1004,5 +1053,24 @@ final class CalibrationModel {
         coarseFitResult = nil
         selectedCandidateIndex = 0
         appliedMessage = nil
+    }
+}
+
+private extension CalibrationSessionDocument.PhotoInfo {
+    /// 会话只保存缩小照片的 PNG 数据；恢复时从 PNG 头读尺寸。
+    var organicPhotoWidth: Int {
+        guard let data = pngData, let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? Int
+        else { return 0 }
+        return width
+    }
+
+    var organicPhotoHeight: Int {
+        guard let data = pngData, let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let height = properties[kCGImagePropertyPixelHeight] as? Int
+        else { return 0 }
+        return height
     }
 }

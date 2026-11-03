@@ -223,7 +223,8 @@ public struct CalibrationService: Sendable {
         outer: [CalibrationPoint],
         hole: [CalibrationPoint],
         points: [CalibrationPoint],
-        outputURL: URL
+        outputURL: URL,
+        confirmed: Bool = true
     ) async throws -> CalibrationSessionSummary {
         try ensureWorkspace()
         try ensureParentDirectory(of: outputURL)
@@ -235,6 +236,7 @@ public struct CalibrationService: Sendable {
             "--outer", encode(points: outer),
             "--hole", encode(points: hole),
             "--points", encode(points: points),
+            "--confirmed", confirmed ? "true" : "false",
             "--output", outputURL.path,
         ])
         return try await readSession(outputURL)

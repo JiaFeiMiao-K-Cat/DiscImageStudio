@@ -10,22 +10,25 @@
 
 ## 0. 文件与状态
 
+一次标定 = 工程 `calibration/` 下的一个 `<id>.calibration.json`，它是**唯一事实来源**：目标几何、内嵌照片、轮廓点、描线点与 `RectificationConfirmed` 全部写在里面。没有独立的 GUI 状态文件，也没有记录索引；候选与选中项在打开会话时重新计算，不落盘。
+
 ```text
 <项目目录>/
-├── <project>.discproj              工程（calibrationSessionPath 指向下面的会话文件）
+├── <project>.discproj                   工程（calibrationSessionPath 指向当前会话）
 ├── calibration/
-│   ├── target-<id>.png             内置标靶（2400×2400，按生成几何裁切环带）
-│   ├── coarse-<id>.png             粗调半黑白图案（2400×2400）
-│   ├── <session>.calibration.json  Windows 兼容标定会话（schema 6，C# 读写）
-│   ├── photo-<id>.png              缩小后的原照片（≤2000 px，轮廓点坐标基于它）
-│   ├── rectified-<id>.png          矫正后盘面图（正方形，中心即盘心）
-│   └── <session>.mac.json          GUI 侧状态（Kit 读写：候选、选中项、参数快照）
+│   ├── <id>.calibration.json            标定会话（schema 6，Windows 双向兼容，CLI 读写）
+│   ├── target-<id>.png                  内置标靶（2400×2400，按生成几何裁切环带）
+│   ├── coarse-<id>.png                  粗调半黑白图案（2400×2400）
+│   ├── coarse-<id>-p0.json              粗调 P0 几何记录
+│   ├── photo-<id>.png                   缩小后的原照片（≤2000 px，轮廓点坐标基于它）
+│   └── rectified-<id>.png               矫正后盘面图（正方形，中心即盘心）
 └── <输出文件>
 ```
 
-- `.discproj` 的 `calibrationSessionPath` 指向 `.calibration.json`；工程重开时据此恢复。
-- `.calibration.json` 必须由 C# 写（schema 校验严格，含内嵌照片与描线点），GUI 不手写。
-- `.mac.json` 是 GUI 的补充状态；丢失时仍可从 `.calibration.json` 恢复照片/轮廓/描线，重新拟合。
+- `.discproj` 的 `calibrationSessionPath` 指向当前会话；工程重开时据此恢复（见 §2）。
+- `.calibration.json` 必须由 C# 写（schema 校验严格，含内嵌照片与描线点），GUI 不手写；GUI 只通过 `calibration-session-write` / `calibration-session-read` 与它交互。
+- 同一 `<id>` 用于会话、靶标、照片、矫正图与粗调文件（`CalibrationWorkspaceLayout` 的命名约定），目录扫描与删除都按 `<id>` 前缀进行。
+- 粗调不写会话：粗调图案只有 `coarse-<id>.png` 与 `coarse-<id>-p0.json`；应用后只更新工程几何并清空 `calibrationSessionPath`（见 §2）。
 
 ## 1. CLI 命令（全部在 `ConsoleModuleRunner` 之前分发，退出码 0/1/2）
 
@@ -176,12 +179,17 @@ GUI 完成照片/描线/拟合后，把完整会话写盘：
 disc-image-studio calibration-session-write \
   --session base.calibration.json --photo photo.png --disc-size 120 \
   --outer "..." --hole "..." --points "x,y;..." \
-  --output <project>.calibration.json
+  [--confirmed true|false] --output <id>.calibration.json
 ```
 
-- 读取 base 会话的 Target，构造 `CalibrationPhotoSession`（照片 base64、轮廓、60/40、confirmed=true、
-  单条 `ArmIndex=0` 描线），校验后 `CalibrationSessionJson.Save`。
+- 读取 base 会话的 Target，构造 `CalibrationPhotoSession`（照片 base64、轮廓、60/40、
+  `RectificationConfirmed` 由 `--confirmed` 决定（默认 true）、单条 `ArmIndex=0` 描线），
+  校验后 `CalibrationSessionJson.Save`。
 - 照片 base64 使用传入的缩小图 PNG（≤14 MB）。
+- `--confirmed false --points ""` 保存「已导照片但还没确认矫正」的中间状态；`--confirmed true --points ""`
+  只确认矫正、暂无描线；`--confirmed false` 带非空描线 → 退出 2。
+- `--output` 允许与 `--session` 相同：先完整读取 base，再原子覆盖，Target/Observations/FitOptions 不丢。
+- GUI 在照片导入、矫正、确认、描线变化后都原地更新同一个 `<id>.calibration.json`。
 
 ### 1.7 `calibration-session-read`
 
@@ -201,7 +209,7 @@ disc-image-studio calibration-session-read --session X.calibration.json --json o
 - 两种模式分段控件：**精调靶标**（内置同心圆 + 十字） / **粗调图案**（半黑白，issue #49）。
 - 「生成」→ 调 CLI 生成 PNG + 会话（精调）或 P0 JSON（粗调）；显示图案预览与几何摘要。
 - 快捷动作：导出到项目 `calibration/` 目录、跳到导出页刻录、跳到刻录页。
-- 每次生成都新建文件（带时间戳/短 ID），不覆盖旧记录。
+- 每次生成都新建文件（带时间戳/短 ID），不覆盖已有会话。
 
 ### 步骤 2：照片矫正
 
@@ -223,44 +231,95 @@ disc-image-studio calibration-session-read --session X.calibration.json --json o
 - 「应用参数」：
   - 更新工程 `geometry`（CD/DVD/BD 半径；DVD 三次项；扇区保持；BD 极性按会话）；
   - 同步预览页实测参数（actual radii/pitch）为应用值；
-  - 写 Windows 兼容 `.calibration.json`（`calibration-session-write`），更新
-    `project.calibrationSessionPath`；
+  - 精调：写 Windows 兼容 `.calibration.json`（`calibration-session-write`，`--confirmed true`），
+    把 `project.calibrationSessionPath` 指向该文件；
+  - 粗调：不写会话，只更新几何，并清空 `calibrationSessionPath`（粗调结果不是最终精调会话）；
   - 标记工程为脏并提示「参数已更新」。
-- 会话恢复：重开工程时若 `calibrationSessionPath` 存在，加载 `.mac.json` 恢复照片/轮廓/描线/候选；
-  缺失时调用 `calibration-session-read` + 重建（照片/描线从 `.calibration.json` 解码；
-  候选重新拟合）。
+
+### 会话恢复
+
+重开工程时按以下顺序恢复，全部数据来自 `.calibration.json`：
+
+1. 读 `project.calibrationSessionPath`；文件不存在或无法解码时清空该路径，回到步骤 1（不静默套用旧参数）。
+2. `CalibrationSessionCatalog.loadSession(at:)` 解码会话：`target.parameters` 恢复盘型、生成几何、密度、DVD 三次项、BD 极性与绘图起止。
+3. 若 `photo` 存在：把内嵌照片 Base64 写回 `photo-<id>.png`，恢复 `outerBoundary` / `holeBoundary` / `RectificationConfirmed` / `traces[0].points`。
+4. 用恢复的轮廓调用 `calibration-photo` 重建 `rectified-<id>.png`；照片与轮廓都来自会话，不依赖原照片路径。
+5. 若会话已确认且有描线，自动重跑 `calibration-fit` 重算候选；候选与选中项不存储，恢复后默认选 `bestIndex`。
 
 ### 标定记录
 
-- 页脚显示本工程标定记录列表（生成时间、盘型、r0/r1、候选 RMS、是否已应用）。
-- 每条记录可：打开（恢复 UI 状态）、删除（只删本工程 `calibration/` 下的记录）、导出会话。
+- 页脚列表 = 扫描工程 `calibration/` 下所有 `*.calibration.json`（`CalibrationSessionCatalog.entries()`，按修改时间倒序）；每项显示盘型、r0/r1、密度、是否已确认、描线点数。没有额外索引文件。
+- 打开：按上面的会话恢复流程。
+- 删除：按 `<id>` 删除会话与同名的 `target-` / `coarse-` / `photo-` / `rectified-` 文件，不触碰其他会话。
+- 导出：复制该 `<id>.calibration.json` 到用户选择的位置。
+- 粗调不产生会话，因此不出现在记录列表；它只在应用时改一次几何。
 
 ## 3. Kit 接口
 
 ```swift
 // CalibrationService.swift
-public struct CalibrationTargetRequest: Sendable { family, geometry, density, invert, drawingStart, drawingEnd, outputURL, sessionURL }
-public struct CalibrationPhotoResult: Codable, Sendable { succeeded, message, photoWidth, photoHeight, rectifiedSize, canvasOuterRadiusMm, discSize, outerRmsPixels, holeRmsPixels, transformDiscToSource, resizedPhotoPath, rectifiedImagePath }
-public struct CalibrationCandidate: Codable, Sendable, Identifiable { innerRadiusMm, outerRadiusMm, pitchLinear/Quadratic/Cubic, rotationRadians, rmsErrorMm, maxErrorMm, outlierCount, predicted: [Point2D] }
-public struct CalibrationFitResult: Codable, Sendable { succeeded, reliable, boundaryLimited, warnings, bestIndex, candidates }
-public struct CalibrationCoarseResult: Codable, Sendable { succeeded, warnings, bestIndex, candidates }
+public struct CalibrationTargetRequest: Sendable, Equatable { family, geometry, density, invert, drawingStart, drawingEnd, outputURL, sessionURL }
+public struct CalibrationPhotoResult: Codable, Sendable, Equatable { succeeded, message, photoWidth, photoHeight, rectifiedSize, canvasOuterRadiusMm, discSize, outerRmsPixels, holeRmsPixels, transformDiscToSource, resizedPhotoPath, rectifiedImagePath }
+public struct CalibrationCandidate: Codable, Sendable, Equatable, Identifiable { innerRadiusMm, outerRadiusMm, pitchLinear/Quadratic/Cubic, rotationRadians, rmsErrorMm, maxErrorMm, outlierCount, predicted: [CalibrationPoint] }
+public struct CalibrationFitResult: Codable, Sendable, Equatable { succeeded, reliable, boundaryLimited, warnings, bestIndex, candidates }
+public struct CalibrationCoarseResult: Codable, Sendable, Equatable { succeeded, warnings, bestIndex, candidates }
 
 public struct CalibrationService: Sendable {
     public init(cliInvocation: CliInvocation, workspace: URL)   // workspace = <project dir>/calibration
+
     public func generateTarget(_ request: CalibrationTargetRequest) async throws -> CalibrationTargetResult
-    public func preparePhoto(photoURL: URL, discSize: Int, resizedOut: URL) async throws -> CalibrationPhotoResult
-    public func rectifyPhoto(photoURL: URL, discSize: Int, outer: [CGPoint], hole: [CGPoint],
-                             resizedOut: URL, rectifiedOut: URL) async throws -> CalibrationPhotoResult
-    public func fit(sessionURL: URL, points: [CGPoint], radiusRange: Double?, autoRange: Bool) async throws -> CalibrationFitResult
+    public func preparePhoto(photoURL: URL, discSize: CalibrationDiscSize, resizedOut: URL) async throws -> CalibrationPhotoResult
+    public func rectifyPhoto(photoURL: URL, discSize: CalibrationDiscSize, outer: [CalibrationPoint],
+                             hole: [CalibrationPoint], resizedOut: URL,
+                             rectifiedOut: URL) async throws -> CalibrationPhotoResult
+    public func fit(sessionURL: URL, points: [CalibrationPoint], radiusRange: Double?,
+                    autoRange: Bool) async throws -> CalibrationFitResult
     public func generateCoarseTarget(...) async throws -> CalibrationCoarseTargetResult
     public func fitCoarse(...) async throws -> CalibrationCoarseResult
-    public func writeSession(baseSessionURL: URL, photoURL: URL, discSize: Int, outer: [CGPoint], hole: [CGPoint], points: [CGPoint], outputURL: URL) async throws
-    public func readSession(sessionURL: URL) async throws -> CalibrationSessionSummary
+    public func writeSession(baseSessionURL: URL, photoURL: URL, discSize: CalibrationDiscSize,
+                             outer: [CalibrationPoint], hole: [CalibrationPoint],
+                             points: [CalibrationPoint], outputURL: URL,
+                             confirmed: Bool = true) async throws -> CalibrationSessionSummary
+    public func readSession(_ sessionURL: URL) async throws -> CalibrationSessionSummary
+    public static func workspace(forProjectURL: URL) -> URL     // <project dir>/calibration
+    public func ensureWorkspace() throws
 }
 
-// CalibrationRecord.swift
-public struct CalibrationRecord: Codable, Sendable { ... 保存 GUI 状态 ... }
-public struct CalibrationRecordStore: Sendable { init(workspace: URL); load(), save(record), list(), delete(id) }
+// CalibrationSession.swift（会话文档 + 目录扫描；替代旧的 GUI 记录索引）
+public struct CalibrationSessionDocument: Codable, Sendable, Equatable {
+    public struct TargetInfo { id: String?; parameters: Parameters }
+    public struct Parameters {
+        kind, innerRadiusMm, outerRadiusMm, sectors, linearDensity,
+        pitchLinear/Quadratic/Cubic, bluRayInvertMapping?, drawingStartSector?, drawingEndSectorExclusive?
+        var family: DiscFamily; var projectGeometry: ProjectGeometry
+    }
+    public struct Trace { armIndex: Int; points: [CalibrationPoint] }
+    public struct PhotoInfo {
+        imagePngBase64, outerBoundary, holeBoundary, physicalOuterRadiusMm,
+        rectificationConfirmed, traces: [Trace]
+    }
+    public let target: TargetInfo
+    public let photo: PhotoInfo?
+}
+
+public struct CalibrationSessionCatalog: Sendable {
+    public struct Entry: Sendable, Equatable, Identifiable {
+        path, modifiedAt, document, family, geometry, density,
+        isConfirmed, tracePointCount, targetID
+    }
+    public init(workspace: URL, cliInvocation: CliInvocation? = nil)
+    public func entries() -> [Entry]                                  // 扫描 *.calibration.json，按修改时间倒序
+    public func loadSession(at url: URL) throws -> CalibrationSessionDocument
+    public func delete(_ entry: Entry) throws                         // 按 <id> 删除会话与同名文件
+    public func export(_ entry: Entry, to destination: URL) throws    // 复制会话
+}
+
+public struct CalibrationWorkspaceLayout: Sendable {
+    public init(workspace: URL)
+    public func sessionURL(id:) / targetImageURL(id:) / photoURL(id:) /
+               rectifiedURL(id:) / coarseImageURL(id:) / coarseP0URL(id:)
+    public static func id(fromSessionURL: URL) -> String              // "<id>.calibration.json" → "<id>"
+}
 ```
 
 坐标约定：照片轮廓点用缩小照片像素坐标（`CalibrationPhotoResult.photoWidth/Height` 内）；
@@ -272,5 +331,6 @@ public struct CalibrationRecordStore: Sendable { init(workspace: URL); load(), s
 - 粗调只用于「把累计绕圈降到可继续精调」；应用前必须核对叠加图，warnings 非空时禁止应用。
 - 应用参数会改变工程几何（因此改变生成结果），必须提示并标记脏；不自动重新生成已有镜像。
 - 标定图案与刻录必须在同一生成参数下；应用 P1/P2 后要用新参数重新生成标靶再刻下一张。
+- 粗调不写会话：应用后只更新几何并清空 `calibrationSessionPath`，避免工程指向一张不存在的精调会话。
 - 不实现自动「密集环相位提取」：粗调仍需人工沿分界描点（与 issue #49 的脚本接口对应，
   但本轮不内置自动环数识别）。文档中明确说明。

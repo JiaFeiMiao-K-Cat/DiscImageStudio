@@ -80,7 +80,7 @@ flowchart TB
 - **工程层**：`ProjectDocument` + `ProjectStore` 读写 `.discproj`（camelCase、schemaVersion 2、原子写、忽略未知字段、读 1 视为 CD/DVD），与 Windows 的 `ProjectJsonStore` 同一格式；`RecentProjectsStore` 管理最近工程与缩略图，`PresetLoader` 用 `presets --json` 读预设目录。
 - **设计层**：`DesignComposer` 按图层顺序自下而上合成正方形 PNG（中心即盘心、mm 坐标；预览 2048 px、导出 8192 px）；合成图是预览与导出共用的唯一输入，因此预览验证的素材就是写入盘片的素材。
 - **命令层**：`ExportService` / `PreviewService` 把工程与参数拼成 `ExportPlan` / `PreviewPlan`，`CliRunner` 启动子进程并逐行回传日志与进度（取消先 `SIGTERM`，3 秒后 `SIGKILL`）；`BurnService` 驱动 `/usr/bin/drutil`，`BurnStreamService` 驱动内置 `disc-burn-stream`。
-- **标定层**：`CalibrationService` 封装标定命令组（靶标/粗调图案生成、照片矫正、精调与粗调反推、会话读写），`CalibrationRecord` / `CalibrationRecordStore` 保存 GUI 侧的 `.mac.json` 记录；标定会话 `.calibration.json` 由 CLI 写，与 Windows 双向兼容。
+- **标定层**：`CalibrationService` 封装标定命令组（靶标/粗调图案生成、照片矫正、精调与粗调反推、会话读写）；`CalibrationSessionCatalog` 扫描工程 `calibration/*.calibration.json` 作为唯一记录来源，`CalibrationSessionDocument` 解码会话内嵌的照片/轮廓/描线，`CalibrationWorkspaceLayout` 固定 `<id>` 命名；不另存 GUI 状态或记录索引。
 - **契约层**：命令行与参数的权威实现在 Windows 的 `ExportViewModel` / `LivePreviewViewModel`，macOS 侧逐字对齐；`catalog.json` 快照与 Kit 单测防止 CLI 输出漂移。
 - 子进程工作目录固定为用户主目录，环境变量强制 `DOTNET_CLI_TELEMETRY_OPTOUT=1`、`DOTNET_NOLOGO=1`、`DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1`。
 
@@ -312,7 +312,7 @@ macos/build/cli/osx-arm64/disc-image-studio cd-generate \
 1. **标靶**：分段控件选「精调靶标」（内置同心圆 + 十字）或「粗调图案」（半黑白，issue #49）。
    - 精调 → `calibration-target`：按当前几何把内置 `target_slim.png` 缩放并裁切刻录环带，输出 2400×2400 灰度 PNG 和 `.calibration.json` 会话骨架（schema 6）。
    - 粗调 → `calibration-coarse-target`：输出「左黑右白、分界过盘心」的图案与 P0 记录（`p0.json`：family、r0/r1、sectors、density、pitch、drawing 起止）。
-   - 快捷动作：导出到项目 `calibration/`、跳导出页刻录、跳刻录页；每次生成都新建带时间戳/短 ID 的文件，不覆盖旧记录。
+   - 快捷动作：导出到项目 `calibration/`、跳导出页刻录、跳刻录页；每次生成都新建带时间戳/短 ID 的文件，不覆盖已有会话。
 2. **照片矫正**：导入照片并选择 12 cm / 8 cm。
    - CLI（`calibration-photo`）先把照片缩到最长边 2000 px 并返回 `--resized-out`；**所有轮廓点坐标都基于这张缩小图**。
    - 在照片上拖动 8 个外缘控制点 + 8 个中心孔控制点（初始按图像范围 0.43 / 0.125 布置），支持缩放、平移、重置轮廓。
@@ -321,7 +321,7 @@ macos/build/cli/osx-arm64/disc-image-studio cd-generate \
    - 精调：在矫正图上沿一条径向曲线从内到外描点（最少 6 点；DVD 建议 ≥12 点并覆盖环带 ≥60%）→ `calibration-fit`。
    - 粗调：沿黑白分界描点（≥8 点，覆盖生成环带径向宽度 ≥30%）→ `calibration-coarse-fit`。
    - 候选列表展示平均偏差、最大偏差、偏离点数、是否被搜索边界限制以及 `warnings`；选中候选后在矫正图上叠加预测折线（青色=描点、橙色=预测、偏离点红色）。
-   - 「应用参数」：更新工程几何（CD/DVD/BD 半径、DVD 三次项、扇区保持不变、BD 极性按会话），同步预览页的实测参数，写 Windows 兼容 `.calibration.json`（`calibration-session-write`），更新工程 `calibrationSessionPath`，并把工程标记为脏。
+   - 「应用参数」：更新工程几何（CD/DVD/BD 半径、DVD 三次项、扇区保持不变、BD 极性按会话），同步预览页的实测参数。精调写 Windows 兼容 `.calibration.json`（`calibration-session-write --confirmed true`）并把工程 `calibrationSessionPath` 指向它；粗调不写会话，只更新几何并清空 `calibrationSessionPath`。应用后把工程标记为脏。
 
 ### 判定阈值
 
@@ -343,27 +343,30 @@ macos/build/cli/osx-arm64/disc-image-studio cd-generate \
 4. **精调盘（P1 → P2）**：在矫正图上沿一条径向曲线描点（CD ≥6 点、建议 20+；DVD ≥12 点且覆盖 ≥60%），`calibration-fit` 反推内外半径、DVD 三次项与整体旋转，按上面的阈值检查后应用 P2 参数。
 
 - 粗调用恒定轨距近似，只求「把累计绕圈降到可继续精调」；精调才拟合 DVD 三次轨距与最终半径。
-- 标定图案与刻录必须在同一生成参数下进行；每张盘都要用生成时保存的记录，改参不会改写已有记录的含义。
+- 标定图案与刻录必须在同一生成参数下进行；每张盘都用生成时保存的会话，改参不会改写已有会话的含义。
 - 常见重拍原因：照片里看不清分界/曲线、轮廓点贴错（把刻录区边界当成实体边缘）、描点覆盖范围不足。
 
 ### 会话文件与记录
 
+一次标定 = 工程 `calibration/<id>.calibration.json`，它是**唯一事实来源**：目标几何、内嵌照片、轮廓点、描线点与确认状态都写在该文件里（schema 6，与 Windows 双向兼容，由 CLI 读写）。没有独立的 GUI 状态文件，也没有记录索引；候选与选中项在打开会话时重新计算，不落盘。
+
 ```text
 <项目目录>/
-├── <project>.discproj               # 工程，calibrationSessionPath 指向下方会话文件
+├── <project>.discproj                   工程，calibrationSessionPath 指向当前会话
 ├── calibration/
-│   ├── target-<id>.png              # 精调标靶 2400×2400（按生成几何裁切环带）
-│   ├── coarse-<id>.png              # 粗调半黑白图案
-│   ├── <session>.calibration.json   # Windows 兼容会话（schema 6，由 CLI 读写）
-│   ├── photo-<id>.png               # 缩小后的原照片（最长边 ≤2000 px）
-│   ├── rectified-<id>.png           # 矫正后盘面图（正方形，中心即盘心）
-│   └── <session>.mac.json           # GUI 补充状态（候选、选中项、参数快照）
+│   ├── <id>.calibration.json            标定会话（schema 6，CLI 读写）
+│   ├── target-<id>.png                  精调标靶 2400×2400（按生成几何裁切环带）
+│   ├── coarse-<id>.png                  粗调半黑白图案
+│   ├── coarse-<id>-p0.json              粗调 P0 几何记录
+│   ├── photo-<id>.png                   缩小后的原照片（最长边 ≤2000 px，轮廓点坐标基于它）
+│   └── rectified-<id>.png               矫正后盘面图（正方形，中心即盘心）
 └── <输出文件>
 ```
 
-- `.calibration.json` 是 **Windows 双向兼容**的标定会话（schema 6：内嵌照片、轮廓点、描线点与生成参数），只由 CLI 写（`calibration-session-write`），GUI 不手写；工程用 `calibrationSessionPath` 指向它，重开工程时据此恢复。
-- `.mac.json` 只是 GUI 的补充状态。丢失时（例如从 Windows 拷来 `.calibration.json`）目前只能通过 `calibration-session-read` 显示摘要，需要在 GUI 重新导入照片并描点；后续会支持从会话解码照片与描线自动恢复。
-- 页脚是**本工程的标定记录列表**（生成时间、盘型、r0/r1、候选 RMS、是否已应用）；每条可以打开（恢复 UI 状态）、删除（只删本工程 `calibration/` 下的记录）或导出会话。
+- 同一 `<id>` 用于会话、靶标、照片、矫正图与粗调文件；目录扫描与删除都按 `<id>` 前缀进行。
+- **恢复流程**：重开工程 → 读 `calibrationSessionPath` → `CalibrationSessionCatalog.loadSession` 解码内嵌照片/轮廓/描线/确认状态 → 写出照片并用 `calibration-photo` 重建矫正图 → 自动重跑 `calibration-fit` 重算候选（粗调不写会话，不参与恢复），默认选中 `bestIndex`。会话缺失或损坏时清空路径、回到步骤 1，不静默套用旧参数。
+- **记录列表**：扫描工程 `calibration/` 下的 `*.calibration.json`（按修改时间倒序），每项显示盘型、r0/r1、密度、是否已确认、描线点数；打开走恢复流程，删除按 `<id>` 清理会话与同名前缀文件，导出即复制该会话文件。
+- **粗调不写会话**：只生成 `coarse-<id>.png` 与 `coarse-<id>-p0.json`；应用后只更新工程几何并清空 `calibrationSessionPath`，因此不会出现在记录列表。
 - 修改轮廓或盘片规格会让「已确认矫正 + 描线 + 拟合」全部失效；修改任一曲线点或搜索范围会让旧拟合失效。
 
 ### 限制
@@ -401,7 +404,7 @@ macos/
 ├── Sources/
 │   ├── DiscImageStudioKit/          工作流层：ProjectStore / PresetLoader / DesignComposer /
 │   │                                ExportService / PreviewService / BurnService / CliRunner /
-│   │                                CalibrationService / CalibrationRecord / CalibrationModels …
+│   │                                CalibrationService / CalibrationSession / CalibrationModels …
 │   ├── DiscImageStudioMac/          SwiftUI 界面：主页、设计、预览、导出、刻录、标定、设置、关于
 │   │                                （标定为 CalibrationView.swift 向导）
 │   └── DiscBurnStream/              流式刻录助手 disc-burn-stream（Objective-C + DiscRecording）
@@ -420,7 +423,7 @@ macos/
 
 应用包内的对应位置：`Contents/Resources/cli/disc-image-studio`（编码后端）与 `Contents/Resources/bin/disc-burn-stream`（流式刻录助手）。`BurnService` 负责文件模式（`drutil`），`BurnStreamService` 负责流式模式（子进程 + stdin 管道）。
 
-Kit 的 `CalibrationService` / `CalibrationRecord` / `CalibrationModels` 封装 CLI 的标定命令组：`calibration-target`、`calibration-photo`、`calibration-fit`、`calibration-coarse-target`、`calibration-coarse-fit`、`calibration-session-write`、`calibration-session-read`。工作目录是 `<项目目录>/calibration/`，照片轮廓点用缩小照片的像素坐标，描线点与预测折线用毫米坐标（+x 右、+y 下，原点盘心）。
+Kit 的 `CalibrationService` / `CalibrationSession` / `CalibrationModels` 封装 CLI 的标定命令组（会话扫描与 `<id>` 命名由 `CalibrationSessionCatalog` / `CalibrationWorkspaceLayout` 负责）：`calibration-target`、`calibration-photo`、`calibration-fit`、`calibration-coarse-target`、`calibration-coarse-fit`、`calibration-session-write`、`calibration-session-read`。工作目录是 `<项目目录>/calibration/`，照片轮廓点用缩小照片的像素坐标，描线点与预测折线用毫米坐标（+x 右、+y 下，原点盘心）。
 
 ## 测试
 

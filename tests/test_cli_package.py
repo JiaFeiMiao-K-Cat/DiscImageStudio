@@ -449,6 +449,48 @@ def check_calibration(executable: Path, work: Path) -> None:
     if len(traces) != 1 or len(traces[0]["points"]) != 11:
         raise ValueError("calibration-fit did not write the traces back to the session")
 
+    # In-place updates: the base session is loaded before the same path is written, so the
+    # target survives, and --confirmed false stores an unconfirmed photo with no traces.
+    inplace = work / "calib-inplace.calibration.json"
+    shutil.copyfile(session_path, inplace)
+    before = json.loads(inplace.read_text(encoding="utf-8"))
+    subprocess.run(
+        [executable, "calibration-session-write", "--session", str(inplace),
+         "--photo", str(resized_photo), "--disc-size", "120",
+         "--outer", outer, "--hole", hole, "--points", "",
+         "--confirmed", "false", "--output", str(inplace)],
+        cwd=work, check=True)
+    after = json.loads(inplace.read_text(encoding="utf-8"))
+    if after["target"]["id"] != before["target"]["id"]:
+        raise ValueError("calibration-session-write lost the target when updating in place")
+    if after["photo"]["rectificationConfirmed"]:
+        raise ValueError("--confirmed false did not store an unconfirmed photo")
+    if after["photo"]["traces"] != [{"armIndex": 0, "points": []}]:
+        raise ValueError("--confirmed false with empty points did not clear the traces")
+
+    inplace_summary = work / "calib-inplace-summary.json"
+    subprocess.run(
+        [executable, "calibration-session-read", "--session", str(inplace),
+         "--json", str(inplace_summary)],
+        cwd=work, check=True)
+    inplace_doc = json.loads(inplace_summary.read_text(encoding="utf-8"))
+    if inplace_doc["rectificationConfirmed"] is not False or inplace_doc["tracePointCount"] != 0:
+        raise ValueError("in-place unconfirmed session summary is wrong")
+
+    subprocess.run(
+        [executable, "calibration-session-write", "--session", str(inplace),
+         "--photo", str(resized_photo), "--disc-size", "120",
+         "--outer", outer, "--hole", hole, "--points", "",
+         "--confirmed", "true", "--output", str(inplace)],
+        cwd=work, check=True)
+    confirmed_doc = json.loads(inplace.read_text(encoding="utf-8"))
+    if not confirmed_doc["photo"]["rectificationConfirmed"]:
+        raise ValueError("--confirmed true was not stored")
+    if confirmed_doc["photo"]["traces"] != [{"armIndex": 0, "points": []}]:
+        raise ValueError("--confirmed true with empty points did not store an empty trace")
+    if confirmed_doc["target"]["parameters"]["innerRadiusMm"] != 24.5:
+        raise ValueError("in-place update changed the target geometry")
+
     radii = [26.0 + (56.0 - 26.0) * index / 39 for index in range(40)]
     import math
     generated_inner, generated_outer = 24.0, 58.0

@@ -404,7 +404,7 @@ internal static class CalibrationSessionWriteCommand
     internal static int Run(IReadOnlyList<string> arguments)
     {
         CalibrationOptions options = CalibrationOptions.Parse(arguments, "calibration-session-write",
-            ["session", "photo", "disc-size", "outer", "hole", "points", "output"],
+            ["session", "photo", "disc-size", "outer", "hole", "points", "confirmed", "output"],
             allowEmptyValues: ["points"]);
         string basePath = options.Require("session");
         string photoPath = options.Require("photo");
@@ -418,6 +418,7 @@ internal static class CalibrationSessionWriteCommand
         CalibrationPoint[] outer = CalibrationCli.ParsePoints(options.Require("outer"));
         CalibrationPoint[] hole = CalibrationCli.ParsePoints(options.Require("hole"));
         CalibrationPoint[] points = CalibrationCli.ParsePoints(options.Require("points"));
+        bool confirmed = options.GetBool("confirmed", true);
         string output = options.Require("output");
 
         CalibrationSession baseSession;
@@ -431,9 +432,10 @@ internal static class CalibrationSessionWriteCommand
         }
 
         byte[] photoBytes = CalibrationCli.ReadPhotoPng(photoPath);
+        // The base session is fully loaded above, so --output may be the same path as --session.
         CalibrationPhotoSession photo = new(
             Convert.ToBase64String(photoBytes), outer, hole, physicalOuterRadius,
-            RectificationConfirmed: true, [new CalibrationCrossTrace(0, points)]);
+            RectificationConfirmed: confirmed, [new CalibrationCrossTrace(0, points)]);
         try
         {
             photo.Validate();
@@ -460,7 +462,7 @@ internal static class CalibrationSessionWriteCommand
         Console.WriteLine(
             $"Calibration session written: {Path.GetFullPath(output)}, photo="
             + $"{(size is { } value ? $"{value.Width}x{value.Height}px" : "png")}, "
-            + $"traces={points.Length}, disc={discSize} mm");
+            + $"traces={points.Length}, confirmed={(confirmed ? "true" : "false")}, disc={discSize} mm");
         return 0;
     }
 }
