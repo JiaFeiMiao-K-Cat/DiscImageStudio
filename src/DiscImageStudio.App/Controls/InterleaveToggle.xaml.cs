@@ -28,7 +28,15 @@ public partial class InterleaveToggle : UserControl
         InitializeComponent();
         UpdateLabel();
         UpdateHint();
-        Loaded += (_, _) => L.LanguageChanged += Language_LanguageChanged;
+        Loaded += (_, _) =>
+        {
+            // The constructor may have run under the previous language while the owning page
+            // was detached, so re-read the fallback text before following later switches.
+            UpdateLabel();
+            UpdateHint();
+            L.LanguageChanged -= Language_LanguageChanged;
+            L.LanguageChanged += Language_LanguageChanged;
+        };
         Unloaded += (_, _) => L.LanguageChanged -= Language_LanguageChanged;
     }
 

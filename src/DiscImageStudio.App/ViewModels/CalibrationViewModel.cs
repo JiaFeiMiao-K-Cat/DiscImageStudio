@@ -1,4 +1,5 @@
 using DiscImageStudio.Localization;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
@@ -62,10 +63,16 @@ public partial class CalibrationViewModel : ObservableObject
     // The range is a search box for the two radius parameters, not a curve-shape choice.
     // Auto starts at the tight box and widens only when the optimum touches its edge, so
     // healthy discs are not silently clamped to a user-picked boundary.
-    public IReadOnlyList<CoarseSearchRange> CoarseSearchRangeChoices { get; } =
+    // The collection is per-view-model so a legacy session can contribute its own range as a
+    // listed item; a detached object would leave the ComboBox unselected, just like the
+    // pre-fix default did.
+    public ObservableCollection<CoarseSearchRange> CoarseSearchRangeChoices { get; } = new(CoarseSearchRanges);
+    // Default references the listed instance: the class uses reference equality, so a
+    // separate object would leave the ComboBox unselected until the user re-picks a range.
+    [ObservableProperty] private CoarseSearchRange _selectedCoarseSearchRange = CoarseSearchRanges[0];
+    private static readonly IReadOnlyList<CoarseSearchRange> CoarseSearchRanges =
         [new(L.T("自动（推荐）"), 0.02, Auto: true), new("±0.02 mm", 0.02),
          new("±0.1 mm", 0.1), new("±0.5 mm", 0.5)];
-    [ObservableProperty] private CoarseSearchRange _selectedCoarseSearchRange = new(L.T("自动（推荐）"), 0.02, Auto: true);
     public string SearchRangeHeader => SelectedCoarseSearchRange.Auto
         ? L.T("搜索范围（自动）")
         : L.F($"搜索范围（{SelectedCoarseSearchRange.Label}）");
@@ -292,10 +299,7 @@ public partial class CalibrationViewModel : ObservableObject
             // Sessions saved before the auto mode carry no flag (null) and default to auto;
             // a session that explicitly saved a manual box keeps that box.
             bool autoRange = options?.AutoRange ?? true;
-            SelectedCoarseSearchRange = autoRange
-                ? CoarseSearchRangeChoices[0]
-                : CoarseSearchRangeChoices.FirstOrDefault(r => !r.Auto && r.RadiusRangeMm == savedRange)
-                    ?? new($"{savedRange:0.###} mm", savedRange);
+            SelectedCoarseSearchRange = ResolveSearchRange(savedRange, autoRange);
             SelectedDiscType = target.Parameters.Kind switch
             {
                 CalibrationDiscKind.Dvd => "DVD",
@@ -319,6 +323,35 @@ public partial class CalibrationViewModel : ObservableObject
             _shell.Burn?.OnCalibrationTargetChanged();
         }
         finally { _installing = false; }
+    }
+
+    /// <summary>A session can carry a manual box that the current choices do not list. The
+    /// entry is added to this view model's collection so the selector shows the saved value;
+    /// the previous session's custom entry is replaced instead of accumulating.</summary>
+    private CoarseSearchRange ResolveSearchRange(double savedRange, bool autoRange)
+    {
+        // The custom entry belongs to the session that contributed it; any other install
+        // (including an auto one) replaces it instead of adding a second entry.
+        while (CoarseSearchRangeChoices.Count > CoarseSearchRanges.Count)
+        {
+            CoarseSearchRangeChoices.RemoveAt(CoarseSearchRangeChoices.Count - 1);
+        }
+
+        if (autoRange)
+        {
+            return CoarseSearchRangeChoices[0];
+        }
+
+        CoarseSearchRange? listed = CoarseSearchRangeChoices
+            .FirstOrDefault(range => !range.Auto && range.RadiusRangeMm == savedRange);
+        if (listed is not null)
+        {
+            return listed;
+        }
+
+        CoarseSearchRange custom = new($"{savedRange:0.###} mm", savedRange);
+        CoarseSearchRangeChoices.Add(custom);
+        return custom;
     }
 
     private void InvalidateFit()

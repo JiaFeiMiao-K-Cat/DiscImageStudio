@@ -53,7 +53,14 @@ public partial class PathField : UserControl
             UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
         });
         UpdateTexts();
-        Loaded += (_, _) => L.LanguageChanged += Language_LanguageChanged;
+        Loaded += (_, _) =>
+        {
+            // The constructor may have run under the previous language while the owning page
+            // was detached, so re-read the fallback text before following later switches.
+            UpdateTexts();
+            L.LanguageChanged -= Language_LanguageChanged;
+            L.LanguageChanged += Language_LanguageChanged;
+        };
         Unloaded += (_, _) => L.LanguageChanged -= Language_LanguageChanged;
     }
 

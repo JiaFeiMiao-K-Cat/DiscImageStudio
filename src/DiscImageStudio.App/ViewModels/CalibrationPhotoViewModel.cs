@@ -47,9 +47,12 @@ public partial class CalibrationViewModel
     /// exists. This is the only line under 确认矫正.</summary>
     [ObservableProperty] private string _rectificationSummary = string.Empty;
     public string TraceSummary => L.F($"已保留 {TracePoints.Count} 点 · 偏离点自动标红");
-    public IReadOnlyList<PhotoDiscSize> PhysicalDiscSizeChoices { get; } =
-        [new(60), new(40)];
-    [ObservableProperty] private PhotoDiscSize _selectedPhysicalDiscSize = new(60);
+    public IReadOnlyList<PhotoDiscSize> PhysicalDiscSizeChoices { get; } = PhotoDiscSizes;
+    // The default must be the same instance the ComboBox lists: PhotoDiscSize is a reference
+    // type, and a separate equal-looking object leaves SelectedIndex at -1. Selecting the
+    // listed item later would then look like a fresh value and invalidate the rectification.
+    [ObservableProperty] private PhotoDiscSize _selectedPhysicalDiscSize = PhotoDiscSizes[0];
+    private static readonly IReadOnlyList<PhotoDiscSize> PhotoDiscSizes = [new(60), new(40)];
 
     public IAsyncRelayCommand ImportPhotoCommand { get; private set; } = null!;
     public IAsyncRelayCommand RectifyPhotoCommand { get; private set; } = null!;

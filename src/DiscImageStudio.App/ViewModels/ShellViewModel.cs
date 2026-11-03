@@ -814,12 +814,40 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.ToneSrgbLinearization),
     ];
 
+    // Notifications that only re-render localized text. Relocalize re-raises exactly these
+    // properties; none of them changes a preview input, so the live preview keeps its result
+    // and any read-back that is already running.
+    private static readonly string[] TextOnlyStateProperties =
+    [
+        nameof(DiscParametersState.CdPresets),
+        nameof(DiscParametersState.DvdPresets),
+        nameof(DiscParametersState.BluRayPresets),
+        nameof(DiscParametersState.SelectedCdPreset),
+        nameof(DiscParametersState.SelectedDvdPreset),
+        nameof(DiscParametersState.SelectedBluRayPreset),
+        nameof(DiscParametersState.CdPresetHint),
+        nameof(DiscParametersState.DvdPresetHint),
+        nameof(DiscParametersState.BluRayPresetHint),
+        nameof(DiscParametersState.ToneSummary),
+        nameof(DiscParametersState.CdOutputLabel),
+        nameof(DiscParametersState.CdOutputHint),
+        nameof(DiscParametersState.DvdPitchSummary),
+        nameof(DiscParametersState.DvdActualPitchSummary),
+    ];
+
     private void State_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         // Any parameter edit refreshes the burn summary and schedules the debounced live
         // preview; both were driven by TextChanged/SelectionChanged before the merge.
         Burn?.UpdateSourceSummary();
-        LivePreview?.Schedule();
+        // A language switch re-raises the selector lists, hints and summaries below without
+        // changing any preview input. Scheduling on those notifications would cancel an
+        // in-flight read-back and recompute the identical frame.
+        if (Array.IndexOf(TextOnlyStateProperties, e.PropertyName) < 0)
+        {
+            LivePreview?.Schedule();
+        }
+
         if (e.PropertyName is nameof(DiscParametersState.CdInnerRadius)
             or nameof(DiscParametersState.CdOuterRadius)
             or nameof(DiscParametersState.DvdInnerRadius)

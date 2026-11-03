@@ -9,11 +9,15 @@ internal static class BluRayModuleTests
     private const string RitekPresetId = "bd-r-ritek-10x";
     private const double RitekInnerRadiusMm = 23.98822105616562;
     private const double RitekOuterRadiusMm = 58.023234731100764;
+    private const string Ritek12xPresetId = "bd-r-ritek-12x";
+    private const double Ritek12xInnerRadiusMm = 23.98795;
+    private const double Ritek12xOuterRadiusMm = 58.02236;
     // Preserved from the saved user preset "Verbatim 64099"
     // (user-bd-20261028-123134-08af), without re-fitting its calibration record.
     private const string VerbatimPresetId = "bd-r-verbatim-64099";
     private const double VerbatimInnerRadiusMm = 23.987042157339335;
     private const double VerbatimOuterRadiusMm = 57.987960341783236;
+    private const string Verbatim64293PresetId = "bd-r-verbatim-64293";
 
     internal static void Run()
     {
@@ -29,7 +33,7 @@ internal static class BluRayModuleTests
     {
         BluRayDiscParameters disc = new();
         disc.Validate();
-        Equal(3, BluRayDiscPreset.BuiltIn.Count, "generic and calibrated single-layer presets");
+        Equal(5, BluRayDiscPreset.BuiltIn.Count, "generic and calibrated single-layer presets");
         True(BluRayDiscPreset.BuiltIn.All(preset => preset.LayerCount == 1), "all builtins retain single-layer support");
         Equal(new BluRayDiscParameters(), BluRayDiscPreset.BuiltIn[0].CreateParameters(), "generic geometry remains the first builtin");
         BluRayDiscPreset ritek = BluRayDiscPreset.Find(RitekPresetId);
@@ -43,6 +47,20 @@ internal static class BluRayModuleTests
             verbatim.CreateParameters(), "Verbatim geometry preserves the saved user parameters exactly");
         True(!verbatim.InvertMapping && !verbatim.IsCustom && !verbatim.IsUserPreset,
             "Verbatim is a normal-polarity builtin");
+        BluRayDiscPreset verbatim64293 = BluRayDiscPreset.Find(Verbatim64293PresetId);
+        Equal("Verbatim BD-R (64293)", verbatim64293.DisplayName, "Verbatim BD-R 64293 calibrated builtin name");
+        Equal(verbatim.CreateParameters(), verbatim64293.CreateParameters(),
+            "Verbatim BD-R 64293 reuses the 64099 geometry");
+        True(!verbatim64293.InvertMapping && !verbatim64293.IsCustom && !verbatim64293.IsUserPreset,
+            "Verbatim BD-R 64293 is a normal-polarity builtin");
+        True(verbatim64293.Contributor == "bczhc", "Verbatim BD-R 64293 contributor is recorded");
+        BluRayDiscPreset ritek12x = BluRayDiscPreset.Find(Ritek12xPresetId);
+        Equal("铼德 BD-R 12x", ritek12x.DisplayName, "Ritek BD-R 12x calibrated builtin name");
+        Equal(new BluRayDiscParameters(12_219_392, 1, Ritek12xInnerRadiusMm, Ritek12xOuterRadiusMm, 0),
+            ritek12x.CreateParameters(), "Ritek BD-R 12x geometry preserves the source values exactly");
+        True(!ritek12x.InvertMapping && !ritek12x.IsCustom && !ritek12x.IsUserPreset,
+            "Ritek BD-R 12x is a normal-polarity builtin");
+        True(ritek12x.Contributor == "DeepAQ", "Ritek BD-R 12x contributor is recorded");
         Equal(25_025_314_816L, disc.ContentLength, "nominal BD-R byte capacity");
         Equal(0x100000U, disc.GetPhysicalSectorNumber(0), "first physical sector");
         Equal(0xCA73FFU, disc.GetPhysicalSectorNumber(disc.TotalSectors - 1), "last physical sector");
@@ -117,6 +135,32 @@ internal static class BluRayModuleTests
         foreach (DiscCommandDescriptor command in module.Descriptor.Commands.Where(command => command.Name is "bd-info" or "bd-probe" or "bd-generate"))
             True(command.Options.Single(option => option.Name == "preset").Choices!.Contains(RitekPresetId),
                 command.Name + " advertises the calibrated builtin to CLI hosts");
+        foreach (DiscCommandDescriptor command in module.Descriptor.Commands.Where(command => command.Name is "bd-info" or "bd-probe" or "bd-generate"))
+            True(command.Options.Single(option => option.Name == "preset").Choices!.Contains(Verbatim64293PresetId),
+                command.Name + " advertises the Verbatim BD-R 64293 builtin to CLI hosts");
+        foreach (DiscCommandDescriptor command in module.Descriptor.Commands.Where(command => command.Name is "bd-info" or "bd-probe" or "bd-generate"))
+            True(command.Options.Single(option => option.Name == "preset").Choices!.Contains(Ritek12xPresetId),
+                command.Name + " advertises the Ritek BD-R 12x builtin to CLI hosts");
+        using (JsonDocument info = JsonDocument.Parse(Run(module, "bd-info", "--preset", Ritek12xPresetId).Summary!))
+        {
+            JsonElement parameters = info.RootElement.GetProperty("parameters");
+            Equal(Ritek12xPresetId, info.RootElement.GetProperty("preset").GetString()!, "CLI reports Ritek BD-R 12x");
+            Equal(Ritek12xInnerRadiusMm, parameters.GetProperty("InnerRadiusMm").GetDouble(), "CLI Ritek BD-R 12x inner radius");
+            Equal(Ritek12xOuterRadiusMm, parameters.GetProperty("OuterRadiusMm").GetDouble(), "CLI Ritek BD-R 12x outer radius");
+            Equal(12_219_392U, parameters.GetProperty("TotalSectors").GetUInt32(), "CLI Ritek BD-R 12x full capacity");
+            True(!info.RootElement.GetProperty("luminanceMapping").GetProperty("invert").GetBoolean(),
+                "CLI Ritek BD-R 12x preserves the recorded polarity");
+        }
+        using (JsonDocument info = JsonDocument.Parse(Run(module, "bd-info", "--preset", Verbatim64293PresetId).Summary!))
+        {
+            JsonElement parameters = info.RootElement.GetProperty("parameters");
+            Equal(VerbatimInnerRadiusMm, parameters.GetProperty("InnerRadiusMm").GetDouble(),
+                "CLI Verbatim BD-R 64293 reuses the 64099 inner radius");
+            Equal(VerbatimOuterRadiusMm, parameters.GetProperty("OuterRadiusMm").GetDouble(),
+                "CLI Verbatim BD-R 64293 reuses the 64099 outer radius");
+            True(!info.RootElement.GetProperty("luminanceMapping").GetProperty("invert").GetBoolean(),
+                "CLI Verbatim BD-R 64293 preserves the 64099 polarity");
+        }
         using (JsonDocument info = JsonDocument.Parse(Run(module, "bd-info", "--preset", RitekPresetId).Summary!))
         {
             JsonElement parameters = info.RootElement.GetProperty("parameters");

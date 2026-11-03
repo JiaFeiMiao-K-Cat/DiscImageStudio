@@ -717,7 +717,9 @@
     "zh-CN": "威宝 CD-R AZO (43438)（实测）",
     "en": "Verbatim CD-R AZO (43438) (measured)",
     "zh-TW": "Verbatim CD-R AZO (43438)（實測）",
-    "ja": "Verbatim CD-R AZO (43438) (実測)"
+    "ja": "Verbatim CD-R AZO (43438) (実測)",
+    "tr": "Verbatim CD-R AZO (43438) (ölçülen)",
+    "es": "Verbatim CD-R AZO (43438) (medido)"
   },
   "实测参数：内半径 24.837775 mm、外半径 58.020875 mm、359,848 扇区；扫描速度采用 1200 mm/s。": {
     "zh-CN": "实测参数：内半径 24.837775 mm、外半径 58.020875 mm、359,848 扇区；扫描速度采用 1200 mm/s。",
@@ -753,49 +755,97 @@
     "zh-CN": "威宝 DVD-R AZO (43533)（实测）",
     "en": "Verbatim DVD-R AZO (43533) (measured)",
     "zh-TW": "Verbatim DVD-R AZO (43533)（實測）",
-    "ja": "Verbatim DVD-R AZO (43533) (実測)"
+    "ja": "Verbatim DVD-R AZO (43533) (実測)",
+    "tr": "Verbatim DVD-R AZO (43533) (ölçülen)",
+    "es": "Verbatim DVD-R AZO (43533) (medido)"
   },
   "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。": {
     "zh-CN": "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
     "en": "Verified Verbatim DVD-R AZO 43533 calibration: 23.9914606277–57.9648936579 mm, 2,297,888 sectors; cubic track pitch distribution.",
     "zh-TW": "Verbatim DVD-R AZO 43533 已驗證校準參數：23.9914606277–57.9648936579 mm，共 2,297,888 個磁區；採用三次軌距分布。",
-    "ja": "Verbatim DVD-R AZO 43533 の検証済みキャリブレーション: 23.9914606277–57.9648936579 mm、2,297,888 セクター。3 次のトラック ピッチ分布を使用。"
+    "ja": "Verbatim DVD-R AZO 43533 の検証済みキャリブレーション: 23.9914606277–57.9648936579 mm、2,297,888 セクター。3 次のトラック ピッチ分布を使用。",
+    "tr": "Doğrulanmış Verbatim DVD-R AZO 43533 kalibrasyonu: 23,9914606277–57,9648936579 mm, 2.297.888 sektör; üçüncü dereceden iz aralığı dağılımı.",
+    "es": "Calibración verificada de Verbatim DVD-R AZO 43533: 23,9914606277–57,9648936579 mm, 2.297.888 sectores; distribución cúbica del paso de pista."
   },
   "威宝 DVD-R AZO (43523)（实测）": {
     "zh-CN": "威宝 DVD-R AZO (43523)（实测）",
     "en": "Verbatim DVD-R AZO (43523) (measured)",
     "zh-TW": "Verbatim DVD-R AZO (43523)（實測）",
-    "ja": "Verbatim DVD-R AZO (43523) (実測)"
+    "ja": "Verbatim DVD-R AZO (43523) (実測)",
+    "tr": "Verbatim DVD-R AZO (43523) (ölçülen)",
+    "es": "Verbatim DVD-R AZO (43523) (medido)"
   },
   "威宝 DVD-R AZO 43523 实测标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布；参数与 43533 一致。": {
     "zh-CN": "威宝 DVD-R AZO 43523 实测标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布；参数与 43533 一致。",
     "en": "Measured Verbatim DVD-R AZO 43523 calibration: 23.9914606277–57.9648936579 mm, 2,297,888 sectors; cubic track pitch distribution; parameters match 43533.",
     "zh-TW": "Verbatim DVD-R AZO 43523 實測校準參數：23.9914606277–57.9648936579 mm，共 2,297,888 個磁區；採用三次軌距分布；參數與 43533 一致。",
-    "ja": "Verbatim DVD-R AZO 43523 の実測キャリブレーション: 23.9914606277–57.9648936579 mm、2,297,888 セクター。3 次のトラック ピッチ分布を使用。パラメーターは 43533 と同一です。"
+    "ja": "Verbatim DVD-R AZO 43523 の実測キャリブレーション: 23.9914606277–57.9648936579 mm、2,297,888 セクター。3 次のトラック ピッチ分布を使用。パラメーターは 43533 と同一です。",
+    "tr": "Ölçülen Verbatim DVD-R AZO 43523 kalibrasyonu: 23,9914606277–57,9648936579 mm, 2.297.888 sektör; üçüncü dereceden iz aralığı dağılımı; parametreler 43533 ile aynı.",
+    "es": "Calibración medida de Verbatim DVD-R AZO 43523: 23,9914606277–57,9648936579 mm, 2.297.888 sectores; distribución cúbica del paso de pista; parámetros coinciden con 43533."
+  },
+  "威宝 DVD+R AZO (43498)（实测）": {
+    "zh-CN": "威宝 DVD+R AZO (43498)（实测）",
+    "en": "Verbatim DVD+R AZO (43498) (measured)",
+    "zh-TW": "Verbatim DVD+R AZO (43498)（實測）",
+    "ja": "Verbatim DVD+R AZO (43498) (実測)",
+    "tr": "Verbatim DVD+R AZO (43498) (ölçülen)",
+    "es": "Verbatim DVD+R AZO (43498) (medido)"
+  },
+  "威宝 DVD+R AZO (43498) 实测标定参数：23.954070–57.981456 mm，共 2,295,104 个扇区；采用三次轨距分布。": {
+    "zh-CN": "威宝 DVD+R AZO (43498) 实测标定参数：23.954070–57.981456 mm，共 2,295,104 个扇区；采用三次轨距分布。",
+    "en": "Measured Verbatim DVD+R AZO (43498) calibration: 23.954070–57.981456 mm, 2,295,104 sectors; cubic track pitch distribution.",
+    "zh-TW": "Verbatim DVD+R AZO (43498) 實測校準參數：23.954070–57.981456 mm，共 2,295,104 個磁區；採用三次軌距分布。",
+    "ja": "Verbatim DVD+R AZO (43498) の実測キャリブレーション: 23.954070–57.981456 mm、2,295,104 セクター。3 次のトラック ピッチ分布を使用。",
+    "tr": "Ölçülen Verbatim DVD+R AZO (43498) kalibrasyonu: 23,954070–57,981456 mm, 2.295.104 sektör; üçüncü dereceden iz aralığı dağılımı.",
+    "es": "Calibración medida de Verbatim DVD+R AZO (43498): 23,954070–57,981456 mm, 2.295.104 sectores; distribución cúbica del paso de pista."
   },
   "PHILIPS DVD+R（实测）": {
     "zh-CN": "PHILIPS DVD+R（实测）",
     "en": "PHILIPS DVD+R (measured)",
     "zh-TW": "PHILIPS DVD+R（實測）",
-    "ja": "PHILIPS DVD+R (実測)"
+    "ja": "PHILIPS DVD+R (実測)",
+    "tr": "PHILIPS DVD+R (ölçülen)",
+    "es": "PHILIPS DVD+R (medido)"
   },
   "PHILIPS DVD+R 实测标定参数：24.157724–57.881039 mm，共 2,295,104 个扇区；采用三次轨距分布。": {
     "zh-CN": "PHILIPS DVD+R 实测标定参数：24.157724–57.881039 mm，共 2,295,104 个扇区；采用三次轨距分布。",
     "en": "Measured PHILIPS DVD+R calibration: 24.157724–57.881039 mm, 2,295,104 sectors; cubic track pitch distribution.",
     "zh-TW": "PHILIPS DVD+R 實測校準參數：24.157724–57.881039 mm，共 2,295,104 個磁區；採用三次軌距分布。",
-    "ja": "PHILIPS DVD+R の実測キャリブレーション: 24.157724–57.881039 mm、2,295,104 セクター。3 次のトラック ピッチ分布を使用。"
+    "ja": "PHILIPS DVD+R の実測キャリブレーション: 24.157724–57.881039 mm、2,295,104 セクター。3 次のトラック ピッチ分布を使用。",
+    "tr": "Ölçülen PHILIPS DVD+R kalibrasyonu: 24,157724–57,881039 mm, 2.295.104 sektör; üçüncü dereceden iz aralığı dağılımı.",
+    "es": "Calibración medida de PHILIPS DVD+R: 24,157724–57,881039 mm, 2.295.104 sectores; distribución cúbica del paso de pista."
   },
   "铼德 DVD+R E时代系列（实测）": {
     "zh-CN": "铼德 DVD+R E时代系列（实测）",
     "en": "Ritek DVD+R E-Series (measured)",
     "zh-TW": "Ritek DVD+R E時代系列（實測）",
-    "ja": "Ritek DVD+R E シリーズ (実測)"
+    "ja": "Ritek DVD+R E シリーズ (実測)",
+    "tr": "Ritek DVD+R E Serisi (ölçülen)",
+    "es": "Ritek DVD+R E-Series (medido)"
   },
   "铼德 DVD+R E时代系列实测标定参数：24.0482013258–58.0264881612 mm，共 2,295,104 个扇区；采用三次轨距分布。": {
     "zh-CN": "铼德 DVD+R E时代系列实测标定参数：24.0482013258–58.0264881612 mm，共 2,295,104 个扇区；采用三次轨距分布。",
     "en": "Measured Ritek DVD+R E-Series calibration: 24.0482013258–58.0264881612 mm, 2,295,104 sectors; cubic track pitch distribution.",
     "zh-TW": "Ritek DVD+R E時代系列實測校準參數：24.0482013258–58.0264881612 mm，共 2,295,104 個磁區；採用三次軌距分布。",
-    "ja": "Ritek DVD+R E シリーズの実測キャリブレーション: 24.0482013258–58.0264881612 mm、2,295,104 セクター。3 次のトラック ピッチ分布を使用。"
+    "ja": "Ritek DVD+R E シリーズの実測キャリブレーション: 24.0482013258–58.0264881612 mm、2,295,104 セクター。3 次のトラック ピッチ分布を使用。",
+    "tr": "Ölçülen Ritek DVD+R E Serisi kalibrasyonu: 24,0482013258–58,0264881612 mm, 2.295.104 sektör; üçüncü dereceden iz aralığı dağılımı.",
+    "es": "Calibración medida de Ritek DVD+R E-Series: 24,0482013258–58,0264881612 mm, 2.295.104 sectores; distribución cúbica del paso de pista."
+  },
+  "铼德 DVD-R E时代系列（实测）": {
+    "zh-CN": "铼德 DVD-R E时代系列（实测）",
+    "en": "Ritek DVD-R E-Series (measured)",
+    "zh-TW": "Ritek DVD-R E時代系列（實測）",
+    "ja": "Ritek DVD-R E シリーズ (実測)",
+    "tr": "Ritek DVD-R E Serisi (ölçülen)",
+    "es": "Ritek DVD-R E-Series (medido)"
+  },
+  "铼德 DVD-R E时代系列实测标定参数：24.0631091841–58.2337337546 mm，共 2,298,496 个扇区；采用三次轨距分布。": {
+    "zh-CN": "铼德 DVD-R E时代系列实测标定参数：24.0631091841–58.2337337546 mm，共 2,298,496 个扇区；采用三次轨距分布。",
+    "en": "Measured Ritek DVD-R E-Series calibration: 24.0631091841–58.2337337546 mm, 2,298,496 sectors; cubic track pitch distribution.",
+    "zh-TW": "Ritek DVD-R E時代系列實測校準參數：24.0631091841–58.2337337546 mm，共 2,298,496 個磁區；採用三次軌距分布。",
+    "ja": "Ritek DVD-R E シリーズの実測キャリブレーション: 24.0631091841–58.2337337546 mm、2,298,496 セクター。3 次のトラック ピッチ分布を使用。",
+    "tr": "Ölçülen Ritek DVD-R E Serisi kalibrasyonu: 24,0631091841–58,2337337546 mm, 2.298.496 sektör; üçüncü dereceden iz aralığı dağılımı.",
+    "es": "Calibración medida de Ritek DVD-R E-Series: 24,0631091841–58,2337337546 mm, 2.298.496 sectores; distribución cúbica del paso de pista."
   },
   "标准 8cm 单层 DVD": {
     "zh-CN": "标准 8cm 单层 DVD",
@@ -833,17 +883,51 @@
     "zh-TW": "實測參數：內半徑 23.988221 mm、外半徑 58.023235 mm、12,219,392 磁區。",
     "ja": "実測パラメーター: 内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 セクター。"
   },
+  "铼德 BD-R 12x（实测）": {
+    "zh-CN": "铼德 BD-R 12x（实测）",
+    "en": "Ritek BD-R 12x (measured)",
+    "zh-TW": "Ritek BD-R 12x（實測）",
+    "ja": "Ritek BD-R 12x (実測)",
+    "tr": "Ritek BD-R 12x (ölçülen)",
+    "es": "Ritek BD-R 12x (medido)"
+  },
+  "实测参数：内半径 23.987950 mm、外半径 58.022360 mm、12,219,392 扇区。": {
+    "zh-CN": "实测参数：内半径 23.987950 mm、外半径 58.022360 mm、12,219,392 扇区。",
+    "en": "Measured parameters: inner radius 23.987950 mm, outer radius 58.022360 mm, 12,219,392 sectors.",
+    "zh-TW": "實測參數：內半徑 23.987950 mm、外半徑 58.022360 mm、12,219,392 磁區。",
+    "ja": "実測パラメーター: 内半径 23.987950 mm、外半径 58.022360 mm、12,219,392 セクター。",
+    "tr": "Ölçülen parametreler: iç yarıçap 23,987950 mm, dış yarıçap 58,022360 mm, 12.219.392 sektör.",
+    "es": "Parámetros medidos: radio interior 23,987950 mm, radio exterior 58,022360 mm, 12.219.392 sectores."
+  },
   "威宝 BD-R (64099)（实测）": {
     "zh-CN": "威宝 BD-R (64099)（实测）",
     "en": "Verbatim BD-R (64099) (measured)",
     "zh-TW": "Verbatim BD-R (64099)（實測）",
-    "ja": "Verbatim BD-R (64099) (実測)"
+    "ja": "Verbatim BD-R (64099) (実測)",
+    "tr": "Verbatim BD-R (64099) (ölçülen)",
+    "es": "Verbatim BD-R (64099) (medido)"
   },
   "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。": {
     "zh-CN": "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。",
     "en": "Measured parameters: inner radius 23.987042 mm, outer radius 57.987960 mm, 12,219,392 sectors.",
     "zh-TW": "實測參數：內半徑 23.987042 mm、外半徑 57.987960 mm、12,219,392 磁區。",
     "ja": "実測パラメーター: 内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 セクター。"
+  },
+  "威宝 BD-R (64293)（实测）": {
+    "zh-CN": "威宝 BD-R (64293)（实测）",
+    "en": "Verbatim BD-R (64293) (measured)",
+    "zh-TW": "Verbatim BD-R (64293)（實測）",
+    "ja": "Verbatim BD-R (64293) (実測)",
+    "tr": "Verbatim BD-R (64293) (ölçülen)",
+    "es": "Verbatim BD-R (64293) (medido)"
+  },
+  "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区；参数与 64099 一致。": {
+    "zh-CN": "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区；参数与 64099 一致。",
+    "en": "Measured parameters: inner radius 23.987042 mm, outer radius 57.987960 mm, 12,219,392 sectors; parameters match 64099.",
+    "zh-TW": "實測參數：內半徑 23.987042 mm、外半徑 57.987960 mm、12,219,392 磁區；參數與 64099 一致。",
+    "ja": "実測パラメーター: 内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 セクター。パラメーターは 64099 と同一です。",
+    "tr": "Ölçülen parametreler: iç yarıçap 23,987042 mm, dış yarıçap 57,987960 mm, 12.219.392 sektör; parametreler 64099 ile aynı.",
+    "es": "Parámetros medidos: radio interior 23,987042 mm, radio exterior 57,987960 mm, 12.219.392 sectores; parámetros coinciden con 64099."
   },
   "自定义参数（未保存）": {
     "zh-CN": "自定义参数（未保存）",

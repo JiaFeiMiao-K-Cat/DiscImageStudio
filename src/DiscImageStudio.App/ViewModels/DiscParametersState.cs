@@ -519,8 +519,8 @@ public partial class DiscParametersState : ObservableObject
 
     /// <summary>Rebuilds the localized parts of the shared state after a language switch:
     /// preset names/descriptions, the selected preset objects (so the selectors show the new
-    /// text) and the computed summaries. Geometry strings are re-applied with the same values,
-    /// so an open project keeps its parameters and its dirty flag.</summary>
+    /// text) and the computed summaries. Geometry strings are never written here: a preset
+    /// file edited on disk must not change the parameters of the running project.</summary>
     public void Relocalize()
     {
         string cdId = SelectedCdPreset.Id;
@@ -536,9 +536,9 @@ public partial class DiscParametersState : ObservableObject
             // not turn into a preset-load failure.
         }
 
-        ApplyCdDiscPreset(_cdPresets.FirstOrDefault(preset => preset.Id == cdId) ?? ManualCdPreset);
-        ApplyDvdDiscPreset(_dvdPresets.FirstOrDefault(preset => preset.Id == dvdId) ?? ManualDvdPreset);
-        ApplyBluRayDiscPreset(_bluRayPresets.FirstOrDefault(preset => preset.Id == bluRayId) ?? ManualBluRayPreset);
+        ApplyCdDiscPreset(_cdPresets.FirstOrDefault(preset => preset.Id == cdId) ?? ManualCdPreset, writeGeometry: false);
+        ApplyDvdDiscPreset(_dvdPresets.FirstOrDefault(preset => preset.Id == dvdId) ?? ManualDvdPreset, writeGeometry: false);
+        ApplyBluRayDiscPreset(_bluRayPresets.FirstOrDefault(preset => preset.Id == bluRayId) ?? ManualBluRayPreset, writeGeometry: false);
         OnPropertyChanged(nameof(ToneSummary));
         OnPropertyChanged(nameof(CdOutputLabel));
         OnPropertyChanged(nameof(CdOutputHint));
@@ -627,7 +627,7 @@ public partial class DiscParametersState : ObservableObject
         SelectedBluRayPreset = ManualBluRayPreset;
     }
 
-    public void ApplyCdDiscPreset(CdDiscPreset preset)
+    public void ApplyCdDiscPreset(CdDiscPreset preset, bool writeGeometry = true)
     {
         bool previous = _isApplyingDiscPreset;
         _isApplyingDiscPreset = true;
@@ -635,7 +635,7 @@ public partial class DiscParametersState : ObservableObject
         {
             SelectedCdPreset = preset;
             CdPresetHint = preset.Description;
-            if (!preset.IsCustom)
+            if (writeGeometry && !preset.IsCustom)
             {
                 CdSectors = preset.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 CdInnerRadius = FormatPresetNumber(preset.InnerRadiusMm);
@@ -648,7 +648,7 @@ public partial class DiscParametersState : ObservableObject
         }
     }
 
-    public void ApplyDvdDiscPreset(DvdDiscPreset preset)
+    public void ApplyDvdDiscPreset(DvdDiscPreset preset, bool writeGeometry = true)
     {
         bool previous = _isApplyingDiscPreset;
         _isApplyingDiscPreset = true;
@@ -656,7 +656,7 @@ public partial class DiscParametersState : ObservableObject
         {
             SelectedDvdPreset = preset;
             DvdPresetHint = preset.Description;
-            if (!preset.IsCustom)
+            if (writeGeometry && !preset.IsCustom)
             {
                 DvdTotalSectors = preset.TotalSectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 DvdInnerRadius = FormatPresetNumber(preset.InnerRadiusMm);
@@ -672,7 +672,7 @@ public partial class DiscParametersState : ObservableObject
         }
     }
 
-    public void ApplyBluRayDiscPreset(BluRayDiscPreset preset)
+    public void ApplyBluRayDiscPreset(BluRayDiscPreset preset, bool writeGeometry = true)
     {
         bool previous = _isApplyingDiscPreset;
         _isApplyingDiscPreset = true;
@@ -680,7 +680,7 @@ public partial class DiscParametersState : ObservableObject
         {
             SelectedBluRayPreset = preset;
             BluRayPresetHint = preset.IsCustom ? string.Empty : preset.DisplayName;
-            if (!preset.IsCustom)
+            if (writeGeometry && !preset.IsCustom)
             {
                 BluRayDiscParameters geometry = preset.CreateParameters();
                 BdTotalSectors = geometry.TotalSectors.ToString(System.Globalization.CultureInfo.InvariantCulture);

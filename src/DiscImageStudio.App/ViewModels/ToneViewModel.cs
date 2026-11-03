@@ -35,6 +35,11 @@ public partial class ToneViewModel : ObservableObject
     private string? _lastTonePreviewPath;
     private bool _tonePreviewReady;
 
+    // A language switch must re-word the status on screen, not replace a running render or a
+    // failure with the idle hint, so the current phase is kept next to the ready flag.
+    private bool _tonePreviewRendering;
+    private string? _tonePreviewError;
+
     public ToneViewModel(ShellViewModel shell, DiscParametersState state, DesignViewModel design)
     {
         _shell = shell;
@@ -74,10 +79,22 @@ public partial class ToneViewModel : ObservableObject
 
     /// <summary>The status line is the module's only cached string; the picture itself needs
     /// no redraw for a language switch.</summary>
-    internal void Relocalize()
-        => TonePreviewStatus = _tonePreviewReady
-            ? L.T("实时更新")
-            : L.T("导入图片后自动生成预览。");
+    internal void Relocalize() => TonePreviewStatus = ComposeTonePreviewStatus();
+
+    private string ComposeTonePreviewStatus()
+    {
+        if (_tonePreviewRendering)
+        {
+            return L.T("正在按当前影调渲染…");
+        }
+
+        if (_tonePreviewError is { } error)
+        {
+            return L.F($"影调预览失败：{error}");
+        }
+
+        return _tonePreviewReady ? L.T("实时更新") : L.T("导入图片后自动生成预览。");
+    }
 
     public RelayCommand ResetToneCommand { get; }
 
@@ -191,6 +208,7 @@ public partial class ToneViewModel : ObservableObject
         CancellationTokenSource cancellation = new();
         _tonePreviewCancellation = cancellation;
         int revision = ++_tonePreviewRevision;
+        BeginTonePreview();
         _ = RenderTonePreviewAsync(revision, cancellation.Token);
     }
 
@@ -206,7 +224,15 @@ public partial class ToneViewModel : ObservableObject
         CancellationTokenSource cancellation = new();
         _tonePreviewCancellation = cancellation;
         int revision = ++_tonePreviewRevision;
+        BeginTonePreview();
         _ = RenderTonePreviewAsync(revision, cancellation.Token);
+    }
+
+    private void BeginTonePreview()
+    {
+        _tonePreviewRendering = true;
+        _tonePreviewError = null;
+        TonePreviewStatus = ComposeTonePreviewStatus();
     }
 
     private async Task RenderTonePreviewAsync(int revision, CancellationToken cancellationToken)
@@ -225,7 +251,6 @@ public partial class ToneViewModel : ObservableObject
         {
             await Task.Delay(180, cancellationToken);
             Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-            TonePreviewStatus = L.T("正在按当前影调渲染…");
 
             int samplesPerSector;
             if (IsBluRay)
@@ -319,16 +344,24 @@ public partial class ToneViewModel : ObservableObject
             keepOutput = true;
             TonePreviewImage = bitmap;
             HasTonePreview = true;
+            _tonePreviewRendering = false;
+            _tonePreviewError = null;
             _tonePreviewReady = true;
-            TonePreviewStatus = L.T("实时更新");
+            TonePreviewStatus = ComposeTonePreviewStatus();
             TempFiles.TryDeleteTemporaryFile(previousPath);
         }
         catch (OperationCanceledException)
         {
+            // A newer render or a cleared preview owns the status; this one must not touch it.
         }
         catch (Exception exception)
         {
-            TonePreviewStatus = L.F($"影调预览失败：{exception.Message}");
+            if (revision == _tonePreviewRevision)
+            {
+                _tonePreviewRendering = false;
+                _tonePreviewError = exception.Message;
+                TonePreviewStatus = ComposeTonePreviewStatus();
+            }
         }
         finally
         {
@@ -346,10 +379,15 @@ public partial class ToneViewModel : ObservableObject
         _tonePreviewCancellation = null;
         _compositePath = null;
         RefreshTonePreviewCommand.NotifyCanExecuteChanged();
+        // A render that is still in flight belongs to the discarded state; bumping the
+        // revision keeps its completion from writing the status back.
+        _tonePreviewRevision++;
         TonePreviewImage = null;
         HasTonePreview = false;
         _tonePreviewReady = false;
-        TonePreviewStatus = L.T("导入图片后自动生成预览。");
+        _tonePreviewRendering = false;
+        _tonePreviewError = null;
+        TonePreviewStatus = ComposeTonePreviewStatus();
         TempFiles.TryDeleteTemporaryFile(_lastTonePreviewPath);
         _lastTonePreviewPath = null;
     }

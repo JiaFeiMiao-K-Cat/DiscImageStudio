@@ -38,7 +38,9 @@ public sealed class CalibrationPhotoCanvas : FrameworkElement
     public static readonly DependencyProperty ShowPredictionProperty = DependencyProperty.Register(nameof(ShowPrediction), typeof(bool), typeof(CalibrationPhotoCanvas), new FrameworkPropertyMetadata(true, Render));
     private static readonly DependencyPropertyKey ViewDescriptionPropertyKey = DependencyProperty.RegisterReadOnly(nameof(ViewDescription), typeof(string), typeof(CalibrationPhotoCanvas), new PropertyMetadata("100%"));
     public static readonly DependencyProperty ViewDescriptionProperty = ViewDescriptionPropertyKey.DependencyProperty;
-    private static readonly DependencyPropertyKey SelectionDescriptionPropertyKey = DependencyProperty.RegisterReadOnly(nameof(SelectionDescription), typeof(string), typeof(CalibrationPhotoCanvas), new PropertyMetadata(L.T("滚轮缩放，右键平移；拖动控制点贴合边缘。")));
+    // The default stays empty: metadata is initialized once, so a localized default would
+    // keep the language that happened to be active when this type was first touched.
+    private static readonly DependencyPropertyKey SelectionDescriptionPropertyKey = DependencyProperty.RegisterReadOnly(nameof(SelectionDescription), typeof(string), typeof(CalibrationPhotoCanvas), new PropertyMetadata(string.Empty));
     public static readonly DependencyProperty SelectionDescriptionProperty = SelectionDescriptionPropertyKey.DependencyProperty;
 
     public BitmapSource? Image { get => (BitmapSource?)GetValue(ImageProperty); set => SetValue(ImageProperty, value); }
@@ -114,6 +116,7 @@ public sealed class CalibrationPhotoCanvas : FrameworkElement
             ThemeResolver.Changed += ThemeResolver_Changed;
             L.LanguageChanged -= Language_LanguageChanged;
             L.LanguageChanged += Language_LanguageChanged;
+            RefreshSelectionDescription();
             InvalidateVisual();
         };
         Unloaded += (_, _) =>
@@ -126,6 +129,12 @@ public sealed class CalibrationPhotoCanvas : FrameworkElement
     private void ThemeResolver_Changed(object? sender, EventArgs e) => InvalidateVisual();
 
     private void Language_LanguageChanged(object? sender, EventArgs e)
+    {
+        RefreshSelectionDescription();
+        InvalidateVisual();
+    }
+
+    private void RefreshSelectionDescription()
     {
         if (_boundaryDrag is { } boundary)
         {
@@ -142,8 +151,6 @@ public sealed class CalibrationPhotoCanvas : FrameworkElement
                 ? L.T("滚轮缩放，右键平移；拖动控制点贴合边缘。")
                 : L.T("滚轮缩放，右键平移；点击添加点，拖动已有点修正位置。"));
         }
-
-        InvalidateVisual();
     }
 
     public Point WorldToView(Point point) => ViewMatrix.Transform(point);

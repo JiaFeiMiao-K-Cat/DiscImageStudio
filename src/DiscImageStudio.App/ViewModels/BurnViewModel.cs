@@ -27,6 +27,13 @@ public partial class BurnViewModel : ObservableObject
     // The speeds the current disc reported, kept so the status line can be re-worded after a
     // language switch without touching the drive again.
     private IReadOnlyList<OpticalWriteSpeed>? _supportedSpeeds;
+    // Probe failures are cached for the same reason: their text carries an exception message
+    // that must not be replaced by the idle hint after a language switch. The in-flight flags
+    // keep a switch from showing the idle hint while a probe is still running.
+    private string? _deviceStatusError;
+    private string? _speedStatusError;
+    private bool _isRefreshingDevices;
+    private bool _isRefreshingSpeeds;
 
     [ObservableProperty]
     private IReadOnlyList<OpticalBurnDevice>? _devices;
@@ -326,7 +333,11 @@ public partial class BurnViewModel : ObservableObject
         OnPropertyChanged(nameof(FamilyLabel));
         UpdateSourceSummary();
         BurnStatusText = L.T(_burnStatusKey);
-        if (Devices is { } devices)
+        if (_isRefreshingDevices)
+        {
+            DeviceStatusText = L.T("正在检测刻录机…");
+        }
+        else if (Devices is { } devices)
         {
             DeviceStatusText = devices.Count == 0
                 ? L.T("未检测到支持 IMAPI2 的 CD/DVD/BD 刻录机。")
@@ -334,7 +345,9 @@ public partial class BurnViewModel : ObservableObject
         }
         else
         {
-            DeviceStatusText = L.T("进入此页面后会检测本机刻录机。");
+            DeviceStatusText = _deviceStatusError is { } deviceError
+                ? L.T("检测刻录机失败：") + deviceError
+                : L.T("进入此页面后会检测本机刻录机。");
         }
 
         foreach (BurnWriteSpeedOption option in Speeds)
@@ -347,6 +360,10 @@ public partial class BurnViewModel : ObservableObject
         {
             SpeedStatusText = L.T("请先选择刻录机。");
         }
+        else if (_isRefreshingSpeeds)
+        {
+            SpeedStatusText = L.T("正在读取当前盘片支持的刻录速度…");
+        }
         else if (_supportedSpeeds is { } supported)
         {
             OpticalBurnMediaKind mediaKind = CurrentMediaKind;
@@ -354,6 +371,11 @@ public partial class BurnViewModel : ObservableObject
                 ? L.T("当前盘片未报告可选速度，将使用刻录接口的保守回退设置。")
                 : L.F($"当前盘片报告 {supported.Count} 种写入配置；自动模式将使用最低值 ")
                     + L.F($"{FormatBurnWriteSpeed(supported[0], mediaKind)}，最终以刻录机采用值为准。");
+        }
+        else if (_speedStatusError is { } speedError)
+        {
+            SpeedStatusText =
+                L.T("未能读取当前盘片速度，将使用刻录接口的保守回退设置：") + speedError;
         }
 
         UpdateActionState();
@@ -369,6 +391,8 @@ public partial class BurnViewModel : ObservableObject
         }
 
         Devices = null;
+        _deviceStatusError = null;
+        _isRefreshingDevices = true;
         DeviceStatusText = L.T("正在检测刻录机…");
         try
         {
@@ -384,10 +408,12 @@ public partial class BurnViewModel : ObservableObject
         {
             Devices = null;
             SelectedDevice = null;
+            _deviceStatusError = exception.Message;
             DeviceStatusText = L.T("检测刻录机失败：") + exception.Message;
         }
         finally
         {
+            _isRefreshingDevices = false;
             UpdateActionState();
         }
     }
@@ -404,9 +430,13 @@ public partial class BurnViewModel : ObservableObject
         Speeds = [BurnWriteSpeedOption.Automatic];
         SelectedSpeed = BurnWriteSpeedOption.Automatic;
         _supportedSpeeds = null;
+        _speedStatusError = null;
 
         if (SelectedDevice is not OpticalBurnDevice device)
         {
+            // This call owns the latest revision, so it also clears the in-flight marker the
+            // superseded probe will no longer clear.
+            _isRefreshingSpeeds = false;
             IsSpeedComboEnabled = false;
             IsSpeedRefreshEnabled = false;
             SpeedStatusText = L.T("请先选择刻录机。");
@@ -414,6 +444,7 @@ public partial class BurnViewModel : ObservableObject
         }
 
         OpticalBurnMediaKind mediaKind = CurrentMediaKind;
+        _isRefreshingSpeeds = true;
         IsSpeedComboEnabled = false;
         IsSpeedRefreshEnabled = false;
         SpeedStatusText = L.T("正在读取当前盘片支持的刻录速度…");
@@ -447,6 +478,7 @@ public partial class BurnViewModel : ObservableObject
         {
             if (revision == _burnWriteSpeedRefreshRevision)
             {
+                _speedStatusError = exception.Message;
                 SpeedStatusText =
                     L.T("未能读取当前盘片速度，将使用刻录接口的保守回退设置：") + exception.Message;
             }
@@ -455,6 +487,7 @@ public partial class BurnViewModel : ObservableObject
         {
             if (revision == _burnWriteSpeedRefreshRevision)
             {
+                _isRefreshingSpeeds = false;
                 IsSpeedComboEnabled = true;
                 IsSpeedRefreshEnabled = true;
             }

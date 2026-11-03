@@ -22,7 +22,14 @@ public partial class SourceChip : UserControl
         InitializeComponent();
         UpdateText();
         UpdateActions();
-        Loaded += (_, _) => L.LanguageChanged += Language_LanguageChanged;
+        // The constructor may have run under the previous language and the control receives no
+        // language event while its page is detached, so re-read the text when it loads.
+        Loaded += (_, _) =>
+        {
+            UpdateText();
+            L.LanguageChanged -= Language_LanguageChanged;
+            L.LanguageChanged += Language_LanguageChanged;
+        };
         Unloaded += (_, _) => L.LanguageChanged -= Language_LanguageChanged;
     }
 

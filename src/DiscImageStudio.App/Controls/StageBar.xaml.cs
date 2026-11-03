@@ -61,7 +61,14 @@ public partial class StageBar : UserControl
     {
         InitializeComponent();
         RebuildItems();
-        Loaded += (_, _) => L.LanguageChanged += Language_LanguageChanged;
+        Loaded += (_, _) =>
+        {
+            // Stage labels are built with the constructor's language; a switch while this
+            // control is detached would otherwise survive until the next workspace change.
+            RebuildItems();
+            L.LanguageChanged -= Language_LanguageChanged;
+            L.LanguageChanged += Language_LanguageChanged;
+        };
         Unloaded += (_, _) => L.LanguageChanged -= Language_LanguageChanged;
     }
 

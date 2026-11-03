@@ -21,7 +21,9 @@
     "zh-CN": "GitHub",
     "en": "GitHub",
     "zh-TW": "GitHub",
-    "ja": "GitHub"
+    "ja": "GitHub",
+    "tr": "GitHub",
+    "es": "GitHub"
   },
   "Xaml.OpenSourceComponents": {
     "zh-CN": "开源组件",
@@ -388,12 +390,6 @@
     "en": "Collapse sidebar",
     "zh-TW": "收起側邊欄",
     "ja": "サイドバーを折りたたむ"
-  },
-  "Xaml.Browse2": {
-    "zh-CN": "浏览",
-    "en": "Browse",
-    "zh-TW": "瀏覽",
-    "ja": "参照"
   },
   "Xaml.ExportTheDesignCompositeAsABurnableImageAdjust": {
     "zh-CN": "导出设计页的合成图为可刻录的镜像。相关参数请在“工程设置”中修改",
@@ -1227,12 +1223,16 @@
     "zh-CN": "制盘",
     "en": "Disc making",
     "zh-TW": "製盤",
-    "ja": "ディスク作成"
+    "ja": "ディスク作成",
+    "tr": "Disk oluşturma",
+    "es": "Creación de discos"
   },
   "Xaml.GroupCalibration": {
     "zh-CN": "标定",
     "en": "Calibration",
     "zh-TW": "校準",
-    "ja": "キャリブレーション"
+    "ja": "キャリブレーション",
+    "tr": "Kalibrasyon",
+    "es": "Calibración"
   }
 }
