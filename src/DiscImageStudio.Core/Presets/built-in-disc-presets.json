@@ -61,8 +61,8 @@
     },
     {
       "id": "verbatim-dvd-r-azo-43533",
-      "displayName": "Verbatim DVD-R AZO (43533)（实测）",
-      "description": "Verbatim DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
+      "displayName": "Verbatim DVD-R AZO (43533/43523)（实测）",
+      "description": "Verbatim DVD-R AZO 43533/43523 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
       "totalSectors": 2297888,
       "innerRadiusMm": 23.991460627731737,
       "outerRadiusMm": 57.964893657925366,
@@ -72,6 +72,20 @@
       "pitchCubic": -4.670918950137523E-05,
       "displayNameResourceKey": "DiscPreset_VerbatimDvdAzo43533_DisplayName",
       "descriptionResourceKey": "DiscPreset_VerbatimDvdAzo43533_Description"
+    },
+    {
+      "id": "verbatim-dvd-plus-r-azo-43498",
+      "displayName": "Verbatim DVD+R AZO (43498)",
+      "description": "Verbatim DVD+R AZO 43498 标定参数：23.954070288547207-57.981456053451275 mm，共2,295,104 个扇区。",
+      "totalSectors": 2295104,
+      "innerRadiusMm": 23.954070288547207,
+      "outerRadiusMm": 57.981456053451275,
+      "channelBitLengthNm": 133.3,
+      "pitchLinear": -1.1055153059816393E-05,
+      "pitchQuadratic": -1.7233535436312236E-06,
+      "pitchCubic": 5.55123860136712E-06,
+	  "displayNameResourceKey": "DiscPreset_VerbatimDvdAzo43498_DisplayName",
+      "descriptionResourceKey": "DiscPreset_VerbatimDvdAzo43498_Description"
     },
     {
       "id": "dvd-5-80mm",
