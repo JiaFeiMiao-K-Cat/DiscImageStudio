@@ -53,7 +53,6 @@ public partial class ShellViewModel : ObservableObject
         Calibration = new CalibrationViewModel(this, State);
         Burn = new BurnViewModel(this, State, Design, opticalDiscBurner);
         Export = new ExportViewModel(this, State, Design);
-        About = new AboutViewModel();
         Design.CompositeRendered += Design_CompositeRendered;
         Design.DesignEdited += () => MarkProjectDirty();
         OpenOutputCommand = new RelayCommand(OpenOutput, () => OpenOutputEnabled);
@@ -91,8 +90,6 @@ public partial class ShellViewModel : ObservableObject
     public BurnViewModel Burn { get; }
 
     public CalibrationViewModel Calibration { get; }
-
-    public AboutViewModel About { get; }
 
     public ObservableCollection<ToastItem> Toasts { get; } = [];
 
@@ -358,6 +355,26 @@ public partial class ShellViewModel : ObservableObject
 
         LivePreview.OnWindowLoaded();
         Home.RefreshRecentProjects();
+    }
+
+    /// <summary>Re-reads the text that view models cached while the old language was active.
+    /// XAML follows its own binding; running job text and the run log are left alone because
+    /// they describe work that already happened.</summary>
+    internal void Relocalize()
+    {
+        if (!IsJobRunning && !HasLogContent)
+        {
+            JobTitle = L.T("就绪");
+            JobStatusText = L.T("尚未运行任务。");
+        }
+
+        State.Relocalize();
+        Home.Relocalize();
+        LivePreview.Relocalize();
+        Design.Relocalize();
+        Burn.Relocalize();
+        Export.Relocalize();
+        Calibration.Relocalize();
     }
 
     /// <summary>Back home leaves the open project behind (the sidebar hides), so it belongs
@@ -797,12 +814,40 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.ToneSrgbLinearization),
     ];
 
+    // Notifications that only re-render localized text. Relocalize re-raises exactly these
+    // properties; none of them changes a preview input, so the live preview keeps its result
+    // and any read-back that is already running.
+    private static readonly string[] TextOnlyStateProperties =
+    [
+        nameof(DiscParametersState.CdPresets),
+        nameof(DiscParametersState.DvdPresets),
+        nameof(DiscParametersState.BluRayPresets),
+        nameof(DiscParametersState.SelectedCdPreset),
+        nameof(DiscParametersState.SelectedDvdPreset),
+        nameof(DiscParametersState.SelectedBluRayPreset),
+        nameof(DiscParametersState.CdPresetHint),
+        nameof(DiscParametersState.DvdPresetHint),
+        nameof(DiscParametersState.BluRayPresetHint),
+        nameof(DiscParametersState.ToneSummary),
+        nameof(DiscParametersState.CdOutputLabel),
+        nameof(DiscParametersState.CdOutputHint),
+        nameof(DiscParametersState.DvdPitchSummary),
+        nameof(DiscParametersState.DvdActualPitchSummary),
+    ];
+
     private void State_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         // Any parameter edit refreshes the burn summary and schedules the debounced live
         // preview; both were driven by TextChanged/SelectionChanged before the merge.
         Burn?.UpdateSourceSummary();
-        LivePreview?.Schedule();
+        // A language switch re-raises the selector lists, hints and summaries below without
+        // changing any preview input. Scheduling on those notifications would cancel an
+        // in-flight read-back and recompute the identical frame.
+        if (Array.IndexOf(TextOnlyStateProperties, e.PropertyName) < 0)
+        {
+            LivePreview?.Schedule();
+        }
+
         if (e.PropertyName is nameof(DiscParametersState.CdInnerRadius)
             or nameof(DiscParametersState.CdOuterRadius)
             or nameof(DiscParametersState.DvdInnerRadius)

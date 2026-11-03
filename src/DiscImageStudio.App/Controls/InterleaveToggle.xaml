@@ -8,7 +8,6 @@
          for its own direction; the default points at the correlation between them. -->
     <StackPanel Orientation="Horizontal">
         <CheckBox x:Name="Toggle" VerticalAlignment="Center"
-                  Content="{Binding Label, RelativeSource={RelativeSource AncestorType=UserControl}}"
                   IsChecked="{Binding IsChecked, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=UserControl}}" />
         <controls:HelpHint x:Name="HintSpot" Margin="8,0,0,0" VerticalAlignment="Center" />
     </StackPanel>

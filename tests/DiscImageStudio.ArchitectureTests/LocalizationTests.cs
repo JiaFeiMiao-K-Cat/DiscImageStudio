@@ -188,7 +188,8 @@ internal static class LocalizationTests
         L.Initialize(L.TraditionalChinese);
         Require(L.CurrentLanguage == L.TraditionalChinese && CultureInfo.CurrentUICulture.Name == L.TraditionalChinese,
             "Traditional Chinese initializes the requested UI culture");
-        Require(L.T("Xaml.SettingsButton") == "設定", "Traditional Chinese resolves from the embedded catalog");
+        Require(L.T("Xaml.OpenSettingsShortcut") == "開啟設定 (Ctrl+,)",
+            "Traditional Chinese resolves from the embedded catalog");
         Require(L.T("unregistered localization key") == "unregistered localization key",
             "Traditional Chinese preserves the missing-key fallback");
         Require(ReferenceEquals(CultureInfo.CurrentCulture, numericCulture),

@@ -59,6 +59,15 @@ public class PreviewInspectorViewModel : ObservableObject
         }
     }
 
+    /// <summary>Re-reads the two written hints and the pitch read-out. The projected paths and
+    /// values have no language of their own.</summary>
+    internal void Relocalize()
+    {
+        OnPropertyChanged(nameof(ArtifactLabel));
+        OnPropertyChanged(nameof(ArtifactHint));
+        OnPropertyChanged(nameof(MeasuredPitchSummary));
+    }
+
     // ---- Read-back mode: the generated artifact is the input ----
 
     public string ArtifactLabel => _family switch

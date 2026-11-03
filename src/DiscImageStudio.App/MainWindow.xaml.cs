@@ -71,9 +71,9 @@ public partial class MainWindow : Window
         _navItems =
         [
             (NavDesign, Workspace.Design),
-            (NavPreview, Workspace.Preview),
             (NavExport, Workspace.Export),
             (NavBurn, Workspace.Burn),
+            (NavPreview, Workspace.Preview),
             (NavCalibration, Workspace.Calibration),
         ];
         foreach ((SideNavItem item, Workspace workspace) in _navItems)
@@ -82,6 +82,7 @@ public partial class MainWindow : Window
         }
 
         _shell.PropertyChanged += Shell_PropertyChanged;
+        L.LanguageChanged += Language_LanguageChanged;
         UpdateNavActive(Workspace.Home);
         UpdateProjectHeader();
         UpdateStageBars();
@@ -414,9 +415,20 @@ public partial class MainWindow : Window
 
     private void MainWindow_Closed(object? sender, EventArgs e)
     {
+        L.LanguageChanged -= Language_LanguageChanged;
         _workArea.Dispose();
         _shell.LivePreview.OnWindowClosed();
         _shell.Calibration.OnWindowClosed();
+    }
+
+    /// <summary>XAML text follows the language revision binding; code-built strings (view
+    /// model fields, window-owned tooltips) are refreshed here so the switch is complete
+    /// without reopening the window.</summary>
+    private void Language_LanguageChanged(object? sender, EventArgs e)
+    {
+        UpdateSidebarCollapse();
+        UpdateProjectHeader();
+        _shell.Relocalize();
     }
 
     private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -558,32 +570,9 @@ public partial class MainWindow : Window
         ProjectUpdateBadge.BeginAnimation(OpacityProperty, badge);
     }
 
-    // ---- Application menu (title bar) ----
-
-    private void TitleBar_AppMenuRequested(object sender, RoutedEventArgs e)
-    {
-        if (FindResource("AppMenu") is not ContextMenu menu || sender is not TitleBar titleBar)
-        {
-            return;
-        }
-
-        FrameworkElement target = titleBar.AppMenuAnchor;
-        menu.PlacementTarget = target;
-        menu.Placement = PlacementMode.Bottom;
-        menu.HorizontalOffset = 0;
-        menu.IsOpen = true;
-        // The menu is wider than the 46px title-bar button; align its right edge with the
-        // button's right edge so it stays inside the window instead of hanging off-screen.
-        menu.HorizontalOffset = Math.Min(0, target.ActualWidth - menu.ActualWidth);
-    }
+    // ---- Settings (title bar gear) ----
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettingsDialog();
-
-    private void AppMenuAbout_Click(object sender, RoutedEventArgs e)
-    {
-        AboutWindow window = new(_shell.About) { Owner = this };
-        window.ShowDialog();
-    }
 
     /// <summary>Opens the settings modal. A successful Save applies the theme immediately and
     /// points new cache writes at the chosen folder.</summary>
@@ -629,10 +618,11 @@ public partial class MainWindow : Window
             ThemeResolver.Apply(application, settings.Theme);
         }
 
+        // The switch runs before the toast so the confirmation itself is already in the new
+        // language; nothing is recreated, so open projects and unsaved edits survive.
         if (languageChanged)
         {
-            _shell.ShowToast(Localization.L.T("语言设置已保存"),
-                Localization.L.T("重启应用后生效。"), ToastKind.Info);
+            L.SetLanguage(settings.Language);
         }
 
         string cacheDirectory = TempFiles.TryConfigureCacheDirectory(settings.CacheDirectory);
@@ -640,6 +630,11 @@ public partial class MainWindow : Window
             && !string.Equals(cacheDirectory, settings.CacheDirectory, StringComparison.OrdinalIgnoreCase))
         {
             _shell.ShowToast(L.T("缓存位置不可用"), L.T("已改用系统临时目录。"), ToastKind.Warning);
+        }
+
+        if (languageChanged)
+        {
+            _shell.ShowToast(L.T("语言设置已保存"), L.T("界面文字已立即更新。"), ToastKind.Info);
         }
     }
 
@@ -874,32 +869,37 @@ public partial class MainWindow : Window
         // Auto-collapse owns the narrow layout, so the manual toggle is meaningless there;
         // it comes back once the window widens past the breakpoint.
         SidebarCollapseToggle.Visibility = narrow ? Visibility.Collapsed : Visibility.Visible;
-        if (collapsed == _isSidebarCollapsed)
+        if (collapsed != _isSidebarCollapsed)
         {
-            return;
+            double sidebarWidth = ThemeValues.Double("SidebarWidth", 288);
+            double sidebarCollapsedWidth = ThemeValues.Double("SidebarCollapsedWidth", 72);
+            double from = _isSidebarCollapsed ? sidebarCollapsedWidth : sidebarWidth;
+            double to = collapsed ? sidebarCollapsedWidth : sidebarWidth;
+            _isSidebarCollapsed = collapsed;
+            SidebarBorder.BeginAnimation(
+                WidthProperty,
+                new DoubleAnimation(from, to, Motion.Fast) { EasingFunction = Motion.EaseOut });
+            foreach ((SideNavItem item, _) in _navItems)
+            {
+                item.IsCollapsed = collapsed;
+            }
+
+            ProjectHeaderButton.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
+            SaveProjectButton.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
+            // Group captions only make sense with labels to group; the collapsed icon rail is flat.
+            DiscMakingGroupHeader.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
+            CalibrationGroupHeader.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
+            // 16 matches the expanded margin in MainWindow.xaml; a different value here made the
+            // whole nav jump on the first toggle.
+            TopNavPanel.Margin = collapsed ? new Thickness(0, 20, 0, 0) : new Thickness(0, 16, 0, 0);
+            SidebarGrid.Margin = collapsed ? new Thickness(0) : new Thickness(24, 0, 24, 0);
+            BackHomeButton.HorizontalAlignment = collapsed ? HorizontalAlignment.Center : HorizontalAlignment.Left;
+            CollapseLeftIcon.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
+            CollapseRightIcon.Visibility = collapsed ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        double sidebarWidth = ThemeValues.Double("SidebarWidth", 288);
-        double sidebarCollapsedWidth = ThemeValues.Double("SidebarCollapsedWidth", 72);
-        double from = _isSidebarCollapsed ? sidebarCollapsedWidth : sidebarWidth;
-        double to = collapsed ? sidebarCollapsedWidth : sidebarWidth;
-        _isSidebarCollapsed = collapsed;
-        SidebarBorder.BeginAnimation(
-            WidthProperty,
-            new DoubleAnimation(from, to, Motion.Fast) { EasingFunction = Motion.EaseOut });
-        foreach ((SideNavItem item, _) in _navItems)
-        {
-            item.IsCollapsed = collapsed;
-        }
-
-        ProjectHeaderButton.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
-        // 16 matches the expanded margin in MainWindow.xaml; a different value here made the
-        // whole nav jump on the first toggle.
-        TopNavPanel.Margin = collapsed ? new Thickness(0, 20, 0, 0) : new Thickness(0, 16, 0, 0);
-        SidebarGrid.Margin = collapsed ? new Thickness(0) : new Thickness(24, 0, 24, 0);
-        BackHomeButton.HorizontalAlignment = collapsed ? HorizontalAlignment.Center : HorizontalAlignment.Left;
-        CollapseLeftIcon.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
-        CollapseRightIcon.Visibility = collapsed ? Visibility.Visible : Visibility.Collapsed;
+        // The tooltip is the one label here that is not an XAML binding, so it refreshes on
+        // every call, including a language switch while the collapse state is unchanged.
         SidebarCollapseToggle.ToolTip = collapsed ? L.T("展开侧边栏") : L.T("收起侧边栏");
     }
 }

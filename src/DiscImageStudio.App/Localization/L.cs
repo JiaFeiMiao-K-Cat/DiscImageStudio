@@ -5,9 +5,10 @@ using System.Text.Json;
 
 namespace DiscImageStudio.Localization;
 
-/// <summary>Application text. Language is selected before any windows are constructed;
-/// changing the saved preference takes effect on the next launch. Numeric culture is
-/// deliberately left alone so engineering parameters and file formats retain their rules.</summary>
+/// <summary>Application text. The saved preference is applied before any windows are
+/// constructed and can be switched again at runtime through <see cref="SetLanguage"/>; XAML
+/// text follows through <see cref="LanguageChanged"/>. Numeric culture is deliberately left
+/// alone so engineering parameters and file formats retain their rules.</summary>
 public static class L
 {
     public const string Chinese = "zh-CN";
@@ -21,6 +22,10 @@ public static class L
     private static readonly IReadOnlyDictionary<string, Dictionary<string, string>> Catalog = LoadCatalog();
 
     public static string CurrentLanguage { get; private set; } = Chinese;
+
+    /// <summary>Raised after <see cref="SetLanguage"/> resolves to a different language. Views
+    /// rebuilt from XAML bindings refresh themselves; cached text in view models listens too.</summary>
+    public static event EventHandler? LanguageChanged;
 
     public static string NormalizeLanguage(string? language) => language?.Trim().ToLowerInvariant() switch
     {
@@ -57,12 +62,24 @@ public static class L
         || name.Equals("zh-Hant", StringComparison.OrdinalIgnoreCase)
         || name.StartsWith("zh-Hant-", StringComparison.OrdinalIgnoreCase);
 
-    public static void Initialize(string? language)
+    public static void Initialize(string? language) => ApplyLanguage(language, notify: false);
+
+    /// <summary>Switches the UI language in place. Existing windows refresh through
+    /// <see cref="LanguageChanged"/>; nothing is recreated, so unsaved work survives.</summary>
+    public static void SetLanguage(string? language) => ApplyLanguage(language, notify: true);
+
+    private static void ApplyLanguage(string? language, bool notify)
     {
-        CurrentLanguage = ResolveLanguage(language);
-        CultureInfo culture = CultureInfo.GetCultureInfo(CurrentLanguage);
+        string resolved = ResolveLanguage(language);
+        bool changed = !string.Equals(CurrentLanguage, resolved, StringComparison.Ordinal);
+        CurrentLanguage = resolved;
+        CultureInfo culture = CultureInfo.GetCultureInfo(resolved);
         CultureInfo.CurrentUICulture = culture;
         CultureInfo.DefaultThreadCurrentUICulture = culture;
+        if (notify && changed)
+        {
+            LanguageChanged?.Invoke(null, EventArgs.Empty);
+        }
     }
 
     public static string T(string key)
