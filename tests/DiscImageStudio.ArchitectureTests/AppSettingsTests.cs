@@ -131,6 +131,10 @@ internal static class AppSettingsTests
             ("ja", "ja"),
             ("ja-JP", "ja"),
             ("JA-jp", "ja"),
+            ("tr", "tr"),
+            ("tr-TR", "tr"),
+            ("TR-tr", "tr"),
+            ("tr-CY", "tr"),
         ];
         foreach ((string stored, string canonical) in cases)
         {

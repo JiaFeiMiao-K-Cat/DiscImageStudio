@@ -52,10 +52,11 @@ public partial class SettingsViewModel : ObservableObject
         LanguageIndex = normalized.Language switch
         {
             L.SystemLanguage => 0,
+            L.Chinese => 1,
             L.TraditionalChinese => 2,
             L.English => 3,
             L.Japanese => 4,
-            L.Chinese => 1,
+            L.Turkish => 5,
             _ => 0,
         };
         ThemeIndex = normalized.Theme switch
@@ -146,10 +147,11 @@ public partial class SettingsViewModel : ObservableObject
             Language = LanguageIndex switch
             {
                 0 => L.SystemLanguage,
+                1 => L.Chinese,
                 2 => L.TraditionalChinese,
                 3 => L.English,
                 4 => L.Japanese,
-                1 => L.Chinese,
+                5 => L.Turkish,
                 _ => L.SystemLanguage,
             },
             Theme = ThemeIndex switch

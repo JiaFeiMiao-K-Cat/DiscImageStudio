@@ -68,6 +68,7 @@
                                     <ComboBoxItem Content="{loc:Text Settings.TraditionalChinese}" />
                                     <ComboBoxItem Content="English" />
                                     <ComboBoxItem Content="日本語" />
+                                    <ComboBoxItem Content="Türkçe" />
                                 </ComboBox>
                             </StackPanel>
                         </controls:SectionCard>

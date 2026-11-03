@@ -3,1434 +3,1673 @@
     "zh-CN": "\n\n如果写入已经开始，当前盘片可能无法继续使用。",
     "en": "\n\nIf writing has started, the disc may no longer be usable.",
     "zh-TW": "\n\n如果寫入已經開始，目前光碟片可能無法繼續使用。",
-    "ja": "\n\n書き込みが開始されている場合、このディスクは使用できなくなる可能性があります。"
+    "ja": "\n\n書き込みが開始されている場合、このディスクは使用できなくなる可能性があります。",
+    "tr": "\n\nEğer yazma işlemi başladıysa mevcut disk bir daha kullanılamayabilir."
   },
   "\n[{0:HH:mm:ss}] 开始流式刻录：{1}；": {
     "zh-CN": "\n[{0:HH:mm:ss}] 开始流式刻录：{1}；",
     "en": "\n[{0:HH:mm:ss}] Starting streaming burn: {1}; ",
     "zh-TW": "\n[{0:HH:mm:ss}] 開始串流燒錄：{1}；",
-    "ja": "\n[{0:HH:mm:ss}] ストリーミング書き込みを開始：{1}；"
+    "ja": "\n[{0:HH:mm:ss}] ストリーミング書き込みを開始：{1}；",
+    "tr": "\n[{0:HH:mm:ss}] Akışla yazma başlatılıyor: {1};"
   },
   "\n已标记 {0} 个偏离较大的点。": {
     "zh-CN": "\n已标记 {0} 个偏离较大的点。",
     "en": "\nFlagged {0} outlier points.",
     "zh-TW": "\n已標記 {0} 個偏離較大的點。",
-    "ja": "\n大きく外れた点を {0} 個マークしました。"
+    "ja": "\n大きく外れた点を {0} 個マークしました。",
+    "tr": "\n{0} adet büyük sapmalı nokta işaretlendi."
   },
   "\n已自动扩大搜索至 ±{0:0.###} mm。": {
     "zh-CN": "\n已自动扩大搜索至 ±{0:0.###} mm。",
     "en": "\nSearch automatically expanded to ±{0:0.###} mm.",
     "zh-TW": "\n已自動擴大搜尋至 ±{0:0.###} mm。",
-    "ja": "\n検索範囲を ±{0:0.###} mm に自動拡大しました。"
+    "ja": "\n検索範囲を ±{0:0.###} mm に自動拡大しました。",
+    "tr": "\nArama aralığı otomatik olarak ±{0:0.###} mm'ye genişletildi."
   },
   "\n最优靠近搜索边界，请补充曲线点或检查点位。": {
     "zh-CN": "\n最优靠近搜索边界，请补充曲线点或检查点位。",
     "en": "\nThe best result is near the search boundary. Add curve points or check their positions.",
     "zh-TW": "\n最佳結果靠近搜尋邊界，請補充曲線點或檢查點位。",
-    "ja": "\n最適値が検索範囲の境界付近にあります。曲線点を追加するか、点の位置を確認してください。"
+    "ja": "\n最適値が検索範囲の境界付近にあります。曲線点を追加するか、点の位置を確認してください。",
+    "tr": "\nEn iyi sonuç arama sınırına yakın. Lütfen eğri noktaları ekleyin veya konumlarını denetleyin."
   },
   " · {0} px · 每扇区 {1} 个采样": {
     "zh-CN": " · {0} px · 每扇区 {1} 个采样",
     "en": " · {0} px · {1} samples per sector",
     "zh-TW": " · {0} px · 每磁區 {1} 個取樣",
-    "ja": " · {0} px · セクターあたり {1} サンプル"
+    "ja": " · {0} px · セクターあたり {1} サンプル",
+    "tr": " · {0} px · sektör başına {1} örnek"
   },
   " · {0} 扇区 · {1:F1} MiB": {
     "zh-CN": " · {0} 扇区 · {1:F1} MiB",
     "en": " · {0} sectors · {1:F1} MiB",
     "zh-TW": " · {0} 磁區 · {1:F1} MiB",
-    "ja": " · {0} セクター · {1:F1} MiB"
+    "ja": " · {0} セクター · {1:F1} MiB",
+    "tr": " · {0} sektör · {1:F1} MiB"
   },
   " · {0} 扇区 · {1}\n": {
     "zh-CN": " · {0} 扇区 · {1}\n",
     "en": " · {0} sectors · {1}\n",
     "zh-TW": " · {0} 磁區 · {1}\n",
-    "ja": " · {0} セクター · {1}\n"
+    "ja": " · {0} セクター · {1}\n",
+    "tr": " · {0} sektör · {1}\n"
   },
   " · 反转 3T/6T": {
     "zh-CN": " · 反转 3T/6T",
     "en": " · Inverted 3T/6T",
     "zh-TW": " · 反轉 3T/6T",
-    "ja": " · 反転 3T/6T"
+    "ja": " · 反転 3T/6T",
+    "tr": " · Ters 3T/6T"
   },
   " · 抖动 {0:0}% · {1} px": {
     "zh-CN": " · 抖动 {0:0}% · {1} px",
     "en": " · Dither {0:0}% · {1} px",
     "zh-TW": " · 抖動 {0:0}% · {1} px",
-    "ja": " · ディザ {0:0}% · {1} px"
+    "ja": " · ディザ {0:0}% · {1} px",
+    "tr": " · Sarsıntı %{0:0} · {1} px"
   },
   " · 文件：{0}": {
     "zh-CN": " · 文件：{0}",
     "en": " · Files: {0}",
     "zh-TW": " · 檔案：{0}",
-    "ja": " · ファイル：{0}"
+    "ja": " · ファイル：{0}",
+    "tr": " · Dosyalar: {0}"
   },
   " · 标准 3T/6T": {
     "zh-CN": " · 标准 3T/6T",
     "en": " · Standard 3T/6T",
     "zh-TW": " · 標準 3T/6T",
-    "ja": " · 標準 3T/6T"
+    "ja": " · 標準 3T/6T",
+    "tr": " · Standart 3T/6T"
   },
   " · 每扇区 {0} 个采样": {
     "zh-CN": " · 每扇区 {0} 个采样",
     "en": " · {0} samples per sector",
     "zh-TW": " · 每磁區 {0} 個取樣",
-    "ja": " · セクターあたり {0} サンプル"
+    "ja": " · セクターあたり {0} サンプル",
+    "tr": " · sektör başına {0} örnek"
   },
   " · 绘图 LBA {0}–{1}": {
     "zh-CN": " · 绘图 LBA {0}–{1}",
     "en": " · Drawing LBA {0}–{1}",
     "zh-TW": " · 繪圖 LBA {0}–{1}",
-    "ja": " · 描画 LBA {0}–{1}"
+    "ja": " · 描画 LBA {0}–{1}",
+    "tr": " · Çizim LBA {0}–{1}"
   },
   "BD-R · {0} 扇区": {
     "zh-CN": "BD-R · {0} 扇区",
     "en": "BD-R · {0} sectors",
     "zh-TW": "BD-R · {0} 磁區",
-    "ja": "BD-R · {0} セクター"
+    "ja": "BD-R · {0} セクター",
+    "tr": "BD-R · {0} sektör"
   },
   "CD 内半径": {
     "zh-CN": "CD 内半径",
     "en": "CD inner radius",
     "zh-TW": "CD 內半徑",
-    "ja": "CD 内半径"
+    "ja": "CD 内半径",
+    "tr": "CD iç yarıçapı"
   },
   "CD 外半径": {
     "zh-CN": "CD 外半径",
     "en": "CD outer radius",
     "zh-TW": "CD 外半徑",
-    "ja": "CD 外半径"
+    "ja": "CD 外半径",
+    "tr": "CD dış yarıçapı"
   },
   "CD 扇区数": {
     "zh-CN": "CD 扇区数",
     "en": "CD sector count",
     "zh-TW": "CD 磁區數",
-    "ja": "CD セクター数"
+    "ja": "CD セクター数",
+    "tr": "CD sektör sayısı"
   },
   "CD 数据盘": {
     "zh-CN": "CD 数据盘",
     "en": "CD data disc",
     "zh-TW": "CD 資料光碟",
-    "ja": "CD データ ディスク"
+    "ja": "CD データ ディスク",
+    "tr": "CD veri diski"
   },
   "CD 数据盘 · 文件位于{0}": {
     "zh-CN": "CD 数据盘 · 文件位于{0}",
     "en": "CD data disc · Files at the {0}",
     "zh-TW": "CD 資料光碟 · 檔案位於{0}",
-    "ja": "CD データ ディスク · ファイルは{0}"
+    "ja": "CD データ ディスク · ファイルは{0}",
+    "tr": "CD veri diski · Dosyalar {0} bölgesinde"
   },
   "CD 数据盘（DAO） · 文件位于{0}": {
     "zh-CN": "CD 数据盘（DAO） · 文件位于{0}",
     "en": "CD data disc (DAO) · Files at the {0}",
     "zh-TW": "CD 資料光碟（DAO） · 檔案位於{0}",
-    "ja": "CD データ ディスク（DAO） · ファイルは{0}"
+    "ja": "CD データ ディスク（DAO） · ファイルは{0}",
+    "tr": "CD veri diski (DAO) · Dosyalar {0} bölgesinde"
   },
   "CD 源图片不存在。": {
     "zh-CN": "CD 源图片不存在。",
     "en": "The CD source image does not exist.",
     "zh-TW": "CD 來源圖片不存在。",
-    "ja": "CD のソース画像が存在しません。"
+    "ja": "CD のソース画像が存在しません。",
+    "tr": "CD kaynak görseli mevcut değil."
   },
   "CD 音轨": {
     "zh-CN": "CD 音轨",
     "en": "CD audio track",
     "zh-TW": "CD 音軌",
-    "ja": "CD オーディオ トラック"
+    "ja": "CD オーディオ トラック",
+    "tr": "CD ses izi"
   },
   "CD 音轨 · 启用延迟交织": {
     "zh-CN": "CD 音轨 · 启用延迟交织",
     "en": "CD audio track · Delayed interleaving enabled",
     "zh-TW": "CD 音軌 · 啟用延遲交織",
-    "ja": "CD オーディオ トラック · 遅延インターリーブ有効"
+    "ja": "CD オーディオ トラック · 遅延インターリーブ有効",
+    "tr": "CD ses izi · Gecikmeli serpiştirme etkin"
   },
   "CD 音轨 · 未交织": {
     "zh-CN": "CD 音轨 · 未交织",
     "en": "CD audio track · Not interleaved",
     "zh-TW": "CD 音軌 · 未交織",
-    "ja": "CD オーディオ トラック · インターリーブなし"
+    "ja": "CD オーディオ トラック · インターリーブなし",
+    "tr": "CD ses izi · Serpiştirilmemiş"
   },
   "CD 音轨|*.wav|CD 原始音轨|*.raw": {
     "zh-CN": "CD 音轨|*.wav|CD 原始音轨|*.raw",
     "en": "CD audio tracks|*.wav|CD raw audio tracks|*.raw",
     "zh-TW": "CD 音軌|*.wav|CD 原始音軌|*.raw",
-    "ja": "CD オーディオ トラック|*.wav|CD RAW オーディオ トラック|*.raw"
+    "ja": "CD オーディオ トラック|*.wav|CD RAW オーディオ トラック|*.raw",
+    "tr": "CD ses izleri|*.wav|CD ham ses izleri|*.raw"
   },
   "CD 音轨或 ISO 文件不存在。": {
     "zh-CN": "CD 音轨或 ISO 文件不存在。",
     "en": "The CD audio track or ISO file does not exist.",
     "zh-TW": "CD 音軌或 ISO 檔案不存在。",
-    "ja": "CD オーディオ トラックまたは ISO ファイルが存在しません。"
+    "ja": "CD オーディオ トラックまたは ISO ファイルが存在しません。",
+    "tr": "CD ses izi veya ISO dosyası mevcut değil."
   },
   "DVD ISO 文件不存在。": {
     "zh-CN": "DVD ISO 文件不存在。",
     "en": "The DVD ISO file does not exist.",
     "zh-TW": "DVD ISO 檔案不存在。",
-    "ja": "DVD ISO ファイルが存在しません。"
+    "ja": "DVD ISO ファイルが存在しません。",
+    "tr": "DVD ISO dosyası mevcut değil."
   },
   "DVD · {0} 扇区 · {1:F1} MiB": {
     "zh-CN": "DVD · {0} 扇区 · {1:F1} MiB",
     "en": "DVD · {0} sectors · {1:F1} MiB",
     "zh-TW": "DVD · {0} 磁區 · {1:F1} MiB",
-    "ja": "DVD · {0} セクター · {1:F1} MiB"
+    "ja": "DVD · {0} セクター · {1:F1} MiB",
+    "tr": "DVD · {0} sektör · {1:F1} MiB"
   },
   "DVD 内半径": {
     "zh-CN": "DVD 内半径",
     "en": "DVD inner radius",
     "zh-TW": "DVD 內半徑",
-    "ja": "DVD 内半径"
+    "ja": "DVD 内半径",
+    "tr": "DVD iç yarıçapı"
   },
   "DVD 外半径": {
     "zh-CN": "DVD 外半径",
     "en": "DVD outer radius",
     "zh-TW": "DVD 外半徑",
-    "ja": "DVD 外半径"
+    "ja": "DVD 外半径",
+    "tr": "DVD dış yarıçapı"
   },
   "DVD 总扇区数": {
     "zh-CN": "DVD 总扇区数",
     "en": "DVD total sectors",
     "zh-TW": "DVD 總磁區數",
-    "ja": "DVD 総セクター数"
+    "ja": "DVD 総セクター数",
+    "tr": "DVD toplam sektör sayısı"
   },
   "DVD 扇区数": {
     "zh-CN": "DVD 扇区数",
     "en": "DVD sector count",
     "zh-TW": "DVD 磁區數",
-    "ja": "DVD セクター数"
+    "ja": "DVD セクター数",
+    "tr": "DVD sektör sayısı"
   },
   "DVD 标定预览引擎未能完成渲染。": {
     "zh-CN": "DVD 标定预览引擎未能完成渲染。",
     "en": "The DVD calibration preview engine could not complete rendering.",
     "zh-TW": "DVD 校準預覽引擎未能完成算繪。",
-    "ja": "DVD キャリブレーション プレビュー エンジンはレンダリングを完了できませんでした。"
+    "ja": "DVD キャリブレーション プレビュー エンジンはレンダリングを完了できませんでした。",
+    "tr": "DVD kalibrasyon önizleme motoru işlemeyi tamamlayamadı."
   },
   "DVD 混合盘 · {0} 个文件（{1}）": {
     "zh-CN": "DVD 混合盘 · {0} 个文件（{1}）",
     "en": "DVD hybrid disc · {0} files ({1})",
     "zh-TW": "DVD 混合光碟 · {0} 個檔案（{1}）",
-    "ja": "DVD ハイブリッド ディスク · {0} 個のファイル（{1}）"
+    "ja": "DVD ハイブリッド ディスク · {0} 個のファイル（{1}）",
+    "tr": "DVD hibrit diski · {0} dosya ({1})"
   },
   "DVD 源图片不存在。": {
     "zh-CN": "DVD 源图片不存在。",
     "en": "The DVD source image does not exist.",
     "zh-TW": "DVD 來源圖片不存在。",
-    "ja": "DVD のソース画像が存在しません。"
+    "ja": "DVD のソース画像が存在しません。",
+    "tr": "DVD kaynak görseli mevcut değil."
   },
   "DVD 相对一次项": {
     "zh-CN": "DVD 相对一次项",
     "en": "DVD relative linear coefficient",
     "zh-TW": "DVD 相對一次項",
-    "ja": "DVD 相対 1 次係数"
+    "ja": "DVD 相対 1 次係数",
+    "tr": "DVD bağıl doğrusal katsayı"
   },
   "DVD 相对三次项": {
     "zh-CN": "DVD 相对三次项",
     "en": "DVD relative cubic coefficient",
     "zh-TW": "DVD 相對三次項",
-    "ja": "DVD 相対 3 次係数"
+    "ja": "DVD 相対 3 次係数",
+    "tr": "DVD bağıl kübik katsayı"
   },
   "DVD 相对二次项": {
     "zh-CN": "DVD 相对二次项",
     "en": "DVD relative quadratic coefficient",
     "zh-TW": "DVD 相對二次項",
-    "ja": "DVD 相対 2 次係数"
+    "ja": "DVD 相対 2 次係数",
+    "tr": "DVD bağıl karesel katsayı"
   },
   "DVD 读回模拟引擎未能完成渲染。": {
     "zh-CN": "DVD 读回模拟引擎未能完成渲染。",
     "en": "The DVD readback simulation engine could not complete rendering.",
     "zh-TW": "DVD 讀回模擬引擎未能完成算繪。",
-    "ja": "DVD 読み戻しシミュレーション エンジンはレンダリングを完了できませんでした。"
+    "ja": "DVD 読み戻しシミュレーション エンジンはレンダリングを完了できませんでした。",
+    "tr": "DVD geri okuma simülasyon motoru işlemeyi tamamlayamadı."
   },
   "DVD 轨距一次项": {
     "zh-CN": "DVD 轨距一次项",
     "en": "DVD pitch linear coefficient",
     "zh-TW": "DVD 軌距一次項",
-    "ja": "DVD トラックピッチ 1 次係数"
+    "ja": "DVD トラックピッチ 1 次係数",
+    "tr": "DVD iz aralığı doğrusal katsayısı"
   },
   "DVD 轨距三次项": {
     "zh-CN": "DVD 轨距三次项",
     "en": "DVD pitch cubic coefficient",
     "zh-TW": "DVD 軌距三次項",
-    "ja": "DVD トラックピッチ 3 次係数"
+    "ja": "DVD トラックピッチ 3 次係数",
+    "tr": "DVD iz aralığı kübik katsayısı"
   },
   "DVD 轨距二次项": {
     "zh-CN": "DVD 轨距二次项",
     "en": "DVD pitch quadratic coefficient",
     "zh-TW": "DVD 軌距二次項",
-    "ja": "DVD トラックピッチ 2 次係数"
+    "ja": "DVD トラックピッチ 2 次係数",
+    "tr": "DVD iz aralığı karesel katsayısı"
   },
   "PNG 与标定记录已导出。刻录请使用本页的生成或流式刻录按钮，以保持坐标比例。": {
     "zh-CN": "PNG 与标定记录已导出。刻录请使用本页的生成或流式刻录按钮，以保持坐标比例。",
     "en": "PNG and calibration record exported. Use this page’s generation or streaming burn buttons to preserve the coordinate scale.",
     "zh-TW": "PNG 與校準記錄已匯出。燒錄請使用本頁的產生或串流燒錄按鈕，以保持座標比例。",
-    "ja": "PNG とキャリブレーション記録をエクスポートしました。座標の縮尺を保つため、書き込みにはこのページの生成ボタンまたはストリーミング書き込みボタンを使用してください。"
+    "ja": "PNG とキャリブレーション記録をエクスポートしました。座標の縮尺を保つため、書き込みにはこのページの生成ボタンまたはストリーミング書き込みボタンを使用してください。",
+    "tr": "PNG ve kalibrasyon kaydı dışa aktarıldı. Koordinat ölçeğini korumak için lütfen bu sayfadaki oluşturma veya akışla yazma düğmelerini kullanın."
   },
   "PNG 图案|*.png": {
     "zh-CN": "PNG 图案|*.png",
     "en": "PNG patterns|*.png",
     "zh-TW": "PNG 圖案|*.png",
-    "ja": "PNG パターン|*.png"
+    "ja": "PNG パターン|*.png",
+    "tr": "PNG desenleri|*.png"
   },
   "[{0:HH:mm:ss}] DVD 实时预览失败：{1}\n": {
     "zh-CN": "[{0:HH:mm:ss}] DVD 实时预览失败：{1}\n",
     "en": "[{0:HH:mm:ss}] DVD live preview failed: {1}\n",
     "zh-TW": "[{0:HH:mm:ss}] DVD 即時預覽失敗：{1}\n",
-    "ja": "[{0:HH:mm:ss}] DVD ライブ プレビューに失敗しました：{1}\n"
+    "ja": "[{0:HH:mm:ss}] DVD ライブ プレビューに失敗しました：{1}\n",
+    "tr": "[{0:HH:mm:ss}] DVD canlı önizlemesi başarısız: {1}\n"
   },
   "[{0:HH:mm:ss}] {1} 没有可用的蓝光 sidecar，": {
     "zh-CN": "[{0:HH:mm:ss}] {1} 没有可用的蓝光 sidecar，",
     "en": "[{0:HH:mm:ss}] No usable Blu-ray sidecar was found for {1}; ",
     "zh-TW": "[{0:HH:mm:ss}] {1} 沒有可用的藍光 sidecar，",
-    "ja": "[{0:HH:mm:ss}] {1} に使用可能な Blu-ray sidecar がないため、"
+    "ja": "[{0:HH:mm:ss}] {1} に使用可能な Blu-ray sidecar がないため、",
+    "tr": "[{0:HH:mm:ss}] {1} için kullanılabilir Blu-ray yan dosyası (sidecar) bulunamadı; "
   },
   "[{0:HH:mm:ss}] 实时预览失败：{1}\n": {
     "zh-CN": "[{0:HH:mm:ss}] 实时预览失败：{1}\n",
     "en": "[{0:HH:mm:ss}] Live preview failed: {1}\n",
     "zh-TW": "[{0:HH:mm:ss}] 即時預覽失敗：{1}\n",
-    "ja": "[{0:HH:mm:ss}] ライブ プレビューに失敗しました：{1}\n"
+    "ja": "[{0:HH:mm:ss}] ライブ プレビューに失敗しました：{1}\n",
+    "tr": "[{0:HH:mm:ss}] Canlı önizleme başarısız: {1}\n"
   },
   "[{0:HH:mm:ss}] 已取消流式刻录；当前盘片可能无法继续使用。\n": {
     "zh-CN": "[{0:HH:mm:ss}] 已取消流式刻录；当前盘片可能无法继续使用。\n",
     "en": "[{0:HH:mm:ss}] Streaming burn canceled; the disc may no longer be usable.\n",
     "zh-TW": "[{0:HH:mm:ss}] 已取消串流燒錄；目前光碟片可能無法繼續使用。\n",
-    "ja": "[{0:HH:mm:ss}] ストリーミング書き込みをキャンセルしました。このディスクは使用できなくなる可能性があります。\n"
+    "ja": "[{0:HH:mm:ss}] ストリーミング書き込みをキャンセルしました。このディスクは使用できなくなる可能性があります。\n",
+    "tr": "[{0:HH:mm:ss}] Akışla yazma iptal edildi; mevcut disk bir daha kullanılamayabilir.\n"
   },
   "[{0:HH:mm:ss}] 已按 {1} 的 sidecar 载入几何：": {
     "zh-CN": "[{0:HH:mm:ss}] 已按 {1} 的 sidecar 载入几何：",
     "en": "[{0:HH:mm:ss}] Loaded geometry from the sidecar for {1}: ",
     "zh-TW": "[{0:HH:mm:ss}] 已按 {1} 的 sidecar 載入幾何：",
-    "ja": "[{0:HH:mm:ss}] {1} の sidecar からジオメトリを読み込みました："
+    "ja": "[{0:HH:mm:ss}] {1} の sidecar からジオメトリを読み込みました：",
+    "tr": "[{0:HH:mm:ss}] {1} yan dosyasındaki (sidecar) geometri yüklendi: "
   },
   "[{0:HH:mm:ss}] 已按 {1} 的生成参数载入标定几何：": {
     "zh-CN": "[{0:HH:mm:ss}] 已按 {1} 的生成参数载入标定几何：",
     "en": "[{0:HH:mm:ss}] Loaded calibration geometry from the generation parameters for {1}: ",
     "zh-TW": "[{0:HH:mm:ss}] 已按 {1} 的產生參數載入校準幾何：",
-    "ja": "[{0:HH:mm:ss}] {1} の生成パラメーターからキャリブレーション ジオメトリを読み込みました："
+    "ja": "[{0:HH:mm:ss}] {1} の生成パラメーターからキャリブレーション ジオメトリを読み込みました：",
+    "tr": "[{0:HH:mm:ss}] {1} oluşturma parametrelerindeki kalibrasyon geometrisi yüklendi: "
   },
   "[{0:HH:mm:ss}] 已载入 {1} 的 CD 数据盘几何与文件位置。\n": {
     "zh-CN": "[{0:HH:mm:ss}] 已载入 {1} 的 CD 数据盘几何与文件位置。\n",
     "en": "[{0:HH:mm:ss}] Loaded CD data disc geometry and file placement for {1}.\n",
     "zh-TW": "[{0:HH:mm:ss}] 已載入 {1} 的 CD 資料光碟幾何與檔案位置。\n",
-    "ja": "[{0:HH:mm:ss}] {1} の CD データ ディスクのジオメトリとファイル配置を読み込みました。\n"
+    "ja": "[{0:HH:mm:ss}] {1} の CD データ ディスクのジオメトリとファイル配置を読み込みました。\n",
+    "tr": "[{0:HH:mm:ss}] {1} için CD veri diski geometrisi ve dosya konumu yüklendi.\n"
   },
   "[{0:HH:mm:ss}] 标定 {1}: {2} 内半径={3}, 外半径={4}\n": {
     "zh-CN": "[{0:HH:mm:ss}] 标定 {1}: {2} 内半径={3}, 外半径={4}\n",
     "en": "[{0:HH:mm:ss}] Calibration {1}: {2} Inner radius={3}, outer radius={4}\n",
     "zh-TW": "[{0:HH:mm:ss}] 校準 {1}: {2} 內半徑={3}, 外半徑={4}\n",
-    "ja": "[{0:HH:mm:ss}] キャリブレーション {1}: {2} 内半径={3}, 外半径={4}\n"
+    "ja": "[{0:HH:mm:ss}] キャリブレーション {1}: {2} 内半径={3}, 外半径={4}\n",
+    "tr": "[{0:HH:mm:ss}] Kalibrasyon {1}: {2} İç yarıçap={3}, Dış yarıçap={4}\n"
   },
   "[{0:HH:mm:ss}] 标定：{1}\n": {
     "zh-CN": "[{0:HH:mm:ss}] 标定：{1}\n",
     "en": "[{0:HH:mm:ss}] Calibration: {1}\n",
     "zh-TW": "[{0:HH:mm:ss}] 校準：{1}\n",
-    "ja": "[{0:HH:mm:ss}] キャリブレーション：{1}\n"
+    "ja": "[{0:HH:mm:ss}] キャリブレーション：{1}\n",
+    "tr": "[{0:HH:mm:ss}] Kalibrasyon: {1}\n"
   },
   "[{0:HH:mm:ss}] 流式刻录失败：{1}\n": {
     "zh-CN": "[{0:HH:mm:ss}] 流式刻录失败：{1}\n",
     "en": "[{0:HH:mm:ss}] Streaming burn failed: {1}\n",
     "zh-TW": "[{0:HH:mm:ss}] 串流燒錄失敗：{1}\n",
-    "ja": "[{0:HH:mm:ss}] ストリーミング書き込みに失敗しました：{1}\n"
+    "ja": "[{0:HH:mm:ss}] ストリーミング書き込みに失敗しました：{1}\n",
+    "tr": "[{0:HH:mm:ss}] Akışla yazma başarısız: {1}\n"
   },
   "[{0:HH:mm:ss}] 流式刻录完成：{1} 字节，": {
     "zh-CN": "[{0:HH:mm:ss}] 流式刻录完成：{1} 字节，",
     "en": "[{0:HH:mm:ss}] Streaming burn completed: {1} bytes, ",
     "zh-TW": "[{0:HH:mm:ss}] 串流燒錄完成：{1} 位元組，",
-    "ja": "[{0:HH:mm:ss}] ストリーミング書き込み完了：{1} バイト、"
+    "ja": "[{0:HH:mm:ss}] ストリーミング書き込み完了：{1} バイト、",
+    "tr": "[{0:HH:mm:ss}] Akışla yazma tamamlandı: {1} bayt, "
   },
   "[{0:HH:mm:ss}] 蓝光实时预览失败：{1}\n": {
     "zh-CN": "[{0:HH:mm:ss}] 蓝光实时预览失败：{1}\n",
     "en": "[{0:HH:mm:ss}] Blu-ray live preview failed: {1}\n",
     "zh-TW": "[{0:HH:mm:ss}] 藍光即時預覽失敗：{1}\n",
-    "ja": "[{0:HH:mm:ss}] Blu-ray ライブ プレビューに失敗しました：{1}\n"
+    "ja": "[{0:HH:mm:ss}] Blu-ray ライブ プレビューに失敗しました：{1}\n",
+    "tr": "[{0:HH:mm:ss}] Blu-ray canlı önizlemesi başarısız: {1}\n"
   },
   "[{0:HH:mm:ss}] 蓝光成品读回失败：{1}\n": {
     "zh-CN": "[{0:HH:mm:ss}] 蓝光成品读回失败：{1}\n",
     "en": "[{0:HH:mm:ss}] Blu-ray artifact readback failed: {1}\n",
     "zh-TW": "[{0:HH:mm:ss}] 藍光成品讀回失敗：{1}\n",
-    "ja": "[{0:HH:mm:ss}] Blu-ray 成果物の読み戻しに失敗しました：{1}\n"
+    "ja": "[{0:HH:mm:ss}] Blu-ray 成果物の読み戻しに失敗しました：{1}\n",
+    "tr": "[{0:HH:mm:ss}] Blu-ray ürün geri okuması başarısız: {1}\n"
   },
   "[{0:HH:mm:ss}] 预览加载失败：{1}\n": {
     "zh-CN": "[{0:HH:mm:ss}] 预览加载失败：{1}\n",
     "en": "[{0:HH:mm:ss}] Preview loading failed: {1}\n",
     "zh-TW": "[{0:HH:mm:ss}] 預覽載入失敗：{1}\n",
-    "ja": "[{0:HH:mm:ss}] プレビューの読み込みに失敗しました：{1}\n"
+    "ja": "[{0:HH:mm:ss}] プレビューの読み込みに失敗しました：{1}\n",
+    "tr": "[{0:HH:mm:ss}] Önizleme yüklenemedi: {1}\n"
   },
   "[{0:HH:mm:ss}] 预览导出失败：{1}\n": {
     "zh-CN": "[{0:HH:mm:ss}] 预览导出失败：{1}\n",
     "en": "[{0:HH:mm:ss}] Preview export failed: {1}\n",
     "zh-TW": "[{0:HH:mm:ss}] 預覽匯出失敗：{1}\n",
-    "ja": "[{0:HH:mm:ss}] プレビューのエクスポートに失敗しました：{1}\n"
+    "ja": "[{0:HH:mm:ss}] プレビューのエクスポートに失敗しました：{1}\n",
+    "tr": "[{0:HH:mm:ss}] Önizleme dışa aktarılamadı: {1}\n"
   },
   "[{0:HH:mm:ss}] 预览已导出：{1}\n": {
     "zh-CN": "[{0:HH:mm:ss}] 预览已导出：{1}\n",
     "en": "[{0:HH:mm:ss}] Preview exported: {1}\n",
     "zh-TW": "[{0:HH:mm:ss}] 預覽已匯出：{1}\n",
-    "ja": "[{0:HH:mm:ss}] プレビューをエクスポートしました：{1}\n"
+    "ja": "[{0:HH:mm:ss}] プレビューをエクスポートしました：{1}\n",
+    "tr": "[{0:HH:mm:ss}] Önizleme dışa aktarıldı: {1}\n"
   },
   "r0={0} mm, r1={1} mm, {2} 总扇区；{3}\n": {
     "zh-CN": "r0={0} mm, r1={1} mm, {2} 总扇区；{3}\n",
     "en": "r0={0} mm, r1={1} mm, {2} total sectors; {3}\n",
     "zh-TW": "r0={0} mm, r1={1} mm, {2} 總磁區；{3}\n",
-    "ja": "r0={0} mm, r1={1} mm, 総セクター {2}；{3}\n"
+    "ja": "r0={0} mm, r1={1} mm, 総セクター {2}；{3}\n",
+    "tr": "r0={0} mm, r1={1} mm, {2} toplam sektör; {3}\n"
   },
   "r0={0} mm, r1={1} mm, {2} 扇区，": {
     "zh-CN": "r0={0} mm, r1={1} mm, {2} 扇区，",
     "en": "r0={0} mm, r1={1} mm, {2} sectors, ",
     "zh-TW": "r0={0} mm, r1={1} mm, {2} 磁區，",
-    "ja": "r0={0} mm, r1={1} mm, {2} セクター、"
+    "ja": "r0={0} mm, r1={1} mm, {2} セクター、",
+    "tr": "r0={0} mm, r1={1} mm, {2} sektör, "
   },
   "r0={0} mm, r1={1} mm, {2} 扇区，交织={3}，": {
     "zh-CN": "r0={0} mm, r1={1} mm, {2} 扇区，交织={3}，",
     "en": "r0={0} mm, r1={1} mm, {2} sectors, interleaved={3}, ",
     "zh-TW": "r0={0} mm, r1={1} mm, {2} 磁區，交織={3}，",
-    "ja": "r0={0} mm, r1={1} mm, {2} セクター、インターリーブ={3}、"
+    "ja": "r0={0} mm, r1={1} mm, {2} セクター、インターリーブ={3}、",
+    "tr": "r0={0} mm, r1={1} mm, {2} sektör, serpiştirme={3}, "
   },
   "sRGB 线性化 · ": {
     "zh-CN": "sRGB 线性化 · ",
     "en": "sRGB linearization · ",
     "zh-TW": "sRGB 線性化 · ",
-    "ja": "sRGB リニア化 · "
+    "ja": "sRGB リニア化 · ",
+    "tr": "sRGB doğrusallaştırma · "
   },
   "{0} 扇区": {
     "zh-CN": "{0} 扇区",
     "en": "{0} sectors",
     "zh-TW": "{0} 磁區",
-    "ja": "{0} セクター"
+    "ja": "{0} セクター",
+    "tr": "{0} sektör"
   },
   "{0} 标定图案 · {1}": {
     "zh-CN": "{0} 标定图案 · {1}",
     "en": "{0} calibration pattern · {1}",
     "zh-TW": "{0} 校準圖案 · {1}",
-    "ja": "{0} キャリブレーション パターン · {1}"
+    "ja": "{0} キャリブレーション パターン · {1}",
+    "tr": "{0} kalibrasyon deseni · {1}"
   },
   "{0} 源图片": {
     "zh-CN": "{0} 源图片",
     "en": "{0} source image",
     "zh-TW": "{0} 來源圖片",
-    "ja": "{0} ソース画像"
+    "ja": "{0} ソース画像",
+    "tr": "{0} kaynak görseli"
   },
   "{0}，最终以刻录机采用值为准。": {
     "zh-CN": "{0}，最终以刻录机采用值为准。",
     "en": "{0}; the actual speed is determined by the recorder.",
     "zh-TW": "{0}，最終以燒錄機採用值為準。",
-    "ja": "{0}。実際の速度はドライブが採用する値によって決まります。"
+    "ja": "{0}。実際の速度はドライブが採用する値によって決まります。",
+    "tr": "{0}; gerçek hız yazıcı tarafından belirlenir."
   },
   "仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？": {
     "zh-CN": "仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？",
     "en": "Only blank discs are allowed. Canceling or losing power after writing starts may render the disc unusable. Continue?",
     "zh-TW": "僅允許空白光碟。開始後取消或斷電可能使光碟片報廢。是否繼續？",
-    "ja": "空のディスクのみ使用できます。開始後にキャンセルしたり電源が切れたりすると、ディスクが使用できなくなる可能性があります。続行しますか？"
+    "ja": "空のディスクのみ使用できます。開始後にキャンセルしたり電源が切れたりすると、ディスクが使用できなくなる可能性があります。続行しますか？",
+    "tr": "Yalnızca boş disklere izin verilir. Yazma başladıktan sonra iptal etmek veya elektriğin kesilmesi diski kullanılamaz hale getirebilir. Devam edilsin mi?"
   },
   "位长 {0:0.######} nm": {
     "zh-CN": "位长 {0:0.######} nm",
     "en": "Bit length {0:0.######} nm",
     "zh-TW": "位元長度 {0:0.######} nm",
-    "ja": "ビット長 {0:0.######} nm"
+    "ja": "ビット長 {0:0.######} nm",
+    "tr": "Bit uzunluğu {0:0.######} nm"
   },
   "位长 {0:0.######} nm · ": {
     "zh-CN": "位长 {0:0.######} nm · ",
     "en": "Bit length {0:0.######} nm · ",
     "zh-TW": "位元長度 {0:0.######} nm · ",
-    "ja": "ビット長 {0:0.######} nm · "
+    "ja": "ビット長 {0:0.######} nm · ",
+    "tr": "Bit uzunluğu {0:0.######} nm · "
   },
   "使用工程当前合成图与参数": {
     "zh-CN": "使用工程当前合成图与参数",
     "en": "Use the current project composite and parameters",
     "zh-TW": "使用專案目前合成圖與參數",
-    "ja": "プロジェクトの現在の合成画像とパラメーターを使用"
+    "ja": "プロジェクトの現在の合成画像とパラメーターを使用",
+    "tr": "Geçerli proje birleşik görselini ve parametrelerini kullan"
   },
   "候选 {0} · 偏差 {1:0.###} mm": {
     "zh-CN": "候选 {0} · 偏差 {1:0.###} mm",
     "en": "Candidate {0} · Error {1:0.###} mm",
     "zh-TW": "候選 {0} · 偏差 {1:0.###} mm",
-    "ja": "候補 {0} · 誤差 {1:0.###} mm"
+    "ja": "候補 {0} · 誤差 {1:0.###} mm",
+    "tr": "Aday {0} · Sapma {1:0.###} mm"
   },
   "候选 · 平均偏差 {0:0.###} mm · 最大 {1:0.###} mm，待核对{2}{3}": {
     "zh-CN": "候选 · 平均偏差 {0:0.###} mm · 最大 {1:0.###} mm，待核对{2}{3}",
     "en": "Candidate · Mean error {0:0.###} mm · Maximum {1:0.###} mm; verify before applying{2}{3}",
     "zh-TW": "候選 · 平均偏差 {0:0.###} mm · 最大 {1:0.###} mm，待核對{2}{3}",
-    "ja": "候補 · 平均誤差 {0:0.###} mm · 最大 {1:0.###} mm、適用前に確認してください{2}{3}"
+    "ja": "候補 · 平均誤差 {0:0.###} mm · 最大 {1:0.###} mm、適用前に確認してください{2}{3}",
+    "tr": "Aday · Ortalama sapma {0:0.###} mm · Maksimum {1:0.###} mm; uygulamadan önce doğrulayın{2}{3}"
   },
   "候选与实拍点偏差较大，暂不能应用；全部 {0} 点已保留。请修正标红点或补充曲线点。": {
     "zh-CN": "候选与实拍点偏差较大，暂不能应用；全部 {0} 点已保留。请修正标红点或补充曲线点。",
     "en": "The candidate differs too much from the photographed points and cannot be applied yet. All {0} points were retained. Correct the red points or add curve points.",
     "zh-TW": "候選與實拍點偏差較大，暫不能套用；全部 {0} 點已保留。請修正標紅點或補充曲線點。",
-    "ja": "候補と撮影点の誤差が大きいため、まだ適用できません。{0} 点すべてを保持しました。赤色の点を修正するか、曲線点を追加してください。"
+    "ja": "候補と撮影点の誤差が大きいため、まだ適用できません。{0} 点すべてを保持しました。赤色の点を修正するか、曲線点を追加してください。",
+    "tr": "Aday ile çekilen noktalar arasındaki sapma çok büyük, şu anda uygulanamaz; {0} noktanın tamamı korundu. Lütfen kırmızı noktaları düzeltin veya eğri noktaları ekleyin."
   },
   "光盘镜像|*.iso": {
     "zh-CN": "光盘镜像|*.iso",
     "en": "Disc images|*.iso",
     "zh-TW": "光碟映像檔|*.iso",
-    "ja": "ディスク イメージ|*.iso"
+    "ja": "ディスク イメージ|*.iso",
+    "tr": "Disk imajları|*.iso"
   },
   "全部有效点都会参与计算，结果需与实拍曲线核对。": {
     "zh-CN": "全部有效点都会参与计算，结果需与实拍曲线核对。",
     "en": "All valid points are used in the calculation. Verify the result against the photographed curve.",
     "zh-TW": "全部有效點都會參與計算，結果需與實拍曲線核對。",
-    "ja": "すべての有効な点が計算に使用されます。結果を撮影した曲線と照合してください。"
+    "ja": "すべての有効な点が計算に使用されます。結果を撮影した曲線と照合してください。",
+    "tr": "Tüm geçerli noktalar hesaplamaya dahil edilir, sonuç fotoğraftaki eğriyle doğrulanmalıdır."
   },
   "内半径": {
     "zh-CN": "内半径",
     "en": "Inner radius",
     "zh-TW": "內半徑",
-    "ja": "内半径"
+    "ja": "内半径",
+    "tr": "İç yarıçap"
   },
   "内半径 {0} mm · 外半径 {1} mm": {
     "zh-CN": "内半径 {0} mm · 外半径 {1} mm",
     "en": "Inner radius {0} mm · Outer radius {1} mm",
     "zh-TW": "內半徑 {0} mm · 外半徑 {1} mm",
-    "ja": "内半径 {0} mm · 外半径 {1} mm"
+    "ja": "内半径 {0} mm · 外半径 {1} mm",
+    "tr": "İç yarıçap {0} mm · Dış yarıçap {1} mm"
   },
   "内半径 {0} mm · 外半径 {1} mm · ": {
     "zh-CN": "内半径 {0} mm · 外半径 {1} mm · ",
     "en": "Inner radius {0} mm · Outer radius {1} mm · ",
     "zh-TW": "內半徑 {0} mm · 外半徑 {1} mm · ",
-    "ja": "内半径 {0} mm · 外半径 {1} mm · "
+    "ja": "内半径 {0} mm · 外半径 {1} mm · ",
+    "tr": "İç yarıçap {0} mm · Dış yarıçap {1} mm · "
   },
   "内半径 {0} mm · 外半径 {1} mm · 三次项 {2}": {
     "zh-CN": "内半径 {0} mm · 外半径 {1} mm · 三次项 {2}",
     "en": "Inner radius {0} mm · Outer radius {1} mm · Cubic coefficient {2}",
     "zh-TW": "內半徑 {0} mm · 外半徑 {1} mm · 三次項 {2}",
-    "ja": "内半径 {0} mm · 外半径 {1} mm · 3 次係数 {2}"
+    "ja": "内半径 {0} mm · 外半径 {1} mm · 3 次係数 {2}",
+    "tr": "İç yarıçap {0} mm · Dış yarıçap {1} mm · Kübik katsayı {2}"
   },
   "内半径必须小于外半径。": {
     "zh-CN": "内半径必须小于外半径。",
     "en": "The inner radius must be smaller than the outer radius.",
     "zh-TW": "內半徑必須小於外半徑。",
-    "ja": "内半径は外半径より小さくする必要があります。"
+    "ja": "内半径は外半径より小さくする必要があります。",
+    "tr": "İç yarıçap dış yarıçaptan küçük olmalıdır."
   },
   "内圈": {
     "zh-CN": "内圈",
     "en": "inner ring",
     "zh-TW": "內圈",
-    "ja": "内周"
+    "ja": "内周",
+    "tr": "iç halka"
   },
   "刻录完成，可以取出光盘。": {
     "zh-CN": "刻录完成，可以取出光盘。",
     "en": "Burn complete. You can remove the disc.",
     "zh-TW": "燒錄完成，可以取出光碟。",
-    "ja": "書き込みが完了しました。ディスクを取り出せます。"
+    "ja": "書き込みが完了しました。ディスクを取り出せます。",
+    "tr": "Yazma tamamlandı, diski çıkarabilirsiniz."
   },
   "刻录未完成，请查看错误信息。": {
     "zh-CN": "刻录未完成，请查看错误信息。",
     "en": "The burn did not complete. See the error details.",
     "zh-TW": "燒錄未完成，請查看錯誤資訊。",
-    "ja": "書き込みが完了しませんでした。エラーの詳細を確認してください。"
+    "ja": "書き込みが完了しませんでした。エラーの詳細を確認してください。",
+    "tr": "Yazma tamamlanmadı, lütfen hata ayrıntılarını kontrol edin."
   },
   "刻录来源或选项已变化，请重新确认后开始。": {
     "zh-CN": "刻录来源或选项已变化，请重新确认后开始。",
     "en": "The burn source or options changed. Confirm them again before starting.",
     "zh-TW": "燒錄來源或選項已變化，請重新確認後開始。",
-    "ja": "書き込み元またはオプションが変更されました。もう一度確認してから開始してください。"
+    "ja": "書き込み元またはオプションが変更されました。もう一度確認してから開始してください。",
+    "tr": "Yazma kaynağı veya seçenekleri değişti. Başlamadan önce lütfen yeniden onaylayın."
   },
   "前往导出": {
     "zh-CN": "前往导出",
     "en": "Go to Export",
     "zh-TW": "前往匯出",
-    "ja": "エクスポートへ移動"
+    "ja": "エクスポートへ移動",
+    "tr": "Dışa Aktarmaya Git"
   },
   "前往设计": {
     "zh-CN": "前往设计",
     "en": "Go to Design",
     "zh-TW": "前往設計",
-    "ja": "デザインへ移動"
+    "ja": "デザインへ移動",
+    "tr": "Tasarıma Git"
   },
   "半径": {
     "zh-CN": "半径",
     "en": "Radius",
     "zh-TW": "半徑",
-    "ja": "半径"
+    "ja": "半径",
+    "tr": "Yarıçap"
   },
   "即将写入：{0}\n{1}\n": {
     "zh-CN": "即将写入：{0}\n{1}\n",
     "en": "About to write to: {0}\n{1}\n",
     "zh-TW": "即將寫入：{0}\n{1}\n",
-    "ja": "書き込み先：{0}\n{1}\n"
+    "ja": "書き込み先：{0}\n{1}\n",
+    "tr": "Yazılmak üzere: {0}\n{1}\n"
   },
   "参数已变化，准备刷新…": {
     "zh-CN": "参数已变化，准备刷新…",
     "en": "Parameters changed. Preparing to refresh…",
     "zh-TW": "參數已變化，準備更新…",
-    "ja": "パラメーターが変更されました。更新を準備しています…"
+    "ja": "パラメーターが変更されました。更新を準備しています…",
+    "tr": "Parametreler değişti, yenilenmeye hazırlanıyor…"
   },
   "反转 3T/6T": {
     "zh-CN": "反转 3T/6T",
     "en": "Inverted 3T/6T",
     "zh-TW": "反轉 3T/6T",
-    "ja": "反転 3T/6T"
+    "ja": "反転 3T/6T",
+    "tr": "Ters 3T/6T"
   },
   "合成图会自动生成本页输入。": {
     "zh-CN": "合成图会自动生成本页输入。",
     "en": "The composite will automatically provide this page’s input.",
     "zh-TW": "合成圖會自動產生本頁輸入。",
-    "ja": "合成画像からこのページの入力が自動的に生成されます。"
+    "ja": "合成画像からこのページの入力が自動的に生成されます。",
+    "tr": "Birleşik görsel bu sayfanın girdisini otomatik olarak sağlar."
   },
   "合成图会自动生成本页输入。 · {0}": {
     "zh-CN": "合成图会自动生成本页输入。 · {0}",
     "en": "The composite will automatically provide this page’s input. · {0}",
     "zh-TW": "合成圖會自動產生本頁輸入。 · {0}",
-    "ja": "合成画像からこのページの入力が自動的に生成されます。 · {0}"
+    "ja": "合成画像からこのページの入力が自動的に生成されます。 · {0}",
+    "tr": "Birleşik görsel bu sayfanın girdisini otomatik olarak sağlar. · {0}"
   },
   "图片已生成，但无法在界面中加载。": {
     "zh-CN": "图片已生成，但无法在界面中加载。",
     "en": "The image was generated but could not be loaded in the interface.",
     "zh-TW": "圖片已產生，但無法在介面中載入。",
-    "ja": "画像は生成されましたが、画面に読み込めませんでした。"
+    "ja": "画像は生成されましたが、画面に読み込めませんでした。",
+    "tr": "Görsel oluşturuldu ancak arayüzde yüklenemedi."
   },
   "外半径": {
     "zh-CN": "外半径",
     "en": "Outer radius",
     "zh-TW": "外半徑",
-    "ja": "外半径"
+    "ja": "外半径",
+    "tr": "Dış yarıçap"
   },
   "外圈": {
     "zh-CN": "外圈",
     "en": "outer ring",
     "zh-TW": "外圈",
-    "ja": "外周"
+    "ja": "外周",
+    "tr": "dış halka"
   },
   "外缘偏差 {0:0.0} 像素 · 内缘偏差 {1:0.0} 像素": {
     "zh-CN": "外缘偏差 {0:0.0} 像素 · 内缘偏差 {1:0.0} 像素",
     "en": "Outer edge error {0:0.0} px · Inner edge error {1:0.0} px",
     "zh-TW": "外緣偏差 {0:0.0} 像素 · 內緣偏差 {1:0.0} 像素",
-    "ja": "外縁の誤差 {0:0.0} px · 内縁の誤差 {1:0.0} px"
+    "ja": "外縁の誤差 {0:0.0} px · 内縁の誤差 {1:0.0} px",
+    "tr": "Dış kenar sapması {0:0.0} piksel · İç kenar sapması {1:0.0} piksel"
   },
   "失败：流式刻录": {
     "zh-CN": "失败：流式刻录",
     "en": "Failed: streaming burn",
     "zh-TW": "失敗：串流燒錄",
-    "ja": "失敗：ストリーミング書き込み"
+    "ja": "失敗：ストリーミング書き込み",
+    "tr": "Başarısız: akışla yazma"
   },
   "完成：流式刻录 ": {
     "zh-CN": "完成：流式刻录 ",
     "en": "Completed: streaming burn ",
     "zh-TW": "完成：串流燒錄 ",
-    "ja": "完了：ストリーミング書き込み "
+    "ja": "完了：ストリーミング書き込み ",
+    "tr": "Tamamlandı: akışla yazma "
   },
   "实时预览失败：{0}": {
     "zh-CN": "实时预览失败：{0}",
     "en": "Live preview failed: {0}",
     "zh-TW": "即時預覽失敗：{0}",
-    "ja": "ライブ プレビューに失敗しました：{0}"
+    "ja": "ライブ プレビューに失敗しました：{0}",
+    "tr": "Canlı önizleme başarısız: {0}"
   },
   "实测内半径": {
     "zh-CN": "实测内半径",
     "en": "Measured inner radius",
     "zh-TW": "實測內半徑",
-    "ja": "実測内半径"
+    "ja": "実測内半径",
+    "tr": "Ölçülen iç yarıçap"
   },
   "实测外半径": {
     "zh-CN": "实测外半径",
     "en": "Measured outer radius",
     "zh-TW": "實測外半徑",
-    "ja": "実測外半径"
+    "ja": "実測外半径",
+    "tr": "Ölçülen dış yarıçap"
   },
   "导入标定盘照片": {
     "zh-CN": "导入标定盘照片",
     "en": "Import calibration disc photo",
     "zh-TW": "匯入校準光碟相片",
-    "ja": "キャリブレーション ディスクの写真をインポート"
+    "ja": "キャリブレーション ディスクの写真をインポート",
+    "tr": "Kalibrasyon diski fotoğrafını içe aktar"
   },
   "导出失败": {
     "zh-CN": "导出失败",
     "en": "Export failed",
     "zh-TW": "匯出失敗",
-    "ja": "エクスポートに失敗しました"
+    "ja": "エクスポートに失敗しました",
+    "tr": "Dışa aktarma başarısız"
   },
   "小光盘 · 8 cm": {
     "zh-CN": "小光盘 · 8 cm",
     "en": "Mini disc · 8 cm",
     "zh-TW": "小光碟 · 8 cm",
-    "ja": "小型ディスク · 8 cm"
+    "ja": "小型ディスク · 8 cm",
+    "tr": "Küçük disk · 8 cm"
   },
   "尚未创建标定图案": {
     "zh-CN": "尚未创建标定图案",
     "en": "No calibration pattern yet",
     "zh-TW": "尚未建立校準圖案",
-    "ja": "キャリブレーション パターンはまだ作成されていません"
+    "ja": "キャリブレーション パターンはまだ作成されていません",
+    "tr": "Henüz kalibrasyon deseni oluşturulmadı"
   },
   "已保存图案、生成参数、照片、边界和曲线点。": {
     "zh-CN": "已保存图案、生成参数、照片、边界和曲线点。",
     "en": "Saved the pattern, generation parameters, photo, boundaries, and curve points.",
     "zh-TW": "已儲存圖案、產生參數、相片、邊界和曲線點。",
-    "ja": "パターン、生成パラメーター、写真、境界、曲線点を保存しました。"
+    "ja": "パターン、生成パラメーター、写真、境界、曲線点を保存しました。",
+    "tr": "Desen, oluşturma parametreleri, fotoğraf, sınırlar ve eğri noktaları kaydedildi."
   },
   "已保留 {0} 点 · 偏离点自动标红": {
     "zh-CN": "已保留 {0} 点 · 偏离点自动标红",
     "en": "{0} points retained · Outliers are highlighted in red",
     "zh-TW": "已保留 {0} 點 · 偏離點自動標紅",
-    "ja": "{0} 点を保持 · 外れ点は自動的に赤で表示"
+    "ja": "{0} 点を保持 · 外れ点は自動的に赤で表示",
+    "tr": "{0} nokta korundu · Sapmalı noktalar kırmızı ile vurgulandı"
   },
   "已取消：流式刻录": {
     "zh-CN": "已取消：流式刻录",
     "en": "Canceled: streaming burn",
     "zh-TW": "已取消：串流燒錄",
-    "ja": "キャンセル済み：ストリーミング書き込み"
+    "ja": "キャンセル済み：ストリーミング書き込み",
+    "tr": "İptal edildi: akışla yazma"
   },
   "已实时更新 · 成品读回 · 3T/6T 类别图（非反射亮度） · {0} px": {
     "zh-CN": "已实时更新 · 成品读回 · 3T/6T 类别图（非反射亮度） · {0} px",
     "en": "Updated · Artifact readback · 3T/6T class map (not reflectance) · {0} px",
     "zh-TW": "已即時更新 · 成品讀回 · 3T/6T 類別圖（非反射亮度） · {0} px",
-    "ja": "更新済み · 成果物の読み戻し · 3T/6T クラス マップ（反射率ではありません） · {0} px"
+    "ja": "更新済み · 成果物の読み戻し · 3T/6T クラス マップ（反射率ではありません） · {0} px",
+    "tr": "Canlı güncellendi · Ürün geri okuması · 3T/6T sınıf haritası (yansıma parlaklığı değil) · {0} px"
   },
   "已实时更新 · 标定预览 · CW · 抖动 {0:0}%": {
     "zh-CN": "已实时更新 · 标定预览 · CW · 抖动 {0:0}%",
     "en": "Updated · Calibration preview · CW · Dither {0:0}%",
     "zh-TW": "已即時更新 · 校準預覽 · CW · 抖動 {0:0}%",
-    "ja": "更新済み · キャリブレーション プレビュー · CW · ディザ {0:0}%"
+    "ja": "更新済み · キャリブレーション プレビュー · CW · ディザ {0:0}%",
+    "tr": "Canlı güncellendi · Kalibrasyon önizlemesi · CW · Sarsıntı %{0:0}"
   },
   "已实时更新 · 标定预览 · 灰度 {0} 级": {
     "zh-CN": "已实时更新 · 标定预览 · 灰度 {0} 级",
     "en": "Updated · Calibration preview · {0} grayscale levels",
     "zh-TW": "已即時更新 · 校準預覽 · 灰階 {0} 級",
-    "ja": "更新済み · キャリブレーション プレビュー · グレースケール {0} 階調"
+    "ja": "更新済み · キャリブレーション プレビュー · グレースケール {0} 階調",
+    "tr": "Canlı güncellendi · Kalibrasyon önizlemesi · Gri ton {0} basamak"
   },
   "已实时更新 · 设计投影 · 3T/6T 类别图": {
     "zh-CN": "已实时更新 · 设计投影 · 3T/6T 类别图",
     "en": "Updated · Design projection · 3T/6T class map",
     "zh-TW": "已即時更新 · 設計投影 · 3T/6T 類別圖",
-    "ja": "更新済み · デザイン投影 · 3T/6T クラス マップ"
+    "ja": "更新済み · デザイン投影 · 3T/6T クラス マップ",
+    "tr": "Canlı güncellendi · Tasarım izdüşümü · 3T/6T sınıf haritası"
   },
   "已实时更新 · 读回模拟 · CW · {0} px · 每扇区 {1} 个采样": {
     "zh-CN": "已实时更新 · 读回模拟 · CW · {0} px · 每扇区 {1} 个采样",
     "en": "Updated · Readback simulation · CW · {0} px · {1} samples per sector",
     "zh-TW": "已即時更新 · 讀回模擬 · CW · {0} px · 每磁區 {1} 個取樣",
-    "ja": "更新済み · 読み戻しシミュレーション · CW · {0} px · セクターあたり {1} サンプル"
+    "ja": "更新済み · 読み戻しシミュレーション · CW · {0} px · セクターあたり {1} サンプル",
+    "tr": "Canlı güncellendi · Geri okuma simülasyonu · CW · {0} px · sektör başına {1} örnek"
   },
   "已实时更新 · 读回模拟 · {0}": {
     "zh-CN": "已实时更新 · 读回模拟 · {0}",
     "en": "Updated · Readback simulation · {0}",
     "zh-TW": "已即時更新 · 讀回模擬 · {0}",
-    "ja": "更新済み · 読み戻しシミュレーション · {0}"
+    "ja": "更新済み · 読み戻しシミュレーション · {0}",
+    "tr": "Canlı güncellendi · Geri okuma simülasyonu · {0}"
   },
   "已应用到 {0} 参数。原标定盘记录仍保留，可继续补点核对。": {
     "zh-CN": "已应用到 {0} 参数。原标定盘记录仍保留，可继续补点核对。",
     "en": "Applied to {0} parameters. The original calibration disc record was retained; you can add more points to verify it.",
     "zh-TW": "已套用到 {0} 參數。原校準光碟記錄仍保留，可繼續補點核對。",
-    "ja": "{0} のパラメーターに適用しました。元のキャリブレーション ディスクの記録は保持されているため、点を追加して引き続き確認できます。"
+    "ja": "{0} のパラメーターに適用しました。元のキャリブレーション ディスクの記録は保持されているため、点を追加して引き続き確認できます。",
+    "tr": "{0} parametrelerine uygulandı. Orijinal kalibrasyon diski kaydı korundu, doğrulamak için nokta eklemeye devam edebilirsiniz."
   },
   "已恢复标定图案、照片和曲线点，可继续编辑或重新反推。": {
     "zh-CN": "已恢复标定图案、照片和曲线点，可继续编辑或重新反推。",
     "en": "Restored the calibration pattern, photo, and curve points. You can continue editing or fit the parameters again.",
     "zh-TW": "已還原校準圖案、相片和曲線點，可繼續編輯或重新反推。",
-    "ja": "キャリブレーション パターン、写真、曲線点を復元しました。編集を続けるか、パラメーターを再推定できます。"
+    "ja": "キャリブレーション パターン、写真、曲線点を復元しました。編集を続けるか、パラメーターを再推定できます。",
+    "tr": "Kalibrasyon deseni, fotoğraf ve eğri noktaları geri yüklendi; düzenlemeye devam edebilir veya parametreleri yeniden çözebilirsiniz."
   },
   "已有任务正在运行。": {
     "zh-CN": "已有任务正在运行。",
     "en": "A task is already running.",
     "zh-TW": "已有工作正在執行。",
-    "ja": "別のタスクが実行中です。"
+    "ja": "別のタスクが実行中です。",
+    "tr": "Zaten çalışan bir görev var."
   },
   "已用全部 {0} 点生成参数候选{1}。请核对橙色预测是否沿青色实拍点连续贴合，再决定是否应用。": {
     "zh-CN": "已用全部 {0} 点生成参数候选{1}。请核对橙色预测是否沿青色实拍点连续贴合，再决定是否应用。",
     "en": "Generated parameter candidates using all {0} points{1}. Check that the orange prediction follows the cyan photographed points continuously before applying.",
     "zh-TW": "已用全部 {0} 點產生參數候選{1}。請核對橙色預測是否沿青色實拍點連續貼合，再決定是否套用。",
-    "ja": "{0} 点すべてを使用してパラメーター候補を生成しました{1}。オレンジ色の予測がシアンの撮影点に沿って連続的に一致しているか確認してから、適用するかどうかを決めてください。"
+    "ja": "{0} 点すべてを使用してパラメーター候補を生成しました{1}。オレンジ色の予測がシアンの撮影点に沿って連続的に一致しているか確認してから、適用するかどうかを決めてください。",
+    "tr": "{0} noktanın tamamı kullanılarak parametre adayları oluşturuldu{1}. Uygulamadan önce turuncu tahmin eğrisinin camgöbeği çekilen noktaları sürekli olarak izleyip izlemediğini kontrol edin."
   },
   "已请求取消；光驱可能仍需一段时间才能停止。": {
     "zh-CN": "已请求取消；光驱可能仍需一段时间才能停止。",
     "en": "Cancellation requested. The drive may need some time to stop.",
     "zh-TW": "已要求取消；光碟機可能仍需一段時間才能停止。",
-    "ja": "キャンセルを要求しました。ドライブが停止するまでしばらくかかる場合があります。"
+    "ja": "キャンセルを要求しました。ドライブが停止するまでしばらくかかる場合があります。",
+    "tr": "İptal istendi; sürücünün durması biraz zaman alabilir."
   },
   "延迟交织": {
     "zh-CN": "延迟交织",
     "en": "Delayed interleaving",
     "zh-TW": "延遲交織",
-    "ja": "遅延インターリーブ"
+    "ja": "遅延インターリーブ",
+    "tr": "Gecikmeli serpiştirme"
   },
   "当前任务生成文件，不包含可视图片预览。": {
     "zh-CN": "当前任务生成文件，不包含可视图片预览。",
     "en": "This task generates a file without an image preview.",
     "zh-TW": "此工作產生檔案，不提供圖片預覽。",
-    "ja": "このタスクはファイルを生成します。画像プレビューはありません。"
+    "ja": "このタスクはファイルを生成します。画像プレビューはありません。",
+    "tr": "Bu görev bir dosya oluşturur, görsel bir resim önizlemesi içermez."
   },
   "当前盘片报告 {0} 种写入配置；自动模式将使用最低值 ": {
     "zh-CN": "当前盘片报告 {0} 种写入配置；自动模式将使用最低值 ",
     "en": "The disc reports {0} write configurations. Automatic mode uses the lowest value: ",
     "zh-TW": "目前光碟片回報 {0} 種寫入設定；自動模式將使用最低值 ",
-    "ja": "このディスクは {0} 種類の書き込み構成を報告しています。自動モードでは最低値を使用します："
+    "ja": "このディスクは {0} 種類の書き込み構成を報告しています。自動モードでは最低値を使用します：",
+    "tr": "Disk {0} yazma yapılandırması bildiriyor; otomatik mod en düşük değeri kullanacaktır: "
   },
   "当前盘片未报告可选速度，将使用刻录接口的保守回退设置。": {
     "zh-CN": "当前盘片未报告可选速度，将使用刻录接口的保守回退设置。",
     "en": "The disc did not report available speeds. The burn interface will use its conservative fallback.",
     "zh-TW": "目前光碟片未回報可選速度，將使用燒錄介面的保守備援設定。",
-    "ja": "このディスクは選択可能な速度を報告していません。書き込みインターフェイスの保守的なフォールバック設定を使用します。"
+    "ja": "このディスクは選択可能な速度を報告していません。書き込みインターフェイスの保守的なフォールバック設定を使用します。",
+    "tr": "Disk kullanılabilir hızları bildirmedi. Yazma arayüzü temkinli varsayılan değerini kullanacaktır."
   },
   "影调={0} 级/{1:0}% 抖动。\n": {
     "zh-CN": "影调={0} 级/{1:0}% 抖动。\n",
     "en": "Tone={0} levels/{1:0}% dither.\n",
     "zh-TW": "影調={0} 級/{1:0}% 抖動。\n",
-    "ja": "階調={0} 段階/{1:0}% ディザ。\n"
+    "ja": "階調={0} 段階/{1:0}% ディザ。\n",
+    "tr": "Ton={0} basamak/%{1:0} sarsıntı.\n"
   },
   "总扇区数": {
     "zh-CN": "总扇区数",
     "en": "Total sectors",
     "zh-TW": "總磁區數",
-    "ja": "総セクター数"
+    "ja": "総セクター数",
+    "tr": "Toplam sektör sayısı"
   },
   "总扇区数超出 DVD 引擎支持范围。": {
     "zh-CN": "总扇区数超出 DVD 引擎支持范围。",
     "en": "The total sector count exceeds the DVD engine’s supported range.",
     "zh-TW": "總磁區數超出 DVD 引擎支援範圍。",
-    "ja": "総セクター数が DVD エンジンのサポート範囲を超えています。"
+    "ja": "総セクター数が DVD エンジンのサポート範囲を超えています。",
+    "tr": "Toplam sektör sayısı DVD motorunun desteklenen aralığını aşıyor."
   },
   "总扇区数超出蓝光引擎支持范围。": {
     "zh-CN": "总扇区数超出蓝光引擎支持范围。",
     "en": "The total sector count exceeds the Blu-ray engine’s supported range.",
     "zh-TW": "總磁區數超出藍光引擎支援範圍。",
-    "ja": "総セクター数が Blu-ray エンジンのサポート範囲を超えています。"
+    "ja": "総セクター数が Blu-ray エンジンのサポート範囲を超えています。",
+    "tr": "Toplam sektör sayısı Blu-ray motorunun desteklenen aralığını aşıyor."
   },
   "扇区数": {
     "zh-CN": "扇区数",
     "en": "Sector count",
     "zh-TW": "磁區數",
-    "ja": "セクター数"
+    "ja": "セクター数",
+    "tr": "Sektör sayısı"
   },
   "打开标定记录": {
     "zh-CN": "打开标定记录",
     "en": "Open calibration record",
     "zh-TW": "開啟校準記錄",
-    "ja": "キャリブレーション記録を開く"
+    "ja": "キャリブレーション記録を開く",
+    "tr": "Kalibrasyon kaydını aç"
   },
   "按标定图案记录的盘型与参数写入。": {
     "zh-CN": "按标定图案记录的盘型与参数写入。",
     "en": "Writes using the disc type and parameters stored in the calibration pattern.",
     "zh-TW": "按校準圖案記錄的光碟類型與參數寫入。",
-    "ja": "キャリブレーション パターンに記録されたディスクの種類とパラメーターで書き込みます。"
+    "ja": "キャリブレーション パターンに記録されたディスクの種類とパラメーターで書き込みます。",
+    "tr": "Kalibrasyon deseninde kayıtlı disk türü ve parametreleri kullanılarak yazılır."
   },
   "搜索范围（{0}）": {
     "zh-CN": "搜索范围（{0}）",
     "en": "Search range ({0})",
     "zh-TW": "搜尋範圍（{0}）",
-    "ja": "検索範囲（{0}）"
+    "ja": "検索範囲（{0}）",
+    "tr": "Arama aralığı ({0})"
   },
   "搜索范围（自动）": {
     "zh-CN": "搜索范围（自动）",
     "en": "Search range (automatic)",
     "zh-TW": "搜尋範圍（自動）",
-    "ja": "検索範囲（自動）"
+    "ja": "検索範囲（自動）",
+    "tr": "Arama aralığı (otomatik)"
   },
   "操作已取消。": {
     "zh-CN": "操作已取消。",
     "en": "Operation canceled.",
     "zh-TW": "操作已取消。",
-    "ja": "操作はキャンセルされました。"
+    "ja": "操作はキャンセルされました。",
+    "tr": "İşlem iptal edildi."
   },
   "操作未执行": {
     "zh-CN": "操作未执行",
     "en": "Operation not performed",
     "zh-TW": "操作未執行",
-    "ja": "操作は実行されませんでした"
+    "ja": "操作は実行されませんでした",
+    "tr": "İşlem yürütülmedi"
   },
   "放入可写盘片后读取其支持的速度；默认自动使用最低可用速度，以降低写入错误率。": {
     "zh-CN": "放入可写盘片后读取其支持的速度；默认自动使用最低可用速度，以降低写入错误率。",
     "en": "Insert a writable disc to read its supported speeds. Automatic mode uses the lowest available speed to reduce write errors.",
     "zh-TW": "放入可寫光碟片後讀取其支援的速度；預設自動使用最低可用速度，以降低寫入錯誤率。",
-    "ja": "書き込み可能なディスクを挿入すると、対応する速度を読み取ります。既定の自動モードでは、書き込みエラーを減らすために使用可能な最低速度を使用します。"
+    "ja": "書き込み可能なディスクを挿入すると、対応する速度を読み取ります。既定の自動モードでは、書き込みエラーを減らすために使用可能な最低速度を使用します。",
+    "tr": "Desteklenen hızları okumak için yazılabilir bir disk takın; yazma hata oranını düşürmek için varsayılan olarak otomatik olarak en düşük kullanılabilir hız seçilir."
   },
   "未交织": {
     "zh-CN": "未交织",
     "en": "Not interleaved",
     "zh-TW": "未交織",
-    "ja": "インターリーブなし"
+    "ja": "インターリーブなし",
+    "tr": "Serpiştirilmemiş"
   },
   "未检测到支持 IMAPI2 的 CD/DVD/BD 刻录机。": {
     "zh-CN": "未检测到支持 IMAPI2 的 CD/DVD/BD 刻录机。",
     "en": "No IMAPI2-compatible CD/DVD/BD recorder was found.",
     "zh-TW": "未偵測到支援 IMAPI2 的 CD/DVD/BD 燒錄機。",
-    "ja": "IMAPI2 対応の CD/DVD/BD ドライブが見つかりませんでした。"
+    "ja": "IMAPI2 対応の CD/DVD/BD ドライブが見つかりませんでした。",
+    "tr": "IMAPI2 uyumlu CD/DVD/BD yazıcısı bulunamadı."
   },
   "未能读取当前盘片速度，将使用刻录接口的保守回退设置：": {
     "zh-CN": "未能读取当前盘片速度，将使用刻录接口的保守回退设置：",
     "en": "Could not read the disc’s speeds. The burn interface will use its conservative fallback: ",
     "zh-TW": "無法讀取目前光碟片的速度，將使用燒錄介面的保守備援設定：",
-    "ja": "ディスクの速度を読み取れませんでした。書き込みインターフェイスの保守的なフォールバック設定を使用します："
+    "ja": "ディスクの速度を読み取れませんでした。書き込みインターフェイスの保守的なフォールバック設定を使用します：",
+    "tr": "Mevcut disk hızları okunamadı. Yazma arayüzünün temkinli varsayılan değeri kullanılacaktır: "
   },
   "未通过 · 平均偏差 {0:0.###} mm · 最大 {1:0.###} mm，不能应用{2}{3}": {
     "zh-CN": "未通过 · 平均偏差 {0:0.###} mm · 最大 {1:0.###} mm，不能应用{2}{3}",
     "en": "Failed · Mean error {0:0.###} mm · Maximum {1:0.###} mm; cannot apply{2}{3}",
     "zh-TW": "未通過 · 平均偏差 {0:0.###} mm · 最大 {1:0.###} mm，不能套用{2}{3}",
-    "ja": "不合格 · 平均誤差 {0:0.###} mm · 最大 {1:0.###} mm、適用できません{2}{3}"
+    "ja": "不合格 · 平均誤差 {0:0.###} mm · 最大 {1:0.###} mm、適用できません{2}{3}",
+    "tr": "Başarısız · Ortalama sapma {0:0.###} mm · Maksimum {1:0.###} mm; uygulanamaz{2}{3}"
   },
   "极性={0}。\n": {
     "zh-CN": "极性={0}。\n",
     "en": "Polarity={0}.\n",
     "zh-TW": "極性={0}。\n",
-    "ja": "極性={0}。\n"
+    "ja": "極性={0}。\n",
+    "tr": "Kutupluluk={0}.\n"
   },
   "标准 3T/6T": {
     "zh-CN": "标准 3T/6T",
     "en": "Standard 3T/6T",
     "zh-TW": "標準 3T/6T",
-    "ja": "標準 3T/6T"
+    "ja": "標準 3T/6T",
+    "tr": "Standart 3T/6T"
   },
   "标准光盘 · 12 cm": {
     "zh-CN": "标准光盘 · 12 cm",
     "en": "Standard disc · 12 cm",
     "zh-TW": "標準光碟 · 12 cm",
-    "ja": "標準ディスク · 12 cm"
+    "ja": "標準ディスク · 12 cm",
+    "tr": "Standart disk · 12 cm"
   },
   "标定参数": {
     "zh-CN": "标定参数",
     "en": "Calibration parameters",
     "zh-TW": "校準參數",
-    "ja": "キャリブレーション パラメーター"
+    "ja": "キャリブレーション パラメーター",
+    "tr": "Kalibrasyon parametreleri"
   },
   "标定参数不是蓝光目标。": {
     "zh-CN": "标定参数不是蓝光目标。",
     "en": "The calibration parameters do not describe a Blu-ray target.",
     "zh-TW": "校準參數不是藍光目標。",
-    "ja": "キャリブレーション パラメーターは Blu-ray 用ではありません。"
+    "ja": "キャリブレーション パラメーターは Blu-ray 用ではありません。",
+    "tr": "Kalibrasyon parametreleri bir Blu-ray hedefini tanımlamıyor."
   },
   "标定图案 · {0} · {1}": {
     "zh-CN": "标定图案 · {0} · {1}",
     "en": "Calibration pattern · {0} · {1}",
     "zh-TW": "校準圖案 · {0} · {1}",
-    "ja": "キャリブレーション パターン · {0} · {1}"
+    "ja": "キャリブレーション パターン · {0} · {1}",
+    "tr": "Kalibrasyon deseni · {0} · {1}"
   },
   "标定图案已变化，请重新保存记录并确认刻录。": {
     "zh-CN": "标定图案已变化，请重新保存记录并确认刻录。",
     "en": "The calibration pattern changed. Save the record and confirm the burn again.",
     "zh-TW": "校準圖案已變化，請重新儲存記錄並確認燒錄。",
-    "ja": "キャリブレーション パターンが変更されました。記録を保存し直し、書き込みをもう一度確認してください。"
+    "ja": "キャリブレーション パターンが変更されました。記録を保存し直し、書き込みをもう一度確認してください。",
+    "tr": "Kalibrasyon deseni değişti. Lütfen kaydı yeniden kaydedin ve yazmayı tekrar onaylayın."
   },
   "标定操作未完成": {
     "zh-CN": "标定操作未完成",
     "en": "Calibration operation did not complete",
     "zh-TW": "校準操作未完成",
-    "ja": "キャリブレーション操作が完了しませんでした"
+    "ja": "キャリブレーション操作が完了しませんでした",
+    "tr": "Kalibrasyon işlemi tamamlanmadı"
   },
   "标定文件与同名标定记录已生成。刻录后打开记录、导入照片，即可矫正和描线。": {
     "zh-CN": "标定文件与同名标定记录已生成。刻录后打开记录、导入照片，即可矫正和描线。",
     "en": "Generated the calibration file and matching record. After burning, open the record and import a photo to rectify it and trace the curves.",
     "zh-TW": "校準檔案與同名校準記錄已產生。燒錄後開啟記錄、匯入相片，即可校正和描線。",
-    "ja": "キャリブレーション ファイルと同名のキャリブレーション記録を生成しました。書き込み後に記録を開いて写真をインポートすると、補正とトレースを行えます。"
+    "ja": "キャリブレーション ファイルと同名のキャリブレーション記録を生成しました。書き込み後に記録を開いて写真をインポートすると、補正とトレースを行えます。",
+    "tr": "Kalibrasyon dosyası ve eşleşen kayıt oluşturuldu. Diske yazdıktan sonra kaydı açıp fotoğrafı içe aktararak düzeltebilir ve eğrileri çizebilirsiniz."
   },
   "标定记录|*.calibration.json": {
     "zh-CN": "标定记录|*.calibration.json",
     "en": "Calibration records|*.calibration.json",
     "zh-TW": "校準記錄|*.calibration.json",
-    "ja": "キャリブレーション記録|*.calibration.json"
+    "ja": "キャリブレーション記録|*.calibration.json",
+    "tr": "Kalibrasyon kayıtları|*.calibration.json"
   },
   "标定记录|*.calibration.json;*.json": {
     "zh-CN": "标定记录|*.calibration.json;*.json",
     "en": "Calibration records|*.calibration.json;*.json",
     "zh-TW": "校準記錄|*.calibration.json;*.json",
-    "ja": "キャリブレーション記録|*.calibration.json;*.json"
+    "ja": "キャリブレーション記録|*.calibration.json;*.json",
+    "tr": "Kalibrasyon kayıtları|*.calibration.json;*.json"
   },
   "标定记录中的照片尺寸无效，请重新导入。": {
     "zh-CN": "标定记录中的照片尺寸无效，请重新导入。",
     "en": "The photo dimensions in the calibration record are invalid. Import the photo again.",
     "zh-TW": "校準記錄中的相片尺寸無效，請重新匯入。",
-    "ja": "キャリブレーション記録の写真サイズが無効です。写真をもう一度インポートしてください。"
+    "ja": "キャリブレーション記録の写真サイズが無効です。写真をもう一度インポートしてください。",
+    "tr": "Kalibrasyon kaydındaki fotoğraf boyutları geçersiz. Lütfen fotoğrafı yeniden içe aktarın."
   },
   "标定轮廓超出照片范围。": {
     "zh-CN": "标定轮廓超出照片范围。",
     "en": "The calibration outline is outside the photo.",
     "zh-TW": "校準輪廓超出相片範圍。",
-    "ja": "キャリブレーションの輪郭が写真の範囲外です。"
+    "ja": "キャリブレーションの輪郭が写真の範囲外です。",
+    "tr": "Kalibrasyon konturu fotoğraf sınırlarının dışında kalıyor."
   },
   "检测到 {0} 台刻录机": {
     "zh-CN": "检测到 {0} 台刻录机",
     "en": "Found {0} recorders",
     "zh-TW": "偵測到 {0} 臺燒錄機",
-    "ja": "{0} 台のドライブが見つかりました"
+    "ja": "{0} 台のドライブが見つかりました",
+    "tr": "{0} yazıcı algılandı"
   },
   "检测刻录机失败：": {
     "zh-CN": "检测刻录机失败：",
     "en": "Recorder detection failed: ",
     "zh-TW": "偵測燒錄機失敗：",
-    "ja": "ドライブの検出に失敗しました："
+    "ja": "ドライブの検出に失敗しました：",
+    "tr": "Yazıcı algılama başarısız: "
   },
   "正在刷新 {0} px DVD 实时预览…": {
     "zh-CN": "正在刷新 {0} px DVD 实时预览…",
     "en": "Refreshing {0} px DVD live preview…",
     "zh-TW": "正在更新 {0} px DVD 即時預覽…",
-    "ja": "{0} px の DVD ライブ プレビューを更新しています…"
+    "ja": "{0} px の DVD ライブ プレビューを更新しています…",
+    "tr": "{0} px DVD canlı önizlemesi yenileniyor…"
   },
   "正在刷新 {0} px DVD 标定预览…": {
     "zh-CN": "正在刷新 {0} px DVD 标定预览…",
     "en": "Refreshing {0} px DVD calibration preview…",
     "zh-TW": "正在更新 {0} px DVD 校準預覽…",
-    "ja": "{0} px の DVD キャリブレーション プレビューを更新しています…"
+    "ja": "{0} px の DVD キャリブレーション プレビューを更新しています…",
+    "tr": "{0} px DVD kalibrasyon önizlemesi yenileniyor…"
   },
   "正在刷新 {0} px 实时预览…": {
     "zh-CN": "正在刷新 {0} px 实时预览…",
     "en": "Refreshing {0} px live preview…",
     "zh-TW": "正在更新 {0} px 即時預覽…",
-    "ja": "{0} px のライブ プレビューを更新しています…"
+    "ja": "{0} px のライブ プレビューを更新しています…",
+    "tr": "{0} px canlı önizleme yenileniyor…"
   },
   "正在刷新 {0} px 标定预览…": {
     "zh-CN": "正在刷新 {0} px 标定预览…",
     "en": "Refreshing {0} px calibration preview…",
     "zh-TW": "正在更新 {0} px 校準預覽…",
-    "ja": "{0} px のキャリブレーション プレビューを更新しています…"
+    "ja": "{0} px のキャリブレーション プレビューを更新しています…",
+    "tr": "{0} px kalibrasyon önizlemesi yenileniyor…"
   },
   "正在刷新 {0} px 蓝光成品读回…": {
     "zh-CN": "正在刷新 {0} px 蓝光成品读回…",
     "en": "Refreshing {0} px Blu-ray artifact readback…",
     "zh-TW": "正在更新 {0} px 藍光成品讀回…",
-    "ja": "{0} px の Blu-ray 成果物の読み戻しを更新しています…"
+    "ja": "{0} px の Blu-ray 成果物の読み戻しを更新しています…",
+    "tr": "{0} px Blu-ray ürün geri okuması yenileniyor…"
   },
   "正在刷新 {0} px 蓝光设计投影…": {
     "zh-CN": "正在刷新 {0} px 蓝光设计投影…",
     "en": "Refreshing {0} px Blu-ray design projection…",
     "zh-TW": "正在更新 {0} px 藍光設計投影…",
-    "ja": "{0} px の Blu-ray デザイン投影を更新しています…"
+    "ja": "{0} px の Blu-ray デザイン投影を更新しています…",
+    "tr": "{0} px Blu-ray tasarım izdüşümü yenileniyor…"
   },
   "正在导出图案…": {
     "zh-CN": "正在导出图案…",
     "en": "Exporting pattern…",
     "zh-TW": "正在匯出圖案…",
-    "ja": "パターンをエクスポートしています…"
+    "ja": "パターンをエクスポートしています…",
+    "tr": "Desen dışa aktarılıyor…"
   },
   "正在恢复标定照片与记录…": {
     "zh-CN": "正在恢复标定照片与记录…",
     "en": "Restoring calibration photo and record…",
     "zh-TW": "正在還原校準相片與記錄…",
-    "ja": "キャリブレーションの写真と記録を復元しています…"
+    "ja": "キャリブレーションの写真と記録を復元しています…",
+    "tr": "Kalibrasyon fotoğrafı ve kaydı geri yükleniyor…"
   },
   "正在根据实体边缘矫正照片…": {
     "zh-CN": "正在根据实体边缘矫正照片…",
     "en": "Rectifying the photo using the physical edges…",
     "zh-TW": "正在根據實體邊緣校正相片…",
-    "ja": "物理的な縁に基づいて写真を補正しています…"
+    "ja": "物理的な縁に基づいて写真を補正しています…",
+    "tr": "Fotoğraf fiziksel kenarlar kullanılarak düzeltiliyor…"
   },
   "正在检测刻录机…": {
     "zh-CN": "正在检测刻录机…",
     "en": "Detecting recorders…",
     "zh-TW": "正在偵測燒錄機…",
-    "ja": "ドライブを検出しています…"
+    "ja": "ドライブを検出しています…",
+    "tr": "Yazıcılar algılanıyor…"
   },
   "正在流式刻录，进度见底部任务栏。": {
     "zh-CN": "正在流式刻录，进度见底部任务栏。",
     "en": "Streaming burn in progress. See the task bar below.",
     "zh-TW": "正在串流燒錄，進度見底部工作欄。",
-    "ja": "ストリーミング書き込み中です。進行状況は下部のタスク バーで確認できます。"
+    "ja": "ストリーミング書き込み中です。進行状況は下部のタスク バーで確認できます。",
+    "tr": "Akışla yazma devam ediyor, ilerleme için alttaki görev çubuğuna bakın."
   },
   "正在生成图片预览…": {
     "zh-CN": "正在生成图片预览…",
     "en": "Generating image preview…",
     "zh-TW": "正在產生圖片預覽…",
-    "ja": "画像プレビューを生成しています…"
+    "ja": "画像プレビューを生成しています…",
+    "tr": "Görsel önizlemesi oluşturuluyor…"
   },
   "正在生成标定文件…": {
     "zh-CN": "正在生成标定文件…",
     "en": "Generating calibration file…",
     "zh-TW": "正在產生校準檔案…",
-    "ja": "キャリブレーション ファイルを生成しています…"
+    "ja": "キャリブレーション ファイルを生成しています…",
+    "tr": "Kalibrasyon dosyası oluşturuluyor…"
   },
   "正在用全部 {0} 个曲线点计算参数…": {
     "zh-CN": "正在用全部 {0} 个曲线点计算参数…",
     "en": "Calculating parameters using all {0} curve points…",
     "zh-TW": "正在用全部 {0} 個曲線點計算參數…",
-    "ja": "{0} 個の曲線点すべてを使用してパラメーターを計算しています…"
+    "ja": "{0} 個の曲線点すべてを使用してパラメーターを計算しています…",
+    "tr": "Tüm {0} eğri noktası kullanılarak parametreler hesaplanıyor…"
   },
   "正在请求停止刻录，请不要取出盘片…": {
     "zh-CN": "正在请求停止刻录，请不要取出盘片…",
     "en": "Requesting the burn to stop. Do not remove the disc…",
     "zh-TW": "正在要求停止燒錄，請不要取出光碟片…",
-    "ja": "書き込みの停止を要求しています。ディスクを取り出さないでください…"
+    "ja": "書き込みの停止を要求しています。ディスクを取り出さないでください…",
+    "tr": "Yazmanın durdurulması isteniyor, lütfen diski çıkarmayın…"
   },
   "正在读取当前盘片支持的刻录速度…": {
     "zh-CN": "正在读取当前盘片支持的刻录速度…",
     "en": "Reading the disc’s supported write speeds…",
     "zh-TW": "正在讀取目前光碟片支援的燒錄速度…",
-    "ja": "ディスクが対応する書き込み速度を読み取っています…"
+    "ja": "ディスクが対応する書き込み速度を読み取っています…",
+    "tr": "Geçerli diskin desteklediği yazma hızları okunuyor…"
   },
   "正在读取照片…": {
     "zh-CN": "正在读取照片…",
     "en": "Reading photo…",
     "zh-TW": "正在讀取相片…",
-    "ja": "写真を読み込んでいます…"
+    "ja": "写真を読み込んでいます…",
+    "tr": "Fotoğraf okunuyor…"
   },
   "没有可应用的候选。": {
     "zh-CN": "没有可应用的候选。",
     "en": "No candidate is available to apply.",
     "zh-TW": "沒有可套用的候選。",
-    "ja": "適用できる候補がありません。"
+    "ja": "適用できる候補がありません。",
+    "tr": "Uygulanabilecek bir aday yok."
   },
   "流式刻录完成": {
     "zh-CN": "流式刻录完成",
     "en": "Streaming burn complete",
     "zh-TW": "串流燒錄完成",
-    "ja": "ストリーミング書き込み完了"
+    "ja": "ストリーミング書き込み完了",
+    "tr": "Akışla yazma tamamlandı"
   },
   "流式刻录已经完成，可以取出光盘。": {
     "zh-CN": "流式刻录已经完成，可以取出光盘。",
     "en": "The streaming burn is complete. You can remove the disc.",
     "zh-TW": "串流燒錄已經完成，可以取出光碟。",
-    "ja": "ストリーミング書き込みが完了しました。ディスクを取り出せます。"
+    "ja": "ストリーミング書き込みが完了しました。ディスクを取り出せます。",
+    "tr": "Akışla yazma tamamlandı, diski çıkarabilirsiniz."
   },
   "流式刻录未完成": {
     "zh-CN": "流式刻录未完成",
     "en": "Streaming burn did not complete",
     "zh-TW": "串流燒錄未完成",
-    "ja": "ストリーミング書き込みが完了しませんでした"
+    "ja": "ストリーミング書き込みが完了しませんでした",
+    "tr": "Akışla yazma tamamlanmadı"
   },
   "照片已导入。请把两组控制点拖到光盘实体外缘和实体内缘，然后计算矫正。": {
     "zh-CN": "照片已导入。请把两组控制点拖到光盘实体外缘和实体内缘，然后计算矫正。",
     "en": "Photo imported. Drag the two sets of control points to the disc’s physical outer and inner edges, then calculate rectification.",
     "zh-TW": "相片已匯入。請把兩組控制點拖到光碟實體外緣和實體內緣，然後計算校正。",
-    "ja": "写真をインポートしました。2 組の制御点をディスクの物理的な外縁と内縁にドラッグしてから、補正を計算してください。"
+    "ja": "写真をインポートしました。2 組の制御点をディスクの物理的な外縁と内縁にドラッグしてから、補正を計算してください。",
+    "tr": "Fotoğraf içe aktarıldı. Lütfen iki denetim noktası grubunu diskin fiziksel dış ve iç kenarlarına sürükleyin, ardından düzeltmeyi hesaplayın."
   },
   "照片或扫描图|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff": {
     "zh-CN": "照片或扫描图|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff",
     "en": "Photos or scans|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff",
     "zh-TW": "相片或掃描圖|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff",
-    "ja": "写真またはスキャン画像|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff"
+    "ja": "写真またはスキャン画像|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff",
+    "tr": "Fotoğraflar veya taramalar|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff"
   },
   "生成内半径": {
     "zh-CN": "生成内半径",
     "en": "Generated inner radius",
     "zh-TW": "產生時的內半徑",
-    "ja": "生成内半径"
+    "ja": "生成内半径",
+    "tr": "Oluşturulan iç yarıçap"
   },
   "生成外半径": {
     "zh-CN": "生成外半径",
     "en": "Generated outer radius",
     "zh-TW": "產生時的外半徑",
-    "ja": "生成外半径"
+    "ja": "生成外半径",
+    "tr": "Oluşturulan dış yarıçap"
   },
   "生成的 CD 音轨或 ISO": {
     "zh-CN": "生成的 CD 音轨或 ISO",
     "en": "generated CD audio track or ISO",
     "zh-TW": "產生的 CD 音軌或 ISO",
-    "ja": "生成された CD オーディオ トラックまたは ISO"
+    "ja": "生成された CD オーディオ トラックまたは ISO",
+    "tr": "oluşturulan CD ses izi veya ISO"
   },
   "生成的 DVD ISO": {
     "zh-CN": "生成的 DVD ISO",
     "en": "generated DVD ISO",
     "zh-TW": "產生的 DVD ISO",
-    "ja": "生成された DVD ISO"
+    "ja": "生成された DVD ISO",
+    "tr": "oluşturulan DVD ISO"
   },
   "生成的蓝光 ISO": {
     "zh-CN": "生成的蓝光 ISO",
     "en": "generated Blu-ray ISO",
     "zh-TW": "產生的藍光 ISO",
-    "ja": "生成された Blu-ray ISO"
+    "ja": "生成された Blu-ray ISO",
+    "tr": "oluşturulan Blu-ray ISO"
   },
   "相对一次项": {
     "zh-CN": "相对一次项",
     "en": "Relative linear coefficient",
     "zh-TW": "相對一次項",
-    "ja": "相対 1 次係数"
+    "ja": "相対 1 次係数",
+    "tr": "Bağıl doğrusal katsayı"
   },
   "相对三次项": {
     "zh-CN": "相对三次项",
     "en": "Relative cubic coefficient",
     "zh-TW": "相對三次項",
-    "ja": "相対 3 次係数"
+    "ja": "相対 3 次係数",
+    "tr": "Bağıl kübik katsayı"
   },
   "相对二次项": {
     "zh-CN": "相对二次项",
     "en": "Relative quadratic coefficient",
     "zh-TW": "相對二次項",
-    "ja": "相対 2 次係数"
+    "ja": "相対 2 次係数",
+    "tr": "Bağıl karesel katsayı"
   },
   "矫正预览已生成。检查盘面恢复正视效果后，确认并开始描线。": {
     "zh-CN": "矫正预览已生成。检查盘面恢复正视效果后，确认并开始描线。",
     "en": "Rectification preview generated. Check that the disc appears face-on, then confirm and start tracing.",
     "zh-TW": "校正預覽已產生。檢查光碟表面還原正視效果後，確認並開始描線。",
-    "ja": "補正プレビューを生成しました。ディスクが正面から見た状態になっていることを確認してから、確定してトレースを開始してください。"
+    "ja": "補正プレビューを生成しました。ディスクが正面から見た状態になっていることを確認してから、確定してトレースを開始してください。",
+    "tr": "Düzeltme önizlemesi oluşturuldu. Disk yüzeyinin dik (karşıdan) görünümünü denetledikten sonra onaylayın ve eğrileri çizmeye başlayın."
   },
   "确保磁盘预留适量空间": {
     "zh-CN": "确保磁盘预留适量空间",
     "en": "Make sure sufficient disk space is available",
     "zh-TW": "確保磁碟預留足夠空間",
-    "ja": "十分なディスク空き容量を確保してください"
+    "ja": "十分なディスク空き容量を確保してください",
+    "tr": "Diskte yeterli boş alan olduğundan emin olun"
   },
   "确保磁盘预留适量空间 · {0}": {
     "zh-CN": "确保磁盘预留适量空间 · {0}",
     "en": "Make sure sufficient disk space is available · {0}",
     "zh-TW": "確保磁碟預留足夠空間 · {0}",
-    "ja": "十分なディスク空き容量を確保してください · {0}"
+    "ja": "十分なディスク空き容量を確保してください · {0}",
+    "tr": "Diskte yeterli boş alan olduğundan emin olun · {0}"
   },
   "确认刻录": {
     "zh-CN": "确认刻录",
     "en": "Confirm burn",
     "zh-TW": "確認燒錄",
-    "ja": "書き込みの確認"
+    "ja": "書き込みの確認",
+    "tr": "Yazmayı onayla"
   },
   "确认开始流式刻录": {
     "zh-CN": "确认开始流式刻录",
     "en": "Confirm streaming burn",
     "zh-TW": "確認開始串流燒錄",
-    "ja": "ストリーミング書き込みの開始を確認"
+    "ja": "ストリーミング書き込みの開始を確認",
+    "tr": "Akışla yazmayı başlatmayı onayla"
   },
   "等待 {0}": {
     "zh-CN": "等待 {0}",
     "en": "Waiting for {0}",
     "zh-TW": "等待 {0}",
-    "ja": "{0} を待機中"
+    "ja": "{0} を待機中",
+    "tr": "{0} bekleniyor"
   },
   "等待开始": {
     "zh-CN": "等待开始",
     "en": "Ready to start",
     "zh-TW": "等待開始",
-    "ja": "開始待ち"
+    "ja": "開始待ち",
+    "tr": "Başlamaya hazır"
   },
   "等待生成的 CD 音轨或 ISO": {
     "zh-CN": "等待生成的 CD 音轨或 ISO",
     "en": "Waiting for a generated CD audio track or ISO",
     "zh-TW": "等待產生的 CD 音軌或 ISO",
-    "ja": "生成された CD オーディオ トラックまたは ISO を待機中"
+    "ja": "生成された CD オーディオ トラックまたは ISO を待機中",
+    "tr": "Oluşturulacak CD ses izi veya ISO bekleniyor"
   },
   "纯音轨": {
     "zh-CN": "纯音轨",
     "en": "Audio track only",
     "zh-TW": "純音軌",
-    "ja": "オーディオ トラックのみ"
+    "ja": "オーディオ トラックのみ",
+    "tr": "Yalnızca ses izi"
   },
   "线速度 {0:0.######} mm/s · ": {
     "zh-CN": "线速度 {0:0.######} mm/s · ",
     "en": "Linear velocity {0:0.######} mm/s · ",
     "zh-TW": "線速度 {0:0.######} mm/s · ",
-    "ja": "線速度 {0:0.######} mm/s · "
+    "ja": "線速度 {0:0.######} mm/s · ",
+    "tr": "Çizgisel hız {0:0.######} mm/s · "
   },
   "绘图 {0}..{1}，": {
     "zh-CN": "绘图 {0}..{1}，",
     "en": "Drawing {0}..{1}, ",
     "zh-TW": "繪圖 {0}..{1}，",
-    "ja": "描画 {0}..{1}、"
+    "ja": "描画 {0}..{1}、",
+    "tr": "Çizim {0}..{1}, "
   },
   "绘图区 {0:0.######}–{1:0.######} mm": {
     "zh-CN": "绘图区 {0:0.######}–{1:0.######} mm",
     "en": "Drawing region {0:0.######}–{1:0.######} mm",
     "zh-TW": "繪圖區 {0:0.######}–{1:0.######} mm",
-    "ja": "描画領域 {0:0.######}–{1:0.######} mm"
+    "ja": "描画領域 {0:0.######}–{1:0.######} mm",
+    "tr": "Çizim alanı {0:0.######}–{1:0.######} mm"
   },
   "耗时 {0:F1} 秒": {
     "zh-CN": "耗时 {0:F1} 秒",
     "en": "Elapsed {0:F1} seconds",
     "zh-TW": "耗時 {0:F1} 秒",
-    "ja": "所要時間 {0:F1} 秒"
+    "ja": "所要時間 {0:F1} 秒",
+    "tr": "{0:F1} saniye sürdü"
   },
   "自动（推荐）": {
     "zh-CN": "自动（推荐）",
     "en": "Automatic (recommended)",
     "zh-TW": "自動（建議）",
-    "ja": "自動（推奨）"
+    "ja": "自動（推奨）",
+    "tr": "Otomatik (önerilen)"
   },
   "自动（最低速率，推荐）": {
     "zh-CN": "自动（最低速率，推荐）",
     "en": "Automatic (lowest speed, recommended)",
     "zh-TW": "自動（最低速率，建議）",
-    "ja": "自動（最低速度、推奨）"
+    "ja": "自動（最低速度、推奨）",
+    "tr": "Otomatik (en düşük hız, önerilen)"
   },
   "蓝光 ISO 文件不存在。": {
     "zh-CN": "蓝光 ISO 文件不存在。",
     "en": "The Blu-ray ISO file does not exist.",
     "zh-TW": "藍光 ISO 檔案不存在。",
-    "ja": "Blu-ray ISO ファイルが存在しません。"
+    "ja": "Blu-ray ISO ファイルが存在しません。",
+    "tr": "Blu-ray ISO dosyası mevcut değil."
   },
   "蓝光内半径": {
     "zh-CN": "蓝光内半径",
     "en": "Blu-ray inner radius",
     "zh-TW": "藍光內半徑",
-    "ja": "Blu-ray 内半径"
+    "ja": "Blu-ray 内半径",
+    "tr": "Blu-ray iç yarıçapı"
   },
   "蓝光外半径": {
     "zh-CN": "蓝光外半径",
     "en": "Blu-ray outer radius",
     "zh-TW": "藍光外半徑",
-    "ja": "Blu-ray 外半径"
+    "ja": "Blu-ray 外半径",
+    "tr": "Blu-ray dış yarıçapı"
   },
   "蓝光总扇区数": {
     "zh-CN": "蓝光总扇区数",
     "en": "Blu-ray total sectors",
     "zh-TW": "藍光總磁區數",
-    "ja": "Blu-ray 総セクター数"
+    "ja": "Blu-ray 総セクター数",
+    "tr": "Blu-ray toplam sektör sayısı"
   },
   "蓝光源图片不存在。": {
     "zh-CN": "蓝光源图片不存在。",
     "en": "The Blu-ray source image does not exist.",
     "zh-TW": "藍光來源圖片不存在。",
-    "ja": "Blu-ray のソース画像が存在しません。"
+    "ja": "Blu-ray のソース画像が存在しません。",
+    "tr": "Blu-ray kaynak görseli mevcut değil."
   },
   "计算未通过，全部点已保留。": {
     "zh-CN": "计算未通过，全部点已保留。",
     "en": "Calculation failed. All points were retained.",
     "zh-TW": "計算未通過，全部點已保留。",
-    "ja": "計算に失敗しました。すべての点を保持しました。"
+    "ja": "計算に失敗しました。すべての点を保持しました。",
+    "tr": "Hesaplama geçmedi, tüm noktalar korundu."
   },
   "计算未通过，已保留全部 {0} 点。\n{1}": {
     "zh-CN": "计算未通过，已保留全部 {0} 点。\n{1}",
     "en": "Calculation failed. All {0} points were retained.\n{1}",
     "zh-TW": "計算未通過，已保留全部 {0} 點。\n{1}",
-    "ja": "計算に失敗しました。{0} 点すべてを保持しました。\n{1}"
+    "ja": "計算に失敗しました。{0} 点すべてを保持しました。\n{1}",
+    "tr": "Hesaplama geçmedi, {0} noktanın tamamı korundu.\n{1}"
   },
   "设备={0}；请求速度={1}。\n": {
     "zh-CN": "设备={0}；请求速度={1}。\n",
     "en": "Device={0}; requested speed={1}.\n",
     "zh-TW": "裝置={0}；要求速度={1}。\n",
-    "ja": "デバイス={0}；要求速度={1}。\n"
+    "ja": "デバイス={0}；要求速度={1}。\n",
+    "tr": "Cihaz={0}; İstenen hız={1}.\n"
   },
   "请先创建图案。": {
     "zh-CN": "请先创建图案。",
     "en": "Create a pattern first.",
     "zh-TW": "請先建立圖案。",
-    "ja": "先にパターンを作成してください。"
+    "ja": "先にパターンを作成してください。",
+    "tr": "Önce bir desen oluşturun."
   },
   "请先勾选刻录确认。": {
     "zh-CN": "请先勾选刻录确认。",
     "en": "Select the burn confirmation checkbox first.",
     "zh-TW": "請先勾選燒錄確認。",
-    "ja": "先に書き込み確認のチェック ボックスをオンにしてください。"
+    "ja": "先に書き込み確認のチェック ボックスをオンにしてください。",
+    "tr": "Önce yazma onay kutusunu işaretleyin."
   },
   "请先在设计页导入图片": {
     "zh-CN": "请先在设计页导入图片",
     "en": "Import an image on the Design page first",
     "zh-TW": "請先在設計頁匯入圖片",
-    "ja": "先にデザイン ページで画像をインポートしてください"
+    "ja": "先にデザイン ページで画像をインポートしてください",
+    "tr": "Önce Tasarım sayfasında bir görsel içe aktarın"
   },
   "请先在设计页导入图片，合成图会自动填入。": {
     "zh-CN": "请先在设计页导入图片，合成图会自动填入。",
     "en": "Import an image on the Design page first. The composite will be filled in automatically.",
     "zh-TW": "請先在設計頁匯入圖片，合成圖會自動填入。",
-    "ja": "先にデザイン ページで画像をインポートしてください。合成画像が自動的に入力されます。"
+    "ja": "先にデザイン ページで画像をインポートしてください。合成画像が自動的に入力されます。",
+    "tr": "Önce Tasarım sayfasında bir görsel içe aktarın, birleşik görsel otomatik olarak doldurulacaktır."
   },
   "请先在辅助标定工作区创建图案。": {
     "zh-CN": "请先在辅助标定工作区创建图案。",
     "en": "Create a pattern in the Calibration workspace first.",
     "zh-TW": "請先在輔助校準工作區建立圖案。",
-    "ja": "先にキャリブレーション ワークスペースでパターンを作成してください。"
+    "ja": "先にキャリブレーション ワークスペースでパターンを作成してください。",
+    "tr": "Önce Yardımcı Kalibrasyon çalışma alanında bir desen oluşturun."
   },
   "请先在辅助标定工作区创建图案，再回到这里刻录。": {
     "zh-CN": "请先在辅助标定工作区创建图案，再回到这里刻录。",
     "en": "Create a pattern in the Calibration workspace, then return here to burn it.",
     "zh-TW": "請先在輔助校準工作區建立圖案，再回到這裡燒錄。",
-    "ja": "先にキャリブレーション ワークスペースでパターンを作成してから、ここに戻って書き込んでください。"
+    "ja": "先にキャリブレーション ワークスペースでパターンを作成してから、ここに戻って書き込んでください。",
+    "tr": "Önce Yardımcı Kalibrasyon çalışma alanında bir desen oluşturun, ardından diske yazmak için buraya dönün."
   },
   "请先选择 {0}。": {
     "zh-CN": "请先选择 {0}。",
     "en": "Select {0} first.",
     "zh-TW": "請先選擇 {0}。",
-    "ja": "先に {0} を選択してください。"
+    "ja": "先に {0} を選択してください。",
+    "tr": "Lütfen önce {0} seçin."
   },
   "请先选择刻录机。": {
     "zh-CN": "请先选择刻录机。",
     "en": "Select a recorder first.",
     "zh-TW": "請先選擇燒錄機。",
-    "ja": "先にドライブを選択してください。"
+    "ja": "先にドライブを選択してください。",
+    "tr": "Lütfen önce bir yazıcı seçin."
   },
   "请先选择生成的 CD 音轨或 ISO。": {
     "zh-CN": "请先选择生成的 CD 音轨或 ISO。",
     "en": "Select a generated CD audio track or ISO first.",
     "zh-TW": "請先選擇產生的 CD 音軌或 ISO。",
-    "ja": "先に生成された CD オーディオ トラックまたは ISO を選択してください。"
+    "ja": "先に生成された CD オーディオ トラックまたは ISO を選択してください。",
+    "tr": "Lütfen önce oluşturulan CD ses izini veya ISO'yu seçin."
   },
   "请先选择生成的 CD 音轨或 ISO（导出页生成后自动填入）。": {
     "zh-CN": "请先选择生成的 CD 音轨或 ISO（导出页生成后自动填入）。",
     "en": "Select a generated CD audio track or ISO first (filled in automatically after generation on the Export page).",
     "zh-TW": "請先選擇產生的 CD 音軌或 ISO（匯出頁產生後自動填入）。",
-    "ja": "先に生成された CD オーディオ トラックまたは ISO を選択してください（エクスポート ページで生成すると自動的に入力されます）。"
+    "ja": "先に生成された CD オーディオ トラックまたは ISO を選択してください（エクスポート ページで生成すると自動的に入力されます）。",
+    "tr": "Lütfen önce oluşturulan CD ses izini veya ISO'yu seçin (Dışa Aktarma sayfasında oluşturulduktan sonra otomatik doldurulur)."
   },
   "请先选择生成的 DVD ISO（导出页生成后自动填入）。": {
     "zh-CN": "请先选择生成的 DVD ISO（导出页生成后自动填入）。",
     "en": "Select a generated DVD ISO first (filled in automatically after generation on the Export page).",
     "zh-TW": "請先選擇產生的 DVD ISO（匯出頁產生後自動填入）。",
-    "ja": "先に生成された DVD ISO を選択してください（エクスポート ページで生成すると自動的に入力されます）。"
+    "ja": "先に生成された DVD ISO を選択してください（エクスポート ページで生成すると自動的に入力されます）。",
+    "tr": "Lütfen önce oluşturulan DVD ISO'sunu seçin (Dışa Aktarma sayfasında oluşturulduktan sonra otomatik doldurulur)."
   },
   "请先选择生成的蓝光 ISO（导出页生成后自动填入）。": {
     "zh-CN": "请先选择生成的蓝光 ISO（导出页生成后自动填入）。",
     "en": "Select a generated Blu-ray ISO first (filled in automatically after generation on the Export page).",
     "zh-TW": "請先選擇產生的藍光 ISO（匯出頁產生後自動填入）。",
-    "ja": "先に生成された Blu-ray ISO を選択してください（エクスポート ページで生成すると自動的に入力されます）。"
+    "ja": "先に生成された Blu-ray ISO を選択してください（エクスポート ページで生成すると自動的に入力されます）。",
+    "tr": "Lütfen önce oluşturulan Blu-ray ISO'sunu seçin (Dışa Aktarma sayfasında oluşturulduktan sonra otomatik doldurulur)."
   },
   "请求速度：{0}\n\n": {
     "zh-CN": "请求速度：{0}\n\n",
     "en": "Requested speed: {0}\n\n",
     "zh-TW": "要求速度：{0}\n\n",
-    "ja": "要求速度：{0}\n\n"
+    "ja": "要求速度：{0}\n\n",
+    "tr": "İstenen hız: {0}\n\n"
   },
   "请选择 DVD/BD 的 .iso 或 CD 的 .wav / .raw 输出文件。": {
     "zh-CN": "请选择 DVD/BD 的 .iso 或 CD 的 .wav / .raw 输出文件。",
     "en": "Choose an .iso output file for DVD/BD or a .wav / .raw file for CD.",
     "zh-TW": "請選擇 DVD/BD 的 .iso 或 CD 的 .wav / .raw 輸出檔案。",
-    "ja": "DVD/BD の場合は .iso、CD の場合は .wav / .raw の出力ファイルを選択してください。"
+    "ja": "DVD/BD の場合は .iso、CD の場合は .wav / .raw の出力ファイルを選択してください。",
+    "tr": "Lütfen DVD/BD için bir .iso veya CD için bir .wav / .raw çıktı dosyası seçin."
   },
   "请选择刻录机。": {
     "zh-CN": "请选择刻录机。",
     "en": "Select a recorder.",
     "zh-TW": "請選擇燒錄機。",
-    "ja": "ドライブを選択してください。"
+    "ja": "ドライブを選択してください。",
+    "tr": "Lütfen bir yazıcı seçin."
   },
   "输出预览": {
     "zh-CN": "输出预览",
     "en": "Output preview",
     "zh-TW": "輸出預覽",
-    "ja": "出力プレビュー"
+    "ja": "出力プレビュー",
+    "tr": "Çıktı önizlemesi"
   },
   "进入此页面后会检测本机刻录机。": {
     "zh-CN": "进入此页面后会检测本机刻录机。",
     "en": "Recorders on this computer will be detected when you open this page.",
     "zh-TW": "進入此頁面後會偵測本機燒錄機。",
-    "ja": "このページを開くと、このコンピューターのドライブが検出されます。"
+    "ja": "このページを開くと、このコンピューターのドライブが検出されます。",
+    "tr": "Bu sayfaya girdiğinizde bilgisayarınızdaki yazıcılar algılanacaktır."
   },
   "逆交织": {
     "zh-CN": "逆交织",
     "en": "Deinterleaved",
     "zh-TW": "逆交織",
-    "ja": "デインターリーブ"
+    "ja": "デインターリーブ",
+    "tr": "Ters serpiştirilmiş"
   },
   "预览 - BD": {
     "zh-CN": "预览 - BD",
     "en": "Preview - BD",
     "zh-TW": "預覽 - BD",
-    "ja": "プレビュー - BD"
+    "ja": "プレビュー - BD",
+    "tr": "Önizleme - BD"
   },
   "预览 - CD": {
     "zh-CN": "预览 - CD",
     "en": "Preview - CD",
     "zh-TW": "預覽 - CD",
-    "ja": "プレビュー - CD"
+    "ja": "プレビュー - CD",
+    "tr": "Önizleme - CD"
   },
   "预览 - DVD": {
     "zh-CN": "预览 - DVD",
     "en": "Preview - DVD",
     "zh-TW": "預覽 - DVD",
-    "ja": "プレビュー - DVD"
+    "ja": "プレビュー - DVD",
+    "tr": "Önizleme - DVD"
   },
   "预览 - {0}": {
     "zh-CN": "预览 - {0}",
     "en": "Preview - {0}",
     "zh-TW": "預覽 - {0}",
-    "ja": "プレビュー - {0}"
+    "ja": "プレビュー - {0}",
+    "tr": "Önizleme - {0}"
   },
   "预览已导出": {
     "zh-CN": "预览已导出",
     "en": "Preview exported",
     "zh-TW": "預覽已匯出",
-    "ja": "プレビューをエクスポートしました"
+    "ja": "プレビューをエクスポートしました",
+    "tr": "Önizleme dışa aktarıldı"
   },
   "预览继续使用当前工程几何。\n": {
     "zh-CN": "预览继续使用当前工程几何。\n",
     "en": "the preview will continue using the current project geometry.\n",
     "zh-TW": "預覽繼續使用目前專案幾何。\n",
-    "ja": "プレビューでは引き続き現在のプロジェクトのジオメトリを使用します。\n"
+    "ja": "プレビューでは引き続き現在のプロジェクトのジオメトリを使用します。\n",
+    "tr": "Önizleme geçerli proje geometrisini kullanmaya devam edecek.\n"
   },
   "，实际速度={0}。\n": {
     "zh-CN": "，实际速度={0}。\n",
     "en": ", actual speed={0}.\n",
     "zh-TW": "，實際速度={0}。\n",
-    "ja": "、実際の速度={0}。\n"
+    "ja": "、実際の速度={0}。\n",
+    "tr": ", gerçek hız={0}.\n"
   },
   "，搜索范围自动扩大至 ±{0:0.###} mm": {
     "zh-CN": "，搜索范围自动扩大至 ±{0:0.###} mm",
     "en": ", with the search range automatically expanded to ±{0:0.###} mm",
     "zh-TW": "，搜尋範圍自動擴大至 ±{0:0.###} mm",
-    "ja": "、検索範囲を ±{0:0.###} mm に自動拡大"
+    "ja": "、検索範囲を ±{0:0.###} mm に自動拡大",
+    "tr": ", arama aralığı otomatik olarak ±{0:0.###} mm'ye genişletildi"
   },
   "；文件位于内圈，图案位于其外侧": {
     "zh-CN": "；文件位于内圈，图案位于其外侧",
     "en": "; files on the inner ring, drawing outside them",
     "zh-TW": "；檔案位於內圈，圖案位於其外側",
-    "ja": "；ファイルは内周、パターンはその外側"
+    "ja": "；ファイルは内周、パターンはその外側",
+    "tr": "; dosyalar iç halkada, desen dış tarafta"
   },
   "；文件位于外圈，图案位于其内侧": {
     "zh-CN": "；文件位于外圈，图案位于其内侧",
     "en": "; files on the outer ring, drawing inside them",
     "zh-TW": "；檔案位於外圈，圖案位於其內側",
-    "ja": "；ファイルは外周、パターンはその内側"
+    "ja": "；ファイルは外周、パターンはその内側",
+    "tr": "; dosyalar dış halkada, desen iç tarafta"
   }
 }
