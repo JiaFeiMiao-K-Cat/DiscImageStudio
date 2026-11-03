@@ -151,8 +151,8 @@ for group in optical cdrom; do
   if getent group "$group" >/dev/null 2>&1; then
     if ! id -nG 2>/dev/null | tr ' ' '\n' | grep -qx "$group"; then
       echo
-      echo "To burn discs, add yourself to the '$group' group, then log out and back in:"
-      echo "  sudo usermod -aG $group \"\$USER\""
+      echo "If the Burn page reports no access to the drive, add yourself to the '$group' group,"
+      echo "then log out and back in:  sudo usermod -aG $group \"\$USER\""
     fi
     break
   fi

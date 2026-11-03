@@ -45,7 +45,25 @@ Disc Image Studio 可将一张图片转换成符合 CD、DVD 与单层 BD-R 光�
 
 Windows 下载 `win-x64.exe` 后可直接运行。Linux 或 macOS 请下载与 CPU 匹配的**实验性 CLI** 压缩包，解压后运行 `./disc-image-studio --help`。这些发布包均自带 .NET 运行时。 [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
-Linux 还可以安装**实验性桌面版**，提供同样的设计、预览、导出与刻录流程，并调用 cdrecord、growisofs 或 xorriso 刻录。Arch Linux 在 `packaging/linux/arch` 中运行 `makepkg -si`；其他发行版解压 `DiscImageStudio-Linux-…tar.gz` 后运行 `./install.sh`，或用 `./packaging/linux/build.sh --install` 从源码构建。详见 [Linux 指南（英文）](docs/LINUX.md)。
+Linux 还可以从分支 [oreo1298/discimagestudio](https://github.com/oreo1298/discimagestudio) 安装**实验性桌面版**，提供同样的设计、预览、导出与刻录流程，并调用 cdrecord、growisofs 或 xorriso 刻录。桌面版需从源码构建，目前尚未发布预编译压缩包：
+
+Arch Linux：
+
+```sh
+git clone https://github.com/oreo1298/discimagestudio.git
+cd discimagestudio/packaging/linux/arch
+makepkg -si
+```
+
+其他发行版（需要 .NET 10 SDK）：
+
+```sh
+git clone https://github.com/oreo1298/discimagestudio.git
+cd discimagestudio
+./packaging/linux/build.sh --install
+```
+
+系统要求、更新与刻录详见 [Linux 指南（英文）](docs/LINUX.md)。
 
 ### 1. 新建工程
 

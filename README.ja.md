@@ -45,7 +45,25 @@ Disc Image Studio は、1 枚の画像を CD、DVD、片面一層 BD-R ディス
 
 Windows では `win-x64.exe` で終わるファイルをダウンロードして実行します。Linux または macOS では、CPU に合った**実験的な CLI** のアーカイブを展開し、`./disc-image-studio --help` を実行してください。いずれも .NET ランタイムを同梱しています。[GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
-Linux では**実験的なデスクトップ版**も使えます。デザイン、プレビュー、エクスポート、書き込みの流れは同じで、書き込みには cdrecord、growisofs または xorriso を使います。Arch Linux では `packaging/linux/arch` で `makepkg -si` を実行します。その他のディストリビューションでは `DiscImageStudio-Linux-…tar.gz` を展開して `./install.sh` を実行するか、`./packaging/linux/build.sh --install` でソースからビルドしてください。詳しくは [Linux ガイド（英語）](docs/LINUX.md) を参照してください。
+Linux では、フォーク [oreo1298/discimagestudio](https://github.com/oreo1298/discimagestudio) から**実験的なデスクトップ版**もインストールできます。デザイン、プレビュー、エクスポート、書き込みの流れは同じで、書き込みには cdrecord、growisofs または xorriso を使います。デスクトップ版はソースからビルドします。ビルド済みのアーカイブはまだ公開されていません。
+
+Arch Linux：
+
+```sh
+git clone https://github.com/oreo1298/discimagestudio.git
+cd discimagestudio/packaging/linux/arch
+makepkg -si
+```
+
+その他のディストリビューション（.NET 10 SDK が必要）：
+
+```sh
+git clone https://github.com/oreo1298/discimagestudio.git
+cd discimagestudio
+./packaging/linux/build.sh --install
+```
+
+動作要件、更新方法、書き込みについては [Linux ガイド（英語）](docs/LINUX.md) を参照してください。
 
 ### 1. プロジェクトを新規作成
 

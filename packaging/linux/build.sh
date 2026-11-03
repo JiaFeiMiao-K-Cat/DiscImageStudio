@@ -119,7 +119,7 @@ Uninstall:                                  ./install.sh --uninstall   (sudo for
 Then start "Disc Image Studio" from the application menu, or run disc-image-studio-gui.
 The command-line tool is disc-image-studio (same engines; run it with --help).
 
-Full instructions: https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/blob/main/docs/LINUX.md
+Full instructions: https://github.com/oreo1298/discimagestudio/blob/main/docs/LINUX.md
 README
 
 echo "==> Smoke test"
