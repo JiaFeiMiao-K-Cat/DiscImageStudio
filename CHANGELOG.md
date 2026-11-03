@@ -4,13 +4,13 @@
 
 ### 中文
 
-- 新增 Verbatim DVD-R AZO (43523) 内置预设。
+- 新增铼德 DVD+R E时代系列内置预设。
 - 新建工程不再按模板自动填充工程名，输入框保持为空；填写名称后才能创建。
 - 侧栏工程头卡片右侧新增软盘保存按钮。
 
 ### English
 
-- Added a built-in Verbatim DVD-R AZO (43523) preset.
+- Added a built-in Ritek DVD+R E-Series preset.
 - New projects leave the project name empty instead of filling it from the selected template; the project can be created once a name is entered.
 - Added a floppy-disk Save button on the right of the sidebar project header.
 

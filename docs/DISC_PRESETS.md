@@ -29,8 +29,8 @@
 ```json
 {
   "id": "verbatim-dvd-r-azo-43533",
-  "displayName": "Verbatim DVD-R AZO (43533)（实测）",
-  "description": "Verbatim DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
+  "displayName": "威宝 DVD-R AZO (43533)（实测）",
+  "description": "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
   "totalSectors": 2297888,
   "innerRadiusMm": 23.991460627731737,
   "outerRadiusMm": 57.964893657925366,
@@ -43,7 +43,7 @@
 
 DVD 的 `totalSectors` 必须大于 0 且是 16 的倍数，以满足 ECC Block 和流式刻录布局要求。`channelBitLengthNm` 见下节，属于保留字段。
 
-此 Verbatim DVD 预设来自用户确认已验证的 `calibration-f2f851f7.calibration.json`，保留记录中的完整参数精度。
+此威宝 DVD 预设来自用户确认已验证的 `calibration-f2f851f7.calibration.json`，保留记录中的完整参数精度。
 
 可选字段 `contributor` 记录该套实测参数的贡献者。填写后，预设卡片左上角显示幼苗图标，鼠标悬停立即显示“贡献者：…”；省略该字段或留空则不显示图标，仅含空白的值会被校验拒绝。例如内置的 `philips-dvd-plus-r`：
 
@@ -99,7 +99,7 @@ DVD 的 `totalSectors` 必须大于 0 且是 16 的倍数，以满足 ECC Block 
 
 BD 的 `totalSectors` 必须大于 0、按 32 对齐且不超过单层容量 12,219,392；外半径不超过 60 mm。`invertMapping` 是预置的 3T/6T 极性，应用到工程后仍可在设计页影调模块中修改。
 
-内置 `bd-r-verbatim-64099`（Verbatim BD-R (64099)）采用用户文件 `disc-presets.json` 中已保存的「Verbatim 64099」预设，保留完整精度：内半径 `23.987042157339335` mm、外半径 `57.987960341783236` mm、`12,219,392` 扇区、`invertMapping: false`。GUI 与命令行使用相同参数。
+内置 `bd-r-verbatim-64099`（威宝 BD-R (64099)）采用用户文件 `disc-presets.json` 中已保存的「Verbatim 64099」预设，保留完整精度：内半径 `23.987042157339335` mm、外半径 `57.987960341783236` mm、`12,219,392` 扇区、`invertMapping: false`。GUI 与命令行使用相同参数。
 
 ## 固定参数与保留字段
 

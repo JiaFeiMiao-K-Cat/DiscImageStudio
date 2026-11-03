@@ -704,7 +704,7 @@
   "铼德医疗水蓝盘（实测）": {
     "zh-CN": "铼德医疗水蓝盘（实测）",
     "en": "Ritek Medical Aqua (measured)",
-    "zh-TW": "錸德醫療水藍盤（實測）",
+    "zh-TW": "Ritek 醫療水藍盤（實測）",
     "ja": "Ritek メディカル アクアブルー (実測)"
   },
   "实测参数：内半径 24.911275 mm、外半径 57.931155 mm、359,845 扇区；扫描速度采用 1200 mm/s。": {
@@ -713,8 +713,8 @@
     "zh-TW": "實測參數：內半徑 24.911275 mm、外半徑 57.931155 mm、359,845 磁區；掃描速度採用 1200 mm/s。",
     "ja": "実測パラメーター: 内半径 24.911275 mm、外半径 57.931155 mm、359,845 セクター。スキャン速度は 1200 mm/s を使用。"
   },
-  "Verbatim CD-R AZO (43438)（实测）": {
-    "zh-CN": "Verbatim CD-R AZO (43438)（实测）",
+  "威宝 CD-R AZO (43438)（实测）": {
+    "zh-CN": "威宝 CD-R AZO (43438)（实测）",
     "en": "Verbatim CD-R AZO (43438) (measured)",
     "zh-TW": "Verbatim CD-R AZO (43438)（實測）",
     "ja": "Verbatim CD-R AZO (43438) (実測)"
@@ -749,26 +749,26 @@
     "zh-TW": "ISO/IEC 16448 標準單層 120 mm DVD（DVD-5）資料區：24–58 mm，共 2,295,104 個磁區。",
     "ja": "ISO/IEC 16448 標準単層 120 mm DVD (DVD-5) データ領域: 24–58 mm、2,295,104 セクター。"
   },
-  "Verbatim DVD-R AZO (43533)（实测）": {
-    "zh-CN": "Verbatim DVD-R AZO (43533)（实测）",
+  "威宝 DVD-R AZO (43533)（实测）": {
+    "zh-CN": "威宝 DVD-R AZO (43533)（实测）",
     "en": "Verbatim DVD-R AZO (43533) (measured)",
     "zh-TW": "Verbatim DVD-R AZO (43533)（實測）",
     "ja": "Verbatim DVD-R AZO (43533) (実測)"
   },
-  "Verbatim DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。": {
-    "zh-CN": "Verbatim DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
+  "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。": {
+    "zh-CN": "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
     "en": "Verified Verbatim DVD-R AZO 43533 calibration: 23.9914606277–57.9648936579 mm, 2,297,888 sectors; cubic track pitch distribution.",
     "zh-TW": "Verbatim DVD-R AZO 43533 已驗證校準參數：23.9914606277–57.9648936579 mm，共 2,297,888 個磁區；採用三次軌距分布。",
     "ja": "Verbatim DVD-R AZO 43533 の検証済みキャリブレーション: 23.9914606277–57.9648936579 mm、2,297,888 セクター。3 次のトラック ピッチ分布を使用。"
   },
-  "Verbatim DVD-R AZO (43523)（实测）": {
-    "zh-CN": "Verbatim DVD-R AZO (43523)（实测）",
+  "威宝 DVD-R AZO (43523)（实测）": {
+    "zh-CN": "威宝 DVD-R AZO (43523)（实测）",
     "en": "Verbatim DVD-R AZO (43523) (measured)",
     "zh-TW": "Verbatim DVD-R AZO (43523)（實測）",
     "ja": "Verbatim DVD-R AZO (43523) (実測)"
   },
-  "Verbatim DVD-R AZO 43523 实测标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布；参数与 43533 一致。": {
-    "zh-CN": "Verbatim DVD-R AZO 43523 实测标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布；参数与 43533 一致。",
+  "威宝 DVD-R AZO 43523 实测标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布；参数与 43533 一致。": {
+    "zh-CN": "威宝 DVD-R AZO 43523 实测标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布；参数与 43533 一致。",
     "en": "Measured Verbatim DVD-R AZO 43523 calibration: 23.9914606277–57.9648936579 mm, 2,297,888 sectors; cubic track pitch distribution; parameters match 43533.",
     "zh-TW": "Verbatim DVD-R AZO 43523 實測校準參數：23.9914606277–57.9648936579 mm，共 2,297,888 個磁區；採用三次軌距分布；參數與 43533 一致。",
     "ja": "Verbatim DVD-R AZO 43523 の実測キャリブレーション: 23.9914606277–57.9648936579 mm、2,297,888 セクター。3 次のトラック ピッチ分布を使用。パラメーターは 43533 と同一です。"
@@ -784,6 +784,18 @@
     "en": "Measured PHILIPS DVD+R calibration: 24.157724–57.881039 mm, 2,295,104 sectors; cubic track pitch distribution.",
     "zh-TW": "PHILIPS DVD+R 實測校準參數：24.157724–57.881039 mm，共 2,295,104 個磁區；採用三次軌距分布。",
     "ja": "PHILIPS DVD+R の実測キャリブレーション: 24.157724–57.881039 mm、2,295,104 セクター。3 次のトラック ピッチ分布を使用。"
+  },
+  "铼德 DVD+R E时代系列（实测）": {
+    "zh-CN": "铼德 DVD+R E时代系列（实测）",
+    "en": "Ritek DVD+R E-Series (measured)",
+    "zh-TW": "Ritek DVD+R E時代系列（實測）",
+    "ja": "Ritek DVD+R E シリーズ (実測)"
+  },
+  "铼德 DVD+R E时代系列实测标定参数：24.0482013258–58.0264881612 mm，共 2,295,104 个扇区；采用三次轨距分布。": {
+    "zh-CN": "铼德 DVD+R E时代系列实测标定参数：24.0482013258–58.0264881612 mm，共 2,295,104 个扇区；采用三次轨距分布。",
+    "en": "Measured Ritek DVD+R E-Series calibration: 24.0482013258–58.0264881612 mm, 2,295,104 sectors; cubic track pitch distribution.",
+    "zh-TW": "Ritek DVD+R E時代系列實測校準參數：24.0482013258–58.0264881612 mm，共 2,295,104 個磁區；採用三次軌距分布。",
+    "ja": "Ritek DVD+R E シリーズの実測キャリブレーション: 24.0482013258–58.0264881612 mm、2,295,104 セクター。3 次のトラック ピッチ分布を使用。"
   },
   "标准 8cm 单层 DVD": {
     "zh-CN": "标准 8cm 单层 DVD",
@@ -812,7 +824,7 @@
   "铼德 BD-R 10x（实测）": {
     "zh-CN": "铼德 BD-R 10x（实测）",
     "en": "Ritek BD-R 10x (measured)",
-    "zh-TW": "錸德 BD-R 10x（實測）",
+    "zh-TW": "Ritek BD-R 10x（實測）",
     "ja": "Ritek BD-R 10x (実測)"
   },
   "实测参数：内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 扇区。": {
@@ -821,8 +833,8 @@
     "zh-TW": "實測參數：內半徑 23.988221 mm、外半徑 58.023235 mm、12,219,392 磁區。",
     "ja": "実測パラメーター: 内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 セクター。"
   },
-  "Verbatim BD-R (64099)（实测）": {
-    "zh-CN": "Verbatim BD-R (64099)（实测）",
+  "威宝 BD-R (64099)（实测）": {
+    "zh-CN": "威宝 BD-R (64099)（实测）",
     "en": "Verbatim BD-R (64099) (measured)",
     "zh-TW": "Verbatim BD-R (64099)（實測）",
     "ja": "Verbatim BD-R (64099) (実測)"

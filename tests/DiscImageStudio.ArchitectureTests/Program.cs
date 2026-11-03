@@ -166,7 +166,7 @@ static void TestDiscPresets()
 {
     DiscPresetJsonDocument builtIn = DiscPresetJsonStore.LoadBuiltIn();
     Equal(4, builtIn.CdPresets.Count, "built-in CD preset count");
-    Equal(5, builtIn.DvdPresets.Count, "built-in DVD preset count");
+    Equal(6, builtIn.DvdPresets.Count, "built-in DVD preset count");
     Equal(3, builtIn.BluRayPresets!.Count, "built-in Blu-ray preset count");
     Equal("zh-CN", builtIn.FallbackLanguage!, "built-in preset fallback language");
     True(
@@ -278,6 +278,15 @@ static void TestDiscPresets()
     Equal(0.0001962455822194293, philips.PitchQuadratic, "PHILIPS DVD+R quadratic pitch");
     Equal(-8.6683602888291885E-05, philips.PitchCubic, "PHILIPS DVD+R cubic pitch");
     True(philips.Contributor == "DBPolp", "PHILIPS DVD+R contributor is recorded");
+    DvdDiscPresetDefinition ritekDvd = builtIn.DvdPresets.Single(
+        value => value.Id == "ritek-dvd-plus-r-e-series");
+    Equal(2_295_104U, ritekDvd.TotalSectors, "Ritek DVD+R E-Series sectors");
+    Equal(24.048201325754512, ritekDvd.InnerRadiusMm, "Ritek DVD+R E-Series inner radius");
+    Equal(58.02648816120639, ritekDvd.OuterRadiusMm, "Ritek DVD+R E-Series outer radius");
+    Equal(0.00004448895078187968, ritekDvd.PitchLinear, "Ritek DVD+R E-Series linear pitch");
+    Equal(-0.00010130233076827166, ritekDvd.PitchQuadratic, "Ritek DVD+R E-Series quadratic pitch");
+    Equal(0.00006625808735161595, ritekDvd.PitchCubic, "Ritek DVD+R E-Series cubic pitch");
+    True(ritekDvd.Contributor == "EternalEve", "Ritek DVD+R E-Series contributor is recorded");
     BluRayDiscPresetDefinition bdStandard = builtIn.BluRayPresets!.Single(
         value => value.Id == "bd-r-sl-25gb");
     True(
@@ -285,7 +294,7 @@ static void TestDiscPresets()
         "standard Blu-ray preset announces its standard nature");
     BluRayDiscPresetDefinition verbatimBd = builtIn.BluRayPresets!.Single(
         value => value.Id == "bd-r-verbatim-64099");
-    Equal("Verbatim BD-R (64099)（实测）", verbatimBd.DisplayName, "Verbatim BD-R 64099 preset name");
+    Equal("威宝 BD-R (64099)（实测）", verbatimBd.DisplayName, "Verbatim BD-R 64099 preset name");
     Equal(12_219_392U, verbatimBd.TotalSectors, "Verbatim BD-R 64099 sectors");
     Equal(23.987042157339335, verbatimBd.InnerRadiusMm, "Verbatim BD-R 64099 saved inner radius");
     Equal(57.987960341783236, verbatimBd.OuterRadiusMm, "Verbatim BD-R 64099 saved outer radius");
@@ -314,7 +323,7 @@ static void TestDiscPresetJson()
             File.ReadAllText(path).Contains("自定义 DVD 参数", StringComparison.Ordinal),
             "initial user JSON keeps custom preset names readable");
         True(
-            !File.ReadAllText(path).Contains("Verbatim DVD-R AZO (43533)", StringComparison.Ordinal),
+            !File.ReadAllText(path).Contains("威宝 DVD-R AZO (43533)", StringComparison.Ordinal),
             "user JSON does not snapshot built-in presets");
         True(
             !File.ReadAllText(path).Contains("displayNameResourceKey", StringComparison.Ordinal),
@@ -329,7 +338,7 @@ static void TestDiscPresetJson()
 
         DiscPresetJsonDocument merged = DiscPresetJsonStore.Merge(builtIn, created);
         Equal(5, merged.CdPresets.Count, "merged CD preset count");
-        Equal(6, merged.DvdPresets.Count, "merged DVD preset count");
+        Equal(7, merged.DvdPresets.Count, "merged DVD preset count");
         Equal(4, merged.BluRayPresets!.Count, "merged Blu-ray preset count");
         DvdDiscPresetDefinition verbatim = merged.DvdPresets.Single(
             value => value.Id == "verbatim-dvd-r-azo-43533");
