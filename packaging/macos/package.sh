@@ -30,5 +30,5 @@ rm -r "$iconset"
 codesign --force --deep --sign - "$app"
 codesign --verify --deep --strict "$app"
 ditto -c -k --sequesterRsrc --keepParent "$app" "$output/DiscImageStudio-$rid.zip"
-shasum -a 256 "$output/DiscImageStudio-$rid.zip" > "$output/DiscImageStudio-$rid.zip.sha256"
+(cd "$output" && shasum -a 256 "DiscImageStudio-$rid.zip" > "DiscImageStudio-$rid.zip.sha256")
 echo "$app"
