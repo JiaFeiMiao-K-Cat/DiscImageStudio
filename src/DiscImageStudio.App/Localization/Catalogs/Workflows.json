@@ -67,7 +67,7 @@
     "en": " · Dither {0:0}% · {1} px",
     "zh-TW": " · 抖動 {0:0}% · {1} px",
     "ja": " · ディザ {0:0}% · {1} px",
-    "tr": " · Titreme %{0:0} · {1} px"
+    "tr": " · Sarsıntı %{0:0} · {1} px"
   },
   " · 文件：{0}": {
     "zh-CN": " · 文件：{0}",
@@ -788,7 +788,7 @@
     "en": "Updated · Calibration preview · CW · Dither {0:0}%",
     "zh-TW": "已即時更新 · 校準預覽 · CW · 抖動 {0:0}%",
     "ja": "更新済み · キャリブレーション プレビュー · CW · ディザ {0:0}%",
-    "tr": "Canlı güncellendi · Kalibrasyon önizlemesi · CW · Titreme %{0:0}"
+    "tr": "Canlı güncellendi · Kalibrasyon önizlemesi · CW · Sarsıntı %{0:0}"
   },
   "已实时更新 · 标定预览 · 灰度 {0} 级": {
     "zh-CN": "已实时更新 · 标定预览 · 灰度 {0} 级",
@@ -886,7 +886,7 @@
     "en": "Tone={0} levels/{1:0}% dither.\n",
     "zh-TW": "影調={0} 級/{1:0}% 抖動。\n",
     "ja": "階調={0} 段階/{1:0}% ディザ。\n",
-    "tr": "Ton={0} basamak/%{1:0} titreme.\n"
+    "tr": "Ton={0} basamak/%{1:0} sarsıntı.\n"
   },
   "总扇区数": {
     "zh-CN": "总扇区数",

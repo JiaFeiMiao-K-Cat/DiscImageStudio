@@ -1313,7 +1313,7 @@
     "en": "Dithering",
     "zh-TW": "抖動強度",
     "ja": "ディザリング強度",
-    "tr": "Titreme yoğunluğu"
+    "tr": "Sarsıntı"
   },
   "Xaml.Brightness": {
     "zh-CN": "亮度",

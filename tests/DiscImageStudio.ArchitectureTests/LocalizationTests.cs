@@ -202,6 +202,12 @@ internal static class LocalizationTests
         Require(L.CurrentLanguage == L.Japanese && CultureInfo.CurrentUICulture.Name == L.Japanese,
             "Japanese initializes the requested UI culture");
         Require(L.T("Xaml.Cancel") == "キャンセル", "Japanese resolves from the embedded catalog");
+        Require(ReferenceEquals(CultureInfo.CurrentCulture, numericCulture),
+            "Japanese does not alter numeric culture");
+        string formattedJapanese = L.F($"BD ISO 长度与总扇区数不符：需要 {expected:N0} 字节，实际 {actual:N0} 字节。");
+        Require(formattedJapanese.Contains(expected.ToString("N0", numericCulture), StringComparison.Ordinal)
+                && formattedJapanese.Contains(actual.ToString("N0", numericCulture), StringComparison.Ordinal),
+            "Japanese interpolation preserves both formatted numeric arguments");
 
         L.Initialize(L.Turkish);
         Require(L.CurrentLanguage == L.Turkish && CultureInfo.CurrentUICulture.Name == L.Turkish,
@@ -215,12 +221,6 @@ internal static class LocalizationTests
         Require(formattedTurkish.Contains(expected.ToString("N0", numericCulture), StringComparison.Ordinal)
                 && formattedTurkish.Contains(actual.ToString("N0", numericCulture), StringComparison.Ordinal),
             "Turkish interpolation preserves both formatted numeric arguments");
-        Require(ReferenceEquals(CultureInfo.CurrentCulture, numericCulture),
-            "Japanese does not alter numeric culture");
-        string formattedJapanese = L.F($"BD ISO 长度与总扇区数不符：需要 {expected:N0} 字节，实际 {actual:N0} 字节。");
-        Require(formattedJapanese.Contains(expected.ToString("N0", numericCulture), StringComparison.Ordinal)
-                && formattedJapanese.Contains(actual.ToString("N0", numericCulture), StringComparison.Ordinal),
-            "Japanese interpolation preserves both formatted numeric arguments");
 
         L.Initialize(L.Chinese);
         Require(L.T("Xaml.Cancel") == "取消", "Chinese text is available after switching back");

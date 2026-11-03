@@ -952,10 +952,10 @@
     "tr": "Dil"
   },
   "Settings.LanguageChangesTakeEffectAfterRestartingTheAppSystemUse": {
-    "zh-CN": "语言将在重启应用后生效。跟随系统时区分简体和繁体中文，日文系统使用日本語，其他语言使用 English。",
-    "en": "Language changes take effect after restarting. System follows Simplified or Traditional Chinese, or Japanese; other system languages use English.",
-    "zh-TW": "語言會在重新啟動應用程式後生效。跟隨系統時會區分簡體與繁體中文，日文系統使用日本語，其他語言使用 English。",
-    "ja": "言語の変更はアプリの再起動後に反映されます。「システムに従う」の場合、簡体字中国語・繁体字中国語・日本語を判別し、その他の言語では English を使用します。",
+    "zh-CN": "语言将在重启应用后生效。跟随系统时区分简体和繁体中文，日文系统使用日本語，土耳其语系统使用 Türkçe，其他语言使用 English。",
+    "en": "Language changes take effect after restarting. System follows Simplified or Traditional Chinese, Japanese, or Turkish; other system languages use English.",
+    "zh-TW": "語言會在重新啟動應用程式後生效。跟隨系統時會區分簡體與繁體中文，日文系統使用日本語，土耳其語系統使用 Türkçe，其他語言使用 English。",
+    "ja": "言語の変更はアプリの再起動後に反映されます。「システムに従う」の場合、簡体字中国語・繁体字中国語・日本語・トルコ語を判別し、その他の言語では English を使用します。",
     "tr": "Dil değişiklikleri yeniden başlatıldıktan sonra geçerli olur. Sistem dili Basitleştirilmiş veya Geleneksel Çince, Japonca ya da Türkçe ise ilgili dili izler; diğer sistem dillerinde English kullanılır."
   },
   "Settings.DefaultLocationsForNewProjectsAndTemporaryFiles": {
