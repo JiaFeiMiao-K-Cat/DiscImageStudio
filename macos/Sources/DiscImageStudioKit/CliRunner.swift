@@ -205,7 +205,9 @@ private final class TimeoutFlag: @unchecked Sendable {
 }
 
 /// 把 `Process` 的管道读取转换成 `AsyncStream<CliEvent>`。
-/// 所有可变状态由 `lock` 保护；回调来自 Foundation 的私有队列。
+///
+/// 两个管道各由一个后台线程阻塞读取直到 EOF；只有「读到 EOF」与「拿到退出码」两件事
+/// 都完成后才发出 `.finished`，因此进程快速退出时也不会丢掉尾部输出。
 private final class ProcessController: @unchecked Sendable {
     private let invocation: CliInvocation
     private let arguments: [String]
@@ -220,6 +222,9 @@ private final class ProcessController: @unchecked Sendable {
     private var finished = false
     private var cancelled = false
     private var started = false
+    private var readersDone = false
+    private var exitCodeReceived = false
+    private var pendingExitCode: Int32 = 0
 
     init(
         invocation: CliInvocation,
@@ -257,27 +262,8 @@ private final class ProcessController: @unchecked Sendable {
         process.standardError = standardError
         process.standardInput = FileHandle.nullDevice
         process.environment = Self.makeEnvironment(overrides: environment)
-
-        standardOutput.fileHandleForReading.readabilityHandler = { [weak self] handle in
-            let data = handle.availableData
-            guard let self else { return }
-            if data.isEmpty {
-                handle.readabilityHandler = nil
-                return
-            }
-            self.consume(data, stream: .stdout)
-        }
-        standardError.fileHandleForReading.readabilityHandler = { [weak self] handle in
-            let data = handle.availableData
-            guard let self else { return }
-            if data.isEmpty {
-                handle.readabilityHandler = nil
-                return
-            }
-            self.consume(data, stream: .stderr)
-        }
         process.terminationHandler = { [weak self] finishedProcess in
-            self?.finish(exitCode: finishedProcess.terminationStatus)
+            self?.recordExit(finishedProcess.terminationStatus)
         }
 
         lock.lock()
@@ -291,9 +277,13 @@ private final class ProcessController: @unchecked Sendable {
                 stream: .system,
                 text: "无法启动 CLI（\(invocation.executableURL.path)）：\(error.localizedDescription)"
             )))
-            finish(exitCode: -1)
+            // 没有子进程就没有管道读者：把读者标记为已完成，再以 -1 收尾。
+            readersFinished()
+            recordExit(-1)
             return
         }
+
+        startReaders(stdout: standardOutput, stderr: standardError)
 
         lock.lock()
         let shouldCancelImmediately = cancelled
@@ -323,6 +313,54 @@ private final class ProcessController: @unchecked Sendable {
         }
     }
 
+    /// 每个管道一个阻塞读取线程；EOF 后两路都归零才结束事件流。
+    private func startReaders(stdout: Pipe, stderr: Pipe) {
+        let group = DispatchGroup()
+        group.enter()
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.readLoop(stdout.fileHandleForReading, stream: .stdout)
+            group.leave()
+        }
+        group.enter()
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.readLoop(stderr.fileHandleForReading, stream: .stderr)
+            group.leave()
+        }
+        group.notify(queue: .global(qos: .userInitiated)) { [weak self] in
+            self?.readersFinished()
+        }
+    }
+
+    private func readLoop(_ handle: FileHandle, stream: LogLine.Stream) {
+        while true {
+            let data = handle.availableData
+            if data.isEmpty { break }
+            consume(data, stream: stream)
+        }
+        try? handle.close()
+    }
+
+    private func readersFinished() {
+        lock.lock()
+        readersDone = true
+        let ready = exitCodeReceived
+        lock.unlock()
+        if ready { finalize() }
+    }
+
+    private func recordExit(_ code: Int32) {
+        lock.lock()
+        guard !exitCodeReceived else {
+            lock.unlock()
+            return
+        }
+        exitCodeReceived = true
+        pendingExitCode = code
+        let ready = readersDone
+        lock.unlock()
+        if ready { finalize() }
+    }
+
     private func consume(_ data: Data, stream: LogLine.Stream) {
         lock.lock()
         defer { lock.unlock() }
@@ -344,13 +382,14 @@ private final class ProcessController: @unchecked Sendable {
         }
     }
 
-    private func finish(exitCode: Int32) {
+    private func finalize() {
         lock.lock()
         if finished {
             lock.unlock()
             return
         }
         finished = true
+        let exitCode = pendingExitCode
         let stdoutTail = Self.takeRemainder(&stdoutBuffer)
         let stderrTail = Self.takeRemainder(&stderrBuffer)
         let duration = Date().timeIntervalSince(startedAt)

@@ -41,6 +41,28 @@ final class CliRunnerTests: XCTestCase {
         XCTAssertFalse(job.isRunning)
     }
 
+    /// 回归：进程几乎立刻退出时，管道读者与 terminationHandler 存在竞态；
+    /// 旧实现会把 stdout/stderr 的尾部整体丢掉。
+    func testFastExitProcessNeverDropsOutput() async throws {
+        let directory = try TestSupport.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        for index in 0..<20 {
+            let script = try TestSupport.writeExecutableScript(
+                in: directory,
+                name: "fast-\(index).sh",
+                contents: """
+                #!/bin/sh
+                echo "out-\(index)"
+                """
+            )
+            let runner = CliRunner(invocation: CliInvocation(executableURL: script, label: "快速脚本"))
+            let collected = try await TestSupport.collectEvents(from: runner.start(arguments: []))
+            XCTAssertEqual(collected.stdoutLines, ["out-\(index)"], "第 \(index) 次快速退出丢失输出")
+            XCTAssertEqual(collected.finished?.exitCode, 0)
+        }
+    }
+
     func testTrailingLinesWithoutNewlineAreFlushedOnExit() async throws {
         let directory = try TestSupport.makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
