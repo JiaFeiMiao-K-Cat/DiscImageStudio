@@ -166,7 +166,7 @@ static void TestDiscPresets()
 {
     DiscPresetJsonDocument builtIn = DiscPresetJsonStore.LoadBuiltIn();
     Equal(4, builtIn.CdPresets.Count, "built-in CD preset count");
-    Equal(3, builtIn.DvdPresets.Count, "built-in DVD preset count");
+    Equal(5, builtIn.DvdPresets.Count, "built-in DVD preset count");
     Equal(3, builtIn.BluRayPresets!.Count, "built-in Blu-ray preset count");
     Equal("zh-CN", builtIn.FallbackLanguage!, "built-in preset fallback language");
     True(
@@ -259,10 +259,25 @@ static void TestDiscPresets()
     Equal(2_297_888U, verbatimDvd.TotalSectors, "Verbatim DVD-R AZO 43533 sectors");
     Equal(23.991460627731737, verbatimDvd.InnerRadiusMm, "Verbatim DVD-R AZO 43533 inner radius");
     Equal(57.964893657925366, verbatimDvd.OuterRadiusMm, "Verbatim DVD-R AZO 43533 outer radius");
+    DvdDiscPresetDefinition verbatimDvd43523 = builtIn.DvdPresets.Single(
+        value => value.Id == "verbatim-dvd-r-azo-43523");
+    Equal(2_297_888U, verbatimDvd43523.TotalSectors, "Verbatim DVD-R AZO 43523 sectors");
+    Equal(23.991460627731737, verbatimDvd43523.InnerRadiusMm, "Verbatim DVD-R AZO 43523 inner radius");
+    Equal(57.964893657925366, verbatimDvd43523.OuterRadiusMm, "Verbatim DVD-R AZO 43523 outer radius");
+    True(verbatimDvd43523.Contributor == "H4CNPE", "Verbatim DVD-R AZO 43523 contributor is recorded");
     DvdDiscPresetDefinition dvd80 = builtIn.DvdPresets.Single(
         value => value.Id == "dvd-5-80mm");
     Equal(714_544U, dvd80.TotalSectors, "80 mm DVD preset sectors");
     Equal(38.0, dvd80.OuterRadiusMm, "80 mm DVD preset outer radius");
+    DvdDiscPresetDefinition philips = builtIn.DvdPresets.Single(
+        value => value.Id == "philips-dvd-plus-r");
+    Equal(2_295_104U, philips.TotalSectors, "PHILIPS DVD+R sectors");
+    Equal(24.157723798864616, philips.InnerRadiusMm, "PHILIPS DVD+R inner radius");
+    Equal(57.881039159257099, philips.OuterRadiusMm, "PHILIPS DVD+R outer radius");
+    Equal(-0.00015487792452410765, philips.PitchLinear, "PHILIPS DVD+R linear pitch");
+    Equal(0.0001962455822194293, philips.PitchQuadratic, "PHILIPS DVD+R quadratic pitch");
+    Equal(-8.6683602888291885E-05, philips.PitchCubic, "PHILIPS DVD+R cubic pitch");
+    True(philips.Contributor == "DBPolp", "PHILIPS DVD+R contributor is recorded");
     BluRayDiscPresetDefinition bdStandard = builtIn.BluRayPresets!.Single(
         value => value.Id == "bd-r-sl-25gb");
     True(
@@ -314,7 +329,7 @@ static void TestDiscPresetJson()
 
         DiscPresetJsonDocument merged = DiscPresetJsonStore.Merge(builtIn, created);
         Equal(5, merged.CdPresets.Count, "merged CD preset count");
-        Equal(4, merged.DvdPresets.Count, "merged DVD preset count");
+        Equal(6, merged.DvdPresets.Count, "merged DVD preset count");
         Equal(4, merged.BluRayPresets!.Count, "merged Blu-ray preset count");
         DvdDiscPresetDefinition verbatim = merged.DvdPresets.Single(
             value => value.Id == "verbatim-dvd-r-azo-43533");
@@ -370,6 +385,24 @@ static void TestDiscPresetJson()
             () => DiscPresetJsonStore.Save(path, reservedId),
             "reserved manual-state preset ID rejection");
         Equal(validJson, File.ReadAllText(path), "invalid preset save preserves valid JSON");
+
+        DiscPresetJsonDocument blankContributor = reloaded with
+        {
+            DvdPresets = reloaded.DvdPresets
+                .Append(new DvdDiscPresetDefinition(
+                    "user-blank-contributor",
+                    "空贡献者",
+                    "测试用预设。",
+                    2_295_104,
+                    24.0,
+                    58.0,
+                    Contributor: "   "))
+                .ToArray(),
+        };
+        Throws<InvalidDataException>(
+            () => DiscPresetJsonStore.Save(path, blankContributor),
+            "blank contributor rejection");
+        Equal(validJson, File.ReadAllText(path), "blank contributor preserves valid JSON");
 
         File.WriteAllText(
             path,

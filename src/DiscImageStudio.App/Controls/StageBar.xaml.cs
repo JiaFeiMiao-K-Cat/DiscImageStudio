@@ -11,12 +11,11 @@ namespace DiscImageStudio.Controls;
 /// current workspace changes, so items need no change notification of their own.</summary>
 public sealed class StageItem
 {
-    internal StageItem(Workspace workspace, string label, int index, Workspace current)
+    internal StageItem(Workspace workspace, string label, bool isGroupStart, Workspace current)
     {
         Workspace = workspace;
         Label = label;
-        IndexText = index.ToString();
-        IsBranch = workspace == Workspace.Calibration;
+        IsGroupStart = isGroupStart;
         IsCurrent = workspace == current;
     }
 
@@ -24,33 +23,36 @@ public sealed class StageItem
 
     public string Label { get; }
 
-    public string IndexText { get; }
-
-    public bool IsBranch { get; }
+    /// <summary>True for the first stage of the calibration group: the rail draws the group
+    /// divider ahead of it.</summary>
+    public bool IsGroupStart { get; }
 
     public bool IsCurrent { get; }
 
-    public Visibility BranchVisibility => IsBranch ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility GroupDividerVisibility => IsGroupStart ? Visibility.Visible : Visibility.Collapsed;
 }
 
 /// <summary>The workflow rail under the page header — this shell's answer to a video
-/// editor's workspace switcher: the design → preview → export → burn path stays visible in
-/// every workspace, with calibration shown as the branch that feeds back into it. Any stage
-/// is clickable and reports through StageActivated; the current stage comes from Current.</summary>
+/// editor's workspace switcher. The two groups mirror the sidebar: disc-making (design →
+/// export → burn) first, then the calibration pair (preview → calibration). Any stage is
+/// clickable and reports through StageActivated; the current stage comes from Current.</summary>
 public partial class StageBar : UserControl
 {
     public static readonly DependencyProperty CurrentProperty = DependencyProperty.Register(
         nameof(Current), typeof(Workspace), typeof(StageBar),
         new PropertyMetadata(Workspace.Home, static (sender, _) => ((StageBar)sender).RebuildItems()));
 
-    private static readonly (Workspace Workspace, string Label)[] Stages =
+    private static readonly (Workspace Workspace, string Key)[] Stages =
     [
-        (Workspace.Design, L.T("设计")),
-        (Workspace.Preview, L.T("预览")),
-        (Workspace.Export, L.T("导出")),
-        (Workspace.Burn, L.T("刻录")),
-        (Workspace.Calibration, L.T("标定")),
+        (Workspace.Design, "设计"),
+        (Workspace.Export, "导出"),
+        (Workspace.Burn, "刻录"),
+        (Workspace.Preview, "预览"),
+        (Workspace.Calibration, "标定"),
     ];
+
+    /// <summary>The stage that opens the second group; the rail draws its divider ahead of it.</summary>
+    private const Workspace CalibrationGroupStart = Workspace.Preview;
 
     /// <summary>Raised when the user clicks a stage; the host wires this to NavigateTo.</summary>
     public event Action<Workspace>? StageActivated;
@@ -59,6 +61,8 @@ public partial class StageBar : UserControl
     {
         InitializeComponent();
         RebuildItems();
+        Loaded += (_, _) => L.LanguageChanged += Language_LanguageChanged;
+        Unloaded += (_, _) => L.LanguageChanged -= Language_LanguageChanged;
     }
 
     public Workspace Current
@@ -67,12 +71,15 @@ public partial class StageBar : UserControl
         set => SetValue(CurrentProperty, value);
     }
 
+    private void Language_LanguageChanged(object? sender, EventArgs e) => RebuildItems();
+
     private void RebuildItems()
     {
         List<StageItem> items = new(Stages.Length);
         for (int index = 0; index < Stages.Length; index++)
         {
-            items.Add(new StageItem(Stages[index].Workspace, Stages[index].Label, index + 1, Current));
+            (Workspace workspace, string key) = Stages[index];
+            items.Add(new StageItem(workspace, L.T(key), workspace == CalibrationGroupStart, Current));
         }
 
         StageList.ItemsSource = items;

@@ -72,6 +72,13 @@ public partial class ToneViewModel : ObservableObject
 
     internal bool IsTonePreviewReady => _tonePreviewReady;
 
+    /// <summary>The status line is the module's only cached string; the picture itself needs
+    /// no redraw for a language switch.</summary>
+    internal void Relocalize()
+        => TonePreviewStatus = _tonePreviewReady
+            ? L.T("实时更新")
+            : L.T("导入图片后自动生成预览。");
+
     public RelayCommand ResetToneCommand { get; }
 
     /// <summary>Redraws the tone preview without touching a parameter.</summary>

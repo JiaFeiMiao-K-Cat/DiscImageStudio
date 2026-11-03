@@ -452,7 +452,8 @@ public partial class DiscParametersState : ObservableObject
                 value.InnerRadiusMm,
                 value.OuterRadiusMm,
                 value.DisplayNameResourceKey,
-                value.DescriptionResourceKey))
+                value.DescriptionResourceKey,
+                Contributor: value.Contributor))
             .ToList();
         cdPresets.Add(ManualCdPreset);
 
@@ -470,7 +471,8 @@ public partial class DiscParametersState : ObservableObject
                 value.DescriptionResourceKey,
                 PitchLinear: value.PitchLinear,
                 PitchQuadratic: value.PitchQuadratic,
-                PitchCubic: value.PitchCubic))
+                PitchCubic: value.PitchCubic,
+                Contributor: value.Contributor))
             .ToList();
         dvdPresets.Add(ManualDvdPreset);
 
@@ -485,7 +487,8 @@ public partial class DiscParametersState : ObservableObject
                     1,
                     value.InnerRadiusMm,
                     value.OuterRadiusMm),
-                value.InvertMapping))
+                value.InvertMapping,
+                Contributor: value.Contributor))
             .ToList();
         bluRayPresets.Add(ManualBluRayPreset);
         return (cdPresets, dvdPresets, bluRayPresets);
@@ -512,6 +515,35 @@ public partial class DiscParametersState : ObservableObject
         ApplyCdDiscPreset(_cdPresets[0]);
         ApplyDvdDiscPreset(_dvdPresets[0]);
         ApplyBluRayDiscPreset(_bluRayPresets[0]);
+    }
+
+    /// <summary>Rebuilds the localized parts of the shared state after a language switch:
+    /// preset names/descriptions, the selected preset objects (so the selectors show the new
+    /// text) and the computed summaries. Geometry strings are re-applied with the same values,
+    /// so an open project keeps its parameters and its dirty flag.</summary>
+    public void Relocalize()
+    {
+        string cdId = SelectedCdPreset.Id;
+        string dvdId = SelectedDvdPreset.Id;
+        string bluRayId = SelectedBluRayPreset.Id;
+        try
+        {
+            LoadPresets();
+        }
+        catch (Exception)
+        {
+            // A broken user JSON falls back to the catalog already in memory; the switch must
+            // not turn into a preset-load failure.
+        }
+
+        ApplyCdDiscPreset(_cdPresets.FirstOrDefault(preset => preset.Id == cdId) ?? ManualCdPreset);
+        ApplyDvdDiscPreset(_dvdPresets.FirstOrDefault(preset => preset.Id == dvdId) ?? ManualDvdPreset);
+        ApplyBluRayDiscPreset(_bluRayPresets.FirstOrDefault(preset => preset.Id == bluRayId) ?? ManualBluRayPreset);
+        OnPropertyChanged(nameof(ToneSummary));
+        OnPropertyChanged(nameof(CdOutputLabel));
+        OnPropertyChanged(nameof(CdOutputHint));
+        OnPropertyChanged(nameof(DvdPitchSummary));
+        OnPropertyChanged(nameof(DvdActualPitchSummary));
     }
 
     // Only the four generation fields per disc family switch the preset to "custom"

@@ -1,4 +1,5 @@
 using DiscImageStudio.Localization;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Windows;
@@ -101,6 +102,22 @@ public partial class CalibrationViewModel : ObservableObject
 
     private static string Trimmed(string value) =>
         string.IsNullOrWhiteSpace(value) ? "—" : value.Trim();
+
+    /// <summary>Re-reads the fit-side strings and the photo step after a language switch. The
+    /// search-range choices only need their labels refreshed, which keeps the ComboBox
+    /// selection and the fitted result intact.</summary>
+    internal void Relocalize()
+    {
+        foreach (CoarseSearchRange range in CoarseSearchRangeChoices)
+        {
+            range.RefreshLabel();
+        }
+
+        OnPropertyChanged(nameof(SearchRangeHeader));
+        OnPropertyChanged(nameof(CurrentParametersSummary));
+        UpdateFitAssessment();
+        RelocalizePhoto();
+    }
 
     // ---- Step column: state chips and progressive disclosure ----
     // One step is active at a time and its card is the expanded one; finished steps collapse
@@ -813,6 +830,29 @@ public partial class CalibrationViewModel : ObservableObject
 
     public sealed record CoarseCandidate(string Label, CalibrationParameters Parameters,
         double RotationRadians, double RmsErrorMm, double MaxErrorMm = 0, int OutlierCount = 0);
-    public sealed record CoarseSearchRange(string Label, double RadiusRangeMm, bool Auto = false);
+    /// <summary>One search box for the two radius parameters. The automatic entry is the only
+    /// localized label; it is computed so a language switch can refresh it in place.</summary>
+    public sealed class CoarseSearchRange : INotifyPropertyChanged
+    {
+        private readonly string _label;
+
+        public CoarseSearchRange(string label, double radiusRangeMm, bool Auto = false)
+        {
+            _label = label;
+            RadiusRangeMm = radiusRangeMm;
+            this.Auto = Auto;
+        }
+
+        public string Label => Auto ? L.T("自动（推荐）") : _label;
+
+        public double RadiusRangeMm { get; }
+
+        public bool Auto { get; }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        internal void RefreshLabel()
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Label)));
+    }
     private sealed record FitAttempt(CalibrationFitResult Result, double RangeMm, bool Expanded);
 }

@@ -45,6 +45,24 @@ DVD 的 `totalSectors` 必须大于 0 且是 16 的倍数，以满足 ECC Block 
 
 此 Verbatim DVD 预设来自用户确认已验证的 `calibration-f2f851f7.calibration.json`，保留记录中的完整参数精度。
 
+可选字段 `contributor` 记录该套实测参数的贡献者。填写后，预设卡片左上角显示幼苗图标，鼠标悬停立即显示“贡献者：…”；省略该字段或留空则不显示图标，仅含空白的值会被校验拒绝。例如内置的 `philips-dvd-plus-r`：
+
+```json
+{
+  "id": "philips-dvd-plus-r",
+  "displayName": "PHILIPS DVD+R（实测）",
+  "description": "PHILIPS DVD+R 实测标定参数：24.157724–57.881039 mm，共 2,295,104 个扇区；采用三次轨距分布。",
+  "totalSectors": 2295104,
+  "innerRadiusMm": 24.157723798864616,
+  "outerRadiusMm": 57.881039159257099,
+  "channelBitLengthNm": 133.3,
+  "pitchLinear": -0.00015487792452410765,
+  "pitchQuadratic": 0.0001962455822194293,
+  "pitchCubic": -8.6683602888291885E-05,
+  "contributor": "DBPolp"
+}
+```
+
 `pitchLinear`、`pitchQuadratic`、`pitchCubic` 是三次轨距的三个相对形状系数，缺省为 0，兼容旧预设。模型为 `p(x)=p0*(1+pitchLinear*x+pitchQuadratic*x²+pitchCubic*x³)`，`x=(r-innerRadiusMm)/(outerRadiusMm-innerRadiusMm)`。完整多项式有四项；`p0` 根据总轨长自动计算，界面显示四项的实际 μm 数值。整个 `0≤x≤1` 区间内轨距必须严格为正，不能仅检查内外边界。修改任一系数会切换到未保存的自定义状态，重新选择内置等轨距预设会恢复零系数。
 
 ## 添加 CD 预设

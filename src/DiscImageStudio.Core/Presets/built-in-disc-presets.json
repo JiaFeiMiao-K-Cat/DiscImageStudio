@@ -74,6 +74,36 @@
       "descriptionResourceKey": "DiscPreset_VerbatimDvdAzo43533_Description"
     },
     {
+      "id": "verbatim-dvd-r-azo-43523",
+      "displayName": "Verbatim DVD-R AZO (43523)（实测）",
+      "description": "Verbatim DVD-R AZO 43523 实测标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布；参数与 43533 一致。",
+      "totalSectors": 2297888,
+      "innerRadiusMm": 23.991460627731737,
+      "outerRadiusMm": 57.964893657925366,
+      "channelBitLengthNm": 133.3,
+      "pitchLinear": -3.9256854319227684E-05,
+      "pitchQuadratic": 6.964795915429256E-05,
+      "pitchCubic": -4.670918950137523E-05,
+      "displayNameResourceKey": "DiscPreset_VerbatimDvdAzo43523_DisplayName",
+      "descriptionResourceKey": "DiscPreset_VerbatimDvdAzo43523_Description",
+      "contributor": "H4CNPE"
+    },
+    {
+      "id": "philips-dvd-plus-r",
+      "displayName": "PHILIPS DVD+R（实测）",
+      "description": "PHILIPS DVD+R 实测标定参数：24.157724–57.881039 mm，共 2,295,104 个扇区；采用三次轨距分布。",
+      "totalSectors": 2295104,
+      "innerRadiusMm": 24.157723798864616,
+      "outerRadiusMm": 57.881039159257099,
+      "channelBitLengthNm": 133.3,
+      "pitchLinear": -0.00015487792452410765,
+      "pitchQuadratic": 0.0001962455822194293,
+      "pitchCubic": -8.6683602888291885E-05,
+      "displayNameResourceKey": "DiscPreset_PhilipsDvdPlusR_DisplayName",
+      "descriptionResourceKey": "DiscPreset_PhilipsDvdPlusR_Description",
+      "contributor": "DBPolp"
+    },
+    {
       "id": "dvd-5-80mm",
       "displayName": "标准 8cm 单层 DVD",
       "description": "ISO/IEC 16448 标准单层 80 mm DVD 数据区：24–38 mm，共 714,544 个扇区。",

@@ -1,10 +1,4 @@
 {
-  "Xaml.AboutDiscImageStudio": {
-    "zh-CN": "关于 Disc Image Studio",
-    "en": "About Disc Image Studio",
-    "zh-TW": "關於 Disc Image Studio",
-    "ja": "Disc Image Studio について"
-  },
   "Xaml.About": {
     "zh-CN": "关于",
     "en": "About",
@@ -22,6 +16,12 @@
     "en": "Released under the GNU General Public License v3.0 or later. Redistribution must include the corresponding source code and retain third-party notices.",
     "zh-TW": "本專案依 GNU General Public License v3.0 or later 發布；重新散佈時須附上對應原始碼並保留第三方聲明。",
     "ja": "本プロジェクトは GNU General Public License v3.0 or later の下で公開されています。再配布する場合は、対応するソース コードを添付し、サードパーティの表示を保持する必要があります。"
+  },
+  "Xaml.GitHub": {
+    "zh-CN": "GitHub",
+    "en": "GitHub",
+    "zh-TW": "GitHub",
+    "ja": "GitHub"
   },
   "Xaml.OpenSourceComponents": {
     "zh-CN": "开源组件",
@@ -334,12 +334,6 @@
     "en": "Save",
     "zh-TW": "儲存",
     "ja": "保存"
-  },
-  "Xaml.About2": {
-    "zh-CN": "关于…",
-    "en": "About…",
-    "zh-TW": "關於…",
-    "ja": "バージョン情報…"
   },
   "Xaml.BackToHome": {
     "zh-CN": "返回主页",
@@ -1205,18 +1199,6 @@
     "zh-TW": "關閉",
     "ja": "閉じる"
   },
-  "Xaml.AppMenu": {
-    "zh-CN": "应用菜单",
-    "en": "App menu",
-    "zh-TW": "應用程式選單",
-    "ja": "アプリ メニュー"
-  },
-  "Xaml.SettingsButton": {
-    "zh-CN": "设置",
-    "en": "Settings",
-    "zh-TW": "設定",
-    "ja": "設定"
-  },
   "Xaml.OpenSettingsShortcut": {
     "zh-CN": "打开设置 (Ctrl+,)",
     "en": "Open settings (Ctrl+,)",
@@ -1240,5 +1222,17 @@
     "en": "{0} layers",
     "zh-TW": "{0} 層",
     "ja": "{0} レイヤー"
+  },
+  "Xaml.GroupDiscMaking": {
+    "zh-CN": "制盘",
+    "en": "Disc making",
+    "zh-TW": "製盤",
+    "ja": "ディスク作成"
+  },
+  "Xaml.GroupCalibration": {
+    "zh-CN": "标定",
+    "en": "Calibration",
+    "zh-TW": "校準",
+    "ja": "キャリブレーション"
   }
 }

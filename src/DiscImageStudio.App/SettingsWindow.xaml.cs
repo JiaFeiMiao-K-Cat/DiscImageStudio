@@ -55,12 +55,16 @@ public partial class SettingsWindow : Window
 
     private void StorageNav_Activated(object sender, RoutedEventArgs e) => SelectCategory(1);
 
+    private void AboutNav_Activated(object sender, RoutedEventArgs e) => SelectCategory(2);
+
     private void SelectCategory(int index)
     {
         GeneralNav.IsActive = index == 0;
         StorageNav.IsActive = index == 1;
+        AboutNav.IsActive = index == 2;
         GeneralPanel.Visibility = index == 0 ? Visibility.Visible : Visibility.Collapsed;
         StoragePanel.Visibility = index == 1 ? Visibility.Visible : Visibility.Collapsed;
+        AboutPanel.Visibility = index == 2 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void SettingsWindow_PreviewKeyDown(object sender, KeyEventArgs e)

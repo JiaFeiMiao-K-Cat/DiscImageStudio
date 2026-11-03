@@ -67,6 +67,9 @@ public partial class LivePreviewViewModel : ObservableObject
     // read-back simulation or the calibration projection. A job's own PNG output takes the
     // canvas over without a file of its own to export, so the action falls back to disabled.
     private bool _downloadablePreview;
+    // Catalog key of the canvas title while a result is showing, so a language switch can
+    // re-resolve it without rebuilding the picture.
+    private string? _resultTitleKey;
     private string? _calibratedTrackPath;
     private string? _calibratedIsoPath;
     private string? _calibratedBluRayPath;
@@ -463,6 +466,24 @@ public partial class LivePreviewViewModel : ObservableObject
         Schedule();
     }
 
+    /// <summary>Re-reads the titles, placeholder and inspector hint after a language switch.
+    /// A rendered picture is kept; only its caption changes.</summary>
+    internal void Relocalize()
+    {
+        Inspector.Relocalize();
+        RaiseEmptyStateAction();
+        if (!HasResultImage)
+        {
+            UpdateMode(clearResult: false);
+            return;
+        }
+
+        if (_resultTitleKey is { } key)
+        {
+            ResultPreviewTitle = L.T(key);
+        }
+    }
+
     internal void UpdateMode(bool clearResult)
     {
         HasFileRegionOverlay = false;
@@ -481,6 +502,7 @@ public partial class LivePreviewViewModel : ObservableObject
         ResultPreviewTitle = L.F($"预览 - {discName}");
         ResultPreviewPlaceholderText = L.F($"请先选择 {inputName}。");
         StatusText = L.F($"等待 {inputName}");
+        _resultTitleKey = null;
         RaiseEmptyStateAction();
 
         if (!clearResult)
@@ -647,7 +669,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, trackPath, L.T("预览 - CD"), overlay);
+            PublishPreview(outputPath, trackPath, "预览 - CD", overlay);
             keepOutput = true;
             StatusText = L.F($"已实时更新 · 读回模拟 · {(dataImage ? L.T("CD 数据盘") : deinterleave ? L.T("逆交织") : L.T("纯音轨"))}")
                 + L.F($" · {outputSize} px · 每扇区 {samplesPerSector} 个采样");
@@ -730,7 +752,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, imagePath, L.T("预览 - CD"), plan is not null);
+            PublishPreview(outputPath, imagePath, "预览 - CD", plan is not null);
             keepOutput = true;
             StatusText = L.F($"已实时更新 · 标定预览 · 灰度 {tone.Levels} 级")
                 + L.F($" · 抖动 {tone.DitherStrength * 100:0}% · {outputSize} px")
@@ -822,7 +844,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, isoPath, L.T("预览 - DVD"), overlay);
+            PublishPreview(outputPath, isoPath, "预览 - DVD", overlay);
             keepOutput = true;
             StatusText = L.F($"已实时更新 · 读回模拟 · CW · {outputSize} px · 每扇区 {samplesPerSector} 个采样");
         }
@@ -1019,7 +1041,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, imagePath, L.T("预览 - BD"), plan.HasFileSystem);
+            PublishPreview(outputPath, imagePath, "预览 - BD", plan.HasFileSystem);
             keepOutput = true;
             StatusText = L.F($"已实时更新 · 设计投影 · 3T/6T 类别图")
                 + $" · {(invert ? L.T("反转 3T/6T") : L.T("标准 3T/6T"))}"
@@ -1110,7 +1132,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, isoPath, L.T("预览 - BD"), overlay);
+            PublishPreview(outputPath, isoPath, "预览 - BD", overlay);
             keepOutput = true;
             StatusText = L.F($"已实时更新 · 成品读回 · 3T/6T 类别图（非反射亮度） · {outputSize} px");
         }
@@ -1175,7 +1197,7 @@ public partial class LivePreviewViewModel : ObservableObject
 
     /// <summary>Adopts a rendered preview as the canvas content and the export source, and
     /// retires the previous temporary file.</summary>
-    private void PublishPreview(string outputPath, string inputPath, string title,
+    private void PublishPreview(string outputPath, string inputPath, string titleKey,
         bool hasFileRegionOverlay = false)
     {
         string? previousPath = _lastLivePreviewPath;
@@ -1184,7 +1206,8 @@ public partial class LivePreviewViewModel : ObservableObject
         bool loaded = ShowResultPreview(outputPath);
         HasFileRegionOverlay = hasFileRegionOverlay && loaded;
         _isLivePreviewReady = true;
-        ResultPreviewTitle = title;
+        _resultTitleKey = titleKey;
+        ResultPreviewTitle = L.T(titleKey);
         ResultPreviewPath = Path.GetFileName(inputPath);
         TempFiles.TryDeleteTemporaryFile(previousPath);
     }
@@ -1503,6 +1526,7 @@ public partial class LivePreviewViewModel : ObservableObject
         ResultImage = null;
         HasResultImage = false;
         _downloadablePreview = false;
+        _resultTitleKey = "输出预览";
         ResultPreviewTitle = L.T("输出预览");
         ResultPreviewPath = string.Empty;
         ResultPreviewPlaceholderText = ShellViewModel.IsPngPath(outputPath)

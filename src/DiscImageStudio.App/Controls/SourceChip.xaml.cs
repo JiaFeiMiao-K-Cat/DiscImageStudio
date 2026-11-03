@@ -11,7 +11,7 @@ public partial class SourceChip : UserControl
 {
     public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
         nameof(Text), typeof(string), typeof(SourceChip),
-        new PropertyMetadata(L.T("来自设计页合成图"), static (sender, _) => ((SourceChip)sender).ChipText.Text = ((SourceChip)sender).Text));
+        new PropertyMetadata(string.Empty, static (sender, _) => ((SourceChip)sender).UpdateText()));
 
     public static readonly DependencyProperty ActionsProperty = DependencyProperty.Register(
         nameof(Actions), typeof(object), typeof(SourceChip),
@@ -20,8 +20,10 @@ public partial class SourceChip : UserControl
     public SourceChip()
     {
         InitializeComponent();
-        ChipText.Text = Text;
+        UpdateText();
         UpdateActions();
+        Loaded += (_, _) => L.LanguageChanged += Language_LanguageChanged;
+        Unloaded += (_, _) => L.LanguageChanged -= Language_LanguageChanged;
     }
 
     public string Text
@@ -36,6 +38,11 @@ public partial class SourceChip : UserControl
         get => GetValue(ActionsProperty);
         set => SetValue(ActionsProperty, value);
     }
+
+    private void Language_LanguageChanged(object? sender, EventArgs e) => UpdateText();
+
+    private void UpdateText()
+        => ChipText.Text = string.IsNullOrWhiteSpace(Text) ? L.T("来自设计页合成图") : Text;
 
     private void UpdateActions()
     {

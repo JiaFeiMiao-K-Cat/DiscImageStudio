@@ -761,6 +761,30 @@
     "zh-TW": "Verbatim DVD-R AZO 43533 已驗證校準參數：23.9914606277–57.9648936579 mm，共 2,297,888 個磁區；採用三次軌距分布。",
     "ja": "Verbatim DVD-R AZO 43533 の検証済みキャリブレーション: 23.9914606277–57.9648936579 mm、2,297,888 セクター。3 次のトラック ピッチ分布を使用。"
   },
+  "Verbatim DVD-R AZO (43523)（实测）": {
+    "zh-CN": "Verbatim DVD-R AZO (43523)（实测）",
+    "en": "Verbatim DVD-R AZO (43523) (measured)",
+    "zh-TW": "Verbatim DVD-R AZO (43523)（實測）",
+    "ja": "Verbatim DVD-R AZO (43523) (実測)"
+  },
+  "Verbatim DVD-R AZO 43523 实测标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布；参数与 43533 一致。": {
+    "zh-CN": "Verbatim DVD-R AZO 43523 实测标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布；参数与 43533 一致。",
+    "en": "Measured Verbatim DVD-R AZO 43523 calibration: 23.9914606277–57.9648936579 mm, 2,297,888 sectors; cubic track pitch distribution; parameters match 43533.",
+    "zh-TW": "Verbatim DVD-R AZO 43523 實測校準參數：23.9914606277–57.9648936579 mm，共 2,297,888 個磁區；採用三次軌距分布；參數與 43533 一致。",
+    "ja": "Verbatim DVD-R AZO 43523 の実測キャリブレーション: 23.9914606277–57.9648936579 mm、2,297,888 セクター。3 次のトラック ピッチ分布を使用。パラメーターは 43533 と同一です。"
+  },
+  "PHILIPS DVD+R（实测）": {
+    "zh-CN": "PHILIPS DVD+R（实测）",
+    "en": "PHILIPS DVD+R (measured)",
+    "zh-TW": "PHILIPS DVD+R（實測）",
+    "ja": "PHILIPS DVD+R (実測)"
+  },
+  "PHILIPS DVD+R 实测标定参数：24.157724–57.881039 mm，共 2,295,104 个扇区；采用三次轨距分布。": {
+    "zh-CN": "PHILIPS DVD+R 实测标定参数：24.157724–57.881039 mm，共 2,295,104 个扇区；采用三次轨距分布。",
+    "en": "Measured PHILIPS DVD+R calibration: 24.157724–57.881039 mm, 2,295,104 sectors; cubic track pitch distribution.",
+    "zh-TW": "PHILIPS DVD+R 實測校準參數：24.157724–57.881039 mm，共 2,295,104 個磁區；採用三次軌距分布。",
+    "ja": "PHILIPS DVD+R の実測キャリブレーション: 24.157724–57.881039 mm、2,295,104 セクター。3 次のトラック ピッチ分布を使用。"
+  },
   "标准 8cm 单层 DVD": {
     "zh-CN": "标准 8cm 单层 DVD",
     "en": "Standard 8 cm single-layer DVD",

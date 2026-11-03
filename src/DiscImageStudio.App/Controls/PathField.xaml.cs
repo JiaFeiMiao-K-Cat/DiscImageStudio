@@ -21,7 +21,7 @@ public partial class PathField : UserControl
 
     public static readonly DependencyProperty ButtonLabelProperty = DependencyProperty.Register(
         nameof(ButtonLabel), typeof(string), typeof(PathField),
-        new PropertyMetadata(L.T("浏览"), static (sender, _) => ((PathField)sender).UpdateTexts()));
+        new PropertyMetadata(string.Empty, static (sender, _) => ((PathField)sender).UpdateTexts()));
 
     public static readonly DependencyProperty CommandProperty = DependencyProperty.Register(
         nameof(Command), typeof(ICommand), typeof(PathField),
@@ -53,6 +53,8 @@ public partial class PathField : UserControl
             UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
         });
         UpdateTexts();
+        Loaded += (_, _) => L.LanguageChanged += Language_LanguageChanged;
+        Unloaded += (_, _) => L.LanguageChanged -= Language_LanguageChanged;
     }
 
     /// <summary>Optional label above the field.</summary>
@@ -109,11 +111,13 @@ public partial class PathField : UserControl
         set => SetValue(PlaceholderProperty, value);
     }
 
+    private void Language_LanguageChanged(object? sender, EventArgs e) => UpdateTexts();
+
     private void UpdateTexts()
     {
         LabelText.Text = Label;
         LabelText.Visibility = string.IsNullOrWhiteSpace(Label) ? Visibility.Collapsed : Visibility.Visible;
-        BrowseButton.Content = ButtonLabel;
+        BrowseButton.Content = string.IsNullOrWhiteSpace(ButtonLabel) ? L.T("浏览") : ButtonLabel;
         HintTextBlock.Text = Hint;
         HintTextBlock.Visibility = string.IsNullOrWhiteSpace(Hint) ? Visibility.Collapsed : Visibility.Visible;
         PlaceholderTextBlock.Text = Placeholder;

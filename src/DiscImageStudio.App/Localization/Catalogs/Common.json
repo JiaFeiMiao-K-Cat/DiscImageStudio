@@ -479,6 +479,18 @@
     "zh-TW": "重新啟動應用程式後生效。",
     "ja": "アプリの再起動後に反映されます。"
   },
+  "界面文字已立即更新。": {
+    "zh-CN": "界面文字已立即更新。",
+    "en": "The interface text has been updated immediately.",
+    "zh-TW": "介面文字已立即更新。",
+    "ja": "画面のテキストをすぐに更新しました。"
+  },
+  "贡献者：{0}": {
+    "zh-CN": "贡献者：{0}",
+    "en": "Contributor: {0}",
+    "zh-TW": "貢獻者：{0}",
+    "ja": "貢献者: {0}"
+  },
   "缓存位置不可用": {
     "zh-CN": "缓存位置不可用",
     "en": "Cache location unavailable",
@@ -580,6 +592,12 @@
     "en": "Could not open the app data folder: ",
     "zh-TW": "無法開啟應用程式資料目錄：",
     "ja": "アプリ データ フォルダーを開けません: "
+  },
+  "无法打开 GitHub：": {
+    "zh-CN": "无法打开 GitHub：",
+    "en": "Could not open GitHub: ",
+    "zh-TW": "無法開啟 GitHub：",
+    "ja": "GitHub を開けません: "
   },
   "请填写绝对路径。": {
     "zh-CN": "请填写绝对路径。",

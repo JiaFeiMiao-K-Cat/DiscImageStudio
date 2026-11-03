@@ -112,12 +112,39 @@ public sealed class CalibrationPhotoCanvas : FrameworkElement
         {
             ThemeResolver.Changed -= ThemeResolver_Changed;
             ThemeResolver.Changed += ThemeResolver_Changed;
+            L.LanguageChanged -= Language_LanguageChanged;
+            L.LanguageChanged += Language_LanguageChanged;
             InvalidateVisual();
         };
-        Unloaded += (_, _) => ThemeResolver.Changed -= ThemeResolver_Changed;
+        Unloaded += (_, _) =>
+        {
+            ThemeResolver.Changed -= ThemeResolver_Changed;
+            L.LanguageChanged -= Language_LanguageChanged;
+        };
     }
 
     private void ThemeResolver_Changed(object? sender, EventArgs e) => InvalidateVisual();
+
+    private void Language_LanguageChanged(object? sender, EventArgs e)
+    {
+        if (_boundaryDrag is { } boundary)
+        {
+            SetValue(SelectionDescriptionPropertyKey, boundary.Boundary == CalibrationPhotoBoundaryKind.OuterEdge
+                ? L.T("拖到盘片实体外缘；不要沿刻录区边界。") : L.T("拖到实体内缘；不要沿透明塑料环。"));
+        }
+        else if (_selectedTrace is not null)
+        {
+            UpdateTraceDescription();
+        }
+        else
+        {
+            SetValue(SelectionDescriptionPropertyKey, IsPhotoStep
+                ? L.T("滚轮缩放，右键平移；拖动控制点贴合边缘。")
+                : L.T("滚轮缩放，右键平移；点击添加点，拖动已有点修正位置。"));
+        }
+
+        InvalidateVisual();
+    }
 
     public Point WorldToView(Point point) => ViewMatrix.Transform(point);
     public Point ViewToWorld(Point point) { var matrix = ViewMatrix; matrix.Invert(); return matrix.Transform(point); }

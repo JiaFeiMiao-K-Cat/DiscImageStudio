@@ -14,7 +14,7 @@ public partial class GeometrySummary : UserControl
 {
     public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(
         nameof(Title), typeof(string), typeof(GeometrySummary),
-        new PropertyMetadata(L.T("盘片几何"), static (sender, _) => ((GeometrySummary)sender).UpdateVisuals()));
+        new PropertyMetadata(string.Empty, static (sender, _) => ((GeometrySummary)sender).UpdateVisuals()));
 
     public static readonly DependencyProperty DetailsProperty = DependencyProperty.Register(
         nameof(Details), typeof(string), typeof(GeometrySummary),
@@ -35,12 +35,14 @@ public partial class GeometrySummary : UserControl
 
     public static readonly DependencyProperty EditLabelProperty = DependencyProperty.Register(
         nameof(EditLabel), typeof(string), typeof(GeometrySummary),
-        new PropertyMetadata(L.T("编辑…"), static (sender, args) => ((GeometrySummary)sender).EditButton.Content = args.NewValue));
+        new PropertyMetadata(string.Empty, static (sender, _) => ((GeometrySummary)sender).UpdateVisuals()));
 
     public GeometrySummary()
     {
         InitializeComponent();
         UpdateVisuals();
+        Loaded += (_, _) => L.LanguageChanged += Language_LanguageChanged;
+        Unloaded += (_, _) => L.LanguageChanged -= Language_LanguageChanged;
     }
 
     public string Title
@@ -81,14 +83,16 @@ public partial class GeometrySummary : UserControl
         set => SetValue(EditLabelProperty, value);
     }
 
+    private void Language_LanguageChanged(object? sender, EventArgs e) => UpdateVisuals();
+
     private void UpdateVisuals()
     {
-        TitleText.Text = Title;
+        TitleText.Text = string.IsNullOrWhiteSpace(Title) ? L.T("盘片几何") : Title;
         DetailsText.Text = Details;
         DetailsText.Visibility = string.IsNullOrWhiteSpace(Details) ? Visibility.Collapsed : Visibility.Visible;
         PitchText.Text = Note;
         PitchText.Visibility = string.IsNullOrWhiteSpace(Note) ? Visibility.Collapsed : Visibility.Visible;
-        EditButton.Content = EditLabel;
+        EditButton.Content = string.IsNullOrWhiteSpace(EditLabel) ? L.T("编辑…") : EditLabel;
         EditButton.Command = EditCommand;
         EditButton.CommandParameter = EditCommandParameter;
         // No command means no jump target (e.g. a summary whose owner is reached by a separate

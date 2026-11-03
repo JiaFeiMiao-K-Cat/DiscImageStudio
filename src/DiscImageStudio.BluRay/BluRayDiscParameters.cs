@@ -45,7 +45,8 @@ public sealed record BluRayDiscParameters(
 }
 
 public sealed record BluRayDiscPreset(string Id, string DisplayName, int LayerCount,
-    BluRayDiscParameters? Geometry = null, bool InvertMapping = false, bool IsCustom = false)
+    BluRayDiscParameters? Geometry = null, bool InvertMapping = false, bool IsCustom = false,
+    string? Contributor = null)
 {
     public uint TotalSectors => Geometry?.TotalSectors ?? checked(BluRayDiscParameters.SectorsPerLayer * (uint)LayerCount);
     public long ContentLength => (long)TotalSectors * BluRayDiscParameters.BytesPerSector;

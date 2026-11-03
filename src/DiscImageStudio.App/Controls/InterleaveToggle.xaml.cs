@@ -12,7 +12,7 @@ public partial class InterleaveToggle : UserControl
 {
     public static readonly DependencyProperty LabelProperty = DependencyProperty.Register(
         nameof(Label), typeof(string), typeof(InterleaveToggle),
-        new PropertyMetadata(L.T("启用 CD-DA 延迟交织")));
+        new PropertyMetadata(string.Empty, static (sender, _) => ((InterleaveToggle)sender).UpdateLabel()));
 
     public static readonly DependencyProperty IsCheckedProperty = DependencyProperty.Register(
         nameof(IsChecked), typeof(bool), typeof(InterleaveToggle),
@@ -20,14 +20,16 @@ public partial class InterleaveToggle : UserControl
 
     public static readonly DependencyProperty HintProperty = DependencyProperty.Register(
         nameof(Hint), typeof(string), typeof(InterleaveToggle),
-        new PropertyMetadata(
-            L.T("如您在盘片制作时勾选了“启用 CD-DA 延迟交织”，则应勾选该选项。"),
+        new PropertyMetadata(string.Empty,
             static (sender, _) => ((InterleaveToggle)sender).UpdateHint()));
 
     public InterleaveToggle()
     {
         InitializeComponent();
+        UpdateLabel();
         UpdateHint();
+        Loaded += (_, _) => L.LanguageChanged += Language_LanguageChanged;
+        Unloaded += (_, _) => L.LanguageChanged -= Language_LanguageChanged;
     }
 
     public string Label
@@ -48,5 +50,17 @@ public partial class InterleaveToggle : UserControl
         set => SetValue(HintProperty, value);
     }
 
-    private void UpdateHint() => HintSpot.Hint = Hint;
+    private void Language_LanguageChanged(object? sender, EventArgs e)
+    {
+        UpdateLabel();
+        UpdateHint();
+    }
+
+    private void UpdateLabel()
+        => Toggle.Content = string.IsNullOrWhiteSpace(Label) ? L.T("启用 CD-DA 延迟交织") : Label;
+
+    private void UpdateHint()
+        => HintSpot.Hint = string.IsNullOrWhiteSpace(Hint)
+            ? L.T("如您在盘片制作时勾选了“启用 CD-DA 延迟交织”，则应勾选该选项。")
+            : Hint;
 }

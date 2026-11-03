@@ -53,7 +53,6 @@ public partial class ShellViewModel : ObservableObject
         Calibration = new CalibrationViewModel(this, State);
         Burn = new BurnViewModel(this, State, Design, opticalDiscBurner);
         Export = new ExportViewModel(this, State, Design);
-        About = new AboutViewModel();
         Design.CompositeRendered += Design_CompositeRendered;
         Design.DesignEdited += () => MarkProjectDirty();
         OpenOutputCommand = new RelayCommand(OpenOutput, () => OpenOutputEnabled);
@@ -91,8 +90,6 @@ public partial class ShellViewModel : ObservableObject
     public BurnViewModel Burn { get; }
 
     public CalibrationViewModel Calibration { get; }
-
-    public AboutViewModel About { get; }
 
     public ObservableCollection<ToastItem> Toasts { get; } = [];
 
@@ -358,6 +355,26 @@ public partial class ShellViewModel : ObservableObject
 
         LivePreview.OnWindowLoaded();
         Home.RefreshRecentProjects();
+    }
+
+    /// <summary>Re-reads the text that view models cached while the old language was active.
+    /// XAML follows its own binding; running job text and the run log are left alone because
+    /// they describe work that already happened.</summary>
+    internal void Relocalize()
+    {
+        if (!IsJobRunning && !HasLogContent)
+        {
+            JobTitle = L.T("就绪");
+            JobStatusText = L.T("尚未运行任务。");
+        }
+
+        State.Relocalize();
+        Home.Relocalize();
+        LivePreview.Relocalize();
+        Design.Relocalize();
+        Burn.Relocalize();
+        Export.Relocalize();
+        Calibration.Relocalize();
     }
 
     /// <summary>Back home leaves the open project behind (the sidebar hides), so it belongs
