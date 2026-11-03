@@ -17,7 +17,7 @@ La app de escritorio para Windows permite diseñar y grabar imágenes de disco. 
 
 </div>
 
-> Traducción al español · [Original](README.en.md). Las capturas muestran la interfaz del proyecto original; no se han sustituido por capturas de la traducción.
+> Traducción al español · [Original](README.en.md). Las capturas muestran la aplicación Windows con Español seleccionado, renderizada con `ui-snapshot`.
 
 ---
 
@@ -41,11 +41,15 @@ Disc Image Studio convierte una imagen en datos que cumplen las restricciones de
 <a id="界面预览"></a>
 ## Vista de la interfaz
 
-![Inicio: plantillas y proyectos recientes](docs/images/ui-home.png)
+![Inicio: plantillas para CD, DVD y Blu-ray](docs/images/ui-home.es.png)
 
-![Diseño: lienzo de capas y controles de tono](docs/images/ui-design.png)
+![Diseño: lienzo y capas antes de importar una imagen](docs/images/ui-design.es.png)
 
-![Exportar: tema claro e imagen de salida](docs/images/ui-export.png)
+![Exportar: opciones de pista de audio CD](docs/images/ui-export.es.png)
+
+![Calibrar: patrón generado por el programa](docs/images/ui-calibration.es.png)
+
+![Configuración: Español seleccionado en el selector de idiomas](docs/images/ui-settings.es.png)
 
 ---
 

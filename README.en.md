@@ -33,6 +33,8 @@ Disc Image Studio converts an image into data that meets the physical-layer cons
 
 ## Interface Preview
 
+[Español — capturas de la interfaz](README.es.md#vista-de-la-interfaz)
+
 ![Home: templates and recent projects](docs/images/ui-home.png)
 
 ![Design: layer canvas and tone controls](docs/images/ui-design.png)

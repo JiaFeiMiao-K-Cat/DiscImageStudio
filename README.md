@@ -33,6 +33,8 @@ Disc Image Studio 可将一张图片转换成符合 CD、DVD 与单层 BD-R 光�
 
 ## 界面预览
 
+[Español — capturas de la interfaz](README.es.md#vista-de-la-interfaz)
+
 ![主页：模板与最近工程](docs/images/ui-home.png)
 
 ![设计页：图层画布与影调](docs/images/ui-design.png)

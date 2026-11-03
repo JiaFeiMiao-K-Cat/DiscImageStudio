@@ -33,6 +33,8 @@ Disc Image Studio は、1 枚の画像を CD、DVD、片面一層 BD-R ディス
 
 ## 画面プレビュー
 
+[Español — capturas de la interfaz](README.es.md#vista-de-la-interfaz)
+
 ![ホーム：テンプレートと最近のプロジェクト](docs/images/ui-home.png)
 
 ![デザイン：レイヤーキャンバスとトーン調整](docs/images/ui-design.png)
