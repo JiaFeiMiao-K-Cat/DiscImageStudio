@@ -122,9 +122,22 @@ jobs:
       - name: Render GUI screenshot
         run: dotnet run --project src/DiscImageStudio.App --configuration Release --no-build -- ui-snapshot --output artifacts/store/home-screen.png
 
+      - name: Render Czech UI screenshots
+        shell: powershell
+        run: |
+          foreach ($tab in 0..5) {
+            dotnet run --project src/DiscImageStudio.App --configuration Release --no-build -- ui-snapshot --language cs --tab $tab --output "artifacts/ui-cs/tab-$tab.png"
+            if ($LASTEXITCODE -ne 0) { throw "Czech snapshot of tab $tab failed." }
+          }
+          foreach ($view in "general", "storage") {
+            dotnet run --project src/DiscImageStudio.App --configuration Release --no-build -- ui-snapshot --language cs --settings-dialog --settings-view $view --output "artifacts/ui-cs/settings-$view.png"
+            if ($LASTEXITCODE -ne 0) { throw "Czech snapshot of settings ($view) failed." }
+          }
+
       - uses: actions/upload-artifact@v4
         with:
           name: validation-artifacts
           path: |
             artifacts/ci/cd-smoke.raw
             artifacts/store/home-screen.png
+            artifacts/ui-cs/*.png
