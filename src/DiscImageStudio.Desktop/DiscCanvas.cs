@@ -15,6 +15,7 @@ public sealed class DiscCanvas : Control, IDisposable
     public ProjectSession? Session { get; set; }
     public int SelectedLayer { get; set; } = -1;
     public event Action<ProjectLayer>? LayerDragged;
+    public event Action? LayerEditCompleted;
     public void SetImage(string? path)
     {
         _bitmap?.Dispose();
@@ -66,6 +67,7 @@ public sealed class DiscCanvas : Control, IDisposable
         _dragStart = null;
         _original = null;
         e.Pointer.Capture(null);
+        LayerEditCompleted?.Invoke();
     }
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
@@ -74,6 +76,7 @@ public sealed class DiscCanvas : Control, IDisposable
         LayerDragged?.Invoke(e.KeyModifiers.HasFlag(KeyModifiers.Shift)
             ? layer with { RotationDeg = layer.RotationDeg + e.Delta.Y * 2 }
             : layer with { Scale = Math.Clamp(layer.Scale * Math.Pow(1.08, e.Delta.Y), 0.01, 100) });
+        LayerEditCompleted?.Invoke();
         e.Handled = true;
     }
 }

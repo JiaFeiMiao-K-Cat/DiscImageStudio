@@ -18,6 +18,7 @@ public sealed partial class MainWindow
         if (design)
         {
             _designCanvas = canvas;
+            canvas.LayerEditCompleted += ShowLayerEditor;
             canvas.LayerDragged += layer => { ReplaceLayer(layer); _composeTimer.Stop(); _composeTimer.Start(); };
         }
         return canvas;
@@ -259,8 +260,12 @@ public sealed partial class MainWindow
         using var cancellation = new CancellationTokenSource(); _cancellation = cancellation;
         _page.IsEnabled = false; _navigation.IsEnabled = false;
         Log(title);
+        TextWriter originalOutput = Console.Out, originalError = Console.Error;
+        using var outputLog = new JobLogWriter(originalOutput, Log);
+        using var errorLog = new JobLogWriter(originalError, Log);
+        Console.SetOut(outputLog); Console.SetError(errorLog);
         try { await work(cancellation.Token); _status.Text = L.T("完成"); _progress.Value = 100; }
         catch (OperationCanceledException) { _status.Text = L.T("已取消"); Log("已取消；未完成的输出文件可能留在磁盘上。"); }
-        finally { _busy = false; _cancellation = null; _cancel.IsVisible = false; _page.IsEnabled = true; _navigation.IsEnabled = true; _progress.IsIndeterminate = false; }
+        finally { outputLog.Flush(); errorLog.Flush(); Console.SetOut(originalOutput); Console.SetError(originalError); _busy = false; _cancellation = null; _cancel.IsVisible = false; _page.IsEnabled = true; _navigation.IsEnabled = true; _progress.IsIndeterminate = false; }
     }
 }

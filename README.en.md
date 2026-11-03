@@ -41,6 +41,10 @@ Disc Image Studio converts an image into data that meets the physical-layer cons
 
 ---
 
+## Experimental macOS desktop (source build)
+
+`DiscImageStudio.Desktop` adds an Avalonia GUI following the Windows design, preview, export and calibration workspaces, using the existing project format and optical modules. Mac recording writes exported WAV/ISO artifacts through DiscRecording and has not been verified on physical media; BD-R images require external recording software. See [build instructions, workflow and parity limits](docs/MACOS_DESKTOP.md).
+
 ## Quick Start
 
 On Windows, download and run `win-x64.exe`. On Linux or macOS, download the **experimental CLI** archive for your CPU, extract it and run `./disc-image-studio --help`. Each release package includes the .NET runtime. [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)

@@ -48,6 +48,7 @@ public sealed partial class MainWindow : Window
     {
         LoadSettings();
         L.Initialize(_settings.Language);
+        _status.Text = L.T("就绪"); _cancel.Content = L.T("取消");
         if (Application.Current is { } app) app.RequestedThemeVariant = _settings.Dark
             ? Avalonia.Styling.ThemeVariant.Dark : Avalonia.Styling.ThemeVariant.Light;
         Title = "Disc Image Studio · macOS";
@@ -105,7 +106,13 @@ public sealed partial class MainWindow : Window
     internal Button Button(string title, Action action) => Button(title, () => { action(); return Task.CompletedTask; });
     internal Button Button(string title, Func<Task> action)
     {
-        var button = new Button { Content = L.T(title), Padding = new Thickness(14, 8), MinHeight = 36 };
+        var button = new Button { Content = L.T(title), Padding = new Thickness(14, 8), MinHeight = 36,
+            CornerRadius = new CornerRadius(7), Background = Surface("#FFFFFF", "#282F3C"),
+            BorderBrush = Surface("#D6D9E0", "#454F62"), BorderThickness = new Thickness(1) };
+        if (title.StartsWith("下一步", StringComparison.Ordinal) || title is "生成文件" or "渲染预览" or "创建工程")
+        {
+            button.Background = Brush.Parse("#2569CC"); button.Foreground = Brushes.White; button.BorderThickness = new Thickness(0);
+        }
         button.Click += async (_, _) => await Guard(action);
         return button;
     }
@@ -181,7 +188,8 @@ public sealed partial class MainWindow : Window
         if (_busy) { e.Cancel = true; _status.Text = L.T("请等待当前任务完成。"); return; }
         if (!Session.IsDirty) return;
         e.Cancel = true;
-        if (await CanReplaceProject()) { _closingApproved = true; Close(); }
+        try { if (await CanReplaceProject()) { _closingApproved = true; Close(); } }
+        catch (Exception exception) { _status.Text = exception.Message; Log(exception.ToString()); }
     }
     private async Task<bool> CanReplaceProject()
     {

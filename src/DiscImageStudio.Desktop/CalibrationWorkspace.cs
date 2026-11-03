@@ -42,15 +42,15 @@ public sealed partial class MainWindow
             _photoCanvas.InvalidateVisual();
         }
         mode.SelectionChanged += (_, _) => SetMode();
-        _photoCanvas.Edited += () =>
-        {
-            _fit = null; _shapeConfirmed = false; _photoCanvas.Prediction = [];
-            if (mode.SelectedIndex != 2) { _photoTransform = null; _rectifiedPath = null; _tracePixels.Clear(); }
-            count.Text = $"外缘 {_outerPoints.Count} · 中心孔 {_holePoints.Count} · 曲线 {_tracePixels.Count}";
-        };
         var result = Text(_fit is null ? "尚未拟合" : $"RMS {_fit.RmsErrorMm:F4} mm");
         var candidate = new ComboBox { HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch };
         var shape = Check("已核对整条预测曲线与照片吻合", false, v => _shapeConfirmed = v);
+        _photoCanvas.Edited += () =>
+        {
+            _fit = null; _shapeConfirmed = false; shape.IsChecked = false; candidate.ItemsSource = null; _photoCanvas.Prediction = [];
+            if (mode.SelectedIndex != 2) { _photoTransform = null; _rectifiedPath = null; _tracePixels.Clear(); }
+            count.Text = $"外缘 {_outerPoints.Count} · 中心孔 {_holePoints.Count} · 曲线 {_tracePixels.Count}";
+        };
         var fields = Column(Button("生成标定盘", GenerateCalibration),
             Row(Button("打开记录", OpenCalibration), Button("保存记录", SaveCalibration)),
             Text("先生成标定盘，刻录后导入该盘照片。", 12), Button("导入照片", async () =>
@@ -88,6 +88,8 @@ public sealed partial class MainWindow
         {
             if (_target is null || _photoTransform is null || _tracePixels.Count < 6) throw new InvalidOperationException("请在矫正后的照片上沿同一条径向曲线由内向外布至少 6 个点，建议 20 个以上。");
             var trace = _tracePixels.Select(PixelToDisc).ToArray();
+            if (trace.Any(p => p.X * p.X + p.Y * p.Y > _physicalRadius * _physicalRadius))
+                throw new InvalidOperationException("曲线点必须位于实体光盘内，请删除盘外的点。");
             await RunWork("正在反推参数…", true, async token =>
             {
                 _fit = await Task.Run(() => CalibrationCrossFitter.Fit(_target, [new(0, trace)], new(AutoRange: true, AdaptiveRobustScale: true), token), token);
@@ -96,15 +98,16 @@ public sealed partial class MainWindow
                 result.Text = string.Join("\n", _fit.Warnings.Prepend(_fit.Succeeded ? $"RMS {_fit.RmsErrorMm:F4} mm" : "拟合未通过"));
             });
         }));
-        candidate.SelectionChanged += (_, _) =>
+        candidate.SelectionChanged += async (_, _) => await Guard(() =>
         {
             _shapeConfirmed = false; shape.IsChecked = false;
-            if (_fit is null || _target is null || candidate.SelectedIndex < 0) return;
+            if (_fit is null || _target is null || candidate.SelectedIndex < 0) return Task.CompletedTask;
             var c = _fit.Candidates[candidate.SelectedIndex];
             var radii = _tracePixels.Select(PixelToDisc).Select(p => Math.Sqrt(p.X * p.X + p.Y * p.Y)).ToArray();
             _photoCanvas.Prediction = CalibrationCrossPrediction.GetOutline(_target, c.Parameters, radii.Min(), radii.Max(), c.RotationRadians).Select(DiscToPixel).ToArray();
             _photoCanvas.InvalidateVisual();
-        };
+            return Task.CompletedTask;
+        });
         fields.Children.Add(candidate); fields.Children.Add(result); fields.Children.Add(shape);
         fields.Children.Add(Button("应用参数", () =>
         {
@@ -119,6 +122,13 @@ public sealed partial class MainWindow
         SetMode();
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,330"), ColumnSpacing = 14 };
         grid.Children.Add(Card("标定照片", _photoCanvas)); var panel = Card("辅助标定", fields); Grid.SetColumn(panel, 1); grid.Children.Add(panel);
+        grid.SizeChanged += (_, _) =>
+        {
+            bool narrow = grid.Bounds.Width < 800;
+            grid.ColumnDefinitions = new ColumnDefinitions(narrow ? "*" : "*,330");
+            grid.RowDefinitions = new RowDefinitions(narrow ? "Auto,Auto" : "Auto");
+            Grid.SetColumn(panel, narrow ? 0 : 1); Grid.SetRow(panel, narrow ? 1 : 0);
+        };
         return grid;
     }
     private CalibrationPoint PixelToDisc(CalibrationPoint p) => new((p.X / RectifiedSize * 2 - 1) * _physicalRadius, (p.Y / RectifiedSize * 2 - 1) * _physicalRadius);
