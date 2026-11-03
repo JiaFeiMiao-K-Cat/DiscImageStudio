@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 4,
+  "fallbackLanguage": "zh-CN",
+  "cdPresets": [
+    {
+      "id": "cd-80",
+      "displayName": "标准 80min CD",
+      "description": "ECMA-130／ISO/IEC 10149 标准速度 1200 mm/s；120 mm 盘、约 80 分钟，359,849 扇区（24.5–56.8 mm）。",
+      "sectors": 359849,
+      "innerRadiusMm": 24.5,
+      "outerRadiusMm": 56.8,
+      "linearVelocityMmPerSecond": 1200,
+      "displayNameResourceKey": "DiscPreset_Cd80_DisplayName",
+      "descriptionResourceKey": "DiscPreset_Cd80_Description"
+    },
+    {
+      "id": "ritek-medical-aqua",
+      "displayName": "铼德医疗水蓝盘（实测）",
+      "description": "实测参数：内半径 24.911275 mm、外半径 57.931155 mm、359,845 扇区；扫描速度采用 1200 mm/s。",
+      "sectors": 359845,
+      "innerRadiusMm": 24.911275,
+      "outerRadiusMm": 57.931155,
+      "linearVelocityMmPerSecond": 1200,
+      "displayNameResourceKey": "DiscPreset_RitekMedicalAqua_DisplayName",
+      "descriptionResourceKey": "DiscPreset_RitekMedicalAqua_Description"
+    },
+    {
+      "id": "verbatim-azo-43438",
+      "displayName": "Verbatim CD-R AZO (43438)（实测）",
+      "description": "实测参数：内半径 24.837775 mm、外半径 58.020875 mm、359,848 扇区；扫描速度采用 1200 mm/s。",
+      "sectors": 359848,
+      "innerRadiusMm": 24.837775,
+      "outerRadiusMm": 58.020875,
+      "linearVelocityMmPerSecond": 1200,
+      "displayNameResourceKey": "DiscPreset_VerbatimAzo43438_DisplayName",
+      "descriptionResourceKey": "DiscPreset_VerbatimAzo43438_Description"
+    },
+    {
+      "id": "cd-74",
+      "displayName": "标准 74min CD",
+      "description": "ECMA-130／ISO/IEC 10149 标准速度 1200 mm/s；120 mm 盘、约 74 分钟，333,000 扇区（24.5–56.8 mm）。",
+      "sectors": 333000,
+      "innerRadiusMm": 24.5,
+      "outerRadiusMm": 56.8,
+      "linearVelocityMmPerSecond": 1200,
+      "displayNameResourceKey": "DiscPreset_Cd74_DisplayName",
+      "descriptionResourceKey": "DiscPreset_Cd74_Description"
+    }
+  ],
+  "dvdPresets": [
+    {
+      "id": "dvd-5-120mm",
+      "displayName": "标准 12cm 单层 DVD",
+      "description": "ISO/IEC 16448 标准单层 120 mm DVD（DVD-5）数据区：24–58 mm，共 2,295,104 个扇区。",
+      "totalSectors": 2295104,
+      "innerRadiusMm": 24.0,
+      "outerRadiusMm": 58.0,
+      "channelBitLengthNm": 133.3,
+      "displayNameResourceKey": "DiscPreset_Dvd120Mm_DisplayName",
+      "descriptionResourceKey": "DiscPreset_Dvd120Mm_Description"
+    },
+    {
+      "id": "verbatim-dvd-r-azo-43533",
+      "displayName": "Verbatim DVD-R AZO (43533)（实测）",
+      "description": "Verbatim DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
+      "totalSectors": 2297888,
+      "innerRadiusMm": 23.991460627731737,
+      "outerRadiusMm": 57.964893657925366,
+      "channelBitLengthNm": 133.3,
+      "pitchLinear": -3.9256854319227684E-05,
+      "pitchQuadratic": 6.964795915429256E-05,
+      "pitchCubic": -4.670918950137523E-05,
+      "displayNameResourceKey": "DiscPreset_VerbatimDvdAzo43533_DisplayName",
+      "descriptionResourceKey": "DiscPreset_VerbatimDvdAzo43533_Description"
+    },
+    {
+      "id": "dvd-5-80mm",
+      "displayName": "标准 8cm 单层 DVD",
+      "description": "ISO/IEC 16448 标准单层 80 mm DVD 数据区：24–38 mm，共 714,544 个扇区。",
+      "totalSectors": 714544,
+      "innerRadiusMm": 24.0,
+      "outerRadiusMm": 38.0,
+      "channelBitLengthNm": 133.3,
+      "displayNameResourceKey": "DiscPreset_Dvd80Mm_DisplayName",
+      "descriptionResourceKey": "DiscPreset_Dvd80Mm_Description"
+    }
+  ],
+  "bluRayPresets": [
+    {
+      "id": "bd-r-sl-25gb",
+      "displayName": "标准 25GB 单层 BD",
+      "description": "ISO/IEC 30190 标准单层 BD-R 数据区：24–58 mm，共 12,219,392 个扇区。",
+      "totalSectors": 12219392,
+      "innerRadiusMm": 24.0,
+      "outerRadiusMm": 58.0,
+      "invertMapping": false
+    },
+    {
+      "id": "bd-r-ritek-10x",
+      "displayName": "铼德 BD-R 10x（实测）",
+      "description": "实测参数：内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 扇区。",
+      "totalSectors": 12219392,
+      "innerRadiusMm": 23.98822105616562,
+      "outerRadiusMm": 58.023234731100764,
+      "invertMapping": false
+    },
+    {
+      "id": "bd-r-verbatim-64099",
+      "displayName": "Verbatim BD-R (64099)（实测）",
+      "description": "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。",
+      "totalSectors": 12219392,
+      "innerRadiusMm": 23.987042157339335,
+      "outerRadiusMm": 57.987960341783236,
+      "invertMapping": false
+    }
+  ]
+}

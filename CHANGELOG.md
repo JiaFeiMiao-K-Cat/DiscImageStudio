@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### 中文
+
+- **实验性功能：macOS 原生 SwiftUI 图形界面。** `macos/` 新增 SwiftUI 客户端（SwiftPM），界面形态与 Windows 桌面版一致：主页（模板／最近工程）、设计（图层画布／属性／影调／随盘文件）、预览（设计投影／成品读回）、导出（CD 音轨或数据盘、DVD/BD ISO）、刻录（`drutil` 文件模式与 DiscRecording 流式模式）、标定（本轮简化版）与设置／关于。工程文件 `.discproj` 与 Windows 双向兼容，所有编码仍由 `disc-image-studio` 子进程完成，参数构造与 Windows 的 `ExportViewModel`／`LivePreviewViewModel` 对齐。
+- CLI 新增 `catalog [--json]`、`presets --json`、`bd-preview`、`bd-preview-readback`：分别输出机器可读的命令目录与盘片预设、渲染蓝光设计投影与成品读回图；GUI 与 CLI 共享同一份命令与预设描述。
+- 新增 `macos/scripts/` 构建与打包脚本（CLI 自包含发布、`.app` 组装、zip 分发）、`docs/MACOS_GUI.md` 与 `macos-gui` CI 工作流。
+- 四份 README 补充 macOS 图形界面的入口、工作流形态、构建方式与文档索引。
+
+### English
+
+- **Experimental feature: a native SwiftUI GUI for macOS.** A new SwiftUI client under `macos/` (SwiftPM) follows the same workflow as the Windows desktop app: home (templates and recent projects), design (layer canvas, properties, tone, disc-bundled files), preview (design projection and artifact read-back), export (CD audio tracks or data discs, DVD/BD ISOs), burn (`drutil` file mode and DiscRecording streaming), calibration (a simplified version this round), and settings/about. Project files are `.discproj`, interoperable with Windows; all encoding still runs through the `disc-image-studio` child process, with arguments aligned to the Windows `ExportViewModel` / `LivePreviewViewModel`.
+- The CLI gains `catalog [--json]`, `presets --json`, `bd-preview`, and `bd-preview-readback`: a machine-readable command catalog and disc preset list, plus Blu-ray design-projection and artifact read-back renders. The GUI and the CLI share one command and preset description.
+- Added the `macos/scripts/` build and packaging scripts (self-contained CLI publish, `.app` assembly, zip distribution), `docs/MACOS_GUI.md`, and a `macos-gui` CI workflow.
+- All four READMEs now describe the macOS GUI's workflow, its build steps, and the new documentation.
+
 ## [1.3.6] - 2026-11-02
 
 ### 中文

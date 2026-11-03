@@ -1,0 +1,81 @@
+name: macos-gui
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "macos/**"
+      - "src/DiscImageStudio.Cli/**"
+      - "src/Shared/**"
+      - "src/DiscImageStudio.Core/**"
+      - "src/DiscImageStudio.ImageIO/**"
+      - "src/DiscImageStudio.Cd/**"
+      - "src/DiscImageStudio.Dvd/**"
+      - "src/DiscImageStudio.BluRay/**"
+      - "src/DvdImageSolver/**"
+      - "src/DiscImageStudio.Iso/**"
+      - "tests/test_cli_package.py"
+      - ".github/workflows/macos-gui.yml"
+  pull_request:
+    paths:
+      - "macos/**"
+      - "src/DiscImageStudio.Cli/**"
+      - "src/Shared/**"
+      - "src/DiscImageStudio.Core/**"
+      - "src/DiscImageStudio.ImageIO/**"
+      - "src/DiscImageStudio.Cd/**"
+      - "src/DiscImageStudio.Dvd/**"
+      - "src/DiscImageStudio.BluRay/**"
+      - "src/DvdImageSolver/**"
+      - "src/DiscImageStudio.Iso/**"
+      - "tests/test_cli_package.py"
+      - ".github/workflows/macos-gui.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # runner 是 macos-15（arm64），build-cli.sh 默认推断出 osx-arm64，
+      # 产物落在 macos/build/cli/osx-arm64/disc-image-studio。
+      - name: Build the self-contained CLI
+        run: macos/scripts/build-cli.sh
+
+      - name: Smoke-test the published CLI
+        run: python3 tests/test_cli_package.py macos/build/cli/osx-arm64/disc-image-studio
+
+      - name: Run Swift package tests
+        run: |
+          cd macos
+          swift test
+
+      # build-app.sh 同时构建并内置原生流式刻录助手 disc-burn-stream（SwiftPM product）。
+      - name: Build the .app bundle with the bundled CLI and burn helper
+        run: macos/scripts/build-app.sh
+
+      - name: Package the .app
+        run: macos/scripts/package-app.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DiscImageStudio-macos-app
+          path: |
+            macos/build/*.zip
+            macos/build/*.sha256
+          if-no-files-found: error
+          retention-days: 14

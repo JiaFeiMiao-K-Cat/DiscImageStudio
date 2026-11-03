@@ -39,11 +39,13 @@ Disc Image Studio 可將一張圖片轉換為符合 CD、DVD 與單層 BD-R 光�
 
 ![匯出頁：淺色佈景主題與輸出映像](docs/images/ui-export.png)
 
+![macOS 圖形介面：首頁、設計與匯出](docs/images/macos-home.png)
+
 ---
 
 ## 快速開始
 
-Windows 下載 `win-x64.exe` 後可直接執行。Linux 或 macOS 請下載與 CPU 相符的**實驗性 CLI** 壓縮檔，解壓縮後執行 `./disc-image-studio --help`。各發布套件均包含 .NET 執行階段。 [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+Windows 下載 `win-x64.exe` 後可直接執行。Linux 或 macOS 請下載與 CPU 相符的**實驗性 CLI** 壓縮檔，解壓縮後執行 `./disc-image-studio --help`。各發布套件均包含 .NET 執行階段。macOS 另有實驗性的原生 SwiftUI 圖形介面，可從原始碼一鍵建置，請見 [macOS 圖形介面](docs/MACOS_GUI.md)。 [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 ### 1. 新增專案
 
@@ -117,6 +119,21 @@ dotnet run --project src/DvdImageSolver --configuration Release -- selftest
 dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Release
 ```
 
+### macOS 圖形介面（實驗性）
+
+macOS 上另有原生 SwiftUI 圖形介面，沿用同一份 CLI 與同一套碟面產生演算法，介面形態與 Windows 桌面版一致：首頁從範本或最近專案開始，設計頁編輯圖層與影調，預覽頁做設計投影或成品讀回，匯出頁產生 CD 音軌／資料碟或 DVD/BD ISO，燒錄頁以系統 `drutil`（檔案模式）或 DiscRecording（串流，實驗性）寫入，校正頁記錄實測半徑。專案檔 `.discproj` 與 Windows 雙向相容；所有編碼仍由 CLI 完成，執行時逐行轉送日誌與進度。
+
+```sh
+# 1. 發布自包含 CLI（需要 .NET 10 SDK）
+macos/scripts/build-cli.sh --rid osx-arm64
+
+# 2. 組裝 .app（自動封裝上一步的 CLI）
+macos/scripts/build-app.sh
+open macos/build/DiscImageStudio.app
+```
+
+建置前置、封裝散布與疑難排解請見 [macOS 圖形介面](docs/MACOS_GUI.md)。
+
 版本規則、CI 產生 EXE、Release 草稿檢查、MSIX 封裝與簽署流程，請見[發布指南](docs/RELEASING.md)。
 
 ## 命令列
@@ -148,12 +165,13 @@ CLI 可讀取 PNG、JPEG、BMP 和 GIF，動畫圖片使用第一幀。以下範
 | `bd-generate` | 產生完整 BD-R ISO，並寫出 `<iso>.json` sidecar |
 | `bd-info` / `bd-probe` / `bd-encode` | 匯出 BD 參數、原始負載探針或單一 ECC 叢集診斷 |
 
-各命令的完整參數請見對應文件。
+各命令的完整參數請見對應文件。`disc-image-studio catalog --json` 輸出機器可讀的命令目錄（模組、命令、參數類型、預設值、可選值與能力旗標），供 GUI 自檢、快照回歸與疑難排解使用；`catalog` 不帶 `--json` 時輸出人類可讀摘要。
 
 ## 原始碼結構
 
 ```text
 src/DiscImageStudio.Cli/     Linux 與 macOS 離線命令列入口
+macos/                       macOS SwiftUI 圖形介面、建置與封裝指令碼
 src/DiscImageStudio.ImageIO/ WIC 與跨平台影像編解碼
 src/DiscImageStudio.Core/    與媒體無關的模組契約、專案／預設模型、任務與命令目錄
 src/DiscImageStudio.Imaging/ CD/DVD/BD 共用的圖片前置處理與抖動輔助
@@ -181,6 +199,7 @@ docs/                        架構、引擎、預設、發布等文件
 | [DISC_PRESETS.md](docs/DISC_PRESETS.md) | 可編輯光碟預設的分層 JSON 格式與合併規則 |
 | [CALIBRATION.md](docs/CALIBRATION.md) | 相片校正（框選光碟實體最外緣與中心孔邊緣）、曲線校準與 DVD 三次軌距擬合 |
 | [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md) | CD / DVD 資料產生物理模型複核 |
+| [MACOS_GUI.md](docs/MACOS_GUI.md) | macOS SwiftUI 圖形介面的工程式工作流程、建置、封裝散布與命令列探索規則 |
 | [VALIDATION.md](docs/VALIDATION.md) | 各輪建置、迴歸與實際光碟測試的本機驗證記錄 |
 | [RELEASING.md](docs/RELEASING.md) | GitHub Release、MSIX 封裝、簽署測試與商店提交流程 |
 | [LOCALIZATION.md](docs/LOCALIZATION.md) | 語言設定、系統語言對應與翻譯資源維護 |

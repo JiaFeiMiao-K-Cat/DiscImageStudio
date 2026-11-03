@@ -39,11 +39,13 @@ Disc Image Studio converts an image into data that meets the physical-layer cons
 
 ![Export: light theme and output image](docs/images/ui-export.png)
 
+![macOS GUI: home, design, and export](docs/images/macos-home.png)
+
 ---
 
 ## Quick Start
 
-On Windows, download and run `win-x64.exe`. On Linux or macOS, download the **experimental CLI** archive for your CPU, extract it and run `./disc-image-studio --help`. Each release package includes the .NET runtime. [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+On Windows, download and run `win-x64.exe`. On Linux or macOS, download the **experimental CLI** archive for your CPU, extract it and run `./disc-image-studio --help`. Each release package includes the .NET runtime. macOS also has an experimental native SwiftUI GUI that you can build from source; see [macOS GUI](docs/MACOS_GUI.md). [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 ### 1. Create a Project
 
@@ -116,6 +118,21 @@ dotnet run --project src/DvdImageSolver --configuration Release -- selftest
 dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Release
 ```
 
+### macOS GUI (experimental)
+
+macOS also has a native SwiftUI GUI that reuses the same CLI and the same disc-generation algorithms, with the same workflow as the Windows desktop app: home with templates and recent projects, design for layers and tone, preview for design projection and artifact read-back, export for CD audio tracks or data discs and DVD/BD ISOs, burn through the system drutil (file mode) or DiscRecording (streaming, experimental) stack, and calibration for measured radii. Project files are `.discproj`, interoperable with Windows, and all encoding still runs through the CLI, with logs and progress streamed into the window.
+
+```sh
+# 1. Publish the self-contained CLI (requires the .NET 10 SDK)
+macos/scripts/build-cli.sh --rid osx-arm64
+
+# 2. Assemble the .app (bundles the CLI from the previous step)
+macos/scripts/build-app.sh
+open macos/build/DiscImageStudio.app
+```
+
+See [macOS GUI](docs/MACOS_GUI.md) for prerequisites, packaging, and troubleshooting.
+
 See the [release guide](docs/RELEASING.md) for versioning rules, CI-generated EXEs, release draft checks, MSIX packaging, and signing procedures.
 
 ## Command Line
@@ -147,12 +164,13 @@ The CLI reads PNG, JPEG, BMP and GIF, using the first frame of animated images. 
 | `bd-generate` | Generate a complete BD-R ISO and write an `<iso>.json` sidecar |
 | `bd-info` / `bd-probe` / `bd-encode` | Export BD parameters, raw payload probes, or diagnostics for a single ECC cluster |
 
-See the corresponding documentation for each command’s complete parameters.
+See the corresponding documentation for each command’s complete parameters. `disc-image-studio catalog --json` prints a machine-readable command catalog (modules, commands, option types, default values, choices, and capability flags) used for GUI self-checks, snapshot regression, and troubleshooting; `catalog` without `--json` prints a human-readable summary.
 
 ## Source Layout
 
 ```text
 src/DiscImageStudio.Cli/     Offline Linux and macOS command-line host
+macos/                       macOS SwiftUI GUI, build, and packaging scripts
 src/DiscImageStudio.ImageIO/ WIC and cross-platform image codecs
 src/DiscImageStudio.Core/    Media-independent module contracts, project/preset models, job and command catalog
 src/DiscImageStudio.Imaging/ Image preprocessing and dithering helpers shared by CD/DVD/BD
@@ -181,6 +199,7 @@ docs/                        Architecture, engine, preset, release, and other do
 | [DISC_PRESETS.md](docs/DISC_PRESETS.md) | Layered JSON format and merging rules for editable disc presets |
 | [CALIBRATION.md](docs/CALIBRATION.md) | Photo rectification (marking the disc’s outermost physical edge and center-hole edge), curve calibration, and DVD cubic track-pitch fitting |
 | [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md) | Review of the CD / DVD generation physical models |
+| [MACOS_GUI.md](docs/MACOS_GUI.md) | macOS SwiftUI GUI workflow, build, packaging, and CLI discovery rules |
 | [VALIDATION.md](docs/VALIDATION.md) | Local validation records for builds, regressions, and physical disc tests |
 | [RELEASING.md](docs/RELEASING.md) | GitHub Releases, MSIX packaging, signing tests, and Store submission procedures |
 | [CHANGELOG.md](CHANGELOG.md) | Version change history |
