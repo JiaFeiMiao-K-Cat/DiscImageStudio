@@ -1,0 +1,51 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="using:DiscImageStudio.Linux.Controls"
+        x:Class="DiscImageStudio.Linux.Views.SettingsWindow"
+        Title="Settings" Width="600" SizeToContent="Height" CanResize="False" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+  <StackPanel Margin="26,22,26,22" Spacing="18">
+    <TextBlock Classes="h2" Text="Settings" />
+
+    <StackPanel Spacing="8">
+      <TextBlock Classes="h3" Text="Appearance" />
+      <Border Classes="segments">
+        <UniformGrid Columns="3">
+          <RadioButton Name="ThemeSystem" Classes="segment">
+            <StackPanel Orientation="Horizontal" Spacing="6"><c:LucideIcon Data="{x:Static c:Icons.Monitor}" Width="15" Height="15" /><TextBlock Text="System" /></StackPanel>
+          </RadioButton>
+          <RadioButton Name="ThemeDark" Classes="segment">
+            <StackPanel Orientation="Horizontal" Spacing="6"><c:LucideIcon Data="{x:Static c:Icons.Moon}" Width="15" Height="15" /><TextBlock Text="Dark" /></StackPanel>
+          </RadioButton>
+          <RadioButton Name="ThemeLight" Classes="segment">
+            <StackPanel Orientation="Horizontal" Spacing="6"><c:LucideIcon Data="{x:Static c:Icons.Sun}" Width="15" Height="15" /><TextBlock Text="Light" /></StackPanel>
+          </RadioButton>
+        </UniformGrid>
+      </Border>
+      <TextBlock Classes="caption" Text="System follows the desktop's light/dark preference (GNOME, KDE and other freedesktop portals)." />
+    </StackPanel>
+
+    <StackPanel Spacing="8">
+      <TextBlock Classes="h3" Text="Storage" />
+      <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
+        <TextBlock Classes="muted" Text="New projects" />
+        <SelectableTextBlock Grid.Column="1" Name="ProjectsText" Classes="mono" TextWrapping="Wrap" />
+        <TextBlock Grid.Row="1" Classes="muted" Text="User disc presets" />
+        <SelectableTextBlock Grid.Row="1" Grid.Column="1" Name="PresetsText" Classes="mono" TextWrapping="Wrap" />
+        <TextBlock Grid.Row="2" Classes="muted" Text="Settings" />
+        <SelectableTextBlock Grid.Row="2" Grid.Column="1" Name="SettingsText" Classes="mono" TextWrapping="Wrap" />
+        <TextBlock Grid.Row="3" Classes="muted" Text="Cache" />
+        <SelectableTextBlock Grid.Row="3" Grid.Column="1" Name="CacheText" Classes="mono" TextWrapping="Wrap" />
+      </Grid>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Name="ChooseProjectsButton" Content="Change projects folder…" />
+        <Button Name="ClearCacheButton" Content="Clear cache" ToolTip.Tip="Removes cached composites and previews; they are rebuilt when needed" />
+      </StackPanel>
+      <TextBlock Classes="caption" Text="Disc presets use the same JSON file format as the Windows app; see docs/DISC_PRESETS.md to add calibrated discs." />
+    </StackPanel>
+
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+      <Button Classes="accent" Content="Done" IsDefault="True" IsCancel="True" Name="DoneButton" />
+    </StackPanel>
+  </StackPanel>
+</Window>

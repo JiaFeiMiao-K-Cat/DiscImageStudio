@@ -57,7 +57,7 @@ GitHub Actions 从配置读取完整版本，自动创建对应的 `vA.B.C` 或 
 
 `Get-ReleaseMetadata.ps1` 提取整个版本段，仅在下一条 `## ` 标题或文件末尾停止，因此 `### 中文` 和 `### English` 都会完整进入 Release 说明。不要将语言标题写成 `## 中文` 或 `## English`，否则会提前结束版本段。当前元数据检查验证版本段唯一、日期有效且内容非空；两种语言是否齐全、条目是否一致仍需发布评审确认。
 
-工作流在双语日志之后附加中英文下载与运行说明、SHA-256 核对命令，以及对应源代码和构建说明。下载说明须用两种语言明确标注 Linux 和 macOS CLI 为实验性功能，并分别说明 Windows EXE 的签名状态及即时刻录的实验性限制。
+工作流在双语日志之后附加中英文下载与运行说明、SHA-256 核对命令，以及对应源代码和构建说明。下载说明须用两种语言明确标注 Linux 和 macOS CLI 以及 Linux 桌面版为实验性功能，并分别说明 Windows EXE 的签名状态及即时刻录的实验性限制。
 
 ### 自动检查与草稿
 
@@ -67,10 +67,14 @@ GitHub Actions 从配置读取完整版本，自动创建对应的 `vA.B.C` 或 
 
 Windows x64 继续提供自包含的单文件 EXE。打包脚本在隔离目录运行最终 EXE，执行自检、两扇区 RAW/WAV 生成检查及 GUI 截图检查。
 
-Linux 与 macOS 的实验性离线 CLI 在各自的 x64、Arm64 runner 上构建，发布包自带 .NET 运行时。每个 runner 解开刚生成的 tar.gz，在仓库目录外运行 `--help`、DVD 自检以及 CD 音轨、DVD 镜像和蓝光镜像生成测试。发布流程收集通过这些测试的原始压缩包，并将它们与 Windows EXE 一同附加到草稿。例如：
+Linux 与 macOS 的实验性离线 CLI 在各自的 x64、Arm64 runner 上构建，发布包自带 .NET 运行时。每个 runner 解开刚生成的 tar.gz，在仓库目录外运行 `--help`、DVD 自检以及 CD 音轨、DVD 镜像和蓝光镜像生成测试。发布流程收集通过这些测试的原始压缩包，并将它们与 Windows EXE 一同附加到草稿。
+
+实验性 Linux 桌面版同样在 x64 与 Arm64 runner 上构建：先运行 `tests/DiscImageStudio.LinuxTests`，再用 `packaging/linux/build.sh` 生成自带 .NET 运行时的安装包，装入临时前缀后运行上述 CLI 包测试、校验桌面文件并在 Xvfb 下截图，最后卸载。通过的 `DiscImageStudio-Linux-<tag>-<rid>.tar.gz` 与 CLI 压缩包一起收集并写入校验值。Arch Linux 的 `packaging/linux/arch/PKGBUILD` 直接从仓库检出构建，版本号随 `Directory.Build.props`。附件示例：
 
 ```text
 DiscImageStudio-v1.3.6-win-x64.exe
+DiscImageStudio-Linux-v1.3.6-linux-x64.tar.gz
+DiscImageStudio-Linux-v1.3.6-linux-arm64.tar.gz
 DiscImageStudio-CLI-v1.3.6-linux-x64.tar.gz
 DiscImageStudio-CLI-v1.3.6-linux-arm64.tar.gz
 DiscImageStudio-CLI-v1.3.6-osx-x64.tar.gz

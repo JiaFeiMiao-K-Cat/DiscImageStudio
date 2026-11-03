@@ -126,14 +126,22 @@ jobs:
           path: artifacts/release/${{ needs.metadata.outputs.tag }}
           merge-multiple: true
 
+      - name: Collect tested Linux desktop archives
+        uses: actions/download-artifact@v4
+        with:
+          pattern: linux-gui-${{ needs.metadata.outputs.tag }}-*
+          path: artifacts/release/${{ needs.metadata.outputs.tag }}
+          merge-multiple: true
+
       - name: Prepare release notes
         run: |
           $metadata = ./packaging/Get-ReleaseMetadata.ps1 -Tag $env:RELEASE_TAG -RequireReleaseNotes
           $directory = Join-Path 'artifacts/release' $metadata.Tag
           $manifest = Join-Path $directory 'SHA256SUMS.txt'
           $hashes = @((Get-Content -LiteralPath $manifest -Raw).Trim())
-          foreach ($rid in 'linux-x64','linux-arm64','osx-x64','osx-arm64') {
-            $archive = "DiscImageStudio-CLI-$($metadata.Tag)-$rid.tar.gz"
+          $archives = @('linux-x64','linux-arm64','osx-x64','osx-arm64' | ForEach-Object { "DiscImageStudio-CLI-$($metadata.Tag)-$_.tar.gz" })
+          $archives += @('linux-x64','linux-arm64' | ForEach-Object { "DiscImageStudio-Linux-$($metadata.Tag)-$_.tar.gz" })
+          foreach ($archive in $archives) {
             $path = Join-Path $directory $archive
             $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
             $line = "$hash  $archive"
@@ -152,10 +160,12 @@ jobs:
             '下载下方 win-x64.exe 后直接运行，支持 Windows 10 2004+ / Windows 11 x64，已内置 .NET 运行时。'
             '此便携 EXE 未进行代码签名。即时流式刻录仍为实验性功能；硬件实测范围以仓库验证记录为准。'
             '**Linux 和 macOS 命令行版为实验性功能。** 按系统和处理器选择自包含的 tar.gz，解压后运行 `./disc-image-studio --help`。macOS 的 arm64 对应 Apple 芯片，x64 对应 Intel。'
+            '**Linux 图形界面为实验性功能。** 按处理器下载 DiscImageStudio-Linux 开头的 tar.gz，解压后运行 `./install.sh`（无需 root），即可在应用菜单中打开 Disc Image Studio。Arch Linux 也可使用仓库中的 `packaging/linux/arch/PKGBUILD`。详见 docs/LINUX.md。'
             ''
             'Download the win-x64.exe below and run it directly on Windows 10 2004+ / Windows 11 x64. The .NET runtime is included.'
             'This portable EXE is unsigned. Live streaming burn remains experimental; see the repository validation records for tested hardware coverage.'
             '**The Linux and macOS CLIs are experimental.** Extract the self-contained tar.gz matching your OS and CPU, then run `./disc-image-studio --help` in that directory. On macOS, arm64 is Apple silicon and x64 is Intel.'
+            '**The Linux desktop app is experimental.** Download the DiscImageStudio-Linux tar.gz for your CPU, extract it and run `./install.sh` (no root needed); Disc Image Studio then appears in the application menu. Arch Linux users can also build `packaging/linux/arch/PKGBUILD` from the repository. See docs/LINUX.md.'
             ''
             '### SHA-256'
             ''

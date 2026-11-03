@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.JiaFeiMiao_K_Cat.DiscImageStudio</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Disc Image Studio</name>
+  <summary>Design and burn pictures visible on CD, DVD and Blu-ray discs</summary>
+  <description>
+    <p>
+      Disc Image Studio converts a picture into data that meets the physical-layer constraints of
+      CD, DVD and single-layer BD-R discs. After burning, the recording side of the disc shows the
+      picture to the naked eye.
+    </p>
+    <ul>
+      <li>Arrange images as layers on a millimetre-accurate disc canvas</li>
+      <li>Tune dithering, brightness and gamma with a live engine preview</li>
+      <li>Generate CD-DA tracks (WAV + CUE), CD data images, DVD ISOs and BD-R ISOs</li>
+      <li>Optionally keep a readable folder of files on the disc next to the picture</li>
+      <li>Simulate read-back of the generated file before spending a disc</li>
+      <li>Burn with cdrecord, wodim, cdrskin, growisofs or xorriso</li>
+      <li>Projects are shared with the Windows version</li>
+    </ul>
+    <p>Burning drawn data is experimental. Use blank, expendable media.</p>
+  </description>
+  <launchable type="desktop-id">io.github.JiaFeiMiao_K_Cat.DiscImageStudio.desktop</launchable>
+  <url type="homepage">https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio</url>
+  <url type="bugtracker">https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues</url>
+  <developer id="io.github.jiafeimiao-k-cat">
+    <name>Disc Image Studio contributors</name>
+  </developer>
+  <provides>
+    <binary>disc-image-studio-gui</binary>
+    <binary>disc-image-studio</binary>
+    <mediatype>application/x-discimagestudio-project</mediatype>
+  </provides>
+  <categories>
+    <category>AudioVideo</category>
+    <category>DiscBurning</category>
+  </categories>
+  <keywords>
+    <keyword>CD</keyword>
+    <keyword>DVD</keyword>
+    <keyword>Blu-ray</keyword>
+    <keyword>burn</keyword>
+    <keyword>disc</keyword>
+  </keywords>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Design page: layers on the disc canvas with a live tone preview</caption>
+      <image>https://raw.githubusercontent.com/JiaFeiMiao-K-Cat/DiscImageStudio/main/docs/images/linux-design.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Preview page: the design projected through the engine geometry</caption>
+      <image>https://raw.githubusercontent.com/JiaFeiMiao-K-Cat/DiscImageStudio/main/docs/images/linux-preview.png</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1" />
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+  <requires>
+    <display_length compare="ge">1024</display_length>
+  </requires>
+  <releases>
+    <release version="1.3.6" date="2026-11-02">
+      <url type="details">https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases/tag/v1.3.6</url>
+    </release>
+  </releases>
+</component>

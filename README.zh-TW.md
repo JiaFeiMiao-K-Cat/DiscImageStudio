@@ -6,7 +6,7 @@
 
 <h2>全功能光碟表面可見圖像製作與燒錄工具</h2>
 
-Windows 桌面版支援設計與燒錄，Linux 和 macOS 的**實驗性命令列版**可離線產生 CD、DVD 與藍光映像。
+Windows 桌面版和 **Linux 桌面版（實驗性）** 支援設計與燒錄，Linux 和 macOS 的**實驗性命令列版**可離線產生 CD、DVD 與藍光映像。
 
 ![.NET 版本](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)
 ![執行平台](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-0078d6?style=flat-square)
@@ -44,6 +44,8 @@ Disc Image Studio 可將一張圖片轉換為符合 CD、DVD 與單層 BD-R 光�
 ## 快速開始
 
 Windows 下載 `win-x64.exe` 後可直接執行。Linux 或 macOS 請下載與 CPU 相符的**實驗性 CLI** 壓縮檔，解壓縮後執行 `./disc-image-studio --help`。各發布套件均包含 .NET 執行階段。 [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+
+Linux 也可以安裝**實驗性桌面版**，提供相同的設計、預覽、匯出與燒錄流程，並呼叫 cdrecord、growisofs 或 xorriso 燒錄。Arch Linux 在 `packaging/linux/arch` 中執行 `makepkg -si`；其他發行版解壓縮 `DiscImageStudio-Linux-…tar.gz` 後執行 `./install.sh`，或以 `./packaging/linux/build.sh --install` 從原始碼建置。詳見 [Linux 指南（英文）](docs/LINUX.md)。
 
 ### 1. 新增專案
 
@@ -154,6 +156,7 @@ CLI 可讀取 PNG、JPEG、BMP 和 GIF，動畫圖片使用第一幀。以下範
 
 ```text
 src/DiscImageStudio.Cli/     Linux 與 macOS 離線命令列入口
+src/DiscImageStudio.Linux/   Avalonia Linux 桌面版（圖形介面與命令列同一程式）
 src/DiscImageStudio.ImageIO/ WIC 與跨平台影像編解碼
 src/DiscImageStudio.Core/    與媒體無關的模組契約、專案／預設模型、任務與命令目錄
 src/DiscImageStudio.Imaging/ CD/DVD/BD 共用的圖片前置處理與抖動輔助

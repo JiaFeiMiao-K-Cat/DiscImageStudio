@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Disc Image Studio
+GenericName=Disc Picture Designer
+Comment=Design, generate and burn pictures visible on CD, DVD and Blu-ray discs
+Exec=disc-image-studio-gui %f
+TryExec=disc-image-studio-gui
+Icon=io.github.JiaFeiMiao_K_Cat.DiscImageStudio
+Terminal=false
+Categories=AudioVideo;DiscBurning;
+MimeType=application/x-discimagestudio-project;
+Keywords=CD;DVD;Blu-ray;BD-R;burn;disc;picture;image;cdrecord;growisofs;
+StartupNotify=true
+StartupWMClass=DiscImageStudio
