@@ -15,6 +15,7 @@ public sealed class DesktopApp : Application
 {
     public override void Initialize()
     {
+        Name = "Disc Image Studio";
         Styles.Add(new FluentTheme());
         RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
     }

@@ -33,6 +33,7 @@ public sealed partial class MainWindow : Window
     private bool _closingApproved;
     private string _workspace = "主页";
     private string? _previewPath;
+    private ProjectDocument? _previousDocument;
     private string? _lastArtifact;
     private string? _projectPreview;
     private int _selectedLayer = -1;
@@ -82,7 +83,17 @@ public sealed partial class MainWindow : Window
         dock.Children.Add(new Expander { Header = L.T("任务日志"), Content = _log });
         Grid.SetRow(dock, 2); root.Children.Add(dock);
         Content = root;
-        Session.Changed += () => { _projectTitle.Text = Session.Document is { } d ? $"{d.Name}{(Session.IsDirty ? " •" : "")}  /  {d.FamilyLabel}" : "Disc Image Studio"; };
+        Session.Changed += () =>
+        {
+            var d = Session.Document;
+            if (_previousDocument is { } previous && d is not null
+                && (previous.Geometry != d.Geometry || previous.Tone != d.Tone || previous.BluRay != d.BluRay
+                    || !previous.Layers.SequenceEqual(d.Layers) || previous.Outputs.DataDirectory != d.Outputs.DataDirectory
+                    || previous.Outputs.FilesAtOuterRing != d.Outputs.FilesAtOuterRing || previous.Outputs.VolumeLabel != d.Outputs.VolumeLabel
+                    || previous.Outputs.Interleave != d.Outputs.Interleave)) _previewPath = null;
+            _previousDocument = d;
+            _projectTitle.Text = d is not null ? $"{d.Name}{(Session.IsDirty ? " •" : "")}  /  {d.FamilyLabel}" : "Disc Image Studio";
+        };
         _composeTimer.Tick += (_, _) => { _composeTimer.Stop(); RefreshComposite(); };
         KeyDown += async (_, e) =>
         {
