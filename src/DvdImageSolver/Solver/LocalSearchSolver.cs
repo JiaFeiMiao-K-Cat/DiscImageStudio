@@ -43,7 +43,15 @@ public sealed class LocalSearchSolver
         Stopwatch stopwatch = Stopwatch.StartNew();
         int completed = 0;
 
-        int mutationCount = Math.Min(options.MutationBytes, currentPayload.Length);
+        if (!constraint.HasMutablePayload)
+        {
+            stopwatch.Stop();
+            return new SolverResult(
+                bestPayload, bestEncoded, bestScore, constraint.ConstrainedBits,
+                "bit-mismatch", 0, stopwatch.Elapsed);
+        }
+
+        int mutationCount = Math.Min(options.MutationBytes, constraint.MutablePayloadCount);
         int[] indexes = new int[mutationCount];
         byte[] previous = new byte[mutationCount];
         HashSet<int> usedIndexes = [];

@@ -49,6 +49,7 @@ internal static class ProjectSession
                 state.DvdOutputPath = outputs.OutputPath;
                 state.DvdDataDirectory = outputs.DataDirectory;
                 state.DvdFilesAtOuterRing = outputs.FilesAtOuterRing;
+                state.DvdFilesInTransparency = outputs.FilesInTransparency;
                 state.DvdVolumeLabel = outputs.VolumeLabel;
                 state.DvdImagePath = string.Empty;
                 break;
@@ -121,7 +122,8 @@ internal static class ProjectSession
                     state.DvdDataDirectory,
                     state.DvdVolumeLabel,
                     Interleave: false,
-                    FilesAtOuterRing: state.DvdFilesAtOuterRing);
+                    FilesAtOuterRing: state.DvdFilesAtOuterRing,
+                    FilesInTransparency: state.DvdFilesInTransparency);
             case OpticalDiscFamily.BluRay:
                 return new ProjectOutputs(
                     RequireOutput(state.BdOutputPath, L.T("蓝光 ISO 输出位置")),

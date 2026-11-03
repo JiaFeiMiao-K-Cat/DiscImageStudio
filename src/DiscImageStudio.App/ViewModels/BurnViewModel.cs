@@ -248,6 +248,7 @@ public partial class BurnViewModel : ObservableObject
         {
             string dataSuffix = string.IsNullOrWhiteSpace(_state.DvdDataDirectory)
                 ? string.Empty
+                : _state.DvdFilesInTransparency ? L.T("；文件位于图片透明区域")
                 : _state.DvdFilesAtOuterRing ? L.T("；文件位于外圈，图案位于其内侧") : L.T("；文件位于内圈，图案位于其外侧");
             SourceTitle = _design.HasLayers
                 ? L.T("使用工程当前合成图与参数")
@@ -258,7 +259,7 @@ public partial class BurnViewModel : ObservableObject
             identity = string.Join("\u001f", "dvd", _design.CompositeRevision, _state.DvdTotalSectors,
                 _state.DvdInnerRadius, _state.DvdOuterRadius,
                 _state.DvdPitchLinear, _state.DvdPitchQuadratic, _state.DvdPitchCubic,
-                _state.DvdDataDirectory, _state.DvdVolumeLabel, _state.DvdFilesAtOuterRing,
+                _state.DvdDataDirectory, _state.DvdVolumeLabel, _state.DvdFilesAtOuterRing, _state.DvdFilesInTransparency,
                 _state.ToneDitherStrength, _state.ToneBrightness, _state.ToneSrgbLinearization);
         }
         else if (IsBluRayBurn)
@@ -516,13 +517,21 @@ public partial class BurnViewModel : ObservableObject
                     string dataDirectory = _state.DvdDataDirectory.Trim();
                     DvdHybridStreamingPlan? hybridPlan = dataDirectory.Length == 0
                         ? null
-                        : DvdStreamingGenerator.PrepareHybrid(
-                            dataDirectory,
-                            options,
-                            string.IsNullOrWhiteSpace(_state.DvdVolumeLabel)
-                                ? "DISC_IMAGE"
-                                : _state.DvdVolumeLabel.Trim(),
-                            filesAtOuterRing: _state.DvdFilesAtOuterRing);
+                        : _state.DvdFilesInTransparency
+                            ? DvdStreamingGenerator.PrepareHybridInTransparency(
+                                dataDirectory,
+                                compositePath,
+                                options,
+                                string.IsNullOrWhiteSpace(_state.DvdVolumeLabel)
+                                    ? "DISC_IMAGE"
+                                    : _state.DvdVolumeLabel.Trim())
+                            : DvdStreamingGenerator.PrepareHybrid(
+                                dataDirectory,
+                                options,
+                                string.IsNullOrWhiteSpace(_state.DvdVolumeLabel)
+                                    ? "DISC_IMAGE"
+                                    : _state.DvdVolumeLabel.Trim(),
+                                filesAtOuterRing: _state.DvdFilesAtOuterRing);
                     request = new OpticalBurnRequest(
                         device.Id,
                         OpticalBurnMediaKind.DvdData,
@@ -550,7 +559,7 @@ public partial class BurnViewModel : ObservableObject
                         selectedWriteSpeed.Speed);
                     contentDescription = hybridPlan is null
                         ? L.F($"DVD · {options.TotalSectors} 扇区 · {options.ContentLength / (1024.0 * 1024.0):F1} MiB")
-                        : L.F($"DVD 混合盘 · {hybridPlan.FileCount} 个文件（{(_state.DvdFilesAtOuterRing ? L.T("外圈") : L.T("内圈"))}）")
+                        : L.F($"DVD 混合盘 · {hybridPlan.FileCount} 个文件（{(_state.DvdFilesInTransparency ? L.T("透明区") : _state.DvdFilesAtOuterRing ? L.T("外圈") : L.T("内圈"))}）")
                             + L.F($" · 绘图 LBA {hybridPlan.DrawingStartLba}–{hybridPlan.DrawingEndLbaExclusive - 1}")
                             + $" · {options.ContentLength / (1024.0 * 1024.0):F1} MiB";
                 }

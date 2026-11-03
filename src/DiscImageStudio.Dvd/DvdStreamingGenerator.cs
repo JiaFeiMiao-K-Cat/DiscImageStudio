@@ -1,10 +1,33 @@
 using System.Diagnostics;
 using DiscImageStudio.Core;
+using DiscImageStudio.Iso;
 using DvdImageSolver;
 using DvdImageSolver.Encoding;
 using DvdImageSolver.Solver;
 
 namespace DiscImageStudio.Dvd;
+
+/// <summary>A half-open, ECC-aligned run of sectors that carries file data instead of drawing.</summary>
+public readonly record struct DvdFileSegment(uint StartLba, uint EndLbaExclusive)
+{
+    public uint Sectors => EndLbaExclusive - StartLba;
+}
+
+/// <summary>Blank-area capacity of a picture against the size of the data folder, in 2048-byte sectors.</summary>
+public readonly record struct DvdTransparencyCapacity(
+    ulong BlankSectors, uint NeededSectors, int BlankRuns, int SegmentsUsed)
+{
+    private const long SectorBytes = 2048;
+
+    public bool Fits => (ulong)NeededSectors <= BlankSectors;
+
+    public long BlankBytes => checked((long)BlankSectors * SectorBytes);
+
+    public long NeededBytes => checked((long)NeededSectors * SectorBytes);
+
+    /// <summary>Spare bytes when the files fit, otherwise the negative shortfall.</summary>
+    public long RemainingBytes => BlankBytes - NeededBytes;
+}
 
 public sealed record DvdStreamingOptions(
     uint TotalSectors,
@@ -108,12 +131,20 @@ public sealed class DvdHybridStreamingPlan
     internal DvdHybridStreamingPlan(
         HybridIsoImageWriter.LayoutPlan isoLayout,
         uint drawingStartLba,
-        uint drawingEndLbaExclusive)
+        uint drawingEndLbaExclusive,
+        IReadOnlyList<DvdFileSegment>? fileSegments = null)
     {
         IsoLayout = isoLayout;
         DrawingStartLba = drawingStartLba;
         DrawingEndLbaExclusive = drawingEndLbaExclusive;
+        FileSegments = fileSegments ?? [];
     }
+
+    /// <summary>True when files sit in blank parts of the picture, interleaved with the drawing.</summary>
+    public bool FilesInTransparentRegion => FileSegments.Count > 0;
+
+    /// <summary>ECC-aligned, ascending sector runs inside the drawing range that carry file data.</summary>
+    public IReadOnlyList<DvdFileSegment> FileSegments { get; }
 
     internal HybridIsoImageWriter.LayoutPlan IsoLayout { get; }
 
@@ -167,6 +198,89 @@ public static class DvdStreamingGenerator
         }
 
         return new DvdHybridStreamingPlan(isoLayout, drawingStartLba, drawingEndLba);
+    }
+
+    /// <summary>
+    /// Estimates how much of the data folder fits into the blank parts of the picture.
+    /// Uses the same scan and headroom as <see cref="PrepareHybridInTransparency"/>.
+    /// </summary>
+    public static DvdTransparencyCapacity EstimateTransparentCapacity(
+        string dataDirectory,
+        string imagePath,
+        DvdStreamingOptions options,
+        string volumeLabel = "DVD_IMAGE",
+        CancellationToken cancellationToken = default,
+        bool whiteIsBlank = true)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
+        ArgumentException.ThrowIfNullOrWhiteSpace(imagePath);
+        ArgumentNullException.ThrowIfNull(options);
+        options.Validate();
+        HybridIsoImageWriter.LayoutPlan probe = HybridIsoImageWriter.Plan(
+            dataDirectory, options.TotalSectors, volumeLabel);
+        uint scanFrom = AlignToEccBlock(probe.MetadataEndLbaExclusive, PsnOffset);
+        uint fileSectors = probe.DataEndLbaExclusive - probe.MetadataEndLbaExclusive;
+        uint needed = fileSectors == 0 ? 0 : checked(fileSectors + 32);
+        IReadOnlyList<DvdFreeRegion> runs = DvdTransparencyScanner.FindFreeRuns(
+            imagePath, CreateImageMapping(options), scanFrom, cancellationToken,
+            whiteIsBlank ? DvdTransparencyScanner.DefaultWhiteLuminance : DvdTransparencyScanner.TransparentOnly);
+        ulong blank = DvdTransparencyScanner.TotalSectors(runs);
+        int segmentsUsed = needed == 0
+            ? 0
+            : DvdTransparencyScanner.ChooseSegments(runs, needed)?.Count ?? runs.Count;
+        return new DvdTransparencyCapacity(blank, needed, runs.Count, segmentsUsed);
+    }
+
+    /// <summary>
+    /// Lays the files out in the blank (transparent, and optionally white) parts of the picture.
+    /// A file may be split over many runs, so the picture is never overwritten; the drawing
+    /// keeps its full-disc geometry and only skips the sectors that carry file data.
+    /// </summary>
+    public static DvdHybridStreamingPlan PrepareHybridInTransparency(
+        string dataDirectory,
+        string imagePath,
+        DvdStreamingOptions options,
+        string volumeLabel = "DVD_IMAGE",
+        CancellationToken cancellationToken = default,
+        bool whiteIsBlank = true)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
+        ArgumentException.ThrowIfNullOrWhiteSpace(imagePath);
+        ArgumentNullException.ThrowIfNull(options);
+        options.Validate();
+        HybridIsoImageWriter.LayoutPlan probe = HybridIsoImageWriter.Plan(
+            dataDirectory, options.TotalSectors, volumeLabel);
+        uint scanFrom = AlignToEccBlock(probe.MetadataEndLbaExclusive, PsnOffset);
+        uint fileSectors = probe.DataEndLbaExclusive - probe.MetadataEndLbaExclusive;
+        if (fileSectors == 0)
+            return new DvdHybridStreamingPlan(probe, scanFrom, options.TotalSectors);
+
+        // Extra extents enlarge the directory records, so keep a little headroom.
+        uint needed = checked(fileSectors + 32);
+        IReadOnlyList<DvdFreeRegion> runs = DvdTransparencyScanner.FindFreeRuns(
+            imagePath, CreateImageMapping(options), scanFrom, cancellationToken,
+            whiteIsBlank ? DvdTransparencyScanner.DefaultWhiteLuminance : DvdTransparencyScanner.TransparentOnly);
+        IReadOnlyList<DvdFreeRegion> chosen = DvdTransparencyScanner.ChooseSegments(runs, needed)
+            ?? throw new ArgumentException(
+                $"The picture leaves only {DvdTransparencyScanner.TotalSectors(runs)} blank sectors "
+                + $"but the files need {needed}.",
+                nameof(imagePath));
+        HybridIsoImageWriter.LayoutPlan isoLayout = HybridIsoImageWriter.Plan(
+            dataDirectory, options.TotalSectors, volumeLabel,
+            candidateSegments: chosen.Select(run => new Iso9660ImageWriter.IsoSegment(run.StartLba, run.EndLbaExclusive)).ToList());
+        uint drawingStartLba = AlignToEccBlock(isoLayout.MetadataEndLbaExclusive, PsnOffset);
+                List<DvdFileSegment> segments = [];
+                uint previousEnd = drawingStartLba;
+                foreach (Iso9660ImageWriter.IsoSegment used in isoLayout.FileSegments)
+                {
+                    // File data replaces single sectors of the drawn blocks, so no block alignment is needed.
+                    if (used.StartLba < previousEnd || used.EndLbaExclusive > options.TotalSectors)
+                        throw new InvalidOperationException("File segments overlap the metadata or leave the disc.");
+                    segments.Add(new DvdFileSegment(used.StartLba, used.EndLbaExclusive));
+                    previousEnd = used.EndLbaExclusive;
+                }
+
+                return new DvdHybridStreamingPlan(isoLayout, drawingStartLba, options.TotalSectors, segments);
     }
 
     public static DvdStreamingSummary Generate(
@@ -265,6 +379,8 @@ public static class DvdStreamingGenerator
 
         string sourceFullPath = Path.GetFullPath(imagePath);
         Stopwatch stopwatch = Stopwatch.StartNew();
+        if (plan.FilesInTransparentRegion)
+            return GenerateHybridInRegion(sourceFullPath, output, options, plan, progress, stopwatch, cancellationToken);
         if (plan.FilesAtOuterRing)
             HybridIsoImageWriter.WriteOuterRingPrefix(plan.IsoLayout, output, plan.DrawingStartLba, cancellationToken);
         else
@@ -310,10 +426,48 @@ public static class DvdStreamingGenerator
             stopwatch.Elapsed);
     }
 
-    private static MultiBlockSolveOptions CreateSolveOptions(
+    private static DvdStreamingSummary GenerateHybridInRegion(
+        string sourceFullPath,
+        Stream output,
         DvdStreamingOptions options,
-        uint startLba,
-        uint fillSectors)
+        DvdHybridStreamingPlan plan,
+        Action<DvdStreamingProgress>? progress,
+        Stopwatch stopwatch,
+        CancellationToken cancellationToken)
+    {
+        HybridIsoImageWriter.WriteRegionPrefix(plan.IsoLayout, output, plan.DrawingStartLba, cancellationToken);
+        int totalBlocks = checked((int)(options.TotalSectors / DvdEccBlockEncoder.SectorCount));
+        long prefixBytes = checked((long)plan.DrawingStartLba * DvdEccBlockEncoder.PayloadBytesPerSector);
+        int prefixBlocks = checked((int)(plan.DrawingStartLba / DvdEccBlockEncoder.SectorCount));
+        List<(uint, uint)> fileSectors = plan.FileSegments.Select(s => (s.StartLba, s.EndLbaExclusive)).ToList();
+
+        using Iso9660ImageWriter.FileRegionWriter files =
+            HybridIsoImageWriter.CreateFileRegionWriter(plan.IsoLayout, cancellationToken);
+        MultiBlockSolveOptions solveOptions = CreateSolveOptions(
+            options, plan.DrawingStartLba, plan.DrawingSectors);
+        // File sectors are fixed before solving each mixed ECC block; no payload is overwritten
+        // after the block's ECC/EFM calculation.
+        FastDvdStreamSummary drawing = FastDispersionImageWriter.WriteStreamEccAware(
+            sourceFullPath, output, solveOptions, fileSectors,
+            (startLba, sectors) => files.FillSectors(sectors),
+            new ModulationBoundary(1, 0, IsLand: true),
+            value => progress?.Invoke(new DvdStreamingProgress(
+                checked(prefixBytes + value.BytesWritten),
+                options.ContentLength,
+                checked(prefixBlocks + value.CompletedBlocks),
+                totalBlocks,
+                stopwatch.Elapsed)),
+            cancellationToken);
+        if (!files.Completed)
+            throw new InvalidOperationException("File data did not fit in the planned segments.");
+        progress?.Invoke(new DvdStreamingProgress(options.ContentLength, options.ContentLength,
+            totalBlocks, totalBlocks, stopwatch.Elapsed));
+        stopwatch.Stop();
+        return new DvdStreamingSummary(
+            sourceFullPath, options.TotalSectors, options.ContentLength, drawing.ControlledWords, stopwatch.Elapsed);
+    }
+
+    private static ImageMappingOptions CreateImageMapping(DvdStreamingOptions options)
     {
         ImageMappingOptions imageMapping = new(
             options.TotalSectors,
@@ -329,6 +483,15 @@ public static class DvdStreamingGenerator
             PitchQuadratic: options.PitchQuadratic,
             PitchCubic: options.PitchCubic,
             Tone: options.Tone);
+        return imageMapping;
+    }
+
+    private static MultiBlockSolveOptions CreateSolveOptions(
+        DvdStreamingOptions options,
+        uint startLba,
+        uint fillSectors)
+    {
+        ImageMappingOptions imageMapping = CreateImageMapping(options);
         return new MultiBlockSolveOptions(
             startLba,
             fillSectors,
