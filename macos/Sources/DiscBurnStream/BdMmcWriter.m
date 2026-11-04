@@ -414,8 +414,9 @@ int DRRunBdMmcBurn(DRStreamOptions *options) {
     }
     EmitPercent(100.0);
     EmitState(@"done");
-    if (options.eject) Eject(&handle);
+    // The drive rejects START STOP UNIT while medium removal is prevented.
     PreventRemoval(&handle, NO);
+    if (options.eject) Eject(&handle);
     CloseMmc(&handle);
     return 0;
 }
