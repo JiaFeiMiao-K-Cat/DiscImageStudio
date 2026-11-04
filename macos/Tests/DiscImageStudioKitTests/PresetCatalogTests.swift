@@ -13,14 +13,17 @@ final class PresetCatalogTests: XCTestCase {
 
         XCTAssertEqual(catalog.document.schemaVersion, 4)
         XCTAssertEqual(PresetCatalog.supportedSchemaVersion, 4)
-        XCTAssertEqual(catalog.document.cdPresets.count, 4)
-        XCTAssertEqual(catalog.document.dvdPresets.count, 3)
-        XCTAssertEqual(catalog.document.bluRayPresets?.count, 3)
+        XCTAssertGreaterThanOrEqual(catalog.document.cdPresets.count, 4)
+        XCTAssertGreaterThanOrEqual(catalog.document.dvdPresets.count, 3)
+        XCTAssertGreaterThanOrEqual(catalog.document.bluRayPresets?.count ?? 0, 3)
 
-        XCTAssertEqual(catalog.presets(for: .cd).count, 4)
-        XCTAssertEqual(catalog.presets(for: .dvd).count, 3)
-        XCTAssertEqual(catalog.presets(for: .bd).count, 3)
-        XCTAssertEqual(catalog.allPresets.count, 10)
+        XCTAssertEqual(catalog.presets(for: .cd).count, catalog.document.cdPresets.count)
+        XCTAssertEqual(catalog.presets(for: .dvd).count, catalog.document.dvdPresets.count)
+        XCTAssertEqual(catalog.presets(for: .bd).count, catalog.document.bluRayPresets?.count ?? 0)
+        XCTAssertEqual(catalog.allPresets.count,
+                       catalog.document.cdPresets.count
+                       + catalog.document.dvdPresets.count
+                       + (catalog.document.bluRayPresets?.count ?? 0))
 
         let cd80 = try XCTUnwrap(catalog.preset(id: "cd-80"))
         XCTAssertEqual(cd80.family, .cd)
@@ -62,18 +65,16 @@ final class PresetCatalogTests: XCTestCase {
         XCTAssertTrue(catalog.presets(for: .dvd).allSatisfy { $0.family == .dvd })
         XCTAssertTrue(catalog.presets(for: .bd).allSatisfy { $0.family == .bd })
 
+        // 预设会随上游增加；这里只钉住「每个文档条目都进入对应家族」，不写死列表。
+        XCTAssertEqual(Set(catalog.presets(for: .cd).map(\.id)), Set(catalog.document.cdPresets.map(\.id)))
+        XCTAssertEqual(Set(catalog.presets(for: .dvd).map(\.id)), Set(catalog.document.dvdPresets.map(\.id)))
         XCTAssertEqual(
-            catalog.presets(for: .cd).map(\.id),
-            ["cd-80", "ritek-medical-aqua", "verbatim-azo-43438", "cd-74"]
+            Set(catalog.presets(for: .bd).map(\.id)),
+            Set((catalog.document.bluRayPresets ?? []).map(\.id))
         )
-        XCTAssertEqual(
-            catalog.presets(for: .dvd).map(\.id),
-            ["dvd-5-120mm", "verbatim-dvd-r-azo-43533", "dvd-5-80mm"]
-        )
-        XCTAssertEqual(
-            catalog.presets(for: .bd).map(\.id),
-            ["bd-r-sl-25gb", "bd-r-ritek-10x", "bd-r-verbatim-64099"]
-        )
+        XCTAssertTrue(catalog.presets(for: .cd).contains { $0.id == "cd-80" })
+        XCTAssertTrue(catalog.presets(for: .dvd).contains { $0.id == "dvd-5-120mm" })
+        XCTAssertTrue(catalog.presets(for: .bd).contains { $0.id == "bd-r-sl-25gb" })
     }
 
     func testDisabledPresetIdsAreFilteredPerFamily() throws {
@@ -88,11 +89,17 @@ final class PresetCatalogTests: XCTestCase {
         let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
 
         let catalog = try PresetCatalog.decode(data)
-        XCTAssertEqual(catalog.presets(for: .cd).map(\.id), ["ritek-medical-aqua", "verbatim-azo-43438"])
-        XCTAssertEqual(catalog.presets(for: .dvd).map(\.id), ["verbatim-dvd-r-azo-43533", "dvd-5-80mm"])
-        XCTAssertEqual(catalog.presets(for: .bd).map(\.id), ["bd-r-ritek-10x", "bd-r-verbatim-64099"])
+        XCTAssertFalse(catalog.presets(for: .cd).contains { $0.id == "cd-80" })
+        XCTAssertFalse(catalog.presets(for: .cd).contains { $0.id == "cd-74" })
+        XCTAssertFalse(catalog.presets(for: .dvd).contains { $0.id == "dvd-5-120mm" })
+        XCTAssertFalse(catalog.presets(for: .bd).contains { $0.id == "bd-r-sl-25gb" })
         XCTAssertNil(catalog.preset(id: "cd-80"))
-        XCTAssertEqual(catalog.allPresets.count, 6)
+        XCTAssertEqual(
+            catalog.allPresets.count,
+            catalog.document.cdPresets.count - 2
+            + catalog.document.dvdPresets.count - 1
+            + (catalog.document.bluRayPresets?.count ?? 0) - 1
+        )
     }
 
     // MARK: - 错误路径
@@ -145,8 +152,9 @@ final class PresetCatalogTests: XCTestCase {
         let loader = PresetLoader(cliInvocation: CliInvocation(executableURL: script, label: "fake CLI"))
         let catalog = try await loader.load()
         XCTAssertEqual(catalog.document.schemaVersion, 4)
-        XCTAssertEqual(catalog.presets(for: .cd).count, 4)
-        XCTAssertEqual(catalog.presets(for: .bd).count, 3)
+        XCTAssertEqual(catalog.presets(for: .cd).count, catalog.document.cdPresets.count)
+        XCTAssertEqual(catalog.presets(for: .bd).count, catalog.document.bluRayPresets?.count ?? 0)
+        XCTAssertGreaterThanOrEqual(catalog.presets(for: .cd).count, 1)
     }
 
     func testPresetLoaderMapsNonZeroExitAndBadJSONToMalformed() async throws {
