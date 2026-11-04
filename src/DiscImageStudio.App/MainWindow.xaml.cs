@@ -629,7 +629,7 @@ public partial class MainWindow : Window
         if (settings.CacheDirectory.Length > 0
             && !string.Equals(cacheDirectory, settings.CacheDirectory, StringComparison.OrdinalIgnoreCase))
         {
-            _shell.ShowToast(L.T("缓存位置不可用"), L.T("已改用系统临时目录。"), ToastKind.Warning);
+            _shell.ShowToast(L.T("缓存位置不可用"), L.T("已改用默认缓存目录。"), ToastKind.Warning);
         }
 
         if (languageChanged)
