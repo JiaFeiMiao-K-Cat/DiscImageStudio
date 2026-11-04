@@ -1584,13 +1584,13 @@
     "cs": "Umístit soubory do průhledné oblasti"
   },
   "Xaml.FilesInTransparentAreaTip": {
-    "zh-CN": "自动选取图片中完全透明的最大连续区域存放文件，优先于内圈／外圈；需要带透明层的 PNG。",
-    "en": "Stores files in the largest fully transparent run of the picture. Overrides inner/outer ring; needs a PNG with transparency.",
-    "zh-TW": "自動選取圖片中完全透明的最大連續區域存放檔案，優先於內圈／外圈；需要帶透明層的 PNG。",
-    "ja": "画像内で完全に透明な最大の連続領域を自動選択してファイルを格納します。内周／外周より優先され、透明レイヤー付きの PNG が必要です。",
-    "tr": "Dosyaları resmin en büyük tamamen saydam bölümüne yerleştirir. İç/dış halka ayarını geçersiz kılar; saydamlık içeren bir PNG gerekir.",
-    "es": "Guarda los archivos en el mayor tramo totalmente transparente de la imagen. Tiene prioridad sobre la zona interior/exterior; requiere un PNG con transparencia.",
-    "cs": "Uloží soubory do největšího zcela průhledného úseku obrázku. Má přednost před vnitřním/vnějším prstencem; vyžaduje PNG s\u00a0průhledností."
+    "zh-CN": "把文件放进图片的空白处：透明像素、接近白色的像素，以及占满盘面的单一浅色背景。图片内容不会被覆盖；优先于内圈／外圈。",
+    "en": "Stores files in the blank parts of the picture: transparent pixels, near-white pixels and a flat background colour that fills the disc. Picture content is never overwritten. Overrides inner/outer ring.",
+    "zh-TW": "把檔案放進圖片的空白處：透明像素、接近白色的像素，以及佔滿盤面的單一淺色背景。圖片內容不會被覆蓋；優先於內圈／外圈。",
+    "ja": "画像の空白部分にファイルを格納します：透明ピクセル、白に近いピクセル、盤面を占める単色の背景。画像の内容は上書きされません。内周／外周より優先されます。",
+    "tr": "Dosyaları resmin boş kısımlarına yerleştirir: saydam pikseller, beyaza yakın pikseller ve diski kaplayan düz arka plan rengi. Resim içeriğinin üzerine asla yazılmaz. İç/dış halka ayarını geçersiz kılar.",
+    "es": "Guarda los archivos en las partes vacías de la imagen: píxeles transparentes, píxeles casi blancos y un color de fondo uniforme que cubre el disco. El contenido de la imagen nunca se sobrescribe. Tiene prioridad sobre la zona interior/exterior.",
+    "cs": "Uloží soubory do prázdných částí obrázku: průhledné pixely, téměř bílé pixely, jednolitá barva pozadí na disku. Obsah obrázku se nikdy nepřepíše. Má přednost před vnitřním/vnějším prstencem."
   },
   "Xaml.OuterRing": {
     "zh-CN": "外圈",

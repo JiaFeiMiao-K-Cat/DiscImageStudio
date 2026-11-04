@@ -2,6 +2,9 @@ using DiscImageStudio.ImageIO;
 
 namespace DvdImageSolver.Solver;
 
+/// <summary>An opaque colour treated as blank paper; channels may differ by up to Tolerance.</summary>
+internal readonly record struct BlankColour(byte Blue, byte Green, byte Red, int Tolerance);
+
 internal sealed class RasterImage
 {
     private readonly byte[] _bgra;
@@ -45,22 +48,100 @@ internal sealed class RasterImage
     /// the threshold and, unless <paramref name="whiteLuminance"/> is 256, not close to white.
     /// White is what the generator draws for blank paper, so file data may replace it.
     /// </summary>
-    internal bool AnyContentAt(int x, int y, byte alphaThreshold, int whiteLuminance)
+    internal bool AnyContentAt(int x, int y, byte alphaThreshold, int whiteLuminance, BlankColour? background = null)
     {
         int x1 = Math.Min(x + 1, Width - 1);
         int y1 = Math.Min(y + 1, Height - 1);
-        return IsContent(x, y, alphaThreshold, whiteLuminance)
-            || IsContent(x1, y, alphaThreshold, whiteLuminance)
-            || IsContent(x, y1, alphaThreshold, whiteLuminance)
-            || IsContent(x1, y1, alphaThreshold, whiteLuminance);
+        return IsContent(x, y, alphaThreshold, whiteLuminance, background)
+            || IsContent(x1, y, alphaThreshold, whiteLuminance, background)
+            || IsContent(x, y1, alphaThreshold, whiteLuminance, background)
+            || IsContent(x1, y1, alphaThreshold, whiteLuminance, background);
     }
 
-    private bool IsContent(int x, int y, byte alphaThreshold, int whiteLuminance)
+    private bool IsContent(int x, int y, byte alphaThreshold, int whiteLuminance, BlankColour? background)
     {
         int offset = ((y * Width) + x) * 4;
         if (_bgra[offset + 3] < alphaThreshold) return false;
+        if (background is { } colour
+            && Math.Abs(_bgra[offset] - colour.Blue) <= colour.Tolerance
+            && Math.Abs(_bgra[offset + 1] - colour.Green) <= colour.Tolerance
+            && Math.Abs(_bgra[offset + 2] - colour.Red) <= colour.Tolerance)
+            return false;
         double luminance = (0.2126 * _bgra[offset + 2]) + (0.7152 * _bgra[offset + 1]) + (0.0722 * _bgra[offset]);
         return luminance < whiteLuminance;
+    }
+
+    /// <summary>
+    /// Finds the flat background colour of the printable ring. Exported or composited
+    /// backgrounds carry a few levels of colour noise, so pixels are first grouped into coarse
+    /// 8-level buckets; the busiest bucket's mean becomes the background colour. Returns null
+    /// when pixels within <paramref name="tolerance"/> of that colour cover less than
+    /// <paramref name="minimumFraction"/> of the ring, so busy pictures are left untouched.
+    /// </summary>
+    internal BlankColour? FindDominantColour(
+        double innerRadiusMm, double outerRadiusMm, byte alphaThreshold, double minimumFraction, int tolerance)
+    {
+        double scale = (Math.Min(Width, Height) - 1) / (2.0 * outerRadiusMm);
+        double centreX = (Width - 1) / 2.0;
+        double centreY = (Height - 1) / 2.0;
+        double inner = innerRadiusMm * scale;
+        double outer = outerRadiusMm * scale;
+        double inner2 = inner * inner;
+        double outer2 = outer * outer;
+        int[] buckets = new int[32 * 32 * 32];
+        long[] sumBlue = new long[buckets.Length];
+        long[] sumGreen = new long[buckets.Length];
+        long[] sumRed = new long[buckets.Length];
+        long total = 0;
+
+        IEnumerable<int> RingOffsets()
+        {
+            for (int y = 0; y < Height; y++)
+            {
+                double dy = y - centreY;
+                for (int x = 0; x < Width; x++)
+                {
+                    double dx = x - centreX;
+                    double distance2 = (dx * dx) + (dy * dy);
+                    if (distance2 >= inner2 && distance2 <= outer2)
+                        yield return ((y * Width) + x) * 4;
+                }
+            }
+        }
+
+        foreach (int offset in RingOffsets())
+        {
+            total++;
+            if (_bgra[offset + 3] < alphaThreshold) continue;
+            int key = (_bgra[offset] >> 3) | ((_bgra[offset + 1] >> 3) << 5) | ((_bgra[offset + 2] >> 3) << 10);
+            buckets[key]++;
+            sumBlue[key] += _bgra[offset];
+            sumGreen[key] += _bgra[offset + 1];
+            sumRed[key] += _bgra[offset + 2];
+        }
+
+        if (total == 0) return null;
+        int best = 0;
+        for (int key = 1; key < buckets.Length; key++)
+            if (buckets[key] > buckets[best]) best = key;
+        if (buckets[best] == 0) return null;
+        BlankColour colour = new(
+            (byte)Math.Round((double)sumBlue[best] / buckets[best]),
+            (byte)Math.Round((double)sumGreen[best] / buckets[best]),
+            (byte)Math.Round((double)sumRed[best] / buckets[best]),
+            tolerance);
+
+        long matching = 0;
+        foreach (int offset in RingOffsets())
+        {
+            if (_bgra[offset + 3] >= alphaThreshold
+                && Math.Abs(_bgra[offset] - colour.Blue) <= tolerance
+                && Math.Abs(_bgra[offset + 1] - colour.Green) <= tolerance
+                && Math.Abs(_bgra[offset + 2] - colour.Red) <= tolerance)
+                matching++;
+        }
+
+        return matching >= minimumFraction * total ? colour : null;
     }
 
     internal PixelSample SampleDisc(

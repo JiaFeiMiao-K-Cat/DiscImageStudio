@@ -30,14 +30,28 @@ public static class DvdTransparencyScanner
     /// </summary>
     public const uint MinimumRunSectors = 4;
 
+    /// <summary>
+    /// A flat background colour must cover at least this share of the printable ring before
+    /// it is treated as blank; busier pictures keep every pixel.
+    /// </summary>
+    public const double BackgroundMinimumFraction = 0.15;
+
+    /// <summary>Per-channel difference still counted as the background colour.</summary>
+    public const int BackgroundTolerance = 6;
+
     /// <summary>Returns the blank runs at or after <paramref name="minimumStartLba"/> in ascending LBA order.</summary>
     public static IReadOnlyList<DvdFreeRegion> FindFreeRuns(
         string imagePath, ImageMappingOptions mapping, uint minimumStartLba = 0,
-        CancellationToken cancellationToken = default, int whiteLuminance = TransparentOnly)
+        CancellationToken cancellationToken = default, int whiteLuminance = TransparentOnly,
+        bool backgroundIsBlank = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(imagePath);
         ArgumentNullException.ThrowIfNull(mapping);
         RasterImage image = RasterImage.Load(imagePath);
+        BlankColour? background = backgroundIsBlank
+            ? image.FindDominantColour(mapping.InnerRadiusMm, mapping.OuterRadiusMm,
+                mapping.AlphaThreshold, BackgroundMinimumFraction, BackgroundTolerance)
+            : null;
         int sectorsPerBlock = DvdEccBlockEncoder.SectorCount;
         if (mapping.TotalSectors == 0 || mapping.TotalSectors % sectorsPerBlock != 0)
             throw new ArgumentException("Total sectors must be a positive multiple of 16.", nameof(mapping));
@@ -69,7 +83,7 @@ public static class DvdTransparencyScanner
                     double px = ((image.Width - 1) / 2.0) + (radius * Math.Cos(polar) * scale);
                     double py = ((image.Height - 1) / 2.0) - (radius * Math.Sin(polar) * scale);
                     if (px >= 0 && py >= 0 && px <= image.Width - 1 && py <= image.Height - 1
-                        && image.AnyContentAt((int)Math.Floor(px), (int)Math.Floor(py), mapping.AlphaThreshold, whiteLuminance))
+                        && image.AnyContentAt((int)Math.Floor(px), (int)Math.Floor(py), mapping.AlphaThreshold, whiteLuminance, background))
                     {
                         used[sectorIndex] = true;
                         break;

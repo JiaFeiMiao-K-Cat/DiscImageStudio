@@ -192,6 +192,56 @@ internal static class DvdFilePlacementTests
             "capacity estimate reports the shortfall for an opaque picture");
         Throws<ArgumentException>(() => DvdStreamingGenerator.PrepareHybridInTransparency(
             data, opaque, options, "PLACEMENT"), "fully opaque picture has no room for files");
+
+        // A pale, slightly noisy opaque background (as exported by the designer) is blank paper too.
+        string pale = Path.Combine(directory, "pale.png");
+        WritePaleBackgroundImage(pale, figureFrom: 50, figureTo: 58);
+        DvdTransparencyCapacity paleOff = DvdStreamingGenerator.EstimateTransparentCapacity(
+            data, pale, options, "PLACEMENT", backgroundIsBlank: false);
+        Require(paleOff.BlankSectors == 0, "pale background is not blank when background detection is off");
+        DvdTransparencyCapacity paleOn = DvdStreamingGenerator.EstimateTransparentCapacity(
+            data, pale, options, "PLACEMENT");
+        Require(paleOn.Fits && paleOn.BlankSectors > 0, "pale background leaves room for files by default");
+        DvdHybridStreamingPlan palePlan = DvdStreamingGenerator.PrepareHybridInTransparency(
+            data, pale, options, "PLACEMENT");
+        using MemoryStream paleOutput = new();
+        DvdStreamingGenerator.GenerateHybrid(pale, paleOutput, options, palePlan);
+        Dictionary<string, Entry> paleEntries = ReadJoliet(paleOutput.ToArray());
+        Require(paleEntries["root.bin"].Bytes.SequenceEqual(rootBytes)
+            && paleEntries["资料/中文.bin"].Bytes.SequenceEqual(nestedBytes),
+            "files placed on a pale background keep their bytes");
+    }
+
+    private static void WritePaleBackgroundImage(string path, double figureFrom, double figureTo)
+    {
+        const int size = 256;
+        byte[] pixels = new byte[size * size * 4];
+        double scale = (size - 1) / (2.0 * 58);
+        Random noise = new(5);
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                double radius = Math.Sqrt(Math.Pow((x - (size - 1) / 2.0) / scale, 2)
+                    + Math.Pow((y - (size - 1) / 2.0) / scale, 2));
+                int offset = ((y * size) + x) * 4;
+                if (radius >= figureFrom && radius < figureTo)
+                {
+                    pixels[offset] = pixels[offset + 1] = pixels[offset + 2] = (byte)((x ^ y) * 9);
+                }
+                else
+                {
+                    // BGRA of a pale lavender (~#F9EFEA) with +-1 level of export noise.
+                    pixels[offset] = (byte)(249 + noise.Next(-1, 2));
+                    pixels[offset + 1] = (byte)(239 + noise.Next(-1, 2));
+                    pixels[offset + 2] = (byte)(234 + noise.Next(-1, 2));
+                }
+                pixels[offset + 3] = 255;
+            }
+        BitmapSource bitmap = BitmapSource.Create(size, size, 96, 96, PixelFormats.Bgra32, null, pixels, size * 4);
+        PngBitmapEncoder encoder = new();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using FileStream file = File.Create(path);
+        encoder.Save(file);
     }
 
     private static void WriteRingImage(string path, double transparentFrom, double transparentTo)

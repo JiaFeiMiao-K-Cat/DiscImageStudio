@@ -210,7 +210,8 @@ public static class DvdStreamingGenerator
         DvdStreamingOptions options,
         string volumeLabel = "DVD_IMAGE",
         CancellationToken cancellationToken = default,
-        bool whiteIsBlank = true)
+        bool whiteIsBlank = true,
+        bool backgroundIsBlank = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
         ArgumentException.ThrowIfNullOrWhiteSpace(imagePath);
@@ -223,7 +224,8 @@ public static class DvdStreamingGenerator
         uint needed = fileSectors == 0 ? 0 : checked(fileSectors + 32);
         IReadOnlyList<DvdFreeRegion> runs = DvdTransparencyScanner.FindFreeRuns(
             imagePath, CreateImageMapping(options), scanFrom, cancellationToken,
-            whiteIsBlank ? DvdTransparencyScanner.DefaultWhiteLuminance : DvdTransparencyScanner.TransparentOnly);
+            whiteIsBlank ? DvdTransparencyScanner.DefaultWhiteLuminance : DvdTransparencyScanner.TransparentOnly,
+            backgroundIsBlank);
         ulong blank = DvdTransparencyScanner.TotalSectors(runs);
         int segmentsUsed = needed == 0
             ? 0
@@ -242,7 +244,8 @@ public static class DvdStreamingGenerator
         DvdStreamingOptions options,
         string volumeLabel = "DVD_IMAGE",
         CancellationToken cancellationToken = default,
-        bool whiteIsBlank = true)
+        bool whiteIsBlank = true,
+        bool backgroundIsBlank = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
         ArgumentException.ThrowIfNullOrWhiteSpace(imagePath);
@@ -259,7 +262,8 @@ public static class DvdStreamingGenerator
         uint needed = checked(fileSectors + 32);
         IReadOnlyList<DvdFreeRegion> runs = DvdTransparencyScanner.FindFreeRuns(
             imagePath, CreateImageMapping(options), scanFrom, cancellationToken,
-            whiteIsBlank ? DvdTransparencyScanner.DefaultWhiteLuminance : DvdTransparencyScanner.TransparentOnly);
+            whiteIsBlank ? DvdTransparencyScanner.DefaultWhiteLuminance : DvdTransparencyScanner.TransparentOnly,
+            backgroundIsBlank);
         IReadOnlyList<DvdFreeRegion> chosen = DvdTransparencyScanner.ChooseSegments(runs, needed)
             ?? throw new ArgumentException(
                 $"The picture leaves only {DvdTransparencyScanner.TotalSectors(runs)} blank sectors "

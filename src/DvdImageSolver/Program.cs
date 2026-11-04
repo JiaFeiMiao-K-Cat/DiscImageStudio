@@ -516,9 +516,11 @@ internal static class Program
                 {
                     uint needed = checked(fileSectors + 32);
                     bool whiteIsBlank = ReadBoolean(arguments, "white-is-blank", fallback: true);
+                    bool backgroundIsBlank = ReadBoolean(arguments, "background-is-blank", fallback: true);
                     IReadOnlyList<DvdFreeRegion> runs = DvdTransparencyScanner.FindFreeRuns(
                         arguments.Require("image"), imageMapping, probeStart, default,
-                        whiteIsBlank ? DvdTransparencyScanner.DefaultWhiteLuminance : DvdTransparencyScanner.TransparentOnly);
+                        whiteIsBlank ? DvdTransparencyScanner.DefaultWhiteLuminance : DvdTransparencyScanner.TransparentOnly,
+                        backgroundIsBlank);
                     IReadOnlyList<DvdFreeRegion> chosen = DvdTransparencyScanner.ChooseSegments(runs, needed)
                         ?? throw new ArgumentException(
                             $"The picture leaves only {DvdTransparencyScanner.TotalSectors(runs)} blank sectors "
