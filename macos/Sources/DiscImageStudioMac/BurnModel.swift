@@ -156,9 +156,6 @@ final class BurnModel {
         guard status.isPresent else {
             return "刻录机里没有光盘。请放入空白盘后再试。"
         }
-        if status.isBluRay {
-            return "检测到蓝光介质：macOS 自带的 drutil 不支持 BD 写入。请先生成 BD-R ISO，再用第三方刻录软件写入。"
-        }
         // drutil 在「有驱动器但没放盘」时仍可能返回 0 且文本非空；没有 Type 字段时按无介质处理（更安全的默认）。
         guard let mediaType = status.mediaType else {
             return "没有检测到可识别的光盘介质（drutil 没有报告 Type）。请放入空白 CD-R / DVD-R 后刷新。"
@@ -181,6 +178,9 @@ final class BurnModel {
         if kind == .audioCD, !mediaType.uppercased().hasPrefix("CD") {
             return "音频 CD 需要空白 CD-R；当前介质是 \(mediaType)。"
         }
+        if status.isBluRay, kind != .dataImage {
+            return "蓝光介质只能刻录数据镜像（.iso）；音频 CD 请使用 CD-R。"
+        }
         return nil
     }
 
@@ -194,21 +194,24 @@ final class BurnModel {
         var parts: [String] = []
         if let mediaType = status.mediaType { parts.append(mediaType) }
         parts.append(status.isProbablyBlank ? "空白" : "非空白")
-        if status.isBluRay { parts.append("BD（不支持）") }
+        if status.isBluRay { parts.append("BD（实验性）") }
         return parts.isEmpty ? "未知" : parts.joined(separator: " · ")
     }
 
     var mediaStatusDescription: String {
         guard let status = mediaStatus else { return "尚未读取介质状态。" }
         if !status.isPresent { return "刻录机里没有光盘。" }
-        if status.isBluRay { return "蓝光介质：文件模式不支持写入，请使用第三方刻录软件。" }
+        if status.isBluRay {
+            return "蓝光介质：可尝试数据镜像刻录（实验性，未经实机验证）；音频 CD 不受支持，失败请换用第三方软件。"
+        }
         if !status.isProbablyBlank { return "非空白盘：检测到已有轨道或会话，已禁止刻录。" }
         return "空白 \(status.mediaType ?? "光盘")，可以刻录。"
     }
 
     var statusColor: Color {
         guard let status = mediaStatus else { return .orange }
-        if !status.isPresent || status.isBluRay { return .orange }
+        if !status.isPresent { return .orange }
+        if status.isBluRay { return status.isProbablyBlank ? .orange : .red }
         return status.isProbablyBlank ? .green : .red
     }
 

@@ -103,7 +103,8 @@ final class BurnServiceTests: XCTestCase {
         XCTAssertEqual(BurnKind.kind(forMediaType: "cd-rw"), .audioCD)
         XCTAssertEqual(BurnKind.kind(forMediaType: "DVD-R"), .dataImage)
         XCTAssertEqual(BurnKind.kind(forMediaType: "DVD+R DL"), .dataImage)
-        XCTAssertNil(BurnKind.kind(forMediaType: "BD-R"))
+        XCTAssertEqual(BurnKind.kind(forMediaType: "BD-R"), .dataImage)
+        XCTAssertEqual(BurnKind.kind(forMediaType: "BD-RE"), .dataImage)
         XCTAssertNil(BurnKind.kind(forMediaType: "unknown"))
         XCTAssertNil(BurnKind.kind(forMediaType: nil))
     }
@@ -297,15 +298,24 @@ final class BurnServiceTests: XCTestCase {
         }
     }
 
-    func testMakePlanRejectsBluRayMedia() async throws {
+    func testMakePlanAllowsBluRayDataImage() async throws {
         let directory = try TestSupport.makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let iso = try makeFile(named: "disc.iso", in: directory, contents: "ISO")
         let service = try makeService(in: directory, status: "Type: BD-R\nBlank: Yes\n", toc: "")
         let status = try await service.mediaStatus(drive: nil)
 
-        XCTAssertThrowsError(try service.makePlan(for: iso, drive: nil, status: status)) { error in
-            XCTAssertEqual(error as? BurnError, .bluRayUnsupported)
+        let plan = try service.makePlan(for: iso, drive: nil, status: status)
+        XCTAssertEqual(plan.kind, .dataImage)
+        XCTAssertEqual(plan.commandArguments, ["burn", "-eject", iso.path])
+
+        // 蓝光不能作为音频 CD。
+        let wav = try makeFile(named: "track.wav", in: directory, contents: "WAV")
+        XCTAssertThrowsError(try service.makePlan(for: wav, drive: nil, status: status)) { error in
+            guard case BurnError.mediaNotWritable(let reason) = error else {
+                return XCTFail("蓝光音频 CD 应抛 mediaNotWritable，实际是 \(error)")
+            }
+            XCTAssertTrue(reason.contains("数据镜像"))
         }
     }
 

@@ -31,10 +31,12 @@ public enum BurnKind: String, Sendable, Equatable, CaseIterable {
     }
 
     /// 媒体类型字符串（来自 `drutil status` 的 `Type:`）对应的刻录方式。
+    /// 蓝光只按数据镜像处理：`drutil` 的 BD 路径与 DiscRecording 的 BDDAO 同源，
+    /// 但 Apple 没有在 `man drutil` 里承诺 BD 写入，属于实验性路径。
     public static func kind(forMediaType mediaType: String?) -> BurnKind? {
         guard let mediaType else { return nil }
         let upper = mediaType.uppercased()
-        if upper.hasPrefix("BD") { return nil }
+        if upper.hasPrefix("BD") { return .dataImage }
         if upper.hasPrefix("CD") { return .audioCD }
         if upper.hasPrefix("DVD") { return .dataImage }
         return nil
@@ -87,8 +89,13 @@ public struct MediaStatus: Sendable, Equatable {
     }
 
     public var isWritable: Bool {
-        !isBluRay
+        true
     }
+
+    /// 蓝光只能作为数据镜像（实验性）；音频 CD 必须用 CD-R。
+    public var supportsDataImage: Bool { true }
+
+    public var supportsAudioCD: Bool { !isBluRay }
 }
 
 public enum BurnError: Error, Sendable, LocalizedError, Equatable {
@@ -113,7 +120,7 @@ public enum BurnError: Error, Sendable, LocalizedError, Equatable {
         case .mediaNotWritable(let reason):
             return "当前盘片不可写入：\(reason)"
         case .bluRayUnsupported:
-            return "macOS 自带的 DiscRecording 不支持蓝光写入。请先生成 BD-R ISO，再使用支持 BD-R 的第三方刻录软件写入。"
+            return "蓝光介质只能刻录数据镜像（实验性）；音频 CD 请使用 CD-R。未实机验证，请使用可报废的 BD-R。"
         case .drutilFailed(let reason):
             return "drutil 执行失败：\(reason)"
         }
@@ -198,7 +205,9 @@ public struct BurnService: Sendable {
 
         if let status {
             guard status.isPresent else { throw BurnError.noMedia }
-            if status.isBluRay { throw BurnError.bluRayUnsupported }
+            if status.isBluRay && kind == .audioCD {
+                throw BurnError.mediaNotWritable("蓝光介质不能刻录音频 CD；请改用数据镜像（.iso）。")
+            }
             if !status.isProbablyBlank {
                 throw BurnError.mediaNotWritable("检测到已有轨道或会话，疑似非空白盘。请改用空白盘片。")
             }

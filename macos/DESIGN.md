@@ -464,7 +464,7 @@ CLI 先生成镜像/音轨，再交给系统 `drutil` 刻录：
 - 音频 CD：CLI 生成 `.wav`，`BurnService` 把它硬链接（失败时复制）进只含该 WAV 的临时目录，执行
   `drutil [-drive N] burn -eject -audio <目录>`（红皮书音频盘）。
 - 数据盘：`.iso` / `.dmg` / `.cue` / `.bin` / `.toc` 直接 `drutil [-drive N] burn -eject <文件>`。
-- 蓝光：`drutil` 文件模式不提供 BD；`disc-burn-stream --kind bd-data` 提供实验性 DiscRecording 流式写入（未实机验证，GUI 暂未接线）。
+- 蓝光：文件模式用 `drutil` 写 BD 数据镜像（实验性），流式用 `disc-burn-stream --kind bd-data`（DiscRecording BDDAO，实验性）；两条路径均未实机验证，音频 CD 不支持蓝光。
 
 `BurnService`（`macos/Sources/DiscImageStudioKit/BurnService.swift`）负责：`drutil list` 解析、`status`+`toc` 介质状态、
 刻录计划（`BurnPlan`，含临时目录清理）、以及用 `CliRunner` 启动 `drutil` 并复用同一套事件流。

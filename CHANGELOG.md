@@ -10,7 +10,7 @@
 - CLI 新增标定命令组：`calibration-target`、`calibration-photo`、`calibration-fit`、`calibration-coarse-target`、`calibration-coarse-fit`、`calibration-session-write`、`calibration-session-read`，覆盖图案生成、照片矫正、拟合候选与会话读写，供 GUI 与脚本复用。
 - 新增 `macos/scripts/` 构建与打包脚本（CLI 自包含发布、`.app` 组装、zip 分发）、`docs/MACOS_GUI.md` 与 `macos-gui` CI 工作流。
 - 四份 README 补充 macOS 图形界面的入口、工作流形态、构建方式与文档索引。
-- macOS 流式刻录助手新增实验性 BD-R 路径（`disc-burn-stream --kind bd-data`，DiscRecording `kDRBurnStrategyBDDAO`、BD 1×=4496 KB/s）；未实机验证，GUI 尚未接线，蓝光写盘仍建议生成 ISO 后用第三方工具。
+- macOS 刻录新增实验性 BD 支持：文件模式用 `drutil` 写 BD 数据镜像，流式助手新增 `bd-data`（DiscRecording `kDRBurnStrategyBDDAO`、BD 1×=4496 KB/s）。两条路径均未实机验证，音频 CD 不支持蓝光，GUI 流式尚未接线；建议只使用可报废 BD-R，失败时用第三方工具。
 
 ### English
 

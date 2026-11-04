@@ -481,7 +481,7 @@ struct BurnView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Text("刻录会不可逆地写入光盘。每次开始前都会要求确认盘片是空白且可报废的测试介质；蓝光介质会被拒绝。")
+            Text("刻录会不可逆地写入光盘。每次开始前都会要求确认盘片是空白且可报废的测试介质；蓝光仅实验性支持数据镜像（未实机验证）。")
                 .font(Typography.caption2)
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -692,7 +692,7 @@ struct BurnConfirmationSheet: View {
                 .toggleStyle(.checkbox)
                 .font(.system(size: 12.5, weight: .medium))
 
-            Text("如果盘片里已有数据或不是空白盘，请立即取消并更换盘片。蓝光介质不受支持。")
+            Text("如果盘片里已有数据或不是空白盘，请立即取消并更换盘片。蓝光仅实验性支持数据镜像。")
                 .font(Typography.caption2)
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
