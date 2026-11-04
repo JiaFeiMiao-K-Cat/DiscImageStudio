@@ -249,14 +249,11 @@ public partial class ToneViewModel : ObservableObject
             return;
         }
 
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
-            $"design-tone-{revision}.png");
+        string outputPath = TempFiles.GetCacheFilePath($"design-tone-{revision}.png");
         bool keepOutput = false;
         try
         {
             await Task.Delay(180, cancellationToken);
-            Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
 
             int samplesPerSector;
             if (IsBluRay)

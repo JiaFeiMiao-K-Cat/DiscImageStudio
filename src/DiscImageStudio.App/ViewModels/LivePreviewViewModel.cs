@@ -690,10 +690,7 @@ public partial class LivePreviewViewModel : ObservableObject
 
         bool deinterleave = _state.CdInterleave;
         bool dataImage = Path.GetExtension(trackPath).Equals(".iso", StringComparison.OrdinalIgnoreCase);
-        Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
-            $"cd-live-preview-{revision}.png");
+        string outputPath = TempFiles.GetCacheFilePath($"cd-live-preview-{revision}.png");
         StatusText = L.F($"正在刷新 {outputSize} px 实时预览…");
         bool keepOutput = false;
         try
@@ -778,10 +775,7 @@ public partial class LivePreviewViewModel : ObservableObject
             return;
         }
 
-        Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
-            $"cd-live-warp-{revision}.png");
+        string outputPath = TempFiles.GetCacheFilePath($"cd-live-warp-{revision}.png");
         StatusText = L.F($"正在刷新 {outputSize} px 标定预览…");
         bool keepOutput = false;
         try
@@ -860,10 +854,7 @@ public partial class LivePreviewViewModel : ObservableObject
     /// bytes and splats them under the measured disc geometry.</summary>
     private async Task RefreshDvdReadbackAsync(int revision, CancellationToken cancellationToken)
     {
-        Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
-            $"dvd-live-preview-{revision}.png");
+        string outputPath = TempFiles.GetCacheFilePath($"dvd-live-preview-{revision}.png");
         string summaryJsonPath = outputPath + ".json";
         if (!TryBuildDvdCommand(
                 outputPath,
@@ -934,10 +925,7 @@ public partial class LivePreviewViewModel : ObservableObject
     /// generated radii and projects it onto the measured ones.</summary>
     private async Task RefreshDvdCalibrationAsync(int revision, CancellationToken cancellationToken)
     {
-        Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
-            $"dvd-live-warp-{revision}.png");
+        string outputPath = TempFiles.GetCacheFilePath($"dvd-live-warp-{revision}.png");
         string summaryJsonPath = outputPath + ".json";
         if (!TryBuildDvdCalibrateCommand(
                 outputPath,
@@ -1075,10 +1063,7 @@ public partial class LivePreviewViewModel : ObservableObject
             return;
         }
 
-        Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
-            $"bd-live-projection-{revision}.png");
+        string outputPath = TempFiles.GetCacheFilePath($"bd-live-projection-{revision}.png");
         StatusText = L.F($"正在刷新 {outputSize} px 蓝光设计投影…");
         bool keepOutput = false;
         try
@@ -1173,10 +1158,7 @@ public partial class LivePreviewViewModel : ObservableObject
             return;
         }
 
-        Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
-            $"bd-live-readback-{revision}.png");
+        string outputPath = TempFiles.GetCacheFilePath($"bd-live-readback-{revision}.png");
         StatusText = L.F($"正在刷新 {outputSize} px 蓝光成品读回…");
         bool keepOutput = false;
         try

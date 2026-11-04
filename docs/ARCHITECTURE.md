@@ -74,7 +74,7 @@ flowchart LR
 
 主题切换是即时的：`Themes/Palette.Light.xaml` 覆盖 `Tokens.xaml` 的全部颜色与画刷键，`Services/ThemeResolver` 在合并字典的第 1 位插入或移除浅色层，窗口无需重建。因此视图对调色板键必须使用 `DynamicResource`（`StaticResource` 会把深色值固化在加载时刻，`ThemePaletteTests` 会拦截）；代码侧取色的控件（`SideNavItem`、`SegmentedControl`、`DiscDesignCanvas`、`CalibrationPhotoCanvas`、`JobDock`、`HelpHint`）订阅 `ThemeResolver.Changed` 并重新读取令牌。系统主题取 `HKCU\...\Themes\Personalize\AppsUseLightTheme`。
 
-应用设置由 `Services/AppSettingsStore` 持久化到 `%LOCALAPPDATA%\DiscImageStudio\settings.json`（camelCase、字符串枚举、临时文件原子替换）：主题、默认工程位置和缓存位置。缺失、损坏或 schemaVersion 高于当前版本的文件回落到默认值，手工改坏的路径在 `AppSettings.Normalize` 中被丢弃；设置从不写入 `.discproj`。默认工程位置只影响新建工程对话框的初始目录，不存在时回落到系统文档目录。`Services/TempFiles` 持有可配置的缓存目录（`LivePreviewDirectory`），设计合成图、缩略图与预览图都写到这里；切换只影响新任务，清空缓存按文件名白名单（`design-composite-*`、`design-tone-*`、`design-thumbnail.png`、`cd/dvd/bd-live-*` 及其 `.png.json` sidecar）删除，绝不删除目录、工程或导出文件。设置窗口在保存前只改副本，取消或 Esc 丢弃全部编辑。
+应用设置由 `Services/AppSettingsStore` 持久化到 `%LOCALAPPDATA%\DiscImageStudio\settings.json`（camelCase、字符串枚举、临时文件原子替换）：主题、默认工程位置和缓存位置。缺失、损坏或 schemaVersion 高于当前版本的文件回落到默认值，手工改坏的路径在 `AppSettings.Normalize` 中被丢弃；设置从不写入 `.discproj`。默认工程位置只影响新建工程对话框的初始目录，不存在时回落到系统文档目录。`Services/TempFiles` 持有可配置的缓存根目录（`LivePreviewDirectory`）；设计合成图、缩略图与预览图通过 `GetCacheFilePath` 写入根目录下独立的应用会话目录，避免多个实例或账户共用缓存位置时覆盖彼此的图片。切换缓存位置只影响新任务，已经解析的文件路径保持有效。缓存统计与清理兼容根目录内的旧缓存，并按文件名白名单（`design-composite-*`、`design-tone-*`、`design-thumbnail.png`、`cd/dvd/bd-live-*` 及其 `.png.json` sidecar）处理会话缓存；通过会话锁跳过其他仍在运行的实例，不遍历任意用户子目录，不删除工程或导出文件。设置窗口在保存前只改副本，取消或 Esc 丢弃全部编辑。
 
 ## 图片预处理层
 

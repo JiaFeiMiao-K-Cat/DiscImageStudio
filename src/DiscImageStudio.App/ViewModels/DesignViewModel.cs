@@ -466,9 +466,7 @@ public partial class DesignViewModel : ObservableObject
         string? outputPath = null;
         if (items.Count > 0)
         {
-            Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-            outputPath = Path.Combine(
-                TempFiles.LivePreviewDirectory,
+            outputPath = TempFiles.GetCacheFilePath(
                 Family switch
                 {
                     OpticalDiscFamily.Dvd => "design-composite-dvd.png",
@@ -515,9 +513,7 @@ public partial class DesignViewModel : ObservableObject
         }
 
         List<DesignLayerRenderItem> items = BuildRenderItems();
-        Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
+        string outputPath = TempFiles.GetCacheFilePath(
             Family switch
             {
                 OpticalDiscFamily.Dvd => "design-composite-dvd-export.png",
@@ -547,9 +543,7 @@ public partial class DesignViewModel : ObservableObject
         }
 
         List<DesignLayerRenderItem> items = BuildRenderItems();
-        string directory = TempFiles.LivePreviewDirectory;
-        Directory.CreateDirectory(directory);
-        string outputPath = Path.Combine(directory, "design-thumbnail.png");
+        string outputPath = TempFiles.GetCacheFilePath("design-thumbnail.png");
         await StaWorker.RunAsync(() =>
         {
             DesignComposer.Render(items, CanvasOuterRadiusMm, ProjectDocument.ThumbnailDecodeSize, outputPath);
