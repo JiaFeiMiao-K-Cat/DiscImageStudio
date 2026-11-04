@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# 用 notarytool 给已用 Developer ID 签名的 .app 做公证，并 stapling 到应用上。
+# 用 notarytool 给已用 Developer ID 签名的 .app 或 .dmg 做公证，并 stapling。
 #
 # 凭据（三选一）：
 #   1) NOTARYTOOL_PROFILE（`xcrun notarytool store-credentials` 保存的钥匙串 profile）
@@ -9,6 +9,7 @@
 #
 # 用法：
 #   macos/scripts/notarize.sh --app macos/build/DiscImageStudio.app
+#   macos/scripts/notarize.sh --app macos/build/DiscImageStudio-1.3.6-osx-arm64.dmg
 #   macos/scripts/notarize.sh --app ... --keychain-profile disc-image-studio
 #   APPLE_ID=... APPLE_APP_SPECIFIC_PASSWORD=... APPLE_TEAM_ID=... macos/scripts/notarize.sh --app ...
 #
@@ -32,11 +33,12 @@ usage() {
   cat <<'EOF'
 用法：macos/scripts/notarize.sh [选项]
 
-对已用 Developer ID 签名并启用 hardened runtime 的 DiscImageStudio.app 执行：
-  校验签名 → zip → notarytool submit --wait → stapler staple → stapler validate → spctl。
+对已用 Developer ID 签名的 .app（要求 hardened runtime）或 .dmg 执行：
+  校验签名 → notarytool submit --wait → stapler staple → stapler validate → spctl。
+  .app 会先压成临时 zip 再提交；.dmg 直接提交（并校验其代码签名）。
 
 选项：
-  --app <path>              应用路径（默认 macos/build/DiscImageStudio.app）。
+  --app <path>              应用或 DMG 路径（默认 macos/build/DiscImageStudio.app）。
   --keychain-profile <name> notarytool 凭据 profile（等价于环境变量 NOTARYTOOL_PROFILE）。
   --apple-id <id>           Apple ID（等价于 APPLE_ID）。
   --password <password>     App 专用密码（等价于 APPLE_APP_SPECIFIC_PASSWORD）。
@@ -133,16 +135,28 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -d "$APP_PATH" ]] || die "找不到应用：$APP_PATH" 2
+[[ -e "$APP_PATH" ]] || die "找不到应用或 DMG：$APP_PATH" 2
 command -v xcrun >/dev/null 2>&1 || die "找不到 xcrun（需要 Xcode 或 Command Line Tools）" 2
 
-# 1. 必须是 Developer ID 签名，且 hardened runtime 生效。
+IS_DMG=0
+case "$APP_PATH" in
+  *.dmg) IS_DMG=1 ;;
+  *.app) IS_DMG=0 ;;
+  *) die "只支持 .app 或 .dmg：$APP_PATH" 2 ;;
+esac
+
+# 1. 必须是 Developer ID 签名；.app 还要求 hardened runtime。
 SIGN_INFO="$(codesign -dv --verbose=4 "$APP_PATH" 2>&1 || true)"
 if ! grep -q "Authority=Developer ID Application" <<<"$SIGN_INFO"; then
-  die "应用不是 Developer ID 签名，无法公证。请先运行：
+  if [[ "$IS_DMG" -eq 1 ]]; then
+    die "DMG 不是 Developer ID 签名，无法公证。请先：
+  macos/scripts/package-app.sh --sign-identity \"Developer ID Application: ...\""
+  else
+    die "应用不是 Developer ID 签名，无法公证。请先运行：
   macos/scripts/build-app.sh --sign-identity \"Developer ID Application: ...\""
+  fi
 fi
-if ! grep -q "flags=.*runtime" <<<"$SIGN_INFO"; then
+if [[ "$IS_DMG" -eq 0 ]] && ! grep -q "flags=.*runtime" <<<"$SIGN_INFO"; then
   die "应用没有启用 hardened runtime（codesign --options runtime），无法公证。"
 fi
 codesign --verify --deep --strict --verbose=2 "$APP_PATH" >/dev/null 2>&1 \
@@ -164,12 +178,17 @@ else
   die "缺少公证凭据。设置 NOTARYTOOL_PROFILE，或 APPLE_API_KEY_PATH/APPLE_API_KEY_ID/APPLE_API_ISSUER_ID，或 APPLE_ID/APPLE_APP_SPECIFIC_PASSWORD/APPLE_TEAM_ID。" 2
 fi
 
-# 3. notarytool 只接受 zip / dmg / pkg；用 ditto 保留 .app 结构。
+# 3. notarytool 只接受 zip / dmg / pkg；.app 先压成 zip，.dmg 直接提交。
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/disc-image-studio-notarize.XXXXXX")"
 trap 'rm -rf "$TMP_DIR"' EXIT
-ARCHIVE="$TMP_DIR/DiscImageStudio.zip"
-note "==> 打包待公证应用"
-ditto -c -k --keepParent --norsrc --noextattr "$APP_PATH" "$ARCHIVE"
+if [[ "$IS_DMG" -eq 1 ]]; then
+  ARCHIVE="$APP_PATH"
+  note "==> 提交 DMG（$ARCHIVE）"
+else
+  ARCHIVE="$TMP_DIR/DiscImageStudio.zip"
+  note "==> 打包待公证应用"
+  ditto -c -k --keepParent --norsrc --noextattr "$APP_PATH" "$ARCHIVE"
+fi
 
 # 4. 提交并等待结果。
 note "==> notarytool submit --wait"
@@ -205,14 +224,22 @@ xcrun stapler staple "$APP_PATH"
 note "==> stapler validate"
 xcrun stapler validate "$APP_PATH"
 note "==> spctl 评估"
-if spctl --assess --type execute --verbose=2 "$APP_PATH" 2>&1; then
-  note "Gatekeeper    : accepted"
+if [[ "$IS_DMG" -eq 1 ]]; then
+  if spctl --assess --type open --context context:primary-signature --verbose=2 "$APP_PATH" 2>&1; then
+    note "Gatekeeper    : accepted"
+  else
+    die "DMG 的 spctl 评估未通过；公证已 Accepted 但 stapling/Gatekeeper 检查失败。" 1
+  fi
 else
-  die "spctl 评估未通过；公证已 Accepted 但 stapling/Gatekeeper 检查失败。" 1
+  if spctl --assess --type execute --verbose=2 "$APP_PATH" 2>&1; then
+    note "Gatekeeper    : accepted"
+  else
+    die "spctl 评估未通过；公证已 Accepted 但 stapling/Gatekeeper 检查失败。" 1
+  fi
 fi
 
 note ""
 note "完成。"
-note "应用          : $APP_PATH"
+note "应用/DMG      : $APP_PATH"
 note "提交 ID       : $SUBMISSION_ID"
 note "状态          : Accepted + stapled"

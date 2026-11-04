@@ -133,8 +133,20 @@ jobs:
                (env.APPLE_API_KEY_PATH != '' && env.APPLE_API_KEY_ID != '' && env.APPLE_API_ISSUER_ID != '')) }}
         run: macos/scripts/notarize.sh --app macos/build/DiscImageStudio.app
 
-      - name: Package the .app
+      # 生成 zip + 拖动安装 DMG；有 MACOS_SIGN_IDENTITY 时 package-app.sh 会用
+      # Developer ID 给 DMG 签名，随后对 DMG 单独公证并 stapling。
+      - name: Package the .app (zip + DMG)
         run: macos/scripts/package-app.sh
+
+      - name: Notarize and staple the .dmg
+        if: >-
+          ${{ env.MACOS_SIGN_IDENTITY != '' &&
+              ((env.APPLE_ID != '' && env.APPLE_APP_SPECIFIC_PASSWORD != '' && env.APPLE_TEAM_ID != '') ||
+               (env.APPLE_API_KEY_PATH != '' && env.APPLE_API_KEY_ID != '' && env.APPLE_API_ISSUER_ID != '')) }}
+        run: |
+          set -euo pipefail
+          DMG="$(ls -t macos/build/*.dmg | head -n 1)"
+          macos/scripts/notarize.sh --app "$DMG"
 
       - name: Upload the packaged app
         uses: actions/upload-artifact@v4
@@ -142,6 +154,7 @@ jobs:
           name: DiscImageStudio-macos-app
           path: |
             macos/build/*.zip
+            macos/build/*.dmg
             macos/build/*.sha256
           if-no-files-found: error
           retention-days: 14

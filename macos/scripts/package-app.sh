@@ -1,14 +1,21 @@
 #!/usr/bin/env bash
 #
-# 把 macos/build/DiscImageStudio.app 打包成可分发的 zip，并生成 SHA-256。
+# 把 macos/build/DiscImageStudio.app 打包成可分发的 zip 与拖动安装 DMG，
+# 并生成各自的 SHA-256。
 #
 # 产物：
 #   macos/build/DiscImageStudio-<version>-<rid>.zip
 #   macos/build/DiscImageStudio-<version>-<rid>.zip.sha256
+#   macos/build/DiscImageStudio-<version>-<rid>.dmg   （含 /Applications 快捷方式）
+#   macos/build/DiscImageStudio-<version>-<rid>.dmg.sha256
+#
+# DMG 在设置 --sign-identity（或 MACOS_SIGN_IDENTITY）时用 Developer ID 签名；
+# 公证由 macos/scripts/notarize.sh 在 CI/发布流程中另行完成。
 #
 # 用法：
 #   macos/scripts/package-app.sh [--rid osx-arm64|osx-x64]
 #                               [--app <path>] [--output <dir>]
+#                               [--sign-identity <id>] [--no-dmg]
 #                               [-h|--help]
 #
 set -euo pipefail
@@ -31,6 +38,10 @@ usage() {
                     默认按 uname -m 推断（只影响文件名，不改变包内容）。
   --app <path>      要打包的 .app 路径。默认 macos/build/DiscImageStudio.app。
   --output <dir>    输出目录。默认 macos/build。
+  --sign-identity <id>
+                    给 DMG 签名的 Developer ID 身份；默认读取 MACOS_SIGN_IDENTITY，
+                    留空则不做 DMG 签名（ad-hoc 构建）。
+  --no-dmg          只生成 zip（旧行为）。
   -h, --help        显示本帮助。
 
 示例：
@@ -62,6 +73,8 @@ default_rid() {
 RID=""
 APP_PATH="$DEFAULT_APP"
 OUTPUT_DIR="$MACOS_DIR/build"
+SIGN_IDENTITY="${MACOS_SIGN_IDENTITY:--}"
+MAKE_DMG=1
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -90,6 +103,19 @@ while [[ $# -gt 0 ]]; do
       ;;
     --output=*)
       OUTPUT_DIR="${1#*=}"
+      shift
+      ;;
+    --sign-identity)
+      [[ $# -ge 2 && -n "$2" ]] || die "--sign-identity 需要签名身份"
+      SIGN_IDENTITY="$2"
+      shift 2
+      ;;
+    --sign-identity=*)
+      SIGN_IDENTITY="${1#*=}"
+      shift
+      ;;
+    --no-dmg)
+      MAKE_DMG=0
       shift
       ;;
     -h|--help)
@@ -155,9 +181,53 @@ ditto -c -k --keepParent --norsrc --noextattr "$APP_PATH" "$ARCHIVE"
 ARCHIVE_SIZE="$(du -h "$ARCHIVE" | awk '{print $1}')"
 CHECKSUM="$(awk '{print $1}' "$OUTPUT_DIR/$ARCHIVE_NAME.sha256")"
 
+DMG=""
+DMG_NAME=""
+if [[ "$MAKE_DMG" -eq 1 ]]; then
+  DMG_NAME="DiscImageStudio-$VERSION-$RID.dmg"
+  DMG="$OUTPUT_DIR/$DMG_NAME"
+  STAGE="$(mktemp -d "${TMPDIR:-/tmp}/disc-image-studio-dmg.XXXXXX")"
+  trap 'rm -rf "$STAGE"' EXIT
+
+  note ""
+  note "==> 创建拖动安装 DMG"
+  # ditto 保留签名与扩展属性；Applications 符号链接用于拖入 /Applications。
+  ditto "$APP_PATH" "$STAGE/$(basename "$APP_PATH")"
+  ln -s /Applications "$STAGE/Applications"
+
+  rm -f -- "$DMG" "$DMG.sha256"
+  hdiutil create -volname "Disc Image Studio" -srcfolder "$STAGE" \
+    -ov -format UDZO "$DMG" >/dev/null
+  [[ -f "$DMG" ]] || die "hdiutil 没有生成 $DMG"
+  hdiutil verify "$DMG" >/dev/null || die "DMG 校验失败：$DMG"
+
+  if [[ "$SIGN_IDENTITY" != "-" ]]; then
+    note "签名 DMG      : $SIGN_IDENTITY"
+    codesign --force --timestamp --sign "$SIGN_IDENTITY" "$DMG" \
+      || die "DMG 签名失败（检查钥匙串里的 Developer ID 身份）"
+    codesign --verify --verbose=2 "$DMG" >/dev/null 2>&1 \
+      || die "DMG 签名校验失败"
+  else
+    note "DMG 未签名（ad-hoc 构建；发布时请用 --sign-identity 或 MACOS_SIGN_IDENTITY）"
+  fi
+
+  (
+    cd "$OUTPUT_DIR"
+    shasum -a 256 "$DMG_NAME" >"$DMG_NAME.sha256"
+  )
+  DMG_SIZE="$(du -h "$DMG" | awk '{print $1}')"
+  DMG_CHECKSUM="$(awk '{print $1}' "$OUTPUT_DIR/$DMG_NAME.sha256")"
+fi
+
 note ""
 note "完成。"
 note "压缩包  : $ARCHIVE"
 note "大小    : $ARCHIVE_SIZE"
 note "校验和  : $OUTPUT_DIR/$ARCHIVE_NAME.sha256"
 note "SHA-256 : $CHECKSUM"
+if [[ -n "$DMG" ]]; then
+  note "DMG     : $DMG"
+  note "DMG 大小: $DMG_SIZE"
+  note "DMG 校验: $OUTPUT_DIR/$DMG_NAME.sha256"
+  note "DMG SHA : $DMG_CHECKSUM"
+fi

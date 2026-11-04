@@ -188,6 +188,14 @@ swift run --package-path macos DiscImageStudioMac
 
 ## 打包分发
 
+`package-app.sh` 同时生成两种分发物：
+
+- `DiscImageStudio-<version>-<rid>.zip`：解压后直接得到 `.app`；
+- `DiscImageStudio-<version>-<rid>.dmg`：拖动安装镜像，内含 `DiscImageStudio.app` 与指向 `/Applications` 的快捷方式；
+- 两者各自带 `.sha256`。
+
+DMG 在设置 `--sign-identity`（或 `MACOS_SIGN_IDENTITY`）时用 Developer ID 签名；CI 会在打包后对 DMG 单独提交公证并 `stapler staple`，见下一节。
+
 ```sh
 macos/scripts/build-app.sh
 macos/scripts/package-app.sh
@@ -238,11 +246,21 @@ macos/scripts/build-app.sh \
   --sign-identity "Developer ID Application: Your Name (TEAMID)" \
   --team-id TEAMID
 
+# 打包 zip + DMG（DMG 用同一身份签名）
+macos/scripts/package-app.sh \
+  --sign-identity "Developer ID Application: Your Name (TEAMID)"
+
 # 公证 + stapling + Gatekeeper 验证（Apple ID + App 专用密码）
 APPLE_ID="you@example.com" \
 APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx" \
 APPLE_TEAM_ID="TEAMID" \
   macos/scripts/notarize.sh --app macos/build/DiscImageStudio.app
+
+# DMG 是独立分发物，需要单独公证 + staple
+APPLE_ID="you@example.com" \
+APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx" \
+APPLE_TEAM_ID="TEAMID" \
+  macos/scripts/notarize.sh --app macos/build/DiscImageStudio-<version>-<rid>.dmg
 ```
 
 `build-app.sh` 在 Developer ID 模式下的签名顺序与参数：
@@ -295,8 +313,8 @@ gh secret set APPLE_APP_SPECIFIC_PASSWORD --repo NaiveTomcat/DiscImageStudio
 配置完成后重新运行 `macos-gui`（Actions → macos-gui → Run workflow，或再 push 一次）。CI 的行为：
 
 - 有 `APPLE_CERTIFICATE_P12`：导入临时钥匙串 → `build-app.sh` 用 Developer ID 签名（hardened runtime + timestamp）。
-- 同时有公证凭据：`notarize.sh` 提交公证、stapling、`spctl` 验证，随后才 `package-app.sh` 打包 → 上传的 zip 已是 **签名 + 公证 + stapled**。
-- 没有证书 / 没有公证凭据：自动 ad-hoc 构建并仍上传 zip（PR 与未配置 secrets 的 fork 不受影响）。
+- 同时有公证凭据：先对 `.app` 提交公证、stapling、`spctl` 验证 → `package-app.sh` 生成 zip + DMG（DMG 用 Developer ID 签名）→ 再对 `.dmg` 单独公证、stapling、`spctl` 验证 → 上传的 zip 与 DMG 都已是 **签名 + 公证 + stapled**。
+- 没有证书 / 没有公证凭据：自动 ad-hoc 构建并仍上传 zip + 未签名 DMG（PR 与未配置 secrets 的 fork 不受影响）。
 
 > 首次公证可能被 Apple 拒绝；`notarize.sh` 会输出 `notarytool` 的 JSON，并在失败时打印 `notarytool log`。常见原因是嵌套二进制未签名或 CLI 缺少 JIT/library-validation entitlements，检查 `codesign --verify --deep --strict` 与 log 中的 `invalid` 项。
 
