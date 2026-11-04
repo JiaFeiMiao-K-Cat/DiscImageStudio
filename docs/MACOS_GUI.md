@@ -228,6 +228,78 @@ open ~/Downloads/DiscImageStudio.app
 
 只对你自己构建或信任来源的包使用 `xattr` 命令；正式分发应补齐开发者 ID 证书签名与公证（见[已知限制](#已知限制)）。
 
+## 签名与公证
+
+默认构建使用 **ad-hoc 签名**，只适合本机运行（Gatekeeper 会拒绝、不能公证）。发布包应使用 Apple **Developer ID Application** 证书，启用 hardened runtime 并提交 Apple 公证：
+
+```sh
+# 本机：先用 Developer ID 签名（CLI/helper 会单独签名并带所需 entitlements）
+macos/scripts/build-app.sh \
+  --sign-identity "Developer ID Application: Your Name (TEAMID)" \
+  --team-id TEAMID
+
+# 公证 + stapling + Gatekeeper 验证（Apple ID + App 专用密码）
+APPLE_ID="you@example.com" \
+APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx" \
+APPLE_TEAM_ID="TEAMID" \
+  macos/scripts/notarize.sh --app macos/build/DiscImageStudio.app
+```
+
+`build-app.sh` 在 Developer ID 模式下的签名顺序与参数：
+
+1. `Contents/Resources/cli/disc-image-studio`：`--options runtime --timestamp`，并附加
+   `macos/Resources/disc-image-studio.entitlements`（.NET JIT 与单文件解压原生库需要的
+   `allow-jit`、`allow-unsigned-executable-memory`、`disable-library-validation`）。
+2. `Contents/Resources/bin/disc-burn-stream`：`--options runtime --timestamp`，无额外 entitlements。
+3. 应用外壳：`--options runtime --timestamp`，无额外 entitlements。
+4. `codesign --verify --deep --strict` 校验；公证由 `notarize.sh` 完成：
+   zip → `notarytool submit --wait` → `stapler staple` → `stapler validate` → `spctl --assess`。
+
+### CI 需要的 Secrets
+
+在 **fork 仓库**（`NaiveTomcat/DiscImageStudio`）的 **Settings → Secrets and variables → Actions → New repository secret** 添加。CI 只在这个仓库的 `macos-gui` workflow 里读取它们；向上游发 PR 时 workflow 运行在上游仓库，读不到这些 secret，会自动退化为 ad-hoc 构建（这是 GitHub 的预期行为）。
+
+| Secret | 必填 | 内容 |
+| --- | --- | --- |
+| `APPLE_CERTIFICATE_P12` | 是 | 导出的 Developer ID Application `.p12`（含私钥）的 **base64 单行文本** |
+| `APPLE_CERTIFICATE_PASSWORD` | 是 | 导出 `.p12` 时设置的密码 |
+| `APPLE_SIGNING_IDENTITY` | 是 | 完整身份名，如 `Developer ID Application: Yitong Dang (BTQCLGS649)`；留空时 CI 会从导入的证书里自动挑第一个 Developer ID Application |
+| `APPLE_TEAM_ID` | 是 | Team ID，如 `BTQCLGS649` |
+| `APPLE_ID` | 公证二选一 | Apple Developer 账号邮箱 |
+| `APPLE_APP_SPECIFIC_PASSWORD` | 公证二选一 | 在 appleid.apple.com 生成的 **App 专用密码**（`xxxx-xxxx-xxxx-xxxx`，不是账号密码） |
+| `APPLE_API_KEY_P8` | 可选（替代上一行两项） | App Store Connect API Key `.p8` 的 base64 单行文本 |
+| `APPLE_API_KEY_ID` | 可选 | API Key ID |
+| `APPLE_API_ISSUER_ID` | 可选 | API Key Issuer ID |
+
+导出与填写方式（本机）：
+
+```sh
+# 1) 钥匙串访问 → 登录 → 我的证书 → 右键 "Developer ID Application: …" → 导出 .p12（设置密码）
+# 2) 转成单行 base64（BSD base64 用 -i）
+base64 -i ~/Desktop/DeveloperID.p12 | tr -d '\n' > /tmp/developerid.p12.b64
+
+# 3) 确认身份名和 Team ID
+security find-identity -v -p codesigning
+# 输出示例：1) 2DCD… "Developer ID Application: Yitong Dang (BTQCLGS649)"
+
+# 4) 写入 GitHub secrets（也可以用网页逐个添加）
+gh secret set APPLE_CERTIFICATE_P12 --repo NaiveTomcat/DiscImageStudio < /tmp/developerid.p12.b64
+gh secret set APPLE_CERTIFICATE_PASSWORD --repo NaiveTomcat/DiscImageStudio
+gh secret set APPLE_SIGNING_IDENTITY --repo NaiveTomcat/DiscImageStudio \
+  --body "Developer ID Application: Yitong Dang (BTQCLGS649)"
+gh secret set APPLE_TEAM_ID --repo NaiveTomcat/DiscImageStudio --body "BTQCLGS649"
+gh secret set APPLE_ID --repo NaiveTomcat/DiscImageStudio --body "you@example.com"
+gh secret set APPLE_APP_SPECIFIC_PASSWORD --repo NaiveTomcat/DiscImageStudio
+```
+
+配置完成后重新运行 `macos-gui`（Actions → macos-gui → Run workflow，或再 push 一次）。CI 的行为：
+
+- 有 `APPLE_CERTIFICATE_P12`：导入临时钥匙串 → `build-app.sh` 用 Developer ID 签名（hardened runtime + timestamp）。
+- 同时有公证凭据：`notarize.sh` 提交公证、stapling、`spctl` 验证，随后才 `package-app.sh` 打包 → 上传的 zip 已是 **签名 + 公证 + stapled**。
+- 没有证书 / 没有公证凭据：自动 ad-hoc 构建并仍上传 zip（PR 与未配置 secrets 的 fork 不受影响）。
+
+> 首次公证可能被 Apple 拒绝；`notarize.sh` 会输出 `notarytool` 的 JSON，并在失败时打印 `notarytool log`。常见原因是嵌套二进制未签名或 CLI 缺少 JIT/library-validation entitlements，检查 `codesign --verify --deep --strict` 与 log 中的 `invalid` 项。
+
 ## 刻录
 
 macOS 侧不引入第三方刻录库，只使用系统自带的 DiscRecording（`drutil` 与 `DRTrack`/`DRBurn`）。有两条路径：

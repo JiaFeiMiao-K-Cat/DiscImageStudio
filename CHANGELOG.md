@@ -18,6 +18,7 @@
 - 新增 `macos/scripts/` 构建与打包脚本（CLI 自包含发布、`.app` 组装、zip 分发）、`docs/MACOS_GUI.md` 与 `macos-gui` CI 工作流。
 - 四份 README 补充 macOS 图形界面的入口、工作流形态、构建方式与文档索引。
 - macOS 刻录新增实验性 BD 支持：文件模式用 `drutil` 写 BD 数据镜像，流式助手新增 `bd-data`（DiscRecording `kDRBurnStrategyBDDAO`、BD 1×=4496 KB/s）。两条路径均未实机验证，音频 CD 不支持蓝光，GUI 流式尚未接线；建议只使用可报废 BD-R，失败时用第三方工具。
+- macOS 构建支持 Developer ID 签名与 Apple 公证：`build-app.sh --sign-identity` 对 CLI/助手/应用分别签名（hardened runtime + timestamp），`notarize.sh` 完成 notarytool 提交、stapling 与 Gatekeeper 验证；CI 在配置证书与公证 secrets 后自动产出签名并公证的 zip，未配置时保持 ad-hoc。
 
 ### English
 
@@ -35,6 +36,7 @@
 - Added the `macos/scripts/` build and packaging scripts (self-contained CLI publish, `.app` assembly, zip distribution), `docs/MACOS_GUI.md`, and a `macos-gui` CI workflow.
 - All four READMEs now describe the macOS GUI's workflow, its build steps, and the new documentation.
 - Added an experimental BD-R path to the macOS streaming burn helper (`disc-burn-stream --kind bd-data`, DiscRecording `kDRBurnStrategyBDDAO`, BD 1× = 4496 KB/s). It is not hardware-verified and not wired into the GUI yet; for Blu-ray, prefer generating an ISO and burning it with third-party tools.
+- macOS builds now support Developer ID signing and Apple notarization: `build-app.sh --sign-identity` signs the CLI, burn helper, and app separately with hardened runtime and timestamps, and `notarize.sh` runs notarytool, staples the ticket, and checks Gatekeeper. With certificate and notarization secrets configured, CI produces a signed and notarized zip; without them it stays ad-hoc.
 
 ## [1.3.6] - 2026-11-02
 

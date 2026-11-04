@@ -4,7 +4,7 @@
 #   macos/build/DiscImageStudio.app
 #
 # 流程：swift build → 复制可执行文件 → 生成 Info.plist → 生成 AppIcon.icns
-#       →（可选）内置 CLI 与许可证 → ad-hoc 签名。
+#       →（可选）内置 CLI 与许可证 → 代码签名（ad-hoc 或 Developer ID + hardened runtime）。
 #
 # 用法：
 #   macos/scripts/build-app.sh [--configuration release|debug]
@@ -35,7 +35,11 @@ usage() {
   --cli <path>             显式指定要内置的 disc-image-studio 路径。
                            默认自动查找 macos/build/cli/<rid>/disc-image-studio。
   --no-cli                 不内置 CLI（应用仍可启动，只是找不到内置 CLI）。
-  --no-sign                跳过 ad-hoc 代码签名（仅用于排障）。
+  --no-sign                跳过代码签名（仅用于排障）。
+  --sign-identity <id>     代码签名身份；默认 "-"（ad-hoc）。
+                           例："Developer ID Application: Name (TEAMID)"。
+                           也可用环境变量 MACOS_SIGN_IDENTITY 指定。
+  --team-id <id>           Apple Team ID（仅用于日志/公证衔接，可省略）。
   -h, --help               显示本帮助。
 
 说明：无论是否使用 --no-cli，脚本都会构建并内置原生流式刻录助手
@@ -66,6 +70,9 @@ CONFIGURATION="release"
 CLI_OVERRIDE=""
 BUNDLE_CLI=1
 SIGN=1
+SIGN_IDENTITY="${MACOS_SIGN_IDENTITY:--}"
+TEAM_ID="${MACOS_TEAM_ID:-}"
+CLI_ENTITLEMENTS="$MACOS_DIR/Resources/disc-image-studio.entitlements"
 BUNDLED_CLI_PATH=""
 BUNDLED_HELPER_PATH=""
 
@@ -95,6 +102,24 @@ while [[ $# -gt 0 ]]; do
       ;;
     --no-sign)
       SIGN=0
+      shift
+      ;;
+    --sign-identity)
+      [[ $# -ge 2 && -n "$2" ]] || die "--sign-identity 需要签名身份"
+      SIGN_IDENTITY="$2"
+      shift 2
+      ;;
+    --sign-identity=*)
+      SIGN_IDENTITY="${1#*=}"
+      shift
+      ;;
+    --team-id)
+      [[ $# -ge 2 && -n "$2" ]] || die "--team-id 需要 Team ID"
+      TEAM_ID="$2"
+      shift 2
+      ;;
+    --team-id=*)
+      TEAM_ID="${1#*=}"
       shift
       ;;
     -h|--help)
@@ -326,12 +351,44 @@ fi
 
 if [[ "$SIGN" -eq 1 ]]; then
   note ""
-  note "==> ad-hoc 代码签名（codesign --sign -）"
-  codesign --force --deep --sign - "$APP" || die "codesign 失败；可加 --no-sign 跳过（仅用于排障）"
-  if command -v codesign >/dev/null 2>&1; then
+  if [[ "$SIGN_IDENTITY" == "-" ]]; then
+    note "==> ad-hoc 代码签名（codesign --sign -）"
+    codesign --force --deep --sign - "$APP" || die "codesign 失败；可加 --no-sign 跳过（仅用于排障）"
     codesign --verify --deep --strict "$APP" >/dev/null 2>&1 \
-      && note "签名校验      : ok" \
+      && note "签名校验      : ok（ad-hoc）" \
       || warn "codesign --verify 未通过（ad-hoc 签名通常仍可本机运行）"
+    note "提示          : ad-hoc 签名无法通过 Gatekeeper，也不能公证；发布请用 --sign-identity 指定 Developer ID。"
+  else
+    note "==> Developer ID 代码签名"
+    note "签名身份      : ${SIGN_IDENTITY}"
+    if [[ -n "$TEAM_ID" ]]; then
+      note "Team ID       : ${TEAM_ID}"
+    fi
+    [[ -f "$CLI_ENTITLEMENTS" ]] || die "找不到 CLI entitlements：$CLI_ENTITLEMENTS"
+
+    # 先签嵌套二进制，再签外壳；不要用 --deep 签 Developer ID（会漏掉正确的
+    # entitlements/runtime 组合）。所有 Mach-O 都需要 hardened runtime + timestamp
+    # 才能公证。
+    if [[ -n "$BUNDLED_CLI_PATH" ]]; then
+      note "签名内置 CLI  : $BUNDLED_CLI_PATH"
+      codesign --force --options runtime --timestamp \
+        --entitlements "$CLI_ENTITLEMENTS" \
+        --sign "$SIGN_IDENTITY" "$BUNDLED_CLI_PATH" \
+        || die "内置 CLI 签名失败（检查钥匙串里是否有该 Developer ID 及公钥）"
+    fi
+    if [[ -n "$BUNDLED_HELPER_PATH" ]]; then
+      note "签名刻录助手  : $BUNDLED_HELPER_PATH"
+      codesign --force --options runtime --timestamp \
+        --sign "$SIGN_IDENTITY" "$BUNDLED_HELPER_PATH" \
+        || die "刻录助手签名失败"
+    fi
+    codesign --force --options runtime --timestamp \
+      --sign "$SIGN_IDENTITY" "$APP" \
+      || die "应用签名失败"
+    codesign --verify --deep --strict --verbose=2 "$APP" >/dev/null 2>&1 \
+      && note "签名校验      : ok（Developer ID + hardened runtime）" \
+      || die "codesign --verify 未通过"
+    note "下一步        : 运行 macos/scripts/notarize.sh --app \"$APP\" 提交公证并 stapling。"
   fi
 else
   note ""
