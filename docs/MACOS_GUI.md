@@ -572,6 +572,18 @@ macos/build/DiscImageStudio.app/Contents/Resources/bin/disc-burn-stream --list-d
 | 编译时出现 DiscRecording 弃用警告 | Apple 已把 DiscRecording 标记为弃用头文件 | 只是警告，不影响构建与运行；升级系统后如完全移除该框架，文件模式仍可用 `drutil` |
 | `disc-burn-stream --list-drives` 没有输出或报错 | 应用是旧包（没有内置助手），或助手启动失败 | 重新 `macos/scripts/build-app.sh`；报错时看 stderr 的 `error:` 行，无刻录机时返回空数组属正常 |
 
+## 界面语言
+
+macOS 应用跟随系统语言，目前提供 **简体中文（zh-Hans）** 与 **英文（en-US）**：
+
+- `macos/Localization/zh-Hans.lproj/Localizable.strings`：中文 identity（key 即中文源文）
+- `macos/Localization/en.lproj/Localizable.strings`：英文译文
+- `Info.plist` 的 `CFBundleLocalizations` 声明 `en` / `zh-Hans`；`build-app.sh` 会把两个 `.lproj` 复制到 `Contents/Resources`
+- SwiftUI 的 `Text("…")` / `Button("…")` 走 `LocalizedStringKey`；运行时拼接或模型返回的字符串用 `L("格式 %@", String(value))`，不要直接拼中文
+- 系统语言切换后重启应用生效；CLI 的 stdout/stderr 保持英文/原始文本，不参与界面翻译
+
+新增界面文案时，必须同时补 `en.lproj`（以及需要的 `zh-Hans` identity）；CI 的 `macos-gui` 会执行 `swift test` 与打包，本地可用 `plutil -lint` 校验 `.strings`。
+
 ## 已知限制
 
 - **实验性**：与上游发布说明一致，macOS/Linux CLI 及本图形界面均为实验性功能，行为可能随版本变化。
@@ -581,7 +593,7 @@ macos/build/DiscImageStudio.app/Contents/Resources/bin/disc-burn-stream --list-d
 - **标定需要实机刻录与拍摄**：自动化只能覆盖图案生成、矫正与拟合算法；真实盘面可见度、镜头状态与描点精度需人工确认。
 - **页面逐步对齐 Windows**：各工作流页面按 `macos/WORKFLOW.md` 与 `macos/CALIBRATION.md` 落地；标定向导依赖 UI/CLI 合并后可用，命令与字段以契约为准。
 - **刻录无法在构建机验证**：CI 与脚本只能确认助手能构建、能启动、能列出刻录机；真正的写入需要实机刻录机与空白介质，相关分支（无介质、非空白、写入中断）只能靠人工回归。
-- **仅简体中文界面**：`Package.swift` 的 `defaultLocalization` 为 `zh-Hans`，界面文案尚未提供其他语言；CLI 输出保持英文。
+- **界面语言**：跟随系统，提供简体中文与英文；CLI/Kit 返回的底层诊断信息保留原文，与 Windows 行为一致。
 - **无公证、ad-hoc 签名**：只保证完整性，不提供开发者身份验证；首次运行需要手动放行。
 - **图标为放大生成**：源图是 256×256 的 `src/DiscImageStudio.App/Assets/DiscImageStudio-256.png`，512/1024 由 `sips` 放大，高分辨率下会略显模糊。提供 1024×1024 源图即可改善。
 - **CLI 与主机架构需匹配**：内置的 CLI 是发布时确定 RID 的单文件，Apple Silicon 与 Intel 需要各自构建；通用二进制（universal）暂未提供。

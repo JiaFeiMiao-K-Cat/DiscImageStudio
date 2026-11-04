@@ -4,7 +4,7 @@ import DiscImageStudioKit
 
 /// 通用任务结果卡：退出码、耗时、输出路径、stderr 尾部与 PNG 预览。
 struct ResultView: View {
-    var title: String = "结果"
+    var title: String = L("结果")
     let result: CliResult?
     let outputURL: URL?
     var intendedOutputURL: URL?
@@ -24,7 +24,7 @@ struct ResultView: View {
             VStack(alignment: .leading, spacing: Spacing.m) {
                 CardHeader(title, systemImage: "checkmark.seal") {
                     Chip(
-                        text: result.succeeded ? "成功" : (wasCancelled ? "已取消" : "失败"),
+                        text: result.succeeded ? L("成功") : (wasCancelled ? L("已取消") : L("失败")),
                         systemImage: result.succeeded
                             ? "checkmark.circle.fill"
                             : (wasCancelled ? "stop.circle.fill" : "xmark.circle.fill"),
@@ -34,7 +34,7 @@ struct ResultView: View {
 
                 Grid(alignment: .leading, horizontalSpacing: Spacing.xl, verticalSpacing: Spacing.xs) {
                     GridRow(alignment: .firstTextBaseline) {
-                        metricLabel("退出码")
+                        metricLabel(L("退出码"))
                         HStack(spacing: Spacing.xs) {
                             Text("\(result.exitCode)")
                                 .font(Typography.monoSmall)
@@ -45,13 +45,13 @@ struct ResultView: View {
                         }
                     }
                     GridRow(alignment: .firstTextBaseline) {
-                        metricLabel("总耗时")
+                        metricLabel(L("总耗时"))
                         Text(Formatting.duration(result.duration))
                             .font(.system(size: 11.5))
                     }
                     if let cliLabel {
                         GridRow(alignment: .firstTextBaseline) {
-                            metricLabel("运行方式")
+                            metricLabel(L("运行方式"))
                             Text(cliLabel)
                                 .font(.system(size: 11.5))
                                 .foregroundStyle(.secondary)
@@ -59,7 +59,7 @@ struct ResultView: View {
                     }
                     if let summary, !summary.isEmpty {
                         GridRow(alignment: .firstTextBaseline) {
-                            metricLabel("最近输出")
+                            metricLabel(L("最近输出"))
                             Text(summary)
                                 .font(Typography.monoSmall)
                                 .foregroundStyle(.secondary)
@@ -83,16 +83,16 @@ struct ResultView: View {
     }
 
     private func exitDescription(_ result: CliResult) -> String {
-        if wasCancelled { return "任务被取消" }
+        if wasCancelled { return L("任务被取消") }
         switch result.exitCode {
-        case 0: return "命令执行成功"
-        case -1: return "CLI 无法启动"
-        default: return "命令返回非零退出码"
+        case 0: return L("命令执行成功")
+        case -1: return L("CLI 无法启动")
+        default: return L("命令返回非零退出码")
         }
     }
 
     private func metricLabel(_ text: String) -> some View {
-        Text(text)
+        Text(L(text))
             .font(Typography.caption)
             .foregroundStyle(.secondary)
             .frame(width: 64, alignment: .leading)

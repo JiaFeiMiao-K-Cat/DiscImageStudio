@@ -100,7 +100,7 @@ struct CalibrationCanvas: View {
                     zoom = max(0.3, zoom - 0.1)
                 } label: { Image(systemName: "minus") }
                 .buttonStyle(.borderless)
-                .help("缩小")
+                .help(L("缩小"))
 
                 Text("\(Int((zoom * 100).rounded()))%")
                     .font(.system(size: 10.5, design: .monospaced))
@@ -111,14 +111,14 @@ struct CalibrationCanvas: View {
                     zoom = min(6, zoom + 0.1)
                 } label: { Image(systemName: "plus") }
                 .buttonStyle(.borderless)
-                .help("放大")
+                .help(L("放大"))
 
                 Button {
                     zoom = 1
                     pan = .zero
                 } label: { Image(systemName: "arrow.counterclockwise") }
                 .buttonStyle(.borderless)
-                .help("适应窗口 / 重置视图")
+                .help(L("适应窗口 / 重置视图"))
 
                 Spacer(minLength: 0)
 
@@ -172,12 +172,12 @@ struct CalibrationCanvas: View {
 
     private var hintText: String {
         if isPhotoEditable {
-            return "拖动控制点对齐盘缘与中心孔 · 拖动空白平移"
+            return L("拖动控制点对齐盘缘与中心孔 · 拖动空白平移")
         }
         if isTraceEditable {
-            return "点击空白补点 · 拖动点修正 · Delete 删除选中点"
+            return L("点击空白补点 · 拖动点修正 · Delete 删除选中点")
         }
-        return "拖动画布平移 · 滚轮/双指缩放"
+        return L("拖动画布平移 · 滚轮/双指缩放")
     }
 
     // MARK: - 绘制

@@ -9,7 +9,7 @@ enum FilePanels {
     static func chooseInputFile(title: String, currentPath: String?) -> URL? {
         let panel = NSOpenPanel()
         panel.title = title
-        panel.prompt = "选择"
+        panel.prompt = L("选择")
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
@@ -21,7 +21,7 @@ enum FilePanels {
     static func chooseInputFolder(title: String, currentPath: String?) -> URL? {
         let panel = NSOpenPanel()
         panel.title = title
-        panel.prompt = "选择"
+        panel.prompt = L("选择")
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
@@ -30,10 +30,10 @@ enum FilePanels {
         return run(panel)
     }
 
-    static func chooseImages(title: String = "导入图片", currentPath: String? = nil) -> [URL] {
+    static func chooseImages(title: String = L("导入图片"), currentPath: String? = nil) -> [URL] {
         let panel = NSOpenPanel()
         panel.title = title
-        panel.prompt = "导入"
+        panel.prompt = L("导入")
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = true
@@ -52,7 +52,7 @@ enum FilePanels {
     ) -> URL? {
         let panel = NSSavePanel()
         panel.title = title
-        panel.prompt = "选择"
+        panel.prompt = L("选择")
         panel.canCreateDirectories = true
         panel.isExtensionHidden = false
         let types = allowedExtensions.compactMap { UTType(filenameExtension: $0) }
@@ -71,7 +71,7 @@ enum FilePanels {
     static func chooseExecutableFile(title: String) -> URL? {
         let panel = NSOpenPanel()
         panel.title = title
-        panel.prompt = "选择"
+        panel.prompt = L("选择")
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
@@ -82,7 +82,7 @@ enum FilePanels {
     static func chooseDirectory(title: String, currentPath: String?) -> URL? {
         let panel = NSOpenPanel()
         panel.title = title
-        panel.prompt = "选择"
+        panel.prompt = L("选择")
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
@@ -136,39 +136,39 @@ struct PathStatusHint: View {
         case .inputFile:
             if exists {
                 if isDirectory.boolValue {
-                    hint("这是一个目录。", systemImage: "xmark.circle.fill", tint: .orange)
+                    hint(L("这是一个目录。"), systemImage: "xmark.circle.fill", tint: .orange)
                 } else if let size = Formatting.fileSize(at: url) {
-                    hint("文件存在 · \(size)", systemImage: "checkmark.circle.fill", tint: .secondary)
+                    hint(L("文件存在 · %@", String(size)), systemImage: "checkmark.circle.fill", tint: .secondary)
                 } else {
-                    hint("文件存在", systemImage: "checkmark.circle.fill", tint: .secondary)
+                    hint(L("文件存在"), systemImage: "checkmark.circle.fill", tint: .secondary)
                 }
             } else {
-                hint("找不到这个文件。", systemImage: "exclamationmark.triangle.fill", tint: .orange)
+                hint(L("找不到这个文件。"), systemImage: "exclamationmark.triangle.fill", tint: .orange)
             }
         case .outputFile:
             if exists {
                 if isDirectory.boolValue {
-                    hint("这是一个目录，输出需要指定文件名。", systemImage: "xmark.circle.fill", tint: .orange)
+                    hint(L("这是一个目录，输出需要指定文件名。"), systemImage: "xmark.circle.fill", tint: .orange)
                 } else {
-                    hint("将覆盖已有文件", systemImage: "exclamationmark.circle", tint: .orange)
+                    hint(L("将覆盖已有文件"), systemImage: "exclamationmark.circle", tint: .orange)
                 }
             } else {
-                hint("运行后创建", systemImage: "plus.circle", tint: .secondary)
+                hint(L("运行后创建"), systemImage: "plus.circle", tint: .secondary)
             }
         case .folder:
             if exists && isDirectory.boolValue {
-                hint("目录存在", systemImage: "checkmark.circle.fill", tint: .secondary)
+                hint(L("目录存在"), systemImage: "checkmark.circle.fill", tint: .secondary)
             } else if exists {
-                hint("这不是目录。", systemImage: "xmark.circle.fill", tint: .orange)
+                hint(L("这不是目录。"), systemImage: "xmark.circle.fill", tint: .orange)
             } else {
-                hint("目录不存在。", systemImage: "exclamationmark.triangle.fill", tint: .orange)
+                hint(L("目录不存在。"), systemImage: "exclamationmark.triangle.fill", tint: .orange)
             }
         }
     }
 
     private func hint(_ text: String, systemImage: String, tint: Color) -> some View {
         Label {
-            Text(text)
+            Text(L(text))
         } icon: {
             Image(systemName: systemImage)
         }

@@ -9,7 +9,7 @@ struct NewProjectSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var family: DiscFamily
     @State private var selectedPresetID: String
-    @State private var name: String = "未命名工程"
+    @State private var name: String = L("未命名工程")
     @State private var projectDirectory: URL
     @State private var outputDirectory: URL
     @State private var errorMessage: String?
@@ -41,7 +41,7 @@ struct NewProjectSheet: View {
     }
 
     private var safeFileName: String {
-        let base = trimmedName.isEmpty ? "未命名工程" : trimmedName
+        let base = trimmedName.isEmpty ? L("未命名工程") : trimmedName
         return base
             .replacingOccurrences(of: "/", with: "-")
             .replacingOccurrences(of: ":", with: "-")
@@ -69,12 +69,12 @@ struct NewProjectSheet: View {
                     .font(.system(size: 18, weight: .semibold))
                 Spacer()
                 if app.usingFallbackPresets {
-                    Chip(text: "内置兜底预设", systemImage: "exclamationmark.triangle", tint: .orange)
+                    Chip(text: L("内置兜底预设"), systemImage: "exclamationmark.triangle", tint: .orange)
                 }
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                FieldLabel("盘型")
+                FieldLabel(L("盘型"))
                 SegmentedControl(
                     items: DiscFamily.allCases.map {
                         .init(id: $0, title: $0.familyLabel, systemImage: "opticaldisc")
@@ -92,10 +92,10 @@ struct NewProjectSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                FieldLabel("盘片预设")
+                FieldLabel(L("盘片预设"))
                 Picker("盘片预设", selection: $selectedPresetID) {
                     ForEach(presets) { preset in
-                        Text(preset.displayName).tag(preset.id)
+                        Text(L(preset.displayName)).tag(preset.id)
                     }
                 }
                 .labelsHidden()
@@ -110,33 +110,33 @@ struct NewProjectSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                FieldLabel("工程名")
+                FieldLabel(L("工程名"))
                 TextField("工程名", text: $name)
                     .textFieldStyle(.roundedBorder)
             }
 
             pathRow(
-                label: "保存位置",
+                label: L("保存位置"),
                 value: projectDirectory,
-                detail: "工程文件：\(Formatting.abbreviatedPath(projectURL.path))"
+                detail: L("工程文件：%@", String(Formatting.abbreviatedPath(projectURL.path)))
             ) {
-                chooseDirectory(title: "选择工程保存位置", current: projectDirectory) { projectDirectory = $0 }
+                chooseDirectory(title: L("选择工程保存位置"), current: projectDirectory) { projectDirectory = $0 }
             }
 
             pathRow(
-                label: "输出位置",
+                label: L("输出位置"),
                 value: outputDirectory,
-                detail: "首次输出：\(Formatting.abbreviatedPath(outputURL.path))"
+                detail: L("首次输出：%@", String(Formatting.abbreviatedPath(outputURL.path)))
             ) {
-                chooseDirectory(title: "选择输出位置", current: outputDirectory) { outputDirectory = $0 }
+                chooseDirectory(title: L("选择输出位置"), current: outputDirectory) { outputDirectory = $0 }
             }
 
             if let preset = selectedPreset {
                 HStack(spacing: Spacing.xs) {
                     Chip(text: "\(format(preset.geometry.innerRadiusMm))–\(format(preset.geometry.outerRadiusMm)) mm", systemImage: "ruler")
-                    Chip(text: "\(preset.geometry.sectors) 扇区", systemImage: "square.stack.3d.up")
+                    Chip(text: L("%@ 扇区", String(preset.geometry.sectors)), systemImage: "square.stack.3d.up")
                     if family == .bd {
-                        Chip(text: "BD-R 单层", systemImage: "opticaldisc")
+                        Chip(text: L("BD-R 单层"), systemImage: "opticaldisc")
                     }
                 }
             }
@@ -202,23 +202,23 @@ struct NewProjectSheet: View {
 
     private func create() {
         guard let preset = selectedPreset else {
-            errorMessage = "请选择盘片预设。"
+            errorMessage = L("请选择盘片预设。")
             return
         }
         guard !trimmedName.isEmpty else {
-            errorMessage = "工程名不能为空。"
+            errorMessage = L("工程名不能为空。")
             return
         }
         let fileManager = FileManager.default
         if fileManager.fileExists(atPath: projectURL.path) {
-            errorMessage = "工程文件已存在，请改名或选择其他保存位置。"
+            errorMessage = L("工程文件已存在，请改名或选择其他保存位置。")
             return
         }
         do {
             try fileManager.createDirectory(at: projectDirectory, withIntermediateDirectories: true)
             try fileManager.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
         } catch {
-            errorMessage = "无法创建目录：\(error.localizedDescription)"
+            errorMessage = L("无法创建目录：%@", String(error.localizedDescription))
             return
         }
         let created = app.createProject(
@@ -231,7 +231,7 @@ struct NewProjectSheet: View {
         if created {
             dismiss()
         } else {
-            errorMessage = app.projectError ?? "创建工程失败。"
+            errorMessage = app.projectError ?? L("创建工程失败。")
         }
     }
 

@@ -24,7 +24,7 @@ struct ExportView: View {
                 outputCard
                 if project.task.kind == .export, let result = project.task.lastResult {
                     ResultView(
-                        title: "导出结果",
+                        title: L("导出结果"),
                         result: result,
                         outputURL: project.artifactDisplayURL,
                         intendedOutputURL: project.exportOutputURL,
@@ -62,7 +62,7 @@ struct ExportView: View {
     // MARK: - 源图
 
     private var sourceCard: some View {
-        SectionCard("源图片", systemImage: "photo") {
+        SectionCard(L("源图片"), systemImage: "photo") {
             HStack(spacing: 10) {
                 Image(systemName: "square.stack.3d.down.right")
                     .font(.system(size: 14))
@@ -93,7 +93,7 @@ struct ExportView: View {
     // MARK: - 输出
 
     private var outputCard: some View {
-        SectionCard("输出文件", systemImage: "folder") {
+        SectionCard(L("输出文件"), systemImage: "folder") {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     FieldLabel(outputLabel)
@@ -135,7 +135,7 @@ struct ExportView: View {
 
                 if project.family != .cd || isCdDataMode {
                     VStack(alignment: .leading, spacing: 4) {
-                        FieldLabel("卷标")
+                        FieldLabel(L("卷标"))
                         TextField("卷标", text: Binding(
                             get: { project.document.outputs.volumeLabel },
                             set: { project.setVolumeLabel($0) }
@@ -147,14 +147,14 @@ struct ExportView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    FieldLabel("随盘文件（可选）")
+                    FieldLabel(L("随盘文件（可选）"))
                     CompactPathField(
-                        label: "文件夹",
+                        label: L("文件夹"),
                         path: project.document.outputs.dataDirectory,
-                        placeholder: "未选择（整盘绘制）",
+                        placeholder: L("未选择（整盘绘制）"),
                         onBrowse: {
                             if let url = FilePanels.chooseInputFolder(
-                                title: "选择随盘文件目录",
+                                title: L("选择随盘文件目录"),
                                 currentPath: project.document.outputs.dataDirectory
                             ) {
                                 project.setDataDirectory(url.path)
@@ -165,8 +165,8 @@ struct ExportView: View {
                     if project.document.outputs.hasBundledFiles {
                         SegmentedControl(
                             items: [
-                                .init(id: false, title: "内圈", systemImage: "circle.dotted"),
-                                .init(id: true, title: "外圈", systemImage: "circle"),
+                                .init(id: false, title: L("内圈"), systemImage: "circle.dotted"),
+                                .init(id: true, title: L("外圈"), systemImage: "circle"),
                             ],
                             selection: Binding(
                                 get: { project.document.outputs.filesAtOuterRing },
@@ -221,19 +221,19 @@ struct ExportView: View {
 
     private var outputLabel: String {
         switch project.family {
-        case .cd: return isCdDataMode ? "输出 ISO" : "输出音轨（WAV / RAW）"
-        case .dvd, .bd: return "输出 ISO"
+        case .cd: return isCdDataMode ? L("输出 ISO") : L("输出音轨（WAV / RAW）")
+        case .dvd, .bd: return L("输出 ISO")
         }
     }
 
     private var outputHint: String? {
         let path = project.document.outputs.outputPath
         if path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return "请选择输出位置。"
+            return L("请选择输出位置。")
         }
         let ext = (path as NSString).pathExtension.lowercased()
         if !ext.isEmpty && ext != expectedExtension {
-            return "当前盘型/模式预期扩展名为 .\(expectedExtension)，当前是 .\(ext)。"
+            return L("当前盘型/模式预期扩展名为 .%@，当前是 .%@。", String(expectedExtension), String(ext))
         }
         return nil
     }
@@ -242,20 +242,20 @@ struct ExportView: View {
         switch project.family {
         case .cd:
             return project.document.outputs.hasBundledFiles
-                ? "已选择随盘文件：生成 Mode 1 数据 ISO，文件写入内/外圈；输出扩展名应为 .iso。"
-                : "未选择随盘文件：生成 CD-DA 音轨（WAV/RAW）；输出扩展名应为 .wav 或 .raw。"
+                ? L("已选择随盘文件：生成 Mode 1 数据 ISO，文件写入内/外圈；输出扩展名应为 .iso。")
+                : L("未选择随盘文件：生成 CD-DA 音轨（WAV/RAW）；输出扩展名应为 .wav 或 .raw。")
         case .dvd:
-            return "生成 DVD ISO；未选择随盘文件时填充整盘，选择后把文件写入内/外圈。"
+            return L("生成 DVD ISO；未选择随盘文件时填充整盘，选择后把文件写入内/外圈。")
         case .bd:
-            return "生成 BD-R ISO；未选择随盘文件时整盘绘制，选择后写入 UDF 文件系统。"
+            return L("生成 BD-R ISO；未选择随盘文件时整盘绘制，选择后写入 UDF 文件系统。")
         }
     }
 
     private var generateTitle: String {
         switch project.family {
-        case .cd: return isCdDataMode ? "生成数据 ISO" : "生成音轨"
-        case .dvd: return "生成 DVD 镜像"
-        case .bd: return "生成蓝光镜像"
+        case .cd: return isCdDataMode ? L("生成数据 ISO") : L("生成音轨")
+        case .dvd: return L("生成 DVD 镜像")
+        case .bd: return L("生成蓝光镜像")
         }
     }
 
@@ -273,7 +273,7 @@ struct ExportView: View {
             ? project.defaultOutputDirectory.map { "\($0)/\(name).\(expectedExtension)" }
             : current
         guard let url = FilePanels.chooseOutputFile(
-            title: "选择输出文件",
+            title: L("选择输出文件"),
             currentPath: suggested,
             defaultDirectory: project.defaultOutputDirectory,
             allowedExtensions: [expectedExtension]

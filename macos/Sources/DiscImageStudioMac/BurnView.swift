@@ -34,8 +34,8 @@ struct BurnView: View {
                     LogConsoleView(
                         lines: burnModel.logLines,
                         isRunning: burnModel.isBurning,
-                        title: "刻录日志",
-                        emptyHint: "刻录开始后，drutil 的日志会逐行显示在这里。",
+                        title: L("刻录日志"),
+                        emptyHint: L("刻录开始后，drutil 的日志会逐行显示在这里。"),
                         onClear: { burnModel.clearLog() }
                     )
                     resultCard
@@ -92,8 +92,8 @@ struct BurnView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
-                Chip(text: "仅写入空白盘", systemImage: "checkmark.shield", tint: .green)
-                Chip(text: "不可撤销", systemImage: "exclamationmark.triangle", tint: .orange)
+                Chip(text: L("仅写入空白盘"), systemImage: "checkmark.shield", tint: .green)
+                Chip(text: L("不可撤销"), systemImage: "exclamationmark.triangle", tint: .orange)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -103,7 +103,7 @@ struct BurnView: View {
 
     private var modeCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            CardHeader("刻录方式", systemImage: "slider.horizontal.3", subtitle: "文件模式稳定可用；流式模式为实验性预留。")
+            CardHeader(L("刻录方式"), systemImage: "slider.horizontal.3", subtitle: L("文件模式稳定可用；流式模式为实验性预留。"))
 
             HStack(spacing: 2) {
                 modeButton(.file, identifier: "burn-mode-file")
@@ -160,9 +160,9 @@ struct BurnView: View {
     private var modeDescription: String {
         switch burnModel.mode {
         case .file:
-            return "调用 /usr/bin/drutil：音频 CD 会先把 WAV 放进临时目录再用 burn -audio 写入；数据盘直接 burn 镜像文件。"
+            return L("调用 /usr/bin/drutil：音频 CD 会先把 WAV 放进临时目录再用 burn -audio 写入；数据盘直接 burn 镜像文件。")
         case .stream:
-            return "流式模式用当前工程直接生成数据，经 DiscRecording 的 DRTrack producer 写入刻录机，不落完整镜像。当前支持 CD 音频与 BD 数据盘，实验性。"
+            return L("流式模式用当前工程直接生成数据，经 DiscRecording 的 DRTrack producer 写入刻录机，不落完整镜像。当前支持 CD 音频与 BD 数据盘，实验性。")
         }
     }
 
@@ -170,7 +170,7 @@ struct BurnView: View {
 
     private var driveCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            CardHeader("光盘刻录机", systemImage: "externaldrive") {
+            CardHeader(L("光盘刻录机"), systemImage: "externaldrive") {
                 HStack(spacing: Spacing.xs) {
                     if burnModel.isLoadingDrives {
                         ProgressView()
@@ -219,13 +219,13 @@ struct BurnView: View {
                 if let drive = burnModel.selectedDrive {
                     Grid(alignment: .leading, horizontalSpacing: Spacing.l, verticalSpacing: Spacing.xxs) {
                         GridRow(alignment: .firstTextBaseline) {
-                            driveLabel("索引")
+                            driveLabel(L("索引"))
                             Text("drutil -drive \(drive.index)")
                                 .font(Typography.monoSmall)
                                 .foregroundStyle(.secondary)
                         }
                         GridRow(alignment: .firstTextBaseline) {
-                            driveLabel("支持级别")
+                            driveLabel(L("支持级别"))
                             Text(drive.supportLevel.isEmpty ? "未知" : drive.supportLevel)
                                 .font(.system(size: 11.5))
                         }
@@ -252,7 +252,7 @@ struct BurnView: View {
     }
 
     private func driveLabel(_ text: String) -> some View {
-        Text(text)
+        Text(L(text))
             .font(Typography.caption)
             .foregroundStyle(.secondary)
             .frame(width: 64, alignment: .leading)
@@ -262,7 +262,7 @@ struct BurnView: View {
 
     private var mediaCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            CardHeader("介质状态", systemImage: "opticaldisc") {
+            CardHeader(L("介质状态"), systemImage: "opticaldisc") {
                 HStack(spacing: Spacing.xs) {
                     if burnModel.isLoadingStatus {
                         ProgressView()
@@ -287,7 +287,7 @@ struct BurnView: View {
                     .foregroundStyle(burnModel.mediaStatus == nil ? .secondary : .primary)
                 Spacer(minLength: 0)
                 if let status = burnModel.mediaStatus {
-                    Chip(text: status.isProbablyBlank ? "空白" : "非空白", systemImage: "circle.fill", tint: burnModel.statusColor)
+                    Chip(text: status.isProbablyBlank ? L("空白") : L("非空白"), systemImage: "circle.fill", tint: burnModel.statusColor)
                     if let mediaType = status.mediaType {
                         Chip(text: mediaType, systemImage: "opticaldisc")
                     }
@@ -297,30 +297,30 @@ struct BurnView: View {
             if let status = burnModel.mediaStatus {
                 Grid(alignment: .leading, horizontalSpacing: Spacing.l, verticalSpacing: Spacing.xxs) {
                     GridRow(alignment: .firstTextBaseline) {
-                        mediaLabel("类型")
-                        Text(status.mediaType ?? "未知")
+                        mediaLabel(L("类型"))
+                        Text(status.mediaType ?? L("未知"))
                             .font(Typography.monoSmall)
                     }
                     GridRow(alignment: .firstTextBaseline) {
-                        mediaLabel("空白")
+                        mediaLabel(L("空白"))
                         Text(blankDescription(status))
                             .font(.system(size: 11.5))
                     }
                     GridRow(alignment: .firstTextBaseline) {
-                        mediaLabel("轨道/会话")
+                        mediaLabel(L("轨道/会话"))
                         Text(status.hasTracks ? "检测到已有轨道或会话" : "没有检测到轨道")
                             .font(.system(size: 11.5))
                             .foregroundStyle(status.hasTracks ? .orange : .secondary)
                     }
                     GridRow(alignment: .firstTextBaseline) {
-                        mediaLabel("来源类型")
-                        Text(burnModel.sourceKind?.displayName ?? "未选择可刻录的来源")
+                        mediaLabel(L("来源类型"))
+                        Text(burnModel.sourceKind.map { L($0.displayName) } ?? L("未选择可刻录的来源"))
                             .font(.system(size: 11.5))
                             .foregroundStyle(burnModel.sourceKind == nil ? .secondary : .primary)
                     }
                 }
 
-                DisclosureGroup("drutil status 原始输出") {
+                DisclosureGroup(L("drutil status 原始输出")) {
                     Text(status.rawText.isEmpty ? "（无输出）" : status.rawText)
                         .font(Typography.monoSmall)
                         .foregroundStyle(.secondary)
@@ -344,13 +344,13 @@ struct BurnView: View {
 
     private func blankDescription(_ status: MediaStatus) -> String {
         if let indicator = status.blankIndicator {
-            return indicator ? "是（drutil 明确报告空白）" : "否（drutil 明确报告非空白）"
+            return indicator ? L("是（drutil 明确报告空白）") : L("否（drutil 明确报告非空白）")
         }
-        return status.hasTracks ? "否（检测到已有轨道）" : "可能是空白盘（无明确标记、无轨道）"
+        return status.hasTracks ? L("否（检测到已有轨道）") : L("可能是空白盘（无明确标记、无轨道）")
     }
 
     private func mediaLabel(_ text: String) -> some View {
-        Text(text)
+        Text(L(text))
             .font(Typography.caption)
             .foregroundStyle(.secondary)
             .frame(width: 64, alignment: .leading)
@@ -361,9 +361,9 @@ struct BurnView: View {
     private var sourceCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
             CardHeader(
-                "来源文件",
+                L("来源文件"),
                 systemImage: "doc",
-                subtitle: "支持 .wav / .aif（音频 CD）与 .iso / .dmg / .cue / .bin / .toc（数据盘）。"
+                subtitle: L("支持 .wav / .aif（音频 CD）与 .iso / .dmg / .cue / .bin / .toc（数据盘）。")
             ) {
                 if let latest = model.latestBurnableOutputURL,
                    latest.path != burnModel.sourceURL?.path {
@@ -380,7 +380,7 @@ struct BurnView: View {
                     .textFieldStyle(.roundedBorder)
                     .font(Typography.monoSmall)
                     .disabled(burnModel.isBurning)
-                    .accessibilityLabel("要刻录的源文件")
+                    .accessibilityLabel(L("要刻录的源文件"))
                 Button("选择…") {
                     chooseSource()
                 }
@@ -396,16 +396,16 @@ struct BurnView: View {
                     .buttonStyle(.borderless)
                     .controlSize(.small)
                     .disabled(burnModel.isBurning)
-                    .help("清除")
+                    .help(L("清除"))
                 }
             }
 
             if !burnModel.sourcePath.isEmpty {
                 HStack(spacing: Spacing.xs) {
                     if let kind = burnModel.sourceKind {
-                        Chip(text: kind.displayName, systemImage: "opticaldisc", tint: DesignSystem.accent(colorScheme))
+                        Chip(text: L(kind.displayName), systemImage: "opticaldisc", tint: DesignSystem.accent(colorScheme))
                     } else {
-                        Chip(text: "不支持的文件类型", systemImage: "xmark.circle.fill", tint: .orange)
+                        Chip(text: L("不支持的文件类型"), systemImage: "xmark.circle.fill", tint: .orange)
                     }
                     if let detail = burnModel.sourceDetail {
                         Text(detail)
@@ -418,7 +418,7 @@ struct BurnView: View {
             }
 
             if let latest = model.latestBurnableOutputURL, burnModel.sourceURL == nil {
-                Text("提示：最近生成的可刻录文件是 \(Formatting.abbreviatedPath(latest.path))。")
+                Text(L("提示：最近生成的可刻录文件是 %@。", String(Formatting.abbreviatedPath(latest.path))))
                     .font(Typography.caption2)
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -439,7 +439,7 @@ struct BurnView: View {
 
     private var actionCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            CardHeader("开始刻录", systemImage: "play.circle")
+            CardHeader(L("开始刻录"), systemImage: "play.circle")
 
             HStack(spacing: Spacing.m) {
                 if burnModel.isBurning {
@@ -463,7 +463,7 @@ struct BurnView: View {
                     .tint(DesignSystem.accent(colorScheme))
                     .disabled(!burnModel.canBurn)
                     .accessibilityIdentifier("burn-disc")
-                    .help(burnModel.canBurn ? "打开确认弹层后开始刻录" : (burnModel.blockReason ?? ""))
+                    .help(burnModel.canBurn ? L("打开确认弹层后开始刻录") : (burnModel.blockReason ?? ""))
 
                     if burnModel.isStreamAvailable == false, burnModel.mode == .stream {
                         Text("流式刻录助手不可用")
@@ -503,15 +503,15 @@ struct BurnView: View {
     private var streamCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
             CardHeader(
-                "从当前工程生成并刻录",
+                L("从当前工程生成并刻录"),
                 systemImage: "waveform.path.ecg",
-                subtitle: "生成数据直接写入刻录机，不落完整镜像。"
+                subtitle: L("生成数据直接写入刻录机，不落完整镜像。")
             ) {
-                Chip(text: "实验性", systemImage: "flask", tint: .orange)
+                Chip(text: L("实验性"), systemImage: "flask", tint: .orange)
             }
 
             if !burnModel.isStreamAvailable {
-                Text(burnModel.streamUnavailableReason ?? "流式刻录助手不可用。")
+                Text(burnModel.streamUnavailableReason ?? L("流式刻录助手不可用。"))
                     .font(Typography.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -531,27 +531,27 @@ struct BurnView: View {
             } else if let project = burnModel.streamProject {
                 Grid(alignment: .leading, horizontalSpacing: Spacing.l, verticalSpacing: Spacing.xs) {
                     GridRow(alignment: .firstTextBaseline) {
-                        streamLabel("工程")
+                        streamLabel(L("工程"))
                         Text(project.document.name)
                             .font(.system(size: 12))
                     }
                     GridRow(alignment: .firstTextBaseline) {
-                        streamLabel("盘型")
+                        streamLabel(L("盘型"))
                         Text(streamFamilyName)
                             .font(.system(size: 12))
                     }
                     GridRow(alignment: .firstTextBaseline) {
-                        streamLabel("流式类型")
-                        Text(burnModel.streamKind?.displayName ?? "—")
+                        streamLabel(L("流式类型"))
+                        Text(burnModel.streamKind.map { L($0.displayName) } ?? "—")
                             .font(.system(size: 12))
                     }
                     GridRow(alignment: .firstTextBaseline) {
-                        streamLabel("扇区")
+                        streamLabel(L("扇区"))
                         Text(burnModel.streamSectors.map { "\($0)" } ?? "—")
                             .font(Typography.monoSmall)
                     }
                     GridRow(alignment: .firstTextBaseline) {
-                        streamLabel("预计数据")
+                        streamLabel(L("预计数据"))
                         Text(streamExpectedBytes)
                             .font(Typography.monoSmall)
                             .foregroundStyle(.secondary)
@@ -579,7 +579,7 @@ struct BurnView: View {
                     }
                     .buttonStyle(.borderless)
                     .disabled(burnModel.isStreamBurning)
-                    .help("刷新流式刻录机与介质")
+                    .help(L("刷新流式刻录机与介质"))
                 }
 
                 if !burnModel.streamDrives.isEmpty {
@@ -641,8 +641,8 @@ struct BurnView: View {
                 LogConsoleView(
                     lines: burnModel.streamLogLines,
                     isRunning: burnModel.isStreamBurning,
-                    title: "流式刻录日志",
-                    emptyHint: "开始后，生成与写入的日志会逐行显示在这里。",
+                    title: L("流式刻录日志"),
+                    emptyHint: L("开始后，生成与写入的日志会逐行显示在这里。"),
                     onClear: { burnModel.clearStreamLog() }
                 )
                 streamResultSection
@@ -683,17 +683,17 @@ struct BurnView: View {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     HStack(spacing: Spacing.xs) {
                         Chip(
-                            text: result.succeeded ? "成功" : (burnModel.streamWasCancelled ? "已取消" : "失败"),
+                            text: result.succeeded ? L("成功") : (burnModel.streamWasCancelled ? L("已取消") : L("失败")),
                             systemImage: result.succeeded ? "checkmark.circle.fill" : (burnModel.streamWasCancelled ? "stop.circle.fill" : "xmark.circle.fill"),
                             tint: result.succeeded ? .green : (burnModel.streamWasCancelled ? .orange : .red)
                         )
                         if let kind = burnModel.streamPlan?.kind {
-                            Chip(text: kind.displayName, systemImage: "opticaldisc")
+                            Chip(text: L(kind.displayName), systemImage: "opticaldisc")
                         }
                     }
                     Text(result.succeeded
-                         ? "流式刻录完成，用时 \(Formatting.duration(result.duration))；请等待光盘弹出。"
-                         : "流式刻录未完成（助手退出码 \(result.helperExitCode)），请查看日志。")
+                         ? L("流式刻录完成，用时 %@；请等待光盘弹出。", String(Formatting.duration(result.duration)))
+                         : L("流式刻录未完成（助手退出码 %@），请查看日志。", String(result.helperExitCode)))
                         .font(Typography.caption)
                         .foregroundStyle(result.succeeded ? .green : .red)
                         .fixedSize(horizontal: false, vertical: true)
@@ -706,7 +706,7 @@ struct BurnView: View {
         switch burnModel.streamProject?.document.discFamily {
         case .cd: return "CD"
         case .dvd: return "DVD"
-        case .bd: return "蓝光"
+        case .bd: return L("蓝光")
         case nil: return "—"
         }
     }
@@ -719,10 +719,10 @@ struct BurnView: View {
 
     private var streamProgressText: String {
         if burnModel.isStreamBurning {
-            return burnModel.streamProgress.map { "\(Int(($0 * 100).rounded()))%" } ?? "进行中"
+            return burnModel.streamProgress.map { "\(Int(($0 * 100).rounded()))%" } ?? L("进行中")
         }
         if let result = burnModel.streamResult {
-            return result.succeeded ? "100%" : "中断"
+            return result.succeeded ? "100%" : L("中断")
         }
         return "—"
     }
@@ -735,7 +735,7 @@ struct BurnView: View {
     }
 
     private func streamLabel(_ text: String) -> some View {
-        Text(text)
+        Text(L(text))
             .font(Typography.caption)
             .foregroundStyle(.secondary)
             .frame(width: 64, alignment: .leading)
@@ -745,10 +745,10 @@ struct BurnView: View {
 
     private var progressCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            CardHeader("刻录进度", systemImage: "flame") {
+            CardHeader(L("刻录进度"), systemImage: "flame") {
                 if let result = burnModel.lastResult {
                     Chip(
-                        text: result.succeeded ? "成功" : (burnModel.wasCancelled ? "已取消" : "失败"),
+                        text: result.succeeded ? L("成功") : (burnModel.wasCancelled ? L("已取消") : L("失败")),
                         systemImage: result.succeeded ? "checkmark.circle.fill" : (burnModel.wasCancelled ? "stop.circle.fill" : "xmark.circle.fill"),
                         tint: result.succeeded ? .green : (burnModel.wasCancelled ? .orange : .red)
                     )
@@ -774,15 +774,15 @@ struct BurnView: View {
             }
 
             if burnModel.isBurning {
-                Text(burnModel.stage ?? "正在调用 drutil…")
+                Text(burnModel.stage ?? L("正在调用 drutil…"))
                     .font(Typography.caption2)
                     .foregroundStyle(.tertiary)
             } else if let result = burnModel.lastResult {
                 Text(burnModel.wasCancelled
-                     ? "已取消（退出码 \(result.exitCode)）。"
+                     ? L("已取消（退出码 %@）。", String(result.exitCode))
                      : (result.succeeded
-                        ? "刻录完成，用时 \(Formatting.duration(result.duration))；光盘已弹出。"
-                        : "刻录失败，退出码 \(result.exitCode)，用时 \(Formatting.duration(result.duration))。"))
+                        ? L("刻录完成，用时 %@；光盘已弹出。", String(Formatting.duration(result.duration)))
+                        : L("刻录失败，退出码 %@，用时 %@。", String(result.exitCode), String(Formatting.duration(result.duration)))))
                     .font(Typography.caption)
                     .foregroundStyle(result.succeeded ? .green : .red)
             }
@@ -793,10 +793,10 @@ struct BurnView: View {
 
     private var progressText: String {
         if burnModel.isBurning {
-            return burnModel.progress.map { "\(Int(($0 * 100).rounded()))%" } ?? "进行中"
+            return burnModel.progress.map { "\(Int(($0 * 100).rounded()))%" } ?? L("进行中")
         }
         if let result = burnModel.lastResult {
-            return result.succeeded ? "100%" : "中断"
+            return result.succeeded ? "100%" : L("中断")
         }
         return "—"
     }
@@ -805,29 +805,29 @@ struct BurnView: View {
     private var resultCard: some View {
         if let result = burnModel.lastResult {
             VStack(alignment: .leading, spacing: Spacing.m) {
-                CardHeader("刻录结果", systemImage: "checkmark.seal")
+                CardHeader(L("刻录结果"), systemImage: "checkmark.seal")
                 Grid(alignment: .leading, horizontalSpacing: Spacing.l, verticalSpacing: Spacing.xs) {
                     GridRow(alignment: .firstTextBaseline) {
-                        resultLabel("退出码")
+                        resultLabel(L("退出码"))
                         Text("\(result.exitCode)")
                             .font(Typography.monoSmall)
                             .foregroundStyle(result.succeeded ? .green : .red)
                     }
                     GridRow(alignment: .firstTextBaseline) {
-                        resultLabel("耗时")
+                        resultLabel(L("耗时"))
                         Text(Formatting.duration(result.duration))
                             .font(.system(size: 11.5))
                     }
                     if let kind = burnModel.plan?.kind ?? burnModel.sourceKind {
                         GridRow(alignment: .firstTextBaseline) {
-                            resultLabel("刻录方式")
-                            Text(kind.displayName)
+                            resultLabel(L("刻录方式"))
+                            Text(L(kind.displayName))
                                 .font(.system(size: 11.5))
                         }
                     }
                     if let drive = burnModel.selectedDrive {
                         GridRow(alignment: .firstTextBaseline) {
-                            resultLabel("刻录机")
+                            resultLabel(L("刻录机"))
                             Text(drive.displayName)
                                 .font(.system(size: 11.5))
                                 .foregroundStyle(.secondary)
@@ -835,8 +835,8 @@ struct BurnView: View {
                     }
                 }
                 Text(result.succeeded
-                     ? "请取出光盘并在其他设备上验证内容。"
-                     : "可展开上方「刻录日志」查看 drutil 的完整输出。")
+                     ? L("请取出光盘并在其他设备上验证内容。")
+                     : L("可展开上方「刻录日志」查看 drutil 的完整输出。"))
                     .font(Typography.caption2)
                     .foregroundStyle(.tertiary)
             }
@@ -846,7 +846,7 @@ struct BurnView: View {
     }
 
     private func resultLabel(_ text: String) -> some View {
-        Text(text)
+        Text(L(text))
             .font(Typography.caption)
             .foregroundStyle(.secondary)
             .frame(width: 64, alignment: .leading)
@@ -856,7 +856,7 @@ struct BurnView: View {
 
     private func chooseSource() {
         guard let url = FilePanels.chooseInputFile(
-            title: "选择要刻录的文件",
+            title: L("选择要刻录的文件"),
             currentPath: burnModel.sourcePath
         ) else { return }
         burnModel.setSourcePath(url.path)
@@ -890,10 +890,10 @@ struct BurnConfirmationSheet: View {
             }
 
             VStack(alignment: .leading, spacing: Spacing.xs) {
-                summaryRow("来源", burnModel.sourceURL.map { Formatting.abbreviatedPath($0.path) } ?? "未选择")
-                summaryRow("刻录方式", burnModel.sourceKind?.displayName ?? "未知")
-                summaryRow("刻录机", burnModel.selectedDrive?.displayName ?? "未选择")
-                summaryRow("介质", burnModel.mediaStatusSummary)
+                summaryRow(L("来源"), burnModel.sourceURL.map { Formatting.abbreviatedPath($0.path) } ?? L("未选择"))
+                summaryRow(L("刻录方式"), burnModel.sourceKind.map { L($0.displayName) } ?? L("未知"))
+                summaryRow(L("刻录机"), burnModel.selectedDrive?.displayName ?? L("未选择"))
+                summaryRow(L("介质"), burnModel.mediaStatusSummary)
             }
             .padding(Spacing.m)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -932,7 +932,7 @@ struct BurnConfirmationSheet: View {
 
     private func summaryRow(_ label: String, _ value: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
-            Text(label)
+            Text(L(label))
                 .font(Typography.caption)
                 .foregroundStyle(.secondary)
                 .frame(width: 64, alignment: .leading)

@@ -21,6 +21,7 @@
 - macOS 构建支持 Developer ID 签名与 Apple 公证：`build-app.sh --sign-identity` 对 CLI/助手/应用分别签名（hardened runtime + timestamp），`notarize.sh` 完成 notarytool 提交、stapling 与 Gatekeeper 验证；CI 在配置证书与公证 secrets 后自动产出签名并公证的 zip，未配置时保持 ad-hoc。
 - macOS 打包新增拖动安装 DMG：`package-app.sh` 生成 zip + DMG（含 `/Applications` 快捷方式），DMG 用 Developer ID 签名；CI 对 `.app` 与 `.dmg` 分别公证并 stapling，上传物同时包含 zip、DMG 与校验和。
 - macOS 刻录页新增流式「生成并刻录」：CD 音频、DVD 数据（含随盘文件的混合 ISO）与 BD 数据盘可直接从当前工程生成并写入，CLI `--output -` / `solve --iso-output -` 与 `disc-burn-stream` 管道直连，带进度、日志与取消。
+- macOS GUI 支持简体中文与英文界面：文案放入 `macos/Localization/{en,zh-Hans}.lproj`，跟随系统语言；动态字符串改用 `L("格式 %@", …)`，`build-app.sh` 把 `.lproj` 打包进 `Contents/Resources`。
 
 ### English
 
@@ -41,6 +42,7 @@
 - macOS builds now support Developer ID signing and Apple notarization: `build-app.sh --sign-identity` signs the CLI, burn helper, and app separately with hardened runtime and timestamps, and `notarize.sh` runs notarytool, staples the ticket, and checks Gatekeeper. With certificate and notarization secrets configured, CI produces a signed and notarized zip; without them it stays ad-hoc.
 - macOS packaging now produces a drag-to-install DMG alongside the zip: `package-app.sh` builds both (the DMG contains an `/Applications` shortcut) and signs the DMG with Developer ID; CI notarizes and staples the `.app` and `.dmg` separately and uploads the zip, DMG, and checksums.
 - The macOS burn page now supports streaming "generate and burn": CD audio, DVD data (including hybrid ISOs with bundled files), and BD data discs are generated from the current project and written directly through `--output -` / `solve --iso-output -` and `disc-burn-stream`, with progress, logs, and cancellation.
+- The macOS GUI now supports Simplified Chinese and English UI: strings live in `macos/Localization/{en,zh-Hans}.lproj` and follow the system language; runtime strings use `L("format %@", …)`, and `build-app.sh` bundles the `.lproj` folders into `Contents/Resources`.
 
 ## [1.3.6] - 2026-11-02
 

@@ -33,7 +33,7 @@ struct SettingsView: View {
         }
         .background(DesignSystem.appBackground)
         .frame(minWidth: 560, minHeight: 520)
-        .alert("提示", isPresented: alertBinding) {
+        .alert(L("提示"), isPresented: alertBinding) {
             Button("好", role: .cancel) {}
         } message: {
             Text(alertMessage ?? "")
@@ -51,7 +51,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
             Text("设置")
                 .font(.system(size: 24, weight: .bold))
-            Text("改动会立即保存到 \(Formatting.abbreviatedPath(model.settingsFileURL.path))。")
+            Text(L("改动会立即保存到 %@。", String(Formatting.abbreviatedPath(model.settingsFileURL.path))))
                 .font(Typography.caption)
                 .foregroundStyle(.secondary)
                 .textSelection(.enabled)
@@ -71,7 +71,7 @@ struct SettingsView: View {
 
     private var cliCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            CardHeader("CLI", systemImage: "terminal", subtitle: "所有生成任务都通过 CLI 子进程执行；这里只决定使用哪一个。") {
+            CardHeader("CLI", systemImage: "terminal", subtitle: L("所有生成任务都通过 CLI 子进程执行；这里只决定使用哪一个。")) {
                 if model.isLoadingCatalog {
                     ProgressView()
                         .controlSize(.mini)
@@ -103,14 +103,14 @@ struct SettingsView: View {
                 }
                 .controlSize(.small)
                 .disabled(model.isLoadingCatalog)
-                .help("清除自定义可执行文件路径，优先使用 App 内置 CLI；没有内置时继续按顺序查找。")
+                .help(L("清除自定义可执行文件路径，优先使用 App 内置 CLI；没有内置时继续按顺序查找。"))
 
                 Button("在 PATH 中查找") {
                     Task { await model.searchPathForCli() }
                 }
                 .controlSize(.small)
                 .disabled(model.isLoadingCatalog)
-                .help("清除自定义路径与源码目录，只在内置与 PATH 中查找。")
+                .help(L("清除自定义路径与源码目录，只在内置与 PATH 中查找。"))
 
                 Spacer(minLength: 0)
 
@@ -124,12 +124,12 @@ struct SettingsView: View {
             }
 
             if let customPath = settings.customCliPath {
-                pathRow(label: "自定义 CLI", path: customPath) {
+                pathRow(label: L("自定义 CLI"), path: customPath) {
                     Task { await model.updateCustomCliPath(nil) }
                 }
             }
             if let devPath = settings.devProjectPath {
-                pathRow(label: "源码目录", path: devPath) {
+                pathRow(label: L("源码目录"), path: devPath) {
                     Task { await model.updateDevProjectPath(nil) }
                 }
             }
@@ -166,7 +166,7 @@ struct SettingsView: View {
                         .truncationMode(.middle)
                 }
                 if let version = model.toolVersion {
-                    Text("CLI 版本 \(version)")
+                    Text(L("CLI 版本 %@", String(version)))
                         .font(Typography.caption2)
                         .foregroundStyle(.tertiary)
                 }
@@ -177,9 +177,9 @@ struct SettingsView: View {
     }
 
     private var statusHeadline: String {
-        if model.isLoadingCatalog { return "正在检测 CLI…" }
-        guard let cli = model.resolvedCli else { return "未找到可用的 CLI" }
-        return "已找到 CLI · \(cli.label)"
+        if model.isLoadingCatalog { return L("正在检测 CLI…") }
+        guard let cli = model.resolvedCli else { return L("未找到可用的 CLI") }
+        return L("已找到 CLI · %@", String(cli.label))
     }
 
     private var statusDetail: String? {
@@ -189,7 +189,7 @@ struct SettingsView: View {
 
     private func pathRow(label: String, path: String, onClear: @escaping () -> Void) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
-            Text(label)
+            Text(L(label))
                 .font(Typography.caption)
                 .foregroundStyle(.secondary)
                 .frame(width: 72, alignment: .leading)
@@ -205,7 +205,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.borderless)
             .controlSize(.small)
-            .help("清除")
+            .help(L("清除"))
         }
     }
 
@@ -214,9 +214,9 @@ struct SettingsView: View {
     private var projectCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
             CardHeader(
-                "工程与缓存",
+                L("工程与缓存"),
                 systemImage: "folder.badge.gearshape",
-                subtitle: "新建工程默认保存到这里；预览/合成缓存位于 ~/Library/Caches/DiscImageStudioMac。"
+                subtitle: L("新建工程默认保存到这里；预览/合成缓存位于 ~/Library/Caches/DiscImageStudioMac。")
             )
 
             HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
@@ -232,7 +232,7 @@ struct SettingsView: View {
                 Spacer(minLength: 0)
                 Button("选择…") {
                     if let url = FilePanels.chooseDirectory(
-                        title: "选择默认工程位置",
+                        title: L("选择默认工程位置"),
                         currentPath: model.defaultProjectsDirectory.path
                     ) {
                         model.setDefaultProjectsDirectory(url)
@@ -275,7 +275,7 @@ struct SettingsView: View {
                     .font(Typography.caption)
                     .foregroundStyle(.secondary)
                     .frame(width: 92, alignment: .leading)
-                Text("\(model.recents.count) 个")
+                Text(L("%@ 个", String(model.recents.count)))
                     .font(.system(size: 11.5))
                 Spacer(minLength: 0)
                 Button("清空最近工程") {
@@ -300,9 +300,9 @@ struct SettingsView: View {
     private var outputCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
             CardHeader(
-                "默认输出目录",
+                L("默认输出目录"),
                 systemImage: "folder",
-                subtitle: "为输出文件面板提供默认目录；不会自动创建目录。"
+                subtitle: L("为输出文件面板提供默认目录；不会自动创建目录。")
             )
             HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
                 if let directory = settings.defaultOutputDirectory {
@@ -335,13 +335,13 @@ struct SettingsView: View {
 
     private var appearanceCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            CardHeader("外观", systemImage: "circle.lefthalf.filled", subtitle: "立即应用到主窗口与设置窗口。")
+            CardHeader(L("外观"), systemImage: "circle.lefthalf.filled", subtitle: L("立即应用到主窗口与设置窗口。"))
             HStack(spacing: Spacing.m) {
                 Text("外观")
                     .font(.system(size: 12.5))
                 Picker("外观", selection: appearanceBinding) {
                     ForEach(AppearanceMode.allCases, id: \.self) { mode in
-                        Text(mode.displayName).tag(mode)
+                        Text(L(mode.displayName)).tag(mode)
                     }
                 }
                 .labelsHidden()
@@ -365,7 +365,7 @@ struct SettingsView: View {
 
     private var optionsCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            CardHeader("表单", systemImage: "slider.horizontal.3")
+            CardHeader(L("表单"), systemImage: "slider.horizontal.3")
             Toggle("显示高级参数", isOn: advancedBinding)
                 .toggleStyle(.switch)
                 .font(.system(size: 12.5))
@@ -388,7 +388,7 @@ struct SettingsView: View {
 
     private var languageCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            CardHeader("语言", systemImage: "globe", subtitle: "界面文案当前仅为简体中文。")
+            CardHeader(L("语言"), systemImage: "globe", subtitle: L("界面文案当前仅为简体中文。"))
             HStack {
                 Text("界面语言")
                     .font(.system(size: 12))
@@ -406,27 +406,27 @@ struct SettingsView: View {
 
     private var catalogCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            CardHeader("盘片预设", systemImage: "square.stack.3d.up", subtitle: "通过 presets --json 读取；CLI 更新后可手动重新加载。")
+            CardHeader(L("盘片预设"), systemImage: "square.stack.3d.up", subtitle: L("通过 presets --json 读取；CLI 更新后可手动重新加载。"))
 
             Grid(alignment: .leading, horizontalSpacing: Spacing.l, verticalSpacing: Spacing.xs) {
                 GridRow(alignment: .firstTextBaseline) {
-                    catalogLabel("CLI 来源")
+                    catalogLabel(L("CLI 来源"))
                     Text(model.resolvedCli?.label ?? "未知")
                         .font(.system(size: 11.5))
                 }
                 GridRow(alignment: .firstTextBaseline) {
-                    catalogLabel("预设状态")
+                    catalogLabel(L("预设状态"))
                     Text(model.usingFallbackPresets ? "内置兜底参数" : "已从 CLI 加载")
                         .font(.system(size: 11.5))
                         .foregroundStyle(model.usingFallbackPresets ? .orange : .primary)
                 }
                 GridRow(alignment: .firstTextBaseline) {
-                    catalogLabel("内容")
+                    catalogLabel(L("内容"))
                     Text(catalogSummary)
                         .font(.system(size: 11.5))
                 }
                 GridRow(alignment: .firstTextBaseline) {
-                    catalogLabel("设置文件")
+                    catalogLabel(L("设置文件"))
                     Text(Formatting.abbreviatedPath(model.settingsFileURL.path))
                         .font(Typography.monoSmall)
                         .foregroundStyle(.secondary)
@@ -459,13 +459,13 @@ struct SettingsView: View {
 
     private var catalogSummary: String {
         if let presets = model.presets {
-            return "\(presets.presets(for: .cd).count) 个 CD · \(presets.presets(for: .dvd).count) 个 DVD · \(presets.presets(for: .bd).count) 个 BD"
+            return L("%@ 个 CD · %@ 个 DVD · %@ 个 BD", String(presets.presets(for: .cd).count), String(presets.presets(for: .dvd).count), String(presets.presets(for: .bd).count))
         }
-        return "使用内置兜底参数"
+        return L("使用内置兜底参数")
     }
 
     private func catalogLabel(_ text: String) -> some View {
-        Text(text)
+        Text(L(text))
             .font(Typography.caption)
             .foregroundStyle(.secondary)
             .frame(width: 88, alignment: .leading)
@@ -474,11 +474,11 @@ struct SettingsView: View {
     // MARK: - 动作
 
     private func chooseCLI() {
-        guard let url = FilePanels.chooseExecutableFile(title: "选择 disc-image-studio 可执行文件") else {
+        guard let url = FilePanels.chooseExecutableFile(title: L("选择 disc-image-studio 可执行文件")) else {
             return
         }
         guard FileManager.default.isExecutableFile(atPath: url.path) else {
-            alertMessage = "所选文件不可执行。请选择 disc-image-studio 发布包里的可执行文件，或先执行 chmod +x 添加执行权限。"
+            alertMessage = L("所选文件不可执行。请选择 disc-image-studio 发布包里的可执行文件，或先执行 chmod +x 添加执行权限。")
             return
         }
         Task { await model.updateCustomCliPath(url.path) }
@@ -486,7 +486,7 @@ struct SettingsView: View {
 
     private func chooseSourceDirectory() {
         guard let url = FilePanels.chooseDirectory(
-            title: "选择仓库根目录或 src/DiscImageStudio.Cli 目录",
+            title: L("选择仓库根目录或 src/DiscImageStudio.Cli 目录"),
             currentPath: settings.devProjectPath
         ) else {
             return
@@ -496,7 +496,7 @@ struct SettingsView: View {
             url.appendingPathComponent("DiscImageStudio.Cli.csproj"),
         ]
         guard candidates.contains(where: { FileManager.default.fileExists(atPath: $0.path) }) else {
-            alertMessage = "这个目录里没有找到 DiscImageStudio.Cli.csproj。请选择仓库根目录，或 src/DiscImageStudio.Cli 目录。"
+            alertMessage = L("这个目录里没有找到 DiscImageStudio.Cli.csproj。请选择仓库根目录，或 src/DiscImageStudio.Cli 目录。")
             return
         }
         Task { await model.updateDevProjectPath(url.path) }
@@ -504,7 +504,7 @@ struct SettingsView: View {
 
     private func chooseOutputDirectory() {
         guard let url = FilePanels.chooseDirectory(
-            title: "选择默认输出目录",
+            title: L("选择默认输出目录"),
             currentPath: settings.defaultOutputDirectory
         ) else {
             return

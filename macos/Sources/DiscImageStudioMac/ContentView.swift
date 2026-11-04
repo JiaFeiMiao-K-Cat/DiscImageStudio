@@ -34,7 +34,7 @@ struct ContentView: View {
         case .onboarding:
             OnboardingView(
                 model: app,
-                errorMessage: app.cliErrorMessage ?? "未找到 disc-image-studio CLI。"
+                errorMessage: app.cliErrorMessage ?? L("未找到 disc-image-studio CLI。")
             )
             .background(DesignSystem.appBackground)
         case .settings:

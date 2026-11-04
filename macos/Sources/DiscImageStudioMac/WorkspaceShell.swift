@@ -31,7 +31,7 @@ struct WorkspaceShell<Content: View>: View {
                 if project.isComposing {
                     ProgressView()
                         .controlSize(.mini)
-                        .help("正在合成设计稿")
+                        .help(L("正在合成设计稿"))
                 }
             }
 
@@ -51,12 +51,12 @@ struct WorkspaceShell<Content: View>: View {
 
     private var pageTitle: String {
         switch app.route {
-        case .design: return "设计"
-        case .preview: return "预览"
-        case .export: return "导出"
-        case .burn: return "刻录"
-        case .calibration: return "标定"
-        default: return "工作区"
+        case .design: return L("设计")
+        case .preview: return L("预览")
+        case .export: return L("导出")
+        case .burn: return L("刻录")
+        case .calibration: return L("标定")
+        default: return L("工作区")
         }
     }
 
@@ -99,11 +99,11 @@ struct WorkspaceShell<Content: View>: View {
 
     private func stageTitle(_ route: AppModel.Route) -> String {
         switch route {
-        case .design: return "设计"
-        case .preview: return "预览"
-        case .export: return "导出"
-        case .burn: return "刻录"
-        case .calibration: return "标定"
+        case .design: return L("设计")
+        case .preview: return L("预览")
+        case .export: return L("导出")
+        case .burn: return L("刻录")
+        case .calibration: return L("标定")
         default: return ""
         }
     }
@@ -114,7 +114,7 @@ struct WorkspaceShell<Content: View>: View {
             Button {
                 app.selectStage(next)
             } label: {
-                Label("下一步：\(nextTitle)", systemImage: "arrow.right")
+                Label(L("下一步：%@", String(nextTitle)), systemImage: "arrow.right")
                     .font(.system(size: 11.5, weight: .medium))
             }
             .controlSize(.small)
@@ -134,11 +134,11 @@ struct WorkspaceShell<Content: View>: View {
     private var nextLabel: String? {
         guard let next = nextRoute else { return nil }
         switch next {
-        case .design: return "设计"
-        case .preview: return "预览"
-        case .export: return "导出"
-        case .burn: return "刻录"
-        case .calibration: return "标定"
+        case .design: return L("设计")
+        case .preview: return L("预览")
+        case .export: return L("导出")
+        case .burn: return L("刻录")
+        case .calibration: return L("标定")
         default: return nil
         }
     }
@@ -224,8 +224,8 @@ struct TaskDock: View {
                 LogConsoleView(
                     lines: task.lines,
                     isRunning: task.isRunning,
-                    title: "任务日志",
-                    emptyHint: "运行预览或生成后，CLI 日志会显示在这里。",
+                    title: L("任务日志"),
+                    emptyHint: L("运行预览或生成后，CLI 日志会显示在这里。"),
                     onClear: { task.clearLog() }
                 )
                 .padding(16)
@@ -253,11 +253,11 @@ struct TaskDock: View {
     private var detailText: String {
         if task.isRunning {
             if let stage = task.stage, !stage.isEmpty { return stage }
-            return "\(task.title)进行中…（切换页面不会中断）"
+            return L("%@进行中…（切换页面不会中断）", String(task.title))
         }
         if let result = task.lastResult {
-            return "退出码 \(result.exitCode) · 用时 \(Formatting.duration(result.duration))"
+            return L("退出码 %@ · 用时 %@", String(result.exitCode), String(Formatting.duration(result.duration)))
         }
-        return "运行预览或生成后，这里会显示进度与结果。"
+        return L("运行预览或生成后，这里会显示进度与结果。")
     }
 }

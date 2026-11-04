@@ -54,8 +54,8 @@ struct PreviewView: View {
                 )
             )
             Text(project.previewMode == .designProjection
-                 ? "把设计页的合成图按生成几何快速投影，适合调整图片与影调。"
-                 : "读取已生成镜像/音轨中实际写入的数据，适合最终核对。")
+                 ? L("把设计页的合成图按生成几何快速投影，适合调整图片与影调。")
+                 : L("读取已生成镜像/音轨中实际写入的数据，适合最终核对。"))
                 .font(Typography.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -66,13 +66,13 @@ struct PreviewView: View {
 
     private var parametersCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionHeader(title: "预览参数", systemImage: "slider.horizontal.3") {
+            SectionHeader(title: L("预览参数"), systemImage: "slider.horizontal.3") {
                 Button("编辑…") { showsGeometryEditor = true }
                     .controlSize(.small)
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                FieldLabel("源图")
+                FieldLabel(L("源图"))
                 Text(project.sourceSummary)
                     .font(Typography.caption2)
                     .foregroundStyle(.secondary)
@@ -87,7 +87,7 @@ struct PreviewView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                FieldLabel("生成几何")
+                FieldLabel(L("生成几何"))
                 Text(project.geometrySummary)
                     .font(Typography.monoSmall)
                     .foregroundStyle(.secondary)
@@ -96,7 +96,7 @@ struct PreviewView: View {
 
             if project.previewMode == .artifactReadback {
                 VStack(alignment: .leading, spacing: 4) {
-                    FieldLabel("成品文件")
+                    FieldLabel(L("成品文件"))
                     HStack(spacing: 6) {
                         Text(project.artifactDisplayURL.map { Formatting.abbreviatedPath($0.path) } ?? "尚未选择成品")
                             .font(Typography.caption2)
@@ -111,7 +111,7 @@ struct PreviewView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                FieldLabel("预览尺寸（px）")
+                FieldLabel(L("预览尺寸（px）"))
                 HStack(spacing: 8) {
                     TextField(
                         "",
@@ -134,11 +134,11 @@ struct PreviewView: View {
             DisclosureGroup(isExpanded: $showsAdvanced) {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 8) {
-                        measuredField("实测内半径", binding: Binding(
+                        measuredField(L("实测内半径"), binding: Binding(
                             get: { project.actualInnerRadiusMm },
                             set: { project.setMeasuredInner($0) }
                         ))
-                        measuredField("实测外半径", binding: Binding(
+                        measuredField(L("实测外半径"), binding: Binding(
                             get: { project.actualOuterRadiusMm },
                             set: { project.setMeasuredOuter($0) }
                         ))
@@ -146,15 +146,15 @@ struct PreviewView: View {
 
                     if project.family == .dvd {
                         HStack(spacing: 8) {
-                            measuredField("线性项", binding: Binding(
+                            measuredField(L("线性项"), binding: Binding(
                                 get: { project.actualPitchLinear },
                                 set: { project.setMeasuredPitch(linear: $0) }
                             ))
-                            measuredField("二次项", binding: Binding(
+                            measuredField(L("二次项"), binding: Binding(
                                 get: { project.actualPitchQuadratic },
                                 set: { project.setMeasuredPitch(quadratic: $0) }
                             ))
-                            measuredField("三次项", binding: Binding(
+                            measuredField(L("三次项"), binding: Binding(
                                 get: { project.actualPitchCubic },
                                 set: { project.setMeasuredPitch(cubic: $0) }
                             ))
@@ -172,7 +172,7 @@ struct PreviewView: View {
 
                     HStack(spacing: 8) {
                         VStack(alignment: .leading, spacing: 4) {
-                            FieldLabel("每扇区采样")
+                            FieldLabel(L("每扇区采样"))
                             TextField(
                                 "",
                                 value: Binding(
@@ -186,7 +186,7 @@ struct PreviewView: View {
                         }
                         if project.previewMode == .artifactReadback {
                             VStack(alignment: .leading, spacing: 4) {
-                                FieldLabel("字节步长")
+                                FieldLabel(L("字节步长"))
                                 TextField(
                                     "",
                                     value: Binding(
@@ -263,7 +263,7 @@ struct PreviewView: View {
 
     private func chooseArtifact() {
         if let url = FilePanels.chooseInputFile(
-            title: "选择成品文件",
+            title: L("选择成品文件"),
             currentPath: project.artifactURL?.path
         ) {
             project.setArtifactURL(url)
@@ -274,7 +274,7 @@ struct PreviewView: View {
         guard let previewURL = project.previewURL else { return }
         let suggested = "预览-\(project.document.name).png"
         guard let destination = FilePanels.chooseOutputFile(
-            title: "导出预览 PNG",
+            title: L("导出预览 PNG"),
             currentPath: previewURL.deletingLastPathComponent().appendingPathComponent(suggested).path,
             defaultDirectory: previewURL.deletingLastPathComponent().path,
             allowedExtensions: ["png"]
@@ -286,7 +286,7 @@ struct PreviewView: View {
             try FileManager.default.copyItem(at: previewURL, to: destination)
             NSWorkspace.shared.activateFileViewerSelecting([destination])
         } catch {
-            project.previewError = "导出预览失败：\(error.localizedDescription)"
+            project.previewError = L("导出预览失败：%@", String(error.localizedDescription))
         }
     }
 }
@@ -300,7 +300,7 @@ private struct PreviewMonitor: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(project.previewMode.displayName)
+                Text(L(project.previewMode.displayName))
                     .font(.system(size: 13, weight: .semibold))
                 if let url = project.previewURL {
                     Text(url.lastPathComponent)
@@ -316,7 +316,7 @@ private struct PreviewMonitor: View {
                         Image(systemName: "folder")
                     }
                     .buttonStyle(.borderless)
-                    .help("在 Finder 中显示")
+                    .help(L("在 Finder 中显示"))
                 }
                 Button {
                     onExportPreview()
@@ -425,7 +425,7 @@ struct SectionHeader<Trailing: View>: View {
             Image(systemName: systemImage)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(DesignSystem.brand)
-            Text(title)
+            Text(L(title))
                 .font(.system(size: 13, weight: .semibold))
             Spacer(minLength: 0)
             trailing()
@@ -465,16 +465,16 @@ struct GeometryEditSheet: View {
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 10) {
-                numeric("内半径 (mm)", value: $inner, digits: 3)
-                numeric("外半径 (mm)", value: $outer, digits: 3)
+                numeric(L("内半径 (mm)"), value: $inner, digits: 3)
+                numeric(L("外半径 (mm)"), value: $outer, digits: 3)
             }
-            numeric("总扇区数", value: $sectors, digits: 0)
+            numeric(L("总扇区数"), value: $sectors, digits: 0)
 
             if project.family == .dvd {
                 HStack(spacing: 10) {
-                    numeric("线性项", value: $pitchLinear, digits: 8)
-                    numeric("二次项", value: $pitchQuadratic, digits: 8)
-                    numeric("三次项", value: $pitchCubic, digits: 8)
+                    numeric(L("线性项"), value: $pitchLinear, digits: 8)
+                    numeric(L("二次项"), value: $pitchQuadratic, digits: 8)
+                    numeric(L("三次项"), value: $pitchCubic, digits: 8)
                 }
             }
 
@@ -510,7 +510,7 @@ struct GeometryEditSheet: View {
 
     private func apply() {
         guard inner > 0, outer > inner, sectors > 0 else {
-            errorMessage = "内半径必须为正且小于外半径，扇区数必须大于 0。"
+            errorMessage = L("内半径必须为正且小于外半径，扇区数必须大于 0。")
             return
         }
         let geometry = ProjectGeometry(

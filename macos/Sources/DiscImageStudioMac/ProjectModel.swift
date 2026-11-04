@@ -13,7 +13,7 @@ final class WorkspaceTask {
     }
 
     var kind: Kind?
-    var title: String = "就绪"
+    var title: String = L("就绪")
     var isRunning: Bool = false
     var progress: Double?
     var stage: String?
@@ -30,10 +30,10 @@ final class WorkspaceTask {
             return title
         }
         if let lastResult {
-            if wasCancelled { return "已取消" }
-            return lastResult.succeeded ? "\(title)完成" : "\(title)失败（退出码 \(lastResult.exitCode)）"
+            if wasCancelled { return L("已取消") }
+            return lastResult.succeeded ? L("%@完成", String(title)) : L("%@失败（退出码 %@）", String(title), String(lastResult.exitCode))
         }
-        return "就绪 · 尚未运行任务"
+        return L("就绪 · 尚未运行任务")
     }
 
     var stderrLines: [String] {
@@ -88,7 +88,7 @@ final class WorkspaceTask {
     func resetIfIdle() {
         guard !isRunning else { return }
         kind = nil
-        title = "就绪"
+        title = L("就绪")
         lastResult = nil
         progress = nil
         stage = nil
@@ -97,7 +97,7 @@ final class WorkspaceTask {
     private func handle(_ event: CliEvent) {
         switch event {
         case .started(let commandLine):
-            lines.append(LogLine(stream: .system, text: "启动：\(commandLine)"))
+            lines.append(LogLine(stream: .system, text: L("启动：%@", String(commandLine))))
         case .line(let line):
             lines.append(line)
             if let fraction = ProgressParsing.fraction(from: line.text) {
@@ -115,8 +115,8 @@ final class WorkspaceTask {
             lines.append(LogLine(
                 stream: .system,
                 text: wasCancelled
-                    ? "已取消（退出码 \(result.exitCode)）"
-                    : "进程结束（退出码 \(result.exitCode)，用时 \(Formatting.duration(result.duration))）"
+                    ? L("已取消（退出码 %@）", String(result.exitCode))
+                    : L("进程结束（退出码 %@，用时 %@）", String(result.exitCode), String(Formatting.duration(result.duration)))
             ))
             let completion = self.completion
             self.completion = nil
@@ -281,7 +281,7 @@ final class ProjectModel {
         var parts = [
             "r0 \(format(document.geometry.innerRadiusMm)) mm",
             "r1 \(format(document.geometry.outerRadiusMm)) mm",
-            "\(document.geometry.sectors) 扇区",
+            L("%@ 扇区", String(document.geometry.sectors)),
         ]
         if family == .dvd {
             parts.append("pitch \(format(document.geometry.pitchLinear))/\(format(document.geometry.pitchQuadratic))/\(format(document.geometry.pitchCubic))")
@@ -290,15 +290,15 @@ final class ProjectModel {
     }
 
     var sourceSummary: String {
-        if layers.isEmpty { return "尚无图层，请先在设计中导入图片。" }
-        return "设计页合成源图（\(DesignComposer.previewSize) px 预览 / \(DesignComposer.exportSize) px 导出）"
+        if layers.isEmpty { return L("尚无图层，请先在设计中导入图片。") }
+        return L("设计页合成源图（%@ px 预览 / %@ px 导出）", String(DesignComposer.previewSize), String(DesignComposer.exportSize))
     }
 
     var deviationSummary: String? {
         let deltaInner = actualInnerRadiusMm - document.geometry.innerRadiusMm
         let deltaOuter = actualOuterRadiusMm - document.geometry.outerRadiusMm
         guard abs(deltaInner) > 0.001 || abs(deltaOuter) > 0.001 else { return nil }
-        return "实测与生成几何差：内 \(signed(deltaInner)) mm，外 \(signed(deltaOuter)) mm"
+        return L("实测与生成几何差：内 %@ mm，外 %@ mm", String(signed(deltaInner)), String(signed(deltaOuter)))
     }
 
     var artifactDisplayURL: URL? {
@@ -321,7 +321,7 @@ final class ProjectModel {
         var firstID: String?
         for url in urls {
             let name = url.deletingPathExtension().lastPathComponent
-            let layer = DesignLayer(name: name.isEmpty ? "图层" : name, imagePath: url.path)
+            let layer = DesignLayer(name: name.isEmpty ? L("图层") : name, imagePath: url.path)
             document.layers.insert(layer, at: 0)
             if firstID == nil { firstID = layer.id }
         }
@@ -686,7 +686,7 @@ final class ProjectModel {
 
     func refreshPreview() {
         guard let cliInvocation else {
-            previewError = "未找到 CLI，无法生成预览。请在设置里配置 CLI。"
+            previewError = L("未找到 CLI，无法生成预览。请在设置里配置 CLI。")
             return
         }
         guard !task.isRunning else { return }
@@ -707,7 +707,7 @@ final class ProjectModel {
                 )
                 let oldPreview = self.previewURL
                 let job = PreviewService(cliInvocation: cliInvocation).run(plan)
-                self.task.start(kind: .preview, title: "刷新预览", job: job) { [weak self] result in
+                self.task.start(kind: .preview, title: L("刷新预览"), job: job) { [weak self] result in
                     guard let self else { return }
                     if result.succeeded {
                         self.previewURL = output
@@ -718,13 +718,13 @@ final class ProjectModel {
                         }
                     } else {
                         self.previewError = self.task.stderrTailText.isEmpty
-                            ? "预览失败（退出码 \(result.exitCode)）"
+                            ? L("预览失败（退出码 %@）", String(result.exitCode))
                             : self.task.stderrTailText
                         try? FileManager.default.removeItem(at: output)
                     }
                 }
                 if revision != self.editRevision {
-                    self.previewError = "工程在预览期间有新的修改，请再次刷新。"
+                    self.previewError = L("工程在预览期间有新的修改，请再次刷新。")
                 }
             } catch {
                 self.previewError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -736,11 +736,11 @@ final class ProjectModel {
 
     func generate() {
         guard let cliInvocation else {
-            exportError = "未找到 CLI，无法生成。请在设置里配置 CLI。"
+            exportError = L("未找到 CLI，无法生成。请在设置里配置 CLI。")
             return
         }
         guard !layers.isEmpty else {
-            exportError = "请先在设计中导入图片。"
+            exportError = L("请先在设计中导入图片。")
             return
         }
         guard !task.isRunning else { return }
@@ -760,7 +760,7 @@ final class ProjectModel {
                     outputURL: outputURL
                 )
                 let job = ExportService(cliInvocation: cliInvocation).run(plan)
-                self.task.start(kind: .export, title: "生成镜像", job: job) { [weak self] result in
+                self.task.start(kind: .export, title: L("生成镜像"), job: job) { [weak self] result in
                     guard let self else { return }
                     if result.succeeded {
                         self.artifactURL = plan.outputURL
@@ -771,7 +771,7 @@ final class ProjectModel {
                         self.saveNow()
                     } else {
                         self.exportError = self.task.stderrTailText.isEmpty
-                            ? "生成失败（退出码 \(result.exitCode)）"
+                            ? L("生成失败（退出码 %@）", String(result.exitCode))
                             : self.task.stderrTailText
                     }
                 }

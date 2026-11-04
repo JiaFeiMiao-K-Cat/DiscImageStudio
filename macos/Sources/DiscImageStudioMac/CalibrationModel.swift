@@ -17,17 +17,17 @@ final class CalibrationModel {
 
         var title: String {
             switch self {
-            case .target: return "生成标靶"
-            case .photo: return "照片矫正"
-            case .fit: return "描点与反推"
+            case .target: return L("生成标靶")
+            case .photo: return L("照片矫正")
+            case .fit: return L("描点与反推")
             }
         }
 
         var subtitle: String {
             switch self {
-            case .target: return "生成用于刻录的标定盘"
-            case .photo: return "拖拽盘缘与中心孔轮廓"
-            case .fit: return "沿曲线打点并反推参数"
+            case .target: return L("生成用于刻录的标定盘")
+            case .photo: return L("拖拽盘缘与中心孔轮廓")
+            case .fit: return L("沿曲线打点并反推参数")
             }
         }
     }
@@ -144,36 +144,36 @@ final class CalibrationModel {
 
     var traceSummary: String {
         let coverage = String(format: "%.0f", traceCoveragePercent)
-        return "\(tracePoints.count) 点 · 覆盖 \(coverage)% · 至少 \(minimumPointCount) 点（建议 \(recommendedPointCount) 点 / ≥\(Int(recommendedCoveragePercent))%）"
+        return L("%@ 点 · 覆盖 %@%% · 至少 %@ 点（建议 %@ 点 / ≥%@%%）", String(tracePoints.count), String(coverage), String(minimumPointCount), String(recommendedPointCount), String(Int(recommendedCoveragePercent)))
     }
 
     var canApply: Bool { applyDisabledReason == nil }
 
     var applyDisabledReason: String? {
         guard let candidate = selectedCandidate else {
-            return fitSucceeded ? "请选择一个候选。" : "请先反推参数。"
+            return fitSucceeded ? L("请选择一个候选。") : L("请先反推参数。")
         }
         switch mode {
         case .fine:
-            guard let fitResult, fitResult.succeeded else { return "精调拟合失败，请检查描点。" }
+            guard let fitResult, fitResult.succeeded else { return L("精调拟合失败，请检查描点。") }
             if candidate.rmsErrorMm > CalibrationFitResult.applicableRmsMm {
-                return String(format: "平均偏差 %.3f mm 超过 0.35 mm。", candidate.rmsErrorMm)
+                return String(format: L("平均偏差 %.3f mm 超过 0.35 mm。"), candidate.rmsErrorMm)
             }
             if candidate.maxErrorMm > CalibrationFitResult.applicableMaxMm {
-                return String(format: "最大偏差 %.3f mm 超过 0.8 mm。", candidate.maxErrorMm)
+                return String(format: L("最大偏差 %.3f mm 超过 0.8 mm。"), candidate.maxErrorMm)
             }
             if sessionURL == nil {
-                return "缺少标定会话，无法写回参数。"
+                return L("缺少标定会话，无法写回参数。")
             }
             return nil
         case .coarse:
-            guard let coarseFitResult else { return "请先反推参数。" }
-            guard coarseFitResult.succeeded else { return "粗调拟合失败。" }
+            guard let coarseFitResult else { return L("请先反推参数。") }
+            guard coarseFitResult.succeeded else { return L("粗调拟合失败。") }
             if !coarseFitResult.warnings.isEmpty {
-                return "粗调存在歧义警告，必须消除后才能应用。"
+                return L("粗调存在歧义警告，必须消除后才能应用。")
             }
             if coarseFitResult.bestIndex < 0 {
-                return "粗调无法确定唯一结论（bestIndex = -1）。"
+                return L("粗调无法确定唯一结论（bestIndex = -1）。")
             }
             return nil
         }
@@ -225,8 +225,8 @@ final class CalibrationModel {
         var parts = [
             "r0 \(format(project.document.geometry.innerRadiusMm)) mm",
             "r1 \(format(project.document.geometry.outerRadiusMm)) mm",
-            "\(project.document.geometry.sectors) 扇区",
-            "盘型 \(family.familyLabel)",
+            L("%@ 扇区", String(project.document.geometry.sectors)),
+            L("盘型 %@", String(family.familyLabel)),
         ]
         if family == .dvd {
             parts.append("pitch \(format(project.document.geometry.pitchLinear))/\(format(project.document.geometry.pitchQuadratic))/\(format(project.document.geometry.pitchCubic))")
@@ -247,29 +247,29 @@ final class CalibrationModel {
         guard let path = project.document.calibrationSessionPath,
               FileManager.default.fileExists(atPath: path) else {
             if let path = project.document.calibrationSessionPath {
-                restoredSessionNote = "工程引用的标定会话不存在：\(path)"
+                restoredSessionNote = L("工程引用的标定会话不存在：%@", String(path))
             }
             return
         }
-        run("正在恢复标定会话…") {
+        run(L("正在恢复标定会话…")) {
             try await self.restoreSession(at: URL(fileURLWithPath: path))
         }
     }
 
     func openEntry(_ entry: CalibrationSessionCatalog.Entry) {
-        run("正在打开标定会话…") {
+        run(L("正在打开标定会话…")) {
             try await self.restoreSession(at: entry.path)
         }
     }
 
     private func restoreSession(at url: URL) async throws {
         guard let service else {
-            throw CalibrationError.missingInput("未找到 CLI，无法恢复标定会话。")
+            throw CalibrationError.missingInput(L("未找到 CLI，无法恢复标定会话。"))
         }
         let session = try catalog.loadSession(at: url)
         guard session.target.parameters.family == project.family else {
             throw CalibrationError.invalidGeometry(
-                "会话盘型 \(session.target.parameters.family.familyLabel) 与工程 \(family.familyLabel) 不一致。"
+                L("会话盘型 %@ 与工程 %@ 不一致。", String(session.target.parameters.family.familyLabel), String(family.familyLabel))
             )
         }
 
@@ -339,11 +339,11 @@ final class CalibrationModel {
                     canvasOuterRadiusMm = result.canvasOuterRadiusMm ?? discSize.physicalOuterRadiusMm
                 } else {
                     restoredSessionNote = result.message.isEmpty
-                        ? "会话已恢复，但矫正图重建失败。"
-                        : "会话已恢复，但矫正图重建失败：\(result.message)"
+                        ? L("会话已恢复，但矫正图重建失败。")
+                        : L("会话已恢复，但矫正图重建失败：%@", String(result.message))
                 }
             } catch {
-                restoredSessionNote = "会话已恢复，但矫正图重建失败：\(error.localizedDescription)"
+                restoredSessionNote = L("会话已恢复，但矫正图重建失败：%@", String(error.localizedDescription))
             }
 
             if photo.rectificationConfirmed, tracePoints.count >= 6 {
@@ -360,7 +360,7 @@ final class CalibrationModel {
                     fitResult = fit
                     selectedCandidateIndex = Self.validSelection(fit.bestIndex, count: fit.candidates.count)
                 } catch {
-                    self.errorMessage = "会话已恢复，但候选重算失败：\(error.localizedDescription)"
+                    self.errorMessage = L("会话已恢复，但候选重算失败：%@", String(error.localizedDescription))
                 }
             } else {
                 step = .photo
@@ -378,7 +378,7 @@ final class CalibrationModel {
 
         project.setCalibrationSessionPath(url.path)
         refreshSessionEntries()
-        statusMessage = "已从 \(url.lastPathComponent) 恢复标定会话。"
+        statusMessage = L("已从 %@ 恢复标定会话。", String(url.lastPathComponent))
     }
 
     // MARK: - 应用状态
@@ -388,7 +388,7 @@ final class CalibrationModel {
         sessionWriteTask?.cancel()
         mode = newMode
         resetAll()
-        statusMessage = "已切换到\(newMode.displayName)，请重新生成标靶。"
+        statusMessage = L("已切换到%@，请重新生成标靶。", String(newMode.displayName))
     }
 
     func selectStep(_ newStep: Step) {
@@ -397,13 +397,13 @@ final class CalibrationModel {
             step = .target
         case .photo:
             guard targetImageURL != nil else {
-                errorMessage = "请先生成标靶。"
+                errorMessage = L("请先生成标靶。")
                 return
             }
             step = .photo
         case .fit:
             guard rectificationConfirmed else {
-                errorMessage = "请先完成并确认照片矫正。"
+                errorMessage = L("请先完成并确认照片矫正。")
                 return
             }
             step = .fit
@@ -414,7 +414,7 @@ final class CalibrationModel {
 
     func generateTarget() {
         guard let service else {
-            errorMessage = "未找到 CLI，无法生成标靶。请在设置里配置 CLI。"
+            errorMessage = L("未找到 CLI，无法生成标靶。请在设置里配置 CLI。")
             return
         }
         let geometry = project.document.geometry
@@ -428,7 +428,7 @@ final class CalibrationModel {
         let coarseURL = layout.coarseImageURL(id: id)
         let p0URL = layout.coarseP0URL(id: id)
 
-        run("正在生成标靶…") {
+        run(L("正在生成标靶…")) {
             try FileManager.default.createDirectory(at: self.workspace, withIntermediateDirectories: true)
             switch mode {
             case .fine:
@@ -470,7 +470,7 @@ final class CalibrationModel {
             self.resetPhotoAndFit()
             self.step = .target
             self.refreshSessionEntries()
-            self.statusMessage = "标靶已生成：\(self.targetImageURL?.lastPathComponent ?? "")"
+            self.statusMessage = L("标靶已生成：%@", String(self.targetImageURL?.lastPathComponent ?? ""))
         }
     }
 
@@ -488,11 +488,11 @@ final class CalibrationModel {
 
     func importPhoto() {
         guard targetImageURL != nil else {
-            errorMessage = "请先生成标靶，再导入对应的盘面照片。"
+            errorMessage = L("请先生成标靶，再导入对应的盘面照片。")
             return
         }
         guard let source = FilePanels.chooseInputFile(
-            title: "导入标定盘照片",
+            title: L("导入标定盘照片"),
             currentPath: photoOriginalURL?.path
         ) else { return }
         loadPhoto(from: source)
@@ -500,18 +500,18 @@ final class CalibrationModel {
 
     func loadPhoto(from source: URL) {
         guard targetImageURL != nil else {
-            errorMessage = "请先生成标靶，再导入对应的盘面照片。"
+            errorMessage = L("请先生成标靶，再导入对应的盘面照片。")
             return
         }
         guard let service else {
-            errorMessage = "未找到 CLI，无法处理照片。"
+            errorMessage = L("未找到 CLI，无法处理照片。")
             return
         }
         let id = sessionID ?? Self.shortID()
         sessionID = id
         let resized = layout.photoURL(id: id)
         let discSize = discSize
-        run("正在准备照片…") {
+        run(L("正在准备照片…")) {
             let result = try await service.preparePhoto(
                 photoURL: source,
                 discSize: discSize,
@@ -546,10 +546,10 @@ final class CalibrationModel {
                 do {
                     try await self.writeSessionNow(confirmed: false, points: [])
                 } catch {
-                    self.errorMessage = "照片已导入，但会话保存失败：\(error.localizedDescription)"
+                    self.errorMessage = L("照片已导入，但会话保存失败：%@", String(error.localizedDescription))
                 }
             }
-            self.statusMessage = "照片已准备：\(self.photoWidth)×\(self.photoHeight) px，拖动轮廓点对齐盘缘与中心孔。"
+            self.statusMessage = L("照片已准备：%@×%@ px，拖动轮廓点对齐盘缘与中心孔。", String(self.photoWidth), String(self.photoHeight))
         }
     }
 
@@ -557,7 +557,7 @@ final class CalibrationModel {
         guard size != discSize else { return }
         discSize = size
         invalidateAfterBoundaryChange()
-        statusMessage = "盘片规格改为 \(size.displayName)，请重新计算矫正。"
+        statusMessage = L("盘片规格改为 %@，请重新计算矫正。", String(size.displayName))
     }
 
     func moveBoundary(kind: BoundaryKind, index: Int, to point: CalibrationPoint) {
@@ -585,22 +585,22 @@ final class CalibrationModel {
 
     func rectifyPhoto() {
         guard let service else {
-            errorMessage = "未找到 CLI，无法计算矫正。"
+            errorMessage = L("未找到 CLI，无法计算矫正。")
             return
         }
         guard let photoOriginalURL, let photoURL else {
-            errorMessage = "请先导入照片。"
+            errorMessage = L("请先导入照片。")
             return
         }
         guard outerBoundary.count >= 5, holeBoundary.count >= 5 else {
-            errorMessage = "外缘与中心孔各需要至少 5 个控制点。"
+            errorMessage = L("外缘与中心孔各需要至少 5 个控制点。")
             return
         }
         let discSize = discSize
         let outer = outerBoundary
         let hole = holeBoundary
         let rectified = layout.rectifiedURL(id: sessionID ?? Self.shortID())
-        run("正在计算照片矫正…") {
+        run(L("正在计算照片矫正…")) {
             let result = try await service.rectifyPhoto(
                 photoURL: photoOriginalURL,
                 discSize: discSize,
@@ -626,35 +626,35 @@ final class CalibrationModel {
                 self.coarseFitResult = nil
                 let outerRms = result.outerRmsPixels.map { String(format: "%.2f", $0) } ?? "—"
                 let holeRms = result.holeRmsPixels.map { String(format: "%.2f", $0) } ?? "—"
-                self.statusMessage = "矫正完成（外缘 RMS \(outerRms) px，中心孔 RMS \(holeRms) px）。请检查预览后确认。"
+                self.statusMessage = L("矫正完成（外缘 RMS %@ px，中心孔 RMS %@ px）。请检查预览后确认。", String(outerRms), String(holeRms))
                 self.errorMessage = nil
                 if self.mode == .fine {
                     do {
                         try await self.writeSessionNow(confirmed: false, points: [])
                     } catch {
-                        self.errorMessage = "矫正已计算，但会话保存失败：\(error.localizedDescription)"
+                        self.errorMessage = L("矫正已计算，但会话保存失败：%@", String(error.localizedDescription))
                     }
                 }
             } else {
-                self.errorMessage = result.message.isEmpty ? "照片矫正失败，请调整轮廓点。" : result.message
+                self.errorMessage = result.message.isEmpty ? L("照片矫正失败，请调整轮廓点。") : result.message
             }
         }
     }
 
     func confirmRectification() {
         guard rectifiedURL != nil else {
-            errorMessage = "请先计算矫正。"
+            errorMessage = L("请先计算矫正。")
             return
         }
         rectificationConfirmed = true
         step = .fit
-        statusMessage = "矫正已确认，请在矫正图上沿一条清楚曲线打点。"
+        statusMessage = L("矫正已确认，请在矫正图上沿一条清楚曲线打点。")
         guard mode == .fine else { return }
-        run("正在保存矫正状态…") {
+        run(L("正在保存矫正状态…")) {
             do {
                 try await self.writeSessionNow(confirmed: true, points: self.tracePoints)
             } catch {
-                self.errorMessage = "矫正已确认，但会话保存失败：\(error.localizedDescription)"
+                self.errorMessage = L("矫正已确认，但会话保存失败：%@", String(error.localizedDescription))
             }
         }
     }
@@ -748,15 +748,15 @@ final class CalibrationModel {
 
     func fit() {
         guard let service else {
-            errorMessage = "未找到 CLI，无法反推参数。"
+            errorMessage = L("未找到 CLI，无法反推参数。")
             return
         }
         guard rectificationConfirmed else {
-            errorMessage = "请先确认照片矫正。"
+            errorMessage = L("请先确认照片矫正。")
             return
         }
         guard tracePoints.count >= minimumPointCount else {
-            errorMessage = "至少需要 \(minimumPointCount) 个点才能反推参数。"
+            errorMessage = L("至少需要 %@ 个点才能反推参数。", String(minimumPointCount))
             return
         }
         sessionWriteTask?.cancel()
@@ -767,11 +767,11 @@ final class CalibrationModel {
         let density = density
         let sessionURL = sessionURL
 
-        run("正在反推参数…") {
+        run(L("正在反推参数…")) {
             switch mode {
             case .fine:
                 guard let sessionURL else {
-                    self.errorMessage = "缺少标定会话，无法反推。请重新生成精调标靶。"
+                    self.errorMessage = L("缺少标定会话，无法反推。请重新生成精调标靶。")
                     return
                 }
                 let result = try await service.fit(
@@ -786,9 +786,9 @@ final class CalibrationModel {
                 self.coarseFitResult = nil
                 self.selectedCandidateIndex = Self.validSelection(result.bestIndex, count: result.candidates.count)
                 self.statusMessage = result.succeeded
-                    ? "已得到 \(result.candidates.count) 个候选。"
-                    : "拟合失败：\(result.warnings.joined(separator: "；"))"
-                self.errorMessage = result.succeeded ? nil : (result.warnings.isEmpty ? "拟合失败。" : nil)
+                    ? L("已得到 %@ 个候选。", String(result.candidates.count))
+                    : L("拟合失败：%@", String(result.warnings.joined(separator: "；")))
+                self.errorMessage = result.succeeded ? nil : (result.warnings.isEmpty ? L("拟合失败。") : nil)
                 self.refreshSessionEntries()
             case .coarse:
                 let result = try await service.fitCoarse(
@@ -802,9 +802,9 @@ final class CalibrationModel {
                 self.fitResult = nil
                 self.selectedCandidateIndex = Self.validSelection(result.bestIndex, count: result.candidates.count)
                 self.statusMessage = result.succeeded
-                    ? "已得到 \(result.candidates.count) 个粗调候选。"
-                    : "粗调失败：\(result.warnings.joined(separator: "；"))"
-                self.errorMessage = result.succeeded ? nil : (result.warnings.isEmpty ? "粗调失败。" : nil)
+                    ? L("已得到 %@ 个粗调候选。", String(result.candidates.count))
+                    : L("粗调失败：%@", String(result.warnings.joined(separator: "；")))
+                self.errorMessage = result.succeeded ? nil : (result.warnings.isEmpty ? L("粗调失败。") : nil)
             }
         }
     }
@@ -816,7 +816,7 @@ final class CalibrationModel {
 
     func applyParameters() {
         guard let candidate = selectedCandidate, canApply else {
-            errorMessage = applyDisabledReason ?? "当前候选不可应用。"
+            errorMessage = applyDisabledReason ?? L("当前候选不可应用。")
             return
         }
         let mode = mode
@@ -828,11 +828,11 @@ final class CalibrationModel {
         let points = tracePoints
         let discSize = discSize
 
-        run("正在应用标定参数…") {
+        run(L("正在应用标定参数…")) {
             switch mode {
             case .fine:
                 guard let sessionURL, let service, let photoURL else {
-                    self.errorMessage = "缺少标定会话或照片，无法写回会话。"
+                    self.errorMessage = L("缺少标定会话或照片，无法写回会话。")
                     return
                 }
                 _ = try await service.writeSession(
@@ -848,14 +848,14 @@ final class CalibrationModel {
                 try Task.checkCancellation()
                 self.project.applyCalibration(candidate, canonicalSessionURL: sessionURL)
                 self.appliedMessage = String(
-                    format: "参数已更新：r0 %.3f mm / r1 %.3f mm",
+                    format: L("参数已更新：r0 %.3f mm / r1 %.3f mm"),
                     candidate.innerRadiusMm,
                     candidate.outerRadiusMm
                 )
             case .coarse:
                 self.project.applyCalibration(candidate, canonicalSessionURL: nil)
                 self.sessionURL = nil
-                self.appliedMessage = "参数已更新；粗调不单独保存会话。"
+                self.appliedMessage = L("参数已更新；粗调不单独保存会话。")
             }
             self.statusMessage = self.appliedMessage
             self.refreshSessionEntries()
@@ -900,9 +900,9 @@ final class CalibrationModel {
                     confirmed: self.rectificationConfirmed
                 )
                 self.refreshSessionEntries()
-                self.statusMessage = "标定会话已更新。"
+                self.statusMessage = L("标定会话已更新。")
             } catch {
-                self.errorMessage = "保存标定会话失败：\(error.localizedDescription)"
+                self.errorMessage = L("保存标定会话失败：%@", String(error.localizedDescription))
             }
         }
     }
@@ -932,24 +932,24 @@ final class CalibrationModel {
                 step = .target
             }
             refreshSessionEntries()
-            statusMessage = "已删除标定会话 \(entry.path.lastPathComponent)。"
+            statusMessage = L("已删除标定会话 %@。", String(entry.path.lastPathComponent))
         } catch {
-            errorMessage = "删除标定会话失败：\(error.localizedDescription)"
+            errorMessage = L("删除标定会话失败：%@", String(error.localizedDescription))
         }
     }
 
     func exportEntry(_ entry: CalibrationSessionCatalog.Entry) {
         guard let destination = FilePanels.chooseOutputFile(
-            title: "导出标定会话",
+            title: L("导出标定会话"),
             currentPath: entry.path.lastPathComponent,
             defaultDirectory: workspace.path,
             allowedExtensions: ["json"]
         ) else { return }
         do {
             try catalog.export(entry, to: destination)
-            statusMessage = "会话已导出：\(destination.lastPathComponent)"
+            statusMessage = L("会话已导出：%@", String(destination.lastPathComponent))
         } catch {
-            errorMessage = "导出标定会话失败：\(error.localizedDescription)"
+            errorMessage = L("导出标定会话失败：%@", String(error.localizedDescription))
         }
     }
 
@@ -965,10 +965,10 @@ final class CalibrationModel {
             do {
                 try await operation()
                 if Task.isCancelled {
-                    self.statusMessage = "已取消等待；CLI 进程可能仍在后台完成写入。"
+                    self.statusMessage = L("已取消等待；CLI 进程可能仍在后台完成写入。")
                 }
             } catch is CancellationError {
-                self.statusMessage = "已取消等待；CLI 进程可能仍在后台完成写入。"
+                self.statusMessage = L("已取消等待；CLI 进程可能仍在后台完成写入。")
             } catch {
                 self.errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             }
@@ -979,7 +979,7 @@ final class CalibrationModel {
 
     func cancelCurrentOperation() {
         guard isBusy else { return }
-        statusMessage = "正在取消等待…"
+        statusMessage = L("正在取消等待…")
         activeTask?.cancel()
     }
 

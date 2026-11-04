@@ -30,8 +30,8 @@ struct SidebarView: View {
 
             Divider().overlay(DesignSystem.hairline.opacity(0.4))
             VStack(spacing: 2) {
-                navRow(.settings, title: "设置", systemImage: "gearshape", shortcut: "⌘,")
-                navRow(.about, title: "关于", systemImage: "info.circle")
+                navRow(.settings, title: L("设置"), systemImage: "gearshape", shortcut: "⌘,")
+                navRow(.about, title: L("关于"), systemImage: "info.circle")
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 10)
@@ -77,7 +77,7 @@ struct SidebarView: View {
                             .frame(width: 24, height: 24)
                     }
                     .buttonStyle(.plain)
-                    .help("返回主页（工程保持打开）")
+                    .help(L("返回主页（工程保持打开）"))
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(project.document.name)
@@ -117,21 +117,21 @@ struct SidebarView: View {
             Image(systemName: "checkmark.circle")
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
-                .help("已保存")
+                .help(L("已保存"))
         case .unsaved:
             Image(systemName: "circle.fill")
                 .font(.system(size: 6))
                 .foregroundStyle(.orange)
-                .help("有未保存的修改")
+                .help(L("有未保存的修改"))
         case .saving:
             ProgressView()
                 .controlSize(.mini)
-                .help("正在保存")
+                .help(L("正在保存"))
         case .failed:
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 11))
                 .foregroundStyle(.red)
-                .help(project.saveError ?? "保存失败")
+                .help(project.saveError ?? L("保存失败"))
         }
     }
 
@@ -206,7 +206,7 @@ struct SidebarView: View {
                 Image(systemName: systemImage)
                     .font(.system(size: 13, weight: .medium))
                     .frame(width: 18)
-                Text(title)
+                Text(L(title))
                     .font(.system(size: 12.5, weight: selected ? .semibold : .regular))
                 Spacer(minLength: 0)
                 if let shortcut {
@@ -226,11 +226,11 @@ struct SidebarView: View {
 
     private func title(for route: AppModel.Route) -> String {
         switch route {
-        case .design: return "设计"
-        case .preview: return "预览"
-        case .export: return "导出"
-        case .burn: return "刻录"
-        case .calibration: return "标定"
+        case .design: return L("设计")
+        case .preview: return L("预览")
+        case .export: return L("导出")
+        case .burn: return L("刻录")
+        case .calibration: return L("标定")
         default: return ""
         }
     }

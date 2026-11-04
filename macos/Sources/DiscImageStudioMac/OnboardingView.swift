@@ -23,7 +23,7 @@ struct OnboardingView: View {
             .frame(maxWidth: .infinity, alignment: .center)
         }
         .background(Color(nsColor: .windowBackgroundColor))
-        .alert("提示", isPresented: alertBinding) {
+        .alert(L("提示"), isPresented: alertBinding) {
             Button("好", role: .cancel) {}
         } message: {
             Text(alertMessage ?? "")
@@ -88,28 +88,28 @@ struct OnboardingView: View {
 
     private var ways: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            CardHeader("三种获取方式", systemImage: "arrow.down.circle")
+            CardHeader(L("三种获取方式"), systemImage: "arrow.down.circle")
 
             wayCard(
                 number: 1,
-                title: "使用发布包",
-                detail: "从 GitHub Releases 下载 macOS 版 CLI，把可执行文件 disc-image-studio 放进应用的 Contents/Resources/cli/ 目录；用源码直接运行时请用下面两种方式。",
+                title: L("使用发布包"),
+                detail: L("从 GitHub Releases 下载 macOS 版 CLI，把可执行文件 disc-image-studio 放进应用的 Contents/Resources/cli/ 目录；用源码直接运行时请用下面两种方式。"),
                 actionTitle: nil,
                 action: nil
             )
             wayCard(
                 number: 2,
-                title: "指定可执行文件",
-                detail: "如果 CLI 已经解压到任意位置（或已经通过 dotnet tool 安装），直接选中那个可执行文件。路径会写入设置并立即生效。",
-                actionTitle: "选择 CLI 可执行文件…",
+                title: L("指定可执行文件"),
+                detail: L("如果 CLI 已经解压到任意位置（或已经通过 dotnet tool 安装），直接选中那个可执行文件。路径会写入设置并立即生效。"),
+                actionTitle: L("选择 CLI 可执行文件…"),
                 action: chooseCLI,
                 primary: true
             )
             wayCard(
                 number: 3,
-                title: "使用源码目录（dotnet run）",
-                detail: "选择仓库根目录或 src/DiscImageStudio.Cli 目录；界面会用 dotnet run -c Release 启动 CLI。需要本机安装 .NET 10 SDK。",
-                actionTitle: "选择源码目录…",
+                title: L("使用源码目录（dotnet run）"),
+                detail: L("选择仓库根目录或 src/DiscImageStudio.Cli 目录；界面会用 dotnet run -c Release 启动 CLI。需要本机安装 .NET 10 SDK。"),
+                actionTitle: L("选择源码目录…"),
                 action: chooseSourceDirectory
             )
 
@@ -137,7 +137,7 @@ struct OnboardingView: View {
                 .frame(width: 22, height: 22)
                 .background(DesignSystem.brand, in: Circle())
             VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text(title)
+                Text(L(title))
                     .font(.system(size: 13, weight: .semibold))
                 Text(detail)
                     .font(Typography.caption)
@@ -199,11 +199,11 @@ struct OnboardingView: View {
     // MARK: - 选择文件
 
     private func chooseCLI() {
-        guard let url = FilePanels.chooseExecutableFile(title: "选择 disc-image-studio 可执行文件") else {
+        guard let url = FilePanels.chooseExecutableFile(title: L("选择 disc-image-studio 可执行文件")) else {
             return
         }
         guard FileManager.default.isExecutableFile(atPath: url.path) else {
-            alertMessage = "所选文件不可执行。请选择 disc-image-studio 发布包里的可执行文件，或先执行 chmod +x 添加执行权限。"
+            alertMessage = L("所选文件不可执行。请选择 disc-image-studio 发布包里的可执行文件，或先执行 chmod +x 添加执行权限。")
             return
         }
         Task {
@@ -213,7 +213,7 @@ struct OnboardingView: View {
 
     private func chooseSourceDirectory() {
         guard let url = FilePanels.chooseDirectory(
-            title: "选择仓库根目录或 src/DiscImageStudio.Cli 目录",
+            title: L("选择仓库根目录或 src/DiscImageStudio.Cli 目录"),
             currentPath: model.settings.devProjectPath
         ) else {
             return
@@ -224,7 +224,7 @@ struct OnboardingView: View {
             url.appendingPathComponent("DiscImageStudio.Cli.csproj"),
         ]
         guard candidates.contains(where: { fileManager.fileExists(atPath: $0.path) }) else {
-            alertMessage = "这个目录里没有找到 DiscImageStudio.Cli.csproj。请选择仓库根目录，或 src/DiscImageStudio.Cli 目录。"
+            alertMessage = L("这个目录里没有找到 DiscImageStudio.Cli.csproj。请选择仓库根目录，或 src/DiscImageStudio.Cli 目录。")
             return
         }
         Task {

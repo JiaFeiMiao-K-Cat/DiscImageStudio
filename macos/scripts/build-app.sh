@@ -215,6 +215,17 @@ if command -v plutil >/dev/null 2>&1; then
 fi
 note "Info.plist    : ok"
 
+# 本地化资源：en.lproj / zh-Hans.lproj 直接放进 Contents/Resources，
+# 让 SwiftUI 的 LocalizedStringKey 和 NSLocalizedString 都能从 main bundle 找到。
+LOCALIZATION_DIR="$MACOS_DIR/Localization"
+if [[ -d "$LOCALIZATION_DIR" ]]; then
+  for lproj in "$LOCALIZATION_DIR"/*.lproj; do
+    [[ -d "$lproj" ]] || continue
+    cp -R "$lproj" "$APP/Contents/Resources/"
+  done
+  note "本地化资源    : $(ls "$LOCALIZATION_DIR"/*.lproj | xargs -n1 basename | paste -sd ' ' -)"
+fi
+
 # AppIcon.icns（sips 生成 iconset → iconutil 合成，随后清理）
 ICONSET_DIR="$MACOS_DIR/build/AppIcon.iconset"
 ICON_TMP="$MACOS_DIR/build/AppIcon.icns"

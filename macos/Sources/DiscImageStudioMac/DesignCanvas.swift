@@ -111,7 +111,7 @@ struct DiscCanvas: View {
                     Image(systemName: "minus")
                 }
                 .buttonStyle(.borderless)
-                .help("缩小")
+                .help(L("缩小"))
 
                 Text("\(Int((zoom * 100).rounded()))%")
                     .font(.system(size: 10.5, design: .monospaced))
@@ -124,7 +124,7 @@ struct DiscCanvas: View {
                     Image(systemName: "plus")
                 }
                 .buttonStyle(.borderless)
-                .help("放大")
+                .help(L("放大"))
 
                 Button {
                     zoom = 1
@@ -133,7 +133,7 @@ struct DiscCanvas: View {
                     Image(systemName: "arrow.counterclockwise")
                 }
                 .buttonStyle(.borderless)
-                .help("适应 / 重置视图")
+                .help(L("适应 / 重置视图"))
 
                 Spacer(minLength: 0)
 

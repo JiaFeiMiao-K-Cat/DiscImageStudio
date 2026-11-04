@@ -1,0 +1,1864 @@
+/* DiscImageStudio macOS UI — Simplified Chinese to English (en-US) */
+/* Generated from the app's SwiftUI sources; keys are the original Chinese strings. */
+
+/* AboutView.swift:37 */
+"全能的光盘盘面可见图像生成工作台" = "A workbench for generating artwork visible on the disc surface";
+
+/* AboutView.swift:53 */
+"版本信息" = "Version";
+
+/* AboutView.swift:56 */
+"图形界面" = "Graphical interface";
+
+/* AboutView.swift:62 */
+"未连接" = "Not connected";
+
+/* AboutView.swift:67 */
+"运行方式" = "Runs via";
+
+/* AboutView.swift:72 */
+"位置" = "Location";
+
+/* AboutView.swift:81 */
+"许可证" = "License";
+
+/* AboutView.swift:102 */
+"链接" = "Links";
+
+/* AboutView.swift:105 */
+"上游仓库（GitHub）" = "Upstream repository (GitHub)";
+
+/* AboutView.swift:108 */
+"发布页与更新日志" = "Releases and changelog";
+
+/* AboutView.swift:113 */
+"许可证全文（GPL-3.0-or-later）" = "Full license text (GPL-3.0-or-later)";
+
+/* AboutView.swift:119 */
+"第三方声明" = "Third-party notices";
+
+/* AboutView.swift:142 */
+"macOS 图形界面为实验性功能，当前不包含物理刻录；生成的镜像需要配合 hdiutil / drutil 等工具使用。" = "The macOS graphical interface is experimental and does not include physical burning; use the generated images with tools such as hdiutil / drutil.";
+
+/* AboutView.swift:147 */
+"Copyright © Disc Image Studio contributors. 在 GPL-3.0-or-later 下分发。" = "Copyright © Disc Image Studio contributors. Distributed under GPL-3.0-or-later.";
+
+/* App.swift:15 */
+"关于 Disc Image Studio" = "About Disc Image Studio";
+
+/* App.swift:18 */
+"新建工程…" = "New Project…";
+
+/* App.swift:20 */
+"打开工程…" = "Open Project…";
+
+/* App.swift:23 */
+"保存工程" = "Save Project";
+
+/* App.swift:28 */
+"返回主页" = "Back to Home";
+
+/* AppModel.swift:73 */
+"开发构建" = "Development build";
+
+/* AppModel.swift:173 */
+"无法读取盘片预设。" = "Unable to read disc presets.";
+
+/* AppModel.swift:236 */
+"打开工程" = "Open Project";
+
+/* AppModel.swift:237 */
+"打开" = "Open";
+
+/* AppModel.swift:320 */
+"请先打开或新建工程，再从导出结果开始刻录。" = "Open or create a project first, then start burning from an export result.";
+
+/* AppModel.swift:462 */
+"标准 80min CD（兜底）" = "Standard 80-minute CD (fallback)";
+
+/* AppModel.swift:463 */
+"CLI 预设暂不可用时的内置 CD 参数（24.5–56.8 mm，359,849 扇区）。" = "Built-in CD geometry used when CLI presets are unavailable (24.5–56.8 mm, 359,849 sectors).";
+
+/* AppModel.swift:469 */
+"标准 12cm 单层 DVD（兜底）" = "Standard 12 cm single-layer DVD (fallback)";
+
+/* AppModel.swift:470 */
+"CLI 预设暂不可用时的内置 DVD 参数（24–58 mm，2,295,104 扇区）。" = "Built-in DVD geometry used when CLI presets are unavailable (24–58 mm, 2,295,104 sectors).";
+
+/* AppModel.swift:476 */
+"标准 25GB 单层 BD（兜底）" = "Standard 25 GB single-layer BD (fallback)";
+
+/* AppModel.swift:477 */
+"CLI 预设暂不可用时的内置 BD 参数（24–58 mm，2,218,392 扇区）。" = "Built-in BD geometry used when CLI presets are unavailable (24–58 mm, 2,218,392 sectors).";
+
+/* BurnModel.swift:19 */
+"文件模式" = "File mode";
+
+/* BurnModel.swift:20 */
+"流式模式" = "Streaming mode";
+
+/* BurnModel.swift:26 */
+"文件模式（drutil）" = "File mode (drutil)";
+
+/* BurnModel.swift:27 */
+"流式模式（DiscRecording，实验性）" = "Streaming mode (DiscRecording, experimental)";
+
+/* BurnModel.swift:109 */
+"未找到 disc-burn-stream 助手（应为 Contents/Resources/bin/disc-burn-stream）。请重新构建或安装完整应用。" = "The disc-burn-stream helper was not found (expected at Contents/Resources/bin/disc-burn-stream). Rebuild or install the complete app.";
+
+/* BurnModel.swift:112 */
+"流式刻录需要可用的 disc-image-studio CLI；请先在设置里指定 CLI。" = "Streaming burn requires a working disc-image-studio CLI; specify the CLI in Settings first.";
+
+/* BurnModel.swift:153 */
+"流式刻录已找到助手，但还需要把生成命令（cd-generate --output -）的参数接入管道；当前版本先请使用文件模式。" = "The streaming burn helper was found, but the generate command (cd-generate --output -) still has to be piped in; please use file mode for now.";
+
+/* BurnModel.swift:156 */
+"系统没有提供 /usr/bin/drutil，无法使用文件模式刻录。" = "/usr/bin/drutil is not available on this system, so file mode burning cannot be used.";
+
+/* BurnModel.swift:159 */
+"正在读取刻录机与介质状态…" = "Reading drive and media status…";
+
+/* BurnModel.swift:162 */
+"没有找到光盘刻录机。请连接刻录机后点「刷新刻录机」。" = "No disc burner found. Connect a burner, then click \"Refresh Drives\".";
+
+/* BurnModel.swift:165 */
+"请选择一个刻录机。" = "Select a burner.";
+
+/* BurnModel.swift:171 */
+"还没有读取到介质状态，请点「刷新介质」。" = "Media status has not been read yet. Click \"Refresh Media\".";
+
+/* BurnModel.swift:174 */
+"刻录机里没有光盘。请放入空白盘后再试。" = "There is no disc in the burner. Insert a blank disc and try again.";
+
+/* BurnModel.swift:178 */
+"没有检测到可识别的光盘介质（drutil 没有报告 Type）。请放入空白 CD-R / DVD-R 后刷新。" = "No recognizable disc media detected (drutil did not report a Type). Insert a blank CD-R / DVD-R and refresh.";
+
+/* BurnModel.swift:181 */
+"当前介质不可写入。" = "The current media is not writable.";
+
+/* BurnModel.swift:184 */
+"当前盘片可能有内容（检测到已有轨道或会话），不是空白盘，已禁止刻录。" = "The current disc may already contain data (existing tracks or sessions detected), so it is not blank and burning has been disabled.";
+
+/* BurnModel.swift:187 */
+"请选择要刻录的源文件（.wav / .aif / .iso / .dmg / .cue / .bin / .toc）。" = "Select a source file to burn (.wav / .aif / .iso / .dmg / .cue / .bin / .toc).";
+
+/* BurnModel.swift:193 */
+"不支持直接刻录该文件类型。可刻录 .wav（音频 CD）或 .iso / .dmg / .cue / .bin / .toc（数据盘）。" = "This file type cannot be burned directly. Burn .wav (audio CD) or .iso / .dmg / .cue / .bin / .toc (data disc).";
+
+/* BurnModel.swift:199 */
+"蓝光介质只能刻录数据镜像（.iso）；音频 CD 请使用 CD-R。" = "Blu-ray media only accepts data images (.iso); use a CD-R for audio CDs.";
+
+/* BurnModel.swift:209 */
+"未知" = "Unknown";
+
+/* BurnModel.swift:210 */
+"无介质" = "No media";
+
+/* BurnModel.swift:213 */
+"空白" = "Blank";
+
+/* BurnModel.swift:213 */
+"非空白" = "Not blank";
+
+/* BurnModel.swift:214 */
+"BD（实验性）" = "BD (experimental)";
+
+/* BurnModel.swift:219 */
+"尚未读取介质状态。" = "Media status has not been read yet.";
+
+/* BurnModel.swift:220 */
+"刻录机里没有光盘。" = "There is no disc in the burner.";
+
+/* BurnModel.swift:222 */
+"蓝光介质：可尝试数据镜像刻录（实验性，未经实机验证）；音频 CD 不受支持，失败请换用第三方软件。" = "Blu-ray media: data image burning can be attempted (experimental, not verified on hardware); audio CDs are not supported, so use third-party software if it fails.";
+
+/* BurnModel.swift:224 */
+"非空白盘：检测到已有轨道或会话，已禁止刻录。" = "Non-blank disc: existing tracks or sessions detected, so burning has been disabled.";
+
+/* BurnModel.swift:225 */
+")，可以刻录。" = "), ready to burn.";
+
+/* BurnModel.swift:237 */
+"源文件不存在" = "Source file does not exist";
+
+/* BurnModel.swift:239 */
+"不支持的文件类型" = "Unsupported file type";
+
+/* BurnModel.swift:260 */
+"没有找到光盘刻录机。请连接刻录机后刷新。" = "No disc burner found. Connect a burner and refresh.";
+
+/* BurnModel.swift:339 */
+"请先打开一个工程，流式刻录会直接生成当前工程并写入光盘。" = "Open a project first; streaming burn generates the current project and writes it straight to disc.";
+
+/* BurnModel.swift:340 */
+"请先打开一个工程。" = "Open a project first.";
+
+/* BurnModel.swift:344 */
+"CD 数据盘的流式写入还没有 CLI 输出模式；请使用文件模式生成 ISO 后刻录。" = "Streaming CD data discs are not supported by CLI output yet; use file mode to generate an ISO and then burn it.";
+
+/* BurnModel.swift:363 */
+"未检测到可流式写入的驱动器" = "No drive that supports streaming was detected";
+
+/* BurnModel.swift:374 */
+"当前工程没有可用的流式刻录类型。" = "The current project has no burnable streaming type.";
+
+/* BurnModel.swift:375 */
+"工程几何的扇区数无效。" = "The project geometry has an invalid sector count.";
+
+/* BurnModel.swift:376 */
+"没有找到支持 DiscRecording 流式写入的驱动器。" = "No drive supporting DiscRecording streaming was found.";
+
+/* BurnModel.swift:381 */
+"刻录机里没有光盘，请放入空白盘后刷新。" = "There is no disc in the burner. Insert a blank disc and refresh.";
+
+/* BurnModel.swift:382 */
+"当前盘片不是空白盘，已禁止刻录。" = "The current disc is not blank, so burning has been disabled.";
+
+/* BurnModel.swift:387 */
+"BD 流式写入需要空白 BD-R。" = "BD streaming requires a blank BD-R.";
+
+/* BurnModel.swift:389 */
+"工程扇区数必须大于 0。" = "The project sector count must be greater than 0.";
+
+/* BurnModel.swift:439 */
+"准备中…" = "Preparing…";
+
+/* BurnModel.swift:509 */
+"准备刻录…" = "Preparing to burn…";
+
+/* BurnModel.swift:510 */
+"正在生成并写入…" = "Generating and writing…";
+
+/* BurnModel.swift:511 */
+"正在校验…" = "Verifying…";
+
+/* BurnModel.swift:512 */
+"完成" = "Done";
+
+/* BurnModel.swift:513 */
+"失败" = "Failed";
+
+/* BurnModel.swift:531 */
+"已取消流式刻录" = "Streaming burn canceled";
+
+/* BurnModel.swift:603 */
+"正在写入…" = "Writing…";
+
+/* BurnModel.swift:607 */
+"正在收尾…" = "Finalizing…";
+
+/* BurnView.swift:37 */
+"刻录日志" = "Burn Log";
+
+/* BurnView.swift:38 */
+"刻录开始后，drutil 的日志会逐行显示在这里。" = "Once burning starts, drutil output appears here line by line.";
+
+/* BurnView.swift:88 */
+"刻录到光盘" = "Burn to Disc";
+
+/* BurnView.swift:90 */
+"把生成的 .wav / .iso / .dmg 等文件交给 macOS 系统刻录工具。" = "Hand the generated .wav / .iso / .dmg files to the macOS burning tools.";
+
+/* BurnView.swift:95 */
+"仅写入空白盘" = "Blank discs only";
+
+/* BurnView.swift:96 */
+"不可撤销" = "Cannot be undone";
+
+/* BurnView.swift:106 */
+"刻录方式" = "Burn Method";
+
+/* BurnView.swift:106 */
+"文件模式稳定可用；流式模式为实验性预留。" = "File mode is stable and available; streaming mode is reserved for experimental use.";
+
+/* BurnView.swift:163 */
+"调用 /usr/bin/drutil：音频 CD 会先把 WAV 放进临时目录再用 burn -audio 写入；数据盘直接 burn 镜像文件。" = "Invokes /usr/bin/drutil: for audio CDs the WAV is first copied to a temporary directory and written with burn -audio; data discs burn the image file directly.";
+
+/* BurnView.swift:165 */
+"流式模式用当前工程直接生成数据，经 DiscRecording 的 DRTrack producer 写入刻录机，不落完整镜像。当前支持 CD 音频与 BD 数据盘，实验性。" = "Streaming mode generates data from the current project and writes it to the burner through the DiscRecording DRTrack producer, without writing a full image. Currently supports CD audio and BD data discs; experimental.";
+
+/* BurnView.swift:173 */
+"光盘刻录机" = "Disc burners";
+
+/* BurnView.swift:182 */
+"刷新刻录机" = "Refresh Drives";
+
+/* BurnView.swift:191 */
+"系统缺少 /usr/bin/drutil，文件模式刻录不可用。" = "/usr/bin/drutil is missing, so file mode burning is unavailable.";
+
+/* BurnView.swift:196 */
+"正在查找刻录机…" = "Looking for burners…";
+
+/* BurnView.swift:196 */
+"没有找到光盘刻录机。" = "No disc burner found.";
+
+/* BurnView.swift:199 */
+"请连接 USB 刻录机，放入空白 CD/DVD-R，然后点「刷新刻录机」。" = "Connect a USB burner, insert a blank CD/DVD-R, then click \"Refresh Drives\".";
+
+/* BurnView.swift:205 */
+"刻录机" = "Burner";
+
+/* BurnView.swift:222 */
+"索引" = "Index";
+
+/* BurnView.swift:228 */
+"支持级别" = "Support level";
+
+/* BurnView.swift:265 */
+"介质状态" = "Media status";
+
+/* BurnView.swift:274 */
+"刷新介质" = "Refresh Media";
+
+/* BurnView.swift:300 */
+"类型" = "Type";
+
+/* BurnView.swift:310 */
+"轨道/会话" = "Tracks/sessions";
+
+/* BurnView.swift:311 */
+"检测到已有轨道或会话" = "Existing tracks or sessions detected";
+
+/* BurnView.swift:311 */
+"没有检测到轨道" = "No tracks detected";
+
+/* BurnView.swift:316 */
+"来源类型" = "Source type";
+
+/* BurnView.swift:317 */
+"未选择可刻录的来源" = "No burnable source selected";
+
+/* BurnView.swift:323 */
+"drutil status 原始输出" = "Raw drutil status output";
+
+/* BurnView.swift:324 */
+"（无输出）" = "(no output)";
+
+/* BurnView.swift:336 */
+"正在读取介质状态…" = "Reading media status…";
+
+/* BurnView.swift:347 */
+"是（drutil 明确报告空白）" = "Yes (drutil explicitly reports blank)";
+
+/* BurnView.swift:347 */
+"否（drutil 明确报告非空白）" = "No (drutil explicitly reports not blank)";
+
+/* BurnView.swift:349 */
+"否（检测到已有轨道）" = "No (existing tracks detected)";
+
+/* BurnView.swift:349 */
+"可能是空白盘（无明确标记、无轨道）" = "Probably blank (no explicit marker, no tracks)";
+
+/* BurnView.swift:364 */
+"来源文件" = "Source file";
+
+/* BurnView.swift:366 */
+"支持 .wav / .aif（音频 CD）与 .iso / .dmg / .cue / .bin / .toc（数据盘）。" = "Supports .wav / .aif (audio CD) and .iso / .dmg / .cue / .bin / .toc (data disc).";
+
+/* BurnView.swift:370 */
+"使用最近生成结果" = "Use Latest Result";
+
+/* BurnView.swift:379 */
+"选择或输入要刻录的文件路径" = "Choose or enter the path of the file to burn";
+
+/* BurnView.swift:383 */
+"要刻录的源文件" = "Source file to burn";
+
+/* BurnView.swift:384 */
+"选择…" = "Choose…";
+
+/* BurnView.swift:399 */
+"清除" = "Clear";
+
+/* BurnView.swift:442 */
+"开始刻录" = "Start Burning";
+
+/* BurnView.swift:449 */
+"正在取消…" = "Canceling…";
+
+/* BurnView.swift:449 */
+"取消刻录" = "Cancel Burning";
+
+/* BurnView.swift:466 */
+"打开确认弹层后开始刻录" = "Confirm in the sheet to start burning";
+
+/* BurnView.swift:469 */
+"流式刻录助手不可用" = "Streaming burn helper unavailable";
+
+/* BurnView.swift:492 */
+"刻录会不可逆地写入光盘。每次开始前都会要求确认盘片是空白且可报废的测试介质；蓝光仅实验性支持数据镜像（未实机验证）。" = "Burning writes to the disc irreversibly. Every burn asks you to confirm the disc is blank and expendable; Blu-ray supports data images experimentally only (not verified on hardware).";
+
+/* BurnView.swift:506 */
+"从当前工程生成并刻录" = "Generate from the current project and burn";
+
+/* BurnView.swift:508 */
+"生成数据直接写入刻录机，不落完整镜像。" = "The generated data goes straight to the burner without writing a full image.";
+
+/* BurnView.swift:510 */
+"实验性" = "Experimental";
+
+/* BurnView.swift:514 */
+"流式刻录助手不可用。" = "The streaming burn helper is unavailable.";
+
+/* BurnView.swift:518 */
+"流式模式需要 DiscRecording 辅助程序 disc-burn-stream。可以切回文件模式，先生成 .wav 或 .iso 再刻录。" = "Streaming mode needs the DiscRecording helper disc-burn-stream. You can switch back to file mode and generate a .wav or .iso first, then burn it.";
+
+/* BurnView.swift:522 */
+"切回文件模式" = "Switch to File Mode";
+
+/* BurnView.swift:534 */
+"工程" = "Project";
+
+/* BurnView.swift:539 */
+"盘型" = "Disc type";
+
+/* BurnView.swift:544 */
+"流式类型" = "Streaming type";
+
+/* BurnView.swift:549 */
+"扇区" = "Sectors";
+
+/* BurnView.swift:554 */
+"预计数据" = "Expected data";
+
+/* BurnView.swift:582 */
+"刷新流式刻录机与介质" = "Refresh streaming burners and media";
+
+/* BurnView.swift:591 */
+"这是空白盘，且是可报废的测试介质" = "This disc is blank and expendable for testing";
+
+/* BurnView.swift:595 */
+"流式写入会直接消耗盘片且不可撤销；首次使用请用可报废 CD-R / BD-R，失败时改用文件模式或第三方软件。" = "Streaming writes consume the disc immediately and cannot be undone; use an expendable CD-R / BD-R for first runs, and fall back to file mode or third-party software if it fails.";
+
+/* BurnView.swift:614 */
+"生成并刻录" = "Generate and Burn";
+
+/* BurnView.swift:644 */
+"流式刻录日志" = "Streaming Burn Log";
+
+/* BurnView.swift:645 */
+"开始后，生成与写入的日志会逐行显示在这里。" = "Once started, generation and writing logs appear here line by line.";
+
+/* BurnView.swift:674 */
+"未开始" = "Not started";
+
+/* BurnView.swift:686 */
+"成功" = "Succeeded";
+
+/* BurnView.swift:686 */
+"已取消" = "Canceled";
+
+/* BurnView.swift:709 */
+"蓝光" = "Blu-ray";
+
+/* BurnView.swift:722 */
+"进行中" = "In progress";
+
+/* BurnView.swift:725 */
+"中断" = "Interrupted";
+
+/* BurnView.swift:748 */
+"刻录进度" = "Burn progress";
+
+/* BurnView.swift:777 */
+"正在调用 drutil…" = "Invoking drutil…";
+
+/* BurnView.swift:808 */
+"刻录结果" = "Burn result";
+
+/* BurnView.swift:811 */
+"退出码" = "Exit code";
+
+/* BurnView.swift:817 */
+"耗时" = "Elapsed";
+
+/* BurnView.swift:838 */
+"请取出光盘并在其他设备上验证内容。" = "Eject the disc and verify its contents on another device.";
+
+/* BurnView.swift:839 */
+"可展开上方「刻录日志」查看 drutil 的完整输出。" = "Expand \"Burn Log\" above to see the full drutil output.";
+
+/* BurnView.swift:859 */
+"选择要刻录的文件" = "Choose the file to burn";
+
+/* BurnView.swift:883 */
+"确认刻录" = "Confirm Burn";
+
+/* BurnView.swift:885 */
+"刻录不可撤销，请确认盘片状态。" = "Burning cannot be undone. Please confirm the disc status.";
+
+/* BurnView.swift:893 */
+"来源" = "Source";
+
+/* BurnView.swift:893 */
+"未选择" = "Not selected";
+
+/* BurnView.swift:896 */
+"介质" = "Media";
+
+/* BurnView.swift:906 */
+"如果盘片里已有数据或不是空白盘，请立即取消并更换盘片。蓝光仅实验性支持数据镜像。" = "If the disc already contains data or is not blank, cancel now and swap discs. Blu-ray data images are experimental only.";
+
+/* BurnView.swift:913 */
+"取消" = "Cancel";
+
+/* CalibrationCanvas.swift:66 */
+"尚未载入图片" = "No image loaded yet";
+
+/* CalibrationCanvas.swift:103 */
+"缩小" = "Zoom Out";
+
+/* CalibrationCanvas.swift:114 */
+"放大" = "Zoom In";
+
+/* CalibrationCanvas.swift:121 */
+"适应窗口 / 重置视图" = "Fit to Window / Reset View";
+
+/* CalibrationCanvas.swift:175 */
+"拖动控制点对齐盘缘与中心孔 · 拖动空白平移" = "Drag control points to align the disc edge and center hole · drag empty space to pan";
+
+/* CalibrationCanvas.swift:178 */
+"点击空白补点 · 拖动点修正 · Delete 删除选中点" = "Click empty space to add a point · drag a point to adjust · Delete removes the selected point";
+
+/* CalibrationCanvas.swift:180 */
+"拖动画布平移 · 滚轮/双指缩放" = "Drag the canvas to pan · scroll or pinch to zoom";
+
+/* CalibrationModel.swift:20 */
+"生成标靶" = "Generate Target";
+
+/* CalibrationModel.swift:21 */
+"照片矫正" = "Photo Rectification";
+
+/* CalibrationModel.swift:22 */
+"描点与反推" = "Trace Points & Fit";
+
+/* CalibrationModel.swift:28 */
+"生成用于刻录的标定盘" = "Generate a calibration disc for burning";
+
+/* CalibrationModel.swift:29 */
+"拖拽盘缘与中心孔轮廓" = "Drag the disc edge and center-hole outline";
+
+/* CalibrationModel.swift:30 */
+"沿曲线打点并反推参数" = "Place points along the curve and fit the parameters";
+
+/* CalibrationModel.swift:154 */
+"请选择一个候选。" = "Select a candidate.";
+
+/* CalibrationModel.swift:154 */
+"请先反推参数。" = "Fit the parameters first.";
+
+/* CalibrationModel.swift:158 */
+"精调拟合失败，请检查描点。" = "Fine-tune fit failed. Check the traced points.";
+
+/* CalibrationModel.swift:160 */
+"平均偏差 %.3f mm 超过 0.35 mm。" = "Mean deviation %.3f mm exceeds 0.35 mm.";
+
+/* CalibrationModel.swift:163 */
+"最大偏差 %.3f mm 超过 0.8 mm。" = "Maximum deviation %.3f mm exceeds 0.8 mm.";
+
+/* CalibrationModel.swift:166 */
+"缺少标定会话，无法写回参数。" = "No calibration session, so the parameters cannot be written back.";
+
+/* CalibrationModel.swift:171 */
+"粗调拟合失败。" = "Coarse fit failed.";
+
+/* CalibrationModel.swift:173 */
+"粗调存在歧义警告，必须消除后才能应用。" = "The coarse fit has ambiguity warnings; they must be resolved before applying.";
+
+/* CalibrationModel.swift:176 */
+"粗调无法确定唯一结论（bestIndex = -1）。" = "The coarse fit is inconclusive (bestIndex = -1).";
+
+/* CalibrationModel.swift:254 */
+"正在恢复标定会话…" = "Restoring calibration session…";
+
+/* CalibrationModel.swift:260 */
+"正在打开标定会话…" = "Opening calibration session…";
+
+/* CalibrationModel.swift:267 */
+"未找到 CLI，无法恢复标定会话。" = "CLI not found; cannot restore the calibration session.";
+
+/* CalibrationModel.swift:342 */
+"会话已恢复，但矫正图重建失败。" = "Session restored, but the rectified image could not be rebuilt.";
+
+/* CalibrationModel.swift:400 */
+"请先生成标靶。" = "Generate a target first.";
+
+/* CalibrationModel.swift:406 */
+"请先完成并确认照片矫正。" = "Complete and confirm the photo rectification first.";
+
+/* CalibrationModel.swift:417 */
+"未找到 CLI，无法生成标靶。请在设置里配置 CLI。" = "CLI not found; cannot generate a target. Configure the CLI in Settings.";
+
+/* CalibrationModel.swift:431 */
+"正在生成标靶…" = "Generating target…";
+
+/* CalibrationModel.swift:491 */
+"请先生成标靶，再导入对应的盘面照片。" = "Generate a target first, then import the matching disc photo.";
+
+/* CalibrationModel.swift:495 */
+"导入标定盘照片" = "Import Calibration Disc Photo";
+
+/* CalibrationModel.swift:507 */
+"未找到 CLI，无法处理照片。" = "CLI not found; cannot process the photo.";
+
+/* CalibrationModel.swift:514 */
+"正在准备照片…" = "Preparing photo…";
+
+/* CalibrationModel.swift:588 */
+"未找到 CLI，无法计算矫正。" = "CLI not found; cannot compute the rectification.";
+
+/* CalibrationModel.swift:592 */
+"请先导入照片。" = "Import a photo first.";
+
+/* CalibrationModel.swift:596 */
+"外缘与中心孔各需要至少 5 个控制点。" = "The outer edge and the center hole each need at least 5 control points.";
+
+/* CalibrationModel.swift:603 */
+"正在计算照片矫正…" = "Computing photo rectification…";
+
+/* CalibrationModel.swift:639 */
+"照片矫正失败，请调整轮廓点。" = "Photo rectification failed. Adjust the outline points.";
+
+/* CalibrationModel.swift:646 */
+"请先计算矫正。" = "Compute the rectification first.";
+
+/* CalibrationModel.swift:651 */
+"矫正已确认，请在矫正图上沿一条清楚曲线打点。" = "Rectification confirmed. Place points along a clearly visible curve on the rectified image.";
+
+/* CalibrationModel.swift:653 */
+"正在保存矫正状态…" = "Saving rectification state…";
+
+/* CalibrationModel.swift:751 */
+"未找到 CLI，无法反推参数。" = "CLI not found; cannot fit the parameters.";
+
+/* CalibrationModel.swift:755 */
+"请先确认照片矫正。" = "Confirm the photo rectification first.";
+
+/* CalibrationModel.swift:770 */
+"正在反推参数…" = "Fitting parameters…";
+
+/* CalibrationModel.swift:774 */
+"缺少标定会话，无法反推。请重新生成精调标靶。" = "No calibration session, so fitting is not possible. Regenerate the fine-tune target.";
+
+/* CalibrationModel.swift:791 */
+"拟合失败。" = "Fit failed.";
+
+/* CalibrationModel.swift:807 */
+"粗调失败。" = "Coarse fit failed.";
+
+/* CalibrationModel.swift:819 */
+"当前候选不可应用。" = "The current candidate cannot be applied.";
+
+/* CalibrationModel.swift:831 */
+"正在应用标定参数…" = "Applying calibration parameters…";
+
+/* CalibrationModel.swift:835 */
+"缺少标定会话或照片，无法写回会话。" = "Missing calibration session or photo; cannot write back to the session.";
+
+/* CalibrationModel.swift:851 */
+"参数已更新：r0 %.3f mm / r1 %.3f mm" = "Parameters updated: r0 %.3f mm / r1 %.3f mm";
+
+/* CalibrationModel.swift:858 */
+"参数已更新；粗调不单独保存会话。" = "Parameters updated; the coarse fit does not save a separate session.";
+
+/* CalibrationModel.swift:903 */
+"标定会话已更新。" = "Calibration session updated.";
+
+/* CalibrationModel.swift:943 */
+"导出标定会话" = "Export Calibration Session";
+
+/* CalibrationModel.swift:968 */
+"已取消等待；CLI 进程可能仍在后台完成写入。" = "Wait canceled; the CLI process may still finish writing in the background.";
+
+/* CalibrationModel.swift:982 */
+"正在取消等待…" = "Canceling wait…";
+
+/* CalibrationView.swift:17 */
+"正在加载标定记录…" = "Loading calibration records…";
+
+/* CalibrationView.swift:78 */
+"辅助标定" = "Assisted Calibration";
+
+/* CalibrationView.swift:80 */
+"精调" = "Fine tune";
+
+/* CalibrationView.swift:80 */
+"粗调" = "Coarse tune";
+
+/* CalibrationView.swift:94 */
+"打开 calibration 目录" = "Open Calibration Folder";
+
+/* CalibrationView.swift:159 */
+"显示矫正预览" = "Show rectified preview";
+
+/* CalibrationView.swift:168 */
+"叠加预测" = "Overlay prediction";
+
+/* CalibrationView.swift:192 */
+"取消等待" = "Cancel Wait";
+
+/* CalibrationView.swift:218 */
+"标定图案预览" = "Calibration pattern preview";
+
+/* CalibrationView.swift:220 */
+"矫正预览" = "Rectified preview";
+
+/* CalibrationView.swift:221 */
+"原始照片与轮廓" = "Original photo & outline";
+
+/* CalibrationView.swift:222 */
+"矫正图 / 描点与预测" = "Rectified image / points & prediction";
+
+/* CalibrationView.swift:285 */
+"矫正预览为只读；切换回照片可继续调整轮廓，修改轮廓会使矫正与后描点失效。" = "The rectified preview is read-only; switch back to the photo to adjust the outline. Changing the outline invalidates the rectification and later points.";
+
+/* CalibrationView.swift:290 */
+"盘片实体外缘" = "Physical disc outer edge";
+
+/* CalibrationView.swift:291 */
+"中心孔边缘" = "Center hole edge";
+
+/* CalibrationView.swift:293 */
+"重置轮廓" = "Reset Outline";
+
+/* CalibrationView.swift:300 */
+"删除选中点" = "Delete Selected Point";
+
+/* CalibrationView.swift:303 */
+"清空" = "Clear All";
+
+/* CalibrationView.swift:312 */
+"描点" = "Points";
+
+/* CalibrationView.swift:313 */
+"预测" = "Prediction";
+
+/* CalibrationView.swift:315 */
+"偏离较大" = "Large deviation";
+
+/* CalibrationView.swift:319 */
+"图案按生成几何裁切环带；请在同一生成参数下刻录并拍照。" = "The pattern is clipped to the annulus of the generation geometry; burn and photograph it using the same generation parameters.";
+
+/* CalibrationView.swift:409 */
+"精调靶标" = "Fine-tune target";
+
+/* CalibrationView.swift:409 */
+"粗调图案" = "Coarse pattern";
+
+/* CalibrationView.swift:422 */
+"生成精调标靶" = "Generate Fine-Tune Target";
+
+/* CalibrationView.swift:422 */
+"生成粗调图案" = "Generate Coarse Pattern";
+
+/* CalibrationView.swift:431 */
+"粗调用于 issue #49 的两张法的第一步：半黑白盘可先消除累计绕圈，再用精调靶标做细标定；本工具不自动识别环数，仍需人工沿分界描点。" = "The coarse step is the first of the two-step method from issue #49: a half black-and-white disc removes accumulated spiraling first, then the fine-tune target refines calibration. This tool does not count turns automatically; you still trace points along the boundary by hand.";
+
+/* CalibrationView.swift:436 */
+"内置同心圆 + 十字靶标；生成时固定当前工程几何。参数应用后必须重新生成标靶再刻下一张。" = "Built-in concentric circles plus a crosshair target; the current project geometry is fixed at generation time. After applying parameters you must regenerate the target before burning the next disc.";
+
+/* CalibrationView.swift:453 */
+"在 Finder 中显示" = "Show in Finder";
+
+/* CalibrationView.swift:455 */
+"下一步：照片矫正" = "Next: Photo Rectification";
+
+/* CalibrationView.swift:461 */
+"前往导出" = "Go to Export";
+
+/* CalibrationView.swift:463 */
+"前往刻录" = "Go to Burn";
+
+/* CalibrationView.swift:466 */
+"生成/刻录请保持本记录保存的生成参数；刻录时在刻录页选择本图案文件。" = "Use the generation parameters saved in this record when generating and burning; on the Burn page, select this pattern file.";
+
+/* CalibrationView.swift:471 */
+"尚未生成标靶。" = "No target generated yet.";
+
+/* CalibrationView.swift:483 */
+"导入照片…" = "Import Photo…";
+
+/* CalibrationView.swift:492 */
+"实体盘片规格" = "Physical disc specifications";
+
+/* CalibrationView.swift:516 */
+"计算矫正" = "Compute Rectification";
+
+/* CalibrationView.swift:520 */
+"确认矫正并进入描点" = "Confirm Rectification and Trace Points";
+
+/* CalibrationView.swift:535 */
+"已确认，可进入描点" = "Confirmed; you can trace points";
+
+/* CalibrationView.swift:541 */
+"重置轮廓为默认 8+8 点" = "Reset outline to the default 8+8 points";
+
+/* CalibrationView.swift:554 */
+"反推参数" = "Fit Parameters";
+
+/* CalibrationView.swift:561 */
+"返回照片矫正" = "Back to Photo Rectification";
+
+/* CalibrationView.swift:571 */
+"粗调：沿黑白分界从内到外打点；应用前必须核对橙色预测线与描点是否重合。" = "Coarse: place points from inside to outside along the black/white boundary; before applying, check that the orange prediction line passes through the traced points.";
+
+/* CalibrationView.swift:589 */
+"搜索结果命中了搜索边界：参数可能被范围截住，请核对叠加线。" = "The search reached its boundary: parameters may be clamped by the range. Check the overlay lines.";
+
+/* CalibrationView.swift:600 */
+"门槛：平均 ≤0.35 / 最大 ≤0.8 mm" = "Thresholds: mean ≤0.35 / max ≤0.8 mm";
+
+/* CalibrationView.swift:600 */
+"粗调：warnings 必须为空" = "Coarse: warnings must be empty";
+
+/* CalibrationView.swift:625 */
+"应用参数到工程" = "Apply Parameters to Project";
+
+/* CalibrationView.swift:667 */
+"平均 %.3f mm · 最大 %.3f mm" = "Mean %.3f mm · Max %.3f mm";
+
+/* CalibrationView.swift:702 */
+"标定记录" = "Calibration Records";
+
+/* CalibrationView.swift:708 */
+"刷新" = "Refresh";
+
+/* CalibrationView.swift:715 */
+"本工程 calibration/ 下还没有 .calibration.json 会话。完成步骤 1 后会自动写入。" = "There are no .calibration.json sessions in this project's calibration/ folder yet. One is written automatically after step 1.";
+
+/* CalibrationView.swift:761 */
+"已确认" = "Confirmed";
+
+/* CalibrationView.swift:763 */
+"未确认" = "Not confirmed";
+
+/* CalibrationView.swift:767 */
+"删除" = "Delete";
+
+/* CalibrationView.swift:769 */
+"导出" = "Export";
+
+/* ContentView.swift:37 */
+"未找到 disc-image-studio CLI。" = "disc-image-studio CLI not found.";
+
+/* DesignCanvas.swift:136 */
+"适应 / 重置视图" = "Fit / Reset View";
+
+/* DesignCanvas.swift:140 */
+"拖动空白平移 · 拖动图层移动 · 角点缩放" = "Drag empty space to pan · drag a layer to move it · drag a corner to resize";
+
+/* DesignInspector.swift:24 */
+"属性" = "Properties";
+
+/* DesignInspector.swift:28 */
+"可见" = "Visible";
+
+/* DesignInspector.swift:28 */
+"已隐藏" = "Hidden";
+
+/* DesignInspector.swift:36 */
+"图层名" = "Layer name";
+
+/* DesignInspector.swift:48 */
+"旋转 (°)" = "Rotation (°)";
+
+/* DesignInspector.swift:49 */
+"缩放 (%)" = "Scale (%)";
+
+/* DesignInspector.swift:64 */
+"选中一个图层以编辑属性" = "Select a layer to edit its properties";
+
+/* DesignInspector.swift:141 */
+"影调" = "Tone";
+
+/* DesignInspector.swift:157 */
+"抖动强度" = "Dither strength";
+
+/* DesignInspector.swift:174 */
+"灰阶档位" = "Gray levels";
+
+/* DesignInspector.swift:178 */
+"2 级" = "2 levels";
+
+/* DesignInspector.swift:179 */
+"4 级" = "4 levels";
+
+/* DesignInspector.swift:187 */
+"2 级（DVD / 蓝光固定）" = "2 levels (fixed for DVD / Blu-ray)";
+
+/* DesignInspector.swift:196 */
+"亮度" = "Brightness";
+
+/* DesignInspector.swift:212 */
+"sRGB 线性化" = "sRGB linearization";
+
+/* DesignInspector.swift:252 */
+"导入图层后显示盘面预览" = "Import a layer to see the disc preview";
+
+/* DesignSystem.swift:201 */
+"必填" = "Required";
+
+/* DesignSystem.swift:207 */
+"必填项" = "Required field";
+
+/* DesignSystem.swift:218 */
+"音频轨道" = "Audio tracks";
+
+/* DesignSystem.swift:219 */
+"数据镜像" = "Data image";
+
+/* DesignSystem.swift:220 */
+"混合文件系统" = "Mixed file system";
+
+/* DesignSystem.swift:221 */
+"几何预览" = "Geometry preview";
+
+/* DesignSystem.swift:222 */
+"编码预览" = "Encoded preview";
+
+/* DesignSystem.swift:223 */
+"纠错编码" = "ECC";
+
+/* DesignSystem.swift:224 */
+"无" = "None";
+
+/* DesignSystem.swift:234 */
+"12.3 秒" = "12.3 s";
+
+/* DesignSystem.swift:234 */
+"1 分 05 秒" = "1 min 05 s";
+
+/* DesignSystem.swift:238 */
+"%.1f 秒" = "%.1f s";
+
+/* DesignSystem.swift:243 */
+"%d 分 %02d 秒" = "%d min %02d s";
+
+/* DesignView.swift:51 */
+"图层" = "Layers";
+
+/* DesignView.swift:68 */
+"还没有图层" = "No layers yet";
+
+/* DesignView.swift:71 */
+"导入 PNG / JPEG 图片开始设计" = "Import a PNG / JPEG image to start designing";
+
+/* DesignView.swift:98 */
+"上移一层" = "Move Up One Layer";
+
+/* DesignView.swift:100 */
+"上移图层" = "Move Layer Up";
+
+/* DesignView.swift:108 */
+"下移一层" = "Move Down One Layer";
+
+/* DesignView.swift:110 */
+"下移图层" = "Move Layer Down";
+
+/* DesignView.swift:117 */
+"删除选中图层" = "Delete Selected Layer";
+
+/* DesignView.swift:119 */
+"删除图层" = "Delete Layer";
+
+/* DesignView.swift:130 */
+"导入图片" = "Import Image";
+
+/* DesignView.swift:184 */
+"隐藏图层" = "Hide Layer";
+
+/* DesignView.swift:184 */
+"显示图层" = "Show Layer";
+
+/* DesignView.swift:202 */
+"显示/隐藏" = "Show/Hide";
+
+/* DesignView.swift:203 */
+"上移" = "Move Up";
+
+/* DesignView.swift:204 */
+"下移" = "Move Down";
+
+/* DesignView.swift:215 */
+"随盘文件" = "Disc files";
+
+/* DesignView.swift:219 */
+"数据盘模式" = "Data disc mode";
+
+/* DesignView.swift:222 */
+"空则整盘绘制；选择文件夹后会生成带文件的镜像（CD 自动切换为数据盘模式）。" = "If empty, the whole disc is drawn; choosing a folder produces an image with files (CD automatically switches to data disc mode).";
+
+/* DesignView.swift:228 */
+"文件夹" = "Folder";
+
+/* DesignView.swift:230 */
+"未选择（整盘绘制）" = "Not selected (whole-disc artwork)";
+
+/* DesignView.swift:233 */
+"选择随盘文件目录" = "Choose Disc Files Folder";
+
+/* DesignView.swift:245 */
+"内圈" = "Inner radius";
+
+/* DesignView.swift:246 */
+"外圈" = "Outer radius";
+
+/* DesignView.swift:256 */
+"未选择随盘文件：导出默认生成 WAV 音轨/CUE（音频 CD）。" = "No disc files selected: export generates a WAV track/CUE by default (audio CD).";
+
+/* ExportView.swift:27 */
+"导出结果" = "Export Results";
+
+/* ExportView.swift:65 */
+"源图片" = "Source image";
+
+/* ExportView.swift:79 */
+"工程设置…" = "Project Settings…";
+
+/* ExportView.swift:83 */
+"前往设计导入图片" = "Go to Design and import an image";
+
+/* ExportView.swift:96 */
+"输出文件" = "Output file";
+
+/* ExportView.swift:101 */
+"输出路径" = "Output path";
+
+/* ExportView.swift:116 */
+"CD-DA 编码" = "CD-DA encoding";
+
+/* ExportView.swift:119 */
+"应用 CD-DA 延迟交织" = "Apply CD-DA delay interleaving";
+
+/* ExportView.swift:126 */
+"同时导出 CUE 文件" = "Also export a CUE file";
+
+/* ExportView.swift:138 */
+"卷标" = "Volume label";
+
+/* ExportView.swift:150 */
+"随盘文件（可选）" = "Disc files (optional)";
+
+/* ExportView.swift:202 */
+"写入文件不会改动光盘。" = "Writing files does not modify the disc.";
+
+/* ExportView.swift:224 */
+"输出 ISO" = "Output ISO";
+
+/* ExportView.swift:224 */
+"输出音轨（WAV / RAW）" = "Output audio track (WAV / RAW)";
+
+/* ExportView.swift:232 */
+"请选择输出位置。" = "Choose an output location.";
+
+/* ExportView.swift:245 */
+"已选择随盘文件：生成 Mode 1 数据 ISO，文件写入内/外圈；输出扩展名应为 .iso。" = "Disc files selected: generates a Mode 1 data ISO with the files written to the inner/outer area; the output extension should be .iso.";
+
+/* ExportView.swift:246 */
+"未选择随盘文件：生成 CD-DA 音轨（WAV/RAW）；输出扩展名应为 .wav 或 .raw。" = "No disc files selected: generates a CD-DA audio track (WAV/RAW); the output extension should be .wav or .raw.";
+
+/* ExportView.swift:248 */
+"生成 DVD ISO；未选择随盘文件时填充整盘，选择后把文件写入内/外圈。" = "Generates a DVD ISO; without disc files the whole disc is filled, with disc files they are written to the inner/outer area.";
+
+/* ExportView.swift:250 */
+"生成 BD-R ISO；未选择随盘文件时整盘绘制，选择后写入 UDF 文件系统。" = "Generates a BD-R ISO; without disc files the whole disc is drawn, with disc files they are written to a UDF file system.";
+
+/* ExportView.swift:256 */
+"生成数据 ISO" = "Generate Data ISO";
+
+/* ExportView.swift:256 */
+"生成音轨" = "Generate Audio Track";
+
+/* ExportView.swift:257 */
+"生成 DVD 镜像" = "Generate DVD Image";
+
+/* ExportView.swift:258 */
+"生成蓝光镜像" = "Generate Blu-ray Image";
+
+/* ExportView.swift:276 */
+"选择输出文件" = "Choose Output File";
+
+/* FilePanels.swift:12 */
+"选择" = "Choose";
+
+/* FilePanels.swift:36 */
+"导入" = "Import";
+
+/* FilePanels.swift:139 */
+"这是一个目录。" = "This is a folder.";
+
+/* FilePanels.swift:143 */
+"文件存在" = "File exists";
+
+/* FilePanels.swift:146 */
+"找不到这个文件。" = "File not found.";
+
+/* FilePanels.swift:151 */
+"这是一个目录，输出需要指定文件名。" = "This is a folder; the output needs a file name.";
+
+/* FilePanels.swift:153 */
+"将覆盖已有文件" = "Will overwrite existing file";
+
+/* FilePanels.swift:156 */
+"运行后创建" = "Created when run";
+
+/* FilePanels.swift:160 */
+"目录存在" = "Folder exists";
+
+/* FilePanels.swift:162 */
+"这不是目录。" = "This is not a folder.";
+
+/* FilePanels.swift:164 */
+"目录不存在。" = "Folder does not exist.";
+
+/* HomeView.swift:17 */
+"把图片设计成 CD / DVD / 蓝光光盘上肉眼可见的盘面图案。" = "Turn images into artwork that is visible on the surface of CD / DVD / Blu-ray discs.";
+
+/* HomeView.swift:36 */
+"从模板开始" = "Start from a Template";
+
+/* HomeView.swift:40 */
+"内置兜底参数" = "Built-in fallback";
+
+/* HomeView.swift:61 */
+"最近工程" = "Recent Projects";
+
+/* HomeView.swift:97 */
+"继续工程" = "Continue Project";
+
+/* HomeView.swift:113 */
+"新建工程" = "New Project";
+
+/* HomeView.swift:156 */
+"盘片预设加载失败，模板使用内置兜底参数。" = "Failed to load disc presets; templates use built-in fallback parameters.";
+
+/* HomeView.swift:167 */
+"重试" = "Retry";
+
+/* HomeView.swift:187 */
+"空白工程" = "Blank project";
+
+/* HomeView.swift:189 */
+"选择盘型与预设" = "Choose a disc type and preset";
+
+/* HomeView.swift:277 */
+"从列表中移除" = "Remove from List";
+
+/* ImagePreviewView.swift:19 */
+"PNG 预览" = "PNG Preview";
+
+/* ImagePreviewView.swift:29 */
+"在预览中打开" = "Open in Preview";
+
+/* ImagePreviewView.swift:52 */
+"无法加载预览图片" = "Unable to load the preview image";
+
+/* ImagePreviewView.swift:72 */
+"双击用「预览」打开" = "Double-click to open in Preview";
+
+/* ImagePreviewView.swift:74 */
+"双击图片可用「预览」打开完整分辨率。" = "Double-click the image to open it at full resolution in Preview.";
+
+/* LogConsoleView.swift:9 */
+"日志" = "Log";
+
+/* LogConsoleView.swift:10 */
+"运行命令后，stdout / stderr 会逐行显示在这里。" = "After a command runs, stdout / stderr appear here line by line.";
+
+/* LogConsoleView.swift:20 */
+"复制" = "Copy";
+
+/* LogConsoleView.swift:24 */
+"把全部日志复制到剪贴板" = "Copy the entire log to the clipboard";
+
+/* LogConsoleView.swift:34 */
+"清空显示；不影响正在运行的任务" = "Clear the display; does not affect a running task";
+
+/* NewProjectSheet.swift:12 */
+"未命名工程" = "Untitled Project";
+
+/* NewProjectSheet.swift:72 */
+"内置兜底预设" = "Built-in fallback presets";
+
+/* NewProjectSheet.swift:95 */
+"盘片预设" = "Disc presets";
+
+/* NewProjectSheet.swift:113 */
+"工程名" = "Project name";
+
+/* NewProjectSheet.swift:119 */
+"保存位置" = "Save location";
+
+/* NewProjectSheet.swift:123 */
+"选择工程保存位置" = "Choose where to save the project";
+
+/* NewProjectSheet.swift:127 */
+"输出位置" = "Output location";
+
+/* NewProjectSheet.swift:131 */
+"选择输出位置" = "Choose Output Location";
+
+/* NewProjectSheet.swift:139 */
+"BD-R 单层" = "BD-R single layer";
+
+/* NewProjectSheet.swift:157 */
+"创建工程" = "Create Project";
+
+/* NewProjectSheet.swift:205 */
+"请选择盘片预设。" = "Select a disc preset.";
+
+/* NewProjectSheet.swift:209 */
+"工程名不能为空。" = "The project name cannot be empty.";
+
+/* NewProjectSheet.swift:214 */
+"工程文件已存在，请改名或选择其他保存位置。" = "The project file already exists. Rename it or choose another save location.";
+
+/* NewProjectSheet.swift:234 */
+"创建工程失败。" = "Failed to create the project.";
+
+/* OnboardingView.swift:26 */
+"提示" = "Notice";
+
+/* OnboardingView.swift:27 */
+"好" = "OK";
+
+/* OnboardingView.swift:46 */
+"还差一个 disc-image-studio CLI" = "One thing is missing: the disc-image-studio CLI";
+
+/* OnboardingView.swift:48 */
+"图形界面本身不包含光盘编码逻辑，所有任务都交给 CLI 执行。准备好 CLI 后，界面会自动读取命令目录并生成表单。" = "The graphical interface contains no disc encoding logic; every task is handled by the CLI. Once the CLI is ready, the interface reads its command catalog and builds the forms automatically.";
+
+/* OnboardingView.swift:64 */
+"未找到可用的 CLI" = "No usable CLI found";
+
+/* OnboardingView.swift:91 */
+"三种获取方式" = "Three ways to get it";
+
+/* OnboardingView.swift:95 */
+"使用发布包" = "Use a release package";
+
+/* OnboardingView.swift:96 */
+"从 GitHub Releases 下载 macOS 版 CLI，把可执行文件 disc-image-studio 放进应用的 Contents/Resources/cli/ 目录；用源码直接运行时请用下面两种方式。" = "Download the macOS CLI from GitHub Releases and put the disc-image-studio executable in the app's Contents/Resources/cli/ directory; when running from source, use the two options below.";
+
+/* OnboardingView.swift:102 */
+"指定可执行文件" = "Point to an executable";
+
+/* OnboardingView.swift:103 */
+"如果 CLI 已经解压到任意位置（或已经通过 dotnet tool 安装），直接选中那个可执行文件。路径会写入设置并立即生效。" = "If the CLI is already unpacked anywhere (or installed via dotnet tool), just select that executable. The path is saved to settings and takes effect immediately.";
+
+/* OnboardingView.swift:104 */
+"选择 CLI 可执行文件…" = "Choose CLI Executable…";
+
+/* OnboardingView.swift:110 */
+"使用源码目录（dotnet run）" = "Use a source directory (dotnet run)";
+
+/* OnboardingView.swift:111 */
+"选择仓库根目录或 src/DiscImageStudio.Cli 目录；界面会用 dotnet run -c Release 启动 CLI。需要本机安装 .NET 10 SDK。" = "Select the repository root or the src/DiscImageStudio.Cli directory; the interface launches the CLI with dotnet run -c Release. Requires the .NET 10 SDK installed locally.";
+
+/* OnboardingView.swift:112 */
+"选择源码目录…" = "Choose Source Directory…";
+
+/* OnboardingView.swift:116 */
+"自动查找顺序：环境变量 DIS_IMAGE_STUDIO_CLI → 设置里的自定义路径 → App 内置 → PATH（含 ~/.local/bin、~/.dotnet/tools、/usr/local/bin、/opt/homebrew/bin）→ 源码 dotnet run。" = "Lookup order: environment variable DIS_IMAGE_STUDIO_CLI → custom path in settings → app bundle → PATH (including ~/.local/bin, ~/.dotnet/tools, /usr/local/bin, /opt/homebrew/bin) → source dotnet run.";
+
+/* OnboardingView.swift:175 */
+"正在重新检测…" = "Detecting again…";
+
+/* OnboardingView.swift:175 */
+"重新检测" = "Detect Again";
+
+/* OnboardingView.swift:179 */
+"打开设置…" = "Open Settings…";
+
+/* OnboardingView.swift:185 */
+"也可以使用环境变量 DIS_IMAGE_STUDIO_CLI 指定路径后重启应用。" = "You can also point the DIS_IMAGE_STUDIO_CLI environment variable at a path and restart the app.";
+
+/* OnboardingView.swift:202 */
+"选择 disc-image-studio 可执行文件" = "Choose the disc-image-studio executable";
+
+/* OnboardingView.swift:206 */
+"所选文件不可执行。请选择 disc-image-studio 发布包里的可执行文件，或先执行 chmod +x 添加执行权限。" = "The selected file is not executable. Choose the executable from the disc-image-studio release package, or run chmod +x to add execute permission.";
+
+/* OnboardingView.swift:216 */
+"选择仓库根目录或 src/DiscImageStudio.Cli 目录" = "Choose the repository root or the src/DiscImageStudio.Cli directory";
+
+/* OnboardingView.swift:227 */
+"这个目录里没有找到 DiscImageStudio.Cli.csproj。请选择仓库根目录，或 src/DiscImageStudio.Cli 目录。" = "DiscImageStudio.Cli.csproj was not found in this directory. Choose the repository root or the src/DiscImageStudio.Cli directory.";
+
+/* PreviewView.swift:57 */
+"把设计页的合成图按生成几何快速投影，适合调整图片与影调。" = "Projects the composite from the Design page onto the generation geometry; useful for adjusting the image and tone.";
+
+/* PreviewView.swift:58 */
+"读取已生成镜像/音轨中实际写入的数据，适合最终核对。" = "Reads the data actually written into the generated image/track; useful for final verification.";
+
+/* PreviewView.swift:69 */
+"预览参数" = "Preview parameters";
+
+/* PreviewView.swift:70 */
+"编辑…" = "Edit…";
+
+/* PreviewView.swift:75 */
+"源图" = "Source image";
+
+/* PreviewView.swift:90 */
+"生成几何" = "Generation geometry";
+
+/* PreviewView.swift:99 */
+"成品文件" = "Output file";
+
+/* PreviewView.swift:101 */
+"尚未选择成品" = "No output file selected";
+
+/* PreviewView.swift:114 */
+"预览尺寸（px）" = "Preview size (px)";
+
+/* PreviewView.swift:127 */
+"上限 8192" = "Maximum 8192";
+
+/* PreviewView.swift:137 */
+"实测内半径" = "Measured inner radius";
+
+/* PreviewView.swift:141 */
+"实测外半径" = "Measured outer radius";
+
+/* PreviewView.swift:149 */
+"线性项" = "Linear term";
+
+/* PreviewView.swift:153 */
+"二次项" = "Quadratic term";
+
+/* PreviewView.swift:157 */
+"三次项" = "Cubic term";
+
+/* PreviewView.swift:165 */
+"BD 极性（3T/6T 反转）" = "BD polarity (3T/6T inverted)";
+
+/* PreviewView.swift:175 */
+"每扇区采样" = "Samples per sector";
+
+/* PreviewView.swift:189 */
+"字节步长" = "Byte stride";
+
+/* PreviewView.swift:206 */
+"读回时反交织（CD-DA）" = "Deinterleave on read-back (CD-DA)";
+
+/* PreviewView.swift:214 */
+"实测参数只用于预览/标定，不改变导出所用的生成几何。" = "Measured parameters are used for preview/calibration only; they do not change the generation geometry used for export.";
+
+/* PreviewView.swift:221 */
+"实测参数与精度" = "Measured parameters & precision";
+
+/* PreviewView.swift:244 */
+"正在生成预览…" = "Generating preview…";
+
+/* PreviewView.swift:244 */
+"刷新预览" = "Refresh Preview";
+
+/* PreviewView.swift:266 */
+"选择成品文件" = "Choose Output File";
+
+/* PreviewView.swift:277 */
+"导出预览 PNG" = "Export Preview PNG";
+
+/* PreviewView.swift:359 */
+"还没有预览" = "No preview yet";
+
+/* PreviewView.swift:362 */
+"设置参数后点「刷新预览」" = "Set the parameters, then click \"Refresh Preview\"";
+
+/* PreviewView.swift:386 */
+"实测几何与生成几何一致" = "Measured geometry matches generation geometry";
+
+/* PreviewView.swift:391 */
+"双击图片用「预览」打开" = "Double-click the image to open it in Preview";
+
+/* PreviewView.swift:461 */
+"工程生成几何" = "Project Generation Geometry";
+
+/* PreviewView.swift:463 */
+"这些参数参与导出与预览；修改后需要重新合成/预览。" = "These parameters drive export and preview; changing them requires re-compositing/re-previewing.";
+
+/* PreviewView.swift:468 */
+"内半径 (mm)" = "Inner radius (mm)";
+
+/* PreviewView.swift:469 */
+"外半径 (mm)" = "Outer radius (mm)";
+
+/* PreviewView.swift:471 */
+"总扇区数" = "Total sectors";
+
+/* PreviewView.swift:491 */
+"应用" = "Apply";
+
+/* PreviewView.swift:513 */
+"内半径必须为正且小于外半径，扇区数必须大于 0。" = "The inner radius must be positive and smaller than the outer radius, and the sector count must be greater than 0.";
+
+/* ProjectModel.swift:16 */
+"就绪" = "Ready";
+
+/* ProjectModel.swift:36 */
+"就绪 · 尚未运行任务" = "Ready · no tasks run yet";
+
+/* ProjectModel.swift:293 */
+"尚无图层，请先在设计中导入图片。" = "There are no layers yet. Import an image in Design first.";
+
+/* ProjectModel.swift:689 */
+"未找到 CLI，无法生成预览。请在设置里配置 CLI。" = "CLI not found; cannot generate the preview. Configure the CLI in Settings.";
+
+/* ProjectModel.swift:727 */
+"工程在预览期间有新的修改，请再次刷新。" = "The project was modified during the preview; refresh again.";
+
+/* ProjectModel.swift:739 */
+"未找到 CLI，无法生成。请在设置里配置 CLI。" = "CLI not found; cannot generate. Configure the CLI in Settings.";
+
+/* ProjectModel.swift:743 */
+"请先在设计中导入图片。" = "Import an image in Design first.";
+
+/* ProjectModel.swift:763 */
+"生成镜像" = "Generate Image";
+
+/* ResultView.swift:7 */
+"结果" = "Result";
+
+/* ResultView.swift:48 */
+"总耗时" = "Total time";
+
+/* ResultView.swift:62 */
+"最近输出" = "Latest output";
+
+/* ResultView.swift:86 */
+"任务被取消" = "Task canceled";
+
+/* ResultView.swift:88 */
+"命令执行成功" = "Command succeeded";
+
+/* ResultView.swift:89 */
+"CLI 无法启动" = "The CLI could not be launched";
+
+/* ResultView.swift:90 */
+"命令返回非零退出码" = "Command returned a non-zero exit code";
+
+/* ResultView.swift:129 */
+"刻录此文件" = "Burn This File";
+
+/* ResultView.swift:140 */
+"未找到输出文件" = "Output file not found";
+
+/* ResultView.swift:140 */
+"未生成" = "Not generated";
+
+/* ResultView.swift:144 */
+"未指定输出路径" = "No output path specified";
+
+/* ResultView.swift:156 */
+"错误输出（stderr 尾部）" = "Error output (tail of stderr)";
+
+/* ResultView.swift:160 */
+"收起完整日志" = "Hide Full Log";
+
+/* ResultView.swift:160 */
+"查看完整日志" = "Show Full Log";
+
+/* SettingsView.swift:52 */
+"设置" = "Settings";
+
+/* SettingsView.swift:74 */
+"所有生成任务都通过 CLI 子进程执行；这里只决定使用哪一个。" = "All generation tasks run through a CLI subprocess; this only decides which one to use.";
+
+/* SettingsView.swift:94 */
+"选择可执行文件…" = "Choose Executable…";
+
+/* SettingsView.swift:96 */
+"使用源码目录（dotnet run）…" = "Use Source Directory (dotnet run)…";
+
+/* SettingsView.swift:101 */
+"使用内置 CLI" = "Use Bundled CLI";
+
+/* SettingsView.swift:106 */
+"清除自定义可执行文件路径，优先使用 App 内置 CLI；没有内置时继续按顺序查找。" = "Clear the custom executable path and prefer the CLI bundled with the app; if there is none, continue searching in order.";
+
+/* SettingsView.swift:108 */
+"在 PATH 中查找" = "Search PATH";
+
+/* SettingsView.swift:113 */
+"清除自定义路径与源码目录，只在内置与 PATH 中查找。" = "Clear the custom path and source directory; search only the bundled CLI and PATH.";
+
+/* SettingsView.swift:120 */
+"重新加载预设与 CLI" = "Reload Presets and CLI";
+
+/* SettingsView.swift:127 */
+"自定义 CLI" = "Custom CLI";
+
+/* SettingsView.swift:132 */
+"源码目录" = "Source directory";
+
+/* SettingsView.swift:137 */
+"当前未指定自定义路径或源码目录，使用自动查找。" = "No custom path or source directory is set; automatic lookup is used.";
+
+/* SettingsView.swift:142 */
+"查找优先级：环境变量 DIS_IMAGE_STUDIO_CLI → 自定义路径 → App 内置 → PATH（/usr/local/bin、/opt/homebrew/bin、~/.local/bin、~/.dotnet/tools）→ 源码 dotnet run。" = "Lookup priority: environment variable DIS_IMAGE_STUDIO_CLI → custom path → app bundle → PATH (/usr/local/bin, /opt/homebrew/bin, ~/.local/bin, ~/.dotnet/tools) → source dotnet run.";
+
+/* SettingsView.swift:180 */
+"正在检测 CLI…" = "Detecting CLI…";
+
+/* SettingsView.swift:217 */
+"工程与缓存" = "Projects & Cache";
+
+/* SettingsView.swift:219 */
+"新建工程默认保存到这里；预览/合成缓存位于 ~/Library/Caches/DiscImageStudioMac。" = "New projects are saved here by default; preview/composite caches live in ~/Library/Caches/DiscImageStudioMac.";
+
+/* SettingsView.swift:223 */
+"默认工程位置" = "Default project location";
+
+/* SettingsView.swift:235 */
+"选择默认工程位置" = "Choose Default Project Location";
+
+/* SettingsView.swift:242 */
+"重置" = "Reset";
+
+/* SettingsView.swift:249 */
+"缓存" = "Cache";
+
+/* SettingsView.swift:255 */
+"含设计合成、预览与导出临时图" = "Includes design composites, previews, and export temp images";
+
+/* SettingsView.swift:259 */
+"打开缓存目录" = "Open Cache Folder";
+
+/* SettingsView.swift:267 */
+"清空缓存" = "Clear Cache";
+
+/* SettingsView.swift:281 */
+"清空最近工程" = "Clear Recent Projects";
+
+/* SettingsView.swift:303 */
+"默认输出目录" = "Default output folder";
+
+/* SettingsView.swift:305 */
+"为输出文件面板提供默认目录；不会自动创建目录。" = "Provides a default folder for output panels; the folder is not created automatically.";
+
+/* SettingsView.swift:315 */
+"未设置（使用系统保存面板的默认位置）" = "Not set (use the default location of the system save panel)";
+
+/* SettingsView.swift:338 */
+"外观" = "Appearance";
+
+/* SettingsView.swift:338 */
+"立即应用到主窗口与设置窗口。" = "Applied immediately to the main window and the Settings window.";
+
+/* SettingsView.swift:368 */
+"表单" = "Forms";
+
+/* SettingsView.swift:369 */
+"显示高级参数" = "Show advanced parameters";
+
+/* SettingsView.swift:372 */
+"关闭后，表单会隐藏「高级参数」分组，只保留输入输出、盘片几何与影调。" = "When off, forms hide the \"Advanced Parameters\" group and keep only input/output, disc geometry, and tone.";
+
+/* SettingsView.swift:391 */
+"语言" = "Language";
+
+/* SettingsView.swift:391 */
+"界面文案当前仅为简体中文。" = "The interface text is currently Simplified Chinese only.";
+
+/* SettingsView.swift:393 */
+"界面语言" = "Interface language";
+
+/* SettingsView.swift:396 */
+"简体中文" = "Simplified Chinese";
+
+/* SettingsView.swift:409 */
+"通过 presets --json 读取；CLI 更新后可手动重新加载。" = "Read via presets --json; reload manually after the CLI is updated.";
+
+/* SettingsView.swift:413 */
+"CLI 来源" = "CLI source";
+
+/* SettingsView.swift:418 */
+"预设状态" = "Preset status";
+
+/* SettingsView.swift:419 */
+"已从 CLI 加载" = "Loaded from CLI";
+
+/* SettingsView.swift:424 */
+"内容" = "Contents";
+
+/* SettingsView.swift:429 */
+"设置文件" = "Settings file";
+
+/* SettingsView.swift:451 */
+"打开设置文件所在目录" = "Open Settings File Folder";
+
+/* SettingsView.swift:464 */
+"使用内置兜底参数" = "Use Built-in Fallback Parameters";
+
+/* SettingsView.swift:507 */
+"选择默认输出目录" = "Choose Default Output Folder";
+
+/* SidebarView.swift:34 */
+"关于" = "About";
+
+/* SidebarView.swift:43 */
+"CLI 未就绪" = "CLI not ready";
+
+/* SidebarView.swift:47 */
+"配置" = "Configuration";
+
+/* SidebarView.swift:80 */
+"返回主页（工程保持打开）" = "Back to Home (project stays open)";
+
+/* SidebarView.swift:100 */
+"光盘盘面工作台" = "Disc Artwork Workbench";
+
+/* SidebarView.swift:120 */
+"已保存" = "Saved";
+
+/* SidebarView.swift:125 */
+"有未保存的修改" = "Unsaved changes";
+
+/* SidebarView.swift:129 */
+"正在保存" = "Saving";
+
+/* SidebarView.swift:134 */
+"保存失败" = "Save failed";
+
+/* SidebarView.swift:181 */
+"主页" = "Home";
+
+/* SidebarView.swift:229 */
+"设计" = "Design";
+
+/* SidebarView.swift:230 */
+"预览" = "Preview";
+
+/* SidebarView.swift:232 */
+"刻录" = "Burn";
+
+/* SidebarView.swift:233 */
+"标定" = "Calibration";
+
+/* WorkspaceShell.swift:34 */
+"正在合成设计稿" = "Compositing the design";
+
+/* WorkspaceShell.swift:59 */
+"工作区" = "Workspace";
+
+/* WorkspaceShell.swift:219 */
+"关闭" = "Close";
+
+/* WorkspaceShell.swift:227 */
+"任务日志" = "Task Log";
+
+/* WorkspaceShell.swift:228 */
+"运行预览或生成后，CLI 日志会显示在这里。" = "After running a preview or generation, CLI logs appear here.";
+
+/* WorkspaceShell.swift:261 */
+"运行预览或生成后，这里会显示进度与结果。" = "After running a preview or generation, progress and results appear here.";
+
+/* Preset display names (from built-in-disc-presets.json) */
+"标准 80min CD" = "Standard 80min CD";
+"铼德医疗水蓝盘（实测）" = "Ritek Medical Aqua (measured)";
+"威宝 CD-R AZO (43438)（实测）" = "Verbatim CD-R AZO (43438, measured)";
+"标准 74min CD" = "Standard 74min CD";
+"标准 12cm 单层 DVD" = "Standard 12cm single-layer DVD";
+"威宝 DVD-R AZO (43533)（实测）" = "Verbatim DVD-R AZO (43533, measured)";
+"威宝 DVD-R AZO (43523)（实测）" = "Verbatim DVD-R AZO (43523, measured)";
+"威宝 DVD+R AZO (43498)（实测）" = "Verbatim DVD+R AZO (43498, measured)";
+"PHILIPS DVD+R（实测）" = "PHILIPS DVD+R (measured)";
+"铼德 DVD+R E时代系列（实测）" = "Ritek DVD+R E-Series (measured)";
+"铼德 DVD-R E时代系列（实测）" = "Ritek DVD-R E-Series (measured)";
+"标准 8cm 单层 DVD" = "Standard 8cm single-layer DVD";
+"标准 25GB 单层 BD" = "Standard 25GB single-layer BD";
+"铼德 BD-R 10x（实测）" = "Ritek BD-R 10x (measured)";
+"铼德 BD-R 12x（实测）" = "Ritek BD-R 12x (measured)";
+"威宝 BD-R (64099)（实测）" = "Verbatim BD-R (64099, measured)";
+"威宝 BD-R (64293)（实测）" = "Verbatim BD-R (64293, measured)";
+
+/* Format and interpolated strings */
+/* AboutView.swift:40 */
+"macOS 图形界面 · %@" = "macOS GUI · %@";
+/* AboutView.swift:62 */
+"已找到 · %@" = "Found · %@";
+/* AppModel.swift:337 */
+"无法保存设置：%@" = "Could not save settings: %@";
+/* AppModel.swift:437 */
+"清空缓存失败：%@" = "Could not clear the cache: %@";
+/* BurnModel.swift:190 */
+"源文件不存在：%@" = "Source file not found: %@";
+/* BurnModel.swift:196 */
+"音频 CD 需要空白 CD-R；当前介质是 %@。" = "Audio CDs require a blank CD-R; the current media is %@.";
+/* BurnModel.swift:225 */
+"空白 %@，可以刻录。" = "Blank %@, ready to burn.";
+/* BurnModel.swift:238 */
+"将作为%@刻录" = "Will burn as %@";
+/* BurnModel.swift:379 */
+"当前驱动器不能写入 %@。" = "The current drive cannot write %@.";
+/* BurnModel.swift:384 */
+"盘片类型 %@ 与 %@ 不匹配。" = "Media type %@ does not match %@.";
+/* BurnModel.swift:451 */
+"生成命令没有 %@ 参数。" = "The generate command has no %@ argument.";
+/* BurnModel.swift:479 */
+"流式刻录启动失败：%@" = "Could not start the streaming burn: %@";
+/* BurnModel.swift:496 */
+"启动生成：%@" = "Starting generate: %@";
+/* BurnModel.swift:497 */
+"启动写入：%@" = "Starting write: %@";
+/* BurnModel.swift:533 */
+"流式刻录完成（用时 %@）" = "Streaming burn complete (%@)";
+/* BurnModel.swift:535 */
+"流式刻录失败（助手退出码 %@）" = "Streaming burn failed (helper exit code %@)";
+/* BurnModel.swift:592 */
+"启动：%@" = "Starting: %@";
+/* BurnModel.swift:626 */
+"已取消刻录（退出码 %@）" = "Burn canceled (exit code %@)";
+/* BurnModel.swift:628 */
+"刻录完成（用时 %@），光盘已弹出。" = "Burn complete (%@); the disc has been ejected.";
+/* BurnModel.swift:630 */
+"刻录失败（退出码 %@），请查看上方日志。" = "Burn failed (exit code %@); check the log above.";
+/* BurnView.swift:421 */
+"提示：最近生成的可刻录文件是 %@。" = "Tip: the most recently generated burnable file is %@.";
+/* BurnView.swift:695 */
+"流式刻录完成，用时 %@；请等待光盘弹出。" = "Streaming burn complete in %@; wait for the disc to be ejected.";
+/* BurnView.swift:696 */
+"流式刻录未完成（助手退出码 %@），请查看日志。" = "Streaming burn did not finish (helper exit code %@); check the log.";
+/* BurnView.swift:782 */
+"已取消（退出码 %@）。" = "Canceled (exit code %@).";
+/* BurnView.swift:784 */
+"刻录完成，用时 %@；光盘已弹出。" = "Burn complete in %@; the disc has been ejected.";
+/* BurnView.swift:785 */
+"刻录失败，退出码 %@，用时 %@。" = "Burn failed (exit code %@) after %@.";
+/* CalibrationModel.swift:147 */
+"%@ 点 · 覆盖 %@%% · 至少 %@ 点（建议 %@ 点 / ≥%@%%）" = "%@ points · %@%% coverage · at least %@ points (%@ recommended / ≥%@%%)";
+/* CalibrationModel.swift:228 */
+"%@ 扇区" = "%@ sectors";
+/* CalibrationModel.swift:229 */
+"盘型 %@" = "Disc type %@";
+/* CalibrationModel.swift:250 */
+"工程引用的标定会话不存在：%@" = "The calibration session referenced by the project does not exist: %@";
+/* CalibrationModel.swift:272 */
+"会话盘型 %@ 与工程 %@ 不一致。" = "Session disc type %@ does not match project %@.";
+/* CalibrationModel.swift:343 */
+"会话已恢复，但矫正图重建失败：%@" = "Session restored, but the rectified image could not be rebuilt: %@";
+/* CalibrationModel.swift:363 */
+"会话已恢复，但候选重算失败：%@" = "Session restored, but the candidates could not be recomputed: %@";
+/* CalibrationModel.swift:381 */
+"已从 %@ 恢复标定会话。" = "Calibration session restored from %@.";
+/* CalibrationModel.swift:391 */
+"已切换到%@，请重新生成标靶。" = "Switched to %@; generate the target again.";
+/* CalibrationModel.swift:473 */
+"标靶已生成：%@" = "Target generated: %@";
+/* CalibrationModel.swift:549 */
+"照片已导入，但会话保存失败：%@" = "Photo imported, but the session could not be saved: %@";
+/* CalibrationModel.swift:552 */
+"照片已准备：%@×%@ px，拖动轮廓点对齐盘缘与中心孔。" = "Photo ready: %@×%@ px. Drag the outline points to align the disc edge and center hole.";
+/* CalibrationModel.swift:560 */
+"盘片规格改为 %@，请重新计算矫正。" = "Disc size changed to %@; recompute the rectification.";
+/* CalibrationModel.swift:629 */
+"矫正完成（外缘 RMS %@ px，中心孔 RMS %@ px）。请检查预览后确认。" = "Rectification complete (outer edge RMS %@ px, center hole RMS %@ px). Check the preview, then confirm.";
+/* CalibrationModel.swift:635 */
+"矫正已计算，但会话保存失败：%@" = "Rectification computed, but the session could not be saved: %@";
+/* CalibrationModel.swift:657 */
+"矫正已确认，但会话保存失败：%@" = "Rectification confirmed, but the session could not be saved: %@";
+/* CalibrationModel.swift:759 */
+"至少需要 %@ 个点才能反推参数。" = "At least %@ points are needed to fit the parameters.";
+/* CalibrationModel.swift:789 */
+"已得到 %@ 个候选。" = "Found %@ candidates.";
+/* CalibrationModel.swift:790 */
+"拟合失败：%@" = "Fit failed: %@";
+/* CalibrationModel.swift:805 */
+"已得到 %@ 个粗调候选。" = "Found %@ coarse-fit candidates.";
+/* CalibrationModel.swift:806 */
+"粗调失败：%@" = "Coarse fit failed: %@";
+/* CalibrationModel.swift:905 */
+"保存标定会话失败：%@" = "Could not save the calibration session: %@";
+/* CalibrationModel.swift:935 */
+"已删除标定会话 %@。" = "Deleted calibration session %@.";
+/* CalibrationModel.swift:937 */
+"删除标定会话失败：%@" = "Could not delete the calibration session: %@";
+/* CalibrationModel.swift:950 */
+"会话已导出：%@" = "Session exported: %@";
+/* CalibrationModel.swift:952 */
+"导出标定会话失败：%@" = "Could not export the calibration session: %@";
+/* CalibrationView.swift:505 */
+"照片 %@×%@ px · %@" = "Photo %@×%@ px · %@";
+/* CalibrationView.swift:510 */
+"外缘 %@ 点 / 中心孔 %@ 点" = "Outer edge %@ points / center hole %@ points";
+/* CalibrationView.swift:529 */
+"矫正图：%@ · 外半径 %@ mm" = "Rectified image: %@ · outer radius %@ mm";
+/* CalibrationView.swift:598 */
+"候选（%@）" = "Candidates (%@)";
+/* CalibrationView.swift:661 */
+"偏离 %@" = "%@ outliers";
+/* CalibrationView.swift:704 */
+"%@ 个会话" = "%@ sessions";
+/* CalibrationView.swift:756 */
+"%@ 点" = "%@ points";
+/* DesignView.swift:54 */
+"%@ 层" = "%@ layers";
+/* ExportView.swift:236 */
+"当前盘型/模式预期扩展名为 .%@，当前是 .%@。" = "The current disc type/mode expects the extension .%@, but the file uses .%@.";
+/* FilePanels.swift:141 */
+"文件存在 · %@" = "File exists · %@";
+/* LogConsoleView.swift:56 */
+"共 %@ 行 · 自动跟随输出" = "%@ lines · following output automatically";
+/* LogConsoleView.swift:58 */
+"共 %@ 行" = "%@ lines";
+/* NewProjectSheet.swift:121 */
+"工程文件：%@" = "Project file: %@";
+/* NewProjectSheet.swift:129 */
+"首次输出：%@" = "First output: %@";
+/* NewProjectSheet.swift:221 */
+"无法创建目录：%@" = "Could not create the folder: %@";
+/* PreviewView.swift:275 */
+"预览-%@.png" = "Preview-%@.png";
+/* PreviewView.swift:289 */
+"导出预览失败：%@" = "Could not export the preview: %@";
+/* ProjectModel.swift:34 */
+"%@完成" = "%@ complete";
+/* ProjectModel.swift:34 */
+"%@失败（退出码 %@）" = "%@ failed (exit code %@)";
+/* ProjectModel.swift:118 */
+"已取消（退出码 %@）" = "Canceled (exit code %@)";
+/* ProjectModel.swift:119 */
+"进程结束（退出码 %@，用时 %@）" = "Process finished (exit code %@, %@)";
+/* ProjectModel.swift:294 */
+"设计页合成源图（%@ px 预览 / %@ px 导出）" = "Design page composite source (%@ px preview / %@ px export)";
+/* ProjectModel.swift:301 */
+"实测与生成几何差：内 %@ mm，外 %@ mm" = "Measured vs. generated geometry difference: inner %@ mm, outer %@ mm";
+/* ProjectModel.swift:721 */
+"预览失败（退出码 %@）" = "Preview failed (exit code %@)";
+/* ProjectModel.swift:774 */
+"生成失败（退出码 %@）" = "Generate failed (exit code %@)";
+/* SettingsView.swift:54 */
+"改动会立即保存到 %@。" = "Changes are saved immediately to %@.";
+/* SettingsView.swift:169 */
+"CLI 版本 %@" = "CLI version %@";
+/* SettingsView.swift:182 */
+"已找到 CLI · %@" = "CLI found · %@";
+/* SettingsView.swift:278 */
+"%@ 个" = "%@ items";
+/* SettingsView.swift:462 */
+"%@ 个 CD · %@ 个 DVD · %@ 个 BD" = "%@ CD · %@ DVD · %@ BD";
+/* WorkspaceShell.swift:117 */
+"下一步：%@" = "Next: %@";
+/* WorkspaceShell.swift:256 */
+"%@进行中…（切换页面不会中断）" = "%@ in progress… (switching pages won't interrupt it)";
+/* WorkspaceShell.swift:259 */
+"退出码 %@ · 用时 %@" = "Exit code %@ · %@";
+"音频 CD（流式）" = "Audio CD (streaming)";
+"DVD 数据盘（流式）" = "DVD data disc (streaming)";
+"蓝光 BD-R（流式，实验性）" = "Blu-ray BD-R (streaming, experimental)";
+"音频 CD" = "Audio CD";
+"DVD 数据盘" = "DVD data disc";
+"蓝光数据盘" = "Blu-ray data disc";
+"CD 数据盘" = "CD data disc";
+"光盘" = "disc";
+"未知错误" = "unknown error";
+"音频 CD（CD-DA）" = "Audio CD (CD-DA)";
+"数据光盘（镜像）" = "Data disc (image)";
+"设计投影" = "Design projection";
+"成品读回" = "Artifact read-back";
+"标准 12 cm 光盘" = "Standard 12 cm disc";
+"8 cm 小盘" = "8 cm mini disc";
+"跟随系统" = "Follow system";
+"浅色" = "Light";
+"深色" = "Dark";

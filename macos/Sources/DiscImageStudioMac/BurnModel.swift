@@ -16,15 +16,15 @@ final class BurnModel {
 
         var shortName: String {
             switch self {
-            case .file: return "文件模式"
-            case .stream: return "流式模式"
+            case .file: return L("文件模式")
+            case .stream: return L("流式模式")
             }
         }
 
         var displayName: String {
             switch self {
-            case .file: return "文件模式（drutil）"
-            case .stream: return "流式模式（DiscRecording，实验性）"
+            case .file: return L("文件模式（drutil）")
+            case .stream: return L("流式模式（DiscRecording，实验性）")
             }
         }
     }
@@ -106,10 +106,10 @@ final class BurnModel {
     /// 流式模式不可用时的具体原因；可用时为 nil。
     var streamUnavailableReason: String? {
         if Self.locateStreamHelper() == nil {
-            return "未找到 disc-burn-stream 助手（应为 Contents/Resources/bin/disc-burn-stream）。请重新构建或安装完整应用。"
+            return L("未找到 disc-burn-stream 助手（应为 Contents/Resources/bin/disc-burn-stream）。请重新构建或安装完整应用。")
         }
         if cliInvocation == nil {
-            return "流式刻录需要可用的 disc-image-studio CLI；请先在设置里指定 CLI。"
+            return L("流式刻录需要可用的 disc-image-studio CLI；请先在设置里指定 CLI。")
         }
         return nil
     }
@@ -150,53 +150,53 @@ final class BurnModel {
             if let reason = streamUnavailableReason {
                 return reason
             }
-            return "流式刻录已找到助手，但还需要把生成命令（cd-generate --output -）的参数接入管道；当前版本先请使用文件模式。"
+            return L("流式刻录已找到助手，但还需要把生成命令（cd-generate --output -）的参数接入管道；当前版本先请使用文件模式。")
         }
         guard isDRUtilAvailable else {
-            return "系统没有提供 /usr/bin/drutil，无法使用文件模式刻录。"
+            return L("系统没有提供 /usr/bin/drutil，无法使用文件模式刻录。")
         }
         if isLoadingDrives || isLoadingStatus {
-            return "正在读取刻录机与介质状态…"
+            return L("正在读取刻录机与介质状态…")
         }
         if drives.isEmpty {
-            return "没有找到光盘刻录机。请连接刻录机后点「刷新刻录机」。"
+            return L("没有找到光盘刻录机。请连接刻录机后点「刷新刻录机」。")
         }
         guard selectedDrive != nil else {
-            return "请选择一个刻录机。"
+            return L("请选择一个刻录机。")
         }
         guard let status = mediaStatus else {
             if let driveErrorMessage, !driveErrorMessage.isEmpty {
                 return driveErrorMessage
             }
-            return "还没有读取到介质状态，请点「刷新介质」。"
+            return L("还没有读取到介质状态，请点「刷新介质」。")
         }
         guard status.isPresent else {
-            return "刻录机里没有光盘。请放入空白盘后再试。"
+            return L("刻录机里没有光盘。请放入空白盘后再试。")
         }
         // drutil 在「有驱动器但没放盘」时仍可能返回 0 且文本非空；没有 Type 字段时按无介质处理（更安全的默认）。
         guard let mediaType = status.mediaType else {
-            return "没有检测到可识别的光盘介质（drutil 没有报告 Type）。请放入空白 CD-R / DVD-R 后刷新。"
+            return L("没有检测到可识别的光盘介质（drutil 没有报告 Type）。请放入空白 CD-R / DVD-R 后刷新。")
         }
         if !status.isWritable {
-            return "当前介质不可写入。"
+            return L("当前介质不可写入。")
         }
         guard status.isProbablyBlank else {
-            return "当前盘片可能有内容（检测到已有轨道或会话），不是空白盘，已禁止刻录。"
+            return L("当前盘片可能有内容（检测到已有轨道或会话），不是空白盘，已禁止刻录。")
         }
         guard !sourcePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return "请选择要刻录的源文件（.wav / .aif / .iso / .dmg / .cue / .bin / .toc）。"
+            return L("请选择要刻录的源文件（.wav / .aif / .iso / .dmg / .cue / .bin / .toc）。")
         }
         guard sourceExists else {
-            return "源文件不存在：\(Formatting.abbreviatedPath(sourcePath))"
+            return L("源文件不存在：%@", String(Formatting.abbreviatedPath(sourcePath)))
         }
         guard let kind = sourceKind else {
-            return "不支持直接刻录该文件类型。可刻录 .wav（音频 CD）或 .iso / .dmg / .cue / .bin / .toc（数据盘）。"
+            return L("不支持直接刻录该文件类型。可刻录 .wav（音频 CD）或 .iso / .dmg / .cue / .bin / .toc（数据盘）。")
         }
         if kind == .audioCD, !mediaType.uppercased().hasPrefix("CD") {
-            return "音频 CD 需要空白 CD-R；当前介质是 \(mediaType)。"
+            return L("音频 CD 需要空白 CD-R；当前介质是 %@。", String(mediaType))
         }
         if status.isBluRay, kind != .dataImage {
-            return "蓝光介质只能刻录数据镜像（.iso）；音频 CD 请使用 CD-R。"
+            return L("蓝光介质只能刻录数据镜像（.iso）；音频 CD 请使用 CD-R。")
         }
         return nil
     }
@@ -206,23 +206,23 @@ final class BurnModel {
     }
 
     var mediaStatusSummary: String {
-        guard let status = mediaStatus else { return "未知" }
-        if !status.isPresent { return "无介质" }
+        guard let status = mediaStatus else { return L("未知") }
+        if !status.isPresent { return L("无介质") }
         var parts: [String] = []
         if let mediaType = status.mediaType { parts.append(mediaType) }
-        parts.append(status.isProbablyBlank ? "空白" : "非空白")
-        if status.isBluRay { parts.append("BD（实验性）") }
-        return parts.isEmpty ? "未知" : parts.joined(separator: " · ")
+        parts.append(status.isProbablyBlank ? L("空白") : L("非空白"))
+        if status.isBluRay { parts.append(L("BD（实验性）")) }
+        return parts.isEmpty ? L("未知") : parts.joined(separator: " · ")
     }
 
     var mediaStatusDescription: String {
-        guard let status = mediaStatus else { return "尚未读取介质状态。" }
-        if !status.isPresent { return "刻录机里没有光盘。" }
+        guard let status = mediaStatus else { return L("尚未读取介质状态。") }
+        if !status.isPresent { return L("刻录机里没有光盘。") }
         if status.isBluRay {
-            return "蓝光介质：可尝试数据镜像刻录（实验性，未经实机验证）；音频 CD 不受支持，失败请换用第三方软件。"
+            return L("蓝光介质：可尝试数据镜像刻录（实验性，未经实机验证）；音频 CD 不受支持，失败请换用第三方软件。")
         }
-        if !status.isProbablyBlank { return "非空白盘：检测到已有轨道或会话，已禁止刻录。" }
-        return "空白 \(status.mediaType ?? "光盘")，可以刻录。"
+        if !status.isProbablyBlank { return L("非空白盘：检测到已有轨道或会话，已禁止刻录。") }
+        return L("空白 %@，可以刻录。", String(status.mediaType ?? L("光盘")))
     }
 
     var statusColor: Color {
@@ -234,9 +234,9 @@ final class BurnModel {
 
     var sourceDetail: String? {
         guard sourceURL != nil else { return nil }
-        if !sourceExists { return "源文件不存在" }
-        if let kind = sourceKind { return "将作为\(kind.displayName)刻录" }
-        return "不支持的文件类型"
+        if !sourceExists { return L("源文件不存在") }
+        if let kind = sourceKind { return L("将作为%@刻录", String(kind.displayName)) }
+        return L("不支持的文件类型")
     }
 
     // MARK: - 刻录机与介质
@@ -257,7 +257,7 @@ final class BurnModel {
             }
             if found.isEmpty {
                 mediaStatus = nil
-                driveErrorMessage = "没有找到光盘刻录机。请连接刻录机后刷新。"
+                driveErrorMessage = L("没有找到光盘刻录机。请连接刻录机后刷新。")
             } else {
                 await refreshMediaStatus()
             }
@@ -336,12 +336,12 @@ final class BurnModel {
     }
 
     var streamUnsupportedReason: String? {
-        guard streamProject != nil else { return "请先打开一个工程，流式刻录会直接生成当前工程并写入光盘。" }
-        guard let document = streamProject?.document else { return "请先打开一个工程。" }
+        guard streamProject != nil else { return L("请先打开一个工程，流式刻录会直接生成当前工程并写入光盘。") }
+        guard let document = streamProject?.document else { return L("请先打开一个工程。") }
         switch document.discFamily {
         case .cd:
             if document.outputs.hasBundledFiles {
-                return "CD 数据盘的流式写入还没有 CLI 输出模式；请使用文件模式生成 ISO 后刻录。"
+                return L("CD 数据盘的流式写入还没有 CLI 输出模式；请使用文件模式生成 ISO 后刻录。")
             }
             return nil
         case .dvd:
@@ -360,10 +360,10 @@ final class BurnModel {
     }
 
     var streamDriveSummary: String {
-        guard let drive = selectedStreamDrive else { return "未检测到可流式写入的驱动器" }
+        guard let drive = selectedStreamDrive else { return L("未检测到可流式写入的驱动器") }
         var parts = [drive.displayName]
         if let mediaType = drive.mediaType { parts.append(mediaType) }
-        parts.append(drive.mediaPresent ? (drive.mediaBlank ? "空白" : "非空白") : "无介质")
+        parts.append(drive.mediaPresent ? (drive.mediaBlank ? L("空白") : L("非空白")) : L("无介质"))
         return parts.joined(separator: " · ")
     }
 
@@ -371,22 +371,22 @@ final class BurnModel {
         guard mode == .stream else { return nil }
         if let reason = streamUnavailableReason { return reason }
         if let reason = streamUnsupportedReason { return reason }
-        guard let kind = streamKind else { return "当前工程没有可用的流式刻录类型。" }
-        guard let sectors = streamSectors else { return "工程几何的扇区数无效。" }
-        guard !streamDrives.isEmpty else { return "没有找到支持 DiscRecording 流式写入的驱动器。" }
-        guard let drive = selectedStreamDrive else { return "请选择一个刻录机。" }
+        guard let kind = streamKind else { return L("当前工程没有可用的流式刻录类型。") }
+        guard let sectors = streamSectors else { return L("工程几何的扇区数无效。") }
+        guard !streamDrives.isEmpty else { return L("没有找到支持 DiscRecording 流式写入的驱动器。") }
+        guard let drive = selectedStreamDrive else { return L("请选择一个刻录机。") }
         guard drive.isWritable(for: kind) else {
-            return "当前驱动器不能写入 \(kind.displayName)。"
+            return L("当前驱动器不能写入 %@。", String(kind.displayName))
         }
-        guard drive.mediaPresent else { return "刻录机里没有光盘，请放入空白盘后刷新。" }
-        guard drive.mediaBlank else { return "当前盘片不是空白盘，已禁止刻录。" }
+        guard drive.mediaPresent else { return L("刻录机里没有光盘，请放入空白盘后刷新。") }
+        guard drive.mediaBlank else { return L("当前盘片不是空白盘，已禁止刻录。") }
         if let mediaKind = StreamBurnKind.kind(forMediaType: drive.mediaType), mediaKind != kind {
-            return "盘片类型 \(drive.mediaType ?? "未知") 与 \(kind.displayName) 不匹配。"
+            return L("盘片类型 %@ 与 %@ 不匹配。", String(drive.mediaType ?? L("未知")), String(kind.displayName))
         }
         if kind == .bdData, drive.mediaType?.uppercased() != "BD-R" {
-            return "BD 流式写入需要空白 BD-R。"
+            return L("BD 流式写入需要空白 BD-R。")
         }
-        guard sectors > 0 else { return "工程扇区数必须大于 0。" }
+        guard sectors > 0 else { return L("工程扇区数必须大于 0。") }
         return nil
     }
 
@@ -405,7 +405,7 @@ final class BurnModel {
                 selectedStreamDriveIndex = found.first?.index
             }
             if found.isEmpty {
-                streamErrorMessage = "没有找到光盘刻录机。请连接刻录机后刷新。"
+                streamErrorMessage = L("没有找到光盘刻录机。请连接刻录机后刷新。")
             } else {
                 streamErrorMessage = nil
             }
@@ -436,7 +436,7 @@ final class BurnModel {
         streamResult = nil
         streamWasCancelled = false
         streamProgress = nil
-        streamStage = "准备中…"
+        streamStage = L("准备中…")
         streamLogLines.removeAll()
         isStreamBurning = true
 
@@ -448,7 +448,7 @@ final class BurnModel {
             ).arguments
             let outputOption = project.document.discFamily == .dvd ? "--iso-output" : "--output"
             guard let outputIndex = arguments.firstIndex(of: outputOption), outputIndex + 1 < arguments.count else {
-                throw StreamBurnError.invalidPlan(reason: "生成命令没有 \(outputOption) 参数。")
+                throw StreamBurnError.invalidPlan(reason: L("生成命令没有 %@ 参数。", String(outputOption)))
             }
             arguments[outputIndex + 1] = "-"
             if kind == .cdAudio, let cueIndex = arguments.firstIndex(of: "--cue"), cueIndex + 1 < arguments.count {
@@ -476,7 +476,7 @@ final class BurnModel {
             isStreamBurning = false
             streamStage = nil
             streamErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            appendStreamSystem("流式刻录启动失败：\(streamErrorMessage ?? "未知错误")")
+            appendStreamSystem(L("流式刻录启动失败：%@", String(streamErrorMessage ?? L("未知错误"))))
         }
     }
 
@@ -493,8 +493,8 @@ final class BurnModel {
     private func handleStreamEvent(_ event: StreamBurnEvent) {
         switch event {
         case .started(let helperCommandLine, let cliCommandLine):
-            appendStreamSystem("启动生成：\(cliCommandLine)")
-            appendStreamSystem("启动写入：\(helperCommandLine)")
+            appendStreamSystem(L("启动生成：%@", String(cliCommandLine)))
+            appendStreamSystem(L("启动写入：%@", String(helperCommandLine)))
         case .log(let line):
             let stream: LogLine.Stream
             switch line.source {
@@ -506,11 +506,11 @@ final class BurnModel {
         case .progress(let progress):
             streamProgress = progress.fraction
             switch progress.state {
-            case .preparing: streamStage = "准备刻录…"
-            case .writing: streamStage = "正在生成并写入…"
-            case .verifying: streamStage = "正在校验…"
-            case .done: streamStage = "完成"
-            case .failed: streamStage = "失败"
+            case .preparing: streamStage = L("准备刻录…")
+            case .writing: streamStage = L("正在生成并写入…")
+            case .verifying: streamStage = L("正在校验…")
+            case .done: streamStage = L("完成")
+            case .failed: streamStage = L("失败")
             }
         case .finished(let result):
             finishStream(result)
@@ -524,15 +524,15 @@ final class BurnModel {
         streamTask = nil
         if result.succeeded {
             streamProgress = 1
-            streamStage = "完成"
+            streamStage = L("完成")
         }
         let status: String
         if streamWasCancelled {
-            status = "已取消流式刻录"
+            status = L("已取消流式刻录")
         } else if result.succeeded {
-            status = "流式刻录完成（用时 \(Formatting.duration(result.duration))）"
+            status = L("流式刻录完成（用时 %@）", String(Formatting.duration(result.duration)))
         } else {
-            status = "流式刻录失败（助手退出码 \(result.helperExitCode)）"
+            status = L("流式刻录失败（助手退出码 %@）", String(result.helperExitCode))
         }
         appendStreamSystem(status)
         Task { await refreshStreamDrives() }
@@ -589,7 +589,7 @@ final class BurnModel {
     private func handle(_ event: CliEvent) {
         switch event {
         case .started(let commandLine):
-            appendSystem("启动：\(commandLine)")
+            appendSystem(L("启动：%@", String(commandLine)))
         case .line(let line):
             logLines.append(line)
             if let fraction = ProgressParsing.fraction(from: line.text) {
@@ -600,11 +600,11 @@ final class BurnModel {
             } else {
                 let lower = line.text.lowercased()
                 if lower.contains("writing") {
-                    stage = "正在写入…"
+                    stage = L("正在写入…")
                 } else if lower.contains("verifying") {
-                    stage = "正在校验…"
+                    stage = L("正在校验…")
                 } else if lower.contains("finishing") {
-                    stage = "正在收尾…"
+                    stage = L("正在收尾…")
                 }
             }
         case .finished(let result):
@@ -623,11 +623,11 @@ final class BurnModel {
 
         let status: String
         if wasCancelled {
-            status = "已取消刻录（退出码 \(result.exitCode)）"
+            status = L("已取消刻录（退出码 %@）", String(result.exitCode))
         } else if result.succeeded {
-            status = "刻录完成（用时 \(Formatting.duration(result.duration))），光盘已弹出。"
+            status = L("刻录完成（用时 %@），光盘已弹出。", String(Formatting.duration(result.duration)))
         } else {
-            status = "刻录失败（退出码 \(result.exitCode)），请查看上方日志。"
+            status = L("刻录失败（退出码 %@），请查看上方日志。", String(result.exitCode))
         }
         appendSystem(status)
 

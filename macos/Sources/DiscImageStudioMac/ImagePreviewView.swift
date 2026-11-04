@@ -69,7 +69,7 @@ struct ImagePreviewView: View {
             .onTapGesture(count: 2) {
                 openInPreview()
             }
-            .help("双击用「预览」打开")
+            .help(L("双击用「预览」打开"))
 
             Text("双击图片可用「预览」打开完整分辨率。")
                 .font(Typography.caption2)

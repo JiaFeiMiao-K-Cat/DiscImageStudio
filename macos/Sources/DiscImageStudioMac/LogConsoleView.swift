@@ -6,8 +6,8 @@ import DiscImageStudioKit
 struct LogConsoleView: View {
     let lines: [LogLine]
     var isRunning: Bool = false
-    var title: String = "日志"
-    var emptyHint: String = "运行命令后，stdout / stderr 会逐行显示在这里。"
+    var title: String = L("日志")
+    var emptyHint: String = L("运行命令后，stdout / stderr 会逐行显示在这里。")
     var onClear: (() -> Void)?
 
     var body: some View {
@@ -21,7 +21,7 @@ struct LogConsoleView: View {
                     }
                     .controlSize(.small)
                     .disabled(lines.isEmpty)
-                    .help("把全部日志复制到剪贴板")
+                    .help(L("把全部日志复制到剪贴板"))
 
                     if let onClear {
                         Button {
@@ -31,7 +31,7 @@ struct LogConsoleView: View {
                         }
                         .controlSize(.small)
                         .disabled(lines.isEmpty)
-                        .help("清空显示；不影响正在运行的任务")
+                        .help(L("清空显示；不影响正在运行的任务"))
                     }
                 }
             }
@@ -53,9 +53,9 @@ struct LogConsoleView: View {
             return emptyHint
         }
         if isRunning {
-            return "共 \(lines.count) 行 · 自动跟随输出"
+            return L("共 %@ 行 · 自动跟随输出", String(lines.count))
         }
-        return "共 \(lines.count) 行"
+        return L("共 %@ 行", String(lines.count))
     }
 
     private func copyLog() {

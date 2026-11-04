@@ -51,7 +51,7 @@ struct DesignView: View {
                 Text("图层")
                     .font(.system(size: 13, weight: .semibold))
                 Spacer()
-                Text("\(project.layers.count) 层")
+                Text(L("%@ 层", String(project.layers.count)))
                     .font(Typography.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -95,9 +95,9 @@ struct DesignView: View {
                     } label: {
                         Image(systemName: "arrow.up")
                     }
-                    .help("上移一层")
+                    .help(L("上移一层"))
                     .disabled(selectedLayerID == nil || !canMoveUp)
-                    .accessibilityLabel("上移图层")
+                    .accessibilityLabel(L("上移图层"))
 
                     Button {
                         guard let id = selectedLayerID else { return }
@@ -105,18 +105,18 @@ struct DesignView: View {
                     } label: {
                         Image(systemName: "arrow.down")
                     }
-                    .help("下移一层")
+                    .help(L("下移一层"))
                     .disabled(selectedLayerID == nil || !canMoveDown)
-                    .accessibilityLabel("下移图层")
+                    .accessibilityLabel(L("下移图层"))
 
                     Button {
                         project.removeSelectedLayer()
                     } label: {
                         Image(systemName: "trash")
                     }
-                    .help("删除选中图层")
+                    .help(L("删除选中图层"))
                     .disabled(selectedLayerID == nil)
-                    .accessibilityLabel("删除图层")
+                    .accessibilityLabel(L("删除图层"))
 
                     Spacer(minLength: 0)
                 }
@@ -181,7 +181,7 @@ struct DesignView: View {
                     .foregroundStyle(layer.visible ? .secondary : .tertiary)
             }
             .buttonStyle(.borderless)
-            .help(layer.visible ? "隐藏图层" : "显示图层")
+            .help(layer.visible ? L("隐藏图层") : L("显示图层"))
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
@@ -216,7 +216,7 @@ struct DesignView: View {
                     .font(.system(size: 13, weight: .semibold))
                 Spacer()
                 if !project.document.outputs.dataDirectory.isEmpty {
-                    Chip(text: "数据盘模式", systemImage: "folder.fill", tint: DesignSystem.brand)
+                    Chip(text: L("数据盘模式"), systemImage: "folder.fill", tint: DesignSystem.brand)
                 }
             }
             Text("空则整盘绘制；选择文件夹后会生成带文件的镜像（CD 自动切换为数据盘模式）。")
@@ -225,12 +225,12 @@ struct DesignView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             CompactPathField(
-                label: "文件夹",
+                label: L("文件夹"),
                 path: project.document.outputs.dataDirectory,
-                placeholder: "未选择（整盘绘制）",
+                placeholder: L("未选择（整盘绘制）"),
                 onBrowse: {
                     if let url = FilePanels.chooseInputFolder(
-                        title: "选择随盘文件目录",
+                        title: L("选择随盘文件目录"),
                         currentPath: project.document.outputs.dataDirectory
                     ) {
                         project.setDataDirectory(url.path)
@@ -242,8 +242,8 @@ struct DesignView: View {
             if !project.document.outputs.dataDirectory.isEmpty {
                 SegmentedControl(
                     items: [
-                        .init(id: false, title: "内圈", systemImage: "circle.dotted"),
-                        .init(id: true, title: "外圈", systemImage: "circle"),
+                        .init(id: false, title: L("内圈"), systemImage: "circle.dotted"),
+                        .init(id: true, title: L("外圈"), systemImage: "circle"),
                     ],
                     selection: Binding(
                         get: { project.document.outputs.filesAtOuterRing },

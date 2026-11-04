@@ -77,7 +77,7 @@ struct CalibrationView: View {
                 HStack(spacing: 6) {
                     Text("辅助标定")
                         .font(.system(size: 16, weight: .semibold))
-                    Chip(text: model.mode == .fine ? "精调" : "粗调", systemImage: "circle.dotted", tint: model.mode == .fine ? DesignSystem.brand : .orange)
+                    Chip(text: model.mode == .fine ? L("精调") : L("粗调"), systemImage: "circle.dotted", tint: model.mode == .fine ? DesignSystem.brand : .orange)
                     if model.isBusy {
                         ProgressView().controlSize(.mini)
                     }
@@ -124,7 +124,7 @@ struct CalibrationView: View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: systemImage)
                 .foregroundStyle(color)
-            Text(text)
+            Text(L(text))
                 .font(Typography.caption)
                 .foregroundStyle(color == .secondary ? .secondary : color)
                 .fixedSize(horizontal: false, vertical: true)
@@ -215,11 +215,11 @@ struct CalibrationView: View {
 
     private func monitorTitle(_ model: CalibrationModel) -> String {
         switch model.step {
-        case .target: return "标定图案预览"
+        case .target: return L("标定图案预览")
         case .photo:
-            if model.showRectifiedPreview && model.rectifiedURL != nil { return "矫正预览" }
-            return "原始照片与轮廓"
-        case .fit: return "矫正图 / 描点与预测"
+            if model.showRectifiedPreview && model.rectifiedURL != nil { return L("矫正预览") }
+            return L("原始照片与轮廓")
+        case .fit: return L("矫正图 / 描点与预测")
         }
     }
 
@@ -287,8 +287,8 @@ struct CalibrationView: View {
                     .foregroundStyle(.tertiary)
             } else {
                 HStack(spacing: 14) {
-                    legendDot(color: DesignSystem.brandEmphasis, text: "盘片实体外缘")
-                    legendDot(color: Color(red: 0.96, green: 0.65, blue: 0.14), text: "中心孔边缘")
+                    legendDot(color: DesignSystem.brandEmphasis, text: L("盘片实体外缘"))
+                    legendDot(color: Color(red: 0.96, green: 0.65, blue: 0.14), text: L("中心孔边缘"))
                     Spacer(minLength: 0)
                     Button("重置轮廓") { model.resetBoundaries() }
                         .controlSize(.small)
@@ -309,10 +309,10 @@ struct CalibrationView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 Spacer(minLength: 0)
-                legendDot(color: Color(red: 0.34, green: 0.78, blue: 1.0), text: "描点")
-                legendDot(color: Color(red: 1.0, green: 0.66, blue: 0.30), text: "预测")
+                legendDot(color: Color(red: 0.34, green: 0.78, blue: 1.0), text: L("描点"))
+                legendDot(color: Color(red: 1.0, green: 0.66, blue: 0.30), text: L("预测"))
                 if !model.outlierIndices.isEmpty {
-                    legendDot(color: .red, text: "偏离较大")
+                    legendDot(color: .red, text: L("偏离较大"))
                 }
             }
         } else {
@@ -327,7 +327,7 @@ struct CalibrationView: View {
             Circle()
                 .fill(color)
                 .frame(width: 7, height: 7)
-            Text(text)
+            Text(L(text))
                 .font(Typography.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -406,7 +406,7 @@ struct CalibrationView: View {
                 items: CalibrationMode.allCases.map {
                     .init(
                         id: $0,
-                        title: $0 == .fine ? "精调靶标" : "粗调图案",
+                        title: $0 == .fine ? L("精调靶标") : L("粗调图案"),
                         systemImage: $0 == .fine ? "scope" : "circle.lefthalf.filled"
                     )
                 },
@@ -489,7 +489,7 @@ struct CalibrationView: View {
             .accessibilityIdentifier("calibration-import-photo")
 
             VStack(alignment: .leading, spacing: 4) {
-                FieldLabel("实体盘片规格")
+                FieldLabel(L("实体盘片规格"))
                 SegmentedControl(
                     items: CalibrationDiscSize.allCases.map {
                         .init(id: $0, title: $0 == .standard ? "12 cm" : "8 cm", systemImage: "opticaldisc")
@@ -502,12 +502,12 @@ struct CalibrationView: View {
             }
 
             if let photo = model.photoURL {
-                Text("照片 \(model.photoWidth)×\(model.photoHeight) px · \(photo.lastPathComponent)")
+                Text(L("照片 %@×%@ px · %@", String(model.photoWidth), String(model.photoHeight), String(photo.lastPathComponent)))
                     .font(Typography.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Text("外缘 \(model.outerBoundary.count) 点 / 中心孔 \(model.holeBoundary.count) 点")
+                Text(L("外缘 %@ 点 / 中心孔 %@ 点", String(model.outerBoundary.count), String(model.holeBoundary.count)))
                     .font(Typography.caption2)
                     .foregroundStyle(.tertiary)
             }
@@ -526,7 +526,7 @@ struct CalibrationView: View {
             }
 
             if let rectified = model.rectifiedURL {
-                Text("矫正图：\(rectified.lastPathComponent) · 外半径 \(String(format: "%.1f", model.canvasOuterRadiusMm)) mm")
+                Text(L("矫正图：%@ · 外半径 %@ mm", String(rectified.lastPathComponent), String(String(format: "%.1f", model.canvasOuterRadiusMm))))
                     .font(Typography.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -595,7 +595,7 @@ struct CalibrationView: View {
             if !model.candidates.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        FieldLabel("候选（\(model.candidates.count)）")
+                        FieldLabel(L("候选（%@）", String(model.candidates.count)))
                         Spacer()
                         Text(model.mode == .fine ? "门槛：平均 ≤0.35 / 最大 ≤0.8 mm" : "粗调：warnings 必须为空")
                             .font(Typography.caption2)
@@ -658,13 +658,13 @@ struct CalibrationView: View {
                         Text("r0 \(format(candidate.innerRadiusMm)) / r1 \(format(candidate.outerRadiusMm))")
                             .font(Typography.monoSmall)
                         if candidate.outlierCount > 0 {
-                            Text("偏离 \(candidate.outlierCount)")
+                            Text(L("偏离 %@", String(candidate.outlierCount)))
                                 .font(Typography.caption2)
                                 .foregroundStyle(.red)
                         }
                     }
                     Text(String(
-                        format: "平均 %.3f mm · 最大 %.3f mm",
+                        format: L("平均 %.3f mm · 最大 %.3f mm"),
                         candidate.rmsErrorMm,
                         candidate.maxErrorMm
                     ))
@@ -701,7 +701,7 @@ struct CalibrationView: View {
             HStack {
                 Text("标定记录")
                     .font(.system(size: 13, weight: .semibold))
-                Text("\(model.sessionEntries.count) 个会话")
+                Text(L("%@ 个会话", String(model.sessionEntries.count)))
                     .font(Typography.caption2)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -753,14 +753,14 @@ struct CalibrationView: View {
                 .font(Typography.monoSmall)
                 .lineLimit(1)
             Spacer(minLength: 0)
-            Text("\(entry.tracePointCount) 点")
+            Text(L("%@ 点", String(entry.tracePointCount)))
                 .font(Typography.caption2)
                 .foregroundStyle(.secondary)
                 .frame(width: 52, alignment: .trailing)
             if entry.isConfirmed {
-                Chip(text: "已确认", systemImage: "checkmark.circle.fill", tint: .green)
+                Chip(text: L("已确认"), systemImage: "checkmark.circle.fill", tint: .green)
             } else {
-                Chip(text: "未确认", systemImage: "circle")
+                Chip(text: L("未确认"), systemImage: "circle")
             }
             Button("打开") { model.openEntry(entry) }
                 .controlSize(.small)

@@ -37,7 +37,7 @@ struct AboutView: View {
                 Text("全能的光盘盘面可见图像生成工作台")
                     .font(.system(size: 12.5))
                     .foregroundStyle(.secondary)
-                Text("macOS 图形界面 · \(model.appVersionText)")
+                Text(L("macOS 图形界面 · %@", String(model.appVersionText)))
                     .font(Typography.caption)
                     .foregroundStyle(.tertiary)
             }
@@ -50,26 +50,26 @@ struct AboutView: View {
 
     private var infoCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            CardHeader("版本信息", systemImage: "info.circle")
+            CardHeader(L("版本信息"), systemImage: "info.circle")
             Grid(alignment: .leading, horizontalSpacing: Spacing.l, verticalSpacing: Spacing.xs) {
                 GridRow(alignment: .firstTextBaseline) {
-                    label("图形界面")
+                    label(L("图形界面"))
                     Text(model.appVersionText)
                         .font(.system(size: 11.5))
                 }
                 GridRow(alignment: .firstTextBaseline) {
                     label("CLI")
-                    Text(model.resolvedCli.map { "已找到 · \($0.label)" } ?? "未连接")
+                    Text(model.resolvedCli.map { L("已找到 · %@", String($0.label)) } ?? L("未连接"))
                         .font(.system(size: 11.5))
                 }
                 if let cli = model.resolvedCli {
                     GridRow(alignment: .firstTextBaseline) {
-                        label("运行方式")
+                        label(L("运行方式"))
                         Text(cli.label)
                             .font(.system(size: 11.5))
                     }
                     GridRow(alignment: .firstTextBaseline) {
-                        label("位置")
+                        label(L("位置"))
                         Text(Formatting.abbreviatedPath(cli.detail))
                             .font(Typography.monoSmall)
                             .foregroundStyle(.secondary)
@@ -78,7 +78,7 @@ struct AboutView: View {
                     }
                 }
                 GridRow(alignment: .firstTextBaseline) {
-                    label("许可证")
+                    label(L("许可证"))
                     Text("GPL-3.0-or-later")
                         .font(.system(size: 11.5, weight: .medium))
                 }
@@ -89,7 +89,7 @@ struct AboutView: View {
     }
 
     private func label(_ text: String) -> some View {
-        Text(text)
+        Text(L(text))
             .font(Typography.caption)
             .foregroundStyle(.secondary)
             .frame(width: 64, alignment: .leading)
@@ -99,7 +99,7 @@ struct AboutView: View {
 
     private var linksCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            CardHeader("链接", systemImage: "link")
+            CardHeader(L("链接"), systemImage: "link")
             VStack(alignment: .leading, spacing: Spacing.s) {
                 Link(destination: repositoryURL) {
                     Label("上游仓库（GitHub）", systemImage: "arrow.up.right.square")

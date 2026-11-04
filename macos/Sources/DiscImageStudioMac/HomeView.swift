@@ -131,7 +131,7 @@ struct HomeView: View {
         HStack(spacing: Spacing.s) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
-            Text(message)
+            Text(L(message))
                 .font(Typography.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -156,7 +156,7 @@ struct HomeView: View {
                 Text("盘片预设加载失败，模板使用内置兜底参数。")
                     .font(Typography.caption)
                 if let message = app.presetsErrorMessage {
-                    Text(message)
+                    Text(L(message))
                         .font(Typography.caption2)
                         .foregroundStyle(.secondary)
                         .lineLimit(3)
@@ -215,7 +215,7 @@ struct HomeView: View {
                         .font(Typography.badge)
                         .foregroundStyle(.secondary)
                 }
-                Text(preset.displayName)
+                Text(L(preset.displayName))
                     .font(.system(size: 11.5, weight: .medium))
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)

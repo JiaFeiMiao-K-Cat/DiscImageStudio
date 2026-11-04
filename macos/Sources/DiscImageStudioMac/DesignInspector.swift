@@ -33,7 +33,7 @@ struct DesignInspector: View {
 
             if let layer = project.selectedLayer {
                 VStack(alignment: .leading, spacing: 4) {
-                    FieldLabel("图层名")
+                    FieldLabel(L("图层名"))
                     TextField("图层名", text: nameBinding)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: 11.5))
@@ -45,8 +45,8 @@ struct DesignInspector: View {
                         numericField("Y (mm)", binding: yBinding, digits: 2)
                     }
                     GridRow {
-                        numericField("旋转 (°)", binding: rotationBinding, digits: 1)
-                        numericField("缩放 (%)", binding: scaleBinding, digits: 0)
+                        numericField(L("旋转 (°)"), binding: rotationBinding, digits: 1)
+                        numericField(L("缩放 (%)"), binding: scaleBinding, digits: 0)
                     }
                 }
 
@@ -154,7 +154,7 @@ struct DesignInspector: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    FieldLabel("抖动强度")
+                    FieldLabel(L("抖动强度"))
                     Spacer()
                     Text("\(Int(tone.ditherPercent.rounded()))%")
                         .font(Typography.caption2)
@@ -171,12 +171,12 @@ struct DesignInspector: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                FieldLabel("灰阶档位")
+                FieldLabel(L("灰阶档位"))
                 if project.family == .cd {
                     SegmentedControl(
                         items: [
-                            .init(id: 2, title: "2 级"),
-                            .init(id: 4, title: "4 级"),
+                            .init(id: 2, title: L("2 级")),
+                            .init(id: 4, title: L("4 级")),
                         ],
                         selection: Binding(
                             get: { tone.levels },
@@ -193,7 +193,7 @@ struct DesignInspector: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    FieldLabel("亮度")
+                    FieldLabel(L("亮度"))
                     Spacer()
                     Text(String(format: "%+.0f", tone.brightness))
                         .font(Typography.caption2)

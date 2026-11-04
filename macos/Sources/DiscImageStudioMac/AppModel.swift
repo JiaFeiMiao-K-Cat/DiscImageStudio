@@ -70,7 +70,7 @@ final class AppModel {
            !version.isEmpty, !version.hasPrefix("__") {
             return version
         }
-        return "开发构建"
+        return L("开发构建")
     }
 
     /// 兼容旧设置/关于页展示；工作流层没有读取 CLI 版本。
@@ -170,7 +170,7 @@ final class AppModel {
         } else {
             let message = (lastPresetError as? LocalizedError)?.errorDescription
                 ?? lastPresetError?.localizedDescription
-                ?? "无法读取盘片预设。"
+                ?? L("无法读取盘片预设。")
             presetsErrorMessage = message
         }
         project?.updateCLI(resolvedCandidate.invocation)
@@ -233,8 +233,8 @@ final class AppModel {
 
     func openProjectPanel() {
         let panel = NSOpenPanel()
-        panel.title = "打开工程"
-        panel.prompt = "打开"
+        panel.title = L("打开工程")
+        panel.prompt = L("打开")
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
@@ -317,7 +317,7 @@ final class AppModel {
 
     func openBurn(sourceURL: URL? = nil) {
         guard let project else {
-            projectError = "请先打开或新建工程，再从导出结果开始刻录。"
+            projectError = L("请先打开或新建工程，再从导出结果开始刻录。")
             return
         }
         project.burnPrefillURL = sourceURL ?? project.latestArtifactURL
@@ -334,7 +334,7 @@ final class AppModel {
             settingsSaveError = nil
             return true
         } catch {
-            settingsSaveError = "无法保存设置：\(error.localizedDescription)"
+            settingsSaveError = L("无法保存设置：%@", String(error.localizedDescription))
             return false
         }
     }
@@ -434,7 +434,7 @@ final class AppModel {
             cacheActionError = nil
             project?.handleCacheCleared()
         } catch {
-            cacheActionError = "清空缓存失败：\(error.localizedDescription)"
+            cacheActionError = L("清空缓存失败：%@", String(error.localizedDescription))
         }
     }
 
@@ -459,22 +459,22 @@ final class AppModel {
     static let fallbackPresets: [DiscPreset] = [
         DiscPreset(
             id: "fallback-cd-80",
-            displayName: "标准 80min CD（兜底）",
-            description: "CLI 预设暂不可用时的内置 CD 参数（24.5–56.8 mm，359,849 扇区）。",
+            displayName: L("标准 80min CD（兜底）"),
+            description: L("CLI 预设暂不可用时的内置 CD 参数（24.5–56.8 mm，359,849 扇区）。"),
             family: .cd,
             geometry: ProjectGeometry(innerRadiusMm: 24.5, outerRadiusMm: 56.8, sectors: 359_849)
         ),
         DiscPreset(
             id: "fallback-dvd-5",
-            displayName: "标准 12cm 单层 DVD（兜底）",
-            description: "CLI 预设暂不可用时的内置 DVD 参数（24–58 mm，2,295,104 扇区）。",
+            displayName: L("标准 12cm 单层 DVD（兜底）"),
+            description: L("CLI 预设暂不可用时的内置 DVD 参数（24–58 mm，2,295,104 扇区）。"),
             family: .dvd,
             geometry: ProjectGeometry(innerRadiusMm: 24, outerRadiusMm: 58, sectors: 2_295_104)
         ),
         DiscPreset(
             id: "fallback-bd-25",
-            displayName: "标准 25GB 单层 BD（兜底）",
-            description: "CLI 预设暂不可用时的内置 BD 参数（24–58 mm，2,218,392 扇区）。",
+            displayName: L("标准 25GB 单层 BD（兜底）"),
+            description: L("CLI 预设暂不可用时的内置 BD 参数（24–58 mm，2,218,392 扇区）。"),
             family: .bd,
             geometry: ProjectGeometry(innerRadiusMm: 24, outerRadiusMm: 58, sectors: 12_219_392)
         ),

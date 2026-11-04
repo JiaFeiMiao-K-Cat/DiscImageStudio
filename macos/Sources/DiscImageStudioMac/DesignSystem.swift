@@ -108,7 +108,7 @@ struct CardHeader<Trailing: View>: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 16)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
+                Text(L(title))
                     .font(Typography.sectionTitle)
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
@@ -165,7 +165,7 @@ struct FamilyBadge: View {
                 .foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(family.displayName)
+        .accessibilityLabel(L(family.displayName))
     }
 }
 
@@ -181,7 +181,7 @@ struct Chip: View {
                 Image(systemName: systemImage)
                     .font(.system(size: 9, weight: .bold))
             }
-            Text(text)
+            Text(L(text))
                 .font(Typography.badge)
         }
         .foregroundStyle(tint ?? .secondary)
@@ -204,7 +204,7 @@ struct RequiredBadge: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(Color.orange.opacity(0.12), in: Capsule(style: .continuous))
-            .accessibilityLabel("必填项")
+            .accessibilityLabel(L("必填项"))
     }
 }
 
@@ -215,13 +215,13 @@ extension DiscCommandDescriptor {
     var capabilityLabels: [String] {
         capabilities.map { capability in
             switch capability {
-            case "RawTrackGeneration": return "音频轨道"
-            case "DataImageGeneration": return "数据镜像"
-            case "HybridFilesystem": return "混合文件系统"
-            case "GeometryPreview": return "几何预览"
-            case "EncodedOutputPreview": return "编码预览"
-            case "ErrorCorrectionEncoding": return "纠错编码"
-            case "None": return "无"
+            case "RawTrackGeneration": return L("音频轨道")
+            case "DataImageGeneration": return L("数据镜像")
+            case "HybridFilesystem": return L("混合文件系统")
+            case "GeometryPreview": return L("几何预览")
+            case "EncodedOutputPreview": return L("编码预览")
+            case "ErrorCorrectionEncoding": return L("纠错编码")
+            case "None": return L("无")
             default: return capability
             }
         }
@@ -231,16 +231,16 @@ extension DiscCommandDescriptor {
 // MARK: - 格式化
 
 enum Formatting {
-    /// 时长：小于 60 秒显示 "12.3 秒"，否则 "1 分 05 秒"。
+    /// 时长：小于 60 秒显示 L("12.3 秒")，否则 L("1 分 05 秒")。
     static func duration(_ seconds: TimeInterval) -> String {
         guard seconds.isFinite, seconds >= 0 else { return "—" }
         if seconds < 60 {
-            return String(format: "%.1f 秒", seconds)
+            return String(format: L("%.1f 秒"), seconds)
         }
         let total = Int(seconds.rounded())
         let minutes = total / 60
         let remainder = total % 60
-        return String(format: "%d 分 %02d 秒", minutes, remainder)
+        return String(format: L("%d 分 %02d 秒"), minutes, remainder)
     }
 
     /// 文件大小；传目录或不存在时返回 nil。
@@ -374,7 +374,7 @@ struct SectionCard<Content: View, Trailing: View>: View {
                     .foregroundStyle(DesignSystem.accent(.light))
                     .frame(width: 16)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
+                    Text(L(title))
                         .font(.system(size: 13, weight: .semibold))
                     if let subtitle, !subtitle.isEmpty {
                         Text(subtitle)
@@ -441,7 +441,7 @@ struct FieldLabel: View {
     init(_ text: String) { self.text = text }
 
     var body: some View {
-        Text(text)
+        Text(L(text))
             .font(.system(size: 10.5, weight: .medium))
             .foregroundStyle(.secondary)
     }
@@ -451,8 +451,8 @@ struct FieldLabel: View {
 struct CompactPathField: View {
     let label: String
     let path: String
-    var placeholder: String = "未选择"
-    var buttonTitle: String = "选择…"
+    var placeholder: String = L("未选择")
+    var buttonTitle: String = L("选择…")
     var onBrowse: () -> Void
     var onClear: (() -> Void)?
 
