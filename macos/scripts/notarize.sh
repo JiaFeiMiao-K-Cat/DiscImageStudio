@@ -156,10 +156,10 @@ if [[ -n "$PROFILE" ]]; then
 elif [[ -n "$API_KEY_PATH" && -n "$API_KEY_ID" && -n "$API_ISSUER" ]]; then
   [[ -f "$API_KEY_PATH" ]] || die "找不到 API Key 私钥：$API_KEY_PATH" 2
   NOTARY_ARGS+=(--key "$API_KEY_PATH" --key-id "$API_KEY_ID" --issuer "$API_ISSUER")
-  note "凭据          : App Store Connect API Key（$API_KEY_ID）"
+  note "凭据          : App Store Connect API Key（${API_KEY_ID}）"
 elif [[ -n "$APPLE_ID_VALUE" && -n "$APPLE_PASSWORD_VALUE" && -n "$TEAM_ID_VALUE" ]]; then
   NOTARY_ARGS+=(--apple-id "$APPLE_ID_VALUE" --password "$APPLE_PASSWORD_VALUE" --team-id "$TEAM_ID_VALUE")
-  note "凭据          : Apple ID（$APPLE_ID_VALUE，Team $TEAM_ID_VALUE）"
+  note "凭据          : Apple ID（${APPLE_ID_VALUE}，Team ${TEAM_ID_VALUE}）"
 else
   die "缺少公证凭据。设置 NOTARYTOOL_PROFILE，或 APPLE_API_KEY_PATH/APPLE_API_KEY_ID/APPLE_API_ISSUER_ID，或 APPLE_ID/APPLE_APP_SPECIFIC_PASSWORD/APPLE_TEAM_ID。" 2
 fi
@@ -179,7 +179,7 @@ SUBMIT_STATUS=$?
 set -e
 printf '%s\n' "$SUBMIT_OUTPUT"
 if [[ $SUBMIT_STATUS -ne 0 ]]; then
-  die "notarytool submit 失败（退出码 $SUBMIT_STATUS）。" 1
+  die "notarytool submit 失败（退出码 ${SUBMIT_STATUS}）。" 1
 fi
 
 STATUS="$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("status",""))' <<<"$SUBMIT_OUTPUT" 2>/dev/null || true)"
@@ -192,12 +192,12 @@ if [[ -z "$STATUS" ]]; then
 fi
 if [[ "$STATUS" != "Accepted" ]]; then
   if [[ -n "$SUBMISSION_ID" ]]; then
-    note "==> notarytool log（$SUBMISSION_ID）"
+    note "==> notarytool log（${SUBMISSION_ID}）"
     xcrun notarytool log "$SUBMISSION_ID" "${NOTARY_ARGS[@]}" || true
   fi
   die "公证未通过：${STATUS:-unknown}。" 1
 fi
-note "公证状态      : Accepted（$SUBMISSION_ID）"
+note "公证状态      : Accepted（${SUBMISSION_ID}）"
 
 # 5. stapling + 验证。
 note "==> stapler staple"
