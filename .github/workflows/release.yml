@@ -223,6 +223,8 @@ jobs:
         if: ${{ env.SIGN_PRIVATE_KEY != '' }}
         run: |
           sudo apt-get update
+          ## No PQC support but faster
+          # sudo apt-get install -y sq
           sudo apt-get install -y clang nettle-dev pkg-config libssl-dev capnproto libsqlite3-dev
           cargo install sequoia-sq \
             --locked \
