@@ -1577,12 +1577,20 @@
   "Xaml.FilesInTransparentArea": {
     "zh-CN": "文件放在图片透明区域",
     "en": "Place files in transparent area",
-    "zh-TW": "檔案放在圖片透明區域"
+    "zh-TW": "檔案放在圖片透明區域",
+    "ja": "ファイルを画像の透明部分に配置",
+    "tr": "Dosyaları saydam alana yerleştir",
+    "es": "Colocar archivos en la zona transparente",
+    "cs": "Umístit soubory do průhledné oblasti"
   },
   "Xaml.FilesInTransparentAreaTip": {
     "zh-CN": "自动选取图片中完全透明的最大连续区域存放文件，优先于内圈／外圈；需要带透明层的 PNG。",
     "en": "Stores files in the largest fully transparent run of the picture. Overrides inner/outer ring; needs a PNG with transparency.",
-    "zh-TW": "自動選取圖片中完全透明的最大連續區域存放檔案，優先於內圈／外圈；需要帶透明層的 PNG。"
+    "zh-TW": "自動選取圖片中完全透明的最大連續區域存放檔案，優先於內圈／外圈；需要帶透明層的 PNG。",
+    "ja": "画像内で完全に透明な最大の連続領域を自動選択してファイルを格納します。内周／外周より優先され、透明レイヤー付きの PNG が必要です。",
+    "tr": "Dosyaları resmin en büyük tamamen saydam bölümüne yerleştirir. İç/dış halka ayarını geçersiz kılar; saydamlık içeren bir PNG gerekir.",
+    "es": "Guarda los archivos en el mayor tramo totalmente transparente de la imagen. Tiene prioridad sobre la zona interior/exterior; requiere un PNG con transparencia.",
+    "cs": "Uloží soubory do největšího zcela průhledného úseku obrázku. Má přednost před vnitřním/vnějším prstencem; vyžaduje PNG s\u00a0průhledností."
   },
   "Xaml.OuterRing": {
     "zh-CN": "外圈",
