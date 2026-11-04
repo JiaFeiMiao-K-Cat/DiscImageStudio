@@ -69,6 +69,8 @@
                                     <ComboBoxItem Content="English" />
                                     <ComboBoxItem Content="日本語" />
                                     <ComboBoxItem Content="Türkçe" />
+                                    <ComboBoxItem Content="Español" />
+                                    <ComboBoxItem Content="Čeština" />
                                 </ComboBox>
                             </StackPanel>
                         </controls:SectionCard>
