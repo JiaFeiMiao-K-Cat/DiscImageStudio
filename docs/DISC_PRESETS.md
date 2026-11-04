@@ -17,6 +17,8 @@
 
 ## 合并规则
 
+CD、DVD、BD 预设都支持可选的 `pitchLinear`、`pitchQuadratic`、`pitchCubic`，缺省为 `0`。三项系数与内外半径共同定义盘片几何，应成套保存和分享；旧预设无需修改。轨距多项式 `1 + c1*x + c2*x² + c3*x³` 在整个归一化半径区间 `[0, 1]` 内必须保持正值。
+
 - 用户预设使用新 `id` 时，会追加到内置预设之后。
 - 用户预设使用与内置预设相同的 `id` 时，会完整覆盖该内置预设。
 - `disabledCdPresetIds`、`disabledDvdPresetIds` 和 `disabledBluRayPresetIds` 可以隐藏不需要的内置或用户预设。

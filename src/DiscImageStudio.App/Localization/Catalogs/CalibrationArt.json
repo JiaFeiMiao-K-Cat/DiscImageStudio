@@ -1,0 +1,65 @@
+{
+  "CalibrationArt.Legacy": {
+    "zh-CN": "同心圆与十字线",
+    "zh-TW": "同心圓與十字線",
+    "en": "Concentric rings and cross",
+    "ja": "同心円と十字線",
+    "tr": "Eş merkezli halkalar ve artı işareti",
+    "es": "Anillos concéntricos y cruz",
+    "cs": "Soustředné kružnice a kříž"
+  },
+  "CalibrationArt.Swept": {
+    "zh-CN": "带弯曲扇区的粗标定图案",
+    "zh-TW": "帶彎曲扇區的粗校準圖案",
+    "en": "Coarse calibration pattern with curved sectors",
+    "ja": "湾曲した扇形を使う概略校正パターン",
+    "tr": "Eğri sektörlü kaba kalibrasyon deseni",
+    "es": "Patrón de calibración inicial con sectores curvos",
+    "cs": "Vzor pro hrubou kalibraci se zakřivenými sektory"
+  },
+  "CalibrationArt.Plain": {
+    "zh-CN": "不等距圆环与精细标定十字线",
+    "zh-TW": "不等距圓環與精細校準十字線",
+    "en": "Unevenly spaced rings and a cross for fine calibration",
+    "ja": "間隔の異なるリングと精密校正用の十字線",
+    "tr": "Eşit olmayan aralıklı halkalar ve hassas kalibrasyon artısı",
+    "es": "Anillos con espaciado desigual y cruz para calibración fina",
+    "cs": "Nerovnoměrně rozmístěné kružnice a kříž pro jemnou kalibraci"
+  },
+  "CalibrationArt.CreateCoarse": {
+    "zh-CN": "新建粗标定图案",
+    "zh-TW": "建立粗校準圖案",
+    "en": "Create coarse calibration target",
+    "ja": "概略校正用ターゲットを作成",
+    "tr": "Kaba kalibrasyon hedefi oluştur",
+    "es": "Crear patrón de calibración inicial",
+    "cs": "Vytvořit terč pro hrubou kalibraci"
+  },
+  "CalibrationArt.CreateFine": {
+    "zh-CN": "新建精细标定图案（十字线）",
+    "zh-TW": "建立精細校準圖案（十字線）",
+    "en": "Create fine calibration target (cross)",
+    "ja": "精密校正用ターゲットを作成（十字線）",
+    "tr": "Hassas kalibrasyon hedefi oluştur (artı)",
+    "es": "Crear patrón de calibración fina (cruz)",
+    "cs": "Vytvořit terč pro jemnou kalibraci (kříž)"
+  },
+  "CalibrationArt.Empty": {
+    "zh-CN": "新建标靶或打开标定记录后可查看实际图案",
+    "zh-TW": "建立標靶或開啟校準記錄後即可查看實際圖案",
+    "en": "Create a target or open a calibration record to see its pattern",
+    "ja": "ターゲットの作成または校正記録の読み込み後、パターンが表示されます",
+    "tr": "Deseni görmek için bir hedef oluşturun veya kalibrasyon kaydı açın",
+    "es": "Cree un patrón o abra un registro de calibración para ver su diseño",
+    "cs": "Pro zobrazení vzoru vytvořte terč nebo otevřete záznam kalibrace"
+  },
+  "CalibrationArt.FineSpine": {
+    "zh-CN": "在深色扇区里，细十字臂呈浅色。沿同一条细臂的中线描点；两段弯曲的宽标记供粗标定核对照片尺度。",
+    "zh-TW": "在深色扇區內，細十字臂呈淺色。沿同一條細臂的中線標點；兩段彎曲的寬標記供粗校準核對相片尺度。",
+    "en": "The narrow cross arm appears light inside the dark sector. Trace the centre of one arm. The two curved, wide marks are scale references for coarse calibration.",
+    "ja": "暗い扇形の中では細い十字線が明るく見えます。同じ腕の中心をたどってください。2か所の太い曲線模様は粗校正で縮尺を確認するために使います。",
+    "tr": "İnce artı kolu koyu sektörün içinde açık görünür. Bir kolun merkezini işaretleyin. İki geniş, eğri işaret kaba kalibrasyon için ölçek referansıdır.",
+    "es": "El brazo fino de la cruz aparece claro dentro del sector oscuro. Trace el centro de un brazo. Las dos marcas anchas y curvas sirven de referencia de escala para la calibración inicial.",
+    "cs": "Tenké rameno kříže je uvnitř tmavého sektoru světlé. Označujte střed jednoho ramene. Dvě široké zakřivené značky slouží jako měřítko pro hrubou kalibraci."
+  }
+}

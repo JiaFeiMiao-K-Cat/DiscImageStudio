@@ -1,6 +1,7 @@
 using System.IO;
 using DiscImageStudio.BluRay;
 using DiscImageStudio.Core.Calibration;
+using DiscImageStudio.ViewModels;
 
 internal static class BluRayPatternRangeTests
 {
@@ -29,10 +30,47 @@ internal static class BluRayPatternRangeTests
             disc, static (_, _) => 0, 32, 160, invertMapping: false), "range past the disc rejected");
 
         TestParallelRangeMatchesScalar();
+        TestWideBandStreamEdges();
         TestSequentialSamplerContract();
         TestProceduralGeometryAgainstScalar();
         TestCancellation();
         Console.WriteLine("blu-ray-pattern-range: passed (drawing range, polarity, parallel/scalar equality, sampler order, cancellation)");
+    }
+
+    private static void TestWideBandStreamEdges()
+    {
+        const uint sectors = BluRayDiscParameters.SectorsPerLayer;
+        const uint drawingStart = 16384, drawingEnd = sectors - 32768;
+        uint clusters = (drawingEnd - drawingStart) / 32;
+        uint Boundary(long permille) => drawingStart + checked((uint)((clusters * permille + 999) / 1000 * 32));
+        uint[] edges = [drawingStart, Boundary(35), Boundary(170), Boundary(305), Boundary(510),
+            Boundary(705), Boundary(955), drawingEnd];
+        foreach (var (inner, outer, invert) in new[] { (24.0, 58.0, false), (21.0, 54.5, false), (24.0, 58.0, true) })
+        {
+            var p = new CalibrationParameters(CalibrationDiscKind.BluRay, inner, outer,
+                sectors, CalibrationParameters.BluRayChannelBitLengthNm, BluRayInvertMapping: invert,
+                DrawingStartSector: drawingStart, DrawingEndSectorExclusive: drawingEnd);
+            var target = CalibrationTarget.Create(p, artwork: CalibrationArtwork.WideAddressBands);
+            var disc = CalibrationViewModel.BluRayParameters(p);
+            var mapping = CalibrationViewModel.BluRayPatternMapping(target);
+            byte light = invert ? BluRayRunLengthMapping.ThreeTByte : BluRayRunLengthMapping.SixTByte;
+            byte dark = invert ? BluRayRunLengthMapping.SixTByte : BluRayRunLengthMapping.ThreeTByte;
+            byte[] tones = [0, light, dark, light, dark, light, dark, light, 0];
+            for (int i = 0; i < edges.Length; i++)
+            {
+                // Verify the complete output bytes of one cluster on either side of
+                // every independently calculated address, including the blank margins.
+                uint start = edges[i] - 32;
+                using MemoryStream actual = new(), expected = new();
+                BluRayStreamingGenerator.GenerateToStream(actual, new(disc, start, 64), mapping);
+                BluRayStreamingGenerator.GenerateToStream(expected, new(disc, start, 32),
+                    new BluRayConstantByteMapping(tones[i]));
+                BluRayStreamingGenerator.GenerateToStream(expected, new(disc, edges[i], 32),
+                    new BluRayConstantByteMapping(tones[i + 1]));
+                Require(actual.ToArray().AsSpan().SequenceEqual(expected.ToArray()),
+                    $"v12 BD host bytes either side of LBA {edges[i]} (invert={invert}, radii={inner}/{outer})");
+            }
+        }
     }
 
     private static void TestParallelRangeMatchesScalar()

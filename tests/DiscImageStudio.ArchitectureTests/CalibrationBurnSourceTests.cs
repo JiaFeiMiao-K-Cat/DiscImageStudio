@@ -38,7 +38,14 @@ internal static class CalibrationBurnSourceTests
         {
             RecordingBurner burner = new();
             shell = new ShellViewModel(Dispatcher.CurrentDispatcher, burner);
-            DiscParametersState state = shell.State;
+            shell.NavigateTo(Workspace.Calibration);
+            Require(!shell.IsProjectOpen && !shell.IsProjectMode && shell.Calibration.Target is null,
+                "calibration opens directly from Home with an empty setup and no project chrome");
+            shell.ReturnFromCalibrationCommand.Execute(null);
+            Require(shell.CurrentWorkspace == Workspace.Home, "home entry returns to home");
+            DiscParametersState state = shell.Calibration.Parameters;
+            Require(!ReferenceEquals(state, shell.State) && !shell.Burn.UseCalibrationPattern
+                && shell.CalibrationBurn.UseCalibrationPattern, "project and calibration have independent geometry and burn sources");
             state.CdInnerRadius = state.DvdInnerRadius = state.BdInnerRadius = "24";
             state.CdOuterRadius = state.DvdOuterRadius = state.BdOuterRadius = "58";
             state.CdSectors = "8";
@@ -50,14 +57,16 @@ internal static class CalibrationBurnSourceTests
             // A data directory must not change a calibration target into a CD data burn.
             state.CdDataDirectory = "not-a-real-directory";
 
-            // Avoid opening a real project or touching the user's recent-project history.
-            SetProjectFamily(shell, ProjectDocument.BluRayFamily);
+            shell.NavigateTo(Workspace.Calibration);
+            shell.Calibration.SelectedDiscType = "BD";
+            shell.Calibration.SelectFineModeCommand.Execute(null); // The small fixture is below the v13 sector threshold.
             shell.Calibration.EnsureTarget();
             Require(shell.Calibration.Target?.Parameters.Kind == CalibrationDiscKind.BluRay
-                && shell.Calibration.SelectedDiscType == "BD", "first target follows the BD project");
-            BurnViewModel burn = shell.Burn;
-            burn.UseCalibrationPattern = true;
-            burn.RefreshDevicesAsync().GetAwaiter().GetResult();
+                && shell.Calibration.SelectedDiscType == "BD", "BD setup builds a target without an open project");
+            BurnViewModel burn = shell.CalibrationBurn;
+            shell.NavigateTo(Workspace.CalibrationBurn);
+            Require(!shell.IsProjectMode && shell.CurrentWorkspace == Workspace.CalibrationBurn,
+                "calibration burn setup stays outside the project");
             VerifySource(shell, burner, "BD", OpticalBurnMediaKind.BluRayData);
             Require(burn.SourceDetails.Contains("74.5 nm", StringComparison.Ordinal)
                 && burn.SourceDetails.Contains("反转 3T/6T", StringComparison.Ordinal)
@@ -69,12 +78,26 @@ internal static class CalibrationBurnSourceTests
             // Once created, the calibration source remains its own snapshot even if the
             // project family or main-page geometry changes before the stream is started.
             SetProjectFamily(shell, ProjectDocument.CdFamily);
-            state.BdTotalSectors = "96";
-            state.BdInvertMapping = false;
+            shell.State.BdTotalSectors = "96";
+            shell.State.BdInvertMapping = false;
             burn.UpdateSourceSummary();
             Require(burn.SourceDetails == savedSummary, "summary is isolated from later project parameter edits");
+            shell.IsProjectOpen = true;
+            shell.IsDirty = true;
+            shell.SelectWorkspace(Workspace.Export);
+            shell.NavigateTo(Workspace.Calibration);
+            var id = shell.Calibration.Target!.Id;
+            shell.NavigateTo(Workspace.CalibrationBurn);
+            shell.NavigateTo(Workspace.Calibration);
+            shell.ReturnFromCalibrationCommand.Execute(null);
+            Require(shell.CurrentWorkspace == Workspace.Export && shell.IsDirty && shell.Calibration.Target!.Id == id,
+                "return from calibration preserves the open project and its originating page");
+            shell.NavigateTo(Workspace.Calibration);
+            shell.NavigateTo(Workspace.CalibrationBurn);
             VerifySource(shell, burner, "BD", OpticalBurnMediaKind.BluRayData);
             shell.Calibration.SaveSessionTo(Path.Combine(directory, "bd.calibration.json"));
+            shell.RegisterOutput(Path.Combine(directory, "drawing.iso"));
+            string projectJobTitle = shell.JobTitle, projectJobStatus = shell.JobStatusText;
             string? confirmation = null;
             shell.ConfirmHandler = (_, message, _) =>
             {
@@ -91,6 +114,12 @@ internal static class CalibrationBurnSourceTests
             Require(shell.LogText.Contains("开始流式刻录：BD 标定图案", StringComparison.Ordinal)
                 && !shell.LogText.Contains("CD 标定图案", StringComparison.Ordinal),
                 "burn log describes BD calibration material");
+            Require(burn.HasCalibrationBurnLog && burn.CalibrationBurnLog.Contains("开始流式刻录：BD 标定图案", StringComparison.Ordinal)
+                && !burn.CalibrationBurnLog.Contains("drawing.iso", StringComparison.Ordinal)
+                && burn.BurnProgressValue == 100
+                && shell.JobTitle == projectJobTitle && shell.JobStatusText == projectJobStatus
+                && shell.JobHasResult && shell.CanPreviewLastOutput && shell.OpenOutputEnabled,
+                "standalone burning retains its own progress and log while the project keeps its previous file and job status");
 
             foreach ((string label, OpticalBurnMediaKind mediaKind) in new[]
             {
@@ -100,7 +129,13 @@ internal static class CalibrationBurnSourceTests
             })
             {
                 int previousQueries = burner.SpeedQueries.Count;
+                if (label == "BD")
+                {
+                    state.BdTotalSectors = "96";
+                    state.BdInvertMapping = false;
+                }
                 shell.Calibration.SelectedDiscType = label;
+                shell.Calibration.SelectFineModeCommand.Execute(null); // Speed routing also uses small test capacities.
                 shell.Calibration.CreateTargetCommand.Execute(null);
                 Require(burner.SpeedQueries.Count > previousQueries, "changing the target refreshes its media-specific speeds");
                 VerifySource(shell, burner, label, mediaKind);
@@ -122,7 +157,7 @@ internal static class CalibrationBurnSourceTests
     private static void VerifySource(ShellViewModel shell, RecordingBurner burner,
         string label, OpticalBurnMediaKind mediaKind)
     {
-        BurnViewModel burn = shell.Burn;
+        BurnViewModel burn = shell.CalibrationBurn;
         Require(burn.FamilyLabel == label && burn.SourceTitle.StartsWith($"标定图案 · {label} · ", StringComparison.Ordinal),
             $"{label} header and source title agree");
         Require(burner.SpeedQueries[^1] == mediaKind, $"{label} speed query agrees with the target");
@@ -158,6 +193,9 @@ internal static class CalibrationBurnSourceTests
 
         public Task<IReadOnlyList<OpticalBurnDevice>> GetDevicesAsync(CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<OpticalBurnDevice>>([new("memory-only", "Memory recorder", [])]);
+
+        public Task<long> GetMediaSectorCountAsync(string deviceId, OpticalBurnMediaKind mediaKind,
+            CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
         public Task<IReadOnlyList<OpticalWriteSpeed>> GetSupportedWriteSpeedsAsync(string deviceId,
             OpticalBurnMediaKind mediaKind, CancellationToken cancellationToken = default)

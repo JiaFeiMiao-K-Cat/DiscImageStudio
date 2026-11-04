@@ -59,6 +59,7 @@ internal static class LocalizationTests
         {
             TestCatalog();
             TestCzechText();
+            TestMissingTranslations();
             TestLanguageResolution();
             TestTranslationAndFormatting();
             TestDefaultSettings(directory);
@@ -81,17 +82,65 @@ internal static class LocalizationTests
         Require(L.Entries.Count > 0, "the published assembly embeds translation catalogs");
         foreach ((string key, Dictionary<string, string> translations) in L.Entries)
         {
-            Require(translations.TryGetValue(L.Chinese, out string? chinese)
-                    && !string.IsNullOrWhiteSpace(chinese), key + " has Simplified Chinese text");
-            HashSet<string> sourceArguments = ReadArguments(chinese!, key);
+            ValidateCatalogEntry(key, translations);
+        }
+    }
+
+    private static void ValidateCatalogEntry(string key, Dictionary<string, string> translations)
+    {
+        Require(translations.TryGetValue(L.Chinese, out string? chinese)
+                && !string.IsNullOrWhiteSpace(chinese), key + " has Simplified Chinese fallback text");
+        HashSet<string> sourceArguments = ReadArguments(chinese!, key);
+        foreach (string language in new[] { L.TraditionalChinese, L.English, L.Japanese, L.Turkish, L.Spanish, L.Czech })
+        {
+            if (!translations.TryGetValue(language, out string? translated) || string.IsNullOrWhiteSpace(translated))
+                continue;
+            HashSet<string> translatedArguments = ReadArguments(translated, key);
+            Require(sourceArguments.SetEquals(translatedArguments),
+                key + " preserves argument indices and numeric/date formats in " + language);
+        }
+    }
+
+    private static void TestMissingTranslations()
+    {
+        const string key = "Xaml.LayerCountFormat";
+        Dictionary<string, string> translations = L.Entries[key];
+        var saved = new Dictionary<string, string>(translations);
+        string originalLanguage = L.CurrentLanguage;
+        try
+        {
+            translations.Clear();
+            translations[L.Chinese] = saved[L.Chinese];
+            ValidateCatalogEntry(key, translations);
+            TestCzechText();
             foreach (string language in new[] { L.TraditionalChinese, L.English, L.Japanese, L.Turkish, L.Spanish, L.Czech })
             {
-                Require(translations.TryGetValue(language, out string? translated)
-                        && !string.IsNullOrWhiteSpace(translated), key + " has " + language + " text");
-                HashSet<string> translatedArguments = ReadArguments(translated!, key);
-                Require(sourceArguments.SetEquals(translatedArguments),
-                    key + " preserves argument indices and numeric/date formats in " + language);
+                L.Initialize(language);
+                Require(L.T(key) == saved[L.Chinese], language + " missing text falls back to Chinese");
+                Require(L.Format(key, 3) == string.Format(CultureInfo.CurrentCulture, saved[L.Chinese], 3),
+                    language + " fallback preserves format arguments");
+                translations[language] = " \t";
+                Require(L.T(key) == saved[L.Chinese], language + " blank text also falls back to Chinese");
             }
+            ValidateCatalogEntry(key, translations);
+            TestCzechText();
+            translations[L.Czech] = "Počet vrstev: {0}";
+            TestCzechText(); // A supplied Czech translation does not require an English translation.
+
+            translations[L.English] = "{1} layers";
+            bool rejected = false;
+            try { ValidateCatalogEntry(key, translations); }
+            catch (InvalidOperationException) { rejected = true; }
+            Require(rejected, "provided translations still reject changed format arguments");
+            translations[L.English] = "{0} layers";
+            L.Initialize(L.English);
+            Require(L.T(key) == "{0} layers", "a later translation replaces the fallback without changing the key");
+        }
+        finally
+        {
+            translations.Clear();
+            foreach (var entry in saved) translations.Add(entry.Key, entry.Value);
+            L.Initialize(originalLanguage);
         }
     }
 
@@ -120,21 +169,23 @@ internal static class LocalizationTests
         Regex looseOneLetterWord = new(@"(?<![\w\-./\\{])[kKsSvVzZoOuUaAiI] (?=\S)");
         foreach ((string key, Dictionary<string, string> translations) in L.Entries)
         {
-            string english = translations[L.English];
-            string czech = translations[L.Czech];
+            if (!translations.TryGetValue(L.Czech, out string? czech) || string.IsNullOrWhiteSpace(czech)) continue;
+            translations.TryGetValue(L.English, out string? english);
+            bool hasEnglish = !string.IsNullOrWhiteSpace(english);
             string name = key + " (cs)";
-            Require(czech != english || !english.Contains(' '), name + " is translated, not copied from English");
+            Require(!hasEnglish || czech != english || !english!.Contains(' '), name + " is translated, not copied from English");
             Require(!chinese.IsMatch(czech) || czech == english, name + " contains no untranslated Chinese");
             Require(!czech.Contains("...") && !czech.Contains('\u2014') && !czech.Contains('"') && !czech.Contains('\u201D'),
                 name + " uses Czech typography");
             Require(czech.Count(c => c == '\u201E') == czech.Count(c => c == '\u201C'),
                 name + " closes every Czech quotation mark");
-            Require(char.IsWhiteSpace(czech[0]) == char.IsWhiteSpace(english[0])
-                    && char.IsWhiteSpace(czech[^1]) == char.IsWhiteSpace(english[^1]),
+            Require(!hasEnglish || char.IsWhiteSpace(czech[0]) == char.IsWhiteSpace(english![0])
+                    && char.IsWhiteSpace(czech[^1]) == char.IsWhiteSpace(english![^1]),
                 name + " keeps the edge spaces that concatenated fragments rely on");
             Require(!looseOneLetterWord.IsMatch(czech),
                 name + " binds one-letter prepositions to the next word with U+00A0");
-            string englishSubject = english.Replace("Disc Image Studio", string.Empty, StringComparison.Ordinal);
+            if (!hasEnglish) continue;
+            string englishSubject = english!.Replace("Disc Image Studio", string.Empty, StringComparison.Ordinal);
             string czechSubject = czech.Replace("Disc Image Studio", string.Empty, StringComparison.Ordinal);
             foreach ((Regex englishTerm, Regex czechTerm) in CzechTerms)
             {

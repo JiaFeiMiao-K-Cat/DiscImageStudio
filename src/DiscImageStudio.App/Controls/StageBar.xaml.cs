@@ -16,7 +16,8 @@ public sealed class StageItem
         Workspace = workspace;
         Label = label;
         IsGroupStart = isGroupStart;
-        IsCurrent = workspace == current;
+        IsCurrent = workspace == current
+            || workspace == Workspace.Calibration && current == Workspace.CalibrationBurn;
     }
 
     public Workspace Workspace { get; }

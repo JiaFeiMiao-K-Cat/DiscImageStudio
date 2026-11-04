@@ -533,6 +533,9 @@ public partial class ProjectDialogViewModel : ObservableObject
                     InnerRadiusText = "24.5";
                     OuterRadiusText = "56.8";
                     SectorsText = "359849";
+                    PitchLinearText = "0";
+                    PitchQuadraticText = "0";
+                    PitchCubicText = "0";
                     break;
             }
         }
@@ -560,9 +563,9 @@ public partial class ProjectDialogViewModel : ObservableObject
                 InnerRadiusText = geometry.InnerRadiusMm.ToString("R", CultureInfo.InvariantCulture);
                 OuterRadiusText = geometry.OuterRadiusMm.ToString("R", CultureInfo.InvariantCulture);
                 SectorsText = geometry.TotalSectors.ToString(CultureInfo.InvariantCulture);
-                PitchLinearText = "0";
-                PitchQuadraticText = "0";
-                PitchCubicText = "0";
+                PitchLinearText = geometry.PitchLinear.ToString("R", CultureInfo.InvariantCulture);
+                PitchQuadraticText = geometry.PitchQuadratic.ToString("R", CultureInfo.InvariantCulture);
+                PitchCubicText = geometry.PitchCubic.ToString("R", CultureInfo.InvariantCulture);
                 _templateInvertMapping = preset.InvertMapping;
             }
         }
@@ -575,6 +578,9 @@ public partial class ProjectDialogViewModel : ObservableObject
                 InnerRadiusText = preset.InnerRadiusMm.ToString("R", CultureInfo.InvariantCulture);
                 OuterRadiusText = preset.OuterRadiusMm.ToString("R", CultureInfo.InvariantCulture);
                 SectorsText = preset.Sectors.ToString(CultureInfo.InvariantCulture);
+                PitchLinearText = preset.PitchLinear.ToString("R", CultureInfo.InvariantCulture);
+                PitchQuadraticText = preset.PitchQuadratic.ToString("R", CultureInfo.InvariantCulture);
+                PitchCubicText = preset.PitchCubic.ToString("R", CultureInfo.InvariantCulture);
             }
         }
     }
@@ -689,16 +695,10 @@ public partial class ProjectDialogViewModel : ObservableObject
             throw new ArgumentException(L.T("外半径必须大于内半径。"));
         }
 
-        double pitchLinear = 0, pitchQuadratic = 0, pitchCubic = 0;
-        if (IsDvd)
-        {
-            // Pitch coefficients are deltas, so zero is the normal default; only finiteness
-            // is required here, unlike the strictly positive radii.
-            pitchLinear = ParseNumber(PitchLinearText, L.T("相对一次项"));
-            pitchQuadratic = ParseNumber(PitchQuadraticText, L.T("相对二次项"));
-            pitchCubic = ParseNumber(PitchCubicText, L.T("相对三次项"));
-            DvdTrackGeometry.ValidatePitchCoefficients(pitchLinear, pitchQuadratic, pitchCubic);
-        }
+        double pitchLinear = ParseNumber(PitchLinearText, L.T("相对一次项"));
+        double pitchQuadratic = ParseNumber(PitchQuadraticText, L.T("相对二次项"));
+        double pitchCubic = ParseNumber(PitchCubicText, L.T("相对三次项"));
+        DvdTrackGeometry.ValidatePitchCoefficients(pitchLinear, pitchQuadratic, pitchCubic);
 
         return (inner, outer, sectors, pitchLinear, pitchQuadratic, pitchCubic);
     }

@@ -94,8 +94,10 @@ public static class L
     {
         ArgumentNullException.ThrowIfNull(key);
         if (!Catalog.TryGetValue(key, out Dictionary<string, string>? translations)) return key;
-        if (translations.TryGetValue(CurrentLanguage, out string? translated)) return translated;
-        return translations.TryGetValue(Chinese, out string? fallback) ? fallback : key;
+        if (translations.TryGetValue(CurrentLanguage, out string? translated)
+            && !string.IsNullOrWhiteSpace(translated)) return translated;
+        return translations.TryGetValue(Chinese, out string? fallback)
+            && !string.IsNullOrWhiteSpace(fallback) ? fallback : key;
     }
 
     public static string F(FormattableString text)

@@ -174,23 +174,38 @@ public class PreviewInspectorViewModel : ObservableObject
 
     public string MeasuredPitchLinear
     {
-        get => _state.DvdActualPitchLinear;
-        set => _state.DvdActualPitchLinear = value;
+        get => _family switch { OpticalDiscFamily.Dvd => _state.DvdActualPitchLinear, OpticalDiscFamily.BluRay => _state.BdActualPitchLinear, _ => _state.CdActualPitchLinear };
+        set
+        {
+            if (_family == OpticalDiscFamily.Dvd) _state.DvdActualPitchLinear = value;
+            else if (_family == OpticalDiscFamily.BluRay) _state.BdActualPitchLinear = value;
+            else _state.CdActualPitchLinear = value;
+        }
     }
 
     public string MeasuredPitchQuadratic
     {
-        get => _state.DvdActualPitchQuadratic;
-        set => _state.DvdActualPitchQuadratic = value;
+        get => _family switch { OpticalDiscFamily.Dvd => _state.DvdActualPitchQuadratic, OpticalDiscFamily.BluRay => _state.BdActualPitchQuadratic, _ => _state.CdActualPitchQuadratic };
+        set
+        {
+            if (_family == OpticalDiscFamily.Dvd) _state.DvdActualPitchQuadratic = value;
+            else if (_family == OpticalDiscFamily.BluRay) _state.BdActualPitchQuadratic = value;
+            else _state.CdActualPitchQuadratic = value;
+        }
     }
 
     public string MeasuredPitchCubic
     {
-        get => _state.DvdActualPitchCubic;
-        set => _state.DvdActualPitchCubic = value;
+        get => _family switch { OpticalDiscFamily.Dvd => _state.DvdActualPitchCubic, OpticalDiscFamily.BluRay => _state.BdActualPitchCubic, _ => _state.CdActualPitchCubic };
+        set
+        {
+            if (_family == OpticalDiscFamily.Dvd) _state.DvdActualPitchCubic = value;
+            else if (_family == OpticalDiscFamily.BluRay) _state.BdActualPitchCubic = value;
+            else _state.CdActualPitchCubic = value;
+        }
     }
 
-    public string MeasuredPitchSummary => _state.DvdActualPitchSummary;
+    public string MeasuredPitchSummary => _state.GetPitchSummary(_family, actual: true);
 
     // ---- Preview precision: inspection behaviour, not a project parameter ----
 
@@ -271,6 +286,7 @@ public class PreviewInspectorViewModel : ObservableObject
     private void State_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         void Raise(string name) => OnPropertyChanged(name);
+        Raise(nameof(MeasuredPitchSummary));
 
         switch (e.PropertyName)
         {
@@ -293,12 +309,18 @@ public class PreviewInspectorViewModel : ObservableObject
                 Raise(nameof(MeasuredOuterRadius));
                 break;
             case nameof(DiscParametersState.DvdActualPitchLinear):
+            case nameof(DiscParametersState.CdActualPitchLinear):
+            case nameof(DiscParametersState.BdActualPitchLinear):
                 Raise(nameof(MeasuredPitchLinear));
                 break;
             case nameof(DiscParametersState.DvdActualPitchQuadratic):
+            case nameof(DiscParametersState.CdActualPitchQuadratic):
+            case nameof(DiscParametersState.BdActualPitchQuadratic):
                 Raise(nameof(MeasuredPitchQuadratic));
                 break;
             case nameof(DiscParametersState.DvdActualPitchCubic):
+            case nameof(DiscParametersState.CdActualPitchCubic):
+            case nameof(DiscParametersState.BdActualPitchCubic):
                 Raise(nameof(MeasuredPitchCubic));
                 break;
             case nameof(DiscParametersState.DvdActualPitchSummary):

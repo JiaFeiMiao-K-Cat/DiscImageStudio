@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.Intrinsics;
+using DiscImageStudio.Core.Calibration;
 using DvdImageSolver.Encoding;
 
 namespace DvdImageSolver.Solver;
@@ -145,6 +146,22 @@ public static class FastDispersionImageWriter
         return WriteSampledStream(sampler, output, options, progress, cancellationToken);
     }
 
+    /// <summary>Uses the frozen reference image with its original bilinear sampling
+    /// and drawing-annulus clipping, including targets loaded from older sessions.</summary>
+    public static FastDvdStreamSummary WriteCalibrationReferenceStream(
+        CalibrationTarget target, Stream output, MultiBlockSolveOptions options,
+        Action<FastDvdStreamProgress>? progress = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(options);
+        if (!target.UsesReferencePattern || target.Parameters.Kind != CalibrationDiscKind.Dvd
+            || target.Parameters.Sectors != options.ImageMapping.TotalSectors)
+            throw new ArgumentException("The reference target and output must describe the same DVD sector capacity.", nameof(target));
+        ValidateStream(output, options);
+        PayloadImageSampler sampler = new(target, options.ImageMapping, options.UseSampleReuse);
+        return WriteSampledStream(sampler, output, options, progress, cancellationToken);
+    }
+
     /// <summary>Samples on the physical payload word grid without replaying ECC or NRZI.</summary>
     public static FastDvdStreamSummary WriteCodewordPatternStream(
         Func<DvdCodewordSample, byte> sampleGray,
@@ -206,6 +223,38 @@ public static class FastDispersionImageWriter
         MultiBlockSolveOptions options,
         Action<FastDvdStreamProgress>? progress,
         CancellationToken cancellationToken)
+        => WriteBlockStream((index, buffer) => GenerateBlock(index, sampler, options, buffer, cancellationToken),
+            output, options, progress, cancellationToken);
+
+    /// <summary>Writes an opaque DVD texture selected once per logical sector, before scrambling.</summary>
+    public static FastDvdStreamSummary WriteSectorPatternStream(
+        Func<uint, byte> sectorLuminance, Stream output, MultiBlockSolveOptions options,
+        Action<FastDvdStreamProgress>? progress = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(sectorLuminance);
+        ValidateStream(output, options);
+        GeneratedBlock Fill(int index, byte[] buffer)
+        {
+            uint lba = checked(options.StartLba + (uint)index * DvdEccBlockEncoder.SectorCount);
+            for (uint offset = 0; offset < DvdEccBlockEncoder.SectorCount; offset++)
+            {
+                uint sector = lba + offset;
+                var payload = buffer.AsSpan((int)offset * DvdEccBlockEncoder.PayloadBytesPerSector,
+                    DvdEccBlockEncoder.PayloadBytesPerSector);
+                payload.Fill(DvdGrayscalePalette.GetScrambledByte(sectorLuminance(sector)));
+                DvdDataFrameBuilder.TransformPayloadScrambling(payload, sector + options.PsnOffset);
+            }
+            return new GeneratedBlock(lba, buffer, buffer.Length);
+        }
+        return WriteBlockStream(Fill, output, options, progress, cancellationToken);
+    }
+
+    private static FastDvdStreamSummary WriteBlockStream(
+        Func<int, byte[], GeneratedBlock> generateBlock,
+        Stream output,
+        MultiBlockSolveOptions options,
+        Action<FastDvdStreamProgress>? progress,
+        CancellationToken cancellationToken)
     {
         int totalBlocks = checked((int)(options.FillSectors / DvdEccBlockEncoder.SectorCount));
         int parallelism = options.FastParallelism == 0
@@ -229,8 +278,7 @@ public static class FastDispersionImageWriter
             Parallel.For(0, batchCount, parallelOptions, batchOffset =>
             {
                 int blockIndex = batchStart + batchOffset;
-                generated[batchOffset] = GenerateBlock(
-                    blockIndex, sampler, options, generated[batchOffset].Payloads, cancellationToken);
+                generated[batchOffset] = generateBlock(blockIndex, generated[batchOffset].Payloads);
             });
 
             for (int batchOffset = 0; batchOffset < batchCount; batchOffset++)
@@ -297,6 +345,12 @@ public static class FastDispersionImageWriter
         ulong blockFirstGlobalBit = (ulong)lba * DvdEccBlockEncoder.ChannelBitsPerSector;
         uint firstPsn = checked(lba + options.PsnOffset);
         bool useSimd = options.UseSimdSampling && sampler.SupportsSimdSampling;
+        bool useReuse = options.UseSampleReuse && sampler.SupportsSampleReuse;
+        PixelSample cachedSample = default;
+        double reusableUntil = double.NegativeInfinity;
+        int reuseMisses = 0;
+        int nextReusePayload = 0;
+        int reuseCooldown = 256;
         Span<PayloadTarget> samples = stackalloc PayloadTarget[4];
         for (int sector = 0; sector < DvdEccBlockEncoder.SectorCount; sector++)
         {
@@ -307,41 +361,78 @@ public static class FastDispersionImageWriter
                 DvdEccBlockEncoder.PayloadBytesPerSector);
             ReadOnlySpan<byte> scrambler = DvdDataFrameBuilder.PayloadScramblerMask(
                 firstPsn + checked((uint)sector));
-            if (useSimd)
+            long toneIndexBase = checked((((long)lba + sector) * DvdEccBlockEncoder.PayloadBytesPerSector));
+            int byteIndex = 0;
+            while (byteIndex < sectorPayload.Length)
             {
-                // Payload slots are not uniformly spaced across headers/SYNC/ECC.
-                // Use the original physical centre of every lane, including group boundaries.
-                long toneIndexBase = checked((((long)lba + sector) * DvdEccBlockEncoder.PayloadBytesPerSector));
-                for (int byteIndex = 0; byteIndex < sectorPayload.Length; byteIndex += 4)
+                if (useReuse && payloadOffset + byteIndex >= nextReusePayload)
                 {
-                    sampler.SampleFour(blockFirstGlobalBit,
-                        PayloadChannelCenters.AsSpan(payloadOffset + byteIndex, 4), samples,
-                        toneIndexBase + byteIndex);
-                    for (int lane = 0; lane < 4; lane++)
+                    for (; byteIndex < sectorPayload.Length; byteIndex++)
                     {
-                        PayloadTarget sample = samples[lane];
-                        if (sample.Alpha < options.ImageMapping.AlphaThreshold)
-                            continue;
-                        sectorPayload[byteIndex + lane] = (byte)(sample.ScrambledByte ^ scrambler[byteIndex + lane]);
-                        controlledWords++;
+                        int payloadIndex = payloadOffset + byteIndex;
+                        ulong channel = blockFirstGlobalBit + checked((ulong)PayloadChannelCenters[payloadIndex]);
+                        if (channel >= reusableUntil)
+                        {
+                            cachedSample = sampler.SampleWithRegion(channel, out reusableUntil);
+                            ulong nextChannel = payloadIndex + 1 < PayloadChannelCenters.Length
+                                ? blockFirstGlobalBit + checked((ulong)PayloadChannelCenters[payloadIndex + 1])
+                                : ulong.MaxValue;
+                            reuseMisses = nextChannel < reusableUntil ? 0 : reuseMisses + 1;
+                        }
+                        else reuseMisses = 0;
+                        if (reuseMisses == 0) reuseCooldown = 256;
+                        // Cache raw samples only: tone phase and scrambling retain
+                        // each byte's original absolute index and sector mask.
+                        PayloadTarget sample = sampler.MapSample(cachedSample, toneIndexBase + byteIndex);
+                        if (sample.Alpha >= options.ImageMapping.AlphaThreshold)
+                        {
+                            sectorPayload[byteIndex] = (byte)(sample.ScrambledByte ^ scrambler[byteIndex]);
+                            controlledWords++;
+                        }
+                        if (reuseMisses >= 8)
+                        {
+                            // A short detailed edge must not disable reuse for the
+                            // remaining block. Retry after bounded SIMD work; sparse
+                            // opportunities back off at most one logical sector.
+                            nextReusePayload = payloadIndex + 1 + reuseCooldown;
+                            reuseCooldown = Math.Min(2048, reuseCooldown * 2);
+                            reuseMisses = 0;
+                            reusableUntil = double.NegativeInfinity;
+                            byteIndex++;
+                            break;
+                        }
                     }
                 }
-                continue;
-            }
-            for (int byteIndex = 0; byteIndex < sectorPayload.Length; byteIndex++)
-            {
-                int payloadIndex = payloadOffset + byteIndex;
-                long toneIndex = checked((((long)lba + sector) * DvdEccBlockEncoder.PayloadBytesPerSector) + byteIndex);
-                PayloadTarget sample = sampler.SampleGlobalChannelBit(
-                    blockFirstGlobalBit + checked((ulong)PayloadChannelCenters[payloadIndex]),
-                    toneIndex);
-                if (sample.Alpha < options.ImageMapping.AlphaThreshold)
+                int fallbackEnd = useReuse
+                    ? Math.Min(sectorPayload.Length, Math.Max(byteIndex, nextReusePayload - payloadOffset))
+                    : sectorPayload.Length;
+                if (useSimd)
                 {
-                    continue;
+                    // Every lane keeps its actual centre across header/SYNC/ECC gaps.
+                    for (; byteIndex <= fallbackEnd - 4; byteIndex += 4)
+                    {
+                        sampler.SampleFour(blockFirstGlobalBit,
+                            PayloadChannelCenters.AsSpan(payloadOffset + byteIndex, 4), samples,
+                            toneIndexBase + byteIndex);
+                        for (int lane = 0; lane < 4; lane++)
+                        {
+                            PayloadTarget sample = samples[lane];
+                            if (sample.Alpha < options.ImageMapping.AlphaThreshold) continue;
+                            sectorPayload[byteIndex + lane] = (byte)(sample.ScrambledByte ^ scrambler[byteIndex + lane]);
+                            controlledWords++;
+                        }
+                    }
                 }
-
-                sectorPayload[byteIndex] = (byte)(sample.ScrambledByte ^ scrambler[byteIndex]);
-                controlledWords++;
+                for (; byteIndex < fallbackEnd; byteIndex++)
+                {
+                    int payloadIndex = payloadOffset + byteIndex;
+                    PayloadTarget sample = sampler.SampleGlobalChannelBit(
+                        blockFirstGlobalBit + checked((ulong)PayloadChannelCenters[payloadIndex]),
+                        toneIndexBase + byteIndex);
+                    if (sample.Alpha < options.ImageMapping.AlphaThreshold) continue;
+                    sectorPayload[byteIndex] = (byte)(sample.ScrambledByte ^ scrambler[byteIndex]);
+                    controlledWords++;
+                }
             }
         }
 
@@ -418,6 +509,11 @@ public static class FastDispersionImageWriter
         private readonly double _bitLengthMm;
         private readonly double _startAngleRadians;
         private readonly double _direction;
+        private readonly CalibrationReferenceImageSampler? _referenceImage;
+        private readonly bool _supportsReuseGeometry;
+        private readonly double _reusePositionMargin;
+        private readonly double _reuseTangentMargin;
+        private readonly double _reuseQuadraticBound;
 
         // Analytic callbacks share the exact vector geometry while retaining
         // scalar trigonometry, so even coordinate-sensitive callbacks agree.
@@ -425,6 +521,9 @@ public static class FastDispersionImageWriter
         // retain its original loop until a separately validated path is faster.
         internal bool SupportsSimdSampling => Vector256.IsHardwareAccelerated
             && !_spiral.IsConstantPitch;
+
+        internal bool SupportsSampleReuse => _supportsReuseGeometry
+            && (_referenceImage is not null || _image is not null);
 
         internal PayloadImageSampler(RasterImage image, ImageMappingOptions options)
             : this(options)
@@ -436,6 +535,15 @@ public static class FastDispersionImageWriter
             : this(options)
         {
             _sampleGray = sampleGray;
+        }
+
+        internal PayloadImageSampler(CalibrationTarget target, ImageMappingOptions options, bool useSampleReuse)
+            : this(options)
+        {
+            // Disabling reuse preserves the original procedural oracle as well
+            // as its exact scalar-trig/coordinate and callback arithmetic.
+            if (useSampleReuse) _referenceImage = new(target);
+            else _sampleGray = target.Sample;
         }
 
         internal PayloadImageSampler(
@@ -466,7 +574,60 @@ public static class FastDispersionImageWriter
                 options.PitchCubic);
             _startAngleRadians = options.StartAngleDegrees * Math.PI / 180.0;
             _direction = options.Clockwise ? -1.0 : 1.0;
+            _supportsReuseGeometry = _spiral.TryGetSampleReuseBounds(_startAngleRadians,
+                out _reusePositionMargin, out double tangentError, out double accelerationBound);
+            _reuseTangentMargin = tangentError + 4 * _reusePositionMargin / _spiral.InnerRadiusMm
+                + 128 * 2.2204460492503131e-16;
+            _reuseQuadraticBound = accelerationBound / 2;
         }
+
+        internal PixelSample SampleWithRegion(ulong globalChannelBit, out double reusableUntil)
+        {
+            var point = _spiral.AtArcLengthFast(globalChannelBit * _bitLengthMm);
+            double angle = _startAngleRadians + _direction * point.Angle;
+            double x = point.Radius * Math.Cos(angle), y = point.Radius * Math.Sin(angle);
+            bool stable;
+            PixelSample sample;
+            SampleRectangle region;
+            if (_referenceImage is not null)
+                stable = _referenceImage.TryGetStableRegion(x, y, out sample, out region);
+            else
+                stable = _image!.TryGetStableRegion(x, y, _options.OuterRadiusMm,
+                    preserveDiscreteGrayscale: true, out sample, out region);
+            reusableUntil = globalChannelBit;
+            if (!stable)
+                return SampleRasterPoint(x, y);
+
+            double tangentX = -_direction * y / point.Radius;
+            double tangentY = _direction * x / point.Radius;
+            // Each signed edge velocity includes the circular-tangent error and
+            // anchor rounding. The second-derivative bound encloses the complete
+            // intervening arc, even when it curves back toward a boundary.
+            double travel = Math.Min(
+                Math.Min(SafeTravel(x - region.MinX, -tangentX), SafeTravel(region.MaxX - x, tangentX)),
+                Math.Min(SafeTravel(y - region.MinY, -tangentY), SafeTravel(region.MaxY - y, tangentY)));
+            if (travel > 0 && double.IsFinite(travel))
+                reusableUntil = Math.BitDecrement(globalChannelBit + travel / _bitLengthMm);
+            return sample;
+        }
+
+        private double SafeTravel(double distance, double outwardTangent)
+        {
+            distance -= _reusePositionMargin;
+            if (distance <= 0) return 0;
+            double velocity = outwardTangent + _reuseTangentMargin;
+            // Solve k*s² + v*s < distance, avoiding cancellation for either sign.
+            double root = Math.Sqrt(velocity * velocity + 4 * _reuseQuadraticBound * distance);
+            return velocity >= 0 ? 2 * distance / (root + velocity)
+                : (root - velocity) / (2 * _reuseQuadraticBound);
+        }
+
+        internal PayloadTarget MapSample(PixelSample sample, long toneIndex)
+            => new(ScrambledForLuminance(sample.Luminance, toneIndex), sample.Alpha);
+
+        private PixelSample SampleRasterPoint(double x, double y) => _referenceImage is not null
+            ? _referenceImage.SampleDisc(x, y)
+            : _image!.SampleDisc(x, y, _options.OuterRadiusMm, preserveDiscreteGrayscale: true);
 
         internal PayloadTarget SampleGlobalChannelBit(ulong globalChannelBit, long toneIndex)
         {
@@ -494,7 +655,7 @@ public static class FastDispersionImageWriter
             // Apply that same flip for analytic patterns, including the start angle.
             PixelSample sample = _sampleGray is not null
                 ? new PixelSample(_sampleGray(xMm, -yMm), 255)
-                : _image!.SampleDisc(xMm, yMm, _options.OuterRadiusMm, preserveDiscreteGrayscale: true);
+                : SampleRasterPoint(xMm, yMm);
             return new PayloadTarget(ScrambledForLuminance(sample.Luminance, toneIndex), sample.Alpha);
         }
 

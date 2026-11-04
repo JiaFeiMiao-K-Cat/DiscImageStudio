@@ -42,7 +42,7 @@ flowchart LR
 
 ## 工程模型与外壳
 
-`DiscImageStudio.Core.ProjectJsonStore` 持有 `.discproj`（UTF-8 JSON，schemaVersion 2）：工程名、盘型（CD/DVD/BD）、几何（CD r0/r1/扇区；DVD 加三次轨距系数；BD 要求 32 扇区对齐、单层容量与 ≤60 mm）、图层列表、输出配置、可选的 `tone` 影调节、可选的 `bluRay` 极性节、标定记录路径和保存时渲染的缩略图。`tone` 缺省表示旧版硬阈值；schemaVersion 1 的 CD/DVD 文件读取后自动按 2 写回。BD 的 `bluRay.invertMapping` 只存在于 BD 工程，CD/DVD 携带该节会被拒绝。读写都经过校验并使用临时文件原子替换，规则与预设 JSON 一致。图层按绝对路径引用图片，不收集资源。
+`DiscImageStudio.Core.ProjectJsonStore` 持有 `.discproj`（UTF-8 JSON，schemaVersion 2）：工程名、盘型（CD/DVD/BD）、几何（CD/DVD/BD 均保存内外半径、扇区数与三次轨距系数；BD 另要求 32 扇区对齐、单层容量与 ≤60 mm）、图层列表、输出配置、可选的 `tone` 影调节、可选的 `bluRay` 极性节、标定记录路径和保存时渲染的缩略图。`tone` 缺省表示旧版硬阈值；schemaVersion 1 的 CD/DVD 文件读取后自动按 2 写回。BD 的 `bluRay.invertMapping` 只存在于 BD 工程，CD/DVD 携带该节会被拒绝。读写都经过校验并使用临时文件原子替换，规则与预设 JSON 一致。图层按绝对路径引用图片，不收集资源。
 
 外壳是工作区模型：起始页（无侧边栏，提供新建/打开、模板卡片与最近工程）加上五个工程工作区——设计 / 预览 / 导出 / 刻录 / 标定（`Workspace` 枚举，侧边栏顺序即工作流顺序）。每个工作区都是同一个工程的一个视角，不是各自独立的一套流程：共享一个 `DiscParametersState`，打开工程时 `ProjectSession` 把文档内容填进它，保存时再捕获回文档；预览、导出、刻录、标定对 State 的绑定因此与工程生命周期完全解耦。脏标记只跟踪会写进工程文件的 State 属性。
 
@@ -98,9 +98,13 @@ BD-R 复用同一刻录契约：`BluRayIsoGenerator` 在一个前向流里写入
 
 `DiscImageStudio.Cd` 拥有 CD 几何、图片采样、RAW 输出和延迟交织。它实现取消，并把字节进度转换成统一的 `DiscJobProgress`。
 
+图片和冻结的内置标定目标由 `CdBlockPipeline` 按 32 扇区分块，并行进行采样与影调计算；Mode 1 的绘图区使用同一管线。每批最多容纳两倍工作线程数的块，工作线程数不超过 16，缓冲空间不随盘容量增长。所有工作线程结束本批计算后，调用线程按原顺序写出并报告进度；音轨整段共用一个 CIRC 交织器，保留跨块延迟状态。任意外部采样回调和带游标的逻辑地址标定保持顺序执行。文件导出与直接刻录默认使用该管线，`useParallelSampling=false` 可选择原顺序实现进行字节对照。
+
 ### DVD
 
 `DiscImageStudio.Dvd` 是薄适配器。它只负责元数据、路由与结果归一化，然后调用隔离的 `DvdImageSolver`。DVD 引擎原参数和自检保持不变。
+
+快速 dispersion 生成器共用于指定图片、混合文件盘及直接刻录；固定参考图标定通过专用采样器保留原图缩放、双线性插值和环带裁切。生成器只在可证明灰度与透明度取整结果保持不变的区域内复用采样。区域界由像素边界、双线性导数和舍入余量决定，轨迹界包含恒定轨距 Newton 逆解误差或三次轨距插值误差；影调抖动和扇区扰码仍逐字节计算。边界附近与不支持的几何回退原计算，外部解析回调保持原调用语义。`UseSampleReuse=false` 可选择原路径进行输出对照。
 
 ### Blu-ray
 

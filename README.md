@@ -74,7 +74,7 @@ Windows 下载 `win-x64.exe` 后可直接运行。Linux 或 macOS 请下载与 C
 
 ### 辅助标定
 
-Disc Image Studio 提供了一套智能且精准的辅助标定流程，相较人工肉眼识别标定，辅助标定算法将可确定的盘面物理数据精确度从 10<sup>-6</sup> 提升到了 10<sup>-14</sup>。校准前采用恒定轨距，十字线的径向线条出现明显弯曲；使用辅助标定得到的三次轨距参数重新生成并刻录后，线条更接近径向直线。
+Disc Image Studio 提供粗标定、边界标定和精细标定流程，通过盘面照片估计内外半径与轨距分布。下面的历史实盘对比中，校准前采用恒定轨距，十字线的径向线条出现明显弯曲；使用辅助标定得到的三次轨距参数重新生成并刻录后，线条更接近径向直线。实测精度取决于照片矫正、取点和复刻验证，参数保存的小数位数不代表测量精度。
 
 | 校准前 · 恒定轨距 | 校准后 · 三次轨距 |
 | --- | --- |
@@ -82,7 +82,7 @@ Disc Image Studio 提供了一套智能且精准的辅助标定流程，相较�
 | `P20261004-133519.jpg` | `P20261004-135416.jpg` |
 
 
-流程与参数说明见[辅助标定说明](docs/CALIBRATION.md)。
+第一次使用可跟随[DVD 标定实操教程：Verbatim AZO DVD-R](docs/CALIBRATION_TUTORIAL.md)，查看照片矫正、三个标定阶段的实际取点、参数变化与参考值，以及精标后的盘面效果。完整流程与参数说明见[辅助标定说明](docs/CALIBRATION.md)。
 
 ### 刻录
 
@@ -173,7 +173,8 @@ docs/                        架构、引擎、预设、发布等文档
 | [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | CD 音轨格式、字节序与重影排查 |
 | [ADDING_BLURAY.md](docs/ADDING_BLURAY.md) | 蓝光模块的物理模型、生成/刻录链路与扩展点 |
 | [DISC_PRESETS.md](docs/DISC_PRESETS.md) | 可编辑盘片预设的分层 JSON 格式与合并规则 |
-| [CALIBRATION.md](docs/CALIBRATION.md) | 照片矫正（框选盘片实体最外缘与中心孔边缘）、曲线标定与 DVD 三次轨距拟合 |
+| [CALIBRATION.md](docs/CALIBRATION.md) | 照片矫正、三阶段取点示例、三次轨距拟合与再次精标 |
+| [CALIBRATION_TUTORIAL.md](docs/CALIBRATION_TUTORIAL.md) | Verbatim AZO DVD-R 实操教程：三个阶段的真实记录、取点图与精标后效果 |
 | [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md) | CD / DVD 生成物理模型复核 |
 | [VALIDATION.md](docs/VALIDATION.md) | 各轮构建、回归与实盘测试的本地验证记录 |
 | [RELEASING.md](docs/RELEASING.md) | GitHub Release、MSIX 打包、签名测试与商店提交流程 |

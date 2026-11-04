@@ -1,3 +1,5 @@
+using DiscImageStudio.Core;
+
 namespace DiscImageStudio.BluRay;
 
 /// <summary>ISO/IEC 30190:2021 BD-R data-zone model. Drive spare areas and remapping
@@ -7,7 +9,10 @@ public sealed record BluRayDiscParameters(
     int LayerCount = 1,
     double InnerRadiusMm = 24.0,
     double OuterRadiusMm = 58.0,
-    double StartAngleDegrees = 0)
+    double StartAngleDegrees = 0,
+    double PitchLinear = 0,
+    double PitchQuadratic = 0,
+    double PitchCubic = 0)
 {
     public const int BytesPerSector = 2048;
     public const int SectorsPerCluster = 32;
@@ -19,6 +24,7 @@ public sealed record BluRayDiscParameters(
     public const double ChannelBitLengthNm = 74.5;
     public const double NominalTrackPitchMicrometers = 0.320;
     public long ContentLength => checked((long)TotalSectors * BytesPerSector);
+    public bool HasVariablePitch => PitchLinear != 0 || PitchQuadratic != 0 || PitchCubic != 0;
 
     public void Validate()
     {
@@ -32,6 +38,8 @@ public sealed record BluRayDiscParameters(
             throw new ArgumentOutOfRangeException(nameof(OuterRadiusMm), "BD-R radii must satisfy 0 < inner < outer <= 60 mm.");
         if (!double.IsFinite(StartAngleDegrees))
             throw new ArgumentOutOfRangeException(nameof(StartAngleDegrees));
+        if (HasVariablePitch)
+            DvdTrackGeometry.ValidatePitchCoefficients(PitchLinear, PitchQuadratic, PitchCubic);
     }
 
     /// <summary>Nominal data-zone address; does not include drive-specific spare-area

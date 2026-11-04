@@ -22,6 +22,7 @@ internal static class ToneTests
         TestDvdThresholdAndDither();
         TestDvdRejectsFourLevels();
         TestGammaCurve();
+        TestGammaLookupCompatibility();
         TestBluRayToneAtSourceResolution();
         TestGenerationAndPreviewAgree();
         TestProjectToneRoundtrip();
@@ -52,6 +53,26 @@ internal static class ToneTests
                 byte expected = grey < 128 ? (byte)0x0D : (byte)0xAA;
                 byte actual = CdToneMapping.Map((byte)grey, ToneProfile.LegacyBinary, index);
                 True(actual == expected, $"binary mapping at grey {grey}");
+            }
+        }
+    }
+
+    private static void TestGammaLookupCompatibility()
+    {
+        // Every byte input and half-step brightness, plus fractional offsets:
+        // caching the transfer curve must never move a quantization boundary.
+        foreach (double brightness in Enumerable.Range(-128, 257).Select(value => value / 2.0)
+            .Concat(new[] { -.123456789, .123456789, Math.BitDecrement(64d), Math.BitIncrement(-64d) }))
+        foreach (bool gamma in new[] { false, true })
+        {
+            ToneProfile tone = new(.75, ToneProfile.TwoLevels, brightness, gamma);
+            for (int gray = 0; gray < 256; gray++)
+            {
+                double value = gray / 255.0;
+                if (gamma) value = value <= .04045 ? value / 12.92 : Math.Pow((value + .055) / 1.055, 2.4);
+                byte expected = (byte)Math.Round(Math.Clamp(value + brightness / 255.0, 0, 1) * 255,
+                    MidpointRounding.AwayFromZero);
+                True(tone.AdjustedGray((byte)gray) == expected, "cached tone curve preserves original byte rounding");
             }
         }
     }

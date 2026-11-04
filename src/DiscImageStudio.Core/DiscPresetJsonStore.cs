@@ -20,7 +20,10 @@ public sealed record CdDiscPresetDefinition(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     string? DescriptionResourceKey = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    string? Contributor = null);
+    string? Contributor = null,
+    double PitchLinear = 0,
+    double PitchQuadratic = 0,
+    double PitchCubic = 0);
 
 public sealed record DvdDiscPresetDefinition(
     string Id,
@@ -55,7 +58,10 @@ public sealed record BluRayDiscPresetDefinition(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     string? DescriptionResourceKey = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    string? Contributor = null);
+    string? Contributor = null,
+    double PitchLinear = 0,
+    double PitchQuadratic = 0,
+    double PitchCubic = 0);
 
 public sealed record DiscPresetJsonDocument(
     int SchemaVersion,
@@ -338,6 +344,7 @@ public static class DiscPresetJsonStore
             }
 
             ValidateRadiusRange(preset.Id, preset.InnerRadiusMm, preset.OuterRadiusMm);
+            ValidatePitch(preset.Id, preset.PitchLinear, preset.PitchQuadratic, preset.PitchCubic);
             ValidatePositiveFinite(
                 preset.Id,
                 "linearVelocityMmPerSecond",
@@ -375,15 +382,8 @@ public static class DiscPresetJsonStore
             }
 
             ValidateRadiusRange(preset.Id, preset.InnerRadiusMm, preset.OuterRadiusMm);
+            ValidatePitch(preset.Id, preset.PitchLinear, preset.PitchQuadratic, preset.PitchCubic);
             ValidatePositiveFinite(preset.Id, "channelBitLengthNm", preset.ChannelBitLengthNm);
-            try
-            {
-                DvdTrackGeometry.ValidatePitchCoefficients(preset.PitchLinear, preset.PitchQuadratic, preset.PitchCubic);
-            }
-            catch (ArgumentException exception)
-            {
-                throw new InvalidDataException($"预设 '{preset.Id}' 的轨距系数无效：{exception.Message}", exception);
-            }
         }
 
         foreach (BluRayDiscPresetDefinition? preset in document.BluRayPresets ?? [])
@@ -411,6 +411,7 @@ public static class DiscPresetJsonStore
             }
 
             ValidateRadiusRange(preset.Id, preset.InnerRadiusMm, preset.OuterRadiusMm);
+            ValidatePitch(preset.Id, preset.PitchLinear, preset.PitchQuadratic, preset.PitchCubic);
             if (preset.OuterRadiusMm > 60)
             {
                 throw InvalidValue(preset.Id, "outerRadiusMm", "不能超过 60");
@@ -490,6 +491,15 @@ public static class DiscPresetJsonStore
         {
             throw new InvalidDataException(
                 $"{family} 预设 id '__manual__' 由界面的未保存状态保留，请换一个 id。");
+        }
+    }
+
+    private static void ValidatePitch(string id, double linear, double quadratic, double cubic)
+    {
+        try { DvdTrackGeometry.ValidatePitchCoefficients(linear, quadratic, cubic); }
+        catch (ArgumentException exception)
+        {
+            throw new InvalidDataException($"预设 '{id}' 的轨距系数无效：{exception.Message}", exception);
         }
     }
 

@@ -12,15 +12,50 @@
     <Grid Margin="{StaticResource PagePadding}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <controls:PageHeader Grid.Row="0" Title="{loc:Text Xaml.Calibration2}"
-                             Workspace="{x:Static vm:Workspace.Calibration}"
-                             Hint="{loc:Text Xaml.UseDiscImageStudioSBuiltInAlgorithmsTo}" />
+        <controls:PageHeader Grid.Row="0" Title="{loc:Text Xaml.Calibration2}" Workspace="Calibration"
+                             ShowStages="{Binding DataContext.IsProjectMode, RelativeSource={RelativeSource AncestorType=Window}, FallbackValue=False}"
+                             Hint="{loc:Text Xaml.UseDiscImageStudioSBuiltInAlgorithmsTo}">
+            <controls:PageHeader.Actions>
+                <WrapPanel>
+                    <Button Content="{loc:Text Xaml.SaveAsPreset}" Command="{Binding SaveAsPresetCommand}" Style="{StaticResource CompactButton}" Margin="0,0,8,0" />
+                    <Button AutomationProperties.AutomationId="CalibrationBack" Content="{loc:Text Standalone.Back}" Style="{StaticResource CompactButton}"
+                            Command="{Binding ReturnFromCalibrationCommand}" />
+                </WrapPanel>
+            </controls:PageHeader.Actions>
+        </controls:PageHeader>
+        <WrapPanel Grid.Row="1" Margin="0,0,0,10">
+            <RadioButton x:Name="CoarsePhase" GroupName="CalibrationPhase"
+                         IsChecked="{Binding IsCoarseMode, Mode=OneWay}" Command="{Binding SelectCoarseModeCommand}"
+                         AutomationProperties.Name="{loc:Text Xaml.CoarseCalibrationPhase}" Margin="0,0,28,6">
+                <StackPanel>
+                    <TextBlock Text="{loc:Text Xaml.CoarseCalibrationPhase}" FontWeight="SemiBold" />
+                    <TextBlock Text="{loc:Text Xaml.CoarseCalibrationPurpose}" Style="{StaticResource CompactHint}" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton x:Name="IntermediatePhase" GroupName="CalibrationPhase"
+                         IsChecked="{Binding IsIntermediateMode, Mode=OneWay}" Command="{Binding SelectIntermediateModeCommand}"
+                         AutomationProperties.Name="{loc:Text HalfDisc.Stage}" Margin="0,0,28,6">
+                <StackPanel>
+                    <TextBlock Text="{loc:Text HalfDisc.Stage}" FontWeight="SemiBold" />
+                    <TextBlock Text="{loc:Text HalfDisc.Purpose}" Style="{StaticResource CompactHint}" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton x:Name="FinePhase" GroupName="CalibrationPhase"
+                         IsChecked="{Binding IsFineMode, Mode=OneWay}" Command="{Binding SelectFineModeCommand}"
+                         AutomationProperties.Name="{loc:Text Xaml.FineCalibrationPhase}" Margin="0,0,0,6">
+                <StackPanel>
+                    <TextBlock Text="{loc:Text Xaml.FineCalibrationPhase}" FontWeight="SemiBold" />
+                    <TextBlock Text="{loc:Text Xaml.FineCalibrationPurpose}" Style="{StaticResource CompactHint}" />
+                </StackPanel>
+            </RadioButton>
+        </WrapPanel>
         <!-- One scroll surface: in the wide layout the work area is exactly the viewport tall
              (the step column is an accordion that never grows past it), in the narrow layout
              it stacks and the page scrolls as one. -->
-        <ScrollViewer x:Name="WorkScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto"
+        <ScrollViewer x:Name="WorkScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled" ScrollChanged="OnWorkScrollChanged"
                       SizeChanged="OnWorkspaceSizeChanged" controls:ScrollMaskBehavior.Enabled="True">
             <Grid x:Name="WorkArea">
@@ -63,7 +98,7 @@
                                           Style="{StaticResource CompactCheckBox}" VerticalAlignment="Center"
                                           Margin="0,0,8,0" />
                             </controls:VisibilityGate>
-                            <controls:VisibilityGate IsOpen="{Binding IsTraceStep}">
+                            <controls:VisibilityGate IsOpen="{Binding IsLineFitStep}">
                                 <CheckBox Content="{loc:Text Xaml.OverlayFittedCurves}" IsChecked="{Binding ShowPrediction}"
                                           Style="{StaticResource CompactCheckBox}" VerticalAlignment="Center" />
                             </controls:VisibilityGate>
@@ -78,18 +113,50 @@
                             FallbackImage="{Binding TargetImage}" TargetCanvasRadiusMm="{Binding CanvasOuterRadiusMm}"
                             IsPhotoStep="{Binding IsPhotoStep}" IsRectificationPreview="{Binding PreviewRectification}"
                             IsTargetPreview="{Binding ShowTargetPreview}"
+                            HasClockTarget="{Binding HasClockTarget}" ClockReadAngles="{Binding ClockReadAngles}"
+                            HasWideBandTarget="{Binding HasWideBandTarget}" IsBandRayMode="{Binding IsBandRayMode}"
+                            BandRayAngleDegrees="{Binding BandRayAngleDegrees}" BandRayPointCommand="{Binding BandRayPointCommand}"
+                            HasRadialArcTarget="{Binding HasRadialArcTarget}" ArcLengthPoints="{Binding ArcLengthPoints}"
+                            ArcLengthPointCommand="{Binding ArcLengthPointCommand}" UndoArcLengthPointCommand="{Binding UndoArcLengthPointCommand}"
+                            PreferredClockAngle="{Binding PreferredClockAngle}" PreferClockAngleCommand="{Binding PreferClockAngleCommand}"
                             CanvasRadiusMm="{Binding PhotoCanvasRadiusMm}"
                             BoundaryPoints="{Binding PhotoBoundaryPoints}" BoundaryContours="{Binding PhotoBoundaryContours}"
                             BoundaryEditedCommand="{Binding BoundaryEditedCommand}"
                             TracePoints="{Binding TracePoints}" TraceEditedCommand="{Binding TraceEditedCommand}"
+                            IsBoundarySegmentMode="{Binding HasBoundarySegments}"
+                            IsCoarseMode="{Binding IsCoarseMode}" RingArcs="{Binding RingArcs}"
+                            ThreePointMode="{Binding ThreePointMode}" SelectedRingIndex="{Binding SelectedRingIndex}"
+                            RingPointMarkers="{Binding RingPointMarkers}" RingPointCommand="{Binding RingPointCommand}"
+                            UndoRingPointCommand="{Binding UndoRingPointCommand}"
+                            RingEditedCommand="{Binding RingEditedCommand}" RingAngleDegrees="{Binding Value, ElementName=RingAngle}"
+                            PhysicalRadiusMm="{Binding SelectedPhysicalDiscSize.OuterRadiusMm}"
                             SelectedTraceArm="{Binding SelectedTraceArm}" PredictionContours="{Binding CrossPredictionContours}"
                             OutlierTracePointIndices="{Binding OutlierTracePointIndices}"
-                            ShowPrediction="{Binding ShowPrediction}"
-                            ToolTip="{loc:Text Xaml.ScrollToZoomRightDragToPanDragPoints}">
+                            ShowPrediction="{Binding ShowPrediction}">
                             <controls:CalibrationPhotoCanvas.Style>
                                 <Style TargetType="controls:CalibrationPhotoCanvas">
                                     <Setter Property="Image" Value="{Binding PhotoImage}" />
+                                    <Setter Property="ToolTip" Value="{loc:Text Xaml.ScrollToZoomRightDragToPanDragPoints}" />
                                     <Style.Triggers>
+                                        <DataTrigger Binding="{Binding NeedsStageTarget}" Value="True">
+                                            <Setter Property="Visibility" Value="Hidden" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsRadialArcStep}" Value="True">
+                                            <Setter Property="ToolTip" Value="{loc:Text Arc.CanvasHint}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsClockStep}" Value="True">
+                                            <Setter Property="ToolTip" Value="{loc:Text Clock.DirectionHint}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsRingStep}" Value="True">
+                                            <Setter Property="ToolTip" Value="{Binding RingOperationHint}" />
+                                        </DataTrigger>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsRingStep}" Value="True" />
+                                                <Condition Binding="{Binding ThreePointMode}" Value="True" />
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="ToolTip" Value="{loc:Text Xaml.CoarseRingPointStatus}" />
+                                        </MultiDataTrigger>
                                         <DataTrigger Binding="{Binding IsTraceStep}" Value="True">
                                             <Setter Property="Image" Value="{Binding RectifiedPhoto}" />
                                         </DataTrigger>
@@ -100,7 +167,17 @@
                                 </Style>
                             </controls:CalibrationPhotoCanvas.Style>
                         </controls:CalibrationPhotoCanvas>
+                        <controls:VisibilityGate Grid.Row="0" IsOpen="{Binding NeedsStageTarget}"
+                                                 VerticalAlignment="Center" HorizontalAlignment="Center" Margin="18">
+                            <TextBlock Text="{loc:Text Stages.NewTargetHint}" TextWrapping="Wrap" Style="{StaticResource CompactText}" />
+                        </controls:VisibilityGate>
                         <StackPanel Grid.Row="1" Margin="12,8,12,10">
+                            <controls:VisibilityGate IsOpen="{Binding IsRadialArcStep}">
+                                <TextBlock Text="{loc:Text Arc.CanvasHint}" Style="{StaticResource LegendLabel}" TextWrapping="Wrap" />
+                            </controls:VisibilityGate>
+                            <controls:VisibilityGate IsOpen="{Binding IsClockStep}">
+                                <TextBlock Text="{loc:Text Clock.Legend}" Style="{StaticResource LegendLabel}" TextWrapping="Wrap" />
+                            </controls:VisibilityGate>
                             <!-- One legend per step: the colour key lives here and nowhere else,
                                  as swatches instead of colour words. -->
                             <controls:VisibilityGate IsOpen="{Binding IsPhotoStep}">
@@ -117,8 +194,20 @@
                                     </StackPanel>
                                 </WrapPanel>
                             </controls:VisibilityGate>
-                            <controls:VisibilityGate IsOpen="{Binding IsTraceStep}">
+                            <controls:VisibilityGate IsOpen="{Binding IsLineFitStep}">
                                 <WrapPanel>
+                                    <controls:VisibilityGate IsOpen="{Binding IsBoundarySegmentStep}">
+                                        <WrapPanel>
+                                            <ComboBox ItemsSource="{Binding BoundarySegmentChoices}" DisplayMemberPath="Label"
+                                                      SelectedValuePath="Id" SelectedValue="{Binding SelectedTraceArm, Mode=TwoWay}"
+                                                      AutomationProperties.Name="{loc:Text HalfDisc.CurrentSegment}"
+                                                      Style="{StaticResource CompactComboBox}" MinWidth="138" Margin="0,0,8,0" />
+                                            <Button Content="{loc:Text HalfDisc.AddSegment}" Command="{Binding AddBoundarySegmentCommand}"
+                                                    Style="{StaticResource CompactButton}" Margin="0,0,8,0" />
+                                            <Button Content="{loc:Text HalfDisc.DeleteSegment}" Command="{Binding DeleteBoundarySegmentCommand}"
+                                                    Style="{StaticResource CompactButton}" Margin="0,0,8,0" />
+                                        </WrapPanel>
+                                    </controls:VisibilityGate>
                                     <Button Content="{loc:Text Xaml.DeletePoint}" Click="OnRemoveTracePoint"
                                             Style="{StaticResource CompactButton}" Margin="0,0,8,0" />
                                     <Button Content="{loc:Text Xaml.ClearCurves}" Command="{Binding ClearTracesCommand}"
@@ -148,6 +237,48 @@
                                     </controls:VisibilityGate>
                                 </WrapPanel>
                             </controls:VisibilityGate>
+                            <controls:VisibilityGate IsOpen="{Binding IsRingStep}">
+                                <StackPanel>
+                                    <controls:VisibilityGate IsOpen="{Binding IsDragRingMode}">
+                                        <WrapPanel>
+                                            <TextBlock Text="{loc:Text Xaml.CoarseRingOrientation}" Style="{StaticResource LegendLabel}"
+                                                       VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <Slider x:Name="RingAngle" Minimum="0" Maximum="180" Width="104"
+                                                    VerticalAlignment="Center" Margin="0,0,14,0"
+                                                    IsMoveToPointEnabled="True" ToolTip="{loc:Text Xaml.CoarseRingRotateHint}"
+                                                    AutomationProperties.Name="{loc:Text Xaml.CoarseRingOrientation}" />
+                                            <Button Content="{loc:Text Xaml.CoarseRingRemove}" Click="OnRemoveRing"
+                                                    Style="{StaticResource CompactButton}" />
+                                        </WrapPanel>
+                                    </controls:VisibilityGate>
+                                    <controls:VisibilityGate IsOpen="{Binding IsDragRingMode}" Inverted="True">
+                                        <WrapPanel>
+                                            <TextBlock Text="{Binding RingPickerLabel}" Style="{StaticResource LegendLabel}"
+                                                       VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <ComboBox x:Name="RingPicker" ItemsSource="{Binding RingChoices}" DisplayMemberPath="Label"
+                                                      SelectedValuePath="Index" SelectedValue="{Binding SelectedRingIndex, Mode=TwoWay}"
+                                                      AutomationProperties.Name="{Binding RingPickerLabel}"
+                                                      Style="{StaticResource CompactComboBox}" MinWidth="80" Margin="0,0,12,0" />
+                                            <controls:VisibilityGate IsOpen="{Binding ThreePointMode}">
+                                                <WrapPanel>
+                                                    <Button Content="{loc:Text Xaml.CoarseRingUndoPoint}" Command="{Binding UndoRingPointCommand}"
+                                                            Style="{StaticResource CompactButton}" Margin="0,0,8,0" />
+                                                    <Button Content="{loc:Text Xaml.CoarseRingRestartPoints}" Command="{Binding RestartRingPointsCommand}"
+                                                            Style="{StaticResource CompactButton}" />
+                                                </WrapPanel>
+                                            </controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding IsBandRayMode}">
+                                                <WrapPanel>
+                                                    <Button Content="{loc:Text BandEdges.RedoEdge}" Command="{Binding RemoveSelectedBandEdgeCommand}"
+                                                            Style="{StaticResource CompactButton}" Margin="0,0,8,0"/>
+                                                    <Button Content="{Binding RestartBandRayLabel}" Command="{Binding RestartBandRayCommand}"
+                                                            Style="{StaticResource CompactButton}"/>
+                                                </WrapPanel>
+                                            </controls:VisibilityGate>
+                                        </WrapPanel>
+                                    </controls:VisibilityGate>
+                                </StackPanel>
+                            </controls:VisibilityGate>
                         </StackPanel>
                     </Grid>
                 </controls:MonitorCard>
@@ -168,14 +299,98 @@
                                        State="{Binding StepOneState}"
                                        IsExpanded="{Binding StepOneExpanded, Mode=TwoWay}">
                             <StackPanel>
-                                <!-- The target follows the project family (no manual disc-type
-                                     switch): the line under the button names the parameters a
-                                     new target is built from. -->
-                                <Button Content="{loc:Text Xaml.CreateTargetFromParameters}" Command="{Binding CreateTargetCommand}"
-                                        Style="{StaticResource CompactPrimaryButton}" HorizontalAlignment="Stretch"
-                                        Margin="0,0,0,10" />
-                                <TextBlock Text="{Binding CurrentParametersSummary}" Style="{StaticResource CompactHint}"
+                                <StackPanel>
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Style.Triggers><DataTrigger Binding="{Binding IsBusy}" Value="True"><Setter Property="IsEnabled" Value="False" /></DataTrigger></Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="68" /><ColumnDefinition Width="8" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                        <TextBlock Text="{loc:Text Xaml.DiscType}" Style="{StaticResource FieldLabel}" />
+                                        <TextBlock Grid.Column="2" Text="{loc:Text CalibrationMedia.Preset}" Style="{StaticResource FieldLabel}" />
+                                        <ComboBox Grid.Row="1" ItemsSource="{Binding DiscTypeChoices}" SelectedItem="{Binding SelectedDiscType, Mode=TwoWay}"
+                                                  Style="{StaticResource CompactComboBox}" AutomationProperties.Name="{loc:Text Xaml.DiscType}" />
+                                        <Grid Grid.Row="1" Grid.Column="2">
+                                            <controls:VisibilityGate IsOpen="{Binding IsCdSetup}"><ComboBox ItemsSource="{Binding Parameters.CdPresets}" SelectedItem="{Binding Parameters.SelectedCdPreset, Mode=TwoWay}" DisplayMemberPath="DisplayName" Style="{StaticResource CompactComboBox}" AutomationProperties.Name="{loc:Text CalibrationMedia.Preset}" /></controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding IsDvdSetup}"><ComboBox ItemsSource="{Binding Parameters.DvdPresets}" SelectedItem="{Binding Parameters.SelectedDvdPreset, Mode=TwoWay}" DisplayMemberPath="DisplayName" Style="{StaticResource CompactComboBox}" AutomationProperties.Name="{loc:Text CalibrationMedia.Preset}" /></controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding IsBluRaySetup}"><ComboBox ItemsSource="{Binding Parameters.BluRayPresets}" SelectedItem="{Binding Parameters.SelectedBluRayPreset, Mode=TwoWay}" DisplayMemberPath="DisplayName" Style="{StaticResource CompactComboBox}" AutomationProperties.Name="{loc:Text CalibrationMedia.Preset}" /></controls:VisibilityGate>
+                                        </Grid>
+                                    </Grid>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="8" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                        <TextBlock Text="{loc:Text Xaml.InnerRadiusMm}" Style="{StaticResource FieldLabel}" />
+                                        <TextBlock Grid.Column="2" Text="{loc:Text Xaml.OuterRadiusMm}" Style="{StaticResource FieldLabel}" />
+                                        <Grid Grid.Row="1">
+                                            <controls:VisibilityGate IsOpen="{Binding IsCdSetup}"><TextBox Text="{Binding Parameters.CdInnerRadius, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.InnerRadiusMm}" /></controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding IsDvdSetup}"><TextBox Text="{Binding Parameters.DvdInnerRadius, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.InnerRadiusMm}" /></controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding IsBluRaySetup}"><TextBox Text="{Binding Parameters.BdInnerRadius, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.InnerRadiusMm}" /></controls:VisibilityGate>
+                                        </Grid>
+                                        <Grid Grid.Row="1" Grid.Column="2">
+                                            <controls:VisibilityGate IsOpen="{Binding IsCdSetup}"><TextBox Text="{Binding Parameters.CdOuterRadius, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.OuterRadiusMm}" /></controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding IsDvdSetup}"><TextBox Text="{Binding Parameters.DvdOuterRadius, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.OuterRadiusMm}" /></controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding IsBluRaySetup}"><TextBox Text="{Binding Parameters.BdOuterRadius, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.OuterRadiusMm}" /></controls:VisibilityGate>
+                                        </Grid>
+                                    </Grid>
+                                    <TextBlock Text="{loc:Text Xaml.Sectors}" Style="{StaticResource FieldLabel}" />
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                        <Grid>
+                                            <controls:VisibilityGate IsOpen="{Binding IsCdSetup}"><TextBox Text="{Binding Parameters.CdSectors, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.Sectors}" /></controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding IsDvdSetup}"><TextBox Text="{Binding Parameters.DvdTotalSectors, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.Sectors}" /></controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding IsBluRaySetup}"><TextBox Text="{Binding Parameters.BdTotalSectors, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.Sectors}" /></controls:VisibilityGate>
+                                        </Grid>
+                                        <Button Grid.Column="1" Command="{Binding ReadDiscSectorsCommand}" Style="{StaticResource CompactButton}" Margin="6,0,0,0"
+                                                Content="{loc:Text CalibrationMedia.ReadButton}" ToolTip="{loc:Text CalibrationMedia.ReadHint}" />
+                                    </Grid>
+                                    <controls:VisibilityGate IsOpen="{Binding HasRecorderChoice}">
+                                        <ComboBox ItemsSource="{Binding CapacityRecorders}" SelectedItem="{Binding SelectedCapacityRecorder, Mode=TwoWay}"
+                                                  AutomationProperties.Name="{loc:Text Xaml.Recorder}" DisplayMemberPath="DisplayName" Style="{StaticResource CompactComboBox}" />
+                                    </controls:VisibilityGate>
+                                    <TextBlock Text="{Binding CapacityStatus}" TextWrapping="Wrap" Style="{StaticResource CompactHint}" AutomationProperties.LiveSetting="Polite" />
+                                    <Expander Header="{loc:Text CalibrationMedia.Encoding}" Margin="0,4,0,10">
+                                        <StackPanel Margin="0,6,0,0">
+                                            <controls:VisibilityGate IsOpen="{Binding IsCdSetup}"><CheckBox IsChecked="{Binding Parameters.CdInterleave, Mode=TwoWay}" Content="{loc:Text CalibrationMedia.CdInterleave}" Style="{StaticResource CompactCheckBox}" /></controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="True">
+                                                <StackPanel>
+                                                    <TextBlock Text="{loc:Text Xaml.LinearTerm}" Style="{StaticResource FieldLabel}" />
+                                                    <TextBox Text="{Binding SetupPitchLinear, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.LinearTerm}" />
+                                                    <TextBlock Text="{loc:Text Xaml.QuadraticTerm}" Style="{StaticResource FieldLabel}" />
+                                                    <TextBox Text="{Binding SetupPitchQuadratic, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.QuadraticTerm}" />
+                                                    <TextBlock Text="{loc:Text Xaml.CubicTerm}" Style="{StaticResource FieldLabel}" />
+                                                    <TextBox Text="{Binding SetupPitchCubic, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.CubicTerm}" />
+                                                </StackPanel>
+                                            </controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding IsBluRaySetup}"><CheckBox IsChecked="{Binding Parameters.BdInvertMapping, Mode=TwoWay}" Content="{loc:Text Xaml.Invert3T6TMapping}" Style="{StaticResource CompactCheckBox}" /></controls:VisibilityGate>
+                                        </StackPanel>
+                                    </Expander>
+                                </StackPanel>
+                                <controls:VisibilityGate IsOpen="{Binding IsCoarseMode}">
+                                    <TextBlock Text="{Binding CoarseSetupHint}" Style="{StaticResource CompactHint}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                </controls:VisibilityGate>
+                                <Button Command="{Binding CreateTargetCommand}" HorizontalAlignment="Stretch" Margin="0,0,0,10">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource CompactPrimaryButton}">
+                                            <Setter Property="Content" Value="{loc:Text CalibrationArt.CreateFine}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsIntermediateMode}" Value="True">
+                                                    <Setter Property="Content" Value="{loc:Text HalfDisc.Create}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsCoarseMode}" Value="True">
+                                                    <Setter Property="Content" Value="{loc:Text CalibrationArt.CreateCoarse}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <TextBlock Text="{Binding TargetSummary}" TextWrapping="Wrap" Style="{StaticResource CompactHint}"
                                            Margin="0,0,0,10" />
+                                <controls:VisibilityGate IsOpen="{Binding NeedsStageTarget}">
+                                    <TextBlock Text="{loc:Text Stages.NewTargetHint}" TextWrapping="Wrap"
+                                               Style="{StaticResource CompactText}" Margin="0,0,0,8" />
+                                </controls:VisibilityGate>
 
                                 <!-- Two delivery paths, named by what the user does next:
                                      burn here, or take a generated file to another burner. -->
@@ -193,8 +408,21 @@
                                 <WrapPanel Margin="0,0,0,12">
                                     <Button Content="{loc:Text Xaml.GenerateImageTrack}" Command="{Binding GenerateImageCommand}"
                                             Style="{StaticResource CompactButton}" Margin="0,0,8,0" />
-                                    <Button Content="{loc:Text Xaml.ExportPatternPNG}" Command="{Binding ExportPngCommand}"
-                                            Style="{StaticResource CompactButton}" />
+                                    <Button Command="{Binding ExportPngCommand}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource CompactButton}">
+                                                <Setter Property="Content" Value="{loc:Text Xaml.ExportPatternPNG}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasClockTarget}" Value="True">
+                                                        <Setter Property="Content" Value="{loc:Text Clock.ExportPreview}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding HasWideBandTarget}" Value="True">
+                                                        <Setter Property="Content" Value="{loc:Text Clock.ExportPreview}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
                                 </WrapPanel>
 
                                 <Expander Header="{loc:Text Xaml.CalibrationSessionAdvanced}" IsExpanded="False">
@@ -212,7 +440,7 @@
                                            State="{Binding StepTwoState}"
                                            IsExpanded="{Binding StepTwoExpanded, Mode=TwoWay}">
                             <StackPanel>
-                                <TextBlock Text="{loc:Text Xaml.PhotographBothPhysicalEdgesAndAtLeastOneRadial}"
+                                <TextBlock Text="{loc:Text Xaml.PhotoCalibrationFeatures}"
                                            Style="{StaticResource CompactHint}" Margin="0,0,0,8" />
                                 <Button Content="{loc:Text Xaml.ImportDiscPhoto}" Command="{Binding ImportPhotoCommand}"
                                         Style="{StaticResource CompactPrimaryButton}" Margin="0,0,0,8"
@@ -225,59 +453,191 @@
                                 </DockPanel>
                                 <Button Content="{loc:Text Xaml.CalculateRectification}" Command="{Binding RectifyPhotoCommand}"
                                         Style="{StaticResource CompactButton}" HorizontalAlignment="Stretch" Margin="0,0,0,8" />
-                                <Button Content="{loc:Text Xaml.ConfirmAndTraceCurves}" Command="{Binding ConfirmRectificationCommand}"
+                                <Button Content="{loc:Text Xaml.ConfirmRectifiedPhoto}" Command="{Binding ConfirmRectificationCommand}"
                                         IsEnabled="{Binding IsRectificationReady}"
                                         Style="{StaticResource CompactPrimaryButton}" HorizontalAlignment="Stretch" />
                                 <TextBlock Text="{Binding RectificationSummary}" Style="{StaticResource CompactHint}" Margin="0,10,0,0" />
                             </StackPanel>
                         </controls:StepCard>
 
-                        <controls:StepCard StepNumber="3" StepTitle="{loc:Text Xaml.TraceAndSolve}" Grid.Row="2"
+                        <controls:StepCard StepNumber="3" Grid.Row="2"
                                            State="{Binding StepThreeState}"
                                            IsExpanded="{Binding StepThreeExpanded, Mode=TwoWay}">
+                            <controls:StepCard.Style>
+                                <Style TargetType="controls:StepCard" BasedOn="{StaticResource {x:Type controls:StepCard}}">
+                                    <Setter Property="StepTitle" Value="{loc:Text Xaml.FineCalibrationPhase}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsIntermediateMode}" Value="True">
+                                            <Setter Property="StepTitle" Value="{loc:Text HalfDisc.Stage}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsCoarseMode}" Value="True">
+                                            <Setter Property="StepTitle" Value="{loc:Text Xaml.CoarseCalibrationPhase}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </controls:StepCard.Style>
                             <StackPanel>
-                                <TextBlock Text="{loc:Text Xaml.PlacePointsEvenlyAlongAClearCurveFromInside}"
-                                           Style="{StaticResource CompactHint}" Margin="0,0,0,8" />
                                 <Button Content="{loc:Text Xaml.BackToPhotoCorrection}" Command="{Binding BackToPhotoCommand}"
                                         Style="{StaticResource CompactButton}" HorizontalAlignment="Stretch" Margin="0,0,0,10" />
-                                <controls:VisibilityGate IsOpen="{Binding IsDvdTarget}">
-                                    <StackPanel Margin="0,0,0,10">
-                                        <CheckBox IsChecked="{Binding FitDvdPitch, Mode=TwoWay}" Content="{loc:Text Xaml.FitCubicDVDTrackPitch}"
-                                                  Style="{StaticResource CompactCheckBox}" Margin="0,0,0,8" />
-                                        <TextBlock Text="{loc:Text Xaml.UseAtLeast16PointsAtDifferentRadiiSpanning}"
-                                                   Style="{StaticResource CompactHint}" />
+                                <controls:VisibilityGate IsOpen="{Binding IsRadialArcStep}">
+                                    <StackPanel>
+                                        <TextBlock Text="{loc:Text Arc.Instructions}" Style="{StaticResource CompactHint}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                        <TextBlock Text="{loc:Text Arc.Segment}" Style="{StaticResource FieldLabel}"/>
+                                        <ComboBox ItemsSource="{Binding ArcBandNames}" DisplayMemberPath="Label" SelectedIndex="{Binding SelectedArcBand,Mode=TwoWay}"
+                                                  Style="{StaticResource CompactComboBox}" AutomationProperties.Name="{loc:Text Arc.Segment}" Margin="0,0,0,6"/>
+                                        <TextBlock Text="{loc:Text Arc.Direction}" Style="{StaticResource FieldLabel}"/>
+                                        <ComboBox ItemsSource="{Binding ArcDirections}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                                  SelectedValue="{Binding SelectedArcDirection, Mode=TwoWay}" Style="{StaticResource CompactComboBox}"
+                                                  AutomationProperties.Name="{loc:Text Arc.Direction}" Margin="0,0,0,6"/>
+                                        <Button Content="{loc:Text Xaml.CoarseRingUndoPoint}" Command="{Binding UndoArcLengthPointCommand}"
+                                                Style="{StaticResource CompactButton}" HorizontalAlignment="Left" Margin="0,0,0,6"/>
+                                        <TextBlock Text="{Binding ArcMeasurementSummary}" Style="{StaticResource CompactText}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                        <Grid Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <CheckBox Grid.ColumnSpan="2" IsChecked="{Binding ArcComplete, Mode=TwoWay}" IsEnabled="{Binding CanConfirmArc}"
+                                                      Style="{StaticResource CompactCheckBox}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                                                      Background="Transparent" AutomationProperties.Name="{loc:Text Arc.Confirm}"/>
+                                            <TextBlock Grid.Column="1" Text="{loc:Text Arc.Confirm}" TextWrapping="Wrap" Style="{StaticResource CompactText}"
+                                                       IsHitTestVisible="False"/>
+                                        </Grid>
+                                        <Button Content="{loc:Text Arc.Solve}" Command="{Binding SolveArcLengthsCommand}" Style="{StaticResource CompactPrimaryButton}" Margin="0,0,0,8"/>
+                                        <TextBlock Text="{Binding ArcFitSummary}" Style="{StaticResource CompactHint}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                        <Button Content="{loc:Text CalibrationMedia.ApplyRadii}" Command="{Binding ApplyArcLengthsCommand}" Style="{StaticResource CompactButton}"/>
                                     </StackPanel>
                                 </controls:VisibilityGate>
-                                <!-- Auto is the useful default; a manual bound is a diagnostic
-                                     escape hatch, so it lives folded instead of occupying the
-                                     card on every fit. The header still names the current mode. -->
-                                <Expander Header="{Binding SearchRangeHeader}" IsExpanded="False"
-                                          FontSize="12" Foreground="{DynamicResource TextMutedBrush}"
-                                          Margin="0,0,0,10">
+                                <controls:VisibilityGate IsOpen="{Binding IsClockStep}">
                                     <StackPanel>
-                                        <ComboBox Style="{StaticResource CompactComboBox}"
-                                                  ItemsSource="{Binding CoarseSearchRangeChoices}"
-                                                  SelectedItem="{Binding SelectedCoarseSearchRange, Mode=TwoWay}"
-                                                  DisplayMemberPath="Label" />
+                                        <TextBlock Text="{loc:Text Clock.Aim}" Style="{StaticResource CompactHint}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                        <WrapPanel Margin="0,0,0,8">
+                                            <Button AutomationProperties.AutomationId="ReadClock" Content="{loc:Text Clock.Read}" Command="{Binding ReadClockCommand}"
+                                                    Style="{StaticResource CompactPrimaryButton}" Margin="0,0,8,4" />
+                                            <Button Content="{loc:Text Xaml.CancelCalculation}" Command="{Binding CancelCommand}" Style="{StaticResource CompactButton}" />
+                                        </WrapPanel>
+                                        <TextBlock Text="{Binding ClockReadSummary}" Style="{StaticResource CompactText}"
+                                                   TextWrapping="Wrap" Margin="0,0,0,8" AutomationProperties.LiveSetting="Polite" />
+                                        <Button Content="{loc:Text Xaml.UseVerifiedRadii}" Command="{Binding ApplyClockCommand}" Style="{StaticResource CompactButton}" />
                                     </StackPanel>
-                                </Expander>
-                                <WrapPanel Margin="0,0,0,10">
-                                    <Button Content="{loc:Text Xaml.SolveParameters}" Command="{Binding SolveCommand}"
-                                            Style="{StaticResource CompactPrimaryButton}" Margin="0,0,8,0" />
-                                    <Button Content="{loc:Text Xaml.CancelCalculation}" Command="{Binding CancelCommand}"
-                                            Style="{StaticResource CompactButton}" />
-                                </WrapPanel>
-                                <ComboBox Style="{StaticResource CompactComboBox}" ItemsSource="{Binding CoarseCandidates}"
-                                          SelectedItem="{Binding SelectedCoarseCandidate, Mode=TwoWay}" DisplayMemberPath="Label"
-                                          MaxDropDownHeight="180" Margin="0,0,0,8" ToolTip="{loc:Text Xaml.SelectACandidateToSeeItsPredictedCurvesOn}" />
-                                <!-- One status line: FitAssessment carries the current verdict;
-                                     failures log their details to the log page. -->
-                                <TextBlock Text="{Binding FitAssessment}" Style="{StaticResource CompactHint}" Margin="0,0,0,10" />
-                                <CheckBox IsChecked="{Binding ContourConfirmed, Mode=TwoWay}" Style="{StaticResource CompactCheckBox}" Margin="0,0,0,10">
-                                    <TextBlock Text="{loc:Text Xaml.ICheckedTheFullCurveItsShapeAndTurns}" TextWrapping="Wrap" />
-                                </CheckBox>
-                                <Button Content="{loc:Text Xaml.ApplyCalibration}" Command="{Binding ApplyParametersCommand}"
-                                        Style="{StaticResource CompactPrimaryButton}" HorizontalAlignment="Stretch" />
+                                </controls:VisibilityGate>
+                                <controls:VisibilityGate IsOpen="{Binding IsRingStep}">
+                                    <StackPanel>
+                                        <controls:VisibilityGate IsOpen="{Binding HasWideBandTarget}">
+                                            <TextBlock Text="{Binding RingBoundaryInstructions}" Style="{StaticResource CompactHint}"
+                                                       TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                        </controls:VisibilityGate>
+                                        <controls:VisibilityGate IsOpen="{Binding HasWideBandTarget}" Inverted="True">
+                                            <CheckBox Content="{loc:Text Xaml.CoarseRingThreePoints}" IsChecked="{Binding ThreePointMode, Mode=TwoWay}"
+                                                      Style="{StaticResource CompactCheckBox}" Margin="0,0,0,8" />
+                                        </controls:VisibilityGate>
+                                        <TextBlock Text="{Binding RingOperationHint}" TextWrapping="Wrap" Style="{StaticResource CompactHint}" Margin="0,0,0,8" />
+                                        <controls:VisibilityGate IsOpen="{Binding IsBandRayMode}">
+                                            <TextBlock Text="{Binding BandRaySummary}" TextWrapping="Wrap" Style="{StaticResource CompactText}" Margin="0,0,0,8"/>
+                                        </controls:VisibilityGate>
+                                        <controls:VisibilityGate IsOpen="{Binding ThreePointMode}">
+                                            <TextBlock Text="{Binding RingPointSummary}" Style="{StaticResource CompactText}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                        </controls:VisibilityGate>
+                                        <TextBlock Text="{Binding CoarseSummary}" Style="{StaticResource CompactText}"
+                                                   TextWrapping="Wrap" Margin="0,0,0,10" />
+                                        <controls:VisibilityGate IsOpen="{Binding HasWideBandTarget}">
+                                            <TextBlock Text="{Binding BandIntervalSummary}" TextWrapping="Wrap" Style="{StaticResource CompactHint}" Margin="0,0,0,8"/>
+                                        </controls:VisibilityGate>
+                                        <Button Content="{Binding RingSolveLabel}" Command="{Binding SolveRingsCommand}"
+                                                Style="{StaticResource CompactPrimaryButton}" Margin="0,0,0,8" />
+                                        <Button Content="{loc:Text CalibrationMedia.ApplyRadii}" Command="{Binding ApplyCoarseParametersCommand}"
+                                                Style="{StaticResource CompactButton}" />
+                                        <controls:VisibilityGate IsOpen="{Binding CanVerifySectorScale}">
+                                            <StackPanel Margin="0,12,0,0">
+                                                <Button Content="{loc:Text Xaml.VerifySectorScale}" Command="{Binding VerifySectorScaleCommand}"
+                                                        Style="{StaticResource CompactButton}" />
+                                                <TextBlock Text="{Binding SectorCheckSummary}" TextWrapping="Wrap"
+                                                           Style="{StaticResource CompactHint}" Margin="0,6,0,8" />
+                                                <Button Content="{loc:Text Xaml.UseVerifiedRadii}" Command="{Binding ApplyVerifiedScaleCommand}"
+                                                        Style="{StaticResource CompactButton}" />
+                                            </StackPanel>
+                                        </controls:VisibilityGate>
+                                    </StackPanel>
+                                </controls:VisibilityGate>
+                                <controls:VisibilityGate IsOpen="{Binding HasRadialArcTarget}">
+                                    <controls:VisibilityGate IsOpen="{Binding IsFineMode}">
+                                        <TextBlock Text="{loc:Text Arc.FineHint}" Style="{StaticResource CompactHint}" TextWrapping="Wrap"/>
+                                    </controls:VisibilityGate>
+                                </controls:VisibilityGate>
+                                <controls:VisibilityGate IsOpen="{Binding HasWideBandTarget}">
+                                    <controls:VisibilityGate IsOpen="{Binding IsFineMode}">
+                                        <TextBlock Text="{loc:Text WideBands.FineHint}" Style="{StaticResource CompactHint}" TextWrapping="Wrap"/>
+                                    </controls:VisibilityGate>
+                                </controls:VisibilityGate>
+                                <controls:VisibilityGate IsOpen="{Binding HasClockTarget}">
+                                    <controls:VisibilityGate IsOpen="{Binding IsFineMode}">
+                                        <TextBlock Text="{loc:Text Clock.FineHint}" Style="{StaticResource CompactHint}" TextWrapping="Wrap" />
+                                    </controls:VisibilityGate>
+                                </controls:VisibilityGate>
+                                <controls:VisibilityGate IsOpen="{Binding IsLineFitStep}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding FineInitialSummary}" Style="{StaticResource CompactText}"
+                                                   TextWrapping="Wrap" Margin="0,0,0,8" />
+                                        <controls:VisibilityGate IsOpen="{Binding HasAvailableRingSeed}">
+                                            <controls:VisibilityGate IsOpen="{Binding HasAcceptedRingSeed}" Inverted="True">
+                                                <Button Content="{loc:Text Xaml.UseMeasuredRingSeed}" Command="{Binding UseRingSeedCommand}"
+                                                        Style="{StaticResource CompactButton}" Margin="0,0,0,8" />
+                                            </controls:VisibilityGate>
+                                        </controls:VisibilityGate>
+                                        <controls:VisibilityGate IsOpen="{Binding HasAcceptedRingSeed}">
+                                            <Button Content="{loc:Text Xaml.RestoreFineInitial}" Command="{Binding ClearRingSeedCommand}"
+                                                    Style="{StaticResource CompactButton}" Margin="0,0,0,8" />
+                                        </controls:VisibilityGate>
+                                        <TextBlock Text="{Binding TraceMarkingHint}" TextWrapping="Wrap"
+                                                   Style="{StaticResource CompactHint}" Margin="0,0,0,8" />
+                                        <controls:VisibilityGate IsOpen="{Binding Target.HasAngularReference}">
+                                            <TextBlock Text="{loc:Text CalibrationArt.FineSpine}" Style="{StaticResource CompactHint}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                        </controls:VisibilityGate>
+                                        <controls:VisibilityGate IsOpen="{Binding CanFitDvdPitch}">
+                                            <StackPanel Margin="0,0,0,10">
+                                                <CheckBox IsChecked="{Binding FitDvdPitch, Mode=TwoWay}" Content="{loc:Text Xaml.FitCubicDVDTrackPitch}"
+                                                          Style="{StaticResource CompactCheckBox}" Margin="0,0,0,8" />
+                                                <TextBlock Text="{loc:Text Xaml.CubicTrackPitchPointRequirement}"
+                                                           Style="{StaticResource CompactHint}" />
+                                            </StackPanel>
+                                        </controls:VisibilityGate>
+                                        <!-- Auto is the useful default; a manual bound is a diagnostic
+                                             escape hatch, so it lives folded instead of occupying the
+                                             card on every fit. The header still names the current mode. -->
+                                        <Expander Header="{Binding SearchRangeHeader}" IsExpanded="False"
+                                                  FontSize="12" Foreground="{DynamicResource TextMutedBrush}"
+                                                  Margin="0,0,0,10">
+                                            <StackPanel>
+                                                <ComboBox Style="{StaticResource CompactComboBox}"
+                                                          ItemsSource="{Binding ActiveSearchRangeChoices}"
+                                                          SelectedItem="{Binding SelectedCoarseSearchRange, Mode=TwoWay}"
+                                                          DisplayMemberPath="Label" />
+                                                <controls:VisibilityGate IsOpen="{Binding IsBoundarySegmentStep}">
+                                                    <TextBlock Text="{loc:Text HalfDisc.SearchHint}" Style="{StaticResource CompactHint}" TextWrapping="Wrap" />
+                                                </controls:VisibilityGate>
+                                            </StackPanel>
+                                        </Expander>
+                                        <WrapPanel Margin="0,0,0,10">
+                                            <Button Content="{loc:Text Xaml.SolveParameters}" Command="{Binding SolveCommand}"
+                                                    Style="{StaticResource CompactPrimaryButton}" Margin="0,0,8,0" />
+                                            <Button Content="{loc:Text Xaml.CancelCalculation}" Command="{Binding CancelCommand}"
+                                                    Style="{StaticResource CompactButton}" />
+                                        </WrapPanel>
+                                        <ComboBox Style="{StaticResource CompactComboBox}" ItemsSource="{Binding CoarseCandidates}"
+                                                  SelectedItem="{Binding SelectedCoarseCandidate, Mode=TwoWay}" DisplayMemberPath="Label"
+                                                  MaxDropDownHeight="180" Margin="0,0,0,8" ToolTip="{loc:Text Xaml.SelectACandidateToSeeItsPredictedCurvesOn}" />
+                                        <!-- Keep the full verdict and the next action beside the apply button. -->
+                                        <TextBlock Text="{Binding FitAssessment}" Style="{StaticResource CompactHint}" TextWrapping="Wrap" Margin="0,0,0,10" />
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="25" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="1" Text="{Binding TraceConfirmationLabel}" TextWrapping="Wrap"
+                                                       FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}" IsHitTestVisible="False" />
+                                            <CheckBox Grid.ColumnSpan="2" IsChecked="{Binding ContourConfirmed, Mode=TwoWay}"
+                                                      AutomationProperties.Name="{Binding TraceConfirmationLabel}"
+                                                      Style="{StaticResource CompactCheckBox}" />
+                                        </Grid>
+                                        <Button Content="{Binding ApplyTraceLabel}" Command="{Binding ApplyParametersCommand}"
+                                                ToolTip="{Binding ApplyParametersHint}" ToolTipService.ShowOnDisabled="True"
+                                                Style="{StaticResource CompactPrimaryButton}" HorizontalAlignment="Stretch" />
+                                    </StackPanel>
+                                </controls:VisibilityGate>
                             </StackPanel>
                         </controls:StepCard>
                 </Grid>

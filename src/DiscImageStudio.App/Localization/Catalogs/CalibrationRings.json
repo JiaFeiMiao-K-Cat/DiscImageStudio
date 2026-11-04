@@ -1,0 +1,344 @@
+{
+  "Phases.LegacyRingEstimate": {
+    "zh-CN": "量环结果可能受照片尺度影响。请核对盘片预设和照片尺度，必要时用扇区校验。",
+    "zh-TW": "量環結果可能受照片比例影響。請核對光碟預設與照片比例，必要時用扇區校驗。",
+    "en": "Ring measurements can be affected by photo scale. Check the disc preset and photo scale, and verify with the sectors if needed.",
+    "ja": "リングの測定値は写真の縮尺に影響されます。ディスクのプリセットと縮尺を確認し、必要に応じて扇形で検証してください。",
+    "tr": "Halka ölçümleri fotoğraf ölçeğinden etkilenebilir. Disk ön ayarını ve fotoğraf ölçeğini kontrol edin; gerekirse sektörlerle doğrulayın.",
+    "es": "Las medidas de los anillos pueden verse afectadas por la escala de la foto. Comprueba el preajuste del disco y la escala; si hace falta, verifícalos con los sectores.",
+    "cs": "Měření prstenců může ovlivnit měřítko fotografie. Zkontrolujte předvolbu disku a měřítko; podle potřeby je ověřte pomocí sektorů."
+  },
+  "Phases.InitialApplied": {
+    "zh-CN": "新标靶初始参数已更新",
+    "zh-TW": "新標靶初始參數已更新",
+    "en": "Updated initial parameters for the next target",
+    "ja": "次のターゲットの初期値を更新しました",
+    "tr": "Sonraki hedefin başlangıç parametreleri güncellendi",
+    "es": "Parámetros iniciales del siguiente patrón actualizados",
+    "cs": "Počáteční parametry dalšího terče byly aktualizovány"
+  },
+  "Phases.SectorHint": {
+    "zh-CN": "量环只能估半径。此标靶的两段扇区可用于核对照片的共同尺度，需有清楚且可辨别的角向纹理。",
+    "zh-TW": "量環只能估算半徑。此標靶的兩段扇區可用於核對照片的共同尺度，須有清楚且可辨別的角向紋理。",
+    "en": "Two swept sectors can check the photo scale after a ring fit. Both need distinguishable angular markings.",
+    "ja": "リング測定後、2か所の扇形を使って写真の倍率を確認できます。両方で角度の模様が判別できる必要があります。",
+    "tr": "Halka ölçümünden sonra fotoğraf ölçeği iki taranmış sektörle kontrol edilebilir. Her ikisindeki açısal işaretler ayırt edilebilir olmalıdır.",
+    "es": "Los dos sectores barridos permiten comprobar la escala de la foto tras medir los anillos. Ambos deben mostrar marcas angulares distinguibles.",
+    "cs": "Dva sektory se vzorem umožňují po měření prstenců ověřit měřítko fotografie. V obou musí být rozlišitelné úhlové značky."
+  },
+  "Phases.VerifiedScale": {
+    "zh-CN": "照片比例系数约 {0:0.00000}；内外两段匹配度 {1:0.00} / {2:0.00}。下次刻录的初始内半径 {3:0.####} mm，外半径 {4:0.####} mm。",
+    "zh-TW": "照片比例係數約 {0:0.00000}；內外兩段匹配度 {1:0.00} / {2:0.00}。下次燒錄的初始內半徑 {3:0.####} mm，外半徑 {4:0.####} mm。",
+    "en": "Photo scale factor ≈ {0:0.00000}. Inner and outer match scores {1:0.00} / {2:0.00}. Initial radii for the next burn: {3:0.####} mm inner, {4:0.####} mm outer.",
+    "ja": "写真の縮尺係数は約 {0:0.00000}、内外の一致度は {1:0.00} / {2:0.00} です。次の書き込みの初期半径は内側 {3:0.####} mm、外側 {4:0.####} mm です。",
+    "tr": "Fotoğraf ölçek katsayısı ≈ {0:0.00000}. İç ve dış eşleşme puanları {1:0.00} / {2:0.00}. Sonraki yazma için başlangıç yarıçapları: iç {3:0.####} mm, dış {4:0.####} mm.",
+    "es": "Factor de escala de la foto ≈ {0:0.00000}. Puntuaciones de coincidencia interior y exterior: {1:0.00} / {2:0.00}. Radios iniciales para la siguiente grabación: interior {3:0.####} mm, exterior {4:0.####} mm.",
+    "cs": "Koeficient měřítka fotografie ≈ {0:0.00000}. Shoda vnitřní a vnější části: {1:0.00} / {2:0.00}. Počáteční poloměry pro další vypalování: vnitřní {3:0.####} mm, vnější {4:0.####} mm."
+  },
+  "Phases.Disagree": {
+    "zh-CN": "两段各自估得的照片比例为 {0:0.00000} 和 {1:0.00000}，差异过大。请核对内外两组圆环和盘面矫正。",
+    "zh-TW": "兩段各自估得的照片比例為 {0:0.00000} 和 {1:0.00000}，差異過大。請核對內外兩組圓環和碟面校正。",
+    "en": "The two sectors gave inconsistent scales ({0:0.00000} and {1:0.00000}). Recheck both ring groups and photo rectification.",
+    "ja": "2か所の推定倍率（{0:0.00000} と {1:0.00000}）の差が大きすぎます。両方のリングと写真補正を確認してください。",
+    "tr": "İki sektörün ölçekleri uyuşmuyor ({0:0.00000} ve {1:0.00000}). Her iki halka grubunu ve fotoğraf düzeltmesini kontrol edin.",
+    "es": "Las escalas obtenidas de los dos sectores no concuerdan ({0:0.00000} y {1:0.00000}). Revisa ambos grupos de anillos y la rectificación de la foto.",
+    "cs": "Oba sektory poskytly rozdílná měřítka ({0:0.00000} a {1:0.00000}). Zkontrolujte obě skupiny prstenců a rektifikaci fotografie."
+  },
+  "Phases.Unverified": {
+    "zh-CN": "未能在两段扇区中都找到清楚且唯一的匹配（匹配度 {0:0.00} / {1:0.00}）。可调整打光、换一张清晰照片，或保留量环粗估。",
+    "zh-TW": "未能在兩段扇區中都找到清楚且唯一的匹配（吻合度 {0:0.00} / {1:0.00}）。可調整照明、換一張清晰照片，或保留量環粗估。",
+    "en": "Both sectors need a clear, unique match (scores {0:0.00} / {1:0.00}). Try different lighting, a sharper photo, or keep the ring estimate.",
+    "ja": "両方の扇形で明確かつ一意な一致を検出できません（一致度 {0:0.00} / {1:0.00}）。照明や写真を変えるか、リングの概算値を使ってください。",
+    "tr": "Her iki sektörde de net ve tek bir eşleşme gerekir (puanlar {0:0.00} / {1:0.00}). Işığı değiştirin, daha net bir fotoğraf deneyin veya halka tahminini koruyun.",
+    "es": "Ambos sectores necesitan una coincidencia clara y única (puntuaciones {0:0.00} / {1:0.00}). Cambia la iluminación, usa una foto más nítida o conserva la estimación de los anillos.",
+    "cs": "Oba sektory potřebují zřetelnou a jednoznačnou shodu (hodnocení {0:0.00} / {1:0.00}). Změňte osvětlení, použijte ostřejší fotografii nebo ponechte odhad z prstenců."
+  },
+  "Phases.OutOfBounds": {
+    "zh-CN": "校验后的半径超出盘片可用范围，请核对标定记录和照片尺寸。",
+    "zh-TW": "校驗後的半徑超出光碟可用範圍，請核對標定記錄與照片尺寸。",
+    "en": "Corrected radii are outside the usable disc area. Check the calibration record and photo dimensions.",
+    "ja": "補正後の半径はディスクの使用可能範囲外です。校正記録と写真の寸法を確認してください。",
+    "tr": "Düzeltilmiş yarıçaplar diskin kullanılabilir alanı dışında. Kalibrasyon kaydını ve fotoğraf boyutlarını kontrol edin.",
+    "es": "Los radios corregidos quedan fuera del área útil del disco. Comprueba el registro de calibración y las dimensiones de la foto.",
+    "cs": "Opravené poloměry leží mimo použitelnou oblast disku. Zkontrolujte záznam kalibrace a rozměry fotografie."
+  },
+  "Phases.Verifying": {
+    "zh-CN": "正在比对内外两段扇区…",
+    "zh-TW": "正在比對內外兩段扇區…",
+    "en": "Checking inner and outer swept sectors…",
+    "ja": "内外2か所の扇形を照合中…",
+    "tr": "İç ve dış taranmış sektörler kontrol ediliyor…",
+    "es": "Comprobando los sectores barridos interior y exterior…",
+    "cs": "Kontrolují se vnitřní a vnější sektory se vzorem…"
+  },
+  "Phases.RingSeed": {
+    "zh-CN": "精细标定使用量环初值：内半径 {0:0.####} mm，外半径 {1:0.####} mm。",
+    "zh-TW": "精細標定使用量環初值：內半徑 {0:0.####} mm，外半徑 {1:0.####} mm。",
+    "en": "Fine calibration starts from the ring estimate: inner radius {0:0.####} mm and outer radius {1:0.####} mm.",
+    "ja": "精密校正の初期値はリング測定で求めた内半径 {0:0.####} mm、外半径 {1:0.####} mm です。",
+    "tr": "Hassas kalibrasyon, halkalardan tahmin edilen iç {0:0.####} mm ve dış {1:0.####} mm yarıçaplarla başlar.",
+    "es": "La calibración precisa parte de los radios estimados con los anillos: interior {0:0.####} mm y exterior {1:0.####} mm.",
+    "cs": "Jemná kalibrace vychází z odhadu prstenců: vnitřní poloměr {0:0.####} mm a vnější {1:0.####} mm."
+  },
+  "Phases.RecordSeed": {
+    "zh-CN": "精细标定使用记录初值：内半径 {0:G10} mm，外半径 {1:G10} mm。",
+    "zh-TW": "精細標定使用記錄初值：內半徑 {0:G10} mm，外半徑 {1:G10} mm。",
+    "en": "Fine calibration starts from the recorded radii: {0:G10} mm inner and {1:G10} mm outer.",
+    "ja": "精密校正の初期値は現在の記録から取得します。内半径 {0:G10} mm、外半径 {1:G10} mm。",
+    "tr": "Hassas kalibrasyon, kayıttaki iç {0:G10} mm ve dış {1:G10} mm yarıçaplarla başlar.",
+    "es": "La calibración precisa parte de los radios del registro: interior {0:G10} mm y exterior {1:G10} mm.",
+    "cs": "Jemná kalibrace vychází z poloměrů v záznamu: vnitřní {0:G10} mm a vnější {1:G10} mm."
+  },
+  "Phases.PendingSeed": {
+    "zh-CN": "创建标靶或打开记录后，将显示精细标定使用的初始半径。",
+    "zh-TW": "建立標靶或開啟紀錄後，將顯示精細標定使用的初始半徑。",
+    "en": "Create a target or open a record to see the initial radii for fine calibration.",
+    "ja": "ターゲットを作成するか記録を開くと、精密校正の初期半径が表示されます。",
+    "tr": "Hassas kalibrasyonun başlangıç yarıçaplarını görmek için bir hedef oluşturun veya kayıt açın.",
+    "es": "Crea un patrón o abre un registro para ver los radios iniciales de la calibración precisa.",
+    "cs": "Pro zobrazení počátečních poloměrů jemné kalibrace vytvořte terč nebo otevřete záznam."
+  },
+  "Phases.Rectified": {
+    "zh-CN": "矫正预览已生成，请核对盘片边界并确认。",
+    "zh-TW": "校正預覽已產生，請核對光碟邊界並確認。",
+    "en": "Rectified preview is ready. Check the disc boundaries and confirm.",
+    "ja": "補正プレビューができました。ディスクの境界を確認して確定してください。",
+    "tr": "Düzeltilmiş önizleme hazır. Disk sınırlarını kontrol edip onaylayın.",
+    "es": "La vista previa rectificada está lista. Comprueba los límites del disco y confirma.",
+    "cs": "Rektifikovaný náhled je připraven. Zkontrolujte hranice disku a potvrďte je."
+  },
+  "Rings.PointsCount": {
+    "zh-CN": "此圈已标 {0} / 3 点。",
+    "zh-TW": "此圈已標 {0} / 3 點。",
+    "en": "{0} of 3 points placed on this ring.",
+    "ja": "このリングに 3 点のうち {0} 点を配置しました。",
+    "tr": "Bu halkada 3 noktadan {0} tanesi işaretlendi.",
+    "es": "{0} de 3 puntos marcados en este anillo.",
+    "cs": "Na tomto prstenci je označeno {0} ze 3 bodů."
+  },
+  "Rings.PointsReady": {
+    "zh-CN": "已用三点测得内缘半径 {0:0.###} mm。可继续选择另一圈。",
+    "zh-TW": "已用三點測得內緣半徑 {0:0.###} mm。可繼續選擇另一圈。",
+    "en": "Inner-edge radius from three points: {0:0.###} mm. Select another ring to continue.",
+    "ja": "3 点から得た内縁の半径は {0:0.###} mm です。次のリングを選んでください。",
+    "tr": "Üç noktadan iç kenar yarıçapı: {0:0.###} mm. Devam etmek için başka bir halka seçin.",
+    "es": "Radio del borde interior a partir de tres puntos: {0:0.###} mm. Selecciona otro anillo para continuar.",
+    "cs": "Poloměr vnitřního okraje ze tří bodů: {0:0.###} mm. Pokračujte výběrem dalšího prstence."
+  },
+  "未完成的三点量环记录无效。": {
+    "zh-CN": "未完成的三点量环记录无效。",
+    "zh-TW": "未完成的三點量環記錄無效。",
+    "en": "The unfinished three-point ring measurement is invalid.",
+    "ja": "途中まで保存された 3 点でのリング測定が無効です。",
+    "tr": "Tamamlanmamış üç noktalı halka ölçümü geçersiz.",
+    "es": "La medición incompleta del anillo con tres puntos no es válida.",
+    "cs": "Nedokončené měření prstence třemi body je neplatné."
+  },
+  "请沿同一条圆环的内缘标出三个点。": {
+    "zh-CN": "请沿同一条圆环的内缘标出三个点。",
+    "zh-TW": "請沿同一條圓環的內緣標出三個點。",
+    "en": "Place three points along the inner edge of the same ring.",
+    "ja": "同じリングの内縁に沿って 3 点を配置してください。",
+    "tr": "Aynı halkanın iç kenarı boyunca üç nokta yerleştirin.",
+    "es": "Marca tres puntos en el borde interior del mismo anillo.",
+    "cs": "Označte tři body na vnitřním okraji stejného prstence."
+  },
+  "圆弧采样点必须位于中心孔与盘片外缘之间。": {
+    "zh-CN": "圆弧采样点必须位于中心孔与盘片外缘之间。",
+    "zh-TW": "圓弧取樣點必須位於中心孔與光碟外緣之間。",
+    "en": "Place each arc point between the centre hole and the outer disc edge.",
+    "ja": "円弧の点は中心穴とディスクの外縁の間に配置してください。",
+    "tr": "Her yay noktasını merkez deliği ile diskin dış kenarı arasına yerleştirin.",
+    "es": "Sitúa cada punto del arco entre el orificio central y el borde exterior del disco.",
+    "cs": "Každý bod oblouku umístěte mezi středový otvor a vnější okraj disku."
+  },
+  "三个采样点靠得太近，请沿同一条圆弧分散选点。": {
+    "zh-CN": "三个采样点靠得太近，请沿同一条圆弧分散选点。",
+    "zh-TW": "三個取樣點靠得太近，請沿同一條圓弧分散選點。",
+    "en": "The three points are too close together. Space them farther apart along this arc.",
+    "ja": "3 点が近すぎます。同じ円弧上で間隔を広げてください。",
+    "tr": "Üç nokta birbirine çok yakın. Aynı yay üzerinde aralarını açın.",
+    "es": "Los tres puntos están demasiado juntos. Sepáralos más a lo largo del mismo arco.",
+    "cs": "Tři body jsou příliš blízko sebe. Rozmístěte je dále od sebe na stejném oblouku."
+  },
+  "三个采样点的半径相差过大，请重新对准同一圈的内缘。": {
+    "zh-CN": "三个采样点的半径相差过大，请重新对准同一圈的内缘。",
+    "zh-TW": "三個取樣點的半徑相差過大，請重新對準同一圈的內緣。",
+    "en": "The three radii differ too much. Reposition the points on the inner edge of the same ring.",
+    "ja": "3 点の半径に大きな差があります。同じリングの内縁に合わせ直してください。",
+    "tr": "Üç yarıçap arasındaki fark çok büyük. Noktaları aynı halkanın iç kenarına yeniden yerleştirin.",
+    "es": "Los tres radios difieren demasiado. Recoloca los puntos en el borde interior del mismo anillo.",
+    "cs": "Tři poloměry se příliš liší. Umístěte body znovu na vnitřní okraj stejného prstence."
+  },
+  "保存的圆弧采样点与实测半径不一致。": {
+    "zh-CN": "保存的圆弧采样点与实测半径不一致。",
+    "zh-TW": "儲存的圓弧取樣點與實測半徑不一致。",
+    "en": "The saved arc points do not match the measured radius.",
+    "ja": "保存された円弧の点と測定半径が一致しません。",
+    "tr": "Kayıtlı yay noktaları ölçülen yarıçapla uyuşmuyor.",
+    "es": "Los puntos guardados del arco no coinciden con el radio medido.",
+    "cs": "Uložené body oblouku neodpovídají naměřenému poloměru."
+  },
+  "Rings.InsufficientTarget": {
+    "zh-CN": "这张标定盘的绘图区不足三条完整圆环，请使用十字线精细标定。",
+    "zh-TW": "這張校準碟的繪圖區不足三條完整圓環，請使用十字線精確校準。",
+    "en": "This target contains fewer than three complete rings in its drawing area. Use cross tracing instead.",
+    "ja": "このターゲットの描画範囲には完全なリングが 3 本ありません。十字線で精密校正してください。",
+    "tr": "Hedefin çizim alanında üç tam halka yok. Bunun yerine artıyı izleyin.",
+    "es": "El área de dibujo del patrón contiene menos de tres anillos completos. Usa el trazado de la cruz.",
+    "cs": "V kreslicí oblasti terče nejsou tři celé prstence. Použijte obtažení kříže."
+  },
+  "Rings.Count": {
+    "zh-CN": "已量 {0} / {1} 圈的内缘。请至少量三圈，包含靠内和靠外的环。",
+    "zh-TW": "已量 {0} / {1} 圈的內緣。請至少量三圈，包含靠內和靠外的環。",
+    "en": "Measured the inner edges of {0} of {1} rings. Measure at least three, including inner and outer rings.",
+    "ja": "{1} 本のうち {0} 本の内縁を測定しました。内側と外側を含めて 3 本以上測定してください。",
+    "tr": "{1} halkadan {0} tanesinin iç kenarı ölçüldü. İç ve dış halkalar dâhil en az üç halka ölçün.",
+    "es": "Bordes interiores medidos de {0} de {1} anillos. Mide al menos tres, incluidos anillos interiores y exteriores.",
+    "cs": "Změřeny vnitřní okraje {0} z {1} prstenců. Změřte alespoň tři, včetně vnitřních a vnějších."
+  },
+  "Rings.Estimate": {
+    "zh-CN": "粗估内半径 {0:0.###} mm · 外半径 {1:0.###} mm\n环径偏差 RMS {2:0.###} mm · 最大 {3:0.###} mm",
+    "zh-TW": "粗估內半徑 {0:0.###} mm · 外半徑 {1:0.###} mm\n環徑偏差 RMS {2:0.###} mm · 最大 {3:0.###} mm",
+    "en": "Estimated inner radius {0:0.###} mm · outer radius {1:0.###} mm\nRing radius residuals: RMS {2:0.###} mm · maximum {3:0.###} mm",
+    "ja": "推定内半径 {0:0.###} mm · 外半径 {1:0.###} mm\nリング半径の誤差 RMS {2:0.###} mm · 最大 {3:0.###} mm",
+    "tr": "Tahmini iç yarıçap {0:0.###} mm · dış yarıçap {1:0.###} mm\nHalka yarıçapı sapması: RMS {2:0.###} mm · en fazla {3:0.###} mm",
+    "es": "Radio interior estimado {0:0.###} mm · exterior {1:0.###} mm\nResiduos del radio de los anillos: RMS {2:0.###} mm · máximo {3:0.###} mm",
+    "cs": "Odhad vnitřního poloměru {0:0.###} mm · vnějšího {1:0.###} mm\nOdchylky poloměrů prstenců: RMS {2:0.###} mm · maximum {3:0.###} mm"
+  },
+  "Rings.CheckAlignment": {
+    "zh-CN": "估计超出盘面或偏差过大。请核对盘片尺寸、圆环编号和圆弧位置。",
+    "zh-TW": "估計超出碟面或偏差過大。請核對光碟尺寸、圓環編號和圓弧位置。",
+    "en": "The estimate falls outside the disc or the residual is too large. Check the disc size, ring numbers, and arc alignment.",
+    "ja": "推定値がディスクの範囲外か、誤差が大きすぎます。ディスクのサイズ、リング番号、円弧の位置を確認してください。",
+    "tr": "Tahmin diskin dışında veya sapma çok büyük. Disk boyutunu, halka numaralarını ve yay hizalamasını kontrol edin.",
+    "es": "La estimación queda fuera del disco o el residuo es demasiado grande. Comprueba el tamaño del disco, los números de anillo y la alineación de los arcos.",
+    "cs": "Odhad leží mimo disk nebo je odchylka příliš velká. Zkontrolujte velikost disku, čísla prstenců a zarovnání oblouků."
+  },
+  "Rings.Fitting": {
+    "zh-CN": "正在用已对准的圆环估算内外半径…",
+    "zh-TW": "正在用已對準的圓環估算內外半徑…",
+    "en": "Estimating inner and outer radii from the aligned rings…",
+    "ja": "位置を合わせたリングから内半径と外半径を推定しています…",
+    "tr": "Hizalanmış halkalardan iç ve dış yarıçaplar tahmin ediliyor…",
+    "es": "Estimando los radios interior y exterior a partir de los anillos alineados…",
+    "cs": "Odhadují se vnitřní a vnější poloměry ze zarovnaných prstenců…"
+  },
+  "Rings.Applied": {
+    "zh-CN": "已将粗估内半径 {0:0.###} mm、外半径 {1:0.###} mm 用作下一张标靶的参数。",
+    "zh-TW": "已將粗估內半徑 {0:0.###} mm、外半徑 {1:0.###} mm 用於下一張標靶。",
+    "en": "Set the estimated inner radius to {0:0.###} mm and outer radius to {1:0.###} mm for the next target.",
+    "ja": "次の標的の内半径を {0:0.###} mm、外半径を {1:0.###} mm に設定しました。",
+    "tr": "Sonraki hedef için tahmini iç yarıçap {0:0.###} mm, dış yarıçap {1:0.###} mm olarak ayarlandı.",
+    "es": "Se han establecido los radios estimados del siguiente patrón: interior {0:0.###} mm y exterior {1:0.###} mm.",
+    "cs": "Pro další terč byl nastaven odhadnutý vnitřní poloměr {0:0.###} mm a vnější {1:0.###} mm."
+  },
+  "CalibrationSetup.FitApplied": {
+    "zh-CN": "已更新下一张标靶的参数。内半径 {0} mm，外半径 {1} mm。可保存为预设供绘图使用。",
+    "zh-TW": "已更新下一張標靶的參數。內半徑 {0} mm，外半徑 {1} mm。可儲存為預設供繪圖使用。",
+    "en": "Updated the next target's parameters. Inner radius {0} mm, outer radius {1} mm. Save as a preset to use these settings in a drawing.",
+    "ja": "次の標的のパラメーターを更新しました。内半径 {0} mm、外半径 {1} mm。描画に使うにはプリセットとして保存します。",
+    "tr": "Sonraki hedefin parametreleri güncellendi. İç yarıçap {0} mm, dış yarıçap {1} mm. Bu ayarları çizimde kullanmak için ön ayar olarak kaydedin.",
+    "es": "Parámetros del siguiente patrón actualizados. Radio interior {0} mm y exterior {1} mm. Guarda un preajuste para usar estos ajustes en un dibujo.",
+    "cs": "Parametry dalšího terče byly aktualizovány. Vnitřní poloměr {0} mm, vnější {1} mm. Uložte je jako předvolbu, abyste tato nastavení mohli použít při kreslení."
+  },
+  "CalibrationSetup.Target": {
+    "zh-CN": "当前标靶 · {0} · {1:N0} 扇区 · 内半径 {2:G10} mm · 外半径 {3:G10} mm",
+    "zh-TW": "目前標靶 · {0} · {1:N0} 磁區 · 內半徑 {2:G10} mm · 外半徑 {3:G10} mm",
+    "en": "Current target · {0} · {1:N0} sectors · inner {2:G10} mm · outer {3:G10} mm",
+    "ja": "現在の標的 · {0} · {1:N0} セクター · 内半径 {2:G10} mm · 外半径 {3:G10} mm",
+    "tr": "Geçerli hedef · {0} · {1:N0} sektör · iç {2:G10} mm · dış {3:G10} mm",
+    "es": "Patrón actual · {0} · {1:N0} sectores · interior {2:G10} mm · exterior {3:G10} mm",
+    "cs": "Aktuální terč · {0} · {1:N0} sektorů · vnitřní {2:G10} mm · vnější {3:G10} mm"
+  },
+  "CalibrationSetup.NoTarget": {
+    "zh-CN": "请选择盘片参数创建标靶，或打开已有标定记录。",
+    "zh-TW": "請選擇光碟參數建立標靶，或開啟既有的校準記錄。",
+    "en": "Choose disc parameters to create a target, or open a saved calibration record.",
+    "ja": "ディスクのパラメーターを選んで標的を作成するか、保存した校正記録を開いてください。",
+    "tr": "Hedef oluşturmak için disk parametrelerini seçin veya kayıtlı bir kalibrasyon kaydı açın.",
+    "es": "Elige los parámetros del disco para crear un patrón o abre un registro de calibración guardado.",
+    "cs": "Vyberte parametry disku pro vytvoření terče nebo otevřete uložený záznam kalibrace."
+  },
+  "CalibrationSetup.ChooseFamily": {
+    "zh-CN": "请选择盘片类型。",
+    "zh-TW": "請選擇光碟類型。",
+    "en": "Select a disc type.",
+    "ja": "ディスクの種類を選択してください。",
+    "tr": "Bir disk türü seçin.",
+    "es": "Selecciona un tipo de disco.",
+    "cs": "Vyberte typ disku."
+  },
+  "Rings.InvalidSavedSeed": {
+    "zh-CN": "记录中的圆环测量无法恢复用于精细标定的粗估值。",
+    "zh-TW": "記錄中的圓環量測無法還原用於精確校準的粗估值。",
+    "en": "The saved ring measurements cannot reproduce a valid starting point for fine calibration.",
+    "ja": "保存されたリングの測定値から精密校正の有効な初期値を復元できません。",
+    "tr": "Kayıtlı halka ölçümlerinden hassas kalibrasyon için geçerli bir başlangıç noktası oluşturulamıyor.",
+    "es": "Las medidas de anillos guardadas no permiten recuperar un punto de partida válido para la calibración precisa.",
+    "cs": "Z uložených měření prstenců nelze obnovit platné počáteční hodnoty pro jemnou kalibraci."
+  },
+  "圆环编号或实测半径无效。": {
+    "zh-CN": "圆环编号或实测半径无效。",
+    "zh-TW": "圓環編號或實測半徑無效。",
+    "en": "The ring number or measured radius is invalid.",
+    "ja": "リング番号または測定した半径が無効です。",
+    "tr": "Halka numarası veya ölçülen yarıçap geçersiz.",
+    "es": "El número de anillo o el radio medido no es válido.",
+    "cs": "Číslo prstence nebo naměřený poloměr je neplatný."
+  },
+  "量环记录需要已矫正的照片，圆弧半径须位于盘面上。": {
+    "zh-CN": "量环记录需要已矫正的照片，圆弧半径须位于盘面上。",
+    "zh-TW": "量環記錄需要已校正的照片，圓弧半徑須位於碟面上。",
+    "en": "Ring measurements require a rectified photo and the arcs must lie on the disc.",
+    "ja": "リングの測定には補正済みの写真が必要です。円弧はディスクの範囲内に配置してください。",
+    "tr": "Halka ölçümleri düzeltilmiş bir fotoğraf gerektirir; yaylar diskin üzerinde olmalıdır.",
+    "es": "Las medidas de anillos requieren una foto rectificada y los arcos deben quedar sobre el disco.",
+    "cs": "Měření prstenců vyžaduje rektifikovanou fotografii a oblouky musí ležet na disku."
+  },
+  "作为精标初值的量环记录需要至少三条已对准的圆环。": {
+    "zh-CN": "作为精细标定初值的量环记录需要至少三条已对准的圆环。",
+    "zh-TW": "作為精確校準初始值的量環記錄需要至少三條已對準的圓環。",
+    "en": "At least three aligned rings are required to use their measurements as the starting point for fine calibration.",
+    "ja": "リング測定を精密校正の初期値にするには、位置を合わせたリングが 3 本以上必要です。",
+    "tr": "Ölçümleri hassas kalibrasyonun başlangıç noktası olarak kullanmak için en az üç hizalanmış halka gerekir.",
+    "es": "Se necesitan al menos tres anillos alineados para usar sus medidas como punto de partida de la calibración precisa.",
+    "cs": "Pro použití měření jako počátečních hodnot jemné kalibrace jsou potřeba alespoň tři zarovnané prstence."
+  },
+  "请至少对准三条圆环，并包含靠内与靠外的圆环。": {
+    "zh-CN": "请至少对准三条圆环，并包含靠内与靠外的圆环。",
+    "zh-TW": "請至少對準三條圓環，並包含靠內與靠外的圓環。",
+    "en": "Align at least three rings, including inner and outer rings.",
+    "ja": "内側と外側を含む 3 本以上のリングを合わせてください。",
+    "tr": "İç ve dış halkalar dâhil en az üç halkayı hizalayın.",
+    "es": "Alinea al menos tres anillos, incluidos anillos interiores y exteriores.",
+    "cs": "Zarovnejte alespoň tři prstence, včetně vnitřních a vnějších."
+  },
+  "所选圆环过于集中，请补选靠内或靠外的圆环。": {
+    "zh-CN": "所选圆环过于集中，请补选靠内或靠外的圆环。",
+    "zh-TW": "所選圓環過於集中，請補選靠內或靠外的圓環。",
+    "en": "The selected rings are too close together. Include a ring nearer the inner or outer edge.",
+    "ja": "選んだリングが近すぎます。内側または外側にあるリングを追加してください。",
+    "tr": "Seçilen halkalar birbirine çok yakın. İç veya dış kenara daha yakın bir halka ekleyin.",
+    "es": "Los anillos seleccionados están demasiado juntos. Añade uno más cercano al borde interior o exterior.",
+    "cs": "Vybrané prstence jsou příliš blízko sebe. Přidejte prstenec blíže vnitřnímu nebo vnějšímu okraji."
+  },
+  "实测圆环的内外顺序不符，请检查编号或重新拖动圆弧。": {
+    "zh-CN": "实测圆环的内外顺序不符，请检查编号或重新拖动圆弧。",
+    "zh-TW": "實測圓環的內外順序不符，請檢查編號或重新拖曳圓弧。",
+    "en": "The measured rings are out of order. Check their numbers or reposition the arcs.",
+    "ja": "リングの内外の順序が合いません。番号を確認するか、円弧の位置を調整してください。",
+    "tr": "Ölçülen halkaların sırası yanlış. Numaralarını kontrol edin veya yayların konumunu değiştirin.",
+    "es": "Los anillos medidos están desordenados. Comprueba sus números o recoloca los arcos.",
+    "cs": "Změřené prstence nejsou ve správném pořadí. Zkontrolujte jejich čísla nebo přemístěte oblouky."
+  },
+  "圆环无法拟合出有效的内外半径，请检查所选圆弧。": {
+    "zh-CN": "圆环无法拟合出有效的内外半径，请检查所选圆弧。",
+    "zh-TW": "圓環無法擬合出有效的內外半徑，請檢查所選圓弧。",
+    "en": "The rings did not yield valid inner and outer radii. Check the selected arcs.",
+    "ja": "リングから有効な内半径と外半径を推定できません。選択した円弧を確認してください。",
+    "tr": "Halkalardan geçerli iç ve dış yarıçaplar elde edilemedi. Seçilen yayları kontrol edin.",
+    "es": "Los anillos no permiten obtener radios interiores y exteriores válidos. Comprueba los arcos seleccionados.",
+    "cs": "Z prstenců nelze určit platné vnitřní a vnější poloměry. Zkontrolujte vybrané oblouky."
+  }
+}

@@ -35,6 +35,21 @@ internal static class DvdCubicPipelineTests
             DvdStreamingGenerator.Generate(source, stream, new(160, 24, 58, FastParallelism: 1,
                 PitchLinear: 0.18, PitchQuadratic: -0.12, PitchCubic: 0.06));
             Require(stream.ToArray().SequenceEqual(File.ReadAllBytes(cubic)), "file and stream use identical cubic geometry");
+            string moduleIso = Path.Combine(directory, "module.iso");
+            DiscJobResult moduleResult = new DvdDiscModule().ExecuteAsync(new DiscJobRequest("solve",
+                ["--image", source, "--iso-output", moduleIso, "--total-sectors", "160", "--fill-sectors", "160",
+                 "--inner-radius-mm", "24", "--outer-radius-mm", "58", "--pitch-linear", "0.18",
+                 "--pitch-quadratic", "-0.12", "--pitch-cubic", "0.06", "--fast-parallelism", "2"]))
+                .GetAwaiter().GetResult();
+            Require(moduleResult.Succeeded && File.ReadAllBytes(moduleIso).AsSpan().SequenceEqual(stream.ToArray()),
+                "product module defaults use the same fast payload generation as direct streaming");
+            using (JsonDocument moduleSummary = JsonDocument.Parse(File.ReadAllText(moduleIso + ".json")))
+            {
+                Require(moduleSummary.RootElement.GetProperty("fastOutput").GetBoolean()
+                    && !moduleSummary.RootElement.GetProperty("exactEccEfmReplay").GetBoolean()
+                    && moduleSummary.RootElement.GetProperty("fastParallelism").GetInt32() == 2,
+                    "product module uses fast output and preserves requested parallelism without caller fast flags");
+            }
             DvdImageMetadata metadata = DvdImageMetadata.TryLoad(cubic) ?? throw new InvalidOperationException("missing cubic metadata");
             Require(metadata.PitchLinear == 0.18 && metadata.PitchQuadratic == -0.12 && metadata.PitchCubic == 0.06,
                 "ISO metadata retains the complete pitch shape");

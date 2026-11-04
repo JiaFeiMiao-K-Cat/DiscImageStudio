@@ -1,0 +1,47 @@
+{
+  "SingleLine.Target": {
+    "zh-CN": "一条 6 mm 宽的半径线，贯穿记录区内外缘。",
+    "zh-TW": "一條 6 mm 寬的半徑線，貫穿記錄區內外緣。",
+    "en": "One 6 mm wide radial line spans the recording area.",
+    "ja": "幅6 mmの半径線が記録領域の内周から外周まで伸びています。",
+    "tr": "6 mm genişliğinde bir yarıçap çizgisi kayıt alanı boyunca uzanır.",
+    "es": "Una línea radial de 6 mm de ancho atraviesa el área de grabación.",
+    "cs": "Záznamovou oblastí prochází jedna radiální čára široká 6 mm."
+  },
+  "SingleLine.Trace": {
+    "zh-CN": "沿同一条粗线的中线从内向外描点，至少 6 点，尽量覆盖靠内和靠外的清楚部分。若线弯曲，沿实拍弯曲处补点，再核对预测曲线。",
+    "zh-TW": "沿同一條粗線的中心由內向外標至少 6 點，盡量涵蓋靠內與靠外的清楚部分。若線彎曲，沿實拍彎曲處補點，再核對預測曲線。",
+    "en": "Mark at least six points along the centre of the broad line, from the hub outwards. Include clear inner and outer sections and add points along bends before checking the predicted curve.",
+    "ja": "太線の中心を内側から外側へ6点以上たどります。内周側と外周側の鮮明な部分を含め、曲がった部分に点を追加して予測線と照合してください。",
+    "tr": "Geniş çizginin merkezini içten dışa en az altı noktada işaretleyin. Belirgin iç ve dış kısımları dahil edin; tahmini eğriyi kontrol etmeden önce kıvrımlara noktalar ekleyin.",
+    "es": "Marque al menos seis puntos en el centro de la línea ancha, de dentro hacia fuera. Incluya zonas interiores y exteriores claras y añada puntos en las curvas antes de comprobar la curva prevista.",
+    "cs": "Označte alespoň šest bodů podél středu široké čáry, od středu ven. Zahrňte zřetelné vnitřní a vnější části a před kontrolou předpovězené křivky přidejte body v ohybech."
+  },
+  "SingleLine.Apply": {
+    "zh-CN": "将修正参数用于新标靶",
+    "zh-TW": "將修正參數用於新標靶",
+    "en": "Use refined parameters for a new target",
+    "ja": "補正値を次のターゲットに使う",
+    "tr": "Düzeltilmiş parametreleri yeni hedefte kullan",
+    "es": "Usar parámetros ajustados en un nuevo patrón",
+    "cs": "Použít zpřesněné parametry pro nový terč"
+  },
+  "ReferenceCross.Target": {
+    "zh-CN": "同心圆与十字线。沿一条细臂描点，进行精细标定。",
+    "zh-TW": "同心圓與十字線。沿一條細臂描點，進行精細校準。",
+    "en": "Concentric rings and a cross. Trace one thin arm for fine calibration.",
+    "ja": "同心円と十字線です。細い腕を1本たどって精密校正します。",
+    "tr": "Eş merkezli halkalar ve artı. Hassas kalibrasyon için ince bir kolu işaretleyin.",
+    "es": "Anillos concéntricos y una cruz. Trace un brazo fino para la calibración fina.",
+    "cs": "Soustředné kružnice a kříž. Pro jemnou kalibraci označujte jedno tenké rameno."
+  },
+  "Stages.NewTargetHint": {
+    "zh-CN": "当前记录属于另一个阶段。用上方参数新建本阶段标靶，或打开与盘片配套的记录。",
+    "zh-TW": "目前記錄屬於另一個階段。用上方參數建立本階段標靶，或開啟與碟片配套的記錄。",
+    "en": "This record belongs to a different stage. Create a target for the selected stage with the parameters above, or open the record for your disc.",
+    "ja": "現在の記録は別の段階用です。上の設定でこの段階のターゲットを作成するか、ディスクに対応する記録を開いてください。",
+    "tr": "Bu kayıt başka bir aşamaya ait. Yukarıdaki parametrelerle seçili aşama için hedef oluşturun veya diskinize ait kaydı açın.",
+    "es": "Este registro pertenece a otra etapa. Cree un patrón para la etapa seleccionada con los parámetros anteriores o abra el registro de su disco.",
+    "cs": "Tento záznam patří k jiné fázi. Vytvořte terč pro vybranou fázi s parametry výše, nebo otevřete záznam pro svůj disk."
+  }
+}

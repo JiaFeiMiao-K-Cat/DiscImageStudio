@@ -5,6 +5,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using DiscImageStudio.Controls;
+using DiscImageStudio.Core.Calibration;
 
 internal static class CalibrationPhotoCanvasTests
 {
@@ -17,6 +18,10 @@ internal static class CalibrationPhotoCanvasTests
             {
                 TestPhotoBoundaryEditing();
                 TestRectifiedCurveEditing();
+                TestBoundaryPolylineEditing();
+                TestManualRingEditing();
+                TestThreePointRingEditing();
+                TestRadialArcLengthEditing();
                 TestPreviewAndOpenPrediction();
             }
             catch (Exception exception) { error = exception; }
@@ -25,7 +30,7 @@ internal static class CalibrationPhotoCanvasTests
         thread.Start();
         thread.Join();
         if (error is not null) ExceptionDispatchInfo.Capture(error).Throw();
-        Console.WriteLine("calibration-photo-canvas: passed (photo pixels, corrected mm, boundary drag, single-curve editing, read-only previews)");
+        Console.WriteLine("calibration-photo-canvas: passed (photo pixels, corrected mm, boundary drag, ring and curve editing, read-only previews)");
     }
 
     private static void TestPhotoBoundaryEditing()
@@ -153,6 +158,172 @@ internal static class CalibrationPhotoCanvasTests
         Require(!canvas.AddTraceAt(canvas.WorldToView(new Point(25, 3))), "a missing photo never accepts guessed curve observations");
     }
 
+    private static void TestBoundaryPolylineEditing()
+    {
+        var canvas = CreateCanvas();
+        canvas.IsPhotoStep = false;
+        canvas.Image = Bitmap(840, 840);
+        canvas.IsBoundarySegmentMode = true;
+        var points = new List<CalibrationTracePoint>();
+        var edits = new List<CalibrationTraceEdit>();
+        int nextId = 0;
+        void Publish() => canvas.TracePoints = points.ToArray();
+        canvas.TraceEditedCommand = new EditCommand<CalibrationTraceEdit>(edit =>
+        {
+            edits.Add(edit);
+            int index = points.FindIndex(p => p.Arm == edit.Arm && p.Index == edit.Index);
+            if (edit.Remove) points.RemoveAt(index);
+            else if (index >= 0) points[index] = new(edit.Arm, edit.Index, edit.XMm, edit.YMm);
+            else
+            {
+                int before = edit.InsertBeforeIndex is int id ? points.FindIndex(p => p.Arm == edit.Arm && p.Index == id) : points.Count;
+                points.Insert(before, new(edit.Arm, nextId++, edit.XMm, edit.YMm));
+            }
+            Publish();
+        });
+        Publish();
+        void Add(double x, double y) => Require(canvas.AddTraceAt(canvas.WorldToView(new(x, y))), "boundary addition is accepted");
+        void Click(CalibrationTracePoint point)
+        {
+            Require(canvas.BeginDragAt(canvas.WorldToView(Position(point))), "an endpoint can be selected");
+            canvas.CompleteDrag();
+        }
+
+        Add(30, 0); Add(28, -4); Add(26, -8);
+        Require(points.Select(p => p.Index).SequenceEqual(new[] { 0, 1, 2 }),
+            "sequential tracing preserves clicked neighbours even while radius decreases");
+        Add(32, -4); Add(34, -8);
+        Require(points.Select(p => p.Index).SequenceEqual(new[] { 4, 3, 0, 1, 2 }),
+            "starting at a tip supports extending both sides without crossing the completed side");
+        Add(33, -6);
+        Require(points.Select(p => p.Index).SequenceEqual(new[] { 4, 5, 3, 0, 1, 2 })
+            && edits[^1].InsertBeforeIndex == 3,
+            "a click on an existing line inserts between its actual neighbours, not by radius or creation ID");
+        canvas.ZoomBy(2); canvas.PanBy(new(13, -19));
+        Add(29, -2);
+        Require(points.Select(p => p.Index).SequenceEqual(new[] { 4, 5, 3, 0, 6, 1, 2 }),
+            "line insertion works at another zoom and pan without reordering prior points");
+
+        // A tight U has two nearby endpoints. Explicitly selecting one must win over
+        // distance and line-insertion heuristics, and subsequent clicks keep that end.
+        canvas.ResetView();
+        points = [new(0, 0, 30, 0), new(0, 1, 26, -6), new(0, 2, 33, -6), new(0, 3, 31, 0)];
+        nextId = 4; Publish();
+        Click(points[0]);
+        Add(32, 2); Add(33, 4);
+        Require(points.Select(p => p.Index).SequenceEqual(new[] { 5, 4, 0, 1, 2, 3 }),
+            "an explicitly selected U endpoint stays active even when the opposite endpoint is closer");
+        canvas.ClearTraceContinuation();
+        Add(35, -1);
+        Require(points[^1].Index == 6 && edits[^1].InsertBeforeIndex is null,
+            "releasing the fixed endpoint restores extension from the nearer opposite end");
+
+        int[] order = points.Select(p => p.Index).ToArray();
+        var moved = points.Single(p => p.Index == 1);
+        Require(canvas.BeginDragAt(canvas.WorldToView(Position(moved))), "a middle boundary point can be dragged");
+        canvas.DragTo(canvas.WorldToView(new(37, -1))); canvas.CompleteDrag();
+        Require(points.Select(p => p.Index).SequenceEqual(order),
+            "moving across other radii never changes the point's two neighbours");
+        Near(new(37, -1), Position(points.Single(p => p.Index == 1)),
+            "moving across other radii commits the transformed coordinates within floating-point precision");
+        canvas.RemoveSelectedTracePoint();
+        Require(points.Select(p => p.Index).SequenceEqual(order.Where(i => i != 1)),
+            "deleting after drag removes the same stable point and leaves the remaining polyline intact");
+
+        Click(points[0]);
+        canvas.SelectedTraceArm = 1; canvas.SelectedTraceArm = 0;
+        Add(39, -2);
+        Require(points[^1].Index == 7, "changing segment clears a previously fixed extension endpoint");
+        Click(points[0]); canvas.RemoveSelectedTracePoint();
+        Add(43, -3);
+        Require(points[^1].Index == 8, "deleting the fixed endpoint removes its continuation anchor");
+
+        // Compare with the unchanged drawing: the selected point's label may share
+        // pixels with a preview probe, but must not count as a leftover preview.
+        canvas.UpdateLayout();
+        var baseline = new RenderTargetBitmap(900, 700, 96, 96, PixelFormats.Pbgra32); baseline.Render(canvas);
+        static byte[] Pixels(BitmapSource bitmap)
+        {
+            var bytes = new byte[bitmap.PixelWidth * bitmap.PixelHeight * 4];
+            bitmap.CopyPixels(bytes, bitmap.PixelWidth * 4, 0);
+            return bytes;
+        }
+        canvas.PreviewTraceAt(canvas.WorldToView(new(53, -5)));
+        canvas.UpdateLayout();
+        var preview = new RenderTargetBitmap(900, 700, 96, 96, PixelFormats.Pbgra32); preview.Render(canvas);
+        Require(!Pixels(preview).SequenceEqual(Pixels(baseline))
+            && HasColorNear(preview, canvas.WorldToView(new(48, -4)), cyan: true),
+            "hover previews the same extension that will be used by the next click");
+        canvas.PreviewTraceAt(null); canvas.UpdateLayout();
+        var cleared = new RenderTargetBitmap(900, 700, 96, 96, PixelFormats.Pbgra32); cleared.Render(canvas);
+        Require(Pixels(cleared).SequenceEqual(Pixels(baseline)),
+            "leaving the canvas removes the uncommitted preview without changing observations");
+
+        // Use the actual v16 source U, whose other side is closer than the next
+        // point along its current side. Distance alone used to bridge these sides.
+        canvas.ResetView(); canvas.ZoomBy(4); canvas.ClearTraceContinuation();
+        points = []; nextId = 0; Publish();
+        var target = CalibrationTarget.Create(new(CalibrationDiscKind.Dvd, 24, 58, 2297888, 133.3),
+            artwork: CalibrationArtwork.WavyBoundary);
+        var map = CalibrationCrossPrediction.CreateMapping(target, target.Parameters, .37);
+        double tipRadius = 24 + 34d / 12;
+        CalibrationPoint TipPoint(double offset) => map(tipRadius + offset);
+        var tipPoint = TipPoint(0);
+        canvas.PanBy(new Point(450, 180) - canvas.WorldToView(new(tipPoint.X, tipPoint.Y)));
+        foreach (double offset in new[] { 0d, -.6, -1.2, .6, 1.2, 1.8 })
+        {
+            var point = TipPoint(offset); Add(point.X, point.Y);
+        }
+        Require(points.Select(p => p.Index).SequenceEqual(new[] { 5, 4, 3, 0, 1, 2 }),
+            "the actual v16 tip extends along both branches instead of bridging the closer opposite side");
+    }
+
+    private static void TestManualRingEditing()
+    {
+        var edits = new List<CalibrationRingEdit>();
+        var canvas = CreateCanvas();
+        canvas.Image = Bitmap(840, 840);
+        canvas.IsPhotoStep = false;
+        canvas.IsCoarseMode = true;
+        canvas.PhysicalRadiusMm = 40;
+        canvas.RingArcs = [new(0, 30, false), new(1, 35, false)];
+        canvas.RingEditedCommand = new EditCommand<CalibrationRingEdit>(edits.Add);
+        canvas.TraceEditedCommand = new EditCommand<CalibrationTraceEdit>(_ => throw new InvalidOperationException("Unexpected cross edit"));
+        canvas.ZoomBy(1.2);
+        canvas.PanBy(new Vector(19, -4));
+        canvas.RingAngleDegrees = 90;
+        Point At(double x, double y) => canvas.WorldToView(new Point(x, y));
+        Require(edits.Count == 0 && !canvas.BeginDragAt(At(30, 0)) && !canvas.AddTraceAt(At(0, -30)),
+            "guide placement and rotation never measure a ring or add a cross point");
+
+        Require(canvas.BeginDragAt(At(0, -30.2)), "the opposite arc can be grabbed slightly off its stroke");
+        canvas.DragTo(At(0, -31));
+        Require(edits.Count == 0, "drag previews do not commit measurements until release");
+        canvas.CompleteDrag();
+        Require(edits.Count == 1 && edits[0] is { RingIndex: 0, RadiusMm: double radius } && Math.Abs(radius - 30.8) < 1e-8,
+            "a radial drag uses millimetres and preserves its grab offset under zoom and pan");
+        canvas.RingArcs = [new(0, 30.8, true), new(1, 35, false)];
+        canvas.RemoveSelectedRing();
+        Require(edits[^1] == new CalibrationRingEdit(0, null), "clearing a measured guide addresses its stable ring index");
+
+        Require(canvas.BeginDragAt(At(0, 35)), "a nominal guide can be confirmed without moving it");
+        canvas.CompleteDrag();
+        Require(edits[^1] == new CalibrationRingEdit(1, 35), "an explicit click records the nominal radius");
+        canvas.RingArcs = [new(0, 30, false), new(1, 35, true)];
+        canvas.BeginDragAt(At(0, 35));
+        canvas.DragTo(At(0, 49));
+        canvas.CompleteDrag();
+        Require(edits[^1] == new CalibrationRingEdit(1, 40), "drag cannot exceed the physical mini disc radius");
+
+        int count = edits.Count;
+        canvas.BeginDragAt(At(0, 30)); canvas.DragTo(At(0, 33)); canvas.CompleteDrag(false);
+        canvas.BeginDragAt(At(0, 30)); canvas.DragTo(At(0, 33)); canvas.IsTargetPreview = true;
+        Require(edits.Count == count && !canvas.BeginDragAt(At(0, 30)), "Escape and target preview discard pending ring edits");
+        canvas.IsTargetPreview = false;
+        canvas.BeginDragAt(At(0, 30)); canvas.DragTo(At(0, 33)); canvas.IsCoarseMode = false;
+        Require(edits.Count == count && !canvas.BeginDragAt(At(0, 30)), "returning to cross tracing cancels a ring drag and hides its hit target");
+    }
+
     private static void TestPreviewAndOpenPrediction()
     {
         var canvas = CreateCanvas();
@@ -181,6 +352,97 @@ internal static class CalibrationPhotoCanvasTests
         canvas.UpdateLayout();
         new RenderTargetBitmap(900, 700, 96, 96, PixelFormats.Pbgra32).Render(canvas);
         Require(!canvas.BeginDragAt(new Point(450, 350)), "the no-photo concentric-cross placeholder is a read-only preview");
+    }
+
+    private static void TestThreePointRingEditing()
+    {
+        var canvas = CreateCanvas();
+        canvas.Image = Bitmap(840, 840);
+        canvas.IsPhotoStep = false;
+        canvas.IsCoarseMode = true;
+        canvas.PhysicalRadiusMm = 40;
+        canvas.RingArcs = [new CalibrationRingArc(0, 30, false)];
+        var samples = new List<CalibrationPoint>();
+        canvas.RingPointCommand = new EditCommand<CalibrationPoint>(samples.Add);
+        canvas.RingEditedCommand = new EditCommand<CalibrationRingEdit>(_ => throw new Exception("A three-point click entered drag mode"));
+        var a = new CalibrationPoint(-30 * Math.Cos(.2), 30 * Math.Sin(.2));
+        var b = new CalibrationPoint(-30, 0);
+        var c = new CalibrationPoint(a.X, -a.Y);
+        Point At(CalibrationPoint p) => canvas.WorldToView(new Point(p.X, p.Y));
+        Require(!canvas.AddRingPointAt(At(b)), "drag mode does not stamp points");
+        canvas.ThreePointMode = true;
+        Require(!canvas.AddRingPointAt(At(b)), "ring sampling requires a selected ring");
+        canvas.SelectedRingIndex = 0;
+        Require(!canvas.AddRingPointAt(At(new(41, 0))) && !canvas.AddRingPointAt(At(new(7, 0))),
+            "clicks outside a mini disc or within the centre hole never become samples");
+        Require(!canvas.BeginDragAt(At(b)) && !canvas.AddTraceAt(At(b)), "an inner-edge click is independent of guides and crosses");
+        canvas.ZoomBy(1.2); canvas.PanBy(new Vector(18, 2));
+        foreach (var sample in new[] { a, b, c })
+        {
+            Require(canvas.AddRingPointAt(At(sample)), "same-side marks in the corrected image are accepted");
+            Near(new Point(sample.X, sample.Y), new Point(samples[^1].X, samples[^1].Y), "points preserve rectified millimetres");
+        }
+        canvas.RingPointMarkers = samples;
+        canvas.RingArcs = [new CalibrationRingArc(0, 30, true, samples)];
+        canvas.UpdateLayout();
+        var bitmap = new RenderTargetBitmap(900, 700, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(canvas);
+        var insideArc = At(new(-30 * Math.Cos(.1), 30 * Math.Sin(.1)));
+        Require(HasColorNear(bitmap, insideArc, cyan: true) && !HasColorNear(bitmap, At(new(30, 0)), cyan: true),
+            "measured inner edge is drawn across the marked arc rather than the opposite side of the disc");
+        canvas.IsTargetPreview = true;
+        Require(!canvas.AddRingPointAt(At(b)), "source preview cannot receive inner-edge points");
+        canvas.IsTargetPreview = false; canvas.IsPhotoStep = true; canvas.IsRectificationPreview = true;
+        Require(!canvas.AddRingPointAt(At(b)), "unconfirmed rectification cannot receive inner-edge points");
+    }
+
+    private static void TestRadialArcLengthEditing()
+    {
+        var canvas = CreateCanvas();
+        canvas.Image = Bitmap(840, 840);
+        canvas.IsPhotoStep = false;
+        canvas.IsCoarseMode = true;
+        canvas.HasRadialArcTarget = true;
+        var points = new List<CalibrationPoint>();
+        canvas.ArcLengthPointCommand = new EditCommand<CalibrationPoint>(points.Add);
+        canvas.RingArcs = [new(0, 30, false)];
+        canvas.RingEditedCommand = new EditCommand<CalibrationRingEdit>(_ => throw new Exception("Unexpected ring edit"));
+        canvas.TraceEditedCommand = new EditCommand<CalibrationTraceEdit>(_ => throw new Exception("Unexpected cross edit"));
+
+        CalibrationPoint AtAngle(double degrees)
+        {
+            double angle = degrees * Math.PI / 180;
+            return new(30 * Math.Cos(angle), 30 * Math.Sin(angle));
+        }
+        Point OnCanvas(CalibrationPoint p) => canvas.WorldToView(new Point(p.X, p.Y));
+        Require(!canvas.AddTraceAt(OnCanvas(AtAngle(0))) && !canvas.BeginDragAt(OnCanvas(AtAngle(0))),
+            "arc target does not accept a cross or draggable full-ring guide");
+        canvas.ZoomBy(1.5);
+        canvas.PanBy(new Vector(20, -9));
+        foreach (var point in new[] { AtAngle(350), AtAngle(70), AtAngle(220) })
+        {
+            Require(canvas.AddArcLengthPointAt(OnCanvas(point)), "each endpoint and intermediate arc click is accepted");
+            Near(new Point(point.X, point.Y), new Point(points[^1].X, points[^1].Y), "arc points use rectified millimetres");
+        }
+        Require(!canvas.AddArcLengthPointAt(canvas.WorldToView(new Point(61, 0)))
+            && !canvas.AddArcLengthPointAt(canvas.WorldToView(new Point(7, 0))),
+            "arc points outside the disc or inside the hole are rejected");
+        canvas.ArcLengthPoints = points;
+        canvas.UpdateLayout();
+        var bitmap = new RenderTargetBitmap(900, 700, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(canvas);
+        Require(HasColorNear(bitmap, OnCanvas(AtAngle(120)), cyan: true)
+            && !HasColorNear(bitmap, OnCanvas(AtAngle(290)), cyan: true),
+            "the intermediate point selects the major arc across zero rather than the shorter opposite arc");
+        canvas.IsTargetPreview = true;
+        Require(!canvas.AddArcLengthPointAt(OnCanvas(AtAngle(0))), "the target preview cannot receive arc marks");
+        canvas.IsTargetPreview = false;
+        canvas.IsCoarseMode = false;
+        Require(!canvas.AddArcLengthPointAt(OnCanvas(AtAngle(0))) && !canvas.AddTraceAt(OnCanvas(AtAngle(0))),
+            "a coarse-only arc target does not receive marks in fine mode");
+        canvas.IsCoarseMode = true;
+        canvas.IsPhotoStep = true;
+        Require(!canvas.AddArcLengthPointAt(OnCanvas(AtAngle(0))), "photo rectification cannot receive arc marks");
     }
 
     private static CalibrationPhotoCanvas CreateCanvas()

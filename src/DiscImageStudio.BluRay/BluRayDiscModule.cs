@@ -20,6 +20,9 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
         new("r0", "Inner radius", DiscOptionValueType.Decimal, DefaultValue: "24", Unit: "mm"),
         new("r1", "Outer radius", DiscOptionValueType.Decimal, DefaultValue: "58", Unit: "mm"),
         new("start-angle", "Start angle", DiscOptionValueType.Decimal, DefaultValue: "0", Unit: "degrees"),
+        new("pitch-linear", "Linear radial pitch coefficient", DiscOptionValueType.Decimal, DefaultValue: "0"),
+        new("pitch-quadratic", "Quadratic radial pitch coefficient", DiscOptionValueType.Decimal, DefaultValue: "0"),
+        new("pitch-cubic", "Cubic radial pitch coefficient", DiscOptionValueType.Decimal, DefaultValue: "0"),
     ];
 
     public DiscModuleDescriptor Descriptor { get; } = new(
@@ -108,7 +111,10 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
             ? UInt(totalSectors, "total-sectors") : preset.TotalSectors, preset.LayerCount,
             options.TryGetValue("r0", out string? inner) ? Number(inner, "r0") : defaults.InnerRadiusMm,
             options.TryGetValue("r1", out string? outer) ? Number(outer, "r1") : defaults.OuterRadiusMm,
-            options.TryGetValue("start-angle", out string? angle) ? Number(angle, "start-angle") : defaults.StartAngleDegrees);
+            options.TryGetValue("start-angle", out string? angle) ? Number(angle, "start-angle") : defaults.StartAngleDegrees,
+            options.TryGetValue("pitch-linear", out string? linear) ? Number(linear, "pitch-linear") : defaults.PitchLinear,
+            options.TryGetValue("pitch-quadratic", out string? quadratic) ? Number(quadratic, "pitch-quadratic") : defaults.PitchQuadratic,
+            options.TryGetValue("pitch-cubic", out string? cubic) ? Number(cubic, "pitch-cubic") : defaults.PitchCubic);
         disc.Validate();
         if (command.Name == "bd-info")
         {

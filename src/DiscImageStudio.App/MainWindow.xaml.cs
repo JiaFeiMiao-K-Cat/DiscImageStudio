@@ -24,7 +24,7 @@ public partial class MainWindow : Window
     private readonly WindowWorkArea _workArea;
     private readonly UserControl[] _pages;
     private readonly (SideNavItem Item, Workspace Workspace)[] _navItems;
-    private readonly PageHeader?[] _pageHeaders = new PageHeader?[6];
+    private readonly PageHeader?[] _pageHeaders = new PageHeader?[Enum.GetValues<Workspace>().Length];
     private readonly AppSettingsStore _settingsStore;
     private AppSettings _settings;
     private bool _isSidebarCollapsed;
@@ -53,7 +53,7 @@ public partial class MainWindow : Window
         _shell.SaveConfirmationHandler = (title, message, confirmLabel, neutralLabel)
             => BurnConfirmModal.ShowThreeWayAsync(title, message, confirmLabel, neutralLabel);
         _shell.ShowProjectDialogHandler = ShowProjectDialog;
-        _shell.CalibrationParametersApplied += PlayProjectUpdateCelebration;
+        _shell.Calibration.ShowPresetSaveDialog = () => PresetSaveWindow.Show(this);
         _shell.ProjectSaved += PlayProjectSaveTrail;
         DataContext = _shell;
 
@@ -67,6 +67,7 @@ public partial class MainWindow : Window
             new ExportView(_shell.Export),
             new BurnView(_shell.Burn),
             new CalibrationView(_shell.Calibration),
+            new BurnView(_shell.CalibrationBurn),
         ];
         _navItems =
         [
@@ -143,22 +144,14 @@ public partial class MainWindow : Window
             _shell.OpenProjectForSnapshot(Path.GetFullPath(projectPath));
         }
 
+        if (workspace == Workspace.Burn && string.Equals(burnSource, "calibration", StringComparison.OrdinalIgnoreCase))
+            workspace = Workspace.CalibrationBurn;
         _shell.SelectWorkspace(workspace);
-        if (workspace == Workspace.Burn)
+        if (workspace is Workspace.Burn or Workspace.CalibrationBurn)
         {
-            bool calibrationSource = string.Equals(burnSource, "calibration", StringComparison.OrdinalIgnoreCase);
-            if (calibrationSource)
-            {
-                // The target has to exist before the burn summary can describe it.
+            if (workspace == Workspace.CalibrationBurn)
                 _shell.Calibration.EnsureTarget();
-                _shell.Burn.UseCalibrationPattern = true;
-            }
-
-            _shell.Burn.UpdateSourceSummary();
-        }
-        if (workspace == Workspace.Calibration)
-        {
-            _shell.Calibration.EnsureTarget();
+            (workspace == Workspace.CalibrationBurn ? _shell.CalibrationBurn : _shell.Burn).UpdateSourceSummary();
         }
         if (!string.IsNullOrWhiteSpace(previewPath))
         {
@@ -288,6 +281,7 @@ public partial class MainWindow : Window
         if (mode is not ("pattern" or "closeup" or "target"))
             throw new ArgumentException("Calibration snapshot view must be pattern, closeup or target.");
         _shell.SelectWorkspace(Workspace.Calibration);
+        _shell.Calibration.EnsureTarget();
         if (mode == "target")
         {
             // Step one auto-collapses once a target exists; snapshots need it open again to
@@ -456,13 +450,21 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (e.Key == Key.S && Keyboard.Modifiers is ModifierKeys.Control or (ModifierKeys.Control | ModifierKeys.Shift)
-            && _shell.IsProjectOpen)
+        if (e.Key == Key.S && Keyboard.Modifiers is ModifierKeys.Control or (ModifierKeys.Control | ModifierKeys.Shift))
         {
-            e.Handled = true;
-            _ = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)
-                ? _shell.SaveProjectAsCommand.ExecuteAsync(null)
-                : _shell.SaveProjectCommand.ExecuteAsync(null);
+            if (_shell.CurrentWorkspace is Workspace.Calibration or Workspace.CalibrationBurn)
+            {
+                e.Handled = true;
+                if (_shell.Calibration.SaveSessionCommand.CanExecute(null))
+                    _shell.Calibration.SaveSessionCommand.Execute(null);
+            }
+            else if (_shell.IsProjectOpen)
+            {
+                e.Handled = true;
+                _ = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)
+                    ? _shell.SaveProjectAsCommand.ExecuteAsync(null)
+                    : _shell.SaveProjectCommand.ExecuteAsync(null);
+            }
         }
     }
 
@@ -784,12 +786,18 @@ public partial class MainWindow : Window
                 viewModel.InnerRadiusText = _shell.State.BdInnerRadius;
                 viewModel.OuterRadiusText = _shell.State.BdOuterRadius;
                 viewModel.SectorsText = _shell.State.BdTotalSectors;
+                viewModel.PitchLinearText = _shell.State.BdPitchLinear;
+                viewModel.PitchQuadraticText = _shell.State.BdPitchQuadratic;
+                viewModel.PitchCubicText = _shell.State.BdPitchCubic;
             }
             else
             {
                 viewModel.InnerRadiusText = _shell.State.CdInnerRadius;
                 viewModel.OuterRadiusText = _shell.State.CdOuterRadius;
                 viewModel.SectorsText = _shell.State.CdSectors;
+                viewModel.PitchLinearText = _shell.State.CdPitchLinear;
+                viewModel.PitchQuadraticText = _shell.State.CdPitchQuadratic;
+                viewModel.PitchCubicText = _shell.State.CdPitchCubic;
             }
         }
 
@@ -802,9 +810,10 @@ public partial class MainWindow : Window
 
     private void UpdateNavActive(Workspace workspace)
     {
+        Workspace active = workspace == Workspace.CalibrationBurn ? Workspace.Calibration : workspace;
         foreach ((SideNavItem item, Workspace itemWorkspace) in _navItems)
         {
-            item.IsActive = itemWorkspace == workspace;
+            item.IsActive = itemWorkspace == active;
         }
     }
 

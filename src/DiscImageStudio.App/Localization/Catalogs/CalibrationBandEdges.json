@@ -1,0 +1,218 @@
+{
+  "BandEdges.Target": {
+    "zh-CN": "在矫正照片上从内向外量六个宽带交界，估算初始半径。",
+    "zh-TW": "在校正照片上由內向外量六個寬帶交界，估算初始半徑。",
+    "en": "Mark the six band boundaries from inner to outer on the rectified photo to estimate initial radii.",
+    "ja": "補正済み写真で帯の境界を内側から6か所測り、初期半径を推定します。",
+    "tr": "Başlangıç yarıçaplarını tahmin etmek için düzeltilmiş fotoğrafta altı bant sınırını içten dışa işaretleyin.",
+    "es": "Marca los seis límites de las bandas, de dentro hacia fuera, en la foto rectificada para estimar los radios iniciales.",
+    "cs": "Pro odhad počátečních poloměrů označte na rektifikované fotografii šest hranic pásů od vnitřního okraje k vnějšímu."
+  },
+  "BandEdges.InnerLabel": {
+    "zh-CN": "{0} 号内缘",
+    "zh-TW": "{0} 號內緣",
+    "en": "Band {0} inner",
+    "ja": "{0}番・内縁",
+    "tr": "{0}. bant iç kenarı",
+    "es": "Banda {0}, interior",
+    "cs": "Pás {0}, vnitřní okraj"
+  },
+  "BandEdges.OuterLabel": {
+    "zh-CN": "{0} 号外缘",
+    "zh-TW": "{0} 號外緣",
+    "en": "Band {0} outer",
+    "ja": "{0}番・外縁",
+    "tr": "{0}. bant dış kenarı",
+    "es": "Banda {0}, exterior",
+    "cs": "Pás {0}, vnější okraj"
+  },
+  "BandEdges.InnerBadge": {
+    "zh-CN": "{0}内",
+    "zh-TW": "{0}內",
+    "en": "{0}i",
+    "ja": "{0}内",
+    "tr": "{0} iç",
+    "es": "{0} int.",
+    "cs": "{0} vnitř."
+  },
+  "BandEdges.OuterBadge": {
+    "zh-CN": "{0}外",
+    "zh-TW": "{0}外",
+    "en": "{0}o",
+    "ja": "{0}外",
+    "tr": "{0} dış",
+    "es": "{0} ext.",
+    "cs": "{0} vněj."
+  },
+  "BandEdges.SelectEdge": {
+    "zh-CN": "当前交界",
+    "zh-TW": "目前交界",
+    "en": "Boundary",
+    "ja": "測定する境界",
+    "tr": "Sınır",
+    "es": "Límite",
+    "cs": "Hranice"
+  },
+  "BandEdges.Ray": {
+    "zh-CN": "沿一条半径依次点六个交界",
+    "zh-TW": "沿一條半徑依序點六個交界",
+    "en": "Six clicks along one radius",
+    "ja": "同じ半径方向で6本の境界をクリック",
+    "tr": "Tek yarıçap boyunca altı tıklama",
+    "es": "Seis clics a lo largo de un radio",
+    "cs": "Šest kliknutí podél jednoho poloměru"
+  },
+  "BandEdges.Drag": {
+    "zh-CN": "拖动圆弧对齐交界",
+    "zh-TW": "拖曳圓弧對準交界",
+    "en": "Drag an arc to each boundary",
+    "ja": "円弧をドラッグして境界に合わせる",
+    "tr": "Her sınıra bir yay sürükle",
+    "es": "Arrastrar un arco a cada límite",
+    "cs": "Přetáhnout oblouk na každou hranici"
+  },
+  "BandEdges.Instructions": {
+    "zh-CN": "三条深带从内到外编号 1、2、3。每条的内缘朝盘心，外缘朝盘缘。选择清楚的一侧量取，深浅带相接的边只量一次。",
+    "zh-TW": "三條深帶由內到外編號 1、2、3。每條的內緣朝盤心，外緣朝盤緣。在清晰的一側量測，深淺帶相接的邊只量一次。",
+    "en": "Count the dark bands 1, 2 and 3 from the centre. The inner edge faces the hub and the outer edge faces the rim. Measure each shared boundary once on a clear side.",
+    "ja": "濃い帯は中心側から1、2、3番です。内縁は中心側、外縁は外周側です。鮮明な側で濃淡の境界を各1回測定します。",
+    "tr": "Koyu bantları merkezden dışa 1, 2 ve 3 olarak sayın. İç kenar merkeze, dış kenar çevreye bakar. Net görünen bir tarafta her ortak sınırı bir kez ölçün.",
+    "es": "Numera las bandas oscuras 1, 2 y 3 desde el centro. El borde interior mira al centro y el exterior a la periferia. Mide cada límite compartido una vez en una zona clara.",
+    "cs": "Tmavé pásy číslujte od středu jako 1, 2 a 3. Vnitřní okraj směřuje ke středu, vnější k obvodu. Každou společnou hranici změřte jednou na zřetelné straně."
+  },
+  "BandEdges.RayHint": {
+    "zh-CN": "从内向外，沿同一方向逐个点击深带的内缘和外缘。首个点确定参考线，之后会自动选中下一个未测交界。",
+    "zh-TW": "由內向外，沿同一方向逐一點選深帶的內緣與外緣。第一點確定參考線，之後會自動選取下個未量交界。",
+    "en": "Click the inner and outer edges along one radial line, working outwards. The first click sets the guide; selection advances to the next unmeasured edge.",
+    "ja": "中心側から同じ半径方向に内縁、外縁の順でクリックします。最初の点でガイド線が決まり、次の未測定境界に自動で進みます。",
+    "tr": "Aynı radyal çizgi üzerinde içten dışa ilerleyerek iç ve dış kenarlara tıklayın. İlk tıklama kılavuzu belirler; seçim sıradaki ölçülmemiş kenara geçer.",
+    "es": "Haz clic en los bordes interiores y exteriores a lo largo de la misma línea radial, de dentro hacia fuera. El primer clic fija la guía; la selección avanza al siguiente borde sin medir.",
+    "cs": "Postupujte od středu po jedné radiální přímce a klikejte na vnitřní a vnější okraje. První bod určí vodítko; výběr přejde na další nezměřený okraj."
+  },
+  "BandEdges.PointHint": {
+    "zh-CN": "先选一个交界，在同一段清楚的弧上分开点三下。",
+    "zh-TW": "先選一個交界，在同一段清晰的弧上分開點三下。",
+    "en": "Select a boundary and click three spaced points along its visible arc.",
+    "ja": "境界を選び、見える円弧に間隔をあけて3点を指定します。",
+    "tr": "Bir sınır seçin ve görünen yayı boyunca aralıklı üç noktaya tıklayın.",
+    "es": "Selecciona un límite y marca tres puntos separados sobre su arco visible.",
+    "cs": "Vyberte hranici a označte na jejím viditelném oblouku tři body s rozestupy."
+  },
+  "BandEdges.DragHint": {
+    "zh-CN": "调整圆弧方向，再拖动标有带号与内外缘的圆弧，贴住对应交界后松手。",
+    "zh-TW": "調整圓弧方向，再拖曳標有帶號與內外緣的圓弧，貼住對應交界後放開。",
+    "en": "Turn the guides toward a clear area. Drag the arc labelled with the band and edge, then release it on the matching boundary.",
+    "ja": "ガイドを鮮明な場所に向け、番号と内外が表示された円弧を対応する境界に合わせて離します。",
+    "tr": "Kılavuzları net bir alana çevirin. Bant ve kenar etiketi olan yayı ilgili sınıra sürükleyip bırakın.",
+    "es": "Gira las guías hacia una zona clara. Arrastra el arco con la etiqueta de banda y borde y suéltalo sobre el límite correspondiente.",
+    "cs": "Natočte vodítka ke zřetelné oblasti. Oblouk označený číslem pásu a okrajem přetáhněte na odpovídající hranici a pusťte."
+  },
+  "BandEdges.RedoEdge": {
+    "zh-CN": "重标当前交界",
+    "zh-TW": "重新標記目前交界",
+    "en": "Remeasure boundary",
+    "ja": "選択中の境界を再測定",
+    "tr": "Sınırı yeniden ölç",
+    "es": "Volver a medir el límite",
+    "cs": "Změřit hranici znovu"
+  },
+  "BandEdges.RestartRay": {
+    "zh-CN": "清除单线点，重选方向",
+    "zh-TW": "清除單線點，重選方向",
+    "en": "Clear radial clicks and change direction",
+    "ja": "半径方向の点を消して方向を選び直す",
+    "tr": "Radyal noktaları temizle ve yönü değiştir",
+    "es": "Borrar puntos radiales y cambiar de dirección",
+    "cs": "Smazat radiální body a změnit směr"
+  },
+  "BandEdges.Selected": {
+    "zh-CN": "已选 {0} · 半径 {1:0.###} mm",
+    "zh-TW": "已選 {0} · 半徑 {1:0.###} mm",
+    "en": "{0} selected · radius {1:0.###} mm",
+    "ja": "{0}を選択 · 半径 {1:0.###} mm",
+    "tr": "{0} seçildi · yarıçap {1:0.###} mm",
+    "es": "{0} seleccionado · radio {1:0.###} mm",
+    "cs": "Vybráno {0} · poloměr {1:0.###} mm"
+  },
+  "BandEdges.Count": {
+    "zh-CN": "已量 {0} / {1} 个交界。1、3 号深带的两侧齐全即可粗估；加入 2 号两侧可核对两段浅带与相邻内缘间距。",
+    "zh-TW": "已量 {0} / {1} 個交界。量齊 1、3 號深帶兩側可粗估；加入 2 號兩側可核對兩段淺帶與相鄰內緣間距。",
+    "en": "{0} of {1} boundaries measured. Both edges of bands 1 and 3 allow an estimate. Add band 2 to check both light gaps and inner-edge spacings.",
+    "ja": "{1}本中{0}本の境界を測定済み。1番と3番の両縁で概算できます。2番の両縁を加えると明るい帯幅と内縁間隔を確認できます。",
+    "tr": "{0} / {1} sınır ölçüldü. 1 ve 3. bantların iki kenarı tahmin için yeterlidir. Açık aralıkları ve iç kenar aralıklarını kontrol etmek için 2. bandı da ölçün.",
+    "es": "{0} de {1} límites medidos. Ambos bordes de las bandas 1 y 3 permiten estimar los radios. Añade la banda 2 para comprobar los huecos claros y las separaciones entre bordes interiores.",
+    "cs": "Změřeno {0} z {1} hranic. Oba okraje pásů 1 a 3 stačí pro odhad. Přidejte pás 2 pro kontrolu světlých mezer a vzdáleností vnitřních okrajů."
+  },
+  "BandEdges.CountLegacy": {
+    "zh-CN": "已量 {0} / {1} 个交界。此图案可用 1、3 号内缘粗估；使用外缘时，请量齐这两条带的两侧。",
+    "zh-TW": "已量 {0} / {1} 個交界。此圖案可用 1、3 號內緣粗估；使用外緣時，請量齊這兩條帶的兩側。",
+    "en": "{0} of {1} boundaries measured. This pattern supports estimates from inner edges 1 and 3. To include outer edges, measure both sides of both bands.",
+    "ja": "{1}本中{0}本を測定済み。この模様は1番と3番の内縁で概算できます。外縁も使う場合は両方の帯の両縁を測ってください。",
+    "tr": "{0} / {1} sınır ölçüldü. Bu desende 1 ve 3. bantların iç kenarları kullanılabilir. Dış kenarları da kullanmak için her iki bandın iki kenarını da ölçün.",
+    "es": "{0} de {1} límites medidos. Este patrón permite usar los bordes interiores de las bandas 1 y 3. Para incluir los exteriores, mide ambos bordes de las dos bandas.",
+    "cs": "Změřeno {0} z {1} hranic. U tohoto vzoru lze použít vnitřní okraje pásů 1 a 3. Chcete-li zahrnout i vnější okraje, změřte oba okraje obou pásů."
+  },
+  "BandEdges.Residual": {
+    "zh-CN": "已量交界的最大拟合偏差 {0:0.00} mm。照片尺度误差会同时影响所有读数。",
+    "zh-TW": "已量交界的最大擬合偏差 {0:0.00} mm。照片比例誤差會同時影響所有讀數。",
+    "en": "Maximum residual across measured boundaries: {0:0.00} mm. Photo scale affects all readings.",
+    "ja": "測定した境界の最大残差は {0:0.00} mm です。写真の縮尺誤差はすべての測定値に影響します。",
+    "tr": "Ölçülen sınırların en büyük sapması: {0:0.00} mm. Fotoğraf ölçeği tüm ölçümleri etkiler.",
+    "es": "Residuo máximo de los límites medidos: {0:0.00} mm. La escala de la foto afecta a todas las medidas.",
+    "cs": "Největší odchylka změřených hranic: {0:0.00} mm. Měřítko fotografie ovlivňuje všechna měření."
+  },
+  "BandEdges.Widths": {
+    "zh-CN": "实测宽度（深／浅／深／浅／深，mm）　{0}",
+    "zh-TW": "實測寬度（深／淺／深／淺／深，mm）　{0}",
+    "en": "Measured widths (dark / light / dark / light / dark, mm)　{0}",
+    "ja": "実測幅（濃／淡／濃／淡／濃、mm）　{0}",
+    "tr": "Ölçülen genişlikler (koyu / açık / koyu / açık / koyu, mm)　{0}",
+    "es": "Anchos medidos (oscuro / claro / oscuro / claro / oscuro, mm)　{0}",
+    "cs": "Naměřené šířky (tmavý / světlý / tmavý / světlý / tmavý, mm) {0}"
+  },
+  "BandEdges.Spacings": {
+    "zh-CN": "内缘间距（1→2／2→3，mm）　{0}",
+    "zh-TW": "內緣間距（1→2／2→3，mm）　{0}",
+    "en": "Measured inner-edge spacings (1→2 / 2→3, mm)　{0}",
+    "ja": "内縁間隔（1→2／2→3、mm）　{0}",
+    "tr": "İç kenarlar arasındaki ölçülen aralıklar (1→2 / 2→3, mm)　{0}",
+    "es": "Separaciones medidas entre bordes interiores (1→2 / 2→3, mm)　{0}",
+    "cs": "Naměřené vzdálenosti vnitřních okrajů (1→2 / 2→3, mm) {0}"
+  },
+  "BandEdges.PredictedSpacings": {
+    "zh-CN": "按 1、3 号外缘预测的内缘间距（mm）　{0}",
+    "zh-TW": "按 1、3 號外緣預測的內緣間距（mm）　{0}",
+    "en": "Inner-edge spacings predicted from outer edges 1 and 3 (mm)　{0}",
+    "ja": "1番・3番の外縁から予測した内縁間隔（mm）　{0}",
+    "tr": "1 ve 3. dış kenarlardan tahmin edilen iç kenar aralıkları (mm)　{0}",
+    "es": "Separaciones entre bordes interiores estimadas a partir de los bordes exteriores 1 y 3 (mm)　{0}",
+    "cs": "Vzdálenosti vnitřních okrajů odhadnuté z vnějších okrajů 1 a 3 (mm) {0}"
+  },
+  "请量取第 1、3 条深带各自的内缘和外缘。": {
+    "zh-CN": "请量取第 1、3 条深带各自的内缘和外缘。",
+    "zh-TW": "請量取第 1、3 條深帶各自的內緣與外緣。",
+    "en": "Measure both edges of dark bands 1 and 3.",
+    "ja": "1番と3番の濃い帯の内縁と外縁を測ってください。",
+    "tr": "1 ve 3. koyu bantların her iki kenarını da ölçün.",
+    "es": "Mide ambos bordes de las bandas oscuras 1 y 3.",
+    "cs": "Změřte oba okraje tmavých pásů 1 a 3."
+  },
+  "交界的径向顺序不符，请核对带号和内外缘。": {
+    "zh-CN": "交界的径向顺序不符，请核对带号和内外缘。",
+    "zh-TW": "交界的徑向順序不符，請核對帶號和內外緣。",
+    "en": "The radial order is inconsistent. Check the band numbers and sides.",
+    "ja": "境界の順序が合いません。帯番号と内縁・外縁を確認してください。",
+    "tr": "Radyal sıralama tutarsız. Bant numaralarını ve kenarları kontrol edin.",
+    "es": "El orden radial no es coherente. Comprueba los números de banda y los bordes.",
+    "cs": "Radiální pořadí nesouhlasí. Zkontrolujte čísla pásů a jejich okraje."
+  },
+  "交界位置与其余边缘推算的位置相差超过 0.40 mm，请核对带号和读边。": {
+    "zh-CN": "交界位置与其余边缘推算的位置相差超过 0.40 mm，请核对带号和读边。",
+    "zh-TW": "交界位置與其他邊緣推算的位置相差超過 0.40 mm，請核對帶號和讀邊。",
+    "en": "A boundary differs by over 0.40 mm from the position predicted by the others. Check band IDs and edge readings.",
+    "ja": "境界の位置が他の縁からの予測と0.40 mmを超えて異なります。帯番号と読み取り位置を確認してください。",
+    "tr": "Bir sınır, diğerlerinden tahmin edilen konumdan 0,40 mm'den fazla sapıyor. Bant numaralarını ve kenar ölçümlerini kontrol edin.",
+    "es": "Un límite difiere más de 0,40 mm de la posición estimada a partir de los demás. Comprueba los números de banda y las medidas de los bordes.",
+    "cs": "Hranice se liší o více než 0,40 mm od polohy odhadnuté z ostatních hranic. Zkontrolujte čísla pásů a měření okrajů."
+  }
+}

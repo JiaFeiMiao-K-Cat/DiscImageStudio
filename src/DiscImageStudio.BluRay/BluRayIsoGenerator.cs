@@ -13,9 +13,10 @@ public sealed class BluRayIsoPlan
         Disc = disc;
         _filesystem = filesystem;
         DrawingStartSector = drawingStartSector;
-        DrawingStartRadiusMm = new BluRayTrackGeometry(disc).AtSector(drawingStartSector).RadiusMm;
+        BluRayTrackGeometry geometry = new(disc);
+        DrawingStartRadiusMm = geometry.AtSector(drawingStartSector).RadiusMm;
         DrawingEndSectorExclusive = filesystem.DrawingEndLbaExclusive;
-        DrawingEndRadiusMm = new BluRayTrackGeometry(disc).AtSector(DrawingEndSectorExclusive).RadiusMm;
+        DrawingEndRadiusMm = geometry.AtSector(DrawingEndSectorExclusive).RadiusMm;
     }
 
     internal BluRayIsoPlan(BluRayDiscParameters disc)
@@ -40,8 +41,9 @@ public sealed class BluRayIsoPlan
         Disc = disc;
         DrawingStartSector = drawingStartSector;
         DrawingEndSectorExclusive = drawingEndSectorExclusive;
-        DrawingStartRadiusMm = new BluRayTrackGeometry(disc).AtSector(drawingStartSector).RadiusMm;
-        DrawingEndRadiusMm = new BluRayTrackGeometry(disc).AtSector(drawingEndSectorExclusive).RadiusMm;
+        BluRayTrackGeometry geometry = new(disc);
+        DrawingStartRadiusMm = geometry.AtSector(drawingStartSector).RadiusMm;
+        DrawingEndRadiusMm = geometry.AtSector(drawingEndSectorExclusive).RadiusMm;
     }
 
     internal UdfImageWriter.LayoutPlan Filesystem => _filesystem
