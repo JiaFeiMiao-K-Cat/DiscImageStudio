@@ -29,6 +29,8 @@ macOS 客户端（`macos/`，SwiftPM 包）与 Windows 桌面版是**同一套�
 ![预览页：设计投影与实测参数](images/macos-preview.png)
 
 ![导出页：输出设置与结果](images/macos-export.png)
+![刻录页：流式模式、速度与校验选项](images/macos-burn.png)
+![刻录中：实时进度与日志](images/macos-burn-active.png)
 
 ![标定页：标靶生成与三步向导](images/macos-calibration.png)
 
@@ -386,6 +388,16 @@ macos/build/cli/osx-arm64/disc-image-studio cd-generate \
 - 介质非空白、没有介质或没有刻录机时，助手直接拒绝（退出码 2 并写 `error:`），界面展示原因而不是静默失败。
 - 支持 CD-DA、DVD 数据与 **BD-R 流式写入**：CD/DVD 走 DiscRecording 的 DRTrack + DRBurn；BD 绕开 DiscRecording，助手用 IOKit `SCSITaskDeviceInterface` 直接发 MMC `WRITE(10)`、`SYNCHRONIZE CACHE`、`CLOSE TRACK/SESSION`，并尝试 `SET CD SPEED`。已在 MATSHITA UJ260AF + 25GB BD-R 上以 4× 完整写入并验证图案。文件模式（drutil）仍只覆盖 CD/DVD；音频 CD 走 CD-R。
 - 验证状态：BD-R 25GB 已在 MATSHITA UJ260AF 上 4× 完整写入；DVD/BD 随盘文件混合 ISO 已挂载并实盘验证；CD 音频完整实盘、其他驱动器/BD-RE/多层仍需补测。CI 仍只覆盖助手构建与 `--list-drives` 自检。
+
+实机验证记录（2026-11，开发机）：
+
+| 路径 | 介质/驱动器 | 结果 |
+| --- | --- | --- |
+| BD 流式 | MATSHITA BD-MLT UJ260AF + 单层 25GB BD-R | 4× 请求，完整写入约 31 分钟（含收尾），图案完整；成功后自动弹盘 |
+| DVD 随盘文件 | DVD-R + 同一驱动器 | 混合 ISO 烧录后挂载、文件读取正常；DRBurn 写后校验曾因介质读错误失败，已改为默认不校验 |
+| BD 随盘文件 | 单层 BD-R | 实盘写入后挂载、文件读取正常 |
+
+CI 仍只能覆盖构建、启动与 `--list-drives`；CD 音频完整实盘、其他驱动器、BD-RE/双层仍需人工补测。
 
 ### 安全要求
 
