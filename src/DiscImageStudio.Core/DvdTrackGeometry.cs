@@ -3,7 +3,7 @@ using System.Runtime.Intrinsics;
 namespace DiscImageStudio.Core;
 
 /// <summary>
-/// DVD spiral whose local radial pitch is a cubic in normalized radius:
+/// Spiral shared by CD, DVD and Blu-ray whose local radial pitch is a cubic in normalized radius:
 /// dr/dθ = b (1 + c1 x + c2 x² + c3 x³), x = (r - ri) / (ro - ri).
 /// The scale b is solved from the full physical track length. Zero coefficients
 /// retain the original Archimedean calculation, including its fast inverse.
@@ -110,6 +110,89 @@ public sealed class DvdTrackGeometry
     public double TotalAngleRadians { get; }
     public bool IsConstantPitch { get; }
 
+    /// <summary>
+    /// Bounds the actual interpolated curve used by fast sampling. The tangent
+    /// error is relative to the unit circular tangent; the acceleration bound
+    /// is with respect to nominal arc length. Unsupported shapes return false.
+    /// No assumption about the quadrature's sampled interpolation tolerance is
+    /// needed: these bounds apply directly to the Hermite polynomials.
+    /// </summary>
+    public bool TryGetFastSamplingBounds(out double positionErrorMm,
+        out double tangentError, out double accelerationBound)
+    {
+        positionErrorMm = tangentError = accelerationBound = 0;
+        if (IsConstantPitch || InnerRadiusMm < 10
+            || RadialGrowthPerRadianMm is < 1e-6 or > 1e-3
+            || Math.Abs(_linear) + Math.Abs(_quadratic) + Math.Abs(_cubic) > .5)
+            return false;
+        const double epsilon = 2.2204460492503131e-16;
+        foreach (Segment segment in _segments)
+        {
+            double width = segment.Width, radius = segment.RadiusStart + width;
+            double s0 = width * segment.ArcDerivativeStart;
+            double s1 = width * segment.ArcDerivativeEnd;
+            double sq = 3 * segment.ArcDelta - 2 * s0 - s1;
+            double sc = s0 + s1 - 2 * segment.ArcDelta;
+            double derivativeBudget = 128 * epsilon * (Math.Abs(s0) + 2 * Math.Abs(sq) + 3 * Math.Abs(sc));
+            double minimum = Math.Min(s0, s0 + 2 * sq + 3 * sc);
+            if (sc != 0)
+            {
+                double vertex = -sq / (3 * sc);
+                if (vertex > 0 && vertex < 1)
+                    minimum = Math.Min(minimum, s0 + vertex * (2 * sq + 3 * sc * vertex));
+            }
+            minimum -= derivativeBudget;
+            double second = Math.Max(Math.Abs(2 * sq), Math.Abs(2 * sq + 6 * sc)) + derivativeBudget;
+            if (!double.IsFinite(minimum) || minimum <= 0 || second / minimum > .5) return false;
+            double a0 = width * segment.AngleDerivativeStart;
+            double a1 = width * segment.AngleDerivativeEnd;
+            double aq = 3 * segment.AngleDelta - 2 * a0 - a1;
+            double ac = a0 + a1 - 2 * segment.AngleDelta;
+            double angularBudget = 128 * epsilon * (Math.Abs(a0) + 2 * Math.Abs(aq) + 3 * Math.Abs(ac));
+            double angularFirst = Math.Abs(a0) + 2 * Math.Abs(aq) + 3 * Math.Abs(ac) + angularBudget;
+            double angularSecond = Math.Max(Math.Abs(2 * aq), Math.Abs(2 * aq + 6 * ac)) + angularBudget;
+            double scaledMinimum = _lengthScale * minimum * (1 - 16 * epsilon);
+            double scaledSecond = _lengthScale * second * (1 + 16 * epsilon);
+            double firstPosition = width + radius * angularFirst;
+            double secondPosition = radius * angularFirst * angularFirst
+                + 2 * width * angularFirst + radius * angularSecond;
+            double acceleration = secondPosition / (scaledMinimum * scaledMinimum)
+                + firstPosition * scaledSecond / (scaledMinimum * scaledMinimum * scaledMinimum);
+            accelerationBound = Math.Max(accelerationBound, acceleration * (1 + 128 * epsilon));
+
+            // r*A' - scale*S' is cubic. Its coefficient sum bounds the
+            // tangential speed's departure from one over the whole segment.
+            double r0 = segment.RadiusStart;
+            double speedDifference = Math.Abs(r0 * a0 - _lengthScale * s0)
+                + Math.Abs(width * a0 + 2 * r0 * aq - 2 * _lengthScale * sq)
+                + Math.Abs(2 * width * aq + 3 * r0 * ac - 3 * _lengthScale * sc)
+                + Math.Abs(3 * width * ac)
+                + 256 * epsilon * (radius * angularFirst
+                    + _lengthScale * (Math.Abs(s0) + 2 * Math.Abs(sq) + 3 * Math.Abs(sc)));
+            tangentError = Math.Max(tangentError, (width + speedDifference) / scaledMinimum);
+
+            // Four clamped Newton steps start within [0,1]. Clamping cannot
+            // increase distance from the root. Include polynomial evaluation,
+            // division and iterate rounding in each step's residual budget.
+            double iterationError = 128 * epsilon
+                * (Math.Abs(s0) + Math.Abs(sq) + Math.Abs(sc) + segment.ArcDelta) / minimum + 32 * epsilon;
+            double tError = 1;
+            for (int iteration = 0; iteration < 4; iteration++)
+                tError = second / (2 * minimum) * tError * tError + iterationError;
+            double error = firstPosition * tError;
+            if (!double.IsFinite(error)) return false;
+            positionErrorMm = Math.Max(positionErrorMm, error);
+        }
+        // Covers channel/sector/arc conversions, segment joins and accumulated
+        // start values, angle/radius evaluation, and sin/cos argument roundoff.
+        // Both the anchor and a later independently sampled point may err.
+        positionErrorMm = 2 * (positionErrorMm
+            + 256 * epsilon * TrackLengthMm * (1 + tangentError)
+            + 256 * epsilon * OuterRadiusMm * (1 + TotalAngleRadians));
+        return double.IsFinite(positionErrorMm) && double.IsFinite(tangentError)
+            && double.IsFinite(accelerationBound) && tangentError < .01 && positionErrorMm < .01;
+    }
+
     public static DvdTrackGeometry Create(double innerRadiusMm, double outerRadiusMm,
         double trackLengthMm, double pitchLinear = 0, double pitchQuadratic = 0, double pitchCubic = 0)
     {
@@ -131,7 +214,7 @@ public sealed class DvdTrackGeometry
         if (!double.IsFinite(linear) || !double.IsFinite(quadratic) || !double.IsFinite(cubic)
             || !PositiveOnInterval(linear, quadratic, cubic, 0, 1))
             throw new ArgumentOutOfRangeException(nameof(linear),
-                "DVD pitch coefficients must be finite and 1 + c1*x + c2*x² + c3*x³ must stay positive for 0 <= x <= 1.");
+                "Pitch coefficients must be finite and 1 + c1*x + c2*x² + c3*x³ must stay positive for 0 <= x <= 1.");
     }
 
     public double RadiusAtArcLength(double arcLengthMm)
@@ -473,7 +556,7 @@ public sealed class DvdTrackGeometry
     private void BuildSegments(double first, double last, double inverseGrowth, List<Segment> segments, int depth)
     {
         if (segments.Count >= 32768)
-            throw new PitchResolutionException("The DVD pitch curve is too close to zero to resolve numerically.");
+            throw new PitchResolutionException("The pitch curve is too close to zero to resolve numerically.");
         double width = last - first;
         double middle = first + width / 2;
         Integral whole = Quadrature(first, last, inverseGrowth);
@@ -502,7 +585,7 @@ public sealed class DvdTrackGeometry
             return;
         }
         if (!accepted || !double.IsFinite(split.Length) || !double.IsFinite(split.Angle) || split.Length <= 0)
-            throw new PitchResolutionException("The DVD pitch curve cannot be resolved numerically.");
+            throw new PitchResolutionException("The pitch curve cannot be resolved numerically.");
         segments.Add(new Segment(first, width, 0, 0, split.Length, split.Angle, s0, s1, a0, a1));
     }
 

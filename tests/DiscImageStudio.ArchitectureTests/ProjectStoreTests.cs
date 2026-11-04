@@ -105,9 +105,15 @@ internal static class ProjectStoreTests
         {
             Geometry = bluRay.Geometry with { Sectors = ProjectDocument.BluRaySectorsPerLayer + 32 },
         });
-        ThrowsInvalidData("bd pitch coefficient", bluRay with
+        ProjectDocument variablePitch = bluRay with
         {
-            Geometry = bluRay.Geometry with { PitchLinear = 0.001 },
+            Geometry = bluRay.Geometry with { PitchLinear = 0.001, PitchQuadratic = -0.0004, PitchCubic = 0.0002 },
+        };
+        ProjectJsonStore.Save(path, variablePitch);
+        Require(ProjectJsonStore.Load(path).Geometry == variablePitch.Geometry, "bd cubic pitch roundtrip");
+        ThrowsInvalidData("bd nonpositive pitch", bluRay with
+        {
+            Geometry = bluRay.Geometry with { PitchLinear = -3 },
         });
         ThrowsInvalidData("bd outer radius over 60 mm", bluRay with
         {

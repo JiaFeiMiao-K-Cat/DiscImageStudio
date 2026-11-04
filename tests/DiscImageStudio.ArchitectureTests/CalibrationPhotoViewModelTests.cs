@@ -18,7 +18,13 @@ internal static class CalibrationPhotoViewModelTests
     {
         string directory = Path.Combine(Path.GetTempPath(), $"disc-photo-vm-{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
-        try { TestWorkflow(directory); TestObservedRadiusDomain(directory); }
+        try
+        {
+            TestWorkflow(directory); TestObservedRadiusDomain(directory); TestRingWorkflow(directory);
+            TestClockWorkflow(directory); TestArcWorkflow(directory); TestWideBands(directory);
+            TestDataDiscWideBands(directory, "DVD", 40);
+            TestDataDiscWideBands(directory, "BD", 60);
+        }
         finally { Directory.Delete(directory, recursive: true); }
         Console.WriteLine("calibration-photo-view-model: passed (perspective photo, complete observed-radius curve, 10-point preservation, fit/apply, portable sessions, invalidation)");
     }
@@ -33,9 +39,12 @@ internal static class CalibrationPhotoViewModelTests
         Require(ReferenceEquals(model.SelectedPhysicalDiscSize, model.PhysicalDiscSizeChoices[0])
             && ReferenceEquals(model.SelectedCoarseSearchRange, model.CoarseSearchRangeChoices[0]),
             "default disc size and search range reference the listed items so both selectors start selected");
+        Require(model.SelectFineModeCommand.CanExecute(null), "fine mode can be chosen before creating any target or photo");
+        model.SelectFineModeCommand.Execute(null);
         model.CreateTargetCommand.Execute(null);
         var target = model.Target ?? throw new InvalidOperationException(model.LastStatusMessage);
-        Require(target.SchemaVersion == CalibrationTarget.CurrentSchemaVersion && model.IsPhotoStep && !model.SolveCommand.CanExecute(null), "new target starts in photo step");
+        Require(target.SchemaVersion == 14 && target.Artwork == CalibrationArtwork.ReferenceCross && target.UsesReferencePattern && model.IsPhotoStep
+            && !model.SolveCommand.CanExecute(null), "new fine target starts in photo step");
         Require(model.CanvasOuterRadiusMm == CalibrationReferencePattern.CanvasRadiusMm && model.PhotoCanvasRadiusMm == 63,
             "disc-preview background remains 120 mm while target scaling and corrected-photo margin are independent");
         Require(model.CurrentParametersSummary.Contains("内半径", StringComparison.Ordinal)
@@ -60,8 +69,8 @@ internal static class CalibrationPhotoViewModelTests
         Require(model.IsRectificationReady && model.PreviewRectification && model.RectifiedPhoto is not null,
             "joint contour calculation produces a read-only corrected preview: " + model.LastStatusMessage);
         model.ConfirmRectificationCommand.Execute(null);
-        Require(model.IsTraceStep && !model.PreviewRectification && !model.SolveCommand.CanExecute(null),
-            "confirmation opens an empty editable single-curve step");
+        Require(model.IsFineStep && !model.PreviewRectification && !model.SolveCommand.CanExecute(null),
+            "target generation and photo confirmation preserve the chosen fine stage");
         var corrected = Field<CalibrationPhotoTransform>(model, "_photoTransform");
         var samples = Enumerable.Range(0, 70).Select(i =>
         {
@@ -89,9 +98,22 @@ internal static class CalibrationPhotoViewModelTests
         Require(!model.ApplyParametersCommand.CanExecute(null), "fitting alone does not approve the contour");
         model.ContourConfirmed = true;
         Require(model.ApplyParametersCommand.CanExecute(null), "completed overlay and contour confirmation enable application");
+        var prediction = model.CrossPredictionContours;
+        model.SelectCoarseModeCommand.Execute(null);
+        Require(!model.IsRingStep && !model.RingEditedCommand.CanExecute(new CalibrationRingEdit(0, null)),
+            "switching stage on a new fine target cannot expose archived coarse ring editing");
+        model.RingEditedCommand.Execute(new(0, target.VisibleRings[0].InnerRadiusMm));
+        model.SelectFineModeCommand.Execute(null);
+        Require(ReferenceEquals(best, model.SelectedCoarseCandidate) && ReferenceEquals(prediction, model.CrossPredictionContours)
+            && model.ContourConfirmed && model.ApplyParametersCommand.CanExecute(null),
+            "visiting and editing independent ring measurements keeps the unseeded fine result and contour confirmation");
+        model.SelectCoarseModeCommand.Execute(null);
+        model.RingEditedCommand.Execute(new(0, null));
+        model.SelectFineModeCommand.Execute(null);
+        model.SelectedDiscType = "BD"; // The editable setup can differ from the photographed target.
         model.ApplyParametersCommand.Execute(null);
-        Require(Math.Abs(double.Parse(state.CdInnerRadius, CultureInfo.InvariantCulture) - actual.InnerRadiusMm) < .0002,
-            "chosen candidate is applied to disc parameters");
+        Require(model.IsCdSetup && Math.Abs(double.Parse(state.CdInnerRadius, CultureInfo.InvariantCulture) - actual.InnerRadiusMm) < .0002,
+            "applying the chosen candidate selects the photographed family for the next preset or target");
         Require(model.Target!.Parameters == target.Parameters, "application preserves the burned target snapshot");
 
         string sessionPath = Path.Combine(directory, "portable.calibration.json");
@@ -147,6 +169,397 @@ internal static class CalibrationPhotoViewModelTests
 
     private static double Radius(CalibrationTracePoint p) => p.XMm * p.XMm + p.YMm * p.YMm;
 
+    private static void TestClockWorkflow(string directory)
+    {
+        var state = new DiscParametersState { CdInnerRadius = "24.5", CdOuterRadius = "56.8", CdSectors = "359848" };
+        var model = CreateModel(state);
+        var target = CalibrationTarget.Create(new(CalibrationDiscKind.Cd, 24.5, 56.8, 359848, 1200),
+            artwork: CalibrationArtwork.ClockRuler);
+        var photo = BlankRectifiedPhoto(60);
+        string path = Path.Combine(directory, "clock.calibration.json");
+        CalibrationSessionJson.Save(path, new(target, [], Photo: photo));
+        Await(model, "LoadSessionFromAsync", path);
+        Require(model.IsClockStep && model.ReadClockCommand.CanExecute(null) && !model.IsRingStep,
+            "a restored clock photo can be read without ring clicks or a preferred region");
+        model.PreferClockAngleCommand.Execute(359.0);
+        model.ReadClockCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Require(!model.ApplyClockCommand.CanExecute(null) && model.ClockReadAngles.Count == 0
+            && model.PreferredClockAngle == 359, "a textureless photograph cannot supply initial radii");
+        model.SaveSessionTo(path);
+        Await(model, "LoadSessionFromAsync", path);
+        Require(model.PreferredClockAngle == 359 && model.IsClockStep, "clock search direction survives opening the saved photo");
+        model.SelectFineModeCommand.Execute(null);
+        Require(!model.IsFineStep && !model.ReadClockCommand.CanExecute(null) && !model.TraceEditedCommand.CanExecute(null),
+            "a clock target cannot masquerade as a photograph with traceable cross arms");
+        model.CreateTargetCommand.Execute(null);
+        Require(model.Target?.HasCrossArms == true && model.PreferredClockAngle is null,
+            "creating the fine disc resets the coarse photo and restores cross artwork");
+        model.SelectCoarseModeCommand.Execute(null);
+        model.CreateTargetCommand.Execute(null);
+        Require(model.Target?.HasAngleSweep == true && !model.HasClockTarget,
+            "creating a coarse target after a legacy clock session always generates v13");
+        Invoke(model, "OnWindowClosed");
+    }
+
+    private static void TestArcWorkflow(string directory)
+    {
+        var state = new DiscParametersState { CdInnerRadius = "24.78", CdOuterRadius = "57.76", CdSectors = "359848" };
+        var model = CreateModel(state);
+        var target = CalibrationTarget.Create(new(CalibrationDiscKind.Cd, 24.78, 57.76, 359848, 1200),
+            artwork: CalibrationArtwork.RadialArcDashes);
+        var photo = CalibrationSessionJson.Load(Path.Combine(directory, "clock.calibration.json")).Photo!;
+        string path = Path.Combine(directory, "arc.calibration.json");
+        CalibrationSessionJson.Save(path, new(target, [], Photo: photo with { PreferredClockAngleDegrees = null }));
+        Await(model, "LoadSessionFromAsync", path);
+        Require(model.IsRadialArcStep && !model.IsRingStep && !model.IsClockStep && !model.IsFineStep,
+            "reopening a rectified arc photograph offers the arc length workflow");
+
+        CalibrationPoint At(CalibrationRadialArc arc, double angle) =>
+            new(arc.RadiusMm * Math.Cos(angle), arc.RadiusMm * Math.Sin(angle));
+        var inner = target.RadialArcDashes[0];
+        model.ArcLengthPointCommand.Execute(At(inner, -inner.HalfAngleRadians));
+        model.ArcLengthPointCommand.Execute(At(inner, 0));
+        model.ArcComplete = true;
+        Require(!model.ArcComplete && !model.SolveArcLengthsCommand.CanExecute(null), "two tentative clicks cannot confirm a mark");
+        model.SaveSessionTo(path);
+        Await(model, "LoadSessionFromAsync", path);
+        Require(model.ArcLengthPoints.Count == 2 && !model.ArcComplete, "partial arc survives a session round trip");
+        model.ArcLengthPointCommand.Execute(At(inner, inner.HalfAngleRadians));
+        model.ArcComplete = true;
+        model.SelectedArcBand = 2;
+        var outer = target.RadialArcDashes[2];
+        foreach (double angle in new[] { -outer.HalfAngleRadians, 0, outer.HalfAngleRadians })
+            model.ArcLengthPointCommand.Execute(At(outer, angle));
+        model.ArcComplete = true;
+        model.SaveSessionTo(path);
+        Await(model, "LoadSessionFromAsync", path);
+        Require(model.SelectedArcBand == 2 && model.ArcComplete && model.SolveArcLengthsCommand.CanExecute(null),
+            "two confirmed, separated arcs and the selected band survive reopening");
+        model.SolveArcLengthsCommand.Execute(null);
+        Require(model.ApplyArcLengthsCommand.CanExecute(null), "nominal arc lengths give a usable coarse fit: " + model.ArcFitSummary);
+        model.ApplyArcLengthsCommand.Execute(null);
+        Require(model.Target?.Parameters == target.Parameters
+            && Math.Abs(double.Parse(state.CdInnerRadius, CultureInfo.InvariantCulture) - target.Parameters.InnerRadiusMm) < .00001,
+            "applying an arc fit updates setup while preserving the burned target");
+        model.UndoArcLengthPointCommand.Execute(null);
+        Require(!model.ArcComplete && !model.ApplyArcLengthsCommand.CanExecute(null) && !model.SolveArcLengthsCommand.CanExecute(null),
+            "editing an arc invalidates its confirmation and the previous fit");
+        model.SelectFineModeCommand.Execute(null);
+        model.CreateTargetCommand.Execute(null);
+        Require(model.Target?.HasCrossArms == true && model.ArcLengthPoints.Count == 0,
+            "the independent fine target uses the cross and clears the previous photograph's marks");
+        Invoke(model, "OnWindowClosed");
+    }
+
+    private static void TestWideBands(string directory)
+    {
+        var state = new DiscParametersState { CdInnerRadius = "24.78", CdOuterRadius = "57.76", CdSectors = "359848", CdInterleave = true };
+        var model = CreateModel(state);
+        model.CreateTargetCommand.Execute(null);
+        var target = model.Target!;
+        Require(target.SchemaVersion == 13 && model.HasWideBandTarget && model.IsBandRayMode && !model.IsDragRingMode
+            && model.IsPhotoStep && model.RingChoices.Select(c => c.Index).SequenceEqual(new[] { 0, 3, 1, 4, 2, 5 }),
+            "a new standard CD offers all six physical boundaries in order and defaults to radial clicks");
+        var photo = CalibrationSessionJson.Load(Path.Combine(directory, "clock.calibration.json")).Photo!
+            with { PreferredClockAngleDegrees = null };
+        string path = Path.Combine(directory, "local-bands.calibration.json");
+        CalibrationSessionJson.Save(path, new(target, [], Photo: photo));
+        Await(model, "LoadSessionFromAsync", path);
+        Require(model.IsRingStep && !model.IsFineStep && !model.CanVerifySectorScale && !model.ReadClockCommand.CanExecute(null),
+            "the broad band photograph exposes the manual ring workflow");
+        var actual = target.Parameters with { InnerRadiusMm = 24.87, OuterRadiusMm = 58.02 };
+        double Radius(int index)
+        {
+            var band = target.VisibleRings[index % 3];
+            double r = band.InnerRadiusMm + (index >= 3 ? band.WidthMm : 0);
+            var edge = target.MapPoint(new(r, 0), actual);
+            return double.Hypot(edge.X, edge.Y);
+        }
+        void ClickRay(int expected)
+        {
+            Require(model.SelectedRingIndex == expected, "the next unmeasured boundary follows spatial order");
+            model.BandRayPointCommand.Execute(new(Radius(expected), 0));
+        }
+        ClickRay(0);
+        model.BandRayPointCommand.Execute(new(0, Radius(3)));
+        Require(!model.RingArcs[3].IsConfirmed && model.SelectedRingIndex == 3, "a click away from the first radial line is rejected");
+        model.SelectedRingIndex = 0;
+        model.BandRayPointCommand.Execute(new(Radius(0) + 1, 0));
+        Require(Math.Abs(model.RingArcs[0].RadiusMm - Radius(0)) < 1e-9, "ordinary clicks do not overwrite an existing edge");
+        model.SelectedRingIndex = 3;
+        model.SaveSessionTo(path);
+        Await(model, "LoadSessionFromAsync", path);
+        Require(model.IsBandRayMode && model.SelectedRingIndex == 3 && model.RingArcs[0].Points?.Count == 1,
+            "the partial one-ray measurement and selection survive reopening");
+        ClickRay(3);
+        model.SelectedRingIndex = 2; // The middle band is obscured; mark the outer band first.
+        ClickRay(2);
+        Require(!model.SolveRingsCommand.CanExecute(null), "v12 needs both edges of the outermost band");
+        ClickRay(5);
+        Require(model.SolveRingsCommand.CanExecute(null) && model.SelectedRingIndex == 1,
+            "finishing the outer band enables a partial fit and returns to the skipped middle band");
+        ClickRay(1); ClickRay(4);
+        Require(model.SolveRingsCommand.CanExecute(null) && model.RingArcs.Count(r => r.IsConfirmed) == 6,
+            "six clicks mark six distinct shared boundaries");
+        model.SolveRingsCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Require(model.ApplyCoarseParametersCommand.CanExecute(null) && !model.UseRingSeedCommand.CanExecute(null),
+            "wide band boundaries supply initial geometry independently from tracing a cross: " + model.CoarseSummary);
+        Require(model.BandIntervalSummary.Contains((Radius(1) - Radius(3)).ToString("0.00"))
+            && model.BandIntervalSummary.Contains((Radius(2) - Radius(1)).ToString("0.00")),
+            "light-gap and inner-edge spacings are visible in the diagnostics");
+        model.ApplyCoarseParametersCommand.Execute(null);
+        Require(Math.Abs(double.Parse(state.CdOuterRadius, CultureInfo.InvariantCulture) - actual.OuterRadiusMm) < .0001
+            && model.Target?.Parameters == target.Parameters, "local measurements update setup while preserving the burned record");
+        model.SelectedRingIndex = 1;
+        model.RemoveSelectedBandEdgeCommand.Execute(null);
+        Require(!model.ApplyCoarseParametersCommand.CanExecute(null) && model.SolveRingsCommand.CanExecute(null),
+            "removing a middle edge invalidates the fit but leaves both anchor bands");
+        Require(!model.ThreePointMode && !model.RingPointCommand.CanExecute(new CalibrationPoint(Radius(0), 0))
+            && !model.RingEditedCommand.CanExecute(new CalibrationRingEdit(4, null)), "only single-ray input is enabled for a wide band");
+        model.RingEditedCommand.Execute(new(4, null));
+        Require(model.RingArcs[4].IsConfirmed, "a drag cannot clear a measured boundary");
+        model.SelectFineModeCommand.Execute(null);
+        Require(!model.TraceEditedCommand.CanExecute(null) && !model.IsFineStep && !model.IsRingStep,
+            "a coarse-only band record cannot be traced as a fine cross");
+        model.SelectCoarseModeCommand.Execute(null);
+        model.SelectedPhysicalDiscSize = model.PhysicalDiscSizeChoices.Single(size => size.OuterRadiusMm == 40);
+        Require(!model.RingPointCommand.CanExecute(new CalibrationPoint(28, 0)) && !model.ApplyCoarseParametersCommand.CanExecute(null),
+            "an 8 cm photo cannot provide wide-band measurements");
+
+        // A v13 session from the retired three-click method can still be read and saved losslessly.
+        var arc = new CalibrationRingArcDraft(1, [new(Radius(1), 0)]);
+        var manual = Enumerable.Range(0, 6).Where(i => i != 1)
+            .Select(i => new CalibrationRingObservation(i, Radius(i))).ToArray();
+        CalibrationSessionJson.Save(path, new(target, [], Photo: photo with { RingObservations = manual, ArcDraft = arc }));
+        Await(model, "LoadSessionFromAsync", path);
+        model.SaveSessionTo(path);
+        var kept = CalibrationSessionJson.Load(path).Photo!;
+        Require(model.IsBandRayMode && !model.ThreePointMode && kept.ArcDraft?.Points.Count == 1
+            && kept.RingObservations!.All(p => p.Points is null), "reopening a former arc draft preserves its measurements without inventing ray samples");
+        model.BandRayPointCommand.Execute(new(Radius(1), 0));
+        model.SolveRingsCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Require(model.CoarseSummary.Contains(DiscImageStudio.Localization.L.T("AngleBands.OldMeasurements"))
+            && model.RingArcs.Count(p => p.Points?.Count == 1) == 1, "mixed legacy/new observations cannot be treated as six ray clicks");
+        model.RestartBandRayCommand.Execute(null);
+        Require(model.RingArcs.All(p => !p.IsConfirmed) && model.SelectedRingIndex == 0,
+            "v13 can restart all boundaries along a single new ray");
+
+        var old = new CalibrationTarget(11, target.Id, target.Parameters, target.Options, target.Cells, CalibrationArtwork.WideAddressBands);
+        var legacyEdges = new[] { 0, 2 }.Select(i => new CalibrationRingObservation(i, old.VisibleRings[i].InnerRadiusMm)).ToArray();
+        CalibrationSessionJson.Save(path, new(old, [], Photo: photo with { RingObservations = legacyEdges }));
+        Await(model, "LoadSessionFromAsync", path);
+        Require(model.Target?.SchemaVersion == 11 && model.SolveRingsCommand.CanExecute(null)
+            && model.RingArcs.Count(a => a.IsConfirmed) == 2 && model.RingArcs[2].IsConfirmed && !model.RingArcs[3].IsConfirmed,
+            "v11 inner-edge IDs and two-edge legacy fitting are preserved without reinterpretation");
+        model.BandRayPointCommand.Execute(new(old.VisibleRings[0].InnerRadiusMm + old.VisibleRings[0].WidthMm, 0));
+        Require(model.RingArcs[0].IsConfirmed && model.RingArcs[3].IsConfirmed && !model.SolveRingsCommand.CanExecute(null),
+            "v11 can supplement a clear outer edge without overwriting its inner edge");
+        model.RestartBandRayCommand.Execute(null);
+        Require(model.RingArcs.Count(a => a.IsConfirmed) == 2 && model.SolveRingsCommand.CanExecute(null),
+            "restarting a v11 ray preserves the two original measurements");
+        Invoke(model, "OnWindowClosed");
+    }
+
+    private static CalibrationPhotoSession BlankRectifiedPhoto(double physicalRadius)
+    {
+        const int size = 240;
+        var image = BitmapSource.Create(size, size, 96, 96, PixelFormats.Gray8, null, new byte[size * size], size);
+        using var encoded = new MemoryStream();
+        var png = new PngBitmapEncoder();
+        png.Frames.Add(BitmapFrame.Create(image));
+        png.Save(encoded);
+        CalibrationPoint[] Boundary(double radius) => Enumerable.Range(0, 8).Select(i =>
+            new CalibrationPoint(120 + radius * 1.8 * Math.Cos(i * Math.PI / 4),
+                                 120 + radius * 1.8 * Math.Sin(i * Math.PI / 4))).ToArray();
+        return new(Convert.ToBase64String(encoded.ToArray()), Boundary(physicalRadius), Boundary(7.5),
+            physicalRadius, true, [], true);
+    }
+
+    private static void TestDataDiscWideBands(string directory, string family, double physicalRadius)
+    {
+        var state = new DiscParametersState(Path.Combine(directory, "disc-presets.json"));
+        state.LoadPresets();
+        var model = CreateModel(state);
+        model.SelectedDiscType = family;
+        if (family == "DVD")
+        {
+            state.SelectedDvdPreset = state.DvdPresets.Single(p => p.Id == "dvd-5-80mm");
+            state.DvdPitchLinear = "0.0001";
+        }
+        else
+        {
+            state.SelectedBluRayPreset = state.BluRayPresets.Single(p => p.Id == "bd-r-sl-25gb");
+            state.BdInvertMapping = true;
+        }
+        CalibrationTarget target;
+        if (physicalRadius == 40)
+        {
+            Require(!model.CreateTargetCommand.CanExecute(null) && model.CoarseSetupHint.Length > 0,
+                "narrow DVD cannot silently generate a retired coarse pattern");
+            // Open the v12 target already burned on a mini DVD.
+            target = CalibrationTarget.Create(new(CalibrationDiscKind.Dvd, 24, 38, 714544, 133.3, PitchLinear: .0001),
+                artwork: CalibrationArtwork.WideAddressBands);
+        }
+        else
+        {
+            Require(model.CreateTargetCommand.CanExecute(null), family + " supports v13");
+            model.CreateTargetCommand.Execute(null);
+            target = model.Target ?? throw new InvalidOperationException(model.LastStatusMessage);
+            Require(target.HasAngleSweep, family + " creates a v13 target");
+        }
+        string path = Path.Combine(directory, family + "-v12.calibration.json");
+        CalibrationSessionJson.Save(path, new(target, [], Photo: BlankRectifiedPhoto(physicalRadius)));
+        Await(model, "LoadSessionFromAsync", path);
+        Require(model.IsRingStep && model.IsBandRayMode && model.SelectedPhysicalDiscSize.OuterRadiusMm == physicalRadius,
+            family + " opens the rectified photo in the matching physical disc size and one-ray mode");
+
+        const double inner = 24.4, angle = .22;
+        double outer = physicalRadius - 2.3;
+        foreach (int id in new[] { 0, 3, 1, 4, 2, 5 })
+        {
+            var range = target.WideBandSectorRanges[id % 3];
+            double q = (id < 3 ? range.Start : range.EndExclusive) / (double)target.Parameters.Sectors;
+            double radius = Math.Sqrt((1-q) * inner * inner + q * outer * outer);
+            var point = new CalibrationPoint(radius * Math.Cos(angle), radius * Math.Sin(angle));
+            Require(model.SelectedRingIndex == id && model.BandRayPointCommand.CanExecute(point),
+                family + " accepts the next boundary on the same ray");
+            model.BandRayPointCommand.Execute(point);
+        }
+        model.SaveSessionTo(path);
+        Await(model, "LoadSessionFromAsync", path);
+        Require(model.RingArcs.Count(a => a.IsConfirmed && a.Points?.Count == 1) == 6
+            && model.IsBandRayMode && model.SolveRingsCommand.CanExecute(null),
+            family + " restores six separate one-ray measurements");
+        model.SolveRingsCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Require(model.ApplyCoarseParametersCommand.CanExecute(null), family + " rough fit: " + model.CoarseSummary);
+        if (target.HasAngleSweep)
+            Require(model.CoarseSummary.Contains(DiscImageStudio.Localization.L.T("AngleBands.Weak")),
+                family + " reports band-only fallback on a photograph without any angular marks");
+        // Edited fine pitch coefficients belong to the next target. BD polarity belongs to the photographed disc.
+        if (family == "DVD")
+        {
+            state.DvdPitchLinear = "-0.0002"; state.DvdPitchQuadratic = "0.0003"; state.DvdPitchCubic = "-0.0001";
+        }
+        else state.BdInvertMapping = false;
+        model.ApplyCoarseParametersCommand.Execute(null);
+        Require(model.Target!.Id == target.Id && model.Target.Parameters == target.Parameters,
+            family + " keeps the measured generation snapshot intact");
+        model.SelectFineModeCommand.Execute(null);
+        model.CreateTargetCommand.Execute(null);
+        var fine = model.Target!;
+        Require(fine.Artwork == CalibrationArtwork.ReferenceCross && fine.Id != target.Id && fine.HasCrossArms
+            && fine.Parameters.Sectors == target.Parameters.Sectors
+            && Math.Abs(fine.Parameters.InnerRadiusMm - inner) < .0001
+            && Math.Abs(fine.Parameters.OuterRadiusMm - outer) < .0001,
+            family + " creates an independent fine cross target with the fitted endpoint radii");
+        if (family == "DVD")
+            Require(fine.Parameters.PitchLinear == -.0002 && fine.Parameters.PitchQuadratic == .0003
+                && fine.Parameters.PitchCubic == -.0001, "DVD coarse fitting preserves edited fine pitch");
+        else
+            Require(fine.Parameters.BluRayInvertMapping, "BD coarse fitting restores the recorded texture polarity");
+        Invoke(model, "OnWindowClosed");
+    }
+
+    private static void TestRingWorkflow(string directory)
+    {
+        string path = Path.Combine(directory, "manual-rings.calibration.json");
+        var original = CalibrationSessionJson.Load(Path.Combine(directory, "portable.calibration.json"));
+        var target = CalibrationTarget.Create(original.Target.Parameters, artwork: CalibrationArtwork.FineCross);
+        var actual = target.Parameters with { InnerRadiusMm = 24.507, OuterRadiusMm = 56.791 };
+        // This box excludes the physical radii until the ring fit supplies the centre.
+        CalibrationSessionJson.Save(path, original with { Target = target, FitOptions = new(target.Parameters, .001, AutoRange: false) });
+        var state = new DiscParametersState();
+        var model = CreateModel(state);
+        Await(model, "LoadSessionFromAsync", path);
+        var trace = model.TracePoints.ToArray();
+        model.SelectCoarseModeCommand.Execute(null);
+        Require(model.IsRingStep && !model.SolveCommand.CanExecute(null) && !model.SolveRingsCommand.CanExecute(null),
+            "old fine-only photo opens in ring mode with no preconfirmed nominal guides");
+        model.ThreePointMode = true;
+        model.SelectedRingIndex = 0;
+        var firstEdge = target.MapPoint(new(target.VisibleRings[0].InnerRadiusMm, 0), actual);
+        double radius = Math.Sqrt(firstEdge.X * firstEdge.X + firstEdge.Y * firstEdge.Y);
+        var clicks = new[] { .1, .2, .3 }.Select(a => new CalibrationPoint(radius * Math.Cos(a), radius * Math.Sin(a))).ToArray();
+        model.RingPointCommand.Execute(clicks[0]);
+        model.RingPointCommand.Execute(clicks[1]);
+        Invoke(model, "SaveSessionTo", path);
+        Require(CalibrationSessionJson.Load(path).Photo is { ArcDraft.Points.Count: 2 }
+            && !model.RingArcs[0].IsConfirmed, "two clicks are saved as a draft, not a measured edge");
+        Await(model, "LoadSessionFromAsync", path);
+        Require(model.ThreePointMode && model.RingPointMarkers.SequenceEqual(clicks[..2]),
+            "reopening restores the selected ring and the unfinished arc");
+        model.RingPointCommand.Execute(clicks[2]);
+        Require(model.RingArcs[0].IsConfirmed && model.RingPointMarkers.SequenceEqual(clicks),
+            "three points on the same side confirm one inner-edge radius");
+        model.UndoRingPointCommand.Execute(null);
+        Require(!model.RingArcs[0].IsConfirmed && model.RingPointMarkers.Count == 2, "undo reopens the completed measurement");
+        model.RingPointCommand.Execute(clicks[2]);
+        model.ThreePointMode = false;
+        var photo = model.RectifiedPhoto;
+        foreach (var ring in new[] { target.VisibleRings[target.VisibleRings.Count / 2], target.VisibleRings[^1] })
+        {
+            var p = target.MapPoint(new(ring.InnerRadiusMm, 0), actual);
+            model.RingEditedCommand.Execute(new(ring.RingIndex, Math.Sqrt(p.X * p.X + p.Y * p.Y)));
+        }
+        Require(model.SolveRingsCommand.CanExecute(null) && !model.UseRingSeedCommand.CanExecute(null),
+            "manually aligning three separated rings enables estimation");
+        Invoke(model, "SaveSessionTo", path);
+        var draft = CalibrationSessionJson.Load(path);
+        Require(draft.Photo is { IsCoarseMode: true, RingObservations.Count: 3, UseRingSeed: false }
+            && draft.Photo.RingObservations.Single(r => r.RingIndex == 0).Points!.SequenceEqual(clicks),
+            "a coarse draft retains its three confirmed rings alongside the existing trace");
+        model.SolveRingsCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Require(model.ApplyCoarseParametersCommand.CanExecute(null) && model.UseRingSeedCommand.CanExecute(null)
+            && model.HasAvailableRingSeed && !model.HasAcceptedRingSeed && model.IsRingStep,
+            "a ring estimate is available without selecting a fine search seed or changing stages");
+        var sectors = state.CdSectors;
+        model.ApplyCoarseParametersCommand.Execute(null);
+        Require(Math.Abs(double.Parse(state.CdInnerRadius, CultureInfo.InvariantCulture) - actual.InnerRadiusMm) < 1e-6
+            && Math.Abs(double.Parse(state.CdOuterRadius, CultureInfo.InvariantCulture) - actual.OuterRadiusMm) < 1e-6
+            && state.CdSectors == sectors && model.Target!.Parameters == target.Parameters,
+            "ring-only application updates the project's radii and preserves its sector count and the burn snapshot");
+        model.SelectFineModeCommand.Execute(null);
+        Require(model.IsFineStep && !model.HasAcceptedRingSeed && model.UseRingSeedCommand.CanExecute(null),
+            "fine calibration can choose the record's initial values even after coarse fitting");
+        var first = model.TracePoints[0];
+        model.TraceEditedCommand.Execute(new(0, first.Index, first.XMm + .01, first.YMm));
+        model.TraceEditedCommand.Execute(new(0, first.Index, first.XMm, first.YMm));
+        Require(model.HasAvailableRingSeed && !model.HasAcceptedRingSeed,
+            "editing the fine trace cannot invalidate a previously solved set of rings");
+        model.UseRingSeedCommand.Execute(null);
+        model.ClearRingSeedCommand.Execute(null);
+        Require(!model.HasAcceptedRingSeed && model.HasAvailableRingSeed && model.IsFineStep,
+            "returning to the record's seed in fine mode preserves the computed coarse estimate");
+        model.SelectCoarseModeCommand.Execute(null);
+        model.UseRingSeedCommand.Execute(null);
+        Require(model.IsRingStep && model.HasAcceptedRingSeed, "adopting initial radii does not leave the coarse stage");
+        model.SelectFineModeCommand.Execute(null);
+        Require(model.IsFineStep && model.TracePoints.SequenceEqual(trace) && ReferenceEquals(model.RectifiedPhoto, photo)
+            && model.Target!.Id == target.Id, "continuing preserves the rectified photo, existing trace and target geometry");
+        Invoke(model, "SaveSessionTo", path);
+        Require(CalibrationSessionJson.Load(path).Photo is { UseRingSeed: true, IsCoarseMode: false },
+            "the session distinguishes accepted ring seeds from unconfirmed guides");
+        var reopened = CreateModel(state);
+        Await(reopened, "LoadSessionFromAsync", path);
+        reopened.SolveCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Require(reopened.SelectedCoarseCandidate is { } result
+            && Math.Abs(result.Parameters.InnerRadiusMm - actual.InnerRadiusMm) < .0002
+            && Math.Abs(result.Parameters.OuterRadiusMm - actual.OuterRadiusMm) < .0002,
+            "the restored manual fine search box is centred on the accepted ring estimate");
+        reopened.SelectCoarseModeCommand.Execute(null);
+        reopened.RingEditedCommand.Execute(new(0, null));
+        Invoke(reopened, "SaveSessionTo", path);
+        Require(CalibrationSessionJson.Load(path).Photo is { UseRingSeed: false, RingObservations.Count: 2 }
+            && !reopened.ApplyCoarseParametersCommand.CanExecute(null) && reopened.CoarseCandidates.Count == 0,
+            "removing a measured radius invalidates the coarse estimate and the fine fit seeded by it");
+        reopened.BackToPhotoCommand.Execute(null);
+        var mark = reopened.PhotoBoundaryPoints[0];
+        reopened.BoundaryEditedCommand.Execute(new(mark.Boundary, mark.Index, mark.X + .2, mark.Y));
+        Require(reopened.RingArcs.All(r => !r.IsConfirmed) && reopened.TracePoints.Count == 0,
+            "adjusting the physical edges invalidates both coordinate-dependent inputs");
+        Invoke(model, "OnWindowClosed"); Invoke(reopened, "OnWindowClosed");
+    }
+
     private static void TestObservedRadiusDomain(string directory)
     {
         // Regression coordinates from the complete ten-point photograph record. The first
@@ -188,7 +601,10 @@ internal static class CalibrationPhotoViewModelTests
         Require(model.TracePoints.Count == 10 && model.TracePoints.Select(p => new CalibrationPoint(p.XMm, p.YMm)).SequenceEqual(measured),
             "solving never trims the original ten measured samples");
         AssertObservedEndpoints(model);
-        Require(model.FitAssessment.Contains("候选", StringComparison.Ordinal) && model.FitAssessment.Contains("待核对", StringComparison.Ordinal),
+        Require(model.SelectedCoarseCandidate is not null && !model.ContourConfirmed
+            && !model.ApplyParametersCommand.CanExecute(null)
+            && !string.IsNullOrWhiteSpace(model.ApplyParametersHint)
+            && model.FitAssessment.Contains(model.ApplyParametersHint, StringComparison.Ordinal),
             "a low-residual numerical result remains a candidate requiring photographic comparison");
         Invoke(model, "SaveSessionTo", path);
         var saved = CalibrationSessionJson.Load(path);
@@ -198,8 +614,8 @@ internal static class CalibrationPhotoViewModelTests
         Require(reopened.TracePoints.Select(p => new CalibrationPoint(p.XMm, p.YMm)).SequenceEqual(measured),
             "reopening does not discard the leading point outside the generation annulus");
 
-        // Candidate selection must not enable applying an obviously high-residual numerical
-        // result merely because preview generation and manual contour confirmation succeeded.
+        // Residual thresholds remain visible advice. The user's explicit photographic
+        // confirmation authorizes a current candidate even when its residual is high.
         var candidate = model.SelectedCoarseCandidate ?? throw new InvalidOperationException("Missing observed-curve candidate.");
         var highResidual = candidate with { RmsErrorMm = 3.2 };
         Set(model, "_installing", true);
@@ -208,9 +624,14 @@ internal static class CalibrationPhotoViewModelTests
         Set(model, "_installing", false);
         Await(model, "ShowCandidateAsync", highResidual);
         model.ContourConfirmed = true;
-        Require(model.CrossPredictionContours.Count == 1 && !model.ApplyParametersCommand.CanExecute(null)
-            && model.FitAssessment.Contains("不能应用", StringComparison.Ordinal) && model.TracePoints.Count == 10,
-            "high-residual candidates remain visible for diagnosis but cannot be presented as an applicable calibration");
+        Require(model.CrossPredictionContours.Count == 1 && model.ApplyParametersCommand.CanExecute(null)
+            && model.FitAssessment.Contains(DiscImageStudio.Localization.L.T("CalibrationApply.ResidualWarning"), StringComparison.Ordinal)
+            && model.TracePoints.Count == 10,
+            "manual confirmation permits a high-residual candidate while keeping the automatic warning visible");
+        model.ApplyParametersCommand.Execute(null);
+        Require(double.Parse(model.Parameters.DvdInnerRadius, CultureInfo.InvariantCulture) == highResidual.Parameters.InnerRadiusMm
+            && double.Parse(model.Parameters.DvdOuterRadius, CultureInfo.InvariantCulture) == highResidual.Parameters.OuterRadiusMm,
+            "manual application writes the high-residual candidate's selected parameters");
 
         model.ClearTracesCommand.Execute(null);
         var mapping = CalibrationCrossPrediction.CreateMapping(target, target.Parameters, .41);

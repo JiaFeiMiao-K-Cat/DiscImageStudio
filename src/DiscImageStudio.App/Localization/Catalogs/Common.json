@@ -746,14 +746,14 @@
     "es": "Ubicación de caché no disponible",
     "cs": "Umístění mezipaměti není dostupné"
   },
-  "已改用系统临时目录。": {
-    "zh-CN": "已改用系统临时目录。",
-    "en": "Using the system temporary directory.",
-    "zh-TW": "已改用系統暫存資料夾。",
-    "ja": "システムの一時フォルダーを代わりに使用します。",
-    "tr": "Sistem geçici dizini kullanılıyor.",
-    "es": "Se usará el directorio temporal del sistema.",
-    "cs": "Používá se systémová dočasná složka."
+  "已改用默认缓存目录。": {
+    "zh-CN": "已改用默认缓存目录。",
+    "en": "Using the default cache folder.",
+    "zh-TW": "已改用預設快取資料夾。",
+    "ja": "既定のキャッシュフォルダーを代わりに使用します。",
+    "tr": "Varsayılan önbellek klasörü kullanılıyor.",
+    "es": "Se usará la carpeta de caché predeterminada.",
+    "cs": "Používá se výchozí složka mezipaměti."
   },
   "展开侧边栏": {
     "zh-CN": "展开侧边栏",
@@ -1314,13 +1314,13 @@
     "cs": "Umístění mezipaměti"
   },
   "Settings.UsedForCompositesPreviewsAndThumbnailsLeaveBlankToUseTh": {
-    "zh-CN": "用于设计合成图、预览渲染与缩略图；留空使用系统临时目录，切换后新任务使用新位置，旧缓存不会自动迁移。",
-    "en": "Used for composites, previews and thumbnails. Leave blank to use the system temporary folder. New jobs use the new location; existing cache files stay in place.",
-    "zh-TW": "用於設計合成圖、預覽算繪與縮圖；留空使用系統暫存資料夾，切換後新工作使用新位置，舊快取不會自動遷移。",
-    "ja": "デザインの合成画像、プレビューのレンダリング、サムネイルに使用されます。空欄の場合はシステムの一時フォルダーを使用します。変更後の新しいジョブは新しい場所を使用し、既存のキャッシュは自動的に移行されません。",
-    "tr": "Birleşik görseller, önizlemeler ve küçük resimler için kullanılır. Sistem geçici klasörünü kullanmak için boş bırakın. Yeni görevler yeni konumu kullanır; mevcut önbellek dosyaları yerinde kalır.",
-    "es": "Se usa para composiciones, vistas previas y miniaturas. Déjala en blanco para usar la carpeta temporal del sistema. Los trabajos nuevos usan la nueva ubicación; la caché existente permanece donde está.",
-    "cs": "Pro složené obrázky, náhledy a miniatury. Když pole necháte prázdné, použije se systémová dočasná složka. Nové úlohy použijí nové umístění, stará mezipaměť se nepřesune."
+    "zh-CN": "用于设计合成图、预览渲染与缩略图；留空使用程序所在目录下的 DiscImageStudio-cache 文件夹，切换后新任务使用新位置，旧缓存不会自动迁移。",
+    "en": "Used for composites, previews and thumbnails. Leave blank to use the DiscImageStudio-cache folder next to the program. New jobs use the new location; existing cache files stay in place.",
+    "zh-TW": "用於設計合成圖、預覽算繪與縮圖；留空使用程式所在資料夾下的 DiscImageStudio-cache 資料夾，切換後新工作使用新位置，舊快取不會自動遷移。",
+    "ja": "デザインの合成画像、プレビューのレンダリング、サムネイルに使用されます。空欄の場合はプログラムと同じ場所の DiscImageStudio-cache フォルダーを使用します。変更後の新しいジョブは新しい場所を使用し、既存のキャッシュは自動的に移行されません。",
+    "tr": "Birleşik görseller, önizlemeler ve küçük resimler için kullanılır. Programın yanındaki DiscImageStudio-cache klasörünü kullanmak için boş bırakın. Yeni görevler yeni konumu kullanır; mevcut önbellek dosyaları yerinde kalır.",
+    "es": "Se usa para composiciones, vistas previas y miniaturas. Déjala en blanco para usar la carpeta DiscImageStudio-cache junto al programa. Los trabajos nuevos usan la nueva ubicación; la caché existente permanece donde está.",
+    "cs": "Pro složené obrázky, náhledy a miniatury. Když pole necháte prázdné, použije se složka DiscImageStudio-cache vedle programu. Nové úlohy použijí nové umístění, stará mezipaměť se nepřesune."
   },
   "Settings.Cache": {
     "zh-CN": "缓存",

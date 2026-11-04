@@ -45,11 +45,11 @@ internal static class UnifiedCommandRunner
                 ReadOnlySpan<string> snapshotArguments = arguments.AsSpan(1);
                 string? tabValue = FindOption(snapshotArguments, "tab");
                 int workspaceIndex = tabValue is null ? 0 : int.Parse(tabValue);
-                if (workspaceIndex < 0 || workspaceIndex > (int)Workspace.Calibration)
+                if (workspaceIndex < 0 || workspaceIndex > (int)Workspace.CalibrationBurn)
                 {
                     throw new ArgumentOutOfRangeException(
                         nameof(arguments),
-                        "Tabs: 0 home, 1 design, 2 preview, 3 export, 4 burn, 5 calibration.");
+                        "Tabs: 0 home, 1 design, 2 preview, 3 export, 4 burn, 5 calibration, 6 calibration burn.");
                 }
 
                 bool settingsDialog = HasOption(snapshotArguments, "settings-dialog");
@@ -140,7 +140,7 @@ internal static class UnifiedCommandRunner
               burn-devices
               burn-build-info
 
-            Tabs: 0 home, 1 design, 2 preview, 3 export, 4 burn, 5 calibration.
+            Tabs: 0 home, 1 design, 2 preview, 3 export, 4 burn, 5 calibration, 6 calibration burn.
             --dock expands the job dock (progress + run log) for the snapshot; --burn-source
             picks what the burn workspace shows as the material to write (calibration also
             creates the calibration target); --scroll N scrolls the page down N pixels so the

@@ -16,14 +16,20 @@ public sealed class CdDiscModule : IOpticalDiscModule
         new("velocity", "Linear velocity", DiscOptionValueType.Decimal, DefaultValue: "1200", Unit: "mm/s"),
         new("theta0", "Start angle", DiscOptionValueType.Decimal, DefaultValue: "0", Unit: "degrees"),
         new("outer", "Image outer radius", DiscOptionValueType.Decimal, DefaultValue: "57.5", Unit: "mm"),
+        new("pitch-linear", "Relative linear pitch", DiscOptionValueType.Decimal, DefaultValue: "0"),
+        new("pitch-quadratic", "Relative quadratic pitch", DiscOptionValueType.Decimal, DefaultValue: "0"),
+        new("pitch-cubic", "Relative cubic pitch", DiscOptionValueType.Decimal, DefaultValue: "0"),
     ];
 
     /// <summary>Second parameter set of the geometry preview: the disc the reader follows.
-    /// Only the radii differ; the constants in <see cref="CdDiscParameters"/> cover the rest.</summary>
+    /// Radii and pitch shape may differ from the generated geometry.</summary>
     private static readonly IReadOnlyList<DiscOptionDefinition> MeasuredGeometryOptions =
     [
         new("actual-r0", "Measured inner radius", DiscOptionValueType.Decimal, DefaultValue: "24.3", Unit: "mm"),
         new("actual-r1", "Measured outer radius", DiscOptionValueType.Decimal, DefaultValue: "56.6", Unit: "mm"),
+        new("actual-pitch-linear", "Measured relative linear pitch", DiscOptionValueType.Decimal, DefaultValue: "0"),
+        new("actual-pitch-quadratic", "Measured relative quadratic pitch", DiscOptionValueType.Decimal, DefaultValue: "0"),
+        new("actual-pitch-cubic", "Measured relative cubic pitch", DiscOptionValueType.Decimal, DefaultValue: "0"),
     ];
 
     /// <summary>Tone mapping shared by generation and the source-projection preview. The
@@ -220,7 +226,7 @@ public sealed class CdDiscModule : IOpticalDiscModule
         CdTrackGenerator.PreviewTrack(
             options.Require("track"),
             output,
-            ReadParameters(options),
+            ReadParameters(options, CdTrackMetadata.TryLoad(track)?.CreateParameters()),
             options.GetInt("size", 1600),
             options.GetInt("byte-step", 48),
             options.GetBoolean("deinterleave", true),
@@ -242,7 +248,10 @@ public sealed class CdDiscModule : IOpticalDiscModule
             options.GetLong("sectors", fallback?.Sectors ?? 359849),
             options.GetDouble("velocity", fallback?.LinearVelocityMmPerSecond ?? CdDiscParameters.StandardLinearVelocityMmPerSecond),
             startAngleDegrees * Math.PI / 180.0,
-            options.GetDouble("outer", fallback?.ImageOuterRadiusMm ?? CdDiscParameters.StandardImageOuterRadiusMm));
+            options.GetDouble("outer", fallback?.ImageOuterRadiusMm ?? CdDiscParameters.StandardImageOuterRadiusMm),
+            options.GetDouble("pitch-linear", fallback?.PitchLinear ?? 0),
+            options.GetDouble("pitch-quadratic", fallback?.PitchQuadratic ?? 0),
+            options.GetDouble("pitch-cubic", fallback?.PitchCubic ?? 0));
     }
 
     private static bool ReadFilePosition(CdCommandOptions options)
@@ -265,7 +274,7 @@ public sealed class CdDiscModule : IOpticalDiscModule
     }
 
     /// <summary>Measured set of the geometry preview: the program it reads is the generated
-    /// one, so only the radii differ.</summary>
+    /// one, with independently measured radii and pitch coefficients.</summary>
     private static CdDiscParameters ReadMeasuredParameters(
         CdCommandOptions options,
         CdDiscParameters generated)
@@ -273,6 +282,9 @@ public sealed class CdDiscModule : IOpticalDiscModule
         {
             InnerRadiusMm = options.GetDouble("actual-r0", 24.3),
             OuterRadiusMm = options.GetDouble("actual-r1", 56.6),
+            PitchLinear = options.GetDouble("actual-pitch-linear", 0),
+            PitchQuadratic = options.GetDouble("actual-pitch-quadratic", 0),
+            PitchCubic = options.GetDouble("actual-pitch-cubic", 0),
         };
 
     private sealed class CdCommandOptions

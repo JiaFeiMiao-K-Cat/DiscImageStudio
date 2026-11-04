@@ -2,9 +2,19 @@
 
 ## Unreleased
 
+## [1.4.0] - 2026-11-05
+
 ### 中文
 
-- 新增西班牙文和捷克文界面：在「设置 → 通用 → 语言」选择「Español」或「Čeština」并保存后立即生效；西班牙文、捷克文系统也可跟随系统。全部应用文案包含 `es` 与 `cs` 翻译，保留格式参数、数值文化和原有回退规则。
+- 修复流式刻录速度首次选择后可能无法再次切换的问题；普通刻录和独立标定刻录在重新读取盘片速度或切换界面语言后仍可正常改选。
+- 设计合成图、缩略图与预览缓存按应用会话隔离；多个实例共用缓存目录时不再覆盖彼此的图片，清理缓存时跳过其他仍在运行的会话。
+- CD、BD 固定参考图标定的导出与直接刻录接入图片采样加速，保持原输出字节、环带裁切和明暗极性；固定 sRGB 转换改为精确查表，减少逐字节重复计算。
+- CD 音轨、固定参考标定图案及 Mode 1 文件盘默认分块并行采样和影调计算，使用固定上限的缓冲区，并按原顺序交织、写出和报告进度。
+- DVD 指定图片和固定参考图标定在采样结果不变的区域内复用计算，覆盖导出、混合文件盘及直接刻录，保持原插值、透明度、影调和输出字节。
+- CD、DVD 和 BD 均可在精细标定中拟合三次轨距，系数随预设、工程、生成与预览完整保存和使用；零系数保留原有几何和输出。重复标定使用该盘生成时的完整参数，结果为可直接使用的绝对系数。
+- 辅助标定新增粗标定、边界标定和精细标定三个阶段，支持读取盘片容量、保存独立标定记录及专用刻录流程；可从首页或工程侧栏进入，已有工程时保留分组导航，并可返回原页面。
+- 标定流程支持现有界面语言；切换语言后，标定设置、阶段提示与刻录页面立即刷新，保留当前参数和测量进度。缺失或为空的译文回退到简体中文，可通过后续 PR 逐步补充。
+- 新增土耳其文、西班牙文和捷克文界面：在「设置 → 通用 → 语言」选择「Türkçe」「Español」或「Čeština」并保存后立即生效；土耳其文、西班牙文、捷克文系统也可跟随系统。译文保留格式参数、数值文化和简体中文回退规则。
 - 新增西班牙文、土耳其文、捷克文 README；全部 README 顶部语言切换加入 Türkçe、Español、Čeština。原始文档、署名及许可证保留不变。
 - 新增威宝 BD-R (64293) 内置预设，参数与 64099 相同，贡献者 bczhc。
 - 新增威宝 DVD+R AZO (43498) 内置预设，贡献者 Disappear9。
@@ -13,10 +23,20 @@
 - 新增铼德 DVD+R E时代系列内置预设。
 - 新建工程不再按模板自动填充工程名，输入框保持为空；填写名称后才能创建。
 - 侧栏工程头卡片右侧新增软盘保存按钮。
+- 缓存位置留空时，缓存改为放在 EXE 旁的 `DiscImageStudio-cache` 文件夹；该处不可写入时（例如安装在 Program Files 下）改用 `%LOCALAPPDATA%\DiscImageStudio\cache`，不再写入系统临时目录。自定义缓存位置照常可用。
+- 单文件 EXE 不再在启动时把全部内容解压到 `%TEMP%\.net`，解压量从约 475 MB 降到约 8 MB，只剩 WPF 原生 DLL 需要解压。
 
 ### English
 
-- Added Spanish and Czech interfaces. Choose Español or Čeština under Settings → General → Language, and save to apply immediately; Spanish and Czech system locales can also follow the system. All application strings include `es` and `cs` translations while preserving format arguments, numeric culture, and existing fallback rules.
+- Fixed streaming burn speed selection becoming stuck after the first choice. Both project and standalone calibration recording retain working speed selection after refreshing disc speeds or changing the interface language.
+- Isolated design composites, thumbnails, and preview caches by application session so instances sharing a cache folder cannot overwrite each other's images. Cache cleanup skips other running sessions.
+- Accelerated sampling for CD and Blu-ray fixed-reference calibration exports and direct recording while preserving output bytes, annulus clipping, and polarity. Cached the exact sRGB transfer curve to avoid repeated per-byte calculations.
+- CD audio, fixed-reference calibration artwork, and Mode 1 drawing payloads now sample and apply tone in bounded parallel blocks while preserving interleaving, output order, and progress callbacks.
+- DVD image and fixed-reference calibration generation reuse samples within regions proven to retain the same result, across exports, hybrid images, and direct recording, preserving interpolation, alpha, tone, and output bytes.
+- Fine calibration now supports cubic track pitch for CD, DVD, and Blu-ray, with coefficients preserved across presets, projects, generation, and preview. Zero coefficients retain the existing geometry and output. Recalibration uses the complete geometry that generated the photographed disc and returns absolute coefficients ready to apply.
+- Added coarse, boundary, and fine calibration stages with disc-capacity reading, independent calibration records, and a dedicated recording workflow. Open calibration from Home or the project sidebar, retain grouped navigation while a project is open, and return to the originating page.
+- Calibration supports the available interface languages. Language changes immediately refresh calibration settings, stage guidance, and recording pages while preserving parameters and measurement progress. Missing or empty translations fall back to Simplified Chinese and can be added in follow-up PRs.
+- Added Turkish, Spanish, and Czech interfaces. Choose Türkçe, Español, or Čeština under Settings → General → Language, and save to apply immediately; Turkish, Spanish, and Czech system locales can also follow the system. Translations preserve format arguments, numeric culture, and the Simplified Chinese fallback.
 - Added Spanish, Turkish, and Czech READMEs; every README language switcher now includes Türkçe, Español, and Čeština. Original documents, attribution, and licenses are preserved.
 - Added a built-in Verbatim BD-R (64293) preset with the same parameters as 64099, contributed by bczhc.
 - Added a built-in Verbatim DVD+R AZO (43498) preset, contributed by Disappear9.
@@ -25,6 +45,8 @@
 - Added a built-in Ritek DVD+R E-Series preset.
 - New projects leave the project name empty instead of filling it from the selected template; the project can be created once a name is entered.
 - Added a floppy-disk Save button on the right of the sidebar project header.
+- When the cache location is left empty, the cache now lives in a `DiscImageStudio-cache` folder next to the EXE. If that folder is not writable (for example under Program Files), `%LOCALAPPDATA%\DiscImageStudio\cache` is used instead; the system temporary folder is no longer used. Custom cache locations work as before.
+- The single-file EXE no longer extracts its entire contents to `%TEMP%\.net` at startup. Extraction drops from about 475 MB to about 8 MB; only the WPF native DLLs still need to be extracted.
 
 ## [1.3.6] - 2026-11-02
 

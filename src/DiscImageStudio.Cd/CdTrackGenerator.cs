@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using DiscImageStudio.Core;
+using DiscImageStudio.Core.Calibration;
 using DiscImageStudio.ImageIO;
 
 namespace DiscImageStudio.Cd;
@@ -31,7 +32,8 @@ public static class CdTrackGenerator
         bool writeCue = true,
         Action<CdProgress>? progress = null,
         CancellationToken cancellationToken = default,
-        ToneProfile? tone = null)
+        ToneProfile? tone = null,
+        bool useParallelSampling = true)
     {
         parameters.Validate();
         ToneProfile effectiveTone = (tone ?? ToneProfile.LegacyBinary).Normalized();
@@ -76,7 +78,8 @@ public static class CdTrackGenerator
             cancellationToken,
             outputFullPath,
             wave ? CdAudioByteOrder.LittleEndian : CdAudioByteOrder.BigEndian,
-            effectiveTone);
+            effectiveTone,
+            useParallelSampling: useParallelSampling);
         file.Dispose();
         CdTrackMetadata.Save(
             outputFullPath,
@@ -93,7 +96,10 @@ public static class CdTrackGenerator
                 effectiveTone.DitherStrength,
                 effectiveTone.Levels,
                 effectiveTone.Brightness,
-                effectiveTone.SrgbLinearization));
+                effectiveTone.SrgbLinearization,
+                parameters.PitchLinear,
+                parameters.PitchQuadratic,
+                parameters.PitchCubic));
         return wave && writeCue
             ? summary with { CueSheetPath = CdWaveFile.WriteCue(outputFullPath) }
             : summary;
@@ -109,7 +115,8 @@ public static class CdTrackGenerator
         string outputDescription = "direct-burn-stream",
         CdAudioByteOrder audioByteOrder = CdAudioByteOrder.BigEndian,
         ToneProfile? tone = null,
-        bool useSimdSampling = true)
+        bool useSimdSampling = true,
+        bool useParallelSampling = true)
     {
         ArgumentNullException.ThrowIfNull(output);
         if (!output.CanWrite)
@@ -133,7 +140,8 @@ public static class CdTrackGenerator
             outputDescription,
             audioByteOrder,
             (tone ?? ToneProfile.LegacyBinary).Normalized(),
-            useSimdSampling && sampler.SupportsSimd ? sampler.SampleFour : null);
+            useSimdSampling && sampler.SupportsSimd ? sampler.SampleFour : null,
+            useParallelSampling);
     }
 
     /// <summary>
@@ -150,6 +158,24 @@ public static class CdTrackGenerator
         bool useSimdSampling = true)
     {
         ArgumentNullException.ThrowIfNull(sampleGray);
+        return WritePatternFile(outputPath, parameters, cancellationToken,
+            (file, path, order) => GeneratePatternToStream(sampleGray, file, parameters, interleave,
+                progress, cancellationToken, path, order, useSimdSampling));
+    }
+
+    public static CdGenerationSummary GeneratePattern(CalibrationTarget target, string outputPath, bool interleave,
+        Action<CdProgress>? progress = null, CancellationToken cancellationToken = default,
+        bool useParallelSampling = true)
+    {
+        var parameters = CdDiscParameters.FromCalibration(target);
+        return WritePatternFile(outputPath, parameters, cancellationToken,
+            (file, path, order) => GeneratePatternToStream(target, file, interleave, progress, cancellationToken, path, order,
+                useParallelSampling));
+    }
+
+    private static CdGenerationSummary WritePatternFile(string outputPath, CdDiscParameters parameters,
+        CancellationToken cancellationToken, Func<Stream, string, CdAudioByteOrder, CdGenerationSummary> write)
+    {
         parameters.Validate();
         string outputFullPath = Path.GetFullPath(outputPath);
         string extension = Path.GetExtension(outputFullPath);
@@ -178,17 +204,57 @@ public static class CdTrackGenerator
             CdWaveFile.WriteHeader(file, parameters.TotalBytes);
         }
 
-        CdGenerationSummary summary = GeneratePatternToStream(
-            sampleGray,
-            file,
-            parameters,
-            interleave,
-            progress,
-            cancellationToken,
-            outputFullPath,
-            wave ? CdAudioByteOrder.LittleEndian : CdAudioByteOrder.BigEndian,
-            useSimdSampling);
+        CdGenerationSummary summary = write(file, outputFullPath,
+            wave ? CdAudioByteOrder.LittleEndian : CdAudioByteOrder.BigEndian);
         return wave ? summary with { CueSheetPath = CdWaveFile.WriteCue(outputFullPath) } : summary;
+    }
+
+    /// <summary>Fixed-address calibration marks use the logical CD-DA byte before interleaving or endian conversion.</summary>
+    public static CdGenerationSummary GeneratePatternToStream(CalibrationTarget target, Stream output, bool interleave,
+        Action<CdProgress>? progress = null, CancellationToken cancellationToken = default,
+        string outputDescription = "direct-burn-stream", CdAudioByteOrder audioByteOrder = CdAudioByteOrder.BigEndian,
+        bool useParallelSampling = true)
+    {
+        var parameters = CdDiscParameters.FromCalibration(target);
+        ArgumentNullException.ThrowIfNull(output);
+        if (!output.CanWrite)
+            throw new ArgumentException("CD output stream must be writable.", nameof(output));
+        CdAudioSamples.Validate(audioByteOrder);
+        parameters.Validate();
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!target.HasClockRuler && !target.HasWideAddressBands)
+        {
+            // Explicit targets own frozen built-in artwork. Arbitrary Func
+            // overloads retain their original sequential callback semantics.
+            CdImageSampler sampler = target.UsesReferencePattern
+                ? new(target, parameters) : new(target.Sample, parameters);
+            return GenerateSamplesToStream(sampler.Sample, "calibration", output, parameters, interleave, progress,
+                cancellationToken, outputDescription, audioByteOrder, ToneProfile.LegacyBinary,
+                sampler.SupportsSimd ? sampler.SampleFour : null, useParallelSampling);
+        }
+        Func<long, byte> sample = target.HasWideAddressBands ? WideBandSampler(target, parameters.TotalBytes)
+            : new CdClockRulerSampler(parameters.TotalBytes).SampleGray;
+        return GenerateSamplesToStream(sample, "calibration", output, parameters, interleave, progress,
+            cancellationToken, outputDescription, audioByteOrder, ToneProfile.LegacyBinary);
+    }
+
+    private static Func<long, byte> WideBandSampler(CalibrationTarget target, long totalBytes)
+    {
+        var ranges = target.WideAddressBands.Select(band => band.ByteRange(totalBytes)).ToArray();
+        var changes = target.HasAngleSweep ? new CalibrationAngleSweepSampler(target).Switches
+            .Select(s => (Position: (long)Math.Ceiling(s.Progress * totalBytes), s.Luminance)).ToArray() : [];
+        // One cursor per job. GenerateSamplesToStream visits every logical byte in order.
+        int next = 0;
+        int nextChange = 0;
+        byte? marker = null;
+        return position =>
+        {
+            while (nextChange < changes.Length && position >= changes[nextChange].Position)
+                marker = changes[nextChange++].Luminance;
+            if (marker.HasValue) return marker.Value;
+            while (next < ranges.Length && position >= ranges[next].EndExclusive) next++;
+            return next < ranges.Length && position >= ranges[next].Start ? (byte)0 : (byte)255;
+        };
     }
 
     /// <summary>
@@ -241,8 +307,12 @@ public static class CdTrackGenerator
         string outputDescription,
         CdAudioByteOrder audioByteOrder,
         ToneProfile tone,
-        Func<long, uint>? sampleFour = null)
+        Func<long, uint>? sampleFour = null,
+        bool useParallelSampling = false)
     {
+        if (useParallelSampling)
+            return GenerateParallelSamplesToStream(sampleGray, summarySource, output, parameters, interleave,
+                progress, cancellationToken, outputDescription, audioByteOrder, tone, sampleFour);
         long totalBytes = parameters.TotalBytes;
         CddaInterleaver? cddaInterleaver = interleave ? new CddaInterleaver(audioByteOrder) : null;
         byte[]? plainSector = interleave ? null : new byte[CdDiscParameters.BytesPerSector];
@@ -307,6 +377,94 @@ public static class CdTrackGenerator
             totalBytes,
             interleave,
             stopwatch.Elapsed);
+    }
+
+    private static CdGenerationSummary GenerateParallelSamplesToStream(Func<long, byte> sampleGray,
+        string summarySource, Stream output, CdDiscParameters parameters, bool interleave,
+        Action<CdProgress>? progress, CancellationToken cancellationToken, string outputDescription,
+        CdAudioByteOrder audioByteOrder, ToneProfile tone, Func<long, uint>? sampleFour)
+    {
+        long totalBytes = parameters.TotalBytes;
+        CddaInterleaver? cddaInterleaver = interleave ? new CddaInterleaver(audioByteOrder) : null;
+        byte[]? plainSector = interleave ? null : new byte[CdDiscParameters.BytesPerSector];
+        int plainPosition = 0;
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        long progressInterval = Math.Max(CdDiscParameters.BytesPerSector, totalBytes / 200);
+        long nextProgress = progressInterval;
+
+        void Fill(long firstSector, byte[] buffer, int sectors)
+        {
+            long firstByte = firstSector * CdDiscParameters.BytesPerSector;
+            int length = sectors * CdDiscParameters.BytesPerSector;
+            if (sampleFour is not null)
+            {
+                for (int offset = 0; offset < length; offset += 4)
+                {
+                    if ((offset & 0xFFF) == 0) cancellationToken.ThrowIfCancellationRequested();
+                    uint samples = sampleFour(firstByte + offset);
+                    for (int lane = 0; lane < 4; lane++)
+                    {
+                        buffer[offset + lane] = CdToneMapping.Map((byte)samples, tone, firstByte + offset + lane);
+                        samples >>= 8;
+                    }
+                }
+            }
+            else
+            {
+                for (int offset = 0; offset < length; offset++)
+                {
+                    if ((offset & 0xFFF) == 0) cancellationToken.ThrowIfCancellationRequested();
+                    long position = firstByte + offset;
+                    buffer[offset] = CdToneMapping.Map(sampleGray(position), tone, position);
+                }
+            }
+        }
+
+        void Consume(long firstSector, byte[] buffer, int sectors)
+        {
+            long position = firstSector * CdDiscParameters.BytesPerSector;
+            int length = sectors * CdDiscParameters.BytesPerSector;
+            for (int offset = 0; offset < length;)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                // Preserve the original progress positions, even inside sectors,
+                // while amortizing cancellation and stateful output across spans.
+                int count = (int)Math.Min(length - offset,
+                    Math.Min(nextProgress - position, 4096 - (position & 0xFFF)));
+                ReadOnlySpan<byte> values = buffer.AsSpan(offset, count);
+                if (cddaInterleaver is not null) cddaInterleaver.Add(values, output);
+                else
+                {
+                    while (!values.IsEmpty)
+                    {
+                        int copied = Math.Min(values.Length, plainSector!.Length - plainPosition);
+                        values[..copied].CopyTo(plainSector.AsSpan(plainPosition));
+                        plainPosition += copied;
+                        values = values[copied..];
+                        if (plainPosition == plainSector.Length)
+                        {
+                            CdAudioSamples.WriteSector(output, plainSector, audioByteOrder);
+                            plainPosition = 0;
+                        }
+                    }
+                }
+                offset += count;
+                position += count;
+                if (position >= nextProgress)
+                {
+                    progress?.Invoke(new CdProgress(position, totalBytes, stopwatch.Elapsed));
+                    nextProgress = checked(position + progressInterval);
+                }
+            }
+        }
+
+        CdBlockPipeline.Run(parameters.Sectors, CdDiscParameters.BytesPerSector, Fill, Consume, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        cddaInterleaver?.Flush(output);
+        output.Flush();
+        stopwatch.Stop();
+        progress?.Invoke(new CdProgress(totalBytes, totalBytes, stopwatch.Elapsed));
+        return new(summarySource, outputDescription, parameters.Sectors, totalBytes, interleave, stopwatch.Elapsed);
     }
 
     /// <summary>

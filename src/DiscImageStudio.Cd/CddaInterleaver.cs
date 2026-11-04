@@ -27,6 +27,24 @@ internal sealed class CddaInterleaver(CdAudioByteOrder audioByteOrder)
             return;
         }
 
+        CompleteFrame(output);
+    }
+
+    internal void Add(ReadOnlySpan<byte> values, Stream output)
+    {
+        while (!values.IsEmpty)
+        {
+            int count = Math.Min(values.Length, CddaInterleaveTable.BytesPerFrame - _inputPosition);
+            for (int index = 0; index < count; index++)
+                _interleaveSequence[MapIndex(CddaInterleaveTable.DelayFor(_inputPosition + index))] = values[index];
+            _inputPosition += count;
+            values = values[count..];
+            if (_inputPosition == CddaInterleaveTable.BytesPerFrame) CompleteFrame(output);
+        }
+    }
+
+    private void CompleteFrame(Stream output)
+    {
         _inputPosition = 0;
         _head++;
         if (_head >= CddaInterleaveTable.FramesPerCycle)

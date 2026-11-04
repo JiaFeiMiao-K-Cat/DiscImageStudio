@@ -1,0 +1,137 @@
+{
+  "Clock.Target": {
+    "zh-CN": "六条定位环与环形时标短纹",
+    "zh-TW": "六條定位環與環形時標短紋",
+    "en": "Six address rings and repeating clock marks",
+    "ja": "6本の位置リングと全周に繰り返すクロック縞",
+    "tr": "Altı adres halkası ve tekrarlayan saat işaretleri",
+    "es": "Seis anillos de posición y marcas de reloj repetidas",
+    "cs": "Šest adresních kružnic a opakující se časové značky"
+  },
+  "Clock.Aim": {
+    "zh-CN": "同一侧约 45° 内从内到外的短纹清楚，即可尝试粗标定。其他清楚区域也会参与估算。",
+    "zh-TW": "同一側約 45° 內從內到外的短紋清楚，即可嘗試粗校準。其他清楚區域也會參與估算。",
+    "en": "A clear 45° arc spanning the recording band may be enough for coarse calibration. Other readable areas also contribute.",
+    "ja": "記録帯の内側から外側まで約45°分の縞が見えれば、概略校正を試せます。他の読み取れる部分も推定に使います。",
+    "tr": "Kayıt bandının tamamını kapsayan belirgin bir 45° yay, kaba kalibrasyon için yeterli olabilir. Diğer okunabilir alanlar da hesaba katılır.",
+    "es": "Un arco claro de 45° que abarque la banda de grabación puede bastar para la calibración inicial. También se utilizan otras zonas legibles.",
+    "cs": "Pro hrubou kalibraci může stačit zřetelný oblouk 45° přes celou šířku záznamového pásu. Přispívají i další čitelné oblasti."
+  },
+  "Clock.DirectionHint": {
+    "zh-CN": "可点选条纹清楚的位置优先读取。",
+    "zh-TW": "可點選條紋清楚的位置優先讀取。",
+    "en": "Click a clear area to read it first.",
+    "ja": "見やすい部分をクリックすると、そこから優先して読み取ります。",
+    "tr": "Önce okunmasını istediğiniz belirgin alana tıklayın.",
+    "es": "Pulse una zona clara para leerla primero.",
+    "cs": "Klikněte na zřetelnou oblast, která se má přečíst jako první."
+  },
+  "Clock.Legend": {
+    "zh-CN": "读取后，盘缘上的色带标出参与计算的区域。",
+    "zh-TW": "讀取後，盤緣上的色帶標出參與計算的區域。",
+    "en": "After reading, arcs along the rim show which areas contributed.",
+    "ja": "読み取り後、計算に使った範囲を外周に色付きの弧で表示します。",
+    "tr": "Okuma sonrasında kenardaki yaylar, hangi alanların kullanıldığını gösterir.",
+    "es": "Tras la lectura, los arcos del borde muestran qué zonas se han utilizado.",
+    "cs": "Po načtení ukazují oblouky podél okraje, které oblasti se použily."
+  },
+  "Clock.Read": {
+    "zh-CN": "读取可见条纹",
+    "zh-TW": "讀取可見條紋",
+    "en": "Read visible marks",
+    "ja": "見える縞を読み取る",
+    "tr": "Görünen işaretleri oku",
+    "es": "Leer marcas visibles",
+    "cs": "Přečíst viditelné značky"
+  },
+  "Clock.Reading": {
+    "zh-CN": "正在查找定位环与时标短纹…",
+    "zh-TW": "正在尋找定位環與時標短紋…",
+    "en": "Reading address rings and clock marks…",
+    "ja": "位置リングとクロック縞を読み取り中…",
+    "tr": "Adres halkaları ve saat işaretleri okunuyor…",
+    "es": "Leyendo anillos de posición y marcas de reloj…",
+    "cs": "Čtení adresních kružnic a časových značek…"
+  },
+  "Clock.ReadHint": {
+    "zh-CN": "可直接读取，也可先在照片上点一下清楚的方向。",
+    "zh-TW": "可直接讀取，也可先在相片上點一下清楚的方向。",
+    "en": "Read now, or click a clear area in the photo first.",
+    "ja": "そのまま読み取るか、先に写真上の見やすい部分をクリックしてください。",
+    "tr": "Doğrudan okuyun veya önce fotoğraftaki belirgin bir alana tıklayın.",
+    "es": "Lea directamente o pulse antes una zona clara de la foto.",
+    "cs": "Spusťte čtení, nebo nejprve klikněte na zřetelnou oblast fotografie."
+  },
+  "Clock.Result": {
+    "zh-CN": "采用 {0} 个局部读数，取样范围共 {1:0.#}°。内半径 {2:0.00000} mm，外半径 {3:0.00000} mm。",
+    "zh-TW": "採用 {0} 個局部讀數，取樣範圍共 {1:0.#}°。內半徑 {2:0.00000} mm，外半徑 {3:0.00000} mm。",
+    "en": "{0} readings span {1:0.#}° in total. Inner radius {2:0.00000} mm, outer radius {3:0.00000} mm.",
+    "ja": "{0} 個の測定値を採用。測定範囲は計 {1:0.#}°、内半径 {2:0.00000} mm、外半径 {3:0.00000} mm。",
+    "tr": "{0} okuma toplam {1:0.#}° alanı kapsıyor. İç yarıçap {2:0.00000} mm, dış yarıçap {3:0.00000} mm.",
+    "es": "{0} lecturas abarcan un total de {1:0.#}°. Radio interior {2:0.00000} mm, radio exterior {3:0.00000} mm.",
+    "cs": "{0} odečtů pokrývá celkem {1:0.#}°. Vnitřní poloměr {2:0.00000} mm, vnější poloměr {3:0.00000} mm."
+  },
+  "Clock.Weak": {
+    "zh-CN": "条纹不足以确定半径。可优先指定清楚的方向，或给同一张盘换光照重拍。",
+    "zh-TW": "條紋不足以確定半徑。可優先指定清楚的方向，或給同一張盤換光照重拍。",
+    "en": "Insufficient clock marks. Try pointing to a clear area or photograph the same disc under different lighting.",
+    "ja": "有効な縞が足りません。見やすい位置を指定するか、同じディスクを照明を変えて撮影してください。",
+    "tr": "Yeterli saat işareti yok. Belirgin bir alanı seçin veya aynı diski farklı ışık altında fotoğraflayın.",
+    "es": "No hay suficientes marcas de reloj. Seleccione una zona clara o fotografíe el mismo disco con otra iluminación.",
+    "cs": "Nedostatek časových značek. Zkuste označit zřetelnou oblast nebo vyfotografovat stejný disk při jiném osvětlení."
+  },
+  "Clock.Conflict": {
+    "zh-CN": "不同位置的读数不一致。请复查盘缘、孔缘的照片矫正，再读取同一张盘。",
+    "zh-TW": "不同位置的讀數不一致。請複查盤緣、孔緣的相片校正，再讀取同一張盤。",
+    "en": "The areas disagree. Check the rim and hole alignment before reading this disc again.",
+    "ja": "範囲によって半径が一致しません。外周と中心穴の補正を確認して読み取り直してください。",
+    "tr": "Alanlar arasındaki okumalar uyuşmuyor. Diski yeniden okumadan önce dış kenar ve delik hizalamasını kontrol edin.",
+    "es": "Las lecturas de las zonas no coinciden. Compruebe la alineación del borde y del orificio antes de volver a leer el disco.",
+    "cs": "Odečty oblastí se neshodují. Před dalším čtením disku zkontrolujte zarovnání vnějšího okraje a otvoru."
+  },
+  "Clock.DiscSize": {
+    "zh-CN": "这张时标靶适用于 12 cm CD。请在照片矫正中核对实体盘片规格。",
+    "zh-TW": "這張時標靶適用於 12 cm CD。請在相片校正中核對實體盤片規格。",
+    "en": "This clock target uses a 12 cm CD. Check the disc size in photo rectification.",
+    "ja": "この縞は12 cm CD用です。写真補正でディスク径を確認してください。",
+    "tr": "Bu saat işaretli hedef 12 cm CD içindir. Fotoğraf düzeltmesinde disk boyutunu kontrol edin.",
+    "es": "Este patrón de reloj es para un CD de 12 cm. Compruebe el tamaño del disco en la rectificación de la foto.",
+    "cs": "Tento časový terč je pro 12cm CD. Zkontrolujte velikost disku při narovnávání fotografie."
+  },
+  "Clock.FineHint": {
+    "zh-CN": "当前盘用于粗标定。要描十字线，请用初始半径新建精细标定图案。",
+    "zh-TW": "目前碟片用於粗校準。要描十字線，請用初始半徑建立精細校準圖案。",
+    "en": "This disc is for coarse calibration. Create a fine cross target using the initial radii to trace its arms.",
+    "ja": "このディスクは概略校正用です。初期半径を使って十字の精密校正用ターゲットを作成してください。",
+    "tr": "Bu disk kaba kalibrasyon içindir. Kollarını işaretlemek için başlangıç yarıçaplarını kullanarak hassas artı hedefi oluşturun.",
+    "es": "Este disco sirve para la calibración inicial. Cree un patrón fino de cruz con los radios iniciales para trazar sus brazos.",
+    "cs": "Tento disk slouží k hrubé kalibraci. Pro označování ramen vytvořte jemný křížový terč s počátečními poloměry."
+  },
+  "Clock.PreviewCaption": {
+    "zh-CN": "时标分布示意 · 刻录请生成音轨",
+    "zh-TW": "時標分布示意 · 燒錄請產生音軌",
+    "en": "Clock mark schematic · Generate the audio track to burn",
+    "ja": "クロック縞の模式図 · 書き込みには音声トラックを生成",
+    "tr": "Saat işaretlerinin şeması · Yazdırmak için ses izi oluşturun",
+    "es": "Esquema de marcas de reloj · Genere la pista de audio para grabar",
+    "cs": "Schéma časových značek · Pro vypálení vytvořte zvukovou stopu"
+  },
+  "Clock.ExportPreview": {
+    "zh-CN": "导出示意图 PNG",
+    "zh-TW": "匯出示意圖 PNG",
+    "en": "Export schematic PNG",
+    "ja": "模式図をPNG出力",
+    "tr": "Şemayı PNG olarak dışa aktar",
+    "es": "Exportar esquema PNG",
+    "cs": "Exportovat schéma do PNG"
+  },
+  "Clock.PreviewSaved": {
+    "zh-CN": "已导出时标示意图和标定记录。刻录请使用本页的音轨或流式刻录。",
+    "zh-TW": "已匯出時標示意圖和標定記錄。燒錄請使用本頁的音軌或串流燒錄。",
+    "en": "Clock schematic and session saved. Use the audio track or streaming burn on this page to record the disc.",
+    "ja": "模式図と記録を保存しました。このページの音声トラックまたはストリーミング書き込みを使用してください。",
+    "tr": "Saat şeması ve oturum kaydedildi. Diske yazdırmak için bu sayfadaki ses izini veya akışla yazdırmayı kullanın.",
+    "es": "Se han guardado el esquema de reloj y la sesión. Para grabar el disco, use la pista de audio o la grabación en flujo de esta página.",
+    "cs": "Schéma časových značek a relace byly uloženy. Pro vypálení disku použijte zvukovou stopu nebo průběžné vypalování na této stránce."
+  }
+}

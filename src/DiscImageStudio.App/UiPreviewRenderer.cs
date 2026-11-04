@@ -231,8 +231,10 @@ internal static class UiPreviewRenderer
             "about" => 2,
             _ => throw new ArgumentException("Settings snapshot view must be general, storage or about.", nameof(view)),
         };
+        // The snapshot never saves, but keep its throwaway store beside the requested output
+        // instead of the system temp folder.
         AppSettingsStore store = new(Path.Combine(
-            Path.GetTempPath(),
+            Path.GetDirectoryName(Path.GetFullPath(outputPath))!,
             "disc-settings-snapshot-" + Guid.NewGuid().ToString("N") + ".json"));
         SettingsViewModel viewModel = new(settings, store);
         SettingsWindow window = new(viewModel)

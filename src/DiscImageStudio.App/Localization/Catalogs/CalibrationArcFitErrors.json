@@ -1,0 +1,128 @@
+{
+  "当前标靶没有用于测量的短圆弧。": {
+    "zh-CN": "当前标靶没有用于测量的短圆弧。",
+    "zh-TW": "目前標靶沒有可供測量的短圓弧。",
+    "en": "This target has no short arcs to measure.",
+    "ja": "このターゲットには測定用の短い円弧がありません。",
+    "tr": "Bu hedefte ölçülecek kısa yay yok.",
+    "es": "Este patrón no contiene arcos cortos que medir.",
+    "cs": "Tento terč neobsahuje krátké oblouky k měření."
+  },
+  "短圆弧编号无效或重复。": {
+    "zh-CN": "短圆弧编号无效或重复。",
+    "zh-TW": "短圓弧編號無效或重複。",
+    "en": "A short arc index is invalid or repeated.",
+    "ja": "短い円弧の番号が無効か重複しています。",
+    "tr": "Bir kısa yayın numarası geçersiz veya yinelenmiş.",
+    "es": "El número de un arco corto no es válido o está repetido.",
+    "cs": "Číslo krátkého oblouku je neplatné nebo se opakuje."
+  },
+  "短圆弧测量值无效。": {
+    "zh-CN": "短圆弧测量值无效。",
+    "zh-TW": "短圓弧測量值無效。",
+    "en": "A short arc measurement is invalid.",
+    "ja": "短い円弧の測定値が無効です。",
+    "tr": "Bir kısa yay ölçümü geçersiz.",
+    "es": "La medida de un arco corto no es válida.",
+    "cs": "Měření krátkého oblouku je neplatné."
+  },
+  "测得的短弧短于图案本身，请检查是否标到了完整两端。": {
+    "zh-CN": "测得的短弧短于图案本身，请检查是否标到了完整两端。",
+    "zh-TW": "測得的短弧短於圖案本身，請檢查是否標到了完整兩端。",
+    "en": "The measured arc is shorter than the original mark. Check that both endpoints are included.",
+    "ja": "測定した円弧が元の図形より短くなっています。両端を正しく指定したか確認してください。",
+    "tr": "Ölçülen yay, özgün işaretten daha kısa. Her iki ucun da seçildiğini kontrol edin.",
+    "es": "El arco medido es más corto que la marca original. Comprueba que has incluido ambos extremos.",
+    "cs": "Naměřený oblouk je kratší než původní značka. Zkontrolujte, zda jsou zahrnuty oba konce."
+  },
+  "请确认每一段从内向外的弯曲方向。仅凭弧长可能有多个解。": {
+    "zh-CN": "请确认每一段从内向外的弯曲方向。仅凭弧长可能有多个解。",
+    "zh-TW": "請確認每一段從內向外的彎曲方向。僅憑弧長可能有多個解。",
+    "en": "Confirm each arc's direction from inner to outer. Its length alone can have multiple solutions.",
+    "ja": "各円弧の内側から外側への曲がる方向を確認してください。弧の長さだけでは複数の解があり得ます。",
+    "tr": "Her yayın içten dışa bükülme yönünü doğrulayın. Yalnızca uzunluğu birden fazla sonuç verebilir.",
+    "es": "Confirma el sentido de curvatura de cada arco, de dentro hacia fuera. Su longitud por sí sola puede dar varias soluciones.",
+    "cs": "Potvrďte směr ohybu každého oblouku od vnitřního okraje k vnějšímu. Samotná délka může vést k více řešením."
+  },
+  "短弧转角无法对应有效的盘片半径。": {
+    "zh-CN": "短弧转角无法对应有效的盘片半径。",
+    "zh-TW": "短弧轉角無法對應有效的盤片半徑。",
+    "en": "The arc angle does not correspond to a valid disc radius.",
+    "ja": "円弧の角度が有効なディスク半径に対応しません。",
+    "tr": "Yayın açısı geçerli bir disk yarıçapına karşılık gelmiyor.",
+    "es": "El ángulo del arco no corresponde a un radio de disco válido.",
+    "cs": "Úhel oblouku neodpovídá platnému poloměru disku."
+  },
+  "请确认至少两段相距较远的完整短弧，保留中间的弯曲方向。": {
+    "zh-CN": "请确认至少两段相距较远的完整短弧，保留中间的弯曲方向。",
+    "zh-TW": "請確認至少兩段相距較遠的完整短弧，保留中間的彎曲方向。",
+    "en": "Confirm at least two widely separated complete arcs, including their bend directions.",
+    "ja": "十分離れた2本以上の完全な円弧とその曲がる方向を確認してください。",
+    "tr": "Birbirinden uzak en az iki tam yayı, bükülme yönleriyle birlikte doğrulayın.",
+    "es": "Confirma al menos dos arcos completos bien separados y sus sentidos de curvatura.",
+    "cs": "Potvrďte alespoň dva celé oblouky dostatečně daleko od sebe, včetně směrů jejich ohybu."
+  },
+  "短弧位置过于集中。请测量靠内和靠外的短弧。": {
+    "zh-CN": "短弧位置过于集中。请测量靠内和靠外的短弧。",
+    "zh-TW": "短弧位置過於集中。請測量靠內和靠外的短弧。",
+    "en": "The arcs are too close together. Measure arcs nearer the inner and outer edges.",
+    "ja": "円弧の位置が近すぎます。内側と外側の円弧を測定してください。",
+    "tr": "Yaylar birbirine çok yakın. İç ve dış kenarlara daha yakın yayları ölçün.",
+    "es": "Los arcos están demasiado juntos. Mide arcos más cercanos a los bordes interior y exterior.",
+    "cs": "Oblouky jsou příliš blízko sebe. Změřte oblouky blíže vnitřnímu a vnějšímu okraji."
+  },
+  "短弧无法对应有效的盘片半径。": {
+    "zh-CN": "短弧无法对应有效的盘片半径。",
+    "zh-TW": "短弧無法對應有效的盤片半徑。",
+    "en": "The arcs do not correspond to valid disc radii.",
+    "ja": "円弧が有効なディスク半径に対応しません。",
+    "tr": "Yaylar geçerli disk yarıçaplarına karşılık gelmiyor.",
+    "es": "Los arcos no corresponden a radios de disco válidos.",
+    "cs": "Oblouky neodpovídají platným poloměrům disku."
+  },
+  "短弧无法稳定确定两个半径。": {
+    "zh-CN": "短弧无法稳定确定两个半径。",
+    "zh-TW": "短弧無法穩定確定兩個半徑。",
+    "en": "The arcs cannot determine both radii reliably.",
+    "ja": "円弧から両方の半径を安定して求められません。",
+    "tr": "Yaylardan iki yarıçap da güvenilir biçimde belirlenemiyor.",
+    "es": "Los arcos no permiten determinar ambos radios de forma fiable.",
+    "cs": "Z oblouků nelze spolehlivě určit oba poloměry."
+  },
+  "短弧结果超出实体盘片范围，请检查方向和两端。": {
+    "zh-CN": "短弧结果超出实体盘片范围，请检查方向和两端。",
+    "zh-TW": "短弧結果超出實體盤片範圍，請檢查方向和兩端。",
+    "en": "The estimated radii are outside the physical disc. Check the direction and endpoints.",
+    "ja": "推定半径がディスクの範囲外です。方向と両端を確認してください。",
+    "tr": "Tahmini yarıçaplar diskin dışında. Yönü ve uç noktaları kontrol edin.",
+    "es": "Los radios estimados quedan fuera del disco. Comprueba el sentido y los extremos.",
+    "cs": "Odhadnuté poloměry leží mimo disk. Zkontrolujte směr a koncové body."
+  },
+  "短弧位置与照片不一致，请检查圈号或照片矫正。": {
+    "zh-CN": "短弧位置与照片不一致，请检查圈号或照片矫正。",
+    "zh-TW": "短弧位置與相片不一致，請檢查圈號或相片校正。",
+    "en": "The arc position disagrees with the photo. Check the band number and photo correction.",
+    "ja": "円弧の位置が写真と一致しません。円弧番号と写真の補正を確認してください。",
+    "tr": "Yayın konumu fotoğrafla uyuşmuyor. Bant numarasını ve fotoğraf düzeltmesini kontrol edin.",
+    "es": "La posición del arco no coincide con la foto. Comprueba el número de banda y la corrección de la foto.",
+    "cs": "Poloha oblouku neodpovídá fotografii. Zkontrolujte číslo pásu a opravu fotografie."
+  },
+  "拟合结果显示短弧内部可能折返，无法从总角度可靠确定半径。": {
+    "zh-CN": "拟合结果显示短弧内部可能折返，无法从总角度可靠确定半径。",
+    "zh-TW": "擬合結果顯示短弧內部可能折返，無法從總角度可靠確定半徑。",
+    "en": "The fitted arc may reverse direction, so its total angle cannot reliably determine the radii.",
+    "ja": "推定された円弧は途中で折り返す可能性があり、全角度から半径を確実に求められません。",
+    "tr": "Uydurulan yay yön değiştirebilir; toplam açısından yarıçaplar güvenilir biçimde belirlenemez.",
+    "es": "El arco ajustado puede invertir su sentido, por lo que su ángulo total no permite determinar los radios de forma fiable.",
+    "cs": "Proložený oblouk může měnit směr, takže z celkového úhlu nelze spolehlivě určit poloměry."
+  },
+  "各段短弧不一致，请重新核对完整轮廓和弯曲方向。": {
+    "zh-CN": "各段短弧不一致，请重新核对完整轮廓和弯曲方向。",
+    "zh-TW": "各段短弧不一致，請重新核對完整輪廓和彎曲方向。",
+    "en": "The arcs disagree. Recheck the complete outlines and bend directions.",
+    "ja": "各円弧が一致しません。輪郭全体と曲がる方向を確認してください。",
+    "tr": "Yaylar birbiriyle uyuşmuyor. Tam konturları ve bükülme yönlerini yeniden kontrol edin.",
+    "es": "Los arcos no concuerdan. Revisa sus contornos completos y sus sentidos de curvatura.",
+    "cs": "Oblouky si neodpovídají. Znovu zkontrolujte celé obrysy a směry ohybu."
+  }
+}
