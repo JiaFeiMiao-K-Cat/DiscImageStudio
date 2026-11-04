@@ -24,12 +24,65 @@ internal static class TempFiles
 
     private static readonly string[] ManagedNames = ["design-thumbnail.png"];
 
+    // Static initializers run in textual order: the Lazy must exist before the field below reads it.
+    private static readonly Lazy<string> DefaultDirectoryValue = new(ResolveDefaultDirectory);
     private static readonly Lock Gate = new();
     private static string _livePreviewDirectory = DefaultDirectory;
 
-    internal static string DefaultDirectory => Path.Combine(
-        Path.GetTempPath(),
-        DefaultFolderName);
+    /// <summary>Cache folder next to the executable, so a portable copy keeps its artifacts with
+    /// itself. When that folder cannot be written (for example under Program Files) the cache
+    /// moves to %LOCALAPPDATA%\DiscImageStudio\cache. The system temp folder is never used.</summary>
+    internal static string DefaultDirectory => DefaultDirectoryValue.Value;
+
+    private static string ResolveDefaultDirectory()
+    {
+        // In a single-file bundle AppContext.BaseDirectory may be the extraction folder, so the
+        // executable's own path is the reliable anchor.
+        // When launched as "dotnet DiscImageStudio.dll" the process is the shared dotnet host,
+        // so the app's own folder is the anchor instead of the SDK directory.
+        string? processPath = Environment.ProcessPath;
+        bool hostedByDotnet = string.Equals(
+            Path.GetFileNameWithoutExtension(processPath), "dotnet", StringComparison.OrdinalIgnoreCase);
+        string? executableDirectory = hostedByDotnet
+            ? AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            : Path.GetDirectoryName(processPath);
+        if (!string.IsNullOrEmpty(executableDirectory))
+        {
+            string besideExecutable = Path.Combine(executableDirectory, DefaultFolderName + "-cache");
+            if (CanWrite(besideExecutable))
+            {
+                return besideExecutable;
+            }
+        }
+
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            DefaultFolderName,
+            "cache");
+    }
+
+    private static bool CanWrite(string directory)
+    {
+        try
+        {
+            Directory.CreateDirectory(directory);
+            string probe = Path.Combine(directory, ".write-probe-" + Guid.NewGuid().ToString("N"));
+            using (new FileStream(probe, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
+            }
+
+            File.Delete(probe);
+            return true;
+        }
+        catch (Exception exception) when (exception is ArgumentException
+                                              or IOException
+                                              or NotSupportedException
+                                              or UnauthorizedAccessException
+                                              or System.Security.SecurityException)
+        {
+            return false;
+        }
+    }
 
     /// <summary>Directory for newly written preview/composite artifacts. Never null; falls
     /// back to <see cref="DefaultDirectory"/>.</summary>
@@ -45,7 +98,7 @@ internal static class TempFiles
     }
 
     /// <summary>Points new cache writes at <paramref name="directory"/>. An empty value or an
-    /// unusable folder (relative path, unwritable) falls back to the default temp folder; the
+    /// unusable folder (relative path, unwritable) falls back to <see cref="DefaultDirectory"/>; the
     /// return value is the directory actually in use.</summary>
     internal static string TryConfigureCacheDirectory(string? directory)
     {
