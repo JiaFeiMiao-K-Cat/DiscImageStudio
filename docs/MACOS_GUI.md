@@ -73,7 +73,7 @@ flowchart TB
     Runner --> CLI["disc-image-studio<br/>（自包含 CLI）"]
     CLI --> Modules["DiscModuleCatalog<br/>CD / DVD / BluRay"]
     BurnSvc -->|"drutil"| Drive["光盘驱动器"]
-    BurnSvc -->|"stdin 管道"| Helper["disc-burn-stream<br/>DRTrack + DRBurn"]
+    BurnSvc -->|"stdin 管道"| Helper["disc-burn-stream<br/>CD/DVD: DRTrack + DRBurn<br/>BD: IOKit MMC"]
     Helper --> Drive
 ```
 
@@ -327,7 +327,7 @@ gh secret set APPLE_APP_SPECIFIC_PASSWORD --repo NaiveTomcat/DiscImageStudio
 
 ## 刻录
 
-macOS 侧不引入第三方刻录库，只使用系统自带的 DiscRecording（`drutil` 与 `DRTrack`/`DRBurn`）。有两条路径：
+macOS 侧不引入第三方刻录库，使用系统自带的 DiscRecording（`drutil`、`DRTrack`/`DRBurn`）与 IOKit SCSI（BD 原始 MMC）。有两条路径：
 
 | 路径 | 实现 | 覆盖范围 | 状态 |
 | --- | --- | --- | --- |
@@ -339,7 +339,7 @@ flowchart LR
     CLI["disc-image-studio"] -->|"--output <file>"| Image["WAV / ISO / CUE+BIN"]
     Image -->|"drutil burn"| Drive["光盘驱动器"]
     CLI -->|"--output -"| Pipe["stdout 管道"]
-    Pipe --> Helper["disc-burn-stream<br/>DRTrack + DRBurn"]
+    Pipe --> Helper["disc-burn-stream<br/>CD/DVD: DRTrack + DRBurn<br/>BD: IOKit MMC"]
     Helper --> Drive
 ```
 
@@ -369,7 +369,7 @@ drutil burn -eject disc.iso             # 等价：hdiutil burn disc.iso
 
 ### 流式模式
 
-流式模式不落盘：`BurnStreamService` 启动 CLI（`--output -`，stdout 只输出原始块，日志改走 stderr），把 stdout 接到内置助手 `disc-burn-stream` 的 stdin；助手用 `DRTrack` 的 producer 回调向前取数据、`DRBurn` 负责写入，并把进度写到 stderr。
+流式模式不落盘：`BurnStreamService` 启动 CLI（`--output -`，stdout 只输出原始块，日志改走 stderr），把 stdout 接到内置助手 `disc-burn-stream` 的 stdin。CD/DVD 用 `DRTrack` producer + `DRBurn`；BD 用 IOKit `SCSITaskDeviceInterface` 直接发 MMC。进度写到 stderr。
 
 ```sh
 # 列出刻录机与介质状态（stdout 为 JSON 数组）
@@ -385,7 +385,7 @@ macos/build/cli/osx-arm64/disc-image-studio cd-generate \
 - 参数：`--kind cd-audio|dvd-data|bd-data`、`--sectors N`，可选 `--drive I`、`--speed N`、`--no-verify`、`--no-eject`、`--test`；stderr 进度行是 `state:` / `percent:` / `error:`，退出码 0 成功、1 失败、2 参数/设备/介质问题。
 - 介质非空白、没有介质或没有刻录机时，助手直接拒绝（退出码 2 并写 `error:`），界面展示原因而不是静默失败。
 - 支持 CD-DA、DVD 数据与 **BD-R 流式写入**：CD/DVD 走 DiscRecording 的 DRTrack + DRBurn；BD 绕开 DiscRecording，助手用 IOKit `SCSITaskDeviceInterface` 直接发 MMC `WRITE(10)`、`SYNCHRONIZE CACHE`、`CLOSE TRACK/SESSION`，并尝试 `SET CD SPEED`。已在 MATSHITA UJ260AF + 25GB BD-R 上以 4× 完整写入并验证图案。文件模式（drutil）仍只覆盖 CD/DVD；音频 CD 走 CD-R。
-- 该路径与 `--output -` 同属实验性能力，尚未在实机验证；CI 只覆盖助手构建与 `--list-drives` 自检。
+- 验证状态：BD-R 25GB 已在 MATSHITA UJ260AF 上 4× 完整写入；DVD/BD 随盘文件混合 ISO 已挂载并实盘验证；CD 音频完整实盘、其他驱动器/BD-RE/多层仍需补测。CI 仍只覆盖助手构建与 `--list-drives` 自检。
 
 ### 安全要求
 
@@ -396,7 +396,7 @@ macos/build/cli/osx-arm64/disc-image-studio cd-generate \
 - 没有刻录机时：`drutil list` 为空 → 界面禁用刻录动作并提示「未检测到光盘驱动器」，不尝试调用 `drutil`。
 - 没有介质时：`drutil status` 报告无盘 → 提示放入空白介质，不自动重试。
 - 介质不是空白时：界面直接拒绝写入并显示现有轨道信息（`drutil toc`），不做「擦除后继续」的隐式操作。
-- 蓝光介质：`BurnKind.kind(forMediaType:)` 返回 nil，界面提示改用镜像文件与第三方软件，绝不尝试写入。
+- 蓝光介质：文件模式直接拦截并提示使用流式模式（MMC）；不会再让 `drutil` 尝试写 BD。
 
 ## 辅助标定（完整流程）
 
@@ -599,9 +599,9 @@ macOS 应用跟随系统语言，目前提供 **简体中文（zh-Hans）** 与 
 - **标定不内置自动环数识别**：粗调需人工沿黑白分界描点，精调需人工沿一条径向曲线描点；没有「密集环相位自动提取」，也不自动识别同心圆。
 - **标定需要实机刻录与拍摄**：自动化只能覆盖图案生成、矫正与拟合算法；真实盘面可见度、镜头状态与描点精度需人工确认。
 - **页面逐步对齐 Windows**：各工作流页面按 `macos/WORKFLOW.md` 与 `macos/CALIBRATION.md` 落地；标定向导依赖 UI/CLI 合并后可用，命令与字段以契约为准。
-- **刻录无法在构建机验证**：CI 与脚本只能确认助手能构建、能启动、能列出刻录机；真正的写入需要实机刻录机与空白介质，相关分支（无介质、非空白、写入中断）只能靠人工回归。
+- **刻录验证仍依赖实机**：BD-R 4× 25GB、DVD/BD 随盘文件已人工验证；CI 只能确认构建、启动与 `--list-drives`，无介质/非空白/中断等分支仍需人工回归。
 - **界面语言**：跟随系统，提供简体中文与英文；CLI/Kit 返回的底层诊断信息保留原文，与 Windows 行为一致。
-- **无公证、ad-hoc 签名**：只保证完整性，不提供开发者身份验证；首次运行需要手动放行。
+- **签名/公证**：配置证书与公证 secrets 的 CI 会产出 Developer ID 签名并公证的 `.app`/DMG；未配置或本地直接构建时仍为 ad-hoc，首次运行需手动放行。
 - **图标为放大生成**：源图是 256×256 的 `src/DiscImageStudio.App/Assets/DiscImageStudio-256.png`，512/1024 由 `sips` 放大，高分辨率下会略显模糊。提供 1024×1024 源图即可改善。
 - **CLI 与主机架构需匹配**：内置的 CLI 是发布时确定 RID 的单文件，Apple Silicon 与 Intel 需要各自构建；通用二进制（universal）暂未提供。
 - **不改变 Windows 行为**：本目录的改动不影响 WPF 桌面程序与 CLI 的既有行为；契约发生变化时以 `macos/DESIGN.md` 为准。

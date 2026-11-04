@@ -469,7 +469,7 @@ CLI 先生成镜像/音轨，再交给系统 `drutil` 刻录：
 `BurnService`（`macos/Sources/DiscImageStudioKit/BurnService.swift`）负责：`drutil list` 解析、`status`+`toc` 介质状态、
 刻录计划（`BurnPlan`，含临时目录清理）、以及用 `CliRunner` 启动 `drutil` 并复用同一套事件流。
 
-### 5.2 流式模式（实验性，DiscRecording）
+### 5.2 流式模式（实验性，DiscRecording + IOKit MMC）
 
 用 DiscRecording 框架把 CLI 生成的字节流直接喂给刻录机，不落完整镜像。
 `drutil` 只接受路径，**不能**从 stdin 流式写入；流式必须走 `DRTrack` 的 producer 接口：
@@ -478,7 +478,7 @@ CLI 先生成镜像/音轨，再交给系统 `drutil` 刻录：
 CLI（--output -，stdout 输出原始块）
         │  pipe
         ▼
-disc-burn-stream（Objective-C + DiscRecording：DRTrack producer + DRBurn）
+disc-burn-stream（Objective-C：CD/DVD 用 DRTrack + DRBurn；BD 用 IOKit MMC）
         │
         ▼
      刻录机
@@ -495,9 +495,10 @@ disc-burn-stream（Objective-C + DiscRecording：DRTrack producer + DRBurn）
 - CLI 侧（`src/DiscImageStudio.Cli`）：
   - `cd-generate --output -`：stdout 只输出 **原始 CD-DA 块**（每扇区 2352 字节、大端 PCM、已延迟交织），不写 WAV 头/CUE；
     所有日志、进度、摘要改走 stderr。GUI 用参数里的 `--sectors` 作为 track 长度。
-  - `bd-generate --output -`（可选）：stdout 输出完整 ISO 字节流，日志走 stderr；供第三方 `growisofs` 等工具使用。
+  - `bd-generate --output -`：stdout 输出完整 ISO 字节流，日志走 stderr；GUI 的 BD 流式模式直接消费它。
 - `BurnStreamService`（Kit）负责编排：启动 CLI 子进程，把 stdout 管道接到 helper 的 stdin，转发两边 stderr 日志、
-  解析 `percent:` 推进进度；取消时同时终止两个进程。
+  解析 `percent:` 推进进度；取消时同时终止两个进程。DVD 在 helper 不发 `percent:` 时用 CLI 的 `block X/Y` 回退；BD 不使用该回退。
+- BD 的 MMC 路径以 64/32 扇区（128/64 KiB）为单位发 `WRITE(10)`，默认不启用写后校验；`SET CD SPEED` 请求的速度以 BD 1×=4496 KB/s 换算。
 
 ### 5.3 边界与安全
 
