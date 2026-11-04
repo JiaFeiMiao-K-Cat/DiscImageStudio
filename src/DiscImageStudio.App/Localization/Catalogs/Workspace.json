@@ -4,6 +4,7 @@
     "en": " · sRGB linearization",
     "zh-TW": " · sRGB 線性化",
     "ja": " · sRGB リニア化",
+    "tr": " · sRGB doğrusallaştırma",
     "es": " · Linealización sRGB"
   },
   "CD ISO 输出位置": {
@@ -11,6 +12,7 @@
     "en": "CD ISO output location",
     "zh-TW": "CD ISO 輸出位置",
     "ja": "CD ISO の出力先",
+    "tr": "CD ISO çıktı konumu",
     "es": "Ubicación de salida de la ISO CD"
   },
   "CD 音轨或镜像|*.wav;*.raw;*.iso|WAV 音轨|*.wav|RAW 音轨|*.raw|ISO 数据盘|*.iso|所有文件|*.*": {
@@ -18,6 +20,7 @@
     "en": "CD track or image|*.wav;*.raw;*.iso|WAV audio track|*.wav|RAW audio track|*.raw|ISO data disc|*.iso|All files|*.*",
     "zh-TW": "CD 音軌或映像檔|*.wav;*.raw;*.iso|WAV 音軌|*.wav|RAW 音軌|*.raw|ISO 資料光碟|*.iso|所有檔案|*.*",
     "ja": "CD トラックまたはイメージ|*.wav;*.raw;*.iso|WAV オーディオ トラック|*.wav|RAW オーディオ トラック|*.raw|ISO データ ディスク|*.iso|すべてのファイル|*.*",
+    "tr": "CD izi veya imajı|*.wav;*.raw;*.iso|WAV ses izi|*.wav|RAW ses izi|*.raw|ISO veri diski|*.iso|Tüm dosyalar|*.*",
     "es": "Pista o imagen CD|*.wav;*.raw;*.iso|Pista de audio WAV|*.wav|Pista de audio RAW|*.raw|Disco de datos ISO|*.iso|Todos los archivos|*.*"
   },
   "CD 音轨输出位置": {
@@ -25,6 +28,7 @@
     "en": "CD track output location",
     "zh-TW": "CD 音軌輸出位置",
     "ja": "CD トラックの出力先",
+    "tr": "CD izi çıktı konumu",
     "es": "Ubicación de salida de la pista CD"
   },
   "DVD ISO 输出位置": {
@@ -32,6 +36,7 @@
     "en": "DVD ISO output location",
     "zh-TW": "DVD ISO 輸出位置",
     "ja": "DVD ISO の出力先",
+    "tr": "DVD ISO çıktı konumu",
     "es": "Ubicación de salida de la ISO DVD"
   },
   "DVD 的扇区数必须是 16 的倍数。": {
@@ -39,6 +44,7 @@
     "en": "The DVD sector count must be a multiple of 16.",
     "zh-TW": "DVD 的磁區數必須是 16 的倍數。",
     "ja": "DVD のセクター数は 16 の倍数である必要があります。",
+    "tr": "DVD sektör sayısı 16'nın katı olmalıdır.",
     "es": "El número de sectores DVD debe ser múltiplo de 16."
   },
   "ISO 镜像|*.iso|所有文件|*.*": {
@@ -46,6 +52,7 @@
     "en": "ISO image|*.iso|All files|*.*",
     "zh-TW": "ISO 映像檔|*.iso|所有檔案|*.*",
     "ja": "ISO イメージ|*.iso|すべてのファイル|*.*",
+    "tr": "ISO imajı|*.iso|Tüm dosyalar|*.*",
     "es": "Imagen ISO|*.iso|Todos los archivos|*.*"
   },
   "WAV 音轨（推荐）|*.wav|RAW 音轨（旧格式）|*.raw|所有文件|*.*": {
@@ -53,6 +60,7 @@
     "en": "WAV audio track (recommended)|*.wav|RAW audio track (legacy)|*.raw|All files|*.*",
     "zh-TW": "WAV 音軌（建議）|*.wav|RAW 音軌（舊格式）|*.raw|所有檔案|*.*",
     "ja": "WAV オーディオ トラック (推奨)|*.wav|RAW オーディオ トラック (旧形式)|*.raw|すべてのファイル|*.*",
+    "tr": "WAV ses izi (önerilen)|*.wav|RAW ses izi (eski)|*.raw|Tüm dosyalar|*.*",
     "es": "Pista de audio WAV (recomendada)|*.wav|Pista de audio RAW (formato anterior)|*.raw|Todos los archivos|*.*"
   },
   "[{0:HH:mm:ss}] 任务失败：退出码 {1}，未生成 {2}\n": {
@@ -60,6 +68,7 @@
     "en": "[{0:HH:mm:ss}] Job failed: exit code {1}; {2} was not generated\n",
     "zh-TW": "[{0:HH:mm:ss}] 工作失敗：結束代碼 {1}，未產生 {2}\n",
     "ja": "[{0:HH:mm:ss}] ジョブ失敗: 終了コード {1}、{2} は生成されませんでした\n",
+    "tr": "[{0:HH:mm:ss}] Görev başarısız: çıkış kodu {1}; {2} oluşturulamadı\n",
     "es": "[{0:HH:mm:ss}] El trabajo falló: código de salida {1}; no se generó {2}\n"
   },
   "[{0:HH:mm:ss}] 任务已取消\n": {
@@ -67,6 +76,7 @@
     "en": "[{0:HH:mm:ss}] Job cancelled\n",
     "zh-TW": "[{0:HH:mm:ss}] 工作已取消\n",
     "ja": "[{0:HH:mm:ss}] ジョブはキャンセルされました\n",
+    "tr": "[{0:HH:mm:ss}] Görev iptal edildi\n",
     "es": "[{0:HH:mm:ss}] Trabajo cancelado\n"
   },
   "[{0:HH:mm:ss}] 任务异常：{1}\n": {
@@ -74,6 +84,7 @@
     "en": "[{0:HH:mm:ss}] Job error: {1}\n",
     "zh-TW": "[{0:HH:mm:ss}] 工作異常：{1}\n",
     "ja": "[{0:HH:mm:ss}] ジョブ エラー: {1}\n",
+    "tr": "[{0:HH:mm:ss}] Görev hatası: {1}\n",
     "es": "[{0:HH:mm:ss}] Error del trabajo: {1}\n"
   },
   "[{0:HH:mm:ss}] 完成：{1}\n": {
@@ -81,6 +92,7 @@
     "en": "[{0:HH:mm:ss}] Completed: {1}\n",
     "zh-TW": "[{0:HH:mm:ss}] 完成：{1}\n",
     "ja": "[{0:HH:mm:ss}] 完了: {1}\n",
+    "tr": "[{0:HH:mm:ss}] Tamamlandı: {1}\n",
     "es": "[{0:HH:mm:ss}] Completado: {1}\n"
   },
   "[{0:HH:mm:ss}] 设计合成失败：{1}\n": {
@@ -88,6 +100,7 @@
     "en": "[{0:HH:mm:ss}] Design composition failed: {1}\n",
     "zh-TW": "[{0:HH:mm:ss}] 設計合成失敗：{1}\n",
     "ja": "[{0:HH:mm:ss}] デザインの合成に失敗しました: {1}\n",
+    "tr": "[{0:HH:mm:ss}] Tasarım birleştirme başarısız: {1}\n",
     "es": "[{0:HH:mm:ss}] Falló la composición del diseño: {1}\n"
   },
   "{0:N0} 扇区 · {1:0.#}–{2:0.#} mm": {
@@ -95,6 +108,7 @@
     "en": "{0:N0} sectors · {1:0.#}–{2:0.#} mm",
     "zh-TW": "{0:N0} 磁區 · {1:0.#}–{2:0.#} mm",
     "ja": "{0:N0} セクター · {1:0.#}–{2:0.#} mm",
+    "tr": "{0:N0} sektör · {1:0.#}–{2:0.#} mm",
     "es": "{0:N0} sectores · {1:0.#}–{2:0.#} mm"
   },
   "{0}\n\n文件位置：\n{1}": {
@@ -102,6 +116,7 @@
     "en": "{0}\n\nFile location:\n{1}",
     "zh-TW": "{0}\n\n檔案位置：\n{1}",
     "ja": "{0}\n\nファイルの場所:\n{1}",
+    "tr": "{0}\n\nDosya konumu:\n{1}",
     "es": "{0}\n\nUbicación del archivo:\n{1}"
   },
   "{0}\n最近打开：{1:yyyy-MM-dd HH:mm}": {
@@ -109,6 +124,7 @@
     "en": "{0}\nLast opened: {1:yyyy-MM-dd HH:mm}",
     "zh-TW": "{0}\n最近開啟：{1:yyyy-MM-dd HH:mm}",
     "ja": "{0}\n最終使用日時: {1:yyyy-MM-dd HH:mm}",
+    "tr": "{0}\nSon açılış: {1:yyyy-MM-dd HH:mm}",
     "es": "{0}\nÚltima apertura: {1:yyyy-MM-dd HH:mm}"
   },
   "{0} 级 · {1} 抖动": {
@@ -116,6 +132,7 @@
     "en": "{0} levels · {1} dithering",
     "zh-TW": "{0} 級 · {1} 抖動",
     "ja": "{0} 階調 · {1} ディザリング",
+    "tr": "{0} düzey · {1} sarsıntı",
     "es": "{0} niveles · {1} de tramado"
   },
   "{0}之前要保存对「{1}」的更改吗？": {
@@ -123,6 +140,7 @@
     "en": "Save changes to “{1}” before continuing ({0})?",
     "zh-TW": "{0}之前要儲存對「{1}」的變更嗎？",
     "ja": "{0}の前に「{1}」への変更を保存しますか？",
+    "tr": "Devam etmeden önce ({0}) “{1}” üzerindeki değişiklikler kaydedilsin mi?",
     "es": "¿Guardar los cambios de «{1}» antes de continuar ({0})?"
   },
   "不保存": {
@@ -130,6 +148,7 @@
     "en": "Don't save",
     "zh-TW": "不儲存",
     "ja": "保存しない",
+    "tr": "Kaydetme",
     "es": "No guardar"
   },
   "从默认参数开始": {
@@ -137,6 +156,7 @@
     "en": "Start with default parameters",
     "zh-TW": "從預設參數開始",
     "ja": "既定のパラメーターで開始",
+    "tr": "Varsayılan parametrelerle başla",
     "es": "Valores iniciales"
   },
   "任务已取消": {
@@ -144,6 +164,7 @@
     "en": "Job cancelled",
     "zh-TW": "工作已取消",
     "ja": "ジョブはキャンセルされました",
+    "tr": "Görev iptal edildi",
     "es": "Trabajo cancelado"
   },
   "任务未完成": {
@@ -151,6 +172,7 @@
     "en": "Job incomplete",
     "zh-TW": "工作未完成",
     "ja": "ジョブ未完了",
+    "tr": "Görev tamamlanmadı",
     "es": "Trabajo incompleto"
   },
   "关闭": {
@@ -158,6 +180,7 @@
     "en": "Close",
     "zh-TW": "關閉",
     "ja": "閉じる",
+    "tr": "Kapat",
     "es": "Cerrar"
   },
   "内置预设不能删除。": {
@@ -165,6 +188,7 @@
     "en": "Built-in presets cannot be deleted.",
     "zh-TW": "內建預設不能刪除。",
     "ja": "組み込みプリセットは削除できません。",
+    "tr": "Yerleşik önayarlar silinemez.",
     "es": "Los preajustes integrados no se pueden eliminar."
   },
   "创建工程": {
@@ -172,6 +196,7 @@
     "en": "Create project",
     "zh-TW": "建立專案",
     "ja": "プロジェクトの作成",
+    "tr": "Proje oluştur",
     "es": "Crear proyecto"
   },
   "刻录完成": {
@@ -179,6 +204,7 @@
     "en": "Burn complete",
     "zh-TW": "燒錄完成",
     "ja": "書き込み完了",
+    "tr": "Yazma tamamlandı",
     "es": "Grabación completada"
   },
   "包含随盘文件，导出为 CD 数据盘 ISO。": {
@@ -186,6 +212,7 @@
     "en": "Files are included; export as a CD data disc ISO.",
     "zh-TW": "包含隨碟檔案，匯出為 CD 資料光碟 ISO。",
     "ja": "ファイルが含まれているため、CD データ ディスク ISO としてエクスポートします。",
+    "tr": "Dosyalar dahil edildi; CD veri diski ISO'su olarak dışa aktarılıyor.",
     "es": "Se incluyen archivos; exportar como ISO de disco de datos CD."
   },
   "可直接粘贴或浏览已生成的 ISO 镜像。": {
@@ -193,6 +220,7 @@
     "en": "Paste a path or browse for a generated ISO image.",
     "zh-TW": "可直接貼上或瀏覽已產生的 ISO 映像檔。",
     "ja": "生成済みの ISO イメージのパスを貼り付けるか、参照して選択します。",
+    "tr": "Oluşturulmuş bir ISO imajının yolunu yapıştırın veya göz atın.",
     "es": "Pega una ruta o busca una imagen ISO generada."
   },
   "可直接粘贴或浏览已生成的 ISO；同名 sidecar 会带回几何与影调。": {
@@ -200,6 +228,7 @@
     "en": "Paste a path or browse for a generated ISO; its sidecar restores geometry and tone settings.",
     "zh-TW": "可直接貼上或瀏覽已產生的 ISO；同名 sidecar 會帶回幾何與影調。",
     "ja": "生成済みの ISO のパスを貼り付けるか、参照して選択します。同名の sidecar からジオメトリとトーンが復元されます。",
+    "tr": "Oluşturulmuş bir ISO'nun yolunu yapıştırın veya göz atın; aynı adlı yan dosya geometri ve ton ayarlarını geri yükler.",
     "es": "Pega una ruta o busca una ISO generada; su archivo auxiliar restaura la geometría y los ajustes de tono."
   },
   "可选择 WAV / RAW 音轨或 CD 数据盘 ISO。": {
@@ -207,6 +236,7 @@
     "en": "Select a WAV / RAW audio track or a CD data disc ISO.",
     "zh-TW": "可選擇 WAV / RAW 音軌或 CD 資料光碟 ISO。",
     "ja": "WAV / RAW オーディオ トラックまたは CD データ ディスク ISO を選択できます。",
+    "tr": "Bir WAV / RAW ses izi veya CD veri diski ISO'su seçin.",
     "es": "Selecciona una pista de audio WAV / RAW o una ISO de disco de datos CD."
   },
   "图片无法导入": {
@@ -214,6 +244,7 @@
     "en": "Cannot import image",
     "zh-TW": "圖片無法匯入",
     "ja": "画像をインポートできません",
+    "tr": "Görsel içe aktarılamıyor",
     "es": "No se puede importar la imagen"
   },
   "外半径必须大于内半径。": {
@@ -221,6 +252,7 @@
     "en": "The outer radius must be greater than the inner radius.",
     "zh-TW": "外半徑必須大於內半徑。",
     "ja": "外半径は内半径より大きくする必要があります。",
+    "tr": "Dış yarıçap iç yarıçaptan büyük olmalıdır.",
     "es": "El radio exterior debe ser mayor que el radio interior."
   },
   "失败：退出码 {0}": {
@@ -228,6 +260,7 @@
     "en": "Failed: exit code {0}",
     "zh-TW": "失敗：結束代碼 {0}",
     "ja": "失敗: 終了コード {0}",
+    "tr": "Başarısız: çıkış kodu {0}",
     "es": "Falló: código de salida {0}"
   },
   "完成：": {
@@ -235,6 +268,7 @@
     "en": "Completed: ",
     "zh-TW": "完成：",
     "ja": "完了: ",
+    "tr": "Tamamlandı: ",
     "es": "Completado: "
   },
   "实时 {0:0.00} MiB/s": {
@@ -242,6 +276,7 @@
     "en": "Current {0:0.00} MiB/s",
     "zh-TW": "即時 {0:0.00} MiB/s",
     "ja": "現在 {0:0.00} MiB/s",
+    "tr": "Anlık {0:0.00} MiB/s",
     "es": "Actual {0:0.00} MiB/s"
   },
   "实时 — MiB/s": {
@@ -249,6 +284,7 @@
     "en": "Current — MiB/s",
     "zh-TW": "即時 — MiB/s",
     "ja": "現在 — MiB/s",
+    "tr": "Anlık — MiB/s",
     "es": "Actual — MiB/s"
   },
   "实时更新": {
@@ -256,6 +292,7 @@
     "en": "Live update",
     "zh-TW": "即時更新",
     "ja": "リアルタイム更新",
+    "tr": "Canlı güncelleme",
     "es": "Actualización en directo"
   },
   "导入图片后自动生成预览。": {
@@ -263,6 +300,7 @@
     "en": "Import an image to generate a preview automatically.",
     "zh-TW": "匯入圖片後自動產生預覽。",
     "ja": "画像をインポートすると、プレビューが自動的に生成されます。",
+    "tr": "Görsel içe aktarıldığında otomatik olarak önizleme oluşturulur.",
     "es": "Importa una imagen para generar automáticamente una vista previa."
   },
   "将保存为：{0}{1}": {
@@ -270,6 +308,7 @@
     "en": "Will save as: {0}{1}",
     "zh-TW": "將儲存為：{0}{1}",
     "ja": "保存名: {0}{1}",
+    "tr": "Şöyle kaydedilecek: {0}{1}",
     "es": "Se guardará como: {0}{1}"
   },
   "尚未运行任务。": {
@@ -277,6 +316,7 @@
     "en": "No jobs have run yet.",
     "zh-TW": "尚未執行工作。",
     "ja": "まだジョブは実行されていません。",
+    "tr": "Henüz hiçbir görev çalıştırılmadı.",
     "es": "Aún no se ha ejecutado ningún trabajo."
   },
   "就绪": {
@@ -284,6 +324,7 @@
     "en": "Ready",
     "zh-TW": "就緒",
     "ja": "準備完了",
+    "tr": "Hazır",
     "es": "Listo"
   },
   "工程": {
@@ -291,6 +332,7 @@
     "en": "Project",
     "zh-TW": "專案",
     "ja": "プロジェクト",
+    "tr": "Proje",
     "es": "Proyecto"
   },
   "工程已创建": {
@@ -298,6 +340,7 @@
     "en": "Project created",
     "zh-TW": "專案已建立",
     "ja": "プロジェクトを作成しました",
+    "tr": "Proje oluşturuldu",
     "es": "Proyecto creado"
   },
   "工程文件已移动或删除": {
@@ -305,6 +348,7 @@
     "en": "Project file moved or deleted",
     "zh-TW": "專案檔案已移動或刪除",
     "ja": "プロジェクト ファイルが移動または削除されています",
+    "tr": "Proje dosyası taşınmış veya silinmiş",
     "es": "Archivo de proyecto movido o eliminado"
   },
   "工程文件已移动或删除：\n{0}": {
@@ -312,6 +356,7 @@
     "en": "The project file has been moved or deleted:\n{0}",
     "zh-TW": "專案檔案已移動或刪除：\n{0}",
     "ja": "プロジェクト ファイルが移動または削除されています:\n{0}",
+    "tr": "Proje dosyası taşınmış veya silinmiş:\n{0}",
     "es": "El archivo de proyecto se ha movido o eliminado:\n{0}"
   },
   "工程设置": {
@@ -319,6 +364,7 @@
     "en": "Project settings",
     "zh-TW": "專案設定",
     "ja": "プロジェクト設定",
+    "tr": "Proje ayarları",
     "es": "Configuración del proyecto"
   },
   "已保存为预设：{0}": {
@@ -326,6 +372,7 @@
     "en": "Saved as preset: {0}",
     "zh-TW": "已儲存為預設：{0}",
     "ja": "プリセットとして保存しました: {0}",
+    "tr": "Önayar olarak kaydedildi: {0}",
     "es": "Guardado como preajuste: {0}"
   },
   "已写入 {0:0.00} / {1:0.00} GiB": {
@@ -333,6 +380,7 @@
     "en": "Written {0:0.00} / {1:0.00} GiB",
     "zh-TW": "已寫入 {0:0.00} / {1:0.00} GiB",
     "ja": "書き込み済み {0:0.00} / {1:0.00} GiB",
+    "tr": "{0:0.00} / {1:0.00} GiB yazıldı",
     "es": "Escritos {0:0.00} / {1:0.00} GiB"
   },
   "已写入 {0:0.0} / {1:0.0} MiB": {
@@ -340,6 +388,7 @@
     "en": "Written {0:0.0} / {1:0.0} MiB",
     "zh-TW": "已寫入 {0:0.0} / {1:0.0} MiB",
     "ja": "書き込み済み {0:0.0} / {1:0.0} MiB",
+    "tr": "{0:0.0} / {1:0.0} MiB yazıldı",
     "es": "Escritos {0:0.0} / {1:0.0} MiB"
   },
   "已删除预设：{0}": {
@@ -347,6 +396,7 @@
     "en": "Deleted preset: {0}",
     "zh-TW": "已刪除預設：{0}",
     "ja": "プリセットを削除しました: {0}",
+    "tr": "Önayar silindi: {0}",
     "es": "Preajuste eliminado: {0}"
   },
   "已取消": {
@@ -354,6 +404,7 @@
     "en": "Cancelled",
     "zh-TW": "已取消",
     "ja": "キャンセルしました",
+    "tr": "İptal edildi",
     "es": "Cancelado"
   },
   "影调预览失败：{0}": {
@@ -361,6 +412,7 @@
     "en": "Tone preview failed: {0}",
     "zh-TW": "影調預覽失敗：{0}",
     "ja": "トーン プレビューに失敗しました: {0}",
+    "tr": "Ton önizlemesi başarısız: {0}",
     "es": "Falló la vista previa de tono: {0}"
   },
   "恢复该盘型的默认几何": {
@@ -368,6 +420,7 @@
     "en": "Restore default geometry for this disc type",
     "zh-TW": "還原該光碟類型的預設幾何",
     "ja": "このディスク種別の既定ジオメトリに戻す",
+    "tr": "Bu disk türü için varsayılan geometriyi geri yükle",
     "es": "Restaurar geometría predeterminada de este tipo de disco"
   },
   "扇区数必须是正整数。": {
@@ -375,6 +428,7 @@
     "en": "The sector count must be a positive integer.",
     "zh-TW": "磁區數必須是正整數。",
     "ja": "セクター数は正の整数である必要があります。",
+    "tr": "Sektör sayısı pozitif bir tam sayı olmalıdır.",
     "es": "El número de sectores debe ser un entero positivo."
   },
   "打开其他工程": {
@@ -382,6 +436,7 @@
     "en": "Open another project",
     "zh-TW": "開啟其他專案",
     "ja": "別のプロジェクトを開く",
+    "tr": "Başka bir proje aç",
     "es": "Abrir otro proyecto"
   },
   "打开工程": {
@@ -389,6 +444,7 @@
     "en": "Open project",
     "zh-TW": "開啟專案",
     "ja": "プロジェクトを開く",
+    "tr": "Proje aç",
     "es": "Abrir proyecto"
   },
   "新建工程": {
@@ -396,6 +452,7 @@
     "en": "New project",
     "zh-TW": "新增專案",
     "ja": "新しいプロジェクト",
+    "tr": "Yeni proje",
     "es": "Nuevo proyecto"
   },
   "无法保存工程": {
@@ -403,6 +460,7 @@
     "en": "Cannot save project",
     "zh-TW": "無法儲存專案",
     "ja": "プロジェクトを保存できません",
+    "tr": "Proje kaydedilemiyor",
     "es": "No se puede guardar el proyecto"
   },
   "无法保存预设：{0}": {
@@ -410,6 +468,7 @@
     "en": "Cannot save preset: {0}",
     "zh-TW": "無法儲存預設：{0}",
     "ja": "プリセットを保存できません: {0}",
+    "tr": "Önayar kaydedilemiyor: {0}",
     "es": "No se puede guardar el preajuste: {0}"
   },
   "无法创建工程": {
@@ -417,6 +476,7 @@
     "en": "Cannot create project",
     "zh-TW": "無法建立專案",
     "ja": "プロジェクトを作成できません",
+    "tr": "Proje oluşturulamıyor",
     "es": "No se puede crear el proyecto"
   },
   "无法删除预设：{0}": {
@@ -424,6 +484,7 @@
     "en": "Cannot delete preset: {0}",
     "zh-TW": "無法刪除預設：{0}",
     "ja": "プリセットを削除できません: {0}",
+    "tr": "Önayar silinemiyor: {0}",
     "es": "No se puede eliminar el preajuste: {0}"
   },
   "无法打开工程": {
@@ -431,6 +492,7 @@
     "en": "Cannot open project",
     "zh-TW": "無法開啟專案",
     "ja": "プロジェクトを開けません",
+    "tr": "Proje açılamıyor",
     "es": "No se puede abrir el proyecto"
   },
   "无随盘文件时生成音轨，推荐 WAV 格式。": {
@@ -438,6 +500,7 @@
     "en": "Without included files, an audio track is generated. WAV format is recommended.",
     "zh-TW": "無隨碟檔案時產生音軌，建議 WAV 格式。",
     "ja": "ファイルが含まれていない場合はオーディオ トラックを生成します。WAV 形式を推奨します。",
+    "tr": "Ek dosya olmadığında bir ses izi oluşturulur. WAV biçimi önerilir.",
     "es": "Sin archivos incluidos, se genera una pista de audio. Se recomienda el formato WAV."
   },
   "最近": {
@@ -445,6 +508,7 @@
     "en": "Recent",
     "zh-TW": "最近",
     "ja": "最近使用したもの",
+    "tr": "Son Kullanılanlar",
     "es": "Recientes"
   },
   "有未保存的更改": {
@@ -452,6 +516,7 @@
     "en": "Unsaved changes",
     "zh-TW": "有未儲存的變更",
     "ja": "未保存の変更があります",
+    "tr": "Kaydedilmemiş değişiklikler var",
     "es": "Cambios sin guardar"
   },
   "未命名": {
@@ -459,6 +524,7 @@
     "en": "Untitled",
     "zh-TW": "未命名",
     "ja": "無題",
+    "tr": "Adsız",
     "es": "Sin título"
   },
   "未完成的输出文件可能留在磁盘上。": {
@@ -466,6 +532,7 @@
     "en": "Incomplete output files may remain on disk.",
     "zh-TW": "未完成的輸出檔案可能留在磁碟上。",
     "ja": "未完成の出力ファイルがディスク上に残っている可能性があります。",
+    "tr": "Tamamlanmamış çıktı dosyaları diskte kalmış olabilir.",
     "es": "Pueden quedar archivos de salida incompletos en el disco."
   },
   "正在取消…": {
@@ -473,6 +540,7 @@
     "en": "Cancelling…",
     "zh-TW": "正在取消…",
     "ja": "キャンセルしています…",
+    "tr": "İptal ediliyor…",
     "es": "Cancelando…"
   },
   "正在按当前影调渲染…": {
@@ -480,6 +548,7 @@
     "en": "Rendering with the current tone settings…",
     "zh-TW": "正在按目前影調算繪…",
     "ja": "現在のトーンでレンダリングしています…",
+    "tr": "Geçerli ton ayarlarıyla işleniyor…",
     "es": "Renderizando con los ajustes de tono actuales…"
   },
   "正在生成 CD 数据盘 ISO…": {
@@ -487,6 +556,7 @@
     "en": "Generating CD data disc ISO…",
     "zh-TW": "正在產生 CD 資料光碟 ISO…",
     "ja": "CD データ ディスク ISO を生成しています…",
+    "tr": "CD veri diski ISO'su oluşturuluyor…",
     "es": "Generando ISO de disco de datos CD…"
   },
   "正在生成 CD 音轨…": {
@@ -494,6 +564,7 @@
     "en": "Generating CD audio track…",
     "zh-TW": "正在產生 CD 音軌…",
     "ja": "CD オーディオ トラックを生成しています…",
+    "tr": "CD ses izi oluşturuluyor…",
     "es": "Generando pista de audio CD…"
   },
   "正在生成 DVD ISO…": {
@@ -501,6 +572,7 @@
     "en": "Generating DVD ISO…",
     "zh-TW": "正在產生 DVD ISO…",
     "ja": "DVD ISO を生成しています…",
+    "tr": "DVD ISO'su oluşturuluyor…",
     "es": "Generando ISO DVD…"
   },
   "正在生成蓝光 ISO…": {
@@ -508,6 +580,7 @@
     "en": "Generating Blu-ray ISO…",
     "zh-TW": "正在產生藍光 ISO…",
     "ja": "Blu-ray ISO を生成しています…",
+    "tr": "Blu-ray ISO'su oluşturuluyor…",
     "es": "Generando ISO Blu-ray…"
   },
   "正在运行…": {
@@ -515,6 +588,7 @@
     "en": "Running…",
     "zh-TW": "正在執行…",
     "ja": "実行中…",
+    "tr": "Çalışıyor…",
     "es": "En ejecución…"
   },
   "流式刻录": {
@@ -522,6 +596,7 @@
     "en": "Streaming burn",
     "zh-TW": "串流燒錄",
     "ja": "ストリーミング書き込み",
+    "tr": "Akışla yazma",
     "es": "Grabación en streaming"
   },
   "版本 {0}": {
@@ -529,6 +604,7 @@
     "en": "Version {0}",
     "zh-TW": "版本 {0}",
     "ja": "バージョン {0}",
+    "tr": "Sürüm {0}",
     "es": "Versión {0}"
   },
   "生成镜像": {
@@ -536,6 +612,7 @@
     "en": "Generate image",
     "zh-TW": "產生映像檔",
     "ja": "イメージの生成",
+    "tr": "İmaj oluştur",
     "es": "Generar imagen"
   },
   "生成音轨": {
@@ -543,6 +620,7 @@
     "en": "Generate track",
     "zh-TW": "產生音軌",
     "ja": "トラックの生成",
+    "tr": "İz oluştur",
     "es": "Generar pista"
   },
   "用户预设 JSON 无法加载，已继续使用程序内置参数。\n\n{0}\n\n文件位置：\n{1}": {
@@ -550,6 +628,7 @@
     "en": "The user preset JSON could not be loaded. Built-in parameters are being used.\n\n{0}\n\nFile location:\n{1}",
     "zh-TW": "使用者預設 JSON 無法載入，已繼續使用程式內建參數。\n\n{0}\n\n檔案位置：\n{1}",
     "ja": "ユーザー プリセット JSON を読み込めなかったため、組み込みのパラメーターを使用しています。\n\n{0}\n\nファイルの場所:\n{1}",
+    "tr": "Kullanıcı önayar JSON'ı yüklenemedi. Yerleşik parametreler kullanılmaya devam ediliyor.\n\n{0}\n\nDosya konumu:\n{1}",
     "es": "No se pudo cargar el JSON de preajustes del usuario. Se usarán los parámetros integrados.\n\n{0}\n\nUbicación del archivo:\n{1}"
   },
   "确定": {
@@ -557,6 +636,7 @@
     "en": "OK",
     "zh-TW": "確定",
     "ja": "OK",
+    "tr": "Tamam",
     "es": "Aceptar"
   },
   "空白工程": {
@@ -564,6 +644,7 @@
     "en": "Blank project",
     "zh-TW": "空白專案",
     "ja": "空のプロジェクト",
+    "tr": "Boş proje",
     "es": "Proyecto vacío"
   },
   "蓝光": {
@@ -571,6 +652,7 @@
     "en": "Blu-ray",
     "zh-TW": "藍光",
     "ja": "Blu-ray",
+    "tr": "Blu-ray",
     "es": "Blu-ray"
   },
   "蓝光 ISO 输出位置": {
@@ -578,6 +660,7 @@
     "en": "Blu-ray ISO output location",
     "zh-TW": "藍光 ISO 輸出位置",
     "ja": "Blu-ray ISO の出力先",
+    "tr": "Blu-ray ISO çıktı konumu",
     "es": "Ubicación de salida de la ISO Blu-ray"
   },
   "蓝光外半径不能超过 60 mm。": {
@@ -585,6 +668,7 @@
     "en": "The Blu-ray outer radius cannot exceed 60 mm.",
     "zh-TW": "藍光外半徑不能超過 60 mm。",
     "ja": "Blu-ray の外半径は 60 mm 以下にする必要があります。",
+    "tr": "Blu-ray dış yarıçapı 60 mm'yi aşamaz.",
     "es": "El radio exterior Blu-ray no puede superar 60 mm."
   },
   "蓝光扇区数不能超过单层容量 {0:N0}。": {
@@ -592,6 +676,7 @@
     "en": "The Blu-ray sector count cannot exceed the single-layer capacity of {0:N0}.",
     "zh-TW": "藍光磁區數不能超過單層容量 {0:N0}。",
     "ja": "Blu-ray のセクター数は単層容量 {0:N0} を超えることはできません。",
+    "tr": "Blu-ray sektör sayısı tek katmanlı {0:N0} kapasitesini aşamaz.",
     "es": "El número de sectores Blu-ray no puede superar la capacidad de una capa de {0:N0}."
   },
   "蓝光的扇区数必须是 32 的倍数。": {
@@ -599,6 +684,7 @@
     "en": "The Blu-ray sector count must be a multiple of 32.",
     "zh-TW": "藍光的磁區數必須是 32 的倍數。",
     "ja": "Blu-ray のセクター数は 32 の倍数である必要があります。",
+    "tr": "Blu-ray sektör sayısı 32'nin katı olmalıdır.",
     "es": "El número de sectores Blu-ray debe ser múltiplo de 32."
   },
   "设计合成失败": {
@@ -606,6 +692,7 @@
     "en": "Design composition failed",
     "zh-TW": "設計合成失敗",
     "ja": "デザインの合成に失敗しました",
+    "tr": "Tasarım birleştirme başarısız",
     "es": "Falló la composición del diseño"
   },
   "设计页合成图源（{0} px）": {
@@ -613,6 +700,7 @@
     "en": "Design composite ({0} px)",
     "zh-TW": "設計頁合成圖源（{0} px）",
     "ja": "デザイン ページの合成ソース ({0} px)",
+    "tr": "Tasarım sayfası birleşik görsel kaynağı ({0} px)",
     "es": "Composición del diseño ({0} px)"
   },
   "详情见窗口底部的任务日志。": {
@@ -620,6 +708,7 @@
     "en": "See the job log at the bottom of the window for details.",
     "zh-TW": "詳情見視窗底部的工作記錄。",
     "ja": "詳細はウィンドウ下部のジョブ ログを参照してください。",
+    "tr": "Ayrıntılar için pencerenin altındaki görev günlüğüne bakın.",
     "es": "Consulta el registro de trabajos en la parte inferior de la ventana para ver los detalles."
   },
   "请先在设计页导入图片。": {
@@ -627,6 +716,7 @@
     "en": "Import an image on the Design page first.",
     "zh-TW": "請先在設計頁匯入圖片。",
     "ja": "先にデザイン ページで画像をインポートしてください。",
+    "tr": "Önce Tasarım sayfasında bir görsel içe aktarın.",
     "es": "Importa primero una imagen en la página Diseño."
   },
   "请先打开或新建一个工程。": {
@@ -634,6 +724,7 @@
     "en": "Open or create a project first.",
     "zh-TW": "請先開啟或新增一個專案。",
     "ja": "先にプロジェクトを開くか、新規作成してください。",
+    "tr": "Önce bir proje açın veya yeni bir proje oluşturun.",
     "es": "Abre o crea primero un proyecto."
   },
   "请填写{0}。": {
@@ -641,6 +732,7 @@
     "en": "Enter {0}.",
     "zh-TW": "請填寫{0}。",
     "ja": "{0}を入力してください。",
+    "tr": "Lütfen {0} alanını doldurun.",
     "es": "Introduce {0}."
   },
   "请填写工程名。": {
@@ -648,6 +740,7 @@
     "en": "Enter a project name.",
     "zh-TW": "請填寫專案名。",
     "ja": "プロジェクト名を入力してください。",
+    "tr": "Lütfen bir proje adı girin.",
     "es": "Introduce un nombre de proyecto."
   },
   "请填写预设名称。": {
@@ -655,6 +748,7 @@
     "en": "Enter a preset name.",
     "zh-TW": "請填寫預設名稱。",
     "ja": "プリセット名を入力してください。",
+    "tr": "Lütfen bir önayar adı girin.",
     "es": "Introduce un nombre de preajuste."
   },
   "请检查输入": {
@@ -662,6 +756,7 @@
     "en": "Check your input",
     "zh-TW": "請檢查輸入",
     "ja": "入力内容を確認してください",
+    "tr": "Girdiğinizi denetleyin",
     "es": "Comprueba los datos introducidos"
   },
   "请选择 CD ISO 输出位置。": {
@@ -669,6 +764,7 @@
     "en": "Choose an output location for the CD ISO.",
     "zh-TW": "請選擇 CD ISO 輸出位置。",
     "ja": "CD ISO の出力先を選択してください。",
+    "tr": "Lütfen CD ISO çıktı konumunu seçin.",
     "es": "Elige una ubicación de salida para la ISO CD."
   },
   "请选择 CD 音轨输出位置。": {
@@ -676,6 +772,7 @@
     "en": "Choose an output location for the CD audio track.",
     "zh-TW": "請選擇 CD 音軌輸出位置。",
     "ja": "CD オーディオ トラックの出力先を選択してください。",
+    "tr": "Lütfen CD ses izi çıktı konumunu seçin.",
     "es": "Elige una ubicación de salida para la pista de audio CD."
   },
   "请选择 DVD ISO 输出位置。": {
@@ -683,6 +780,7 @@
     "en": "Choose an output location for the DVD ISO.",
     "zh-TW": "請選擇 DVD ISO 輸出位置。",
     "ja": "DVD ISO の出力先を選択してください。",
+    "tr": "Lütfen DVD ISO çıktı konumunu seçin.",
     "es": "Elige una ubicación de salida para la ISO DVD."
   },
   "请选择保存位置。": {
@@ -690,6 +788,7 @@
     "en": "Choose a save location.",
     "zh-TW": "請選擇儲存位置。",
     "ja": "保存先を選択してください。",
+    "tr": "Lütfen kayıt konumunu seçin.",
     "es": "Elige una ubicación para guardar."
   },
   "请选择蓝光 ISO 输出位置。": {
@@ -697,6 +796,7 @@
     "en": "Choose an output location for the Blu-ray ISO.",
     "zh-TW": "請選擇藍光 ISO 輸出位置。",
     "ja": "Blu-ray ISO の出力先を選択してください。",
+    "tr": "Lütfen Blu-ray ISO çıktı konumunu seçin.",
     "es": "Elige una ubicación de salida para la ISO Blu-ray."
   },
   "轨距模型无效：请检查半径、扇区数及系数，整个刻录区的轨距必须为正。": {
@@ -704,6 +804,7 @@
     "en": "Invalid track pitch model: check the radii, sector count and coefficients. Track pitch must be positive throughout the recording area.",
     "zh-TW": "軌距模型無效：請檢查半徑、磁區數及系數，整個燒錄區的軌距必須為正。",
     "ja": "トラック ピッチ モデルが無効です。半径、セクター数、係数を確認してください。記録領域全体でトラック ピッチが正である必要があります。",
+    "tr": "Geçersiz iz aralığı modeli: yarıçapları, sektör sayısını ve katsayıları denetleyin. İz aralığı tüm kayıt alanı boyunca pozitif olmalıdır.",
     "es": "Modelo de paso de pista no válido: comprueba los radios, el número de sectores y los coeficientes. El paso de pista debe ser positivo en toda la zona de grabación."
   },
   "输出数据盘 (.iso)": {
@@ -711,6 +812,7 @@
     "en": "Data disc output (.iso)",
     "zh-TW": "輸出資料光碟 (.iso)",
     "ja": "データ ディスクを出力 (.iso)",
+    "tr": "Veri diski çıktısı (.iso)",
     "es": "Salida de disco de datos (.iso)"
   },
   "输出音轨 (.wav / .raw)": {
@@ -718,6 +820,7 @@
     "en": "Audio track output (.wav / .raw)",
     "zh-TW": "輸出音軌 (.wav / .raw)",
     "ja": "オーディオ トラックを出力 (.wav / .raw)",
+    "tr": "Ses izi çıktısı (.wav / .raw)",
     "es": "Salida de pista de audio (.wav / .raw)"
   },
   "返回主页": {
@@ -725,6 +828,7 @@
     "en": "Return home",
     "zh-TW": "返回首頁",
     "ja": "ホームに戻る",
+    "tr": "Ana sayfaya dön",
     "es": "Volver al inicio"
   },
   "还没有最近使用的模板。": {
@@ -732,6 +836,7 @@
     "en": "No recently used templates yet.",
     "zh-TW": "還沒有最近使用的範本。",
     "ja": "最近使用したテンプレートはまだありません。",
+    "tr": "Henüz son kullanılan şablon yok.",
     "es": "Aún no hay plantillas usadas recientemente."
   },
   "选择生成的 CD 音轨或数据盘": {
@@ -739,6 +844,7 @@
     "en": "Select a generated CD track or data disc",
     "zh-TW": "選擇產生的 CD 音軌或資料光碟",
     "ja": "生成済みの CD トラックまたはデータ ディスクを選択",
+    "tr": "Oluşturulan CD izini veya veri diskini seçin",
     "es": "Seleccionar pista CD o disco de datos generado"
   },
   "选择生成的 DVD ISO": {
@@ -746,6 +852,7 @@
     "en": "Select a generated DVD ISO",
     "zh-TW": "選擇產生的 DVD ISO",
     "ja": "生成済みの DVD ISO を選択",
+    "tr": "Oluşturulan DVD ISO'sunu seçin",
     "es": "Seleccionar ISO DVD generada"
   },
   "选择生成的蓝光 ISO": {
@@ -753,6 +860,7 @@
     "en": "Select a generated Blu-ray ISO",
     "zh-TW": "選擇產生的藍光 ISO",
     "ja": "生成済みの Blu-ray ISO を選択",
+    "tr": "Oluşturulan Blu-ray ISO'sunu seçin",
     "es": "Seleccionar ISO Blu-ray generada"
   },
   "选择要放入 CD 数据盘的文件夹": {
@@ -760,6 +868,7 @@
     "en": "Select a folder to include on the CD data disc",
     "zh-TW": "選擇要放入 CD 資料光碟的資料夾",
     "ja": "CD データ ディスクに含めるフォルダーを選択",
+    "tr": "CD veri diskine eklenecek klasörü seçin",
     "es": "Seleccionar carpeta para incluir en el disco de datos CD"
   },
   "选择要放入 DVD 的文件夹": {
@@ -767,6 +876,7 @@
     "en": "Select a folder to include on the DVD",
     "zh-TW": "選擇要放入 DVD 的資料夾",
     "ja": "DVD に含めるフォルダーを選択",
+    "tr": "DVD'ye eklenecek klasörü seçin",
     "es": "Seleccionar carpeta para incluir en el DVD"
   },
   "选择要放入蓝光盘的文件夹": {
@@ -774,6 +884,7 @@
     "en": "Select a folder to include on the Blu-ray disc",
     "zh-TW": "選擇要放入藍光光碟的資料夾",
     "ja": "Blu-ray ディスクに含めるフォルダーを選択",
+    "tr": "Blu-ray diske eklenecek klasörü seçin",
     "es": "Seleccionar carpeta para incluir en el disco Blu-ray"
   },
   "部分图层图片无法读取": {
@@ -781,6 +892,7 @@
     "en": "Some layer images could not be read",
     "zh-TW": "部分圖層圖片無法讀取",
     "ja": "一部のレイヤー画像を読み込めませんでした",
+    "tr": "Bazı katman görselleri okunamadı",
     "es": "No se pudieron leer algunas imágenes de las capas"
   },
   "预设加载失败": {
@@ -788,6 +900,7 @@
     "en": "Preset loading failed",
     "zh-TW": "預設載入失敗",
     "ja": "プリセットの読み込みに失敗しました",
+    "tr": "Önayar yüklenemedi",
     "es": "Falló la carga de preajustes"
   },
   "默认参数": {
@@ -795,6 +908,7 @@
     "en": "Default parameters",
     "zh-TW": "預設參數",
     "ja": "既定のパラメーター",
+    "tr": "Varsayılan parametreler",
     "es": "Parámetros predeterminados"
   },
   "Disc Image Studio 工程|*.discproj": {
@@ -802,6 +916,7 @@
     "en": "Disc Image Studio project|*.discproj",
     "zh-TW": "Disc Image Studio 專案|*.discproj",
     "ja": "Disc Image Studio プロジェクト|*.discproj",
+    "tr": "Disc Image Studio projesi|*.discproj",
     "es": "Proyecto de Disc Image Studio|*.discproj"
   },
   "标准 80min CD": {
@@ -809,6 +924,7 @@
     "en": "Standard 80 min CD",
     "zh-TW": "標準 80min CD",
     "ja": "標準 80 分 CD",
+    "tr": "Standart 80 dk CD",
     "es": "CD estándar de 80 min"
   },
   "ECMA-130／ISO/IEC 10149 标准速度 1200 mm/s；120 mm 盘、约 80 分钟，359,849 扇区（24.5–56.8 mm）。": {
@@ -816,13 +932,15 @@
     "en": "ECMA-130 / ISO/IEC 10149 standard scanning speed: 1200 mm/s; 120 mm disc, about 80 minutes, 359,849 sectors (24.5–56.8 mm).",
     "zh-TW": "ECMA-130／ISO/IEC 10149 標準速度 1200 mm/s；120 mm 光碟、約 80 分鐘，359,849 磁區（24.5–56.8 mm）。",
     "ja": "ECMA-130 / ISO/IEC 10149 標準線速度 1200 mm/s、120 mm ディスク、約 80 分、359,849 セクター (24.5–56.8 mm)。",
+    "tr": "ECMA-130 / ISO/IEC 10149 standart tarama hızı: 1200 mm/s; 120 mm disk, yaklaşık 80 dakika, 359.849 sektör (24,5–56,8 mm).",
     "es": "Velocidad de exploración estándar ECMA-130 / ISO/IEC 10149: 1200 mm/s; disco de 120 mm, unos 80 minutos, 359.849 sectores (24,5–56,8 mm)."
   },
   "铼德医疗水蓝盘（实测）": {
     "zh-CN": "铼德医疗水蓝盘（实测）",
     "en": "Ritek Medical Aqua (measured)",
-    "zh-TW": "錸德醫療水藍盤（實測）",
+    "zh-TW": "Ritek 醫療水藍盤（實測）",
     "ja": "Ritek メディカル アクアブルー (実測)",
+    "tr": "Ritek Medical Aqua (ölçülen)",
     "es": "Ritek Medical Aqua (medido)"
   },
   "实测参数：内半径 24.911275 mm、外半径 57.931155 mm、359,845 扇区；扫描速度采用 1200 mm/s。": {
@@ -830,13 +948,15 @@
     "en": "Measured parameters: inner radius 24.911275 mm, outer radius 57.931155 mm, 359,845 sectors; scanning speed 1200 mm/s.",
     "zh-TW": "實測參數：內半徑 24.911275 mm、外半徑 57.931155 mm、359,845 磁區；掃描速度採用 1200 mm/s。",
     "ja": "実測パラメーター: 内半径 24.911275 mm、外半径 57.931155 mm、359,845 セクター。スキャン速度は 1200 mm/s を使用。",
+    "tr": "Ölçülen parametreler: iç yarıçap 24,911275 mm, dış yarıçap 57,931155 mm, 359.845 sektör; tarama hızı 1200 mm/s.",
     "es": "Parámetros medidos: radio interior 24,911275 mm, radio exterior 57,931155 mm, 359.845 sectores; velocidad de exploración 1200 mm/s."
   },
-  "Verbatim CD-R AZO (43438)（实测）": {
-    "zh-CN": "Verbatim CD-R AZO (43438)（实测）",
+  "威宝 CD-R AZO (43438)（实测）": {
+    "zh-CN": "威宝 CD-R AZO (43438)（实测）",
     "en": "Verbatim CD-R AZO (43438) (measured)",
     "zh-TW": "Verbatim CD-R AZO (43438)（實測）",
     "ja": "Verbatim CD-R AZO (43438) (実測)",
+    "tr": "Verbatim CD-R AZO (43438) (ölçülen)",
     "es": "Verbatim CD-R AZO (43438) (medido)"
   },
   "实测参数：内半径 24.837775 mm、外半径 58.020875 mm、359,848 扇区；扫描速度采用 1200 mm/s。": {
@@ -844,6 +964,7 @@
     "en": "Measured parameters: inner radius 24.837775 mm, outer radius 58.020875 mm, 359,848 sectors; scanning speed 1200 mm/s.",
     "zh-TW": "實測參數：內半徑 24.837775 mm、外半徑 58.020875 mm、359,848 磁區；掃描速度採用 1200 mm/s。",
     "ja": "実測パラメーター: 内半径 24.837775 mm、外半径 58.020875 mm、359,848 セクター。スキャン速度は 1200 mm/s を使用。",
+    "tr": "Ölçülen parametreler: iç yarıçap 24,837775 mm, dış yarıçap 58,020875 mm, 359.848 sektör; tarama hızı 1200 mm/s.",
     "es": "Parámetros medidos: radio interior 24,837775 mm, radio exterior 58,020875 mm, 359.848 sectores; velocidad de exploración 1200 mm/s."
   },
   "标准 74min CD": {
@@ -851,6 +972,7 @@
     "en": "Standard 74 min CD",
     "zh-TW": "標準 74min CD",
     "ja": "標準 74 分 CD",
+    "tr": "Standart 74 dk CD",
     "es": "CD estándar de 74 min"
   },
   "ECMA-130／ISO/IEC 10149 标准速度 1200 mm/s；120 mm 盘、约 74 分钟，333,000 扇区（24.5–56.8 mm）。": {
@@ -858,6 +980,7 @@
     "en": "ECMA-130 / ISO/IEC 10149 standard scanning speed: 1200 mm/s; 120 mm disc, about 74 minutes, 333,000 sectors (24.5–56.8 mm).",
     "zh-TW": "ECMA-130／ISO/IEC 10149 標準速度 1200 mm/s；120 mm 光碟、約 74 分鐘，333,000 磁區（24.5–56.8 mm）。",
     "ja": "ECMA-130 / ISO/IEC 10149 標準線速度 1200 mm/s、120 mm ディスク、約 74 分、333,000 セクター (24.5–56.8 mm)。",
+    "tr": "ECMA-130 / ISO/IEC 10149 standart tarama hızı: 1200 mm/s; 120 mm disk, yaklaşık 74 dakika, 333.000 sektör (24,5–56,8 mm).",
     "es": "Velocidad de exploración estándar ECMA-130 / ISO/IEC 10149: 1200 mm/s; disco de 120 mm, unos 74 minutos, 333.000 sectores (24,5–56,8 mm)."
   },
   "标准 12cm 单层 DVD": {
@@ -865,6 +988,7 @@
     "en": "Standard 12 cm single-layer DVD",
     "zh-TW": "標準 12cm 單層 DVD",
     "ja": "標準 12 cm 単層 DVD",
+    "tr": "Standart 12 cm tek katmanlı DVD",
     "es": "DVD estándar de 12 cm y una capa"
   },
   "ISO/IEC 16448 标准单层 120 mm DVD（DVD-5）数据区：24–58 mm，共 2,295,104 个扇区。": {
@@ -872,27 +996,111 @@
     "en": "ISO/IEC 16448 standard single-layer 120 mm DVD (DVD-5) data area: 24–58 mm, 2,295,104 sectors.",
     "zh-TW": "ISO/IEC 16448 標準單層 120 mm DVD（DVD-5）資料區：24–58 mm，共 2,295,104 個磁區。",
     "ja": "ISO/IEC 16448 標準単層 120 mm DVD (DVD-5) データ領域: 24–58 mm、2,295,104 セクター。",
+    "tr": "ISO/IEC 16448 standart tek katmanlı 120 mm DVD (DVD-5) veri alanı: 24–58 mm, 2.295.104 sektör.",
     "es": "Zona de datos de DVD de 120 mm y una capa (DVD-5) estándar ISO/IEC 16448: 24–58 mm, 2.295.104 sectores."
   },
-  "Verbatim DVD-R AZO (43533)（实测）": {
-    "zh-CN": "Verbatim DVD-R AZO (43533)（实测）",
+  "威宝 DVD-R AZO (43533)（实测）": {
+    "zh-CN": "威宝 DVD-R AZO (43533)（实测）",
     "en": "Verbatim DVD-R AZO (43533) (measured)",
     "zh-TW": "Verbatim DVD-R AZO (43533)（實測）",
     "ja": "Verbatim DVD-R AZO (43533) (実測)",
+    "tr": "Verbatim DVD-R AZO (43533) (ölçülen)",
     "es": "Verbatim DVD-R AZO (43533) (medido)"
   },
-  "Verbatim DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。": {
-    "zh-CN": "Verbatim DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
+  "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。": {
+    "zh-CN": "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
     "en": "Verified Verbatim DVD-R AZO 43533 calibration: 23.9914606277–57.9648936579 mm, 2,297,888 sectors; cubic track pitch distribution.",
     "zh-TW": "Verbatim DVD-R AZO 43533 已驗證校準參數：23.9914606277–57.9648936579 mm，共 2,297,888 個磁區；採用三次軌距分布。",
     "ja": "Verbatim DVD-R AZO 43533 の検証済みキャリブレーション: 23.9914606277–57.9648936579 mm、2,297,888 セクター。3 次のトラック ピッチ分布を使用。",
+    "tr": "Doğrulanmış Verbatim DVD-R AZO 43533 kalibrasyonu: 23,9914606277–57,9648936579 mm, 2.297.888 sektör; üçüncü dereceden iz aralığı dağılımı.",
     "es": "Calibración verificada de Verbatim DVD-R AZO 43533: 23,9914606277–57,9648936579 mm, 2.297.888 sectores; distribución cúbica del paso de pista."
+  },
+  "威宝 DVD-R AZO (43523)（实测）": {
+    "zh-CN": "威宝 DVD-R AZO (43523)（实测）",
+    "en": "Verbatim DVD-R AZO (43523) (measured)",
+    "zh-TW": "Verbatim DVD-R AZO (43523)（實測）",
+    "ja": "Verbatim DVD-R AZO (43523) (実測)",
+    "tr": "Verbatim DVD-R AZO (43523) (ölçülen)",
+    "es": "Verbatim DVD-R AZO (43523) (medido)"
+  },
+  "威宝 DVD-R AZO 43523 实测标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布；参数与 43533 一致。": {
+    "zh-CN": "威宝 DVD-R AZO 43523 实测标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布；参数与 43533 一致。",
+    "en": "Measured Verbatim DVD-R AZO 43523 calibration: 23.9914606277–57.9648936579 mm, 2,297,888 sectors; cubic track pitch distribution; parameters match 43533.",
+    "zh-TW": "Verbatim DVD-R AZO 43523 實測校準參數：23.9914606277–57.9648936579 mm，共 2,297,888 個磁區；採用三次軌距分布；參數與 43533 一致。",
+    "ja": "Verbatim DVD-R AZO 43523 の実測キャリブレーション: 23.9914606277–57.9648936579 mm、2,297,888 セクター。3 次のトラック ピッチ分布を使用。パラメーターは 43533 と同一です。",
+    "tr": "Ölçülen Verbatim DVD-R AZO 43523 kalibrasyonu: 23,9914606277–57,9648936579 mm, 2.297.888 sektör; üçüncü dereceden iz aralığı dağılımı; parametreler 43533 ile aynı.",
+    "es": "Calibración medida de Verbatim DVD-R AZO 43523: 23,9914606277–57,9648936579 mm, 2.297.888 sectores; distribución cúbica del paso de pista; parámetros coinciden con 43533."
+  },
+  "威宝 DVD+R AZO (43498)（实测）": {
+    "zh-CN": "威宝 DVD+R AZO (43498)（实测）",
+    "en": "Verbatim DVD+R AZO (43498) (measured)",
+    "zh-TW": "Verbatim DVD+R AZO (43498)（實測）",
+    "ja": "Verbatim DVD+R AZO (43498) (実測)",
+    "tr": "Verbatim DVD+R AZO (43498) (ölçülen)",
+    "es": "Verbatim DVD+R AZO (43498) (medido)"
+  },
+  "威宝 DVD+R AZO (43498) 实测标定参数：23.954070–57.981456 mm，共 2,295,104 个扇区；采用三次轨距分布。": {
+    "zh-CN": "威宝 DVD+R AZO (43498) 实测标定参数：23.954070–57.981456 mm，共 2,295,104 个扇区；采用三次轨距分布。",
+    "en": "Measured Verbatim DVD+R AZO (43498) calibration: 23.954070–57.981456 mm, 2,295,104 sectors; cubic track pitch distribution.",
+    "zh-TW": "Verbatim DVD+R AZO (43498) 實測校準參數：23.954070–57.981456 mm，共 2,295,104 個磁區；採用三次軌距分布。",
+    "ja": "Verbatim DVD+R AZO (43498) の実測キャリブレーション: 23.954070–57.981456 mm、2,295,104 セクター。3 次のトラック ピッチ分布を使用。",
+    "tr": "Ölçülen Verbatim DVD+R AZO (43498) kalibrasyonu: 23,954070–57,981456 mm, 2.295.104 sektör; üçüncü dereceden iz aralığı dağılımı.",
+    "es": "Calibración medida de Verbatim DVD+R AZO (43498): 23,954070–57,981456 mm, 2.295.104 sectores; distribución cúbica del paso de pista."
+  },
+  "PHILIPS DVD+R（实测）": {
+    "zh-CN": "PHILIPS DVD+R（实测）",
+    "en": "PHILIPS DVD+R (measured)",
+    "zh-TW": "PHILIPS DVD+R（實測）",
+    "ja": "PHILIPS DVD+R (実測)",
+    "tr": "PHILIPS DVD+R (ölçülen)",
+    "es": "PHILIPS DVD+R (medido)"
+  },
+  "PHILIPS DVD+R 实测标定参数：24.157724–57.881039 mm，共 2,295,104 个扇区；采用三次轨距分布。": {
+    "zh-CN": "PHILIPS DVD+R 实测标定参数：24.157724–57.881039 mm，共 2,295,104 个扇区；采用三次轨距分布。",
+    "en": "Measured PHILIPS DVD+R calibration: 24.157724–57.881039 mm, 2,295,104 sectors; cubic track pitch distribution.",
+    "zh-TW": "PHILIPS DVD+R 實測校準參數：24.157724–57.881039 mm，共 2,295,104 個磁區；採用三次軌距分布。",
+    "ja": "PHILIPS DVD+R の実測キャリブレーション: 24.157724–57.881039 mm、2,295,104 セクター。3 次のトラック ピッチ分布を使用。",
+    "tr": "Ölçülen PHILIPS DVD+R kalibrasyonu: 24,157724–57,881039 mm, 2.295.104 sektör; üçüncü dereceden iz aralığı dağılımı.",
+    "es": "Calibración medida de PHILIPS DVD+R: 24,157724–57,881039 mm, 2.295.104 sectores; distribución cúbica del paso de pista."
+  },
+  "铼德 DVD+R E时代系列（实测）": {
+    "zh-CN": "铼德 DVD+R E时代系列（实测）",
+    "en": "Ritek DVD+R E-Series (measured)",
+    "zh-TW": "Ritek DVD+R E時代系列（實測）",
+    "ja": "Ritek DVD+R E シリーズ (実測)",
+    "tr": "Ritek DVD+R E Serisi (ölçülen)",
+    "es": "Ritek DVD+R E-Series (medido)"
+  },
+  "铼德 DVD+R E时代系列实测标定参数：24.0482013258–58.0264881612 mm，共 2,295,104 个扇区；采用三次轨距分布。": {
+    "zh-CN": "铼德 DVD+R E时代系列实测标定参数：24.0482013258–58.0264881612 mm，共 2,295,104 个扇区；采用三次轨距分布。",
+    "en": "Measured Ritek DVD+R E-Series calibration: 24.0482013258–58.0264881612 mm, 2,295,104 sectors; cubic track pitch distribution.",
+    "zh-TW": "Ritek DVD+R E時代系列實測校準參數：24.0482013258–58.0264881612 mm，共 2,295,104 個磁區；採用三次軌距分布。",
+    "ja": "Ritek DVD+R E シリーズの実測キャリブレーション: 24.0482013258–58.0264881612 mm、2,295,104 セクター。3 次のトラック ピッチ分布を使用。",
+    "tr": "Ölçülen Ritek DVD+R E Serisi kalibrasyonu: 24,0482013258–58,0264881612 mm, 2.295.104 sektör; üçüncü dereceden iz aralığı dağılımı.",
+    "es": "Calibración medida de Ritek DVD+R E-Series: 24,0482013258–58,0264881612 mm, 2.295.104 sectores; distribución cúbica del paso de pista."
+  },
+  "铼德 DVD-R E时代系列（实测）": {
+    "zh-CN": "铼德 DVD-R E时代系列（实测）",
+    "en": "Ritek DVD-R E-Series (measured)",
+    "zh-TW": "Ritek DVD-R E時代系列（實測）",
+    "ja": "Ritek DVD-R E シリーズ (実測)",
+    "tr": "Ritek DVD-R E Serisi (ölçülen)",
+    "es": "Ritek DVD-R E-Series (medido)"
+  },
+  "铼德 DVD-R E时代系列实测标定参数：24.0631091841–58.2337337546 mm，共 2,298,496 个扇区；采用三次轨距分布。": {
+    "zh-CN": "铼德 DVD-R E时代系列实测标定参数：24.0631091841–58.2337337546 mm，共 2,298,496 个扇区；采用三次轨距分布。",
+    "en": "Measured Ritek DVD-R E-Series calibration: 24.0631091841–58.2337337546 mm, 2,298,496 sectors; cubic track pitch distribution.",
+    "zh-TW": "Ritek DVD-R E時代系列實測校準參數：24.0631091841–58.2337337546 mm，共 2,298,496 個磁區；採用三次軌距分布。",
+    "ja": "Ritek DVD-R E シリーズの実測キャリブレーション: 24.0631091841–58.2337337546 mm、2,298,496 セクター。3 次のトラック ピッチ分布を使用。",
+    "tr": "Ölçülen Ritek DVD-R E Serisi kalibrasyonu: 24,0631091841–58,2337337546 mm, 2.298.496 sektör; üçüncü dereceden iz aralığı dağılımı.",
+    "es": "Calibración medida de Ritek DVD-R E-Series: 24,0631091841–58,2337337546 mm, 2.298.496 sectores; distribución cúbica del paso de pista."
   },
   "标准 8cm 单层 DVD": {
     "zh-CN": "标准 8cm 单层 DVD",
     "en": "Standard 8 cm single-layer DVD",
     "zh-TW": "標準 8cm 單層 DVD",
     "ja": "標準 8 cm 単層 DVD",
+    "tr": "Standart 8 cm tek katmanlı DVD",
     "es": "DVD estándar de 8 cm y una capa"
   },
   "ISO/IEC 16448 标准单层 80 mm DVD 数据区：24–38 mm，共 714,544 个扇区。": {
@@ -900,6 +1108,7 @@
     "en": "ISO/IEC 16448 standard single-layer 80 mm DVD data area: 24–38 mm, 714,544 sectors.",
     "zh-TW": "ISO/IEC 16448 標準單層 80 mm DVD 資料區：24–38 mm，共 714,544 個磁區。",
     "ja": "ISO/IEC 16448 標準単層 80 mm DVD データ領域: 24–38 mm、714,544 セクター。",
+    "tr": "ISO/IEC 16448 standart tek katmanlı 80 mm DVD veri alanı: 24–38 mm, 714.544 sektör.",
     "es": "Zona de datos de DVD de 80 mm y una capa estándar ISO/IEC 16448: 24–38 mm, 714.544 sectores."
   },
   "标准 25GB 单层 BD": {
@@ -907,6 +1116,7 @@
     "en": "Standard 25 GB single-layer BD",
     "zh-TW": "標準 25GB 單層 BD",
     "ja": "標準 25 GB 単層 BD",
+    "tr": "Standart 25 GB tek katmanlı BD",
     "es": "BD estándar de 25 GB y una capa"
   },
   "ISO/IEC 30190 标准单层 BD-R 数据区：24–58 mm，共 12,219,392 个扇区。": {
@@ -914,13 +1124,15 @@
     "en": "ISO/IEC 30190 standard single-layer BD-R data area: 24–58 mm, 12,219,392 sectors.",
     "zh-TW": "ISO/IEC 30190 標準單層 BD-R 資料區：24–58 mm，共 12,219,392 個磁區。",
     "ja": "ISO/IEC 30190 標準単層 BD-R データ領域: 24–58 mm、12,219,392 セクター。",
+    "tr": "ISO/IEC 30190 standart tek katmanlı BD-R veri alanı: 24–58 mm, 12.219.392 sektör.",
     "es": "Zona de datos de BD-R de una capa estándar ISO/IEC 30190: 24–58 mm, 12.219.392 sectores."
   },
   "铼德 BD-R 10x（实测）": {
     "zh-CN": "铼德 BD-R 10x（实测）",
     "en": "Ritek BD-R 10x (measured)",
-    "zh-TW": "錸德 BD-R 10x（實測）",
+    "zh-TW": "Ritek BD-R 10x（實測）",
     "ja": "Ritek BD-R 10x (実測)",
+    "tr": "Ritek BD-R 10x (ölçülen)",
     "es": "Ritek BD-R 10x (medido)"
   },
   "实测参数：内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 扇区。": {
@@ -928,13 +1140,31 @@
     "en": "Measured parameters: inner radius 23.988221 mm, outer radius 58.023235 mm, 12,219,392 sectors.",
     "zh-TW": "實測參數：內半徑 23.988221 mm、外半徑 58.023235 mm、12,219,392 磁區。",
     "ja": "実測パラメーター: 内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 セクター。",
+    "tr": "Ölçülen parametreler: iç yarıçap 23,988221 mm, dış yarıçap 58,023235 mm, 12.219.392 sektör.",
     "es": "Parámetros medidos: radio interior 23,988221 mm, radio exterior 58,023235 mm, 12.219.392 sectores."
   },
-  "Verbatim BD-R (64099)（实测）": {
-    "zh-CN": "Verbatim BD-R (64099)（实测）",
+  "铼德 BD-R 12x（实测）": {
+    "zh-CN": "铼德 BD-R 12x（实测）",
+    "en": "Ritek BD-R 12x (measured)",
+    "zh-TW": "Ritek BD-R 12x（實測）",
+    "ja": "Ritek BD-R 12x (実測)",
+    "tr": "Ritek BD-R 12x (ölçülen)",
+    "es": "Ritek BD-R 12x (medido)"
+  },
+  "实测参数：内半径 23.987950 mm、外半径 58.022360 mm、12,219,392 扇区。": {
+    "zh-CN": "实测参数：内半径 23.987950 mm、外半径 58.022360 mm、12,219,392 扇区。",
+    "en": "Measured parameters: inner radius 23.987950 mm, outer radius 58.022360 mm, 12,219,392 sectors.",
+    "zh-TW": "實測參數：內半徑 23.987950 mm、外半徑 58.022360 mm、12,219,392 磁區。",
+    "ja": "実測パラメーター: 内半径 23.987950 mm、外半径 58.022360 mm、12,219,392 セクター。",
+    "tr": "Ölçülen parametreler: iç yarıçap 23,987950 mm, dış yarıçap 58,022360 mm, 12.219.392 sektör.",
+    "es": "Parámetros medidos: radio interior 23,987950 mm, radio exterior 58,022360 mm, 12.219.392 sectores."
+  },
+  "威宝 BD-R (64099)（实测）": {
+    "zh-CN": "威宝 BD-R (64099)（实测）",
     "en": "Verbatim BD-R (64099) (measured)",
     "zh-TW": "Verbatim BD-R (64099)（實測）",
     "ja": "Verbatim BD-R (64099) (実測)",
+    "tr": "Verbatim BD-R (64099) (ölçülen)",
     "es": "Verbatim BD-R (64099) (medido)"
   },
   "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。": {
@@ -942,13 +1172,31 @@
     "en": "Measured parameters: inner radius 23.987042 mm, outer radius 57.987960 mm, 12,219,392 sectors.",
     "zh-TW": "實測參數：內半徑 23.987042 mm、外半徑 57.987960 mm、12,219,392 磁區。",
     "ja": "実測パラメーター: 内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 セクター。",
+    "tr": "Ölçülen parametreler: iç yarıçap 23,987042 mm, dış yarıçap 57,987960 mm, 12.219.392 sektör.",
     "es": "Parámetros medidos: radio interior 23,987042 mm, radio exterior 57,987960 mm, 12.219.392 sectores."
+  },
+  "威宝 BD-R (64293)（实测）": {
+    "zh-CN": "威宝 BD-R (64293)（实测）",
+    "en": "Verbatim BD-R (64293) (measured)",
+    "zh-TW": "Verbatim BD-R (64293)（實測）",
+    "ja": "Verbatim BD-R (64293) (実測)",
+    "tr": "Verbatim BD-R (64293) (ölçülen)",
+    "es": "Verbatim BD-R (64293) (medido)"
+  },
+  "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区；参数与 64099 一致。": {
+    "zh-CN": "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区；参数与 64099 一致。",
+    "en": "Measured parameters: inner radius 23.987042 mm, outer radius 57.987960 mm, 12,219,392 sectors; parameters match 64099.",
+    "zh-TW": "實測參數：內半徑 23.987042 mm、外半徑 57.987960 mm、12,219,392 磁區；參數與 64099 一致。",
+    "ja": "実測パラメーター: 内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 セクター。パラメーターは 64099 と同一です。",
+    "tr": "Ölçülen parametreler: iç yarıçap 23,987042 mm, dış yarıçap 57,987960 mm, 12.219.392 sektör; parametreler 64099 ile aynı.",
+    "es": "Parámetros medidos: radio interior 23,987042 mm, radio exterior 57,987960 mm, 12.219.392 sectores; parámetros coinciden con 64099."
   },
   "自定义参数（未保存）": {
     "zh-CN": "自定义参数（未保存）",
     "en": "Custom parameters (unsaved)",
     "zh-TW": "自訂參數（未儲存）",
     "ja": "カスタム パラメーター (未保存)",
+    "tr": "Özel parametreler (kaydedilmemiş)",
     "es": "Parámetros personalizados (sin guardar)"
   },
   "生成参数已在界面中手动调整；如需长期保存，请写入用户预设 JSON。": {
@@ -956,6 +1204,7 @@
     "en": "Generation parameters have been adjusted manually. Save them as a user preset to keep them.",
     "zh-TW": "產生參數已在介面中手動調整；如需長期儲存，請寫入使用者預設 JSON。",
     "ja": "生成パラメーターは画面上で手動調整されています。保持するには、ユーザー プリセット JSON に保存してください。",
+    "tr": "Oluşturma parametreleri arayüzde el ile ayarlandı. Kalıcı olarak saklamak için kullanıcı önayar JSON'ına kaydedin.",
     "es": "Los parámetros de generación se han ajustado manualmente. Guárdalos como preajuste de usuario para conservarlos."
   }
 }

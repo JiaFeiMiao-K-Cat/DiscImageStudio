@@ -4,6 +4,7 @@
     "en": "Scroll to zoom, right-drag to pan; drag control points to fit the edge.",
     "zh-TW": "滾輪縮放，右鍵平移；拖曳控制點貼合邊緣。",
     "ja": "ホイールでズーム、右ドラッグでパン。制御点をドラッグして縁に合わせます。",
+    "tr": "Yakınlaştırmak için kaydırın, kaydırmak için sağ tıklayıp sürükleyin; kenara oturtmak için denetim noktalarını sürükleyin.",
     "es": "Usa la rueda para ampliar y arrastra con el botón derecho para desplazar; ajusta los puntos de control al borde."
   },
   "拖到盘片实体外缘；不要沿刻录区边界。": {
@@ -11,6 +12,7 @@
     "en": "Drag to the physical outer edge of the disc, not the recorded area.",
     "zh-TW": "拖到碟片實體外緣；不要沿燒錄區邊界。",
     "ja": "ディスク本体の外縁までドラッグします。書き込み領域の境界には合わせないでください。",
+    "tr": "Diskin fiziksel dış kenarına sürükleyin; yazma alanı sınırına değil.",
     "es": "Arrastra hasta el borde exterior físico del disco, no hasta la zona grabada."
   },
   "拖到实体内缘；不要沿透明塑料环。": {
@@ -18,6 +20,7 @@
     "en": "Drag to the physical inner edge, not the transparent plastic ring.",
     "zh-TW": "拖到實體內緣；不要沿透明塑膠環。",
     "ja": "本体の内縁までドラッグします。透明なプラスチック リングには合わせないでください。",
+    "tr": "Fiziksel iç kenara sürükleyin; şeffaf plastik halkaya değil.",
     "es": "Arrastra hasta el borde interior físico, no hasta el anillo de plástico transparente."
   },
   "已删除此点；点击照片继续描当前曲线。": {
@@ -25,6 +28,7 @@
     "en": "Point deleted. Click the photo to continue tracing this curve.",
     "zh-TW": "已刪除此點；點選相片繼續描目前曲線。",
     "ja": "この点を削除しました。写真をクリックして現在の曲線のトレースを続けます。",
+    "tr": "Nokta silindi. Bu eğriyi çizmeye devam etmek için fotoğrafa tıklayın.",
     "es": "Punto eliminado. Haz clic en la foto para seguir trazando esta curva."
   },
   "点 {0}": {
@@ -32,6 +36,7 @@
     "en": "Point {0}",
     "zh-TW": "點 {0}",
     "ja": "点 {0}",
+    "tr": "Nokta {0}",
     "es": "Punto {0}"
   },
   "标靶预览 · 导入照片后开始矫正": {
@@ -39,6 +44,7 @@
     "en": "Target preview · Import a photo to start rectification",
     "zh-TW": "標靶預覽 · 匯入相片後開始校正",
     "ja": "ターゲット プレビュー · 写真をインポートすると補正を開始します",
+    "tr": "Hedef önizleme · Düzeltmeye başlamak için bir fotoğraf içe aktarın",
     "es": "Vista previa del patrón · Importa una foto para iniciar la rectificación"
   },
   "刻录图案预览 · 关闭预览后继续照片标定": {
@@ -46,6 +52,7 @@
     "en": "Burn pattern preview · Close the preview to continue photo calibration",
     "zh-TW": "燒錄圖案預覽 · 關閉預覽後繼續相片校準",
     "ja": "書き込みパターン プレビュー · プレビューを閉じると写真キャリブレーションを続行します",
+    "tr": "Yazma deseni önizlemesi · Fotoğraf kalibrasyonuna devam etmek için önizlemeyi kapatın",
     "es": "Vista previa del patrón de grabación · Cierra la vista previa para continuar la calibración fotográfica"
   },
   "矫正预览 · 确认后开始描线": {
@@ -53,6 +60,7 @@
     "en": "Rectification preview · Confirm to start tracing",
     "zh-TW": "校正預覽 · 確認後開始描線",
     "ja": "補正プレビュー · 確定するとトレースを開始します",
+    "tr": "Düzeltme önizlemesi · Çizmeye başlamak için onaylayın",
     "es": "Vista previa de rectificación · Confirma para empezar a trazar"
   },
   "已选曲线上的点 {0} · 直接拖动修正，Delete 删除": {
@@ -60,6 +68,7 @@
     "en": "Curve point {0} selected · Drag to adjust, Delete to remove",
     "zh-TW": "已選曲線上的點 {0} · 直接拖曳修正，Delete 刪除",
     "ja": "曲線上の点 {0} を選択中 · ドラッグで修正、Delete で削除",
+    "tr": "Eğri noktası {0} seçildi · Ayarlamak için sürükleyin, silmek için Delete'e basın",
     "es": "Punto {0} de la curva seleccionado · Arrastra para ajustarlo; Supr para eliminarlo"
   },
   "点击照片上同一条可见曲线，由内向外连续描点。": {
@@ -67,6 +76,7 @@
     "en": "Trace the same visible curve in the photo, placing points from inside out.",
     "zh-TW": "點選相片上同一條可見曲線，由內向外連續描點。",
     "ja": "写真上の同じ曲線をクリックし、内側から外側へ連続して点を打ちます。",
+    "tr": "Fotoğraftaki görünür aynı eğriyi, içten dışa doğru noktalar koyarak çizin.",
     "es": "Traza la misma curva visible en la foto, colocando los puntos desde dentro hacia fuera."
   },
   "滚轮缩放，右键平移；点击添加点，拖动已有点修正位置。": {
@@ -74,6 +84,7 @@
     "en": "Scroll to zoom, right-drag to pan; click to add points, drag to adjust.",
     "zh-TW": "滾輪縮放，右鍵平移；點選添加點，拖曳已有點修正位置。",
     "ja": "ホイールでズーム、右ドラッグでパン。クリックで点を追加し、既存の点をドラッグして位置を修正します。",
+    "tr": "Yakınlaştırmak için kaydırın, kaydırmak için sağ tıklayıp sürükleyin; nokta eklemek için tıklayın, ayarlamak için sürükleyin.",
     "es": "Usa la rueda para ampliar y arrastra con el botón derecho para desplazar; haz clic para añadir puntos y arrástralos para ajustarlos."
   },
   "点击左侧「导入图片」开始设计": {
@@ -81,6 +92,7 @@
     "en": "Click Import images on the left to start designing",
     "zh-TW": "點選左側「匯入圖片」開始設計",
     "ja": "左側の「画像のインポート」をクリックしてデザインを開始します",
+    "tr": "Tasarıma başlamak için soldaki Görselleri içe aktar'a tıklayın",
     "es": "Haz clic en Importar imágenes, a la izquierda, para empezar a diseñar"
   },
   "盘片几何": {
@@ -88,6 +100,7 @@
     "en": "Disc geometry",
     "zh-TW": "碟片幾何",
     "ja": "ディスク ジオメトリ",
+    "tr": "Disk geometrisi",
     "es": "Geometría del disco"
   },
   "编辑…": {
@@ -95,6 +108,7 @@
     "en": "Edit…",
     "zh-TW": "編輯…",
     "ja": "編集…",
+    "tr": "Düzenle…",
     "es": "Editar…"
   },
   "启用 CD-DA 延迟交织": {
@@ -102,6 +116,7 @@
     "en": "Enable CD-DA delay interleaving",
     "zh-TW": "啟用 CD-DA 延遲交織",
     "ja": "CD-DA 遅延インターリーブを有効にする",
+    "tr": "CD-DA gecikmeli serpiştirmeyi etkinleştir",
     "es": "Activar intercalado con retardo CD-DA"
   },
   "如您在盘片制作时勾选了“启用 CD-DA 延迟交织”，则应勾选该选项。": {
@@ -109,6 +124,7 @@
     "en": "Select this option if CD-DA delay interleaving was enabled when generating the disc.",
     "zh-TW": "如您在碟片製作時勾選了“啟用 CD-DA 延遲交織”，則應勾選該選項。",
     "ja": "ディスク作成時に「CD-DA 遅延インターリーブを有効にする」をオンにした場合は、このオプションをオンにしてください。",
+    "tr": "Disk oluşturulurken CD-DA gecikmeli serpiştirme etkinleştirilmişse bu seçeneği belirleyin.",
     "es": "Selecciona esta opción si el intercalado con retardo CD-DA estaba activado al generar el disco."
   },
   "浏览": {
@@ -116,6 +132,7 @@
     "en": "Browse",
     "zh-TW": "瀏覽",
     "ja": "参照",
+    "tr": "Gözat",
     "es": "Examinar"
   },
   "来自设计页合成图": {
@@ -123,6 +140,7 @@
     "en": "Composite from Design",
     "zh-TW": "來自設計頁合成圖",
     "ja": "デザインの合成画像から",
+    "tr": "Tasarım sayfasından birleşik görsel",
     "es": "Composición de Diseño"
   },
   "设计": {
@@ -130,6 +148,7 @@
     "en": "Design",
     "zh-TW": "設計",
     "ja": "デザイン",
+    "tr": "Tasarım",
     "es": "Diseño"
   },
   "预览": {
@@ -137,6 +156,7 @@
     "en": "Preview",
     "zh-TW": "預覽",
     "ja": "プレビュー",
+    "tr": "Önizleme",
     "es": "Vista previa"
   },
   "导出": {
@@ -144,6 +164,7 @@
     "en": "Export",
     "zh-TW": "匯出",
     "ja": "エクスポート",
+    "tr": "Dışa Aktar",
     "es": "Exportar"
   },
   "刻录": {
@@ -151,6 +172,7 @@
     "en": "Burn",
     "zh-TW": "燒錄",
     "ja": "書き込み",
+    "tr": "Diske Yaz",
     "es": "Grabar"
   },
   "标定": {
@@ -158,6 +180,7 @@
     "en": "Calibrate",
     "zh-TW": "校準",
     "ja": "キャリブレーション",
+    "tr": "Kalibre Et",
     "es": "Calibrar"
   },
   "还原": {
@@ -165,6 +188,7 @@
     "en": "Restore",
     "zh-TW": "還原",
     "ja": "元に戻す",
+    "tr": "Geri Yükle",
     "es": "Restaurar"
   },
   "最大化": {
@@ -172,6 +196,7 @@
     "en": "Maximize",
     "zh-TW": "最大化",
     "ja": "最大化",
+    "tr": "Ekranı Kapla",
     "es": "Maximizar"
   },
   "请选择蓝光预设库或之前导出的蓝光参数 JSON（缺少 parameters）。": {
@@ -179,6 +204,7 @@
     "en": "Select a Blu-ray preset library or an exported Blu-ray parameter JSON file (parameters is missing).",
     "zh-TW": "請選擇藍光預設庫或之前匯出的藍光參數 JSON（缺少 parameters）。",
     "ja": "Blu-ray プリセット ライブラリ、または以前にエクスポートした Blu-ray パラメーター JSON を選択してください (parameters がありません)。",
+    "tr": "Lütfen bir Blu-ray önayar kitaplığı veya dışa aktarılmış Blu-ray parametre JSON dosyası seçin (parameters eksik).",
     "es": "Selecciona una biblioteca de preajustes Blu-ray o un JSON de parámetros Blu-ray exportado (falta parameters)."
   },
   "蓝光 parameters 不能为空。": {
@@ -186,6 +212,7 @@
     "en": "Blu-ray parameters cannot be null.",
     "zh-TW": "藍光 parameters 不能為空。",
     "ja": "Blu-ray の parameters は空にできません。",
+    "tr": "Blu-ray parameters boş olamaz.",
     "es": "Los parámetros Blu-ray no pueden ser nulos."
   },
   "蓝光 luminanceMapping.invert 必须是布尔值。": {
@@ -193,6 +220,7 @@
     "en": "Blu-ray luminanceMapping.invert must be a boolean.",
     "zh-TW": "藍光 luminanceMapping.invert 必須是布林值。",
     "ja": "Blu-ray の luminanceMapping.invert はブール値である必要があります。",
+    "tr": "Blu-ray luminanceMapping.invert bir boole değeri olmalıdır.",
     "es": "El campo Blu-ray luminanceMapping.invert debe ser un booleano."
   },
   "该文件没有可导入的蓝光预设。": {
@@ -200,6 +228,7 @@
     "en": "This file has no Blu-ray presets to import.",
     "zh-TW": "該檔案沒有可匯入的藍光預設。",
     "ja": "このファイルにはインポートできる Blu-ray プリセットがありません。",
+    "tr": "Bu dosyada içe aktarılacak Blu-ray önayarı yok.",
     "es": "Este archivo no contiene preajustes Blu-ray para importar."
   },
   "蓝光预设缺少 parameters。": {
@@ -207,6 +236,7 @@
     "en": "The Blu-ray preset is missing parameters.",
     "zh-TW": "藍光預設缺少 parameters。",
     "ja": "Blu-ray プリセットに parameters がありません。",
+    "tr": "Blu-ray önayarında parameters eksik.",
     "es": "Faltan los parámetros del preajuste Blu-ray."
   },
   "蓝光预设 JSON 不能为空。": {
@@ -214,6 +244,7 @@
     "en": "Blu-ray preset JSON cannot be null.",
     "zh-TW": "藍光預設 JSON 不能為空。",
     "ja": "Blu-ray プリセット JSON は空にできません。",
+    "tr": "Blu-ray önayar JSON'ı boş olamaz.",
     "es": "El JSON del preajuste Blu-ray no puede ser nulo."
   },
   "蓝光预设 JSON 格式无效。": {
@@ -221,6 +252,7 @@
     "en": "Invalid Blu-ray preset JSON.",
     "zh-TW": "藍光預設 JSON 格式無效。",
     "ja": "Blu-ray プリセット JSON の形式が無効です。",
+    "tr": "Geçersiz Blu-ray önayar JSON'ı.",
     "es": "JSON de preajuste Blu-ray no válido."
   },
   "蓝光预设 JSON 必须包含 schemaVersion: 1 和 presets 列表。": {
@@ -228,6 +260,7 @@
     "en": "Blu-ray preset JSON must contain schemaVersion: 1 and a presets list.",
     "zh-TW": "藍光預設 JSON 必須包含 schemaVersion: 1 和 presets 清單。",
     "ja": "Blu-ray プリセット JSON には schemaVersion: 1 と presets リストが必要です。",
+    "tr": "Blu-ray önayar JSON'ı schemaVersion: 1 ve bir presets listesi içermelidir.",
     "es": "El JSON del preajuste Blu-ray debe contener schemaVersion: 1 y una lista presets."
   },
   "蓝光预设 ID 重复：{0}": {
@@ -235,6 +268,7 @@
     "en": "Duplicate Blu-ray preset ID: {0}",
     "zh-TW": "藍光預設 ID 重複：{0}",
     "ja": "Blu-ray プリセット ID が重複しています: {0}",
+    "tr": "Yinelenen Blu-ray önayar kimliği: {0}",
     "es": "ID de preajuste Blu-ray duplicado: {0}"
   },
   "蓝光预设必须包含独立 ID、名称和参数，不能使用内置或未保存预设的 ID。": {
@@ -242,6 +276,7 @@
     "en": "A Blu-ray preset needs a unique ID, a name and parameters. IDs of built-in or unsaved presets cannot be used.",
     "zh-TW": "藍光預設必須包含獨立 ID、名稱和參數，不能使用內建或未儲存預設的 ID。",
     "ja": "Blu-ray プリセットには固有の ID、名前、パラメーターが必要です。組み込みプリセットまたは未保存プリセットの ID は使用できません。",
+    "tr": "Blu-ray önayarı benzersiz bir kimlik, ad ve parametreler içermelidir. Yerleşik veya kaydedilmemiş önayarların kimlikleri kullanılamaz.",
     "es": "Un preajuste Blu-ray necesita un ID único, un nombre y parámetros. No se pueden usar los ID de preajustes integrados o sin guardar."
   },
   "当前蓝光制作与标定仅支持起始角 0°；此 JSON 的非零起始角不能导入，也不会自动改为 0°。": {
@@ -249,6 +284,7 @@
     "en": "Blu-ray generation and calibration currently require a 0° start angle. The nonzero angle in this JSON cannot be imported or automatically reset to 0°.",
     "zh-TW": "目前藍光製作與校準僅支援起始角 0°；此 JSON 的非零起始角不能匯入，也不會自動改為 0°。",
     "ja": "現在、Blu-ray の作成とキャリブレーションは開始角 0° のみに対応しています。この JSON の 0 以外の開始角はインポートできず、0° に自動変更されることもありません。",
+    "tr": "Blu-ray oluşturma ve kalibrasyon şu anda yalnızca 0° başlangıç açısını destekler. Bu JSON'daki sıfır olmayan açı içe aktarılamaz veya otomatik olarak 0°'ye sıfırlanamaz.",
     "es": "La generación y calibración Blu-ray requieren actualmente un ángulo inicial de 0°. No se puede importar ni restablecer automáticamente a 0° el ángulo distinto de cero de este JSON."
   },
   "蓝光 parameters 缺少 {0}，不能使用默认值替代导入的参数。": {
@@ -256,6 +292,7 @@
     "en": "Blu-ray parameters is missing {0}. Imported parameters cannot be replaced with defaults.",
     "zh-TW": "藍光 parameters 缺少 {0}，不能使用預設值替代匯入的參數。",
     "ja": "Blu-ray の parameters に {0} がありません。インポートしたパラメーターを既定値で代替することはできません。",
+    "tr": "Blu-ray parametrelerinde {0} eksik. İçe aktarılan parametreler varsayılan değerlerle değiştirilemez.",
     "es": "Falta {0} en los parámetros Blu-ray. No se pueden sustituir los parámetros importados por valores predeterminados."
   },
   "BD ISO 长度与总扇区数不符：需要 {0:N0} 字节，实际 {1:N0} 字节。": {
@@ -263,6 +300,7 @@
     "en": "BD ISO size does not match the sector count: expected {0:N0} bytes, found {1:N0}.",
     "zh-TW": "BD ISO 長度與總磁區數不符：需要 {0:N0} 位元組，實際 {1:N0} 位元組。",
     "ja": "BD ISO のサイズが総セクター数と一致しません: 必要 {0:N0} バイト、実際 {1:N0} バイト。",
+    "tr": "BD ISO boyutu sektör sayısıyla uyuşmuyor: beklenen {0:N0} bayt, bulunan {1:N0} bayt.",
     "es": "El tamaño de la ISO BD no coincide con el número de sectores: se esperaban {0:N0} bytes y se encontraron {1:N0}."
   },
   "生成暂存目录与输出目录不能相同，输出目录也不能位于暂存目录内部。": {
@@ -270,6 +308,7 @@
     "en": "The output directory must differ from the staging directory and cannot be inside it.",
     "zh-TW": "產生暫存資料夾與輸出資料夾不能相同，輸出資料夾也不能位於暫存資料夾內部。",
     "ja": "出力フォルダーはステージング フォルダーと異なる必要があり、ステージング フォルダー内に置くこともできません。",
+    "tr": "Çıktı dizini hazırlık dizininden farklı olmalı ve içinde yer almamalıdır.",
     "es": "El directorio de salida debe ser distinto del directorio temporal de preparación y no puede estar dentro de él."
   },
   "生成暂存目录不存在：": {
@@ -277,6 +316,7 @@
     "en": "Staging directory does not exist: ",
     "zh-TW": "產生暫存資料夾不存在：",
     "ja": "ステージング フォルダーが存在しません: ",
+    "tr": "Hazırlık dizini mevcut değil: ",
     "es": "El directorio temporal de preparación no existe: "
   },
   "生成暂存目录应只包含本次作业的顶层输出文件。": {
@@ -284,6 +324,7 @@
     "en": "The staging directory must contain only top-level output files from this job.",
     "zh-TW": "產生暫存資料夾應只包含本次作業的最上層輸出檔案。",
     "ja": "ステージング フォルダーには、このジョブの最上位の出力ファイルのみを含める必要があります。",
+    "tr": "Hazırlık dizini yalnızca bu görevin üst düzey çıktı dosyalarını içermelidir.",
     "es": "El directorio temporal de preparación sólo debe contener los archivos de salida de este trabajo en su nivel superior."
   },
   "没有可发布的标定输出文件。": {
@@ -291,6 +332,7 @@
     "en": "No calibration output files are available to publish.",
     "zh-TW": "沒有可發佈的校準輸出檔案。",
     "ja": "公開できるキャリブレーション出力ファイルがありません。",
+    "tr": "Yayınlanacak kalibrasyon çıktı dosyası yok.",
     "es": "No hay archivos de salida de calibración disponibles para publicar."
   },
   "生成文件名存在大小写重名，无法安全发布。": {
@@ -298,6 +340,7 @@
     "en": "Output names differ only by case and cannot be published safely.",
     "zh-TW": "產生檔名存在大小寫重名，無法安全發佈。",
     "ja": "大文字と小文字の違いだけで重複する出力ファイル名があるため、安全に公開できません。",
+    "tr": "Çıktı adları yalnızca büyük/küçük harf bakımından farklılık gösteriyor ve güvenli şekilde yayınlanamaz.",
     "es": "Los nombres de salida sólo se diferencian en mayúsculas y minúsculas y no se pueden publicar de forma segura."
   },
   "输出文件路径与暂存路径冲突。": {
@@ -305,6 +348,7 @@
     "en": "An output path conflicts with a staging path.",
     "zh-TW": "輸出檔案路徑與暫存路徑衝突。",
     "ja": "出力ファイルのパスがステージング パスと競合しています。",
+    "tr": "Bir çıktı yolu, hazırlık yolu ile çakışıyor.",
     "es": "Una ruta de salida entra en conflicto con una ruta de preparación."
   },
   "同名输出路径已是目录：": {
@@ -312,6 +356,7 @@
     "en": "An output path is already a directory: ",
     "zh-TW": "同名輸出路徑已是資料夾：",
     "ja": "同名の出力パスは既にフォルダーです: ",
+    "tr": "Bir çıktı yolu zaten bir dizin: ",
     "es": "Una ruta de salida ya es un directorio: "
   },
   "标定文件发布失败，部分文件未能恢复。备份保留在 ": {
@@ -319,6 +364,7 @@
     "en": "Calibration publishing failed and some files could not be restored. Backups remain at ",
     "zh-TW": "校準檔案發佈失敗，部分檔案未能恢復。備份保留在 ",
     "ja": "キャリブレーション ファイルの公開に失敗し、一部のファイルを復元できませんでした。バックアップの保存先: ",
+    "tr": "Kalibrasyon dosyası yayınlanamadı ve bazı dosyalar geri yüklenemedi. Yedekler şurada tutuluyor: ",
     "es": "La publicación de la calibración falló y no se pudieron restaurar algunos archivos. Las copias de seguridad permanecen en "
   },
   "；请保留该目录并检查文件占用后恢复。": {
@@ -326,6 +372,7 @@
     "en": ". Keep this directory, check for locked files, and restore the backups.",
     "zh-TW": "；請保留該資料夾並檢查檔案占用後恢復。",
     "ja": "。このフォルダーを保持し、ファイルが使用中でないか確認してから復元してください。",
+    "tr": ". Lütfen bu dizini saklayın, dosya kilitlerini denetleyin ve yedekleri geri yükleyin.",
     "es": ". Conserva este directorio, comprueba si hay archivos bloqueados y restaura las copias de seguridad."
   },
   "发布路径不能是符号链接或目录联接：": {
@@ -333,6 +380,7 @@
     "en": "A publishing path cannot be a symbolic link or junction: ",
     "zh-TW": "發佈路徑不能是符號連結或目錄連接點：",
     "ja": "公開パスにシンボリック リンクまたはジャンクションは使用できません: ",
+    "tr": "Yayınlama yolu sembolik bağ veya birleşim noktası olamaz: ",
     "es": "Una ruta de publicación no puede ser un enlace simbólico ni una unión de directorios: "
   },
   "请选择一张盘片照片。": {
@@ -340,6 +388,7 @@
     "en": "Select a disc photo.",
     "zh-TW": "請選擇一張碟片相片。",
     "ja": "ディスクの写真を選択してください。",
+    "tr": "Lütfen bir disk fotoğrafı seçin.",
     "es": "Selecciona una foto del disco."
   },
   "照片尺寸上限应为 64–4096 像素。": {
@@ -347,6 +396,7 @@
     "en": "The photo dimension limit must be 64–4096 pixels.",
     "zh-TW": "相片尺寸上限應為 64–4096 像素。",
     "ja": "写真サイズの上限は 64–4096 ピクセルにしてください。",
+    "tr": "Fotoğraf boyut sınırı 64–4096 piksel olmalıdır.",
     "es": "El límite de dimensiones de la foto debe estar entre 64 y 4096 píxeles."
   },
   "照片文件过大，请使用小于 256 MB 的图片。": {
@@ -354,6 +404,7 @@
     "en": "The photo is too large. Use an image smaller than 256 MB.",
     "zh-TW": "相片檔案過大，請使用小於 256 MB 的圖片。",
     "ja": "写真ファイルが大きすぎます。256 MB 未満の画像を使用してください。",
+    "tr": "Fotoğraf çok büyük. Lütfen 256 MB'tan küçük bir görsel kullanın.",
     "es": "La foto es demasiado grande. Usa una imagen de menos de 256 MB."
   },
   "照片没有可读取的图像。": {
@@ -361,6 +412,7 @@
     "en": "The photo contains no readable image.",
     "zh-TW": "相片沒有可讀取的圖像。",
     "ja": "写真に読み取り可能な画像がありません。",
+    "tr": "Fotoğrafta okunabilir bir görsel yok.",
     "es": "La foto no contiene ninguna imagen legible."
   },
   "照片尺寸无效。": {
@@ -368,6 +420,7 @@
     "en": "Invalid photo dimensions.",
     "zh-TW": "相片尺寸無效。",
     "ja": "写真のサイズが無効です。",
+    "tr": "Geçersiz fotoğraf boyutları.",
     "es": "Dimensiones de foto no válidas."
   },
   "每条初始轮廓应有 5–64 个点。": {
@@ -375,6 +428,7 @@
     "en": "Each initial contour must have 5–64 points.",
     "zh-TW": "每條初始輪廓應有 5–64 個點。",
     "ja": "各初期輪郭には 5–64 個の点が必要です。",
+    "tr": "Her başlangıç konturu 5–64 nokta içermelidir.",
     "es": "Cada contorno inicial debe tener entre 5 y 64 puntos."
   },
   "照片太小，无法输入轮廓。": {
@@ -382,6 +436,7 @@
     "en": "The photo is too small to enter contours.",
     "zh-TW": "相片太小，無法輸入輪廓。",
     "ja": "写真が小さすぎるため、輪郭を入力できません。",
+    "tr": "Fotoğraf kontur girmek için çok küçük.",
     "es": "La foto es demasiado pequeña para introducir contornos."
   },
   "矫正画布半径无效。": {
@@ -389,6 +444,7 @@
     "en": "Invalid rectification canvas radius.",
     "zh-TW": "校正畫布半徑無效。",
     "ja": "補正キャンバスの半径が無効です。",
+    "tr": "Geçersiz düzeltme tuvali yarıçapı.",
     "es": "Radio del lienzo de rectificación no válido."
   },
   "矫正图片尺寸应为 32–4096 像素。": {
@@ -396,6 +452,7 @@
     "en": "Rectified image dimensions must be 32–4096 pixels.",
     "zh-TW": "校正圖片尺寸應為 32–4096 像素。",
     "ja": "補正画像のサイズは 32–4096 ピクセルにしてください。",
+    "tr": "Düzeltilmiş görsel boyutları 32–4096 piksel olmalıdır.",
     "es": "Las dimensiones de la imagen rectificada deben estar entre 32 y 4096 píxeles."
   },
   "请先按照片尺寸上限载入图片，再进行矫正。": {
@@ -403,6 +460,7 @@
     "en": "Load the image within the photo dimension limit before rectifying it.",
     "zh-TW": "請先按相片尺寸上限載入圖片，再進行校正。",
     "ja": "補正する前に、写真サイズの上限内で画像を読み込んでください。",
+    "tr": "Görseli düzeltmeden önce fotoğraf boyut sınırları içinde yükleyin.",
     "es": "Carga la imagen dentro del límite de dimensiones de la foto antes de rectificarla."
   },
   "照片变换在当前画布内退化，请重新矫正轮廓或缩小画布。": {
@@ -410,6 +468,7 @@
     "en": "The photo transform is degenerate within this canvas. Adjust the contours or reduce the canvas.",
     "zh-TW": "相片變換在目前畫布內退化，請重新校正輪廓或縮小畫布。",
     "ja": "現在のキャンバス内で写真の変換が縮退しています。輪郭を補正し直すか、キャンバスを縮小してください。",
+    "tr": "Fotoğraf dönüşümü bu tuval içinde bozuldu. Konturları ayarlayın veya tuvali küçültün.",
     "es": "La transformación de la foto es degenerada dentro de este lienzo. Ajusta los contornos o reduce el lienzo."
   },
   "完整数据区半径（创建图案时）：{0}–{1} mm": {
@@ -417,6 +476,7 @@
     "en": "Full data area radii (at pattern creation): {0}–{1} mm",
     "zh-TW": "完整資料區半徑（建立圖案時）：{0}–{1} mm",
     "ja": "データ領域全体の半径 (パターン作成時): {0}–{1} mm",
+    "tr": "Tam veri alanı yarıçapları (desen oluşturma sırasında): {0}–{1} mm",
     "es": "Radios de la zona de datos completa (al crear el patrón): {0}–{1} mm"
   },
   "轨距 p(x) = {0} + ({1})x": {
@@ -424,6 +484,7 @@
     "en": "Pitch p(x) = {0} + ({1})x",
     "zh-TW": "軌距 p(x) = {0} + ({1})x",
     "ja": "トラック ピッチ p(x) = {0} + ({1})x",
+    "tr": "İz aralığı p(x) = {0} + ({1})x",
     "es": "Paso p(x) = {0} + ({1})x"
   },
   "选择源图片": {
@@ -431,6 +492,7 @@
     "en": "Select source image",
     "zh-TW": "選擇來源圖片",
     "ja": "ソース画像の選択",
+    "tr": "Kaynak görseli seçin",
     "es": "Seleccionar imagen de origen"
   },
   "图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|所有文件|*.*": {
@@ -438,6 +500,7 @@
     "en": "Image files|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|All files|*.*",
     "zh-TW": "圖片檔案|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|所有檔案|*.*",
     "ja": "画像ファイル|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|すべてのファイル|*.*",
+    "tr": "Görsel dosyaları|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|Tüm dosyalar|*.*",
     "es": "Archivos de imagen|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|Todos los archivos|*.*"
   },
   "导入图片": {
@@ -445,6 +508,7 @@
     "en": "Import images",
     "zh-TW": "匯入圖片",
     "ja": "画像のインポート",
+    "tr": "Görselleri içe aktar",
     "es": "Importar imágenes"
   },
   "选择输出位置": {
@@ -452,6 +516,7 @@
     "en": "Select output location",
     "zh-TW": "選擇輸出位置",
     "ja": "出力先の選択",
+    "tr": "Çıktı konumunu seçin",
     "es": "Seleccionar ubicación de salida"
   },
   "{0}不是有效数字。": {
@@ -459,6 +524,7 @@
     "en": "{0} is not a valid number.",
     "zh-TW": "{0}不是有效數字。",
     "ja": "{0} は有効な数値ではありません。",
+    "tr": "{0} geçerli bir sayı değil.",
     "es": "{0} no es un número válido."
   },
   "{0}必须大于 0。": {
@@ -466,6 +532,7 @@
     "en": "{0} must be greater than 0.",
     "zh-TW": "{0}必須大於 0。",
     "ja": "{0} は 0 より大きくする必要があります。",
+    "tr": "{0} 0'dan büyük olmalıdır.",
     "es": "{0} debe ser mayor que 0."
   },
   "{0}必须是正整数。": {
@@ -473,6 +540,7 @@
     "en": "{0} must be a positive integer.",
     "zh-TW": "{0}必須是正整數。",
     "ja": "{0} は正の整数である必要があります。",
+    "tr": "{0} pozitif bir tam sayı olmalıdır.",
     "es": "{0} debe ser un entero positivo."
   },
   "{0}必须是非负整数。": {
@@ -480,6 +548,7 @@
     "en": "{0} must be a nonnegative integer.",
     "zh-TW": "{0}必須是非負整數。",
     "ja": "{0} は 0 以上の整数である必要があります。",
+    "tr": "{0} negatif olmayan bir tam sayı olmalıdır.",
     "es": "{0} debe ser un entero no negativo."
   },
   "预览尺寸": {
@@ -487,6 +556,7 @@
     "en": "Preview size",
     "zh-TW": "預覽尺寸",
     "ja": "プレビュー サイズ",
+    "tr": "Önizleme boyutu",
     "es": "Tamaño de vista previa"
   },
   "预览尺寸必须在 64–8192 px 之间。": {
@@ -494,6 +564,7 @@
     "en": "Preview size must be between 64 and 8192 px.",
     "zh-TW": "預覽尺寸必須在 64–8192 px 之間。",
     "ja": "プレビュー サイズは 64–8192 px の範囲で指定してください。",
+    "tr": "Önizleme boyutu 64 ile 8192 px arasında olmalıdır.",
     "es": "El tamaño de la vista previa debe estar entre 64 y 8192 px."
   },
   "每扇区采样": {
@@ -501,6 +572,7 @@
     "en": "Samples per sector",
     "zh-TW": "每磁區取樣",
     "ja": "セクターあたりのサンプル数",
+    "tr": "Sektör başına örnek",
     "es": "Muestras por sector"
   },
   "每扇区采样必须在 1–{0} 之间。": {
@@ -508,6 +580,7 @@
     "en": "Samples per sector must be between 1 and {0}.",
     "zh-TW": "每磁區取樣必須在 1–{0} 之間。",
     "ja": "セクターあたりのサンプル数は 1–{0} の範囲で指定してください。",
+    "tr": "Sektör başına örnek 1 ile {0} arasında olmalıdır.",
     "es": "Las muestras por sector deben estar entre 1 y {0}."
   },
   "正在准备防断流缓冲区…": {
@@ -515,6 +588,7 @@
     "en": "Preparing the underrun protection buffer…",
     "zh-TW": "正在準備防斷流緩衝區…",
     "ja": "バッファー アンダーラン防止バッファーを準備しています…",
+    "tr": "Arabellek yetersizliğini önleme arabelleği hazırlanıyor…",
     "es": "Preparando el búfer de protección contra vaciado…"
   },
   "刻录机开始写入。": {
@@ -522,6 +596,7 @@
     "en": "The recorder has started writing.",
     "zh-TW": "燒錄機開始寫入。",
     "ja": "ドライブが書き込みを開始しました。",
+    "tr": "Yazıcı yazmaya başladı.",
     "es": "La grabadora ha empezado a escribir."
   },
   "正在刷新缓存并关闭刻录会话…": {
@@ -529,6 +604,7 @@
     "en": "Flushing the cache and closing the burn session…",
     "zh-TW": "正在寫出快取並關閉燒錄工作階段…",
     "ja": "キャッシュをフラッシュし、書き込みセッションを閉じています…",
+    "tr": "Önbellek temizleniyor ve yazma oturumu kapatılıyor…",
     "es": "Vaciando la caché y cerrando la sesión de grabación…"
   },
   "标定参数已应用": {
@@ -536,6 +612,7 @@
     "en": "Calibration applied",
     "zh-TW": "校準參數已套用",
     "ja": "キャリブレーションを適用しました",
+    "tr": "Kalibrasyon uygulandı",
     "es": "Calibración aplicada"
   },
   "本工程的参数已更新。": {
@@ -543,6 +620,7 @@
     "en": "The project parameters have been updated.",
     "zh-TW": "本專案的參數已更新。",
     "ja": "このプロジェクトのパラメーターを更新しました。",
+    "tr": "Proje parametreleri güncellendi.",
     "es": "Se han actualizado los parámetros del proyecto."
   },
   "语言设置已保存": {
@@ -550,6 +628,7 @@
     "en": "Language preference saved",
     "zh-TW": "語言設定已儲存",
     "ja": "言語設定を保存しました",
+    "tr": "Dil tercihi kaydedildi",
     "es": "Preferencia de idioma guardada"
   },
   "重启应用后生效。": {
@@ -557,13 +636,31 @@
     "en": "Takes effect after restarting the app.",
     "zh-TW": "重新啟動應用程式後生效。",
     "ja": "アプリの再起動後に反映されます。",
+    "tr": "Uygulama yeniden başlatıldıktan sonra geçerli olur.",
     "es": "Se aplicará al reiniciar la app."
+  },
+  "界面文字已立即更新。": {
+    "zh-CN": "界面文字已立即更新。",
+    "en": "The interface text has been updated immediately.",
+    "zh-TW": "介面文字已立即更新。",
+    "ja": "画面のテキストをすぐに更新しました。",
+    "tr": "Arayüz metni hemen güncellendi.",
+    "es": "El texto de la interfaz se actualizó inmediatamente."
+  },
+  "贡献者：{0}": {
+    "zh-CN": "贡献者：{0}",
+    "en": "Contributor: {0}",
+    "zh-TW": "貢獻者：{0}",
+    "ja": "貢献者: {0}",
+    "tr": "Katkıda bulunan: {0}",
+    "es": "Colaborador: {0}"
   },
   "缓存位置不可用": {
     "zh-CN": "缓存位置不可用",
     "en": "Cache location unavailable",
     "zh-TW": "無法使用快取位置",
     "ja": "キャッシュの場所を使用できません",
+    "tr": "Önbellek konumu kullanılamıyor",
     "es": "Ubicación de caché no disponible"
   },
   "已改用系统临时目录。": {
@@ -571,6 +668,7 @@
     "en": "Using the system temporary directory.",
     "zh-TW": "已改用系統暫存資料夾。",
     "ja": "システムの一時フォルダーを代わりに使用します。",
+    "tr": "Sistem geçici dizini kullanılıyor.",
     "es": "Se usará el directorio temporal del sistema."
   },
   "展开侧边栏": {
@@ -578,6 +676,7 @@
     "en": "Expand sidebar",
     "zh-TW": "展開側邊欄",
     "ja": "サイドバーを展開",
+    "tr": "Kenar çubuğunu genişlet",
     "es": "Expandir barra lateral"
   },
   "收起侧边栏": {
@@ -585,6 +684,7 @@
     "en": "Collapse sidebar",
     "zh-TW": "收起側邊欄",
     "ja": "サイドバーを折りたたむ",
+    "tr": "Kenar çubuğunu daralt",
     "es": "Contraer barra lateral"
   },
   "切换预设": {
@@ -592,6 +692,7 @@
     "en": "Switch preset",
     "zh-TW": "切換預設",
     "ja": "プリセットの切り替え",
+    "tr": "Önayarı değiştir",
     "es": "Cambiar preajuste"
   },
   "切换为“{0}”会用该预设的几何参数覆盖当前参数，确认后无法撤销。是否继续？": {
@@ -599,6 +700,7 @@
     "en": "Switching to “{0}” will replace the current geometry with this preset. This cannot be undone. Continue?",
     "zh-TW": "切換為“{0}”會用該預設的幾何參數覆蓋目前參數，確認後無法復原。是否繼續？",
     "ja": "「{0}」に切り替えると、現在のパラメーターがこのプリセットのジオメトリで上書きされます。この操作は元に戻せません。続行しますか?",
+    "tr": "“{0}” önayarına geçildiğinde geçerli geometri bu önayarla değiştirilecektir. Bu işlem geri alınamaz. Devam edilsin mi?",
     "es": "Cambiar a «{0}» sustituirá la geometría actual por la de este preajuste. Esta acción no se puede deshacer. ¿Continuar?"
   },
   "覆盖参数": {
@@ -606,6 +708,7 @@
     "en": "Replace parameters",
     "zh-TW": "覆蓋參數",
     "ja": "パラメーターを上書き",
+    "tr": "Parametrelerin üzerine yaz",
     "es": "Sustituir parámetros"
   },
   "选择工程保存位置": {
@@ -613,6 +716,7 @@
     "en": "Select project location",
     "zh-TW": "選擇專案儲存位置",
     "ja": "プロジェクトの保存場所の選択",
+    "tr": "Proje kayıt konumunu seçin",
     "es": "Seleccionar ubicación del proyecto"
   },
   "清空缓存": {
@@ -620,6 +724,7 @@
     "en": "Clear cache",
     "zh-TW": "清空快取",
     "ja": "キャッシュのクリア",
+    "tr": "Önbelleği temizle",
     "es": "Vaciar caché"
   },
   "将删除本应用写入缓存目录的缩略图、合成图与预览图片。工程文件与导出文件不受影响。": {
@@ -627,6 +732,7 @@
     "en": "Delete thumbnails, composites and preview images created by this app in the cache directory. Project and export files are kept.",
     "zh-TW": "將刪除本應用程式寫入快取資料夾的縮圖、合成圖與預覽圖片。專案檔案與匯出檔案不受影響。",
     "ja": "このアプリがキャッシュ フォルダーに作成したサムネイル、合成画像、プレビュー画像を削除します。プロジェクト ファイルとエクスポート ファイルは影響を受けません。",
+    "tr": "Bu uygulamanın önbellek dizininde oluşturduğu küçük resimler, birleşik görseller ve önizleme görüntüleri silinecektir. Proje ve dışa aktarma dosyaları korunur.",
     "es": "Elimina las miniaturas, composiciones y vistas previas creadas por esta app en el directorio de caché. Conserva los archivos de proyectos y exportaciones."
   },
   "已用 ": {
@@ -634,6 +740,7 @@
     "en": "Used: ",
     "zh-TW": "已用 ",
     "ja": "使用量: ",
+    "tr": "Kullanılan: ",
     "es": "Utilizado: "
   },
   "无法保存设置：": {
@@ -641,6 +748,7 @@
     "en": "Could not save settings: ",
     "zh-TW": "無法儲存設定：",
     "ja": "設定を保存できません: ",
+    "tr": "Ayarlar kaydedilemedi: ",
     "es": "No se pudo guardar la configuración: "
   },
   "选择默认工程位置": {
@@ -648,6 +756,7 @@
     "en": "Select default project location",
     "zh-TW": "選擇預設專案位置",
     "ja": "既定のプロジェクトの場所の選択",
+    "tr": "Varsayılan proje konumunu seçin",
     "es": "Seleccionar ubicación predeterminada de proyectos"
   },
   "选择缓存位置": {
@@ -655,6 +764,7 @@
     "en": "Select cache location",
     "zh-TW": "選擇快取位置",
     "ja": "キャッシュの場所の選択",
+    "tr": "Önbellek konumunu seçin",
     "es": "Seleccionar ubicación de caché"
   },
   "已删除 {0} 个缓存文件。": {
@@ -662,6 +772,7 @@
     "en": "Deleted cache files: {0}.",
     "zh-TW": "已刪除 {0} 個快取檔案。",
     "ja": "{0} 個のキャッシュ ファイルを削除しました。",
+    "tr": "Silinen önbellek dosyaları: {0}.",
     "es": "Archivos de caché eliminados: {0}."
   },
   "缓存目录中没有可清理的文件。": {
@@ -669,6 +780,7 @@
     "en": "There are no files to clear in the cache directory.",
     "zh-TW": "快取資料夾中沒有可清理的檔案。",
     "ja": "キャッシュ フォルダーにクリアできるファイルはありません。",
+    "tr": "Önbellek dizininde temizlenecek dosya yok.",
     "es": "No hay archivos que eliminar en el directorio de caché."
   },
   "无法打开应用数据目录：": {
@@ -676,13 +788,23 @@
     "en": "Could not open the app data folder: ",
     "zh-TW": "無法開啟應用程式資料目錄：",
     "ja": "アプリ データ フォルダーを開けません: ",
+    "tr": "Uygulama veri klasörü açılamadı: ",
     "es": "No se pudo abrir la carpeta de datos de la app: "
+  },
+  "无法打开 GitHub：": {
+    "zh-CN": "无法打开 GitHub：",
+    "en": "Could not open GitHub: ",
+    "zh-TW": "無法開啟 GitHub：",
+    "ja": "GitHub を開けません: ",
+    "tr": "GitHub açılamadı: ",
+    "es": "No se pudo abrir GitHub: "
   },
   "请填写绝对路径。": {
     "zh-CN": "请填写绝对路径。",
     "en": "Enter an absolute path.",
     "zh-TW": "請填寫絕對路徑。",
     "ja": "絶対パスを入力してください。",
+    "tr": "Mutlak bir yol girin.",
     "es": "Introduce una ruta absoluta."
   },
   "路径无效：": {
@@ -690,6 +812,7 @@
     "en": "Invalid path: ",
     "zh-TW": "路徑無效：",
     "ja": "無効なパス: ",
+    "tr": "Geçersiz yol: ",
     "es": "Ruta no válida: "
   },
   "目录不存在：": {
@@ -697,6 +820,7 @@
     "en": "Directory does not exist: ",
     "zh-TW": "資料夾不存在：",
     "ja": "フォルダーが存在しません: ",
+    "tr": "Dizin mevcut değil: ",
     "es": "El directorio no existe: "
   },
   "设置": {
@@ -704,6 +828,7 @@
     "en": "Settings",
     "zh-TW": "設定",
     "ja": "設定",
+    "tr": "Ayarlar",
     "es": "Configuración"
   },
   "通用": {
@@ -711,6 +836,7 @@
     "en": "General",
     "zh-TW": "一般",
     "ja": "全般",
+    "tr": "Genel",
     "es": "General"
   },
   "存储": {
@@ -718,6 +844,7 @@
     "en": "Storage",
     "zh-TW": "儲存空間",
     "ja": "ストレージ",
+    "tr": "Depolama",
     "es": "Almacenamiento"
   },
   "界面外观偏好。": {
@@ -725,6 +852,7 @@
     "en": "Appearance and language preferences.",
     "zh-TW": "介面外觀偏好。",
     "ja": "外観の設定。",
+    "tr": "Görünüm ve dil tercihleri.",
     "es": "Preferencias de apariencia e idioma."
   },
   "外观": {
@@ -732,6 +860,7 @@
     "en": "Appearance",
     "zh-TW": "外觀",
     "ja": "外観",
+    "tr": "Görünüm",
     "es": "Apariencia"
   },
   "主题": {
@@ -739,6 +868,7 @@
     "en": "Theme",
     "zh-TW": "主題",
     "ja": "テーマ",
+    "tr": "Tema",
     "es": "Tema"
   },
   "深色": {
@@ -746,6 +876,7 @@
     "en": "Dark",
     "zh-TW": "深色",
     "ja": "ダーク",
+    "tr": "Koyu",
     "es": "Oscuro"
   },
   "浅色": {
@@ -753,6 +884,7 @@
     "en": "Light",
     "zh-TW": "淺色",
     "ja": "ライト",
+    "tr": "Açık",
     "es": "Claro"
   },
   "跟随系统": {
@@ -760,6 +892,7 @@
     "en": "System",
     "zh-TW": "跟隨系統",
     "ja": "システムに従う",
+    "tr": "Sistem",
     "es": "Sistema"
   },
   "保存后立即应用到所有窗口。": {
@@ -767,6 +900,7 @@
     "en": "Applied to all windows after saving.",
     "zh-TW": "儲存後立即套用至所有視窗。",
     "ja": "保存すると、すべてのウィンドウにすぐに適用されます。",
+    "tr": "Kaydedildikten sonra tüm pencerelere uygulanır.",
     "es": "Se aplica a todas las ventanas al guardar."
   },
   "语言": {
@@ -774,6 +908,7 @@
     "en": "Language",
     "zh-TW": "語言",
     "ja": "言語",
+    "tr": "Dil",
     "es": "Idioma"
   },
   "简体中文": {
@@ -781,6 +916,7 @@
     "en": "简体中文",
     "zh-TW": "简体中文",
     "ja": "简体中文",
+    "tr": "简体中文",
     "es": "简体中文"
   },
   "English": {
@@ -788,13 +924,15 @@
     "en": "English",
     "zh-TW": "English",
     "ja": "English",
+    "tr": "English",
     "es": "English"
   },
   "语言将在重启应用后生效；跟随系统时，中文系统使用简体中文，其他系统使用 English。": {
-    "zh-CN": "语言更改将在重启后生效。跟随系统支持简体中文、繁体中文、日文和西班牙文，其他系统语言使用英文。",
-    "en": "Language changes take effect after restarting. System follows Simplified or Traditional Chinese, Japanese, or Spanish; other system languages use English.",
-    "zh-TW": "語言變更將在重新啟動後生效。跟隨系統支援簡體中文、繁體中文、日文和西班牙文，其他系統語言使用英文。",
-    "ja": "言語の変更は再起動後に反映されます。システム設定では簡体字中国語、繁体字中国語、日本語、スペイン語に対応し、その他の言語では英語を使用します。",
+    "zh-CN": "语言将在重启应用后生效。跟随系统时区分简体和繁体中文，其他语言使用 English。",
+    "en": "Language changes take effect after restarting. System follows Simplified or Traditional Chinese; other system languages use English.",
+    "zh-TW": "語言會在重新啟動應用程式後生效。跟隨系統時會區分簡體與繁體中文，其他語言使用 English。",
+    "ja": "言語の変更はアプリの再起動後に反映されます。「システムに従う」の場合、簡体字中国語と繁体字中国語を区別し、その他の言語では English を使用します。",
+    "tr": "Dil değişiklikleri yeniden başlatıldıktan sonra geçerli olur. Sistem dili Basitleştirilmiş veya Geleneksel Çince, Japonca ya da Türkçe ise ilgili dili izler; diğer sistem dillerinde English kullanılır.",
     "es": "El idioma se aplica al reiniciar. Sistema sigue el chino simplificado o tradicional, el japonés o el español; para otros idiomas usa inglés."
   },
   "新建工程与临时缓存的默认位置。": {
@@ -802,6 +940,7 @@
     "en": "Default locations for new projects and temporary files.",
     "zh-TW": "新專案與暫存快取的預設位置。",
     "ja": "新規プロジェクトと一時キャッシュの既定の場所。",
+    "tr": "Yeni projeler ve geçici dosyalar için varsayılan konumlar.",
     "es": "Ubicaciones predeterminadas para proyectos nuevos y archivos temporales."
   },
   "位置": {
@@ -809,6 +948,7 @@
     "en": "Locations",
     "zh-TW": "位置",
     "ja": "場所",
+    "tr": "Konumlar",
     "es": "Ubicaciones"
   },
   "默认工程位置": {
@@ -816,6 +956,7 @@
     "en": "Default project location",
     "zh-TW": "預設專案位置",
     "ja": "既定のプロジェクトの場所",
+    "tr": "Varsayılan proje konumu",
     "es": "Ubicación predeterminada de proyectos"
   },
   "恢复默认": {
@@ -823,6 +964,7 @@
     "en": "Reset",
     "zh-TW": "還原預設值",
     "ja": "既定に戻す",
+    "tr": "Sıfırla",
     "es": "Restablecer"
   },
   "仅作为新建工程对话框的默认位置；留空使用系统文档目录。": {
@@ -830,6 +972,7 @@
     "en": "Default location for new projects. Leave blank to use the system Documents folder.",
     "zh-TW": "僅作為新專案對話框的預設位置；留空使用系統「文件」資料夾。",
     "ja": "新規プロジェクト ダイアログの既定の場所としてのみ使用されます。空欄の場合はシステムのドキュメント フォルダーを使用します。",
+    "tr": "Yeni projeler için varsayılan konum. Sistem Belgeler klasörünü kullanmak için boş bırakın.",
     "es": "Ubicación predeterminada de los proyectos nuevos. Déjala en blanco para usar la carpeta Documentos del sistema."
   },
   "缓存位置": {
@@ -837,6 +980,7 @@
     "en": "Cache location",
     "zh-TW": "快取位置",
     "ja": "キャッシュの場所",
+    "tr": "Önbellek konumu",
     "es": "Ubicación de caché"
   },
   "用于设计合成图、预览渲染与缩略图；留空使用系统临时目录，切换后新任务使用新位置，旧缓存不会自动迁移。": {
@@ -844,6 +988,7 @@
     "en": "Used for composites, previews and thumbnails. Leave blank to use the system temporary folder. New jobs use the new location; existing cache files stay in place.",
     "zh-TW": "用於設計合成圖、預覽算繪與縮圖；留空使用系統暫存資料夾，切換後新工作使用新位置，舊快取不會自動遷移。",
     "ja": "デザインの合成画像、プレビューのレンダリング、サムネイルに使用されます。空欄の場合はシステムの一時フォルダーを使用します。変更後の新しいジョブは新しい場所を使用し、既存のキャッシュは自動的に移行されません。",
+    "tr": "Birleşik görseller, önizlemeler ve küçük resimler için kullanılır. Sistem geçici klasörünü kullanmak için boş bırakın. Yeni görevler yeni konumu kullanır; mevcut önbellek dosyaları yerinde kalır.",
     "es": "Se usa para composiciones, vistas previas y miniaturas. Déjala en blanco para usar la carpeta temporal del sistema. Los trabajos nuevos usan la nueva ubicación; la caché existente permanece donde está."
   },
   "缓存": {
@@ -851,6 +996,7 @@
     "en": "Cache",
     "zh-TW": "快取",
     "ja": "キャッシュ",
+    "tr": "Önbellek",
     "es": "Caché"
   },
   "打开应用数据目录": {
@@ -858,6 +1004,7 @@
     "en": "Open app data folder",
     "zh-TW": "開啟應用程式資料目錄",
     "ja": "アプリ データ フォルダーを開く",
+    "tr": "Uygulama veri klasörünü aç",
     "es": "Abrir carpeta de datos de la app"
   },
   "取消": {
@@ -865,6 +1012,7 @@
     "en": "Cancel",
     "zh-TW": "取消",
     "ja": "キャンセル",
+    "tr": "İptal",
     "es": "Cancelar"
   },
   "保存": {
@@ -872,6 +1020,7 @@
     "en": "Save",
     "zh-TW": "儲存",
     "ja": "保存",
+    "tr": "Kaydet",
     "es": "Guardar"
   },
   "Settings.Settings": {
@@ -879,6 +1028,7 @@
     "en": "Settings",
     "zh-TW": "設定",
     "ja": "設定",
+    "tr": "Ayarlar",
     "es": "Configuración"
   },
   "Settings.General": {
@@ -886,6 +1036,7 @@
     "en": "General",
     "zh-TW": "一般",
     "ja": "全般",
+    "tr": "Genel",
     "es": "General"
   },
   "Settings.Storage": {
@@ -893,6 +1044,7 @@
     "en": "Storage",
     "zh-TW": "儲存空間",
     "ja": "ストレージ",
+    "tr": "Depolama",
     "es": "Almacenamiento"
   },
   "Settings.AppearanceAndLanguagePreferences": {
@@ -900,6 +1052,7 @@
     "en": "Appearance and language preferences.",
     "zh-TW": "介面外觀與語言偏好。",
     "ja": "外観と言語の設定。",
+    "tr": "Görünüm ve dil tercihleri.",
     "es": "Preferencias de apariencia e idioma."
   },
   "Settings.Appearance": {
@@ -907,6 +1060,7 @@
     "en": "Appearance",
     "zh-TW": "外觀",
     "ja": "外観",
+    "tr": "Görünüm",
     "es": "Apariencia"
   },
   "Settings.Theme": {
@@ -914,6 +1068,7 @@
     "en": "Theme",
     "zh-TW": "主題",
     "ja": "テーマ",
+    "tr": "Tema",
     "es": "Tema"
   },
   "Settings.Dark": {
@@ -921,6 +1076,7 @@
     "en": "Dark",
     "zh-TW": "深色",
     "ja": "ダーク",
+    "tr": "Koyu",
     "es": "Oscuro"
   },
   "Settings.Light": {
@@ -928,6 +1084,7 @@
     "en": "Light",
     "zh-TW": "淺色",
     "ja": "ライト",
+    "tr": "Açık",
     "es": "Claro"
   },
   "Settings.System": {
@@ -935,6 +1092,7 @@
     "en": "System",
     "zh-TW": "跟隨系統",
     "ja": "システムに従う",
+    "tr": "Sistem",
     "es": "Sistema"
   },
   "Settings.AppliedToAllWindowsAfterSaving": {
@@ -942,6 +1100,7 @@
     "en": "Applied to all windows after saving.",
     "zh-TW": "儲存後立即套用至所有視窗。",
     "ja": "保存すると、すべてのウィンドウにすぐに適用されます。",
+    "tr": "Kaydedildikten sonra tüm pencerelere uygulanır.",
     "es": "Se aplica a todas las ventanas al guardar."
   },
   "Settings.Language": {
@@ -949,13 +1108,15 @@
     "en": "Language",
     "zh-TW": "語言",
     "ja": "言語",
+    "tr": "Dil",
     "es": "Idioma"
   },
   "Settings.LanguageChangesTakeEffectAfterRestartingTheAppSystemUse": {
-    "zh-CN": "语言更改将在重启后生效。跟随系统支持简体中文、繁体中文、日文和西班牙文，其他系统语言使用英文。",
-    "en": "Language changes take effect after restarting. System follows Simplified or Traditional Chinese, Japanese, or Spanish; other system languages use English.",
-    "zh-TW": "語言變更將在重新啟動後生效。跟隨系統支援簡體中文、繁體中文、日文和西班牙文，其他系統語言使用英文。",
-    "ja": "言語の変更は再起動後に反映されます。システム設定では簡体字中国語、繁体字中国語、日本語、スペイン語に対応し、その他の言語では英語を使用します。",
+    "zh-CN": "语言将在重启应用后生效。跟随系统时区分简体和繁体中文，日文系统使用日本語，其他语言使用 English。",
+    "en": "Language changes take effect after restarting. System follows Simplified or Traditional Chinese, or Japanese; other system languages use English.",
+    "zh-TW": "語言會在重新啟動應用程式後生效。跟隨系統時會區分簡體與繁體中文，日文系統使用日本語，其他語言使用 English。",
+    "ja": "言語の変更はアプリの再起動後に反映されます。「システムに従う」の場合、簡体字中国語・繁体字中国語・日本語を判別し、その他の言語では English を使用します。",
+    "tr": "Dil değişiklikleri yeniden başlatıldıktan sonra geçerli olur. Sistem dili Basitleştirilmiş veya Geleneksel Çince, Japonca ya da Türkçe ise ilgili dili izler; diğer sistem dillerinde English kullanılır.",
     "es": "El idioma se aplica al reiniciar. Sistema sigue el chino simplificado o tradicional, el japonés o el español; para otros idiomas usa inglés."
   },
   "Settings.DefaultLocationsForNewProjectsAndTemporaryFiles": {
@@ -963,6 +1124,7 @@
     "en": "Default locations for new projects and temporary files.",
     "zh-TW": "新專案與暫存快取的預設位置。",
     "ja": "新規プロジェクトと一時キャッシュの既定の場所。",
+    "tr": "Yeni projeler ve geçici dosyalar için varsayılan konumlar.",
     "es": "Ubicaciones predeterminadas para proyectos nuevos y archivos temporales."
   },
   "Settings.Locations": {
@@ -970,6 +1132,7 @@
     "en": "Locations",
     "zh-TW": "位置",
     "ja": "場所",
+    "tr": "Konumlar",
     "es": "Ubicaciones"
   },
   "Settings.DefaultProjectLocation": {
@@ -977,6 +1140,7 @@
     "en": "Default project location",
     "zh-TW": "預設專案位置",
     "ja": "既定のプロジェクトの場所",
+    "tr": "Varsayılan proje konumu",
     "es": "Ubicación predeterminada de proyectos"
   },
   "Settings.Reset": {
@@ -984,6 +1148,7 @@
     "en": "Reset",
     "zh-TW": "還原預設值",
     "ja": "既定に戻す",
+    "tr": "Sıfırla",
     "es": "Restablecer"
   },
   "Settings.DefaultLocationForNewProjectsLeaveBlankToUseTheSystemDo": {
@@ -991,6 +1156,7 @@
     "en": "Default location for new projects. Leave blank to use the system Documents folder.",
     "zh-TW": "僅作為新專案對話框的預設位置；留空使用系統「文件」資料夾。",
     "ja": "新規プロジェクト ダイアログの既定の場所としてのみ使用されます。空欄の場合はシステムのドキュメント フォルダーを使用します。",
+    "tr": "Yeni projeler için varsayılan konum. Sistem Belgeler klasörünü kullanmak için boş bırakın.",
     "es": "Ubicación predeterminada de los proyectos nuevos. Déjala en blanco para usar la carpeta Documentos del sistema."
   },
   "Settings.CacheLocation": {
@@ -998,6 +1164,7 @@
     "en": "Cache location",
     "zh-TW": "快取位置",
     "ja": "キャッシュの場所",
+    "tr": "Önbellek konumu",
     "es": "Ubicación de caché"
   },
   "Settings.UsedForCompositesPreviewsAndThumbnailsLeaveBlankToUseTh": {
@@ -1005,6 +1172,7 @@
     "en": "Used for composites, previews and thumbnails. Leave blank to use the system temporary folder. New jobs use the new location; existing cache files stay in place.",
     "zh-TW": "用於設計合成圖、預覽算繪與縮圖；留空使用系統暫存資料夾，切換後新工作使用新位置，舊快取不會自動遷移。",
     "ja": "デザインの合成画像、プレビューのレンダリング、サムネイルに使用されます。空欄の場合はシステムの一時フォルダーを使用します。変更後の新しいジョブは新しい場所を使用し、既存のキャッシュは自動的に移行されません。",
+    "tr": "Birleşik görseller, önizlemeler ve küçük resimler için kullanılır. Sistem geçici klasörünü kullanmak için boş bırakın. Yeni görevler yeni konumu kullanır; mevcut önbellek dosyaları yerinde kalır.",
     "es": "Se usa para composiciones, vistas previas y miniaturas. Déjala en blanco para usar la carpeta temporal del sistema. Los trabajos nuevos usan la nueva ubicación; la caché existente permanece donde está."
   },
   "Settings.Cache": {
@@ -1012,6 +1180,7 @@
     "en": "Cache",
     "zh-TW": "快取",
     "ja": "キャッシュ",
+    "tr": "Önbellek",
     "es": "Caché"
   },
   "Settings.ClearCache": {
@@ -1019,6 +1188,7 @@
     "en": "Clear cache",
     "zh-TW": "清空快取",
     "ja": "キャッシュのクリア",
+    "tr": "Önbelleği temizle",
     "es": "Vaciar caché"
   },
   "Settings.OpenAppDataFolder": {
@@ -1026,6 +1196,7 @@
     "en": "Open app data folder",
     "zh-TW": "開啟應用程式資料目錄",
     "ja": "アプリ データ フォルダーを開く",
+    "tr": "Uygulama veri klasörünü aç",
     "es": "Abrir carpeta de datos de la app"
   },
   "Settings.Cancel": {
@@ -1033,6 +1204,7 @@
     "en": "Cancel",
     "zh-TW": "取消",
     "ja": "キャンセル",
+    "tr": "İptal",
     "es": "Cancelar"
   },
   "Settings.Save": {
@@ -1040,6 +1212,7 @@
     "en": "Save",
     "zh-TW": "儲存",
     "ja": "保存",
+    "tr": "Kaydet",
     "es": "Guardar"
   },
   "Settings.SimplifiedChinese": {
@@ -1047,6 +1220,7 @@
     "en": "简体中文",
     "zh-TW": "简体中文",
     "ja": "简体中文",
+    "tr": "Basitleştirilmiş Çince",
     "es": "简体中文"
   },
   "Settings.TraditionalChinese": {
@@ -1054,6 +1228,7 @@
     "en": "繁體中文",
     "zh-TW": "繁體中文",
     "ja": "繁體中文",
+    "tr": "Geleneksel Çince",
     "es": "繁體中文"
   }
 }

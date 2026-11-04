@@ -10,15 +10,21 @@ Se conservan y traducen por separado los bloques originales en chino e inglés, 
 <a id="中文"></a>
 ### Chino (traducción)
 
-- Se añadió una interfaz en español: seleccionar «Español» en «Configuración → General → Idioma», guardar y reiniciar; los sistemas en español también pueden seguir el idioma del sistema. Las 734 cadenas de la aplicación incluyen traducciones `es`, conservando los argumentos de formato, la configuración regional numérica y las reglas de reserva existentes.
+- Se añadió una interfaz en español: seleccionar «Español» en «Configuración → General → Idioma», guardar para aplicar de inmediato; los sistemas en español también pueden seguir el idioma del sistema. Todas las cadenas de la aplicación incluyen traducciones `es`, conservando los argumentos de formato, la configuración regional numérica y las reglas de reserva existentes.
 - Se añadieron copias completas de la documentación en español y un acceso de idioma en los README; los documentos originales, las atribuciones y las licencias se conservan sin cambios. Se añadieron regresiones de configuración de idioma y comprobaciones de capturas de la interfaz Windows en español. El README español incluye capturas reales de Windows en español.
+
+- Se añadieron los preajustes integrados Verbatim BD-R (64293), de bczhc, con los mismos parámetros que 64099; Verbatim DVD+R AZO (43498), de Disappear9; Ritek DVD-R E-Series, de bczhc; Ritek BD-R 12x, de DeepAQ, con radios 23.98795–58.02236 mm; y Ritek DVD+R E-Series.
+- El nombre de un proyecto nuevo queda vacío hasta que se introduce, sin copiar el de la plantilla.
+- Se añadió un botón Guardar con icono de disquete al encabezado del proyecto en la barra lateral.
 
 <a id="english"></a>
 ### Inglés (traducción)
 
-- Se añadió una interfaz en español. Seleccionar Español en Configuración → General → Idioma, guardar y reiniciar; los sistemas configurados en español también pueden seguir el idioma del sistema. Las 734 cadenas de la aplicación incluyen traducciones `es`, conservando los argumentos de formato, la configuración regional numérica y las reglas de reserva existentes.
+- Se añadió una interfaz en español. Seleccionar Español en Configuración → General → Idioma, guardar para aplicar de inmediato; los sistemas configurados en español también pueden seguir el idioma del sistema. Todas las cadenas de la aplicación incluyen traducciones `es`, conservando los argumentos de formato, la configuración regional numérica y las reglas de reserva existentes.
 - Se añadieron versiones en español de la documentación mantenida y enlaces al español en el selector de idioma de todos los README. Se conservan los documentos originales, las atribuciones y las licencias. Se ampliaron las regresiones de configuración de idioma y las comprobaciones de capturas de la interfaz Windows en español. El README español incluye capturas reales de Windows en español.
-
+- Se añadieron los preajustes integrados Verbatim BD-R (64293), de bczhc, con los mismos parámetros que 64099; Verbatim DVD+R AZO (43498), de Disappear9; Ritek DVD-R E-Series, de bczhc; Ritek BD-R 12x, de DeepAQ, con radios 23.98795–58.02236 mm; y Ritek DVD+R E-Series.
+- El nombre de un proyecto nuevo queda vacío hasta que se introduce, sin copiar el de la plantilla.
+- Se añadió un botón Guardar con icono de disquete al encabezado del proyecto en la barra lateral.
 
 ## [1.3.6] - 2026-11-02
 

@@ -16,9 +16,12 @@ public sealed record HomeTemplateTile(
     string Detail,
     PackIconLucideKind Icon,
     OpticalDiscFamily Family,
-    bool IsBlank)
+    bool IsBlank,
+    string? Contributor = null)
 {
-    public static HomeTemplateTile Blank { get; } = new(
+    // Built on demand: the card carries localized text, so a cached instance would keep the
+    // language it was created in.
+    public static HomeTemplateTile CreateBlank() => new(
         null,
         L.T("空白工程"),
         L.T("从默认参数开始"),
@@ -36,6 +39,14 @@ public sealed record HomeTemplateTile(
     public string ToolTipText => string.IsNullOrWhiteSpace(Detail)
         ? Title
         : $"{Title}\n{Detail}";
+
+    public bool HasContributor => !string.IsNullOrWhiteSpace(Contributor);
+
+    public System.Windows.Visibility ContributorVisibility => HasContributor
+        ? System.Windows.Visibility.Visible
+        : System.Windows.Visibility.Collapsed;
+
+    public string ContributorToolTip => L.F($"贡献者：{Contributor}");
 }
 
 /// <summary>One card in the home page's recent-project list. The thumbnail is the picture

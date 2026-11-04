@@ -28,10 +28,12 @@ Las nuevas tareas de generación producen `cd-track.wav` de forma predeterminada
 
 | Método de grabación | Uso |
 | --- | --- |
-| cdrecord | `cdrecord dev=设备 speed=速度 -audio "cd-track.wav"`, sin añadir `-swab` |
+| cdrecord | `cdrecord dev=DISPOSITIVO speed=VELOCIDAD -audio "cd-track.wav"`, sin añadir `-swab` |
 | ImgBurn | Abrir `cd-track.cue` en «Write image file to disc» |
 | Grabación por flujo integrada | Genera automáticamente los mismos datos PCM little-endian, sin cabecera WAV ni pista temporal completa |
 | Flujo de trabajo RAW anterior | Sigue siendo posible elegir la salida `.raw`; utilizar `cdrecord -audio "cd-track.raw"` sin `-swab` |
+
+En el comando de cdrecord, sustituye `DISPOSITIVO` por el identificador de tu grabadora y `VELOCIDAD` por una velocidad de escritura admitida por esa grabadora y el disco. Son marcadores de posición, no valores que deban copiarse literalmente.
 
 La extensión de salida determina el formato real; sólo se aceptan `.wav` y `.raw`. No se puede convertir un RAW anterior a WAV renombrándolo: debe generarse de nuevo. El CUE que acompaña al WAV utiliza `FILE "cd-track.wav" WAVE`, no `BINARY`. Para nombres de archivo Unicode se utiliza CUE UTF-8 con BOM, compatible con espacios y caracteres chinos. El autor de ImgBurn verificó la compatibilidad con nombres Unicode de este tipo de CUE e indicó que los problemas de la antigua versión 2.5.0.0 se corrigieron en 2.5.1.0. [Explicación del autor de ImgBurn](https://forum.imgburn.com/topic/13526-unicode-filename-problem-in-cue-file/)
 

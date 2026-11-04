@@ -133,7 +133,7 @@ jobs:
             @('--tab', '4', '--language', 'es', '--output', 'artifacts/store/burn-es.png'),
             @('--tab', '5', '--language', 'es', '--output', 'artifacts/store/calibration-es.png'),
             @('--project-dialog', 'new', '--language', 'es', '--output', 'artifacts/store/new-project-es.png'),
-            @('--about-dialog', '--language', 'es', '--output', 'artifacts/store/about-es.png'),
+            @('--settings-dialog', '--settings-view', 'about', '--language', 'es', '--output', 'artifacts/store/about-es.png'),
             @('--settings-dialog', '--language', 'es', '--output', 'artifacts/store/settings-es.png'),
             @('--settings-dialog', '--settings-view', 'storage', '--language', 'es', '--output', 'artifacts/store/settings-storage-es.png')
           )

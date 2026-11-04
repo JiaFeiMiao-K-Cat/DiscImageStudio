@@ -18,7 +18,9 @@ public sealed record CdDiscPresetDefinition(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     string? DisplayNameResourceKey = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    string? DescriptionResourceKey = null);
+    string? DescriptionResourceKey = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? Contributor = null);
 
 public sealed record DvdDiscPresetDefinition(
     string Id,
@@ -36,7 +38,9 @@ public sealed record DvdDiscPresetDefinition(
     string? DescriptionResourceKey = null,
     double PitchLinear = 0,
     double PitchQuadratic = 0,
-    double PitchCubic = 0);
+    double PitchCubic = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? Contributor = null);
 
 public sealed record BluRayDiscPresetDefinition(
     string Id,
@@ -49,7 +53,9 @@ public sealed record BluRayDiscPresetDefinition(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     string? DisplayNameResourceKey = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    string? DescriptionResourceKey = null);
+    string? DescriptionResourceKey = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? Contributor = null);
 
 public sealed record DiscPresetJsonDocument(
     int SchemaVersion,
@@ -324,6 +330,7 @@ public static class DiscPresetJsonStore
                 preset.DescriptionResourceKey,
                 preset.Id,
                 "descriptionResourceKey");
+            ValidateOptionalText(preset.Contributor, preset.Id, "contributor");
             ValidateReservedId(preset.Id, "CD");
             if (preset.Sectors <= 0)
             {
@@ -355,6 +362,7 @@ public static class DiscPresetJsonStore
                 preset.DescriptionResourceKey,
                 preset.Id,
                 "descriptionResourceKey");
+            ValidateOptionalText(preset.Contributor, preset.Id, "contributor");
             ValidateReservedId(preset.Id, "DVD");
             if (preset.TotalSectors == 0)
             {
@@ -390,6 +398,7 @@ public static class DiscPresetJsonStore
             ValidateText(preset.Description, preset.Id, "description");
             ValidateOptionalText(preset.DisplayNameResourceKey, preset.Id, "displayNameResourceKey");
             ValidateOptionalText(preset.DescriptionResourceKey, preset.Id, "descriptionResourceKey");
+            ValidateOptionalText(preset.Contributor, preset.Id, "contributor");
             ValidateReservedId(preset.Id, "Blu-ray");
             if (preset.TotalSectors == 0
                 || preset.TotalSectors > ProjectDocument.BluRaySectorsPerLayer

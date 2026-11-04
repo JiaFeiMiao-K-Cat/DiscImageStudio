@@ -50,7 +50,29 @@ En DVD, `totalSectors` debe ser positivo y múltiplo de 16 para cumplir el bloqu
 
 Este preajuste Verbatim DVD procede de `calibration-f2f851f7.calibration.json`, cuya validación fue confirmada en el proyecto original, y conserva toda la precisión del registro.
 
+El campo opcional `contributor` identifica a quien aportó las mediciones. Si se indica, la tarjeta muestra un icono de brote y su nombre al pasar el cursor; si se omite o está vacío, no se muestra. Un valor formado sólo por espacios se rechaza. Por ejemplo, el preajuste integrado `philips-dvd-plus-r`:
+
+```json
+{
+  "id": "philips-dvd-plus-r",
+  "displayName": "PHILIPS DVD+R（实测）",
+  "description": "PHILIPS DVD+R 实测标定参数：24.157724–57.881039 mm，共 2,295,104 个扇区；采用三次轨距分布。",
+  "totalSectors": 2295104,
+  "innerRadiusMm": 24.157723798864616,
+  "outerRadiusMm": 57.881039159257099,
+  "channelBitLengthNm": 133.3,
+  "pitchLinear": -0.00015487792452410765,
+  "pitchQuadratic": 0.0001962455822194293,
+  "pitchCubic": -8.6683602888291885E-05,
+  "contributor": "DBPolp"
+}
+```
+
 `pitchLinear`, `pitchQuadratic` y `pitchCubic` son los tres coeficientes de forma relativos del paso cúbico; su valor predeterminado es 0, compatible con preajustes antiguos. El modelo es `p(x)=p0*(1+pitchLinear*x+pitchQuadratic*x²+pitchCubic*x³)`, donde `x=(r-innerRadiusMm)/(outerRadiusMm-innerRadiusMm)`. El polinomio completo tiene cuatro términos; `p0` se calcula con la longitud total de pista, y la interfaz muestra los cuatro valores reales en μm. El paso debe ser estrictamente positivo en todo `0≤x≤1`, no sólo en los límites interior y exterior. Modificar un coeficiente activa el estado personalizado sin guardar; volver a elegir un preajuste integrado de paso constante restablece los coeficientes a cero.
+
+Los preajustes DVD medidos también incluyen `verbatim-dvd-plus-r-azo-43498` (Verbatim DVD+R AZO (43498), de `Disappear9`), `ritek-dvd-plus-r-e-series` (Ritek DVD+R E-Series, de `EternalEve`) y `ritek-dvd-r-e-series` (Ritek DVD-R E-Series, de `bczhc`).
+
+`verbatim-dvd-plus-r-azo-43498` conserva los radios `23.954070288547207` y `57.981456053451275` mm, `2,295,104` sectores y los coeficientes `-1.1055153059816393E-05`, `-1.7233535436312236E-06` y `5.55123860136712E-06`. `ritek-dvd-r-e-series` conserva los radios `24.063109184084034` y `58.23373375457525` mm, `2,298,496` sectores y los coeficientes `-3.2229430281730407E-06`, `1.0507210681810583E-05` y `-8.562064227346657E-06`, con toda la precisión de sus fuentes.
 
 <a id="添加-cd-预设"></a>
 ## Añadir un preajuste CD
@@ -89,6 +111,10 @@ Copia un objeto existente en `bluRayPresets` y cambia `id`, nombre y parámetros
 En BD, `totalSectors` debe ser positivo, múltiplo de 32 y no superar los 12.219.392 sectores de una capa; el radio exterior no puede superar 60 mm. `invertMapping` es la polaridad 3T/6T inicial, que aún se puede cambiar en Tono de la página Diseño después de aplicarla al proyecto.
 
 El integrado `bd-r-verbatim-64099` (Verbatim BD-R (64099)) usa el preajuste «Verbatim 64099» guardado en el archivo original del usuario `disc-presets.json`, con toda su precisión: radio interior `23.987042157339335` mm, exterior `57.987960341783236` mm, `12,219,392` sectores e `invertMapping: false`. La GUI y la CLI usan los mismos parámetros.
+
+El preajuste integrado `bd-r-verbatim-64293` (Verbatim BD-R (64293)), aportado por `bczhc`, utiliza los mismos parámetros y precisión que 64099.
+
+El preajuste integrado `bd-r-ritek-12x` (Ritek BD-R 12x), aportado por `DeepAQ`, utiliza radio interior `23.98795` mm, radio exterior `58.02236` mm, `12,219,392` sectores e `invertMapping: false`. La interfaz y la CLI comparten estos parámetros.
 
 <a id="固定参数与保留字段"></a>
 ## Parámetros fijos y campos reservados

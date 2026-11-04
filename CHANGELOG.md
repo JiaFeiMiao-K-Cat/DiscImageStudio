@@ -6,13 +6,27 @@
 
 ### 中文
 
-- 新增西班牙文界面：在「设置 → 通用 → 语言」选择「Español」并保存、重启；西班牙文系统也可跟随系统。全部 734 条应用文案包含 `es` 翻译，保留格式参数、数值文化和原有回退规则。
+- 新增西班牙文界面：在「设置 → 通用 → 语言」选择「Español」并保存后立即生效；西班牙文系统也可跟随系统。全部应用文案包含 `es` 翻译，保留格式参数、数值文化和原有回退规则。
 - 新增完整西班牙文文档副本与 README 语言入口；原始文档、署名及许可证保留不变。补充语言设置回归与 Windows 西班牙文界面截图检查；西班牙文 README 包含真实 Windows 界面截图。
+- 新增威宝 BD-R (64293) 内置预设，参数与 64099 相同，贡献者 bczhc。
+- 新增威宝 DVD+R AZO (43498) 内置预设，贡献者 Disappear9。
+- 新增铼德 DVD-R E时代系列内置预设，贡献者 bczhc。
+- 新增铼德 BD-R 12x 内置预设：内半径 23.98795 mm、外半径 58.02236 mm，贡献者 DeepAQ。
+- 新增铼德 DVD+R E时代系列内置预设。
+- 新建工程不再按模板自动填充工程名，输入框保持为空；填写名称后才能创建。
+- 侧栏工程头卡片右侧新增软盘保存按钮。
 
 ### English
 
-- Added a Spanish interface. Choose Español under Settings → General → Language, save, and restart; Spanish system locales can also follow the system. All 734 application strings include `es` translations while preserving format arguments, numeric culture, and existing fallback rules.
+- Added a Spanish interface. Choose Español under Settings → General → Language, and save to apply immediately; Spanish system locales can also follow the system. All application strings include `es` translations while preserving format arguments, numeric culture, and existing fallback rules.
 - Added Spanish counterparts for the maintained documentation and Spanish links in every README language switcher. Original documents, attribution, and licenses are preserved. Extended language-setting regressions and Windows Spanish interface snapshot checks; the Spanish README includes real Windows screenshots in Spanish.
+- Added a built-in Verbatim BD-R (64293) preset with the same parameters as 64099, contributed by bczhc.
+- Added a built-in Verbatim DVD+R AZO (43498) preset, contributed by Disappear9.
+- Added a built-in Ritek DVD-R E-Series preset, contributed by bczhc.
+- Added a built-in Ritek BD-R 12x preset with inner radius 23.98795 mm and outer radius 58.02236 mm, contributed by DeepAQ.
+- Added a built-in Ritek DVD+R E-Series preset.
+- New projects leave the project name empty instead of filling it from the selected template; the project can be created once a name is entered.
+- Added a floppy-disk Save button on the right of the sidebar project header.
 
 ## [1.3.6] - 2026-11-02
 

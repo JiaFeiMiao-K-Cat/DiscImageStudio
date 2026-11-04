@@ -121,7 +121,7 @@ Consulta la [guía de calibración asistida](docs/CALIBRATION.es.md) para conoce
 <a id="应用形态"></a>
 ### Aplicación
 
-- Interfaz multilingüe: haz clic en **Configuración**, en la esquina superior derecha, y elige chino simplificado, chino tradicional, inglés, japonés, español o **Sistema** en **General → Idioma**. Guarda y reinicia la app para aplicar el cambio. El idioma y el tema siguen el sistema de forma predeterminada; se conservan las preferencias explícitas guardadas. Para el idioma del sistema, `zh-TW`, `zh-HK`, `zh-MO` y `zh-Hant` usan chino tradicional; las demás variantes del chino usan chino simplificado; el japonés usa japonés y el español, español. Los demás idiomas usan inglés.
+- Interfaz multilingüe: haz clic en **Configuración**, en la esquina superior derecha, y elige chino simplificado, chino tradicional, inglés, japonés, turco, español o **Sistema** en **General → Idioma**. Guarda para aplicar el cambio de inmediato. El idioma y el tema siguen el sistema de forma predeterminada; se conservan las preferencias explícitas guardadas. Para el idioma del sistema, `zh-TW`, `zh-HK`, `zh-MO` y `zh-Hant` usan chino tradicional; las demás variantes del chino usan chino simplificado; el japonés usa japonés, el turco, turco y el español, español. Los demás idiomas usan inglés.
 - Dos formas de entrada: inicia sin argumentos para abrir la GUI, o con argumentos para usar la línea de comandos unificada.
 - Diseño modular: CD, DVD y Blu-ray se conectan mediante `IOpticalDiscModule` y comparten un catálogo de comandos y contratos de trabajos. Consulta la [guía de arquitectura](docs/ARCHITECTURE.es.md).
 

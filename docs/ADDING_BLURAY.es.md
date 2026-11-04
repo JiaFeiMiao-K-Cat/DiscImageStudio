@@ -16,7 +16,7 @@ Blu-ray es el tercer tipo de disco del proyecto (CD / DVD / BD), no un sexto esp
 - **Grabación**: envía el mismo flujo ISO directamente a la escritura secuencial MMC, sin guardar una imagen completa; el panel de tareas admite progreso y cancelación.
 - **Calibración**: el patrón BD cubre toda la zona de datos y guarda los sectores, los radios, la polaridad, el inicio y el final del dibujo y las marcas de tiempo ISO; el ajuste utiliza un paso de pista constante y vuelve a los parámetros BD.
 
-Los preajustes BD se guardan junto a los de CD/DVD en `bluRayPresets`, dentro de `disc-presets.json` (schema 4). Se incluyen tres: «BD estándar de 25 GB y una capa», «Ritek BD-R 10x» y «Verbatim BD-R (64099)»; los preajustes del usuario se pueden guardar en la parte inferior del diálogo de configuración del proyecto.
+Los preajustes BD se guardan junto a los de CD/DVD en `bluRayPresets`, dentro de `disc-presets.json` (schema 4). Se incluyen cinco: «BD estándar de 25 GB y una capa», «Ritek BD-R 10x», «Ritek BD-R 12x», «Verbatim BD-R (64099)» y «Verbatim BD-R (64293)»; los preajustes del usuario se pueden guardar en la parte inferior del diálogo de configuración del proyecto.
 
 <a id="容量与几何"></a>
 ## Capacidad y geometría
@@ -85,7 +85,7 @@ dotnet run --project src/DiscImageStudio.App -- bd-probe --byte 0xA6 --sectors 3
 dotnet run --project src/DiscImageStudio.App -- bd-encode --input bd-probe.bin --psn 0x100000 --output bd-ecc.bin
 ```
 
-`--preset` de `bd-generate` permite elegir `bd-r-sl-25gb`, `bd-r-ritek-10x` o `bd-r-verbatim-64099`; `--total-sectors`, `--r0`, `--r1` y `--start-angle` pueden sobrescribir sus valores correspondientes. `--invert` acepta `true`/`false`. `bd-generate` ya no acepta los antiguos parámetros de intervalo `--start-sector` / `--sectors`; los intervalos sólo se mantienen en `bd-probe`.
+`--preset` de `bd-generate` permite elegir `bd-r-sl-25gb`, `bd-r-ritek-10x`, `bd-r-ritek-12x`, `bd-r-verbatim-64099` o `bd-r-verbatim-64293`; `--total-sectors`, `--r0`, `--r1` y `--start-angle` pueden sobrescribir sus valores correspondientes. `--invert` acepta `true`/`false`. `bd-generate` ya no acepta los antiguos parámetros de intervalo `--start-sector` / `--sectors`; los intervalos sólo se mantienen en `bd-probe`.
 
 `--byte` de `bd-probe` admite 0..255 o `0x00`..`0xFF`, y el intervalo se alinea a 32. La entrada de `bd-encode` debe tener exactamente 65,536 bytes y su salida es un clúster ECC de 76,880 bytes, sin 17PP, control DC ni sistema de archivos; no puede utilizarse como imagen grabable.
 

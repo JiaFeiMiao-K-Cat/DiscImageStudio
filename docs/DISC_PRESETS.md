@@ -31,8 +31,8 @@
 ```json
 {
   "id": "verbatim-dvd-r-azo-43533",
-  "displayName": "Verbatim DVD-R AZO (43533)（实测）",
-  "description": "Verbatim DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
+  "displayName": "威宝 DVD-R AZO (43533)（实测）",
+  "description": "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
   "totalSectors": 2297888,
   "innerRadiusMm": 23.991460627731737,
   "outerRadiusMm": 57.964893657925366,
@@ -45,9 +45,31 @@
 
 DVD 的 `totalSectors` 必须大于 0 且是 16 的倍数，以满足 ECC Block 和流式刻录布局要求。`channelBitLengthNm` 见下节，属于保留字段。
 
-此 Verbatim DVD 预设来自用户确认已验证的 `calibration-f2f851f7.calibration.json`，保留记录中的完整参数精度。
+此威宝 DVD 预设来自用户确认已验证的 `calibration-f2f851f7.calibration.json`，保留记录中的完整参数精度。
+
+可选字段 `contributor` 记录该套实测参数的贡献者。填写后，预设卡片左上角显示幼苗图标，鼠标悬停立即显示“贡献者：…”；省略该字段或留空则不显示图标，仅含空白的值会被校验拒绝。例如内置的 `philips-dvd-plus-r`：
+
+```json
+{
+  "id": "philips-dvd-plus-r",
+  "displayName": "PHILIPS DVD+R（实测）",
+  "description": "PHILIPS DVD+R 实测标定参数：24.157724–57.881039 mm，共 2,295,104 个扇区；采用三次轨距分布。",
+  "totalSectors": 2295104,
+  "innerRadiusMm": 24.157723798864616,
+  "outerRadiusMm": 57.881039159257099,
+  "channelBitLengthNm": 133.3,
+  "pitchLinear": -0.00015487792452410765,
+  "pitchQuadratic": 0.0001962455822194293,
+  "pitchCubic": -8.6683602888291885E-05,
+  "contributor": "DBPolp"
+}
+```
 
 `pitchLinear`、`pitchQuadratic`、`pitchCubic` 是三次轨距的三个相对形状系数，缺省为 0，兼容旧预设。模型为 `p(x)=p0*(1+pitchLinear*x+pitchQuadratic*x²+pitchCubic*x³)`，`x=(r-innerRadiusMm)/(outerRadiusMm-innerRadiusMm)`。完整多项式有四项；`p0` 根据总轨长自动计算，界面显示四项的实际 μm 数值。整个 `0≤x≤1` 区间内轨距必须严格为正，不能仅检查内外边界。修改任一系数会切换到未保存的自定义状态，重新选择内置等轨距预设会恢复零系数。
+
+内置 DVD 实测预设还包括 `verbatim-dvd-plus-r-azo-43498`（威宝 DVD+R AZO (43498)，贡献者 `Disappear9`）、`ritek-dvd-plus-r-e-series`（铼德 DVD+R E时代系列，贡献者 `EternalEve`）和 `ritek-dvd-r-e-series`（铼德 DVD-R E时代系列，贡献者 `bczhc`）。
+
+`verbatim-dvd-plus-r-azo-43498` 的参数为：内半径 `23.954070288547207` mm、外半径 `57.981456053451275` mm、`2,295,104` 扇区，三次项系数 `-1.1055153059816393E-05`、`-1.7233535436312236E-06`、`5.55123860136712E-06`。`ritek-dvd-r-e-series` 的参数为：内半径 `24.063109184084034` mm、外半径 `58.23373375457525` mm、`2,298,496` 扇区，三次项系数 `-3.2229430281730407E-06`、`1.0507210681810583E-05`、`-8.562064227346657E-06`。两者均保留来源数值的完整精度。
 
 ## 添加 CD 预设
 
@@ -83,7 +105,11 @@ DVD 的 `totalSectors` 必须大于 0 且是 16 的倍数，以满足 ECC Block 
 
 BD 的 `totalSectors` 必须大于 0、按 32 对齐且不超过单层容量 12,219,392；外半径不超过 60 mm。`invertMapping` 是预置的 3T/6T 极性，应用到工程后仍可在设计页影调模块中修改。
 
-内置 `bd-r-verbatim-64099`（Verbatim BD-R (64099)）采用用户文件 `disc-presets.json` 中已保存的「Verbatim 64099」预设，保留完整精度：内半径 `23.987042157339335` mm、外半径 `57.987960341783236` mm、`12,219,392` 扇区、`invertMapping: false`。GUI 与命令行使用相同参数。
+内置 `bd-r-verbatim-64099`（威宝 BD-R (64099)）采用用户文件 `disc-presets.json` 中已保存的「Verbatim 64099」预设，保留完整精度：内半径 `23.987042157339335` mm、外半径 `57.987960341783236` mm、`12,219,392` 扇区、`invertMapping: false`。GUI 与命令行使用相同参数。
+
+内置 `bd-r-verbatim-64293`（威宝 BD-R (64293)）由贡献者 `bczhc` 提供，参数与 64099 相同，保留同样精度。
+
+内置 `bd-r-ritek-12x`（铼德 BD-R 12x）由贡献者 `DeepAQ` 提供：内半径 `23.98795` mm、外半径 `58.02236` mm、`12,219,392` 扇区、`invertMapping: false`。GUI 与命令行使用相同参数。
 
 ## 固定参数与保留字段
 

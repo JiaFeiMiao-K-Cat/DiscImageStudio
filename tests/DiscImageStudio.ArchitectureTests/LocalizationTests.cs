@@ -16,7 +16,8 @@ internal static class LocalizationTests
         (2, L.TraditionalChinese),
         (3, L.English),
         (4, L.Japanese),
-        (5, L.Spanish),
+        (5, L.Turkish),
+        (6, L.Spanish),
     ];
 
     public static void Run()
@@ -55,7 +56,7 @@ internal static class LocalizationTests
             Require(translations.TryGetValue(L.Chinese, out string? chinese)
                     && !string.IsNullOrWhiteSpace(chinese), key + " has Simplified Chinese text");
             HashSet<string> sourceArguments = ReadArguments(chinese!, key);
-            foreach (string language in new[] { L.TraditionalChinese, L.English, L.Japanese, L.Spanish })
+            foreach (string language in new[] { L.TraditionalChinese, L.English, L.Japanese, L.Turkish, L.Spanish })
             {
                 Require(translations.TryGetValue(language, out string? translated)
                         && !string.IsNullOrWhiteSpace(translated), key + " has " + language + " text");
@@ -130,6 +131,8 @@ internal static class LocalizationTests
                 "missing or invalid preferences use English on a non-Chinese, non-Japanese system");
             Require(L.ResolveLanguage(language, CultureInfo.GetCultureInfo("ja-JP")) == L.Japanese,
                 "missing or invalid preferences use Japanese on a Japanese system");
+            Require(L.ResolveLanguage(language, CultureInfo.GetCultureInfo("tr-TR")) == L.Turkish,
+                "missing or invalid preferences use Turkish on a Turkish system");
         }
         Require(L.NormalizeLanguage(" JA-jp ") == L.Japanese, "Japanese regional tags normalize");
         Require(L.NormalizeLanguage("ja") == L.Japanese, "Japanese normalizes");
@@ -142,6 +145,17 @@ internal static class LocalizationTests
             "explicit Japanese overrides a Chinese system");
         Require(L.ResolveLanguage(L.English, CultureInfo.GetCultureInfo("ja-JP")) == L.English,
             "explicit English overrides a Japanese system");
+        Require(L.NormalizeLanguage(" TR-tr ") == L.Turkish, "Turkish regional tags normalize");
+        Require(L.NormalizeLanguage("tr") == L.Turkish, "Turkish normalizes");
+        foreach (string language in new[] { "tr", "tr-TR", "tr-CY" })
+        {
+            Require(L.ResolveLanguage(L.SystemLanguage, CultureInfo.GetCultureInfo(language)) == L.Turkish,
+                language + " system locale uses Turkish");
+        }
+        Require(L.ResolveLanguage(L.Turkish, CultureInfo.GetCultureInfo("zh-CN")) == L.Turkish,
+            "explicit Turkish overrides a Chinese system");
+        Require(L.ResolveLanguage(L.English, CultureInfo.GetCultureInfo("tr-TR")) == L.English,
+            "explicit English overrides a Turkish system");
         foreach (string language in new[] { "en-US", "fr-FR", "ko-KR" })
         {
             Require(L.ResolveLanguage(L.SystemLanguage, CultureInfo.GetCultureInfo(language)) == L.English,
@@ -186,7 +200,8 @@ internal static class LocalizationTests
         L.Initialize(L.TraditionalChinese);
         Require(L.CurrentLanguage == L.TraditionalChinese && CultureInfo.CurrentUICulture.Name == L.TraditionalChinese,
             "Traditional Chinese initializes the requested UI culture");
-        Require(L.T("Xaml.SettingsButton") == "設定", "Traditional Chinese resolves from the embedded catalog");
+        Require(L.T("Xaml.OpenSettingsShortcut") == "開啟設定 (Ctrl+,)",
+            "Traditional Chinese resolves from the embedded catalog");
         Require(L.T("unregistered localization key") == "unregistered localization key",
             "Traditional Chinese preserves the missing-key fallback");
         Require(ReferenceEquals(CultureInfo.CurrentCulture, numericCulture),
@@ -207,6 +222,18 @@ internal static class LocalizationTests
                 && formattedJapanese.Contains(actual.ToString("N0", numericCulture), StringComparison.Ordinal),
             "Japanese interpolation preserves both formatted numeric arguments");
 
+        L.Initialize(L.Turkish);
+        Require(L.CurrentLanguage == L.Turkish && CultureInfo.CurrentUICulture.Name == L.Turkish,
+            "Turkish initializes the requested UI culture");
+        Require(L.T("Xaml.Cancel") == "İptal", "Turkish resolves from the embedded catalog");
+        Require(L.T("unregistered localization key") == "unregistered localization key",
+            "Turkish preserves the missing-key fallback");
+        Require(ReferenceEquals(CultureInfo.CurrentCulture, numericCulture),
+            "Turkish does not alter numeric culture");
+        string formattedTurkish = L.F($"BD ISO 长度与总扇区数不符：需要 {expected:N0} 字节，实际 {actual:N0} 字节。");
+        Require(formattedTurkish.Contains(expected.ToString("N0", numericCulture), StringComparison.Ordinal)
+                && formattedTurkish.Contains(actual.ToString("N0", numericCulture), StringComparison.Ordinal),
+            "Turkish interpolation preserves both formatted numeric arguments");
         L.Initialize(L.Spanish);
         Require(L.CurrentLanguage == L.Spanish && CultureInfo.CurrentUICulture.Name == L.Spanish,
             "Spanish initializes the requested UI culture");
@@ -264,6 +291,14 @@ internal static class LocalizationTests
             Require(viewModel.TrySave(), "language preference saves successfully");
             Require(store.Load().Language == language && viewModel.SavedSettings?.Language == language,
                 "the selected language persists and is returned to the caller");
+            AppSettingsStore restartedStore = new(store.FilePath);
+            SettingsViewModel restarted = new(restartedStore.Load(), restartedStore);
+            Require(restarted.LanguageIndex == index,
+                language + " retains its distinct selector index after restarting");
+            L.Initialize(restartedStore.Load().Language);
+            Require(L.CurrentLanguage == L.ResolveLanguage(language),
+                language + " is restored as the running language after restarting");
+            L.Initialize(L.Chinese);
             Require(L.CurrentLanguage == L.Chinese && CultureInfo.CurrentUICulture.Name == L.Chinese,
                 "saving a language does not partially switch the running application");
         }

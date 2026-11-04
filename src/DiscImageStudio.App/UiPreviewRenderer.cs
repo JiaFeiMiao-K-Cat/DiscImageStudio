@@ -26,7 +26,6 @@ internal static class UiPreviewRenderer
         string? calibrationView = null,
         string? projectPath = null,
         string? projectDialog = null,
-        bool aboutDialog = false,
         bool presetDialog = false,
         bool expandJobDock = false,
         string? burnSource = null,
@@ -55,8 +54,8 @@ internal static class UiPreviewRenderer
             "system" => AppTheme.System,
             _ => throw new ArgumentException("Snapshot theme must be dark, light or system.", nameof(theme)),
         };
-        if (language is not (null or "zh-CN" or "zh-TW" or "en" or "ja" or "es" or "system"))
-            throw new ArgumentException("Snapshot language must be zh-CN, zh-TW, en, ja, es or system.", nameof(language));
+        if (language is not (null or "zh-CN" or "zh-TW" or "en" or "ja" or "tr" or "es" or "system"))
+            throw new ArgumentException("Snapshot language must be zh-CN, zh-TW, en, ja, tr, es or system.", nameof(language));
         Application application = AppHost.CreateApplication(ShutdownMode.OnExplicitShutdown, requestedTheme,
             language ?? L.Chinese);
         if (settingsDialog)
@@ -67,10 +66,6 @@ internal static class UiPreviewRenderer
         if (projectDialog is not null)
         {
             return RenderProjectDialog(outputPath, projectDialog, width, height, application);
-        }
-        if (aboutDialog)
-        {
-            return RenderAboutDialog(outputPath, width, height, application);
         }
         if (presetDialog)
         {
@@ -217,29 +212,9 @@ internal static class UiPreviewRenderer
         return SaveWindowBitmap(window, outputPath, width, height, application);
     }
 
-    /// <summary>Renders the about dialog standalone so the snapshot CLI covers its XAML too.</summary>
-    private static int RenderAboutDialog(
-        string outputPath,
-        int width,
-        int height,
-        Application application)
-    {
-        Window window = new AboutWindow(new AboutViewModel())
-        {
-            Width = width,
-            Height = height,
-            WindowStartupLocation = WindowStartupLocation.Manual,
-            Left = -10000,
-            Top = -10000,
-            ShowInTaskbar = false,
-        };
-        window.Show();
-        window.UpdateLayout();
-        return SaveWindowBitmap(window, outputPath, width, height, application);
-    }
-
     /// <summary>Renders the settings window standalone. The store points at a throwaway file so
-    /// a snapshot never reads or rewrites the workstation's real settings.</summary>
+    /// a snapshot never reads or rewrites the workstation's real settings. The about category
+    /// is the folded-in About page; the standalone about dialog no longer exists.</summary>
     private static int RenderSettingsDialog(
         string outputPath,
         int width,
@@ -252,7 +227,8 @@ internal static class UiPreviewRenderer
         {
             null or "" or "general" => 0,
             "storage" => 1,
-            _ => throw new ArgumentException("Settings snapshot view must be general or storage.", nameof(view)),
+            "about" => 2,
+            _ => throw new ArgumentException("Settings snapshot view must be general, storage or about.", nameof(view)),
         };
         AppSettingsStore store = new(Path.Combine(
             Path.GetTempPath(),
