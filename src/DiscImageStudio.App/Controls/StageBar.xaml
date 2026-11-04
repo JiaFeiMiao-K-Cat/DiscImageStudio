@@ -1,10 +1,10 @@
 <UserControl x:Class="DiscImageStudio.Controls.StageBar"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <!-- The workflow rail under the page header: design → preview → export → burn, with
-         calibration as the branch that feeds back into it. Every workspace shows the whole
-         path, the current stage is highlighted, and every stage is clickable — the same
-         navigation the sidebar offers, expressed inside the page itself. -->
+    <!-- The workflow rail under the page header, in the same two groups the sidebar shows:
+         disc-making (design → export → burn), then calibration (preview → calibration).
+         No stage carries a number — the dot marks the current stage, every stage is
+         clickable, and the divider separates the groups. -->
     <ItemsControl x:Name="StageList">
         <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
@@ -14,10 +14,10 @@
         <ItemsControl.ItemTemplate>
             <DataTemplate>
                 <StackPanel Orientation="Horizontal">
-                    <!-- The branch divider separates calibration from the linear chain. -->
+                    <!-- The group divider separates the calibration pair from disc-making. -->
                     <Rectangle Width="1" Height="14" Fill="{DynamicResource DividerBrush}"
                                Margin="12,0,6,0" VerticalAlignment="Center"
-                               Visibility="{Binding BranchVisibility}" />
+                               Visibility="{Binding GroupDividerVisibility}" />
                     <Button Click="Stage_Click" Focusable="False" Cursor="Hand"
                             AutomationProperties.Name="{Binding Label}">
                         <Button.Template>
@@ -37,13 +37,8 @@
                             </ControlTemplate>
                         </Button.Template>
                         <StackPanel Orientation="Horizontal">
-                            <Grid Width="18" Height="18">
-                                <Border x:Name="Dot" CornerRadius="9" Background="{DynamicResource Surface2Brush}" />
-                                <TextBlock x:Name="IndexText" Text="{Binding IndexText}" Style="{StaticResource MicroText}"
-                                           FontWeight="Bold"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource TextMutedBrush}" />
-                            </Grid>
+                            <Ellipse x:Name="Dot" Width="6" Height="6" VerticalAlignment="Center"
+                                     Fill="{DynamicResource TextMutedBrush}" />
                             <TextBlock x:Name="StageLabel" Text="{Binding Label}" Style="{StaticResource InlineText}"
                                        Margin="7,0,2,0"
                                        VerticalAlignment="Center"
@@ -52,14 +47,10 @@
                     </Button>
                 </StackPanel>
                 <DataTemplate.Triggers>
-                    <!-- The rail marks where you are, not what is finished: earlier stages keep
-                         their muted number instead of a check mark, because reaching a stage is
-                         not the same as having completed it. -->
+                    <!-- The rail marks where you are, not what is finished: the current stage
+                         takes the accent dot and the readable label. -->
                     <DataTrigger Binding="{Binding IsCurrent}" Value="True">
-                        <Setter TargetName="Dot" Property="Background" Value="{DynamicResource PrimaryBrush}" />
-                        <!-- The number sits on the blue fill, so it takes the on-primary
-                             label white; TextPrimaryBrush turns dark in the light theme. -->
-                        <Setter TargetName="IndexText" Property="Foreground" Value="White" />
+                        <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource PrimaryBrush}" />
                         <Setter TargetName="StageLabel" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                         <Setter TargetName="StageLabel" Property="FontWeight" Value="Medium" />
                     </DataTrigger>

@@ -11,11 +11,69 @@ on:
         description: Exact commit to validate for a release
         required: false
         type: string
+      release_tag:
+        description: Upload the tested CLI archives for this release
+        required: false
+        type: string
 
 permissions:
   contents: read
 
 jobs:
+  cli:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: ubuntu-24.04, rid: linux-x64 }
+          - { runner: ubuntu-24.04-arm, rid: linux-arm64 }
+          - { runner: macos-15-intel, rid: osx-x64 }
+          - { runner: macos-15, rid: osx-arm64 }
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+      RID: ${{ matrix.rid }}
+      PACKAGE_TAG: ${{ inputs.release_tag || 'ci' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish and archive the self-contained CLI
+        shell: bash
+        run: |
+          archive="DiscImageStudio-CLI-$PACKAGE_TAG-$RID.tar.gz"
+          dotnet publish src/DiscImageStudio.Cli/DiscImageStudio.Cli.csproj \
+            -c Release -r "$RID" --self-contained true -o "$RUNNER_TEMP/publish" \
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          mkdir -p artifacts/cli
+          tar -czf "artifacts/cli/$archive" -C "$RUNNER_TEMP/publish" disc-image-studio \
+            -C "$GITHUB_WORKSPACE" LICENSE THIRD-PARTY-NOTICES.txt
+          (cd artifacts/cli && shasum -a 256 "$archive" > "$archive.sha256")
+
+      - name: Test the extracted CLI on the target platform
+        shell: bash
+        run: |
+          mkdir "$RUNNER_TEMP/cli-smoke"
+          tar -xzf "artifacts/cli/DiscImageStudio-CLI-$PACKAGE_TAG-$RID.tar.gz" -C "$RUNNER_TEMP/cli-smoke"
+          python3 tests/test_cli_package.py "$RUNNER_TEMP/cli-smoke/disc-image-studio"
+
+      - uses: actions/upload-artifact@v4
+        if: inputs.release_tag != ''
+        with:
+          name: cli-${{ inputs.release_tag }}-${{ matrix.rid }}
+          path: artifacts/cli/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 14
+
   windows:
     runs-on: windows-latest
     timeout-minutes: 30

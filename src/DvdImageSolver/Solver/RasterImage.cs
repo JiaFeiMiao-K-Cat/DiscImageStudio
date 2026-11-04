@@ -1,5 +1,4 @@
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using DiscImageStudio.ImageIO;
 
 namespace DvdImageSolver.Solver;
 
@@ -23,17 +22,8 @@ internal sealed class RasterImage
 
     internal static RasterImage Load(string path)
     {
-        string fullPath = Path.GetFullPath(path);
-        using FileStream stream = File.OpenRead(fullPath);
-        BitmapFrame frame = BitmapFrame.Create(
-            stream,
-            BitmapCreateOptions.PreservePixelFormat,
-            BitmapCacheOption.OnLoad);
-        FormatConvertedBitmap converted = new(frame, PixelFormats.Bgra32, null, 0);
-        int stride = checked(converted.PixelWidth * 4);
-        byte[] pixels = new byte[checked(stride * converted.PixelHeight)];
-        converted.CopyPixels(pixels, stride, 0);
-        return new RasterImage(converted.PixelWidth, converted.PixelHeight, pixels);
+        var raster = RasterCodec.LoadBgra32(path);
+        return new RasterImage(raster.Width, raster.Height, raster.Pixels);
     }
 
     internal static RasterImage CreateForTest(int width, int height, byte blue, byte green, byte red, byte alpha)

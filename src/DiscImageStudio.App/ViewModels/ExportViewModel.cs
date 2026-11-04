@@ -86,6 +86,14 @@ public partial class ExportViewModel : ObservableObject
     [ObservableProperty]
     private string _sourceSummary = L.T("请先在设计页导入图片。");
 
+    /// <summary>The action label and source row are the page's cached text; both are composed
+    /// from the current state so they re-read cleanly.</summary>
+    internal void Relocalize()
+    {
+        OnPropertyChanged(nameof(GenerateButtonText));
+        UpdateSourceSummary();
+    }
+
     private void NotifyCommands()
     {
         BrowseOutputCommand.NotifyCanExecuteChanged();

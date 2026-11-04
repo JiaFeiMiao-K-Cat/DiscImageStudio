@@ -1,8 +1,6 @@
-using System.IO;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using DiscImageStudio.BluRay;
 using DiscImageStudio.Core;
+using DiscImageStudio.ImageIO;
 
 namespace DiscImageStudio.Services;
 
@@ -26,14 +24,9 @@ public static class BluRayImageLoader
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         cancellationToken.ThrowIfCancellationRequested();
-        using FileStream stream = new(Path.GetFullPath(path), FileMode.Open, FileAccess.Read, FileShare.Read);
-        BitmapFrame frame = ReadValidatedFrame(stream, path, cancellationToken);
-        int width = frame.PixelWidth, height = frame.PixelHeight;
-        BitmapSource converted = frame.Format == PixelFormats.Bgra32
-            ? frame : new FormatConvertedBitmap(frame, PixelFormats.Bgra32, null, 0);
-        int stride = checked(width * 4);
-        byte[] bgra = new byte[checked(stride * height)];
-        converted.CopyPixels(bgra, stride, 0);
+        BgraRaster frame = RasterCodec.LoadBgra32(path, MaxFileBytes, MaxPixels);
+        int width = frame.Width, height = frame.Height;
+        byte[] bgra = frame.Pixels;
         byte[] gray = new byte[checked(width * height)];
         for (int y = 0; y < height; y++)
         {
@@ -71,23 +64,8 @@ public static class BluRayImageLoader
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         cancellationToken.ThrowIfCancellationRequested();
-        using FileStream stream = new(Path.GetFullPath(path), FileMode.Open, FileAccess.Read, FileShare.Read);
-        _ = ReadValidatedFrame(stream, path, cancellationToken);
-    }
-
-    private static BitmapFrame ReadValidatedFrame(FileStream stream, string path, CancellationToken cancellationToken)
-    {
+        RasterCodec.ValidateSource(path, MaxFileBytes, MaxPixels);
         cancellationToken.ThrowIfCancellationRequested();
-        if (stream.Length > MaxFileBytes)
-            throw new ArgumentException("The source image must be no larger than 256 MiB.", nameof(path));
-        BitmapDecoder decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.OnDemand);
-        if (decoder.Frames.Count == 0) throw new ArgumentException("The source image contains no frames.", nameof(path));
-        BitmapFrame frame = decoder.Frames[0];
-        int width = frame.PixelWidth, height = frame.PixelHeight;
-        if (width <= 0 || height <= 0 || (long)width * height > MaxPixels)
-            throw new ArgumentException("The source image must contain between 1 and 67,108,864 pixels.", nameof(path));
-        cancellationToken.ThrowIfCancellationRequested();
-        return frame;
     }
 
     public static BluRayImagePayloadMapping CreateMapping(string path, BluRayDiscParameters disc,

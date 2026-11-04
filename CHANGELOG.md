@@ -2,6 +2,46 @@
 
 ## Unreleased
 
+### 中文
+
+- 新增西班牙文和捷克文界面：在「设置 → 通用 → 语言」选择「Español」或「Čeština」并保存后立即生效；西班牙文、捷克文系统也可跟随系统。全部应用文案包含 `es` 与 `cs` 翻译，保留格式参数、数值文化和原有回退规则。
+- 新增西班牙文、土耳其文、捷克文 README；全部 README 顶部语言切换加入 Türkçe、Español、Čeština。原始文档、署名及许可证保留不变。
+- 新增威宝 BD-R (64293) 内置预设，参数与 64099 相同，贡献者 bczhc。
+- 新增威宝 DVD+R AZO (43498) 内置预设，贡献者 Disappear9。
+- 新增铼德 DVD-R E时代系列内置预设，贡献者 bczhc。
+- 新增铼德 BD-R 12x 内置预设：内半径 23.98795 mm、外半径 58.02236 mm，贡献者 DeepAQ。
+- 新增铼德 DVD+R E时代系列内置预设。
+- 新建工程不再按模板自动填充工程名，输入框保持为空；填写名称后才能创建。
+- 侧栏工程头卡片右侧新增软盘保存按钮。
+
+### English
+
+- Added Spanish and Czech interfaces. Choose Español or Čeština under Settings → General → Language, and save to apply immediately; Spanish and Czech system locales can also follow the system. All application strings include `es` and `cs` translations while preserving format arguments, numeric culture, and existing fallback rules.
+- Added Spanish, Turkish, and Czech READMEs; every README language switcher now includes Türkçe, Español, and Čeština. Original documents, attribution, and licenses are preserved.
+- Added a built-in Verbatim BD-R (64293) preset with the same parameters as 64099, contributed by bczhc.
+- Added a built-in Verbatim DVD+R AZO (43498) preset, contributed by Disappear9.
+- Added a built-in Ritek DVD-R E-Series preset, contributed by bczhc.
+- Added a built-in Ritek BD-R 12x preset with inner radius 23.98795 mm and outer radius 58.02236 mm, contributed by DeepAQ.
+- Added a built-in Ritek DVD+R E-Series preset.
+- New projects leave the project name empty instead of filling it from the selected template; the project can be created once a name is entered.
+- Added a floppy-disk Save button on the right of the sidebar project header.
+
+## [1.3.6] - 2026-11-02
+
+### 中文
+
+- **实验性功能：Linux 和 macOS 离线命令行版。** 可从图片生成 CD 音轨（WAV+CUE 或 RAW）、CD 数据盘、DVD 和蓝光 ISO。两个系统均提供 x64 和 ARM64 自包含下载包。解压后运行 `./disc-image-studio --help` 查看命令。
+- Windows 桌面版继续使用 WIC 读图。跨平台 CLI 采用 StbImageSharp 读图和 StbImageWriteSharp 写 PNG，复用相同的盘面编码算法。
+- 新增日文界面：在「设置 → 通用 → 语言」可选择「日本語」；系统语言为日文（`ja`、`ja-JP`）时跟随系统也使用日文。所有翻译资源新增 `ja` 文本，`ui-snapshot --language` 支持 `ja`。
+- 新增日文 README（`README.ja.md`），所有 README 顶部的语言切换链接加入日本語。
+
+### English
+
+- **Experimental feature: offline CLI for Linux and macOS.** Generate CD audio tracks (WAV+CUE or RAW), CD data images, and DVD or Blu-ray ISOs from an image. Self-contained x64 and ARM64 archives are available for both systems. Extract the archive and run `./disc-image-studio --help` to list commands.
+- The Windows desktop app continues to decode images with WIC. The cross-platform CLI uses StbImageSharp to read images and StbImageWriteSharp to write PNGs, with the same disc encoding algorithms.
+- Added a Japanese interface. Choose 日本語 under Settings → General → Language; Japanese system locales (`ja`, `ja-JP`) now use Japanese when following the system. Every translation entry gains `ja` text, and `ui-snapshot --language` accepts `ja`.
+- Added a Japanese README (`README.ja.md`) and a 日本語 link to the language switcher at the top of every README.
+
 ## [1.3.4] - 2026-11-02
 
 ### 中文

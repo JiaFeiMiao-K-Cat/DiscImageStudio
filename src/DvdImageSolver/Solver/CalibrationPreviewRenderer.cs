@@ -1,5 +1,4 @@
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using DiscImageStudio.ImageIO;
 using DiscImageStudio.Core;
 using DvdImageSolver.Encoding;
 
@@ -211,7 +210,7 @@ public static class CalibrationPreviewRenderer
             }
         });
 
-        WritePng(outputFullPath, size, pixels, stride);
+        WritePng(outputFullPath, size, pixels);
         return new CalibrationPreviewSummary(
             sourceFullPath,
             outputFullPath,
@@ -245,7 +244,7 @@ public static class CalibrationPreviewRenderer
             options.Tone);
     }
 
-    private static void WritePng(string outputPath, int size, byte[] pixels, int stride)
+    private static void WritePng(string outputPath, int size, byte[] pixels)
     {
         string? directory = Path.GetDirectoryName(outputPath);
         if (directory is not null)
@@ -253,19 +252,7 @@ public static class CalibrationPreviewRenderer
             Directory.CreateDirectory(directory);
         }
 
-        BitmapSource bitmap = BitmapSource.Create(
-            size,
-            size,
-            96,
-            96,
-            PixelFormats.Bgra32,
-            palette: null,
-            pixels,
-            stride);
-        PngBitmapEncoder encoder = new();
-        encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        using FileStream output = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.None);
-        encoder.Save(output);
+        RasterCodec.SavePng(outputPath, size, size, pixels, grayscale: false);
     }
 
     private static void Validate(CalibrationPreviewOptions options)

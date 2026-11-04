@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:DiscImageStudio.Localization"
         xmlns:controls="clr-namespace:DiscImageStudio.Controls"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         Title="{loc:Text Settings.Settings}"
         Width="760" Height="600"
         WindowStartupLocation="CenterOwner"
@@ -39,6 +40,8 @@
                                           Activated="GeneralNav_Activated" />
                     <controls:SideNavItem x:Name="StorageNav" LabelText="{loc:Text Settings.Storage}"
                                           IconKind="HardDrive" Activated="StorageNav_Activated" />
+                    <controls:SideNavItem x:Name="AboutNav" LabelText="{loc:Text Xaml.About}"
+                                          IconKind="Info" Activated="AboutNav_Activated" />
                 </StackPanel>
             </Border>
 
@@ -54,8 +57,6 @@
                                 <TextBlock Text="{loc:Text Settings.Theme}" Style="{StaticResource FieldLabel}" />
                                 <controls:SegmentedControl LabelA="{loc:Text Settings.Dark}" LabelB="{loc:Text Settings.Light}" LabelC="{loc:Text Settings.System}"
                                                            SelectedIndex="{Binding ThemeIndex, Mode=TwoWay}" />
-                                <TextBlock Text="{loc:Text Settings.AppliedToAllWindowsAfterSaving}"
-                                           Style="{StaticResource CompactHint}" Margin="0,8,0,0" />
                             </StackPanel>
                         </controls:SectionCard>
                         <controls:SectionCard Header="{loc:Text Settings.Language}" IconKind="Languages" Margin="0,16,0,0">
@@ -66,9 +67,11 @@
                                     <ComboBoxItem Content="{loc:Text Settings.SimplifiedChinese}" />
                                     <ComboBoxItem Content="{loc:Text Settings.TraditionalChinese}" />
                                     <ComboBoxItem Content="English" />
+                                    <ComboBoxItem Content="日本語" />
+                                    <ComboBoxItem Content="Türkçe" />
+                                    <ComboBoxItem Content="Español" />
+                                    <ComboBoxItem Content="Čeština" />
                                 </ComboBox>
-                                <TextBlock Text="{loc:Text Settings.LanguageChangesTakeEffectAfterRestartingTheAppSystemUse}"
-                                           Style="{StaticResource CompactHint}" Margin="0,8,0,0" TextWrapping="Wrap" />
                             </StackPanel>
                         </controls:SectionCard>
                     </StackPanel>
@@ -90,8 +93,7 @@
                                 <controls:PathField
                                     Text="{Binding DefaultProjectDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     Placeholder="{Binding DefaultProjectDirectoryPlaceholder}"
-                                    Command="{Binding BrowseDefaultProjectDirectoryCommand}"
-                                    Hint="{loc:Text Settings.DefaultLocationForNewProjectsLeaveBlankToUseTheSystemDo}" />
+                                    Command="{Binding BrowseDefaultProjectDirectoryCommand}" />
 
                                 <Grid Margin="0,18,0,6">
                                     <TextBlock Text="{loc:Text Settings.CacheLocation}" Style="{StaticResource FieldLabel}"
@@ -103,8 +105,7 @@
                                 <controls:PathField
                                     Text="{Binding CacheDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     Placeholder="{Binding DefaultCacheDirectoryPlaceholder}"
-                                    Command="{Binding BrowseCacheDirectoryCommand}"
-                                    Hint="{loc:Text Settings.UsedForCompositesPreviewsAndThumbnailsLeaveBlankToUseTh}" />
+                                    Command="{Binding BrowseCacheDirectoryCommand}" />
                             </StackPanel>
                         </controls:SectionCard>
 
@@ -130,6 +131,76 @@
                                 </StackPanel>
                             </StackPanel>
                         </controls:SectionCard>
+                    </StackPanel>
+
+                    <!-- About: the old standalone dialog folded in, in its own plain layout —
+                         app icon, version, description, the open-source component list and
+                         the three embedded license texts behind expanders. No cards: this is
+                         a colophon, not a settings form. -->
+                    <StackPanel x:Name="AboutPanel" Visibility="Collapsed">
+                        <TextBlock Text="{loc:Text Xaml.About}" Style="{StaticResource H1Title}" />
+
+                        <Grid Margin="0,20,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Image Source="{StaticResource AppIconSource}" Width="64" Height="64" VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Margin="16,0,16,0" VerticalAlignment="Center">
+                                <TextBlock Text="Disc Image Studio" Style="{StaticResource CardTitle}" FontWeight="Medium"
+                                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                                <TextBlock Text="{Binding VersionText}" Style="{StaticResource HintText}" Margin="0,6,0,0" />
+                            </StackPanel>
+                            <Button Grid.Column="2" Style="{StaticResource GhostButton}" Padding="10,0"
+                                    VerticalAlignment="Center" Command="{Binding OpenRepositoryCommand}"
+                                    ToolTip="{Binding RepositoryUrl}"
+                                    AutomationProperties.Name="{loc:Text Xaml.GitHub}">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconLucide Kind="Github" Width="16" Height="16"
+                                                              VerticalAlignment="Center" />
+                                    <TextBlock Text="{loc:Text Xaml.GitHub}" Margin="6,0,0,0"
+                                               VerticalAlignment="Center" FontSize="13" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <TextBlock Style="{StaticResource BodyText}" Margin="0,24,0,0" TextWrapping="Wrap"
+                                   Text="{loc:Text Xaml.DiscImageStudioIsAnAllInOneWorkspace}" />
+                        <TextBlock Style="{StaticResource CompactHint}" Margin="0,8,0,0" TextWrapping="Wrap"
+                                   Text="{loc:Text Xaml.ReleasedUnderTheGNUGeneralPublicLicenseV30}" />
+
+                        <StackPanel Margin="0,20,0,0">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.OpenSourceComponents}" />
+                            <TextBlock Style="{StaticResource BodyText}" TextWrapping="Wrap"
+                                       Text="{loc:Text Xaml.HarmonyOSSansSCHarmonyOSSansFontLicense}" />
+                            <TextBlock Style="{StaticResource BodyText}" Margin="0,4,0,0" TextWrapping="Wrap"
+                                       Text="{loc:Text Xaml.MahAppsMetroIconPacksLucideLucideIconsMITLicense}" />
+                            <TextBlock Style="{StaticResource BodyText}" Margin="0,4,0,0" TextWrapping="Wrap"
+                                       Text="{loc:Text Xaml.CommunityToolkitMvvmApacheLicense20}" />
+                        </StackPanel>
+
+                        <Expander Header="{loc:Text Xaml.GNUGPLV30OrLaterProjectLicense}" Margin="0,20,0,0">
+                            <TextBox Text="{Binding LicenseText, Mode=OneWay}" IsReadOnly="True" Height="240"
+                                     Margin="0,8,0,0" Style="{StaticResource BareTextBox}"
+                                     FontFamily="{StaticResource MonoFontFamily}" FontSize="11"
+                                     TextWrapping="NoWrap"
+                                     HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
+                        </Expander>
+                        <Expander Header="{loc:Text Xaml.ThirdPartyNotices}" Margin="0,8,0,0">
+                            <TextBox Text="{Binding ThirdPartyNoticesText, Mode=OneWay}" IsReadOnly="True" Height="240"
+                                     Margin="0,8,0,0" Style="{StaticResource BareTextBox}"
+                                     FontFamily="{StaticResource MonoFontFamily}" FontSize="11"
+                                     TextWrapping="NoWrap"
+                                     HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
+                        </Expander>
+                        <Expander Header="{loc:Text Xaml.HarmonyOSSansFontLicense}" Margin="0,8,0,0">
+                            <TextBox Text="{Binding FontLicenseText, Mode=OneWay}" IsReadOnly="True" Height="180"
+                                     Margin="0,8,0,0" Style="{StaticResource BareTextBox}"
+                                     FontFamily="{StaticResource MonoFontFamily}" FontSize="11"
+                                     TextWrapping="NoWrap"
+                                     HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
+                        </Expander>
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>

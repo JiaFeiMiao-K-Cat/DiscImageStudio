@@ -1,6 +1,4 @@
-using System.IO;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using DiscImageStudio.ImageIO;
 
 namespace DiscImageStudio.Cd;
 
@@ -30,16 +28,8 @@ internal sealed class RasterImage
 
     internal static RasterImage Load(string path)
     {
-        using FileStream stream = File.OpenRead(Path.GetFullPath(path));
-        BitmapFrame frame = BitmapFrame.Create(
-            stream,
-            BitmapCreateOptions.PreservePixelFormat,
-            BitmapCacheOption.OnLoad);
-        FormatConvertedBitmap converted = new(frame, PixelFormats.Bgra32, null, 0);
-        int stride = checked(converted.PixelWidth * 4);
-        byte[] pixels = new byte[checked(stride * converted.PixelHeight)];
-        converted.CopyPixels(pixels, stride, 0);
-        return new RasterImage(converted.PixelWidth, converted.PixelHeight, pixels);
+        BgraRaster raster = RasterCodec.LoadBgra32(path);
+        return new RasterImage(raster.Width, raster.Height, raster.Pixels);
     }
 
     internal byte GrayAt(double pixelX, double pixelY, byte outside = 255)

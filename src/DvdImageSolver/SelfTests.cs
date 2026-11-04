@@ -1,8 +1,7 @@
 using System.Buffers.Binary;
 using System.Numerics;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using DiscImageStudio.Core;
+using DiscImageStudio.ImageIO;
 using DvdImageSolver.Encoding;
 using DvdImageSolver.Solver;
 
@@ -433,11 +432,7 @@ internal static class SelfTests
                     }
                 }
 
-                BitmapSource bitmap = BitmapSource.Create(3, 3, 96, 96, PixelFormats.Bgra32, null, pixels, 12);
-                PngBitmapEncoder encoder = new();
-                encoder.Frames.Add(BitmapFrame.Create(bitmap));
-                using FileStream output = File.Create(path);
-                encoder.Save(output);
+                RasterCodec.SavePng(path, 3, 3, pixels, grayscale: false);
             }
         }
         finally
@@ -1343,19 +1338,7 @@ internal static class SelfTests
             }
         }
 
-        BitmapSource bitmap = BitmapSource.Create(
-            size,
-            size,
-            96,
-            96,
-            PixelFormats.Bgra32,
-            palette: null,
-            pixels,
-            stride);
-        PngBitmapEncoder encoder = new();
-        encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        using FileStream output = File.Create(path);
-        encoder.Save(output);
+        RasterCodec.SavePng(path, size, size, pixels, grayscale: false);
     }
 
     private static void WriteCrossPng(string path)
@@ -1379,32 +1362,12 @@ internal static class SelfTests
             }
         }
 
-        BitmapSource bitmap = BitmapSource.Create(
-            size,
-            size,
-            96,
-            96,
-            PixelFormats.Bgra32,
-            palette: null,
-            pixels,
-            stride);
-        PngBitmapEncoder encoder = new();
-        encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        using FileStream output = File.Create(path);
-        encoder.Save(output);
+        RasterCodec.SavePng(path, size, size, pixels, grayscale: false);
     }
 
     private static (int DarkPixels, int LightPixels) CountDarkAndLightPixels(string path)
     {
-        using FileStream stream = File.OpenRead(path);
-        BitmapFrame frame = BitmapFrame.Create(
-            stream,
-            BitmapCreateOptions.PreservePixelFormat,
-            BitmapCacheOption.OnLoad);
-        FormatConvertedBitmap converted = new(frame, PixelFormats.Bgra32, null, 0);
-        int stride = checked(converted.PixelWidth * 4);
-        byte[] pixels = new byte[checked(stride * converted.PixelHeight)];
-        converted.CopyPixels(pixels, stride, 0);
+        byte[] pixels = RasterCodec.LoadBgra32(path).Pixels;
         int dark = 0;
         int light = 0;
         for (int offset = 0; offset < pixels.Length; offset += 4)
@@ -1429,13 +1392,7 @@ internal static class SelfTests
 
     private static bool ContainsOpaqueGray(string path, byte gray)
     {
-        using FileStream stream = File.OpenRead(path);
-        BitmapFrame frame = BitmapFrame.Create(
-            stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
-        FormatConvertedBitmap converted = new(frame, PixelFormats.Bgra32, null, 0);
-        int stride = checked(converted.PixelWidth * 4);
-        byte[] pixels = new byte[checked(stride * converted.PixelHeight)];
-        converted.CopyPixels(pixels, stride, 0);
+        byte[] pixels = RasterCodec.LoadBgra32(path).Pixels;
         for (int offset = 0; offset < pixels.Length; offset += 4)
         {
             if (pixels[offset] == gray && pixels[offset + 1] == gray
@@ -1450,15 +1407,7 @@ internal static class SelfTests
 
     private static int CountIntermediateOpaquePixels(string path)
     {
-        using FileStream stream = File.OpenRead(path);
-        BitmapFrame frame = BitmapFrame.Create(
-            stream,
-            BitmapCreateOptions.PreservePixelFormat,
-            BitmapCacheOption.OnLoad);
-        FormatConvertedBitmap converted = new(frame, PixelFormats.Bgra32, null, 0);
-        int stride = checked(converted.PixelWidth * 4);
-        byte[] pixels = new byte[checked(stride * converted.PixelHeight)];
-        converted.CopyPixels(pixels, stride, 0);
+        byte[] pixels = RasterCodec.LoadBgra32(path).Pixels;
         int count = 0;
         for (int offset = 0; offset < pixels.Length; offset += 4)
         {

@@ -1526,7 +1526,7 @@ internal static class Program
               --initial-level pit|land Initial physical NRZI level (default land)
 
             Solve options:
-              --image FILE              PNG/JPEG/BMP/TIFF/GIF image mapped onto the disc
+              --image FILE              Source image mapped onto the disc (e.g. PNG or JPEG)
               --total-sectors N         Reported count of 2048-byte sectors (required with --image)
               --total-blocks N          Alias for --total-sectors
               --inner-radius-mm N       Track start radius (default 24.0)

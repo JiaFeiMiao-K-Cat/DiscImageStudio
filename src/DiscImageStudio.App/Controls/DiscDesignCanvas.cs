@@ -66,16 +66,21 @@ public class DiscDesignCanvas : FrameworkElement
             // The palette is resolved inside OnRender, so a theme switch only needs a repaint.
             ThemeResolver.Changed -= ThemeResolver_Changed;
             ThemeResolver.Changed += ThemeResolver_Changed;
+            L.LanguageChanged -= Language_LanguageChanged;
+            L.LanguageChanged += Language_LanguageChanged;
             InvalidateVisual();
         };
         Unloaded += (_, _) =>
         {
             ThemeResolver.Changed -= ThemeResolver_Changed;
+            L.LanguageChanged -= Language_LanguageChanged;
             DetachDesign();
         };
     }
 
     private void ThemeResolver_Changed(object? sender, EventArgs e) => InvalidateVisual();
+
+    private void Language_LanguageChanged(object? sender, EventArgs e) => InvalidateVisual();
 
     /// <summary>Zoom on top of the fit-to-view scale. 1 shows the whole disc; the +/- buttons
     /// and Ctrl/Alt+wheel change it, middle-drag pans, the refresh button or double-clicking

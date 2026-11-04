@@ -150,6 +150,10 @@ public partial class DesignViewModel : ObservableObject
     /// page renders through the engines' tone mapping.</summary>
     public ToneViewModel Tone { get; }
 
+    /// <summary>The design page itself builds its text from XAML; only the tone module caches
+    /// a status line.</summary>
+    internal void Relocalize() => Tone.Relocalize();
+
     /// <summary>Disc files are shared with export, preview and burn; they are not image layers.</summary>
     public DiscParametersState State => _state;
 

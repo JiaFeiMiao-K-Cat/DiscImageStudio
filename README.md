@@ -1,15 +1,15 @@
 <div align="center">
 
-**简体中文** | [繁體中文](README.zh-TW.md) | [English](README.en.md)
+**简体中文** | [繁體中文](README.zh-TW.md) | [English](README.en.md) | [日本語](README.ja.md) | [Türkçe](README.tr.md) | [Español](README.es.md) | [Čeština](README.cs.md)
 
 ![Banner](docs/images/DiscImageStudio_Banner_2.png)
 
 <h2>全能的光盘盘面可见图像生成与刻录工具</h2>
 
-Disc Image Studio 是一个运行在 Windows 的光盘盘面图像生成与刻录工具，帮助您使用**任何**刻录光驱在**任何** DVD / CD / 蓝光 光盘上刻蚀出肉眼可见的图像。
+Disc Image Studio 是一个多平台的光盘盘面图像生成与刻录工具，帮助您使用任何刻录光驱在任何 DVD / CD / 单层蓝光 光盘上刻蚀出肉眼可见的图像。
 
 ![.NET 版本](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)
-![运行平台](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078d6?style=flat-square)
+![运行平台](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-0078d6?style=flat-square)
 ![开发语言](https://img.shields.io/badge/Language-C%23-68217A?style=flat-square)
 ![GitHub Repo size](https://img.shields.io/github/repo-size/JiaFeiMiao-K-Cat/DiscImageStudio?style=flat-square&color=3cb371)
 ![贡献欢迎](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=flat-square)
@@ -43,7 +43,7 @@ Disc Image Studio 可将一张图片转换成符合 CD、DVD 与单层 BD-R 光�
 
 ## 快速开始
 
-从 [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases) 下载 Release EXE，解压后直接运行；EXE 已包含 .NET 运行时。
+Windows 下载 `win-x64.exe` 后可直接运行。Linux 或 macOS 请下载与 CPU 匹配的**实验性 CLI** 压缩包，解压后运行 `./disc-image-studio --help`。这些发布包均自带 .NET 运行时。 [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 ### 1. 新建工程
 
@@ -90,15 +90,9 @@ Disc Image Studio 提供了一套智能且精准的辅助标定流程，相较�
 - **即时流式刻录（实验性）**：CD、DVD 与 BD-R 边生成边刻录，不保存完整镜像；BD-R 走 MMC 顺序写入。
 - **不要使用非空白介质！**
 
-### 应用形态
-
-- 多语言界面：点击右上角「设置」按钮，在「通用 → 语言」选择简体中文、繁體中文、English 或跟随系统，保存并重启应用后生效。语言和主题默认均跟随系统，已保存的明确选择继续保留；跟随系统时区分简体和繁体中文，其他系统语言使用英文。
-- 双入口：不带参数将打开 GUI；带参数则进入统一命令行。
-- 模块化：CD、DVD 与蓝光通过 `IOpticalDiscModule` 接入，统一命令目录与任务契约，详见[架构说明](docs/ARCHITECTURE.md)。
-
 ## 系统与设备要求
 
-- Windows 10 2004（2004/20H1，19041）及以上，或 Windows 11。
+- 桌面版需要 Windows 10 2004（2004/20H1，19041）及以上，或 Windows 11。
 - 构建：.NET 10 SDK（`global.json` 锁定 10.0.x）；自行构建的非自包含 GUI 需要 .NET 10 Windows 桌面运行时。Release EXE 已包含运行时，无需另行安装 .NET。
 - “即时刻录”功能需要一台 Windows 可识别的 CD / DVD / BD 刻录机与空白盘片；BD-R 需要支持顺序写入的单层空白盘。
 
@@ -120,7 +114,19 @@ dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Rel
 
 ## 命令行
 
-统一程序不带参数时将打开 GUI，而带参数时作为自动化工具使用：
+Linux（glibc）可选 `linux-x64` 或 `linux-arm64`。Apple Silicon Mac 选 `osx-arm64`，Intel Mac 选 `osx-x64`。CLI 在本地生成镜像，实际写盘可交给支持相应镜像或音轨的刻录软件。
+
+使用 .NET 10 SDK 从源码运行 CLI
+
+```sh
+dotnet run --project src/DiscImageStudio.Cli -c Release -- --help
+```
+
+CLI 可读取 PNG、JPEG、BMP 和 GIF，使用动画图片的第一帧。下面的例子用两扇区音轨验证安装，同时生成配套 CUE。
+
+```sh
+./disc-image-studio cd-generate --input picture.png --output sample.wav --sectors 2
+```
 
 | 命令 | 说明 |
 | --- | --- |
@@ -140,6 +146,8 @@ dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Rel
 ## 源码结构
 
 ```text
+src/DiscImageStudio.Cli/     Linux 和 macOS 离线命令行入口
+src/DiscImageStudio.ImageIO/ WIC 和跨平台图像编解码
 src/DiscImageStudio.Core/    介质无关的模块契约、工程/预设模型、任务与命令目录
 src/DiscImageStudio.Imaging/ CD/DVD/BD 共用的图片预处理与抖动辅助
 src/DiscImageStudio.Burning/ Windows IMAPI2 设备枚举、流缓冲与安全刻录层

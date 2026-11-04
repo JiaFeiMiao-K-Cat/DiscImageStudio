@@ -453,7 +453,8 @@ public partial class DiscParametersState : ObservableObject
                 value.InnerRadiusMm,
                 value.OuterRadiusMm,
                 value.DisplayNameResourceKey,
-                value.DescriptionResourceKey))
+                value.DescriptionResourceKey,
+                Contributor: value.Contributor))
             .ToList();
         cdPresets.Add(ManualCdPreset);
 
@@ -471,7 +472,8 @@ public partial class DiscParametersState : ObservableObject
                 value.DescriptionResourceKey,
                 PitchLinear: value.PitchLinear,
                 PitchQuadratic: value.PitchQuadratic,
-                PitchCubic: value.PitchCubic))
+                PitchCubic: value.PitchCubic,
+                Contributor: value.Contributor))
             .ToList();
         dvdPresets.Add(ManualDvdPreset);
 
@@ -486,7 +488,8 @@ public partial class DiscParametersState : ObservableObject
                     1,
                     value.InnerRadiusMm,
                     value.OuterRadiusMm),
-                value.InvertMapping))
+                value.InvertMapping,
+                Contributor: value.Contributor))
             .ToList();
         bluRayPresets.Add(ManualBluRayPreset);
         return (cdPresets, dvdPresets, bluRayPresets);
@@ -513,6 +516,35 @@ public partial class DiscParametersState : ObservableObject
         ApplyCdDiscPreset(_cdPresets[0]);
         ApplyDvdDiscPreset(_dvdPresets[0]);
         ApplyBluRayDiscPreset(_bluRayPresets[0]);
+    }
+
+    /// <summary>Rebuilds the localized parts of the shared state after a language switch:
+    /// preset names/descriptions, the selected preset objects (so the selectors show the new
+    /// text) and the computed summaries. Geometry strings are never written here: a preset
+    /// file edited on disk must not change the parameters of the running project.</summary>
+    public void Relocalize()
+    {
+        string cdId = SelectedCdPreset.Id;
+        string dvdId = SelectedDvdPreset.Id;
+        string bluRayId = SelectedBluRayPreset.Id;
+        try
+        {
+            LoadPresets();
+        }
+        catch (Exception)
+        {
+            // A broken user JSON falls back to the catalog already in memory; the switch must
+            // not turn into a preset-load failure.
+        }
+
+        ApplyCdDiscPreset(_cdPresets.FirstOrDefault(preset => preset.Id == cdId) ?? ManualCdPreset, writeGeometry: false);
+        ApplyDvdDiscPreset(_dvdPresets.FirstOrDefault(preset => preset.Id == dvdId) ?? ManualDvdPreset, writeGeometry: false);
+        ApplyBluRayDiscPreset(_bluRayPresets.FirstOrDefault(preset => preset.Id == bluRayId) ?? ManualBluRayPreset, writeGeometry: false);
+        OnPropertyChanged(nameof(ToneSummary));
+        OnPropertyChanged(nameof(CdOutputLabel));
+        OnPropertyChanged(nameof(CdOutputHint));
+        OnPropertyChanged(nameof(DvdPitchSummary));
+        OnPropertyChanged(nameof(DvdActualPitchSummary));
     }
 
     // Only the four generation fields per disc family switch the preset to "custom"
@@ -596,7 +628,7 @@ public partial class DiscParametersState : ObservableObject
         SelectedBluRayPreset = ManualBluRayPreset;
     }
 
-    public void ApplyCdDiscPreset(CdDiscPreset preset)
+    public void ApplyCdDiscPreset(CdDiscPreset preset, bool writeGeometry = true)
     {
         bool previous = _isApplyingDiscPreset;
         _isApplyingDiscPreset = true;
@@ -604,7 +636,7 @@ public partial class DiscParametersState : ObservableObject
         {
             SelectedCdPreset = preset;
             CdPresetHint = preset.Description;
-            if (!preset.IsCustom)
+            if (writeGeometry && !preset.IsCustom)
             {
                 CdSectors = preset.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 CdInnerRadius = FormatPresetNumber(preset.InnerRadiusMm);
@@ -617,7 +649,7 @@ public partial class DiscParametersState : ObservableObject
         }
     }
 
-    public void ApplyDvdDiscPreset(DvdDiscPreset preset)
+    public void ApplyDvdDiscPreset(DvdDiscPreset preset, bool writeGeometry = true)
     {
         bool previous = _isApplyingDiscPreset;
         _isApplyingDiscPreset = true;
@@ -625,7 +657,7 @@ public partial class DiscParametersState : ObservableObject
         {
             SelectedDvdPreset = preset;
             DvdPresetHint = preset.Description;
-            if (!preset.IsCustom)
+            if (writeGeometry && !preset.IsCustom)
             {
                 DvdTotalSectors = preset.TotalSectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 DvdInnerRadius = FormatPresetNumber(preset.InnerRadiusMm);
@@ -641,7 +673,7 @@ public partial class DiscParametersState : ObservableObject
         }
     }
 
-    public void ApplyBluRayDiscPreset(BluRayDiscPreset preset)
+    public void ApplyBluRayDiscPreset(BluRayDiscPreset preset, bool writeGeometry = true)
     {
         bool previous = _isApplyingDiscPreset;
         _isApplyingDiscPreset = true;
@@ -649,7 +681,7 @@ public partial class DiscParametersState : ObservableObject
         {
             SelectedBluRayPreset = preset;
             BluRayPresetHint = preset.IsCustom ? string.Empty : preset.DisplayName;
-            if (!preset.IsCustom)
+            if (writeGeometry && !preset.IsCustom)
             {
                 BluRayDiscParameters geometry = preset.CreateParameters();
                 BdTotalSectors = geometry.TotalSectors.ToString(System.Globalization.CultureInfo.InvariantCulture);

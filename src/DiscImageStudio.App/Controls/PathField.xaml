@@ -1,7 +1,6 @@
 <UserControl x:Class="DiscImageStudio.Controls.PathField"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:loc="clr-namespace:DiscImageStudio.Localization"
              xmlns:controls="clr-namespace:DiscImageStudio.Controls">
     <!-- One path-row recipe (label + field + browse) for the ~6 places that used to retype
          TextBox + BrowseButton with drifting widths. Compact=true switches the row to the
@@ -50,7 +49,7 @@
                     </Style>
                 </TextBlock.Style>
             </TextBlock>
-            <Button x:Name="BrowseButton" Grid.Column="1" Content="{loc:Text Xaml.Browse2}">
+            <Button x:Name="BrowseButton" Grid.Column="1">
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource BrowseButton}">
                         <Style.Triggers>
