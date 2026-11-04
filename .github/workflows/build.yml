@@ -126,12 +126,12 @@ jobs:
         shell: pwsh
         run: |
           $scenes = @(
-            @('--language', 'es', '--output', 'artifacts/store/home-es.png'),
-            @('--tab', '1', '--language', 'es', '--output', 'artifacts/store/design-es.png'),
-            @('--tab', '2', '--language', 'es', '--output', 'artifacts/store/preview-es.png'),
-            @('--tab', '3', '--language', 'es', '--output', 'artifacts/store/export-es.png'),
-            @('--tab', '4', '--language', 'es', '--output', 'artifacts/store/burn-es.png'),
-            @('--tab', '5', '--language', 'es', '--output', 'artifacts/store/calibration-es.png'),
+            @('--width', '1044', '--language', 'es', '--output', 'artifacts/store/home-es.png'),
+            @('--width', '1044', '--tab', '1', '--language', 'es', '--output', 'artifacts/store/design-es.png'),
+            @('--width', '1044', '--tab', '2', '--language', 'es', '--output', 'artifacts/store/preview-es.png'),
+            @('--width', '1044', '--tab', '3', '--language', 'es', '--output', 'artifacts/store/export-es.png'),
+            @('--width', '1044', '--tab', '4', '--language', 'es', '--output', 'artifacts/store/burn-es.png'),
+            @('--width', '1044', '--tab', '5', '--language', 'es', '--output', 'artifacts/store/calibration-es.png'),
             @('--project-dialog', 'new', '--language', 'es', '--output', 'artifacts/store/new-project-es.png'),
             @('--settings-dialog', '--settings-view', 'about', '--language', 'es', '--output', 'artifacts/store/about-es.png'),
             @('--settings-dialog', '--language', 'es', '--output', 'artifacts/store/settings-es.png'),
