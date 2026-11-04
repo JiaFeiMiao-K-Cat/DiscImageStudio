@@ -191,6 +191,7 @@ if [[ "$MAKE_DMG" -eq 1 ]]; then
 
   note ""
   note "==> 创建拖动安装 DMG"
+  df -h "$OUTPUT_DIR" | tail -n 1 || true
   # ditto 保留签名与扩展属性；Applications 符号链接用于拖入 /Applications。
   ditto "$APP_PATH" "$STAGE/$(basename "$APP_PATH")"
   ln -s /Applications "$STAGE/Applications"

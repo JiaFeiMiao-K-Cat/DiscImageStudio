@@ -133,6 +133,15 @@ jobs:
                (env.APPLE_API_KEY_PATH != '' && env.APPLE_API_KEY_ID != '' && env.APPLE_API_ISSUER_ID != '')) }}
         run: macos/scripts/notarize.sh --app macos/build/DiscImageStudio.app
 
+      # hdiutil 在 runner 上创建临时镜像需要额外空间；.build 与 CLI 发布目录
+      # 在 .app 组装完成后已不再需要（CLI 已内置），先清掉避免 "No space left"。
+      - name: Free disk space for the DMG
+        run: |
+          set -euo pipefail
+          df -h /
+          rm -rf macos/.build macos/build/cli
+          df -h /
+
       # 生成 zip + 拖动安装 DMG；有 MACOS_SIGN_IDENTITY 时 package-app.sh 会用
       # Developer ID 给 DMG 签名，随后对 DMG 单独公证并 stapling。
       - name: Package the .app (zip + DMG)
