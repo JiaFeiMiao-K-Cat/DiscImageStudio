@@ -31,6 +31,7 @@ macOS 客户端（`macos/`，SwiftPM 包）与 Windows 桌面版是**同一套�
 ![导出页：输出设置与结果](images/macos-export.png)
 ![刻录页：流式模式、速度与校验选项](images/macos-burn.png)
 ![刻录中：实时进度与日志](images/macos-burn-active.png)
+![刻录完成：31 分 52 秒，100%](images/macos-burn-complete.png)
 
 ![标定页：标靶生成与三步向导](images/macos-calibration.png)
 
