@@ -191,6 +191,31 @@ def check_streaming(executable: Path, work: Path) -> None:
     if (work / "-").exists():
         raise ValueError('"--iso-output -" created a file literally named "-"')
 
+    # Hybrid DVD (data-dir) streams the ISO9660/Joliet prefix, the raw drawing
+    # interval and the file suffix through one stdout pipe.
+    dvd_files = work / "dvd-files"
+    (dvd_files / "sub").mkdir(parents=True, exist_ok=True)
+    (dvd_files / "a.txt").write_text("hello", encoding="utf-8")
+    (dvd_files / "sub" / "b.txt").write_text("world", encoding="utf-8")
+    dvd_hybrid = subprocess.run(
+        [executable, "solve", "--image", "input image.png", "--iso-output", "-",
+         "--total-sectors", "160", "--data-dir", str(dvd_files),
+         "--file-position", "inner", "--fast-output", "true", "--algorithm", "dispersion"],
+        cwd=work, capture_output=True)
+    if dvd_hybrid.returncode != 0:
+        raise ValueError(
+            f"hybrid solve --iso-output - failed with {dvd_hybrid.returncode}: "
+            f"{dvd_hybrid.stderr.decode('utf-8', 'replace')}")
+    if len(dvd_hybrid.stdout) != 160 * 2048:
+        raise ValueError(
+            f"hybrid solve stdout wrote {len(dvd_hybrid.stdout)} bytes, expected {160 * 2048}")
+    if b"hybrid ISO" not in dvd_hybrid.stderr:
+        raise ValueError("hybrid solve stdout did not report its layout on stderr")
+    if b"DVD command solve completed" in dvd_hybrid.stdout:
+        raise ValueError("hybrid solve mixed the CLI summary into stdout")
+    if not any(dvd_hybrid.stdout[:32768]) and not any(dvd_hybrid.stdout[32768:]):
+        raise ValueError("hybrid solve stdout is empty")
+
 
 def check_png(path: Path, size: int, height=None) -> None:
     expected_height = size if height is None else height

@@ -325,7 +325,7 @@ macOS 侧不引入第三方刻录库，只使用系统自带的 DiscRecording（
 | 路径 | 实现 | 覆盖范围 | 状态 |
 | --- | --- | --- | --- |
 | 文件模式 | CLI 生成镜像或音轨文件 → `/usr/bin/drutil` 写入 | CD-DA 音频、CD/DVD 数据镜像 | 可用 |
-| 流式模式 | GUI 用当前工程生成，内置助手 `Contents/Resources/bin/disc-burn-stream` 读取 CLI 的 stdout 管道，用 DRTrack producer + DRBurn 写入 | CD-DA、DVD 数据（无随盘文件）、BD 数据；带随盘文件的 DVD 走文件模式 | 实验性 |
+| 流式模式 | GUI 用当前工程生成，内置助手 `Contents/Resources/bin/disc-burn-stream` 读取 CLI 的 stdout 管道，用 DRTrack producer + DRBurn 写入 | CD-DA、DVD 数据（含随盘文件）、BD 数据 | 实验性 |
 
 ```mermaid
 flowchart LR
@@ -575,7 +575,7 @@ macos/build/DiscImageStudio.app/Contents/Resources/bin/disc-burn-stream --list-d
 ## 已知限制
 
 - **实验性**：与上游发布说明一致，macOS/Linux CLI 及本图形界面均为实验性功能，行为可能随版本变化。
-- **刻录覆盖范围有限**：文件模式复用系统 `drutil`，可写 CD-DA、CD/DVD 数据镜像，并实验性写入 BD 数据镜像（`drutil` 的 BD 路径与 DiscRecording BDDAO 同源，但 Apple 未在 man 中承诺，未实机验证）；流式模式（`disc-burn-stream`）覆盖 CD-DA、DVD 数据与实验性 BD-R（`--kind bd-data`）。BD 两条路径都没有实机验证；带随盘文件的 DVD 走文件模式；建议只使用可报废 BD-R，失败时改用第三方软件。刻录属于实验性功能，只能使用空白或可报废介质。
+- **刻录覆盖范围有限**：文件模式复用系统 `drutil`，可写 CD-DA、CD/DVD 数据镜像，并实验性写入 BD 数据镜像（`drutil` 的 BD 路径与 DiscRecording BDDAO 同源，但 Apple 未在 man 中承诺，未实机验证）；流式模式（`disc-burn-stream`）覆盖 CD-DA、DVD 数据与实验性 BD-R（`--kind bd-data`）。BD 两条路径都没有实机验证；建议只使用可报废 BD-R，失败时改用第三方软件。刻录属于实验性功能，只能使用空白或可报废介质。
 - **随盘文件工程的投影范围是近似值**：DVD `calibrate` 需要显式的绘图起止（`--lba/--fill-sectors`），当前 GUI 固定按整盘（0..总扇区）预览；BD `bd-preview` 同样固定整盘绘图区间。未选择随盘文件时与真实生成完全一致，选择文件夹后预览的文件区高亮可能偏大，以导出后的成品读回为准。
 - **标定不内置自动环数识别**：粗调需人工沿黑白分界描点，精调需人工沿一条径向曲线描点；没有「密集环相位自动提取」，也不自动识别同心圆。
 - **标定需要实机刻录与拍摄**：自动化只能覆盖图案生成、矫正与拟合算法；真实盘面可见度、镜头状态与描点精度需人工确认。

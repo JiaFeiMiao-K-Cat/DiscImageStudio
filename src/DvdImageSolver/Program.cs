@@ -442,15 +442,6 @@ internal static class Program
             throw new ArgumentException($"--{unsupportedOption} is not supported with multi-block --fill-sectors.");
         }
 
-        if (streamOutput)
-        {
-            if (hybridMode)
-            {
-                throw new ArgumentException(
-                    "--iso-output - streams a raw fill image and is not supported with --data-dir.");
-            }
-        }
-
         if (hybridMode && (arguments.Has("lba") || arguments.Has("fill-sectors")))
         {
             throw new ArgumentException(
@@ -552,11 +543,14 @@ internal static class Program
                     "The filesystem leaves no complete ECC Block for drawing in the selected file layout.");
             }
 
-            hybridIso = HybridIsoImageWriter.Create(isoLayout, isoOutputPath);
+            if (!streamOutput)
+            {
+                hybridIso = HybridIsoImageWriter.Create(isoLayout, isoOutputPath);
+            }
 
             Console.WriteLine(
-                $"hybrid ISO: files={hybridIso.FileCount}, directories={hybridIso.DirectoryCount}, "
-                + $"data={hybridIso.FileBytes} bytes, filesystem end LBA={hybridIso.DataEndLbaExclusive}, "
+                $"hybrid ISO: files={isoLayout.FileCount}, directories={isoLayout.DirectoryCount}, "
+                + $"data={isoLayout.FileBytes} bytes, filesystem end LBA={isoLayout.DataEndLbaExclusive}, "
                 + $"files={(filesAtOuterRing ? "outer" : "inner")}, drawing LBA {lba}..{lba + fillSectors - 1}");
             if (!fastOutput)
             {
@@ -596,7 +590,7 @@ internal static class Program
             arguments.GetInt("batch-candidates", 4),
             arguments.GetInt("search-lanes", 1),
             arguments.GetInt("fast-parallelism", 0),
-            PreserveExistingIso: hybridMode);
+            PreserveExistingIso: hybridMode && !streamOutput);
         int totalBlocks = checked((int)(fillSectors / DvdEccBlockEncoder.SectorCount));
         int progressEvery = Math.Max(1, totalBlocks / 100);
         if (fastOutput)
@@ -785,6 +779,18 @@ internal static class Program
         return outer;
     }
 
+    private static void WriteZeros(Stream output, long count)
+    {
+        if (count <= 0) return;
+        byte[] buffer = new byte[256 * 1024];
+        while (count > 0)
+        {
+            int chunk = (int)Math.Min(buffer.Length, count);
+            output.Write(buffer, 0, chunk);
+            count -= chunk;
+        }
+    }
+
     private static int WriteFastDispersionImage(
         CliArguments arguments,
         string isoOutputPath,
@@ -794,16 +800,33 @@ internal static class Program
     {
         if (isoOutputPath == "-")
         {
-            if (hybridIso is not null)
-            {
-                throw new ArgumentException("--iso-output - is not supported with --data-dir.");
-            }
-            if (options.StartLba != 0)
+            bool hybrid = arguments.Has("data-dir");
+            if (!hybrid && options.StartLba != 0)
             {
                 throw new ArgumentException("--iso-output - requires --lba 0 so the stream starts at sector 0.");
             }
 
             using Stream stdout = Console.OpenStandardOutput();
+            HybridIsoImageWriter.LayoutPlan? layout = null;
+            bool filesAtOuterRing = false;
+            if (hybrid)
+            {
+                filesAtOuterRing = ReadFilesAtOuterRing(arguments);
+                layout = HybridIsoImageWriter.Plan(
+                    arguments.Require("data-dir"),
+                    options.ImageMapping.TotalSectors,
+                    arguments.Get("volume-label", "DVD_IMAGE"),
+                    filesAtOuterRing);
+                if (filesAtOuterRing)
+                {
+                    HybridIsoImageWriter.WriteOuterRingPrefix(layout, stdout, options.StartLba);
+                }
+                else
+                {
+                    HybridIsoImageWriter.WriteSequentialPrefix(layout, stdout, options.StartLba);
+                }
+            }
+
             FastDvdStreamSummary summary = FastDispersionImageWriter.WriteStream(
                 arguments.Require("image"),
                 stdout,
@@ -825,6 +848,22 @@ internal static class Program
                     }
                 },
                 CancellationToken.None);
+
+            if (layout is not null)
+            {
+                uint drawingEndLba = checked(options.StartLba + options.FillSectors);
+                if (filesAtOuterRing)
+                {
+                    HybridIsoImageWriter.WriteOuterRingSuffix(layout, stdout, drawingEndLba);
+                }
+                else
+                {
+                    long written = (long)drawingEndLba * IsoImageWriter.LogicalSectorBytes;
+                    long total = (long)options.ImageMapping.TotalSectors * IsoImageWriter.LogicalSectorBytes;
+                    WriteZeros(stdout, total - written);
+                }
+            }
+
             stdout.Flush();
             double streamMebibytes = summary.BytesWritten / (1024.0 * 1024.0);
             double streamRate = summary.Elapsed.TotalSeconds <= 0

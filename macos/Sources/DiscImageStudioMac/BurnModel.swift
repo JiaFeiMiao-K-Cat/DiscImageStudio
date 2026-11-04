@@ -326,9 +326,7 @@ final class BurnModel {
         case .bd:
             return .bdData
         case .dvd:
-            // solve --iso-output - 目前流式输出 raw fill（无随盘文件）；
-            // 带 --data-dir 的混合 ISO 走文件模式。
-            return document.outputs.hasBundledFiles ? nil : .dvdData
+            return .dvdData
         }
     }
 
@@ -347,9 +345,6 @@ final class BurnModel {
             }
             return nil
         case .dvd:
-            if document.outputs.hasBundledFiles {
-                return "带随盘文件的 DVD 需要先生成混合 ISO；流式写入使用文件模式。"
-            }
             return nil
         case .bd:
             return nil
