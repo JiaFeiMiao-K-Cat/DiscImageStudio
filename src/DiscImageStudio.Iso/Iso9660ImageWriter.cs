@@ -13,6 +13,7 @@ public static class Iso9660ImageWriter
     private const uint TerminatorLba = 18;
     private const uint FirstMetadataLba = 19;
     private const int MaximumPrimaryIdentifierCharacters = 31;
+    private const int MaximumPreservedExtensionCharacters = 8;
     private const int MaximumJolietIdentifierCharacters = 60;
 
     public sealed class LayoutPlan
@@ -332,29 +333,29 @@ public static class Iso9660ImageWriter
             HashSet<string> jolietUsed = new(StringComparer.OrdinalIgnoreCase);
             foreach (IsoNode child in directory.Children)
             {
+                // File names are normalized in full so MakeUnique can keep their
+                // extension when it shortens them; directories have no extension.
                 string primaryBase = NormalizePrimaryIdentifier(
                     child.Name,
-                    child.IsDirectory
-                        ? MaximumPrimaryIdentifierCharacters
-                        : MaximumPrimaryIdentifierCharacters - 2,
+                    child.IsDirectory ? MaximumPrimaryIdentifierCharacters : int.MaxValue,
                     child.IsDirectory ? "DIRECTORY" : "FILE");
                 child.PrimaryIdentifier = MakeUnique(
                     primaryBase,
                     primaryUsed,
                     child.IsDirectory ? string.Empty : ";1",
-                    MaximumPrimaryIdentifierCharacters);
+                    MaximumPrimaryIdentifierCharacters,
+                    preserveExtension: !child.IsDirectory);
 
                 string jolietBase = NormalizeJolietIdentifier(
                     child.Name,
-                    child.IsDirectory
-                        ? MaximumJolietIdentifierCharacters
-                        : MaximumJolietIdentifierCharacters - 2,
+                    child.IsDirectory ? MaximumJolietIdentifierCharacters : int.MaxValue,
                     child.IsDirectory ? "Directory" : "File");
                 child.JolietIdentifier = MakeUnique(
                     jolietBase,
                     jolietUsed,
                     child.IsDirectory ? string.Empty : ";1",
-                    MaximumJolietIdentifierCharacters);
+                    MaximumJolietIdentifierCharacters,
+                    preserveExtension: !child.IsDirectory);
             }
         }
     }
@@ -667,9 +668,10 @@ public static class Iso9660ImageWriter
         string baseName,
         HashSet<string> used,
         string suffix,
-        int maximumCharacters)
+        int maximumCharacters,
+        bool preserveExtension)
     {
-        string candidate = Truncate(baseName, maximumCharacters - suffix.Length) + suffix;
+        string candidate = Fit(baseName, string.Empty, maximumCharacters - suffix.Length, preserveExtension) + suffix;
         if (used.Add(candidate))
         {
             return candidate;
@@ -678,11 +680,7 @@ public static class Iso9660ImageWriter
         for (int index = 2; index < 1_000_000; index++)
         {
             string discriminator = $"~{index}";
-            candidate = Truncate(
-                baseName,
-                maximumCharacters - suffix.Length - discriminator.Length)
-                + discriminator
-                + suffix;
+            candidate = Fit(baseName, discriminator, maximumCharacters - suffix.Length, preserveExtension) + suffix;
             if (used.Add(candidate))
             {
                 return candidate;
@@ -690,6 +688,26 @@ public static class Iso9660ImageWriter
         }
 
         throw new ArgumentException($"Too many colliding ISO identifiers derived from '{baseName}'.");
+    }
+
+    /// <summary>Shortens the stem rather than the extension and places the discriminator
+    /// before the extension, so a renamed file still opens with the same application.
+    /// Names without a short extension are truncated as before.</summary>
+    private static string Fit(string name, string discriminator, int maximumCharacters, bool preserveExtension)
+    {
+        int dot = preserveExtension ? name.LastIndexOf('.') : -1;
+        int extensionLength = dot > 0 ? name.Length - dot : 0;
+        int stemCharacters = maximumCharacters - discriminator.Length - extensionLength;
+        if (extensionLength > 1 && extensionLength <= MaximumPreservedExtensionCharacters && stemCharacters > 0)
+        {
+            string stem = Truncate(name[..dot], stemCharacters).TrimEnd('.', ' ');
+            if (stem.Length > 0)
+            {
+                return stem + discriminator + name[dot..];
+            }
+        }
+
+        return Truncate(name, maximumCharacters - discriminator.Length) + discriminator;
     }
 
     private static void ValidateSourceFile(IsoNode file)
@@ -705,7 +723,7 @@ public static class Iso9660ImageWriter
         int maximumLength,
         string fallback)
     {
-        StringBuilder result = new(maximumLength);
+        StringBuilder result = new(Math.Min(maximumLength, value.Length));
         foreach (char character in value.Normalize(NormalizationForm.FormKC).ToUpperInvariant())
         {
             char normalized = character is >= 'A' and <= 'Z'
@@ -730,7 +748,7 @@ public static class Iso9660ImageWriter
         int maximumLength,
         string fallback)
     {
-        StringBuilder result = new(maximumLength);
+        StringBuilder result = new(Math.Min(maximumLength, value.Length));
         foreach (char character in value.Normalize(NormalizationForm.FormC))
         {
             char normalized = character is '\0' or '/' or '\\' or ':' or ';'
