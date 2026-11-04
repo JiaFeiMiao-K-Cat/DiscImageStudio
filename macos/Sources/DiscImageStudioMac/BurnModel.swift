@@ -60,6 +60,8 @@ final class BurnModel {
     var streamWasCancelled = false
     /// 流式刻录速度倍数；nil 表示交给驱动器自动（通常最高），默认 2×。
     var streamSpeed: Double? = 2
+    /// 写入后重读校验；默认关闭，避免把可读的盘因驱动器读错误报成失败。
+    var streamVerify = false
     /// 成功后是否弹出光盘；失败/取消时助手不会弹盘。
     var streamEject = true
     private(set) var streamPlan: StreamBurnPlan?
@@ -464,7 +466,7 @@ final class BurnModel {
                 sectors: sectors,
                 drive: drive,
                 speed: streamSpeed,
-                verify: true,
+                verify: streamVerify,
                 eject: streamEject,
                 test: false
             )
@@ -508,6 +510,19 @@ final class BurnModel {
             case .system: stream = .system
             }
             streamLogLines.append(LogLine(stream: stream, text: line.text, timestamp: line.timestamp))
+            if line.source == .cli,
+               streamPlan?.kind == .dvdData,
+               let fraction = Self.parseBlockProgress(line.text) {
+                // DVD's helper does not always emit percent:, so use the
+                // generation position as a fallback. Never use it for BD: the
+                // generator runs far ahead of the laser and would jump to 99%.
+                if fraction > (streamProgress ?? 0) {
+                    streamProgress = min(fraction, 0.999)
+                }
+                if streamStage == nil {
+                    streamStage = L("正在生成并写入…")
+                }
+            }
         case .progress(let progress):
             streamProgress = progress.fraction
             switch progress.state {
@@ -644,5 +659,16 @@ final class BurnModel {
 
     private func appendSystem(_ text: String) {
         logLines.append(LogLine(stream: .system, text: text))
+    }
+
+    private static func parseBlockProgress(_ text: String) -> Double? {
+        guard let blockRange = text.range(of: "block ") else { return nil }
+        let rest = text[blockRange.upperBound...]
+        guard let slash = rest.firstIndex(of: "/") else { return nil }
+        let doneText = rest[..<slash].trimmingCharacters(in: .whitespaces)
+        let tail = rest[rest.index(after: slash)...]
+        let totalText = tail.prefix { $0.isNumber }
+        guard let done = Int(doneText), let total = Int(totalText), total > 0 else { return nil }
+        return min(max(Double(done) / Double(total), 0), 1)
     }
 }

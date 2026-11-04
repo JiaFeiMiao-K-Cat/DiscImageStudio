@@ -1888,3 +1888,4 @@
 "文件模式（drutil）不支持蓝光写入；BD 请使用流式模式（MMC），或生成 ISO 后用第三方工具。" = "File mode (drutil) does not support Blu-ray; use streaming mode (MMC) for BD, or generate an ISO and burn it with a third-party tool.";
 "蓝光介质：文件模式不支持，请改用流式模式（MMC）。" = "Blu-ray media: file mode is not supported; use streaming mode (MMC).";
 "流式写入会直接消耗盘片且不可撤销；首次使用请用可报废 CD-R / BD-R。CD/DVD 也可改用文件模式；BD 只支持流式模式。" = "Streaming writes consume the disc irreversibly; use expendable CD-R / BD-R first. CD/DVD can also use file mode; BD supports streaming only.";
+"写入后校验（重读整张盘，较慢）" = "Verify after writing (reads the whole disc back; slow)";

@@ -502,6 +502,7 @@ disc-burn-stream（Objective-C + DiscRecording：DRTrack producer + DRBurn）
 ### 5.3 边界与安全
 
 - 两条路径都只接受空白盘；GUI 在刻录前展示 `drutil status` / helper 报告的介质信息并要求用户确认。
+- 流式默认不启用写后校验；`--no-verify` 由 GUI 默认传入，需要校验时显式开启，校验失败不会被当作写入失败重烧。
 - 流式模式覆盖 CD-DA、DVD 数据（`solve --iso-output -`，含随盘文件的混合 ISO）与 BD-R SRM 数据（`bd-data`：2048 B 块，IOKit MMC `WRITE(10)`）；GUI 直接用当前工程生成并刻录。BD 已在 MATSHITA UJ260AF + 25GB BD-R 上 4× 实测通过，其他驱动器/BD-RE/多层仍需验证。
 - 没有刻录机或没有空白盘时，两条路径都必须给出明确提示，而不是静默失败。
 

@@ -23,6 +23,7 @@
 - macOS 刻录页新增流式「生成并刻录」：CD 音频、DVD 数据（含随盘文件的混合 ISO）与 BD 数据盘可直接从当前工程生成并写入，CLI `--output -` / `solve --iso-output -` 与 `disc-burn-stream` 管道直连，带进度、日志与取消。
 - macOS 流式刻录日志改为 POSIX `read` 逐块读取，不再按 8 KB 批量刷新；增加速度选择（1×/2×/4×/8×/自动，默认 2×）和“成功后弹盘/失败保留”策略。
 - 限制流式进度输出频率（helper 每个百分点、CLI 每秒/每 1%），避免 stderr 管道和 GUI 被每块日志拖慢；BD 文件模式改为明确提示使用流式模式。
+- 流式默认关闭写后校验（可勾选「写入后校验」）；修复 DVD 校验读错误把已可读的盘报成失败。
 - macOS GUI 支持简体中文与英文界面：文案放入 `macos/Localization/{en,zh-Hans}.lproj`，跟随系统语言；动态字符串改用 `L("格式 %@", …)`，`build-app.sh` 把 `.lproj` 打包进 `Contents/Resources`。
 - macOS 预设导入/保存：主页「导入预设…」合并 schema 4 JSON 到用户 `disc-presets.json`；标定页「保存为预设…」把应用后的实测几何写成模板；新增 CLI `presets-import`。
 

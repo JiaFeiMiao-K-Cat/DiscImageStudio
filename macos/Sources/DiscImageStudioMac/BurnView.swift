@@ -12,6 +12,7 @@ struct BurnView: View {
     @State private var showsConfirmation = false
     @State private var streamAcknowledged = false
     @State private var streamEject = true
+    @State private var streamVerify = false
 
     var body: some View {
         ScrollView {
@@ -625,6 +626,10 @@ struct BurnView: View {
                     .insetSurface()
                 }
 
+                Toggle("写入后校验（重读整张盘，较慢）", isOn: $streamVerify)
+                    .toggleStyle(.checkbox)
+                    .font(.system(size: 12.5, weight: .medium))
+
                 Toggle("完成后弹出光盘", isOn: $streamEject)
                     .toggleStyle(.checkbox)
                     .font(.system(size: 12.5, weight: .medium))
@@ -651,6 +656,7 @@ struct BurnView: View {
                     } else {
                         Button {
                             burnModel.streamEject = streamEject
+                            burnModel.streamVerify = streamVerify
                             Task { await burnModel.startStreamingBurn() }
                         } label: {
                             Label("生成并刻录", systemImage: "play.circle.fill")
