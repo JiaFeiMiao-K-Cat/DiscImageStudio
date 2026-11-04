@@ -363,6 +363,7 @@ int DRRunBdMmcBurn(DRStreamOptions *options) {
     }
 
     EmitState(@"writing");
+    double lastPercent = -1.0;
     for (uint32_t lba = 0; lba < sectors; lba += sectorsPerWrite) {
         size_t filled = 0;
         while (filled < bytesPerWrite) {
@@ -401,7 +402,13 @@ int DRRunBdMmcBurn(DRStreamOptions *options) {
         }
         uint64_t completed = (uint64_t)(lba + sectorsPerWrite) * 2048;
         uint64_t total = (uint64_t)sectors * 2048;
-        EmitPercent((double)completed / (double)total * 100.0);
+        double percent = (double)completed / (double)total * 100.0;
+        // Emitting one percent line per 128 KiB write floods stderr and slows
+        // both the helper and the GUI. One line per percentage point is enough.
+        if (percent >= lastPercent + 1.0 || completed == total) {
+            EmitPercent(percent);
+            lastPercent = percent;
+        }
     }
     free(buffer);
 

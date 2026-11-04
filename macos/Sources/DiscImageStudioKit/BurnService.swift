@@ -120,7 +120,7 @@ public enum BurnError: Error, Sendable, LocalizedError, Equatable {
         case .mediaNotWritable(let reason):
             return "当前盘片不可写入：\(reason)"
         case .bluRayUnsupported:
-            return "蓝光介质只能刻录数据镜像（实验性）；音频 CD 请使用 CD-R。未实机验证，请使用可报废的 BD-R。"
+            return "文件模式（drutil）不支持蓝光写入；BD 请使用流式模式（MMC），或生成 ISO 后用第三方工具。"
         case .drutilFailed(let reason):
             return "drutil 执行失败：\(reason)"
         }
@@ -205,8 +205,9 @@ public struct BurnService: Sendable {
 
         if let status {
             guard status.isPresent else { throw BurnError.noMedia }
-            if status.isBluRay && kind == .audioCD {
-                throw BurnError.mediaNotWritable("蓝光介质不能刻录音频 CD；请改用数据镜像（.iso）。")
+            if status.isBluRay {
+                // drutil has no BD write path; the macOS app streams BD through MMC.
+                throw BurnError.bluRayUnsupported
             }
             if !status.isProbablyBlank {
                 throw BurnError.mediaNotWritable("检测到已有轨道或会话，疑似非空白盘。请改用空白盘片。")

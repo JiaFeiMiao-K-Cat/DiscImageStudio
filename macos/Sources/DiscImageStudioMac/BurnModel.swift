@@ -196,11 +196,11 @@ final class BurnModel {
         guard let kind = sourceKind else {
             return L("不支持直接刻录该文件类型。可刻录 .wav（音频 CD）或 .iso / .dmg / .cue / .bin / .toc（数据盘）。")
         }
+        if status.isBluRay {
+            return L("BD 请使用流式模式；文件模式（drutil）不支持蓝光写入。")
+        }
         if kind == .audioCD, !mediaType.uppercased().hasPrefix("CD") {
             return L("音频 CD 需要空白 CD-R；当前介质是 %@。", String(mediaType))
-        }
-        if status.isBluRay, kind != .dataImage {
-            return L("蓝光介质只能刻录数据镜像（.iso）；音频 CD 请使用 CD-R。")
         }
         return nil
     }
@@ -223,7 +223,7 @@ final class BurnModel {
         guard let status = mediaStatus else { return L("尚未读取介质状态。") }
         if !status.isPresent { return L("刻录机里没有光盘。") }
         if status.isBluRay {
-            return L("蓝光介质：可尝试数据镜像刻录（实验性，未经实机验证）；音频 CD 不受支持，失败请换用第三方软件。")
+            return L("蓝光介质：文件模式不支持，请改用流式模式（MMC）。")
         }
         if !status.isProbablyBlank { return L("非空白盘：检测到已有轨道或会话，已禁止刻录。") }
         return L("空白 %@，可以刻录。", String(status.mediaType ?? L("光盘")))

@@ -87,14 +87,30 @@ internal static class ConsoleModuleRunner
     private sealed class ConsoleProgress : IProgress<DiscJobProgress>
     {
         private readonly bool _standardError;
+        private double _lastFraction = -1;
+        private long _lastTick;
 
         internal ConsoleProgress(bool standardError) => _standardError = standardError;
 
         public void Report(DiscJobProgress value)
         {
             if (string.IsNullOrWhiteSpace(value.Message)) return;
-            if (_standardError) Console.Error.WriteLine(value.Message);
-            else Console.WriteLine(value.Message);
+            if (_standardError)
+            {
+                // BD/DVD streaming emits one progress message per block; writing
+                // every line blocks the pipe and the GUI. One line per percent or
+                // per second is enough.
+                long now = Environment.TickCount64;
+                if (value.Fraction < _lastFraction + 0.01 && now - _lastTick < 1000) return;
+                _lastFraction = value.Fraction;
+                _lastTick = now;
+                Console.Error.WriteLine(value.Message);
+                Console.Error.Flush();
+            }
+            else
+            {
+                Console.WriteLine(value.Message);
+            }
         }
     }
 }

@@ -633,7 +633,7 @@ struct BurnView: View {
                     .toggleStyle(.checkbox)
                     .font(.system(size: 12.5, weight: .medium))
 
-                Text("流式写入会直接消耗盘片且不可撤销；首次使用请用可报废 CD-R / BD-R，失败时改用文件模式或第三方软件。")
+                Text("流式写入会直接消耗盘片且不可撤销；首次使用请用可报废 CD-R / BD-R。CD/DVD 也可改用文件模式；BD 只支持流式模式。")
                     .font(Typography.caption2)
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
