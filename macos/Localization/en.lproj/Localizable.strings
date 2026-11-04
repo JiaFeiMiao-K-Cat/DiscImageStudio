@@ -38,7 +38,6 @@
 "第三方声明" = "Third-party notices";
 
 /* AboutView.swift:142 */
-"macOS 图形界面为实验性功能，当前不包含物理刻录；生成的镜像需要配合 hdiutil / drutil 等工具使用。" = "The macOS graphical interface is experimental and does not include physical burning; use the generated images with tools such as hdiutil / drutil.";
 
 /* AboutView.swift:147 */
 "Copyright © Disc Image Studio contributors. 在 GPL-3.0-or-later 下分发。" = "Copyright © Disc Image Studio contributors. Distributed under GPL-3.0-or-later.";
@@ -1862,3 +1861,13 @@
 "跟随系统" = "Follow system";
 "浅色" = "Light";
 "深色" = "Dark";
+"macOS 图形界面跟随上游持续开发：支持 CD/DVD/BD 的镜像生成、预览、文件模式与实验性流式刻录；流式与 BD 路径尚未实机验证，请使用可报废介质。" = "The macOS GUI tracks upstream: it supports CD/DVD/BD image generation, preview, file-mode burning, and experimental streaming burn. Streaming and BD paths have not been verified on hardware; use expendable media.";
+"环境变量" = "Environment variable";
+"自定义路径" = "Custom path";
+"App 内置" = "Bundled with app";
+"PATH 中的 CLI" = "CLI on PATH";
+"设置中的 CLI" = "CLI from settings";
+"环境变量 DIS_IMAGE_STUDIO_CLI" = "DIS_IMAGE_STUDIO_CLI environment variable";
+"App 内置 CLI" = "Bundled CLI";
+"PATH" = "PATH";
+"dotnet run" = "dotnet run";

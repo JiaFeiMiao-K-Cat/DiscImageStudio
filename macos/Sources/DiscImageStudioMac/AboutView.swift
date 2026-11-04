@@ -65,7 +65,7 @@ struct AboutView: View {
                 if let cli = model.resolvedCli {
                     GridRow(alignment: .firstTextBaseline) {
                         label(L("运行方式"))
-                        Text(cli.label)
+                        Text(L(cli.label))
                             .font(.system(size: 11.5))
                     }
                     GridRow(alignment: .firstTextBaseline) {
@@ -139,7 +139,7 @@ struct AboutView: View {
 
     private var footer: some View {
         VStack(spacing: Spacing.xxs) {
-            Text("macOS 图形界面为实验性功能，当前不包含物理刻录；生成的镜像需要配合 hdiutil / drutil 等工具使用。")
+            Text("macOS 图形界面跟随上游持续开发：支持 CD/DVD/BD 的镜像生成、预览、文件模式与实验性流式刻录；流式与 BD 路径尚未实机验证，请使用可报废介质。")
                 .font(Typography.caption2)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)

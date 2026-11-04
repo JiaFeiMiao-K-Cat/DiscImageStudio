@@ -411,7 +411,7 @@ struct SettingsView: View {
             Grid(alignment: .leading, horizontalSpacing: Spacing.l, verticalSpacing: Spacing.xs) {
                 GridRow(alignment: .firstTextBaseline) {
                     catalogLabel(L("CLI 来源"))
-                    Text(model.resolvedCli?.label ?? "未知")
+                    Text(model.resolvedCli.map { L($0.label) } ?? L("未知"))
                         .font(.system(size: 11.5))
                 }
                 GridRow(alignment: .firstTextBaseline) {
