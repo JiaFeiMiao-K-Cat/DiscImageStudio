@@ -502,7 +502,7 @@ disc-burn-stream（Objective-C + DiscRecording：DRTrack producer + DRBurn）
 ### 5.3 边界与安全
 
 - 两条路径都只接受空白盘；GUI 在刻录前展示 `drutil status` / helper 报告的介质信息并要求用户确认。
-- 流式模式覆盖 CD-DA、DVD 数据与实验性 BD-R（`bd-data`：2048 B 块、`kDRBurnStrategyBDDAO`、BD 1×=4496 KB/s）。BD 路径未经实机验证，GUI 的流式刻录尚未接线，文档统一标注为实验性。
+- 流式模式覆盖 CD-DA、DVD 数据（`solve --iso-output -`，无随盘文件）与实验性 BD 数据（`bd-data`：2048 B 块、`kDRBurnStrategyBDDAO`、BD 1×=4496 KB/s）；GUI 直接用当前工程生成并刻录，带随盘文件的 DVD 走文件模式。BD 路径未经实机验证，文档统一标注为实验性。
 - 没有刻录机或没有空白盘时，两条路径都必须给出明确提示，而不是静默失败。
 
 ## 六、并行边界

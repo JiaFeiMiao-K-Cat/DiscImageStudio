@@ -164,6 +164,33 @@ def check_streaming(executable: Path, work: Path) -> None:
     if (work / "-").exists():
         raise ValueError('"--output -" created a file literally named "-"')
 
+    dvd_stream = subprocess.run(
+        [executable, "solve", "--image", "input image.png", "--iso-output", "-",
+         "--total-sectors", "160", "--fill-sectors", "160",
+         "--fast-output", "true", "--algorithm", "dispersion"],
+        cwd=work, capture_output=True)
+    if dvd_stream.returncode != 0:
+        raise ValueError(
+            f"solve --iso-output - failed with {dvd_stream.returncode}: "
+            f"{dvd_stream.stderr.decode('utf-8', 'replace')}")
+    if len(dvd_stream.stdout) != 160 * 2048:
+        raise ValueError(
+            f"solve --iso-output - wrote {len(dvd_stream.stdout)} bytes, expected {160 * 2048}")
+    if b"Running DVD" in dvd_stream.stdout or b"DVD command solve completed" in dvd_stream.stdout:
+        raise ValueError("solve --iso-output - mixed log text into the binary stream")
+    if b"DVD command solve completed" not in dvd_stream.stderr:
+        raise ValueError("solve --iso-output - did not write its summary to stderr")
+
+    subprocess.run(
+        [executable, "solve", "--image", "input image.png", "--iso-output", "dvd-stream.iso",
+         "--total-sectors", "160", "--fill-sectors", "160",
+         "--fast-output", "true", "--algorithm", "dispersion"],
+        cwd=work, check=True, capture_output=True)
+    if (work / "dvd-stream.iso").read_bytes() != dvd_stream.stdout:
+        raise ValueError("stdout DVD stream differs from the ISO file output")
+    if (work / "-").exists():
+        raise ValueError('"--iso-output -" created a file literally named "-"')
+
 
 def check_png(path: Path, size: int, height=None) -> None:
     expected_height = size if height is None else height

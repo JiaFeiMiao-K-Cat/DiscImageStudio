@@ -10,6 +10,7 @@ struct BurnView: View {
 
     @Environment(\.colorScheme) private var colorScheme
     @State private var showsConfirmation = false
+    @State private var streamAcknowledged = false
 
     var body: some View {
         ScrollView {
@@ -25,7 +26,7 @@ struct BurnView: View {
                     sourceCard
                     actionCard
                 } else {
-                    streamUnavailableCard
+                    streamCard
                 }
 
                 if burnModel.isBurning || burnModel.lastResult != nil {
@@ -58,11 +59,15 @@ struct BurnView: View {
     // MARK: - 载入
 
     private func initialLoad() async {
+        burnModel.updateStreamContext(project: model.project)
         burnModel.prefillIfNeeded(model.project?.burnPrefillURL ?? model.latestBurnableOutputURL)
         if burnModel.drives.isEmpty || burnModel.mediaStatus == nil {
             await burnModel.refreshDrives()
         } else {
             await burnModel.refreshMediaStatus()
+        }
+        if burnModel.mode == .stream {
+            await burnModel.refreshStreamDrives()
         }
     }
 
@@ -121,6 +126,9 @@ struct BurnView: View {
         let selected = burnModel.mode == mode
         return Button {
             burnModel.mode = mode
+            if mode == .stream {
+                Task { await burnModel.refreshStreamDrives() }
+            }
         } label: {
             HStack(spacing: Spacing.xs) {
                 Image(systemName: mode == .file ? "doc.on.doc" : "waveform.path")
@@ -144,7 +152,7 @@ struct BurnView: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .disabled(burnModel.isBurning)
+        .disabled(burnModel.isBurning || burnModel.isStreamBurning)
         .accessibilityIdentifier(identifier)
         .accessibilityAddTraits(selected ? [.isSelected] : [])
     }
@@ -154,7 +162,7 @@ struct BurnView: View {
         case .file:
             return "调用 /usr/bin/drutil：音频 CD 会先把 WAV 放进临时目录再用 burn -audio 写入；数据盘直接 burn 镜像文件。"
         case .stream:
-            return "流式模式通过 DiscRecording 的 DRTrack producer 把 CLI 输出直接写入刻录机，不落完整镜像。"
+            return "流式模式用当前工程直接生成数据，经 DiscRecording 的 DRTrack producer 写入刻录机，不落完整镜像。当前支持 CD 音频与 BD 数据盘，实验性。"
         }
     }
 
@@ -490,44 +498,247 @@ struct BurnView: View {
         .cardSurface(padding: Spacing.l)
     }
 
-    // MARK: - 流式模式占位
+    // MARK: - 流式刻录
 
-    private var streamUnavailableCard: some View {
+    private var streamCard: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
-            if burnModel.isStreamAvailable {
-                CardHeader("流式刻录助手已就绪", systemImage: "waveform.path.ecg") {
-                    Chip(text: "实验性", systemImage: "flask", tint: .orange)
-                }
-                Text("已找到 disc-burn-stream（DiscRecording 的 DRTrack producer + DRBurn）。")
-                    .font(Typography.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("完整的流式刻录需要把生成命令（例如 cd-generate --output -）的参数接进管道；这部分尚未串联。请先使用文件模式，或等待后续版本。")
-                    .font(Typography.caption2)
-                    .foregroundStyle(.tertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-            } else {
-                CardHeader("流式刻录助手不可用", systemImage: "waveform.path.badge.minus") {
-                    Chip(text: "实验性", systemImage: "flask", tint: .orange)
-                }
+            CardHeader(
+                "从当前工程生成并刻录",
+                systemImage: "waveform.path.ecg",
+                subtitle: "生成数据直接写入刻录机，不落完整镜像。"
+            ) {
+                Chip(text: "实验性", systemImage: "flask", tint: .orange)
+            }
+
+            if !burnModel.isStreamAvailable {
                 Text(burnModel.streamUnavailableReason ?? "流式刻录助手不可用。")
                     .font(Typography.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("流式模式需要 DiscRecording 辅助程序 disc-burn-stream。文件模式已经可用：先生成 .wav 或 .iso，再切回「文件模式」用系统的 drutil 刻录。")
+                Text("流式模式需要 DiscRecording 辅助程序 disc-burn-stream。可以切回文件模式，先生成 .wav 或 .iso 再刻录。")
                     .font(Typography.caption2)
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
+                Button("切回文件模式") { burnModel.mode = .file }
+                    .controlSize(.small)
+            } else if let reason = burnModel.streamUnsupportedReason {
+                Label(reason, systemImage: "info.circle.fill")
+                    .font(Typography.caption)
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("切回文件模式") { burnModel.mode = .file }
+                    .controlSize(.small)
+            } else if let project = burnModel.streamProject {
+                Grid(alignment: .leading, horizontalSpacing: Spacing.l, verticalSpacing: Spacing.xs) {
+                    GridRow(alignment: .firstTextBaseline) {
+                        streamLabel("工程")
+                        Text(project.document.name)
+                            .font(.system(size: 12))
+                    }
+                    GridRow(alignment: .firstTextBaseline) {
+                        streamLabel("盘型")
+                        Text(streamFamilyName)
+                            .font(.system(size: 12))
+                    }
+                    GridRow(alignment: .firstTextBaseline) {
+                        streamLabel("流式类型")
+                        Text(burnModel.streamKind?.displayName ?? "—")
+                            .font(.system(size: 12))
+                    }
+                    GridRow(alignment: .firstTextBaseline) {
+                        streamLabel("扇区")
+                        Text(burnModel.streamSectors.map { "\($0)" } ?? "—")
+                            .font(Typography.monoSmall)
+                    }
+                    GridRow(alignment: .firstTextBaseline) {
+                        streamLabel("预计数据")
+                        Text(streamExpectedBytes)
+                            .font(Typography.monoSmall)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                HStack(spacing: Spacing.s) {
+                    Text("刻录机")
+                        .font(Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 64, alignment: .leading)
+                    Picker("刻录机", selection: streamDriveSelection) {
+                        ForEach(burnModel.streamDrives) { drive in
+                            Text(drive.displayName).tag(drive.index)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .frame(maxWidth: 420)
+                    .disabled(burnModel.isStreamBurning)
+                    Button {
+                        Task { await burnModel.refreshStreamDrives() }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(burnModel.isStreamBurning)
+                    .help("刷新流式刻录机与介质")
+                }
+
+                if !burnModel.streamDrives.isEmpty {
+                    Text(burnModel.streamDriveSummary)
+                        .font(Typography.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
+                Toggle("这是空白盘，且是可报废的测试介质", isOn: $streamAcknowledged)
+                    .toggleStyle(.checkbox)
+                    .font(.system(size: 12.5, weight: .medium))
+
+                Text("流式写入会直接消耗盘片且不可撤销；首次使用请用可报废 CD-R / BD-R，失败时改用文件模式或第三方软件。")
+                    .font(Typography.caption2)
+                    .foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: Spacing.m) {
+                    if burnModel.isStreamBurning {
+                        Button(role: .destructive) {
+                            burnModel.cancelStreamingBurn()
+                        } label: {
+                            Label(burnModel.streamWasCancelled ? "正在取消…" : "取消刻录", systemImage: "stop.fill")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                        .disabled(burnModel.streamWasCancelled)
+                    } else {
+                        Button {
+                            Task { await burnModel.startStreamingBurn() }
+                        } label: {
+                            Label("生成并刻录", systemImage: "play.circle.fill")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(DesignSystem.accent(colorScheme))
+                        .disabled(burnModel.streamBlockReason != nil || !streamAcknowledged)
+                        .accessibilityIdentifier("stream-burn")
+                    }
+                    Spacer(minLength: 0)
+                }
+
+                if let reason = burnModel.streamBlockReason, !burnModel.isStreamBurning {
+                    Label(reason, systemImage: "info.circle.fill")
+                        .font(Typography.caption)
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if let error = burnModel.streamErrorMessage, !burnModel.isStreamBurning {
+                    Label(error, systemImage: "exclamationmark.octagon.fill")
+                        .font(Typography.caption)
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
-            Button("切回文件模式") {
-                burnModel.mode = .file
+
+            if burnModel.isStreamBurning || burnModel.streamResult != nil {
+                Divider().opacity(0.4)
+                streamProgressSection
+                LogConsoleView(
+                    lines: burnModel.streamLogLines,
+                    isRunning: burnModel.isStreamBurning,
+                    title: "流式刻录日志",
+                    emptyHint: "开始后，生成与写入的日志会逐行显示在这里。",
+                    onClear: { burnModel.clearStreamLog() }
+                )
+                streamResultSection
             }
-            .controlSize(.small)
-            .buttonStyle(.borderedProminent)
-            .tint(DesignSystem.accent(colorScheme))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .cardSurface(padding: Spacing.l)
+    }
+
+    private var streamProgressSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            HStack(spacing: Spacing.m) {
+                if let progress = burnModel.streamProgress, burnModel.isStreamBurning {
+                    ProgressView(value: min(max(progress, 0), 1))
+                        .tint(DesignSystem.accent(colorScheme))
+                } else if burnModel.isStreamBurning {
+                    ProgressView()
+                        .progressViewStyle(.linear)
+                } else {
+                    ProgressView(value: burnModel.streamResult?.succeeded == true ? 1 : 0)
+                        .tint(burnModel.streamResult?.succeeded == true ? .green : .secondary)
+                }
+                Text(streamProgressText)
+                    .font(Typography.monoSmall)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .frame(width: 58, alignment: .trailing)
+            }
+            Text(burnModel.streamStage ?? (burnModel.isStreamBurning ? "准备中…" : "未开始"))
+                .font(Typography.caption2)
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    private var streamResultSection: some View {
+        Group {
+            if let result = burnModel.streamResult {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    HStack(spacing: Spacing.xs) {
+                        Chip(
+                            text: result.succeeded ? "成功" : (burnModel.streamWasCancelled ? "已取消" : "失败"),
+                            systemImage: result.succeeded ? "checkmark.circle.fill" : (burnModel.streamWasCancelled ? "stop.circle.fill" : "xmark.circle.fill"),
+                            tint: result.succeeded ? .green : (burnModel.streamWasCancelled ? .orange : .red)
+                        )
+                        if let kind = burnModel.streamPlan?.kind {
+                            Chip(text: kind.displayName, systemImage: "opticaldisc")
+                        }
+                    }
+                    Text(result.succeeded
+                         ? "流式刻录完成，用时 \(Formatting.duration(result.duration))；请等待光盘弹出。"
+                         : "流式刻录未完成（助手退出码 \(result.helperExitCode)），请查看日志。")
+                        .font(Typography.caption)
+                        .foregroundStyle(result.succeeded ? .green : .red)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    private var streamFamilyName: String {
+        switch burnModel.streamProject?.document.discFamily {
+        case .cd: return "CD"
+        case .dvd: return "DVD"
+        case .bd: return "蓝光"
+        case nil: return "—"
+        }
+    }
+
+    private var streamExpectedBytes: String {
+        guard let sectors = burnModel.streamSectors, let kind = burnModel.streamKind else { return "—" }
+        let bytes = Int64(sectors) * Int64(kind.blockSize)
+        return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+    }
+
+    private var streamProgressText: String {
+        if burnModel.isStreamBurning {
+            return burnModel.streamProgress.map { "\(Int(($0 * 100).rounded()))%" } ?? "进行中"
+        }
+        if let result = burnModel.streamResult {
+            return result.succeeded ? "100%" : "中断"
+        }
+        return "—"
+    }
+
+    private var streamDriveSelection: Binding<Int> {
+        Binding(
+            get: { burnModel.selectedStreamDriveIndex ?? burnModel.streamDrives.first?.index ?? 0 },
+            set: { burnModel.selectStreamDrive($0) }
+        )
+    }
+
+    private func streamLabel(_ text: String) -> some View {
+        Text(text)
+            .font(Typography.caption)
+            .foregroundStyle(.secondary)
+            .frame(width: 64, alignment: .leading)
     }
 
     // MARK: - 进度与结果

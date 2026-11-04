@@ -144,6 +144,7 @@ final class AppModel {
             cliErrorMessage = CliResolverError.notFound(searched: []).localizedDescription
             presetsErrorMessage = cliErrorMessage
             project?.updateCLI(nil)
+            burnModel.updateCLI(nil)
             return
         }
 
@@ -173,6 +174,7 @@ final class AppModel {
             presetsErrorMessage = message
         }
         project?.updateCLI(resolvedCandidate.invocation)
+        burnModel.updateCLI(resolvedCandidate)
     }
 
     func refreshPresets() async {

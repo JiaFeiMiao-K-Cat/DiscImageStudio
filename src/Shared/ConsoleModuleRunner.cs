@@ -52,8 +52,17 @@ internal static class ConsoleModuleRunner
     /// </summary>
     internal static bool IsStandardOutputStream(string command, IReadOnlyList<string> arguments)
     {
-        if (!command.Equals("cd-generate", StringComparison.OrdinalIgnoreCase)
-            && !command.Equals("bd-generate", StringComparison.OrdinalIgnoreCase))
+        string optionName;
+        if (command.Equals("cd-generate", StringComparison.OrdinalIgnoreCase)
+            || command.Equals("bd-generate", StringComparison.OrdinalIgnoreCase))
+        {
+            optionName = "--output";
+        }
+        else if (command.Equals("solve", StringComparison.OrdinalIgnoreCase))
+        {
+            optionName = "--iso-output";
+        }
+        else
         {
             return false;
         }
@@ -61,14 +70,14 @@ internal static class ConsoleModuleRunner
         for (int index = 0; index < arguments.Count; index++)
         {
             string argument = arguments[index];
-            if (argument.Equals("--output", StringComparison.OrdinalIgnoreCase))
+            if (argument.Equals(optionName, StringComparison.OrdinalIgnoreCase))
             {
                 return index + 1 < arguments.Count && arguments[index + 1] == "-";
             }
 
-            if (argument.StartsWith("--output=", StringComparison.OrdinalIgnoreCase))
+            if (argument.StartsWith(optionName + "=", StringComparison.OrdinalIgnoreCase))
             {
-                return argument["--output=".Length..] == "-";
+                return argument[(optionName.Length + 1)..] == "-";
             }
         }
 

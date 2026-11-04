@@ -421,6 +421,12 @@ internal static class Program
         }
 
         string isoOutputPath = arguments.Require("iso-output");
+        bool streamOutput = isoOutputPath == "-";
+        if (streamOutput)
+        {
+            // The raw ISO/stream is written to stdout; every diagnostic must go to stderr.
+            Console.SetOut(Console.Error);
+        }
         string[] unsupported =
         [
             "output",
@@ -434,6 +440,15 @@ internal static class Program
         if (unsupportedOption is not null)
         {
             throw new ArgumentException($"--{unsupportedOption} is not supported with multi-block --fill-sectors.");
+        }
+
+        if (streamOutput)
+        {
+            if (hybridMode)
+            {
+                throw new ArgumentException(
+                    "--iso-output - streams a raw fill image and is not supported with --data-dir.");
+            }
         }
 
         if (hybridMode && (arguments.Has("lba") || arguments.Has("fill-sectors")))
@@ -460,6 +475,10 @@ internal static class Program
             arguments,
             hybridMode ? "dispersion" : "full");
         bool fastOutput = ReadBoolean(arguments, "fast-output", fallback: hybridMode);
+        if (streamOutput && !fastOutput)
+        {
+            throw new ArgumentException("--iso-output - requires --fast-output true.");
+        }
         if (fastOutput && algorithm != SolverAlgorithm.Dispersion)
         {
             throw new ArgumentException("--fast-output true requires --algorithm dispersion.");
@@ -773,6 +792,51 @@ internal static class Program
         int progressEvery,
         HybridIsoWriteSummary? hybridIso)
     {
+        if (isoOutputPath == "-")
+        {
+            if (hybridIso is not null)
+            {
+                throw new ArgumentException("--iso-output - is not supported with --data-dir.");
+            }
+            if (options.StartLba != 0)
+            {
+                throw new ArgumentException("--iso-output - requires --lba 0 so the stream starts at sector 0.");
+            }
+
+            using Stream stdout = Console.OpenStandardOutput();
+            FastDvdStreamSummary summary = FastDispersionImageWriter.WriteStream(
+                arguments.Require("image"),
+                stdout,
+                options,
+                progress =>
+                {
+                    if (progress.CompletedBlocks == 1
+                        || progress.CompletedBlocks == progress.TotalBlocks
+                        || progress.CompletedBlocks % progressEvery == 0)
+                    {
+                        double mebibytes = progress.BytesWritten / (1024.0 * 1024.0);
+                        double rate = progress.Elapsed.TotalSeconds <= 0
+                            ? 0
+                            : mebibytes / progress.Elapsed.TotalSeconds;
+                        Console.Error.WriteLine(
+                            $"block {progress.CompletedBlocks}/{progress.TotalBlocks}, "
+                            + $"LBA={progress.BlockLba}, bytes={progress.BytesWritten}, "
+                            + $"rate={rate:F2} MiB/s, elapsed={progress.Elapsed.TotalSeconds:F1}s");
+                    }
+                },
+                CancellationToken.None);
+            stdout.Flush();
+            double streamMebibytes = summary.BytesWritten / (1024.0 * 1024.0);
+            double streamRate = summary.Elapsed.TotalSeconds <= 0
+                ? 0
+                : streamMebibytes / summary.Elapsed.TotalSeconds;
+            Console.Error.WriteLine(
+                $"done: blocks={summary.CompletedBlocks}, sectors={summary.SectorsWritten}, "
+                + $"bytes={summary.BytesWritten}, controlled={summary.ControlledWords}, "
+                + $"rate={streamRate:F2} MiB/s, elapsed={summary.Elapsed.TotalSeconds:F1}s, output=stdout");
+            return 0;
+        }
+
         Console.WriteLine(
             $"fast raw ISO fill: LBA {options.StartLba}.."
             + $"{checked(options.StartLba + options.FillSectors - 1)}, "

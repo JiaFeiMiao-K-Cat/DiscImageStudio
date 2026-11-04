@@ -46,6 +46,23 @@ final class BurnModel {
     var wasCancelled = false
     private(set) var plan: BurnPlan?
 
+    // MARK: - 流式刻录（从当前工程生成并直接写入）
+
+    var streamProject: ProjectModel?
+    var streamDrives: [StreamDrive] = []
+    var selectedStreamDriveIndex: Int?
+    var isStreamBurning = false
+    var streamProgress: Double?
+    var streamStage: String?
+    var streamLogLines: [LogLine] = []
+    var streamResult: StreamBurnResult?
+    var streamErrorMessage: String?
+    var streamWasCancelled = false
+    private(set) var streamPlan: StreamBurnPlan?
+
+    @ObservationIgnored private var streamJob: BurnStreamJob?
+    @ObservationIgnored private var streamTask: Task<Void, Never>?
+
     @ObservationIgnored private let service: BurnService
     private var cliInvocation: CliInvocation?
     @ObservationIgnored private var job: CliJob?
@@ -290,6 +307,244 @@ final class BurnModel {
     func prefillIfNeeded(_ url: URL?) {
         guard sourcePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, let url else { return }
         sourcePath = url.path
+    }
+
+    // MARK: - 流式刻录状态
+
+    /// 进入刻录页时注入当前工程；没有工程时流式模式不可用。
+    func updateStreamContext(project: ProjectModel?) {
+        streamProject = project
+    }
+
+    var streamKind: StreamBurnKind? {
+        guard let document = streamProject?.document else { return nil }
+        switch document.discFamily {
+        case .cd:
+            // 音频 CD 才能通过 cd-generate --output - 输出 2352 字节块；
+            // 带随盘文件的 CD 数据盘走文件模式。
+            return document.outputs.hasBundledFiles ? nil : .cdAudio
+        case .bd:
+            return .bdData
+        case .dvd:
+            // solve --iso-output - 目前流式输出 raw fill（无随盘文件）；
+            // 带 --data-dir 的混合 ISO 走文件模式。
+            return document.outputs.hasBundledFiles ? nil : .dvdData
+        }
+    }
+
+    var streamSectors: Int? {
+        guard let sectors = streamProject?.document.geometry.sectors, sectors > 0 else { return nil }
+        return Int(sectors)
+    }
+
+    var streamUnsupportedReason: String? {
+        guard streamProject != nil else { return "请先打开一个工程，流式刻录会直接生成当前工程并写入光盘。" }
+        guard let document = streamProject?.document else { return "请先打开一个工程。" }
+        switch document.discFamily {
+        case .cd:
+            if document.outputs.hasBundledFiles {
+                return "CD 数据盘的流式写入还没有 CLI 输出模式；请使用文件模式生成 ISO 后刻录。"
+            }
+            return nil
+        case .dvd:
+            if document.outputs.hasBundledFiles {
+                return "带随盘文件的 DVD 需要先生成混合 ISO；流式写入使用文件模式。"
+            }
+            return nil
+        case .bd:
+            return nil
+        }
+    }
+
+    var selectedStreamDrive: StreamDrive? {
+        if let selectedStreamDriveIndex,
+           let match = streamDrives.first(where: { $0.index == selectedStreamDriveIndex }) {
+            return match
+        }
+        return streamDrives.first
+    }
+
+    var streamDriveSummary: String {
+        guard let drive = selectedStreamDrive else { return "未检测到可流式写入的驱动器" }
+        var parts = [drive.displayName]
+        if let mediaType = drive.mediaType { parts.append(mediaType) }
+        parts.append(drive.mediaPresent ? (drive.mediaBlank ? "空白" : "非空白") : "无介质")
+        return parts.joined(separator: " · ")
+    }
+
+    var streamBlockReason: String? {
+        guard mode == .stream else { return nil }
+        if let reason = streamUnavailableReason { return reason }
+        if let reason = streamUnsupportedReason { return reason }
+        guard let kind = streamKind else { return "当前工程没有可用的流式刻录类型。" }
+        guard let sectors = streamSectors else { return "工程几何的扇区数无效。" }
+        guard !streamDrives.isEmpty else { return "没有找到支持 DiscRecording 流式写入的驱动器。" }
+        guard let drive = selectedStreamDrive else { return "请选择一个刻录机。" }
+        guard drive.isWritable(for: kind) else {
+            return "当前驱动器不能写入 \(kind.displayName)。"
+        }
+        guard drive.mediaPresent else { return "刻录机里没有光盘，请放入空白盘后刷新。" }
+        guard drive.mediaBlank else { return "当前盘片不是空白盘，已禁止刻录。" }
+        if let mediaKind = StreamBurnKind.kind(forMediaType: drive.mediaType), mediaKind != kind {
+            return "盘片类型 \(drive.mediaType ?? "未知") 与 \(kind.displayName) 不匹配。"
+        }
+        if kind == .bdData, drive.mediaType?.uppercased() != "BD-R" {
+            return "BD 流式写入需要空白 BD-R。"
+        }
+        guard sectors > 0 else { return "工程扇区数必须大于 0。" }
+        return nil
+    }
+
+    func refreshStreamDrives() async {
+        guard let service = streamService else {
+            streamErrorMessage = streamUnavailableReason
+            return
+        }
+        do {
+            let found = try await service.listDrives()
+            streamDrives = found
+            if let selectedStreamDriveIndex,
+               found.contains(where: { $0.index == selectedStreamDriveIndex }) {
+                // keep
+            } else {
+                selectedStreamDriveIndex = found.first?.index
+            }
+            if found.isEmpty {
+                streamErrorMessage = "没有找到光盘刻录机。请连接刻录机后刷新。"
+            } else {
+                streamErrorMessage = nil
+            }
+        } catch {
+            streamDrives = []
+            selectedStreamDriveIndex = nil
+            streamErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    func selectStreamDrive(_ index: Int) {
+        selectedStreamDriveIndex = index
+    }
+
+    /// 从当前工程生成并直接写入光盘。生成参数与导出页一致，只是把
+    /// `--output` 换成 `-`，由 CLI 通过管道写入 DiscRecording 助手。
+    func startStreamingBurn() async {
+        guard !isStreamBurning else { return }
+        guard streamBlockReason == nil else { return }
+        guard let service = streamService,
+              let project = streamProject,
+              let kind = streamKind,
+              let sectors = streamSectors,
+              let drive = selectedStreamDrive
+        else { return }
+
+        streamErrorMessage = nil
+        streamResult = nil
+        streamWasCancelled = false
+        streamProgress = nil
+        streamStage = "准备中…"
+        streamLogLines.removeAll()
+        isStreamBurning = true
+
+        do {
+            let composite = try await project.prepareExportComposite()
+            var arguments = try ExportService.makePlan(
+                project: project.document,
+                compositeURL: composite
+            ).arguments
+            let outputOption = project.document.discFamily == .dvd ? "--iso-output" : "--output"
+            guard let outputIndex = arguments.firstIndex(of: outputOption), outputIndex + 1 < arguments.count else {
+                throw StreamBurnError.invalidPlan(reason: "生成命令没有 \(outputOption) 参数。")
+            }
+            arguments[outputIndex + 1] = "-"
+            if kind == .cdAudio, let cueIndex = arguments.firstIndex(of: "--cue"), cueIndex + 1 < arguments.count {
+                arguments[cueIndex + 1] = "false"
+            }
+
+            let plan = try service.makePlan(
+                kind: kind,
+                sectors: sectors,
+                drive: drive,
+                verify: true,
+                eject: true,
+                test: false
+            )
+            streamPlan = plan
+            let job = service.burn(plan: plan, cliArguments: arguments)
+            streamJob = job
+            streamTask = Task { @MainActor [weak self] in
+                for await event in job.events {
+                    guard let self else { return }
+                    self.handleStreamEvent(event)
+                }
+            }
+        } catch {
+            isStreamBurning = false
+            streamStage = nil
+            streamErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            appendStreamSystem("流式刻录启动失败：\(streamErrorMessage ?? "未知错误")")
+        }
+    }
+
+    func cancelStreamingBurn() {
+        guard isStreamBurning, let streamJob else { return }
+        streamWasCancelled = true
+        streamJob.cancel()
+    }
+
+    func clearStreamLog() {
+        streamLogLines.removeAll()
+    }
+
+    private func handleStreamEvent(_ event: StreamBurnEvent) {
+        switch event {
+        case .started(let helperCommandLine, let cliCommandLine):
+            appendStreamSystem("启动生成：\(cliCommandLine)")
+            appendStreamSystem("启动写入：\(helperCommandLine)")
+        case .log(let line):
+            let stream: LogLine.Stream
+            switch line.source {
+            case .helper: stream = .stderr
+            case .cli: stream = .stdout
+            case .system: stream = .system
+            }
+            streamLogLines.append(LogLine(stream: stream, text: line.text, timestamp: line.timestamp))
+        case .progress(let progress):
+            streamProgress = progress.fraction
+            switch progress.state {
+            case .preparing: streamStage = "准备刻录…"
+            case .writing: streamStage = "正在生成并写入…"
+            case .verifying: streamStage = "正在校验…"
+            case .done: streamStage = "完成"
+            case .failed: streamStage = "失败"
+            }
+        case .finished(let result):
+            finishStream(result)
+        }
+    }
+
+    private func finishStream(_ result: StreamBurnResult) {
+        isStreamBurning = false
+        streamResult = result
+        streamJob = nil
+        streamTask = nil
+        if result.succeeded {
+            streamProgress = 1
+            streamStage = "完成"
+        }
+        let status: String
+        if streamWasCancelled {
+            status = "已取消流式刻录"
+        } else if result.succeeded {
+            status = "流式刻录完成（用时 \(Formatting.duration(result.duration))）"
+        } else {
+            status = "流式刻录失败（助手退出码 \(result.helperExitCode)）"
+        }
+        appendStreamSystem(status)
+        Task { await refreshStreamDrives() }
+    }
+
+    private func appendStreamSystem(_ text: String) {
+        streamLogLines.append(LogLine(stream: .system, text: text))
     }
 
     // MARK: - 刻录

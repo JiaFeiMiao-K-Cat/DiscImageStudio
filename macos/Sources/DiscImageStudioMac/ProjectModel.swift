@@ -581,6 +581,11 @@ final class ProjectModel {
         return destination
     }
 
+    /// 生成供导出/流式刻录使用的 8192 px 合成图（与导出页使用同一张图）。
+    func prepareExportComposite() async throws -> URL {
+        try await ensureExportComposite()
+    }
+
     private func ensureExportComposite() async throws -> URL {
         let destination = ProjectModel.cacheDirectory
             .appendingPathComponent("export-composite-\(UUID().uuidString).png")
