@@ -66,7 +66,6 @@ internal static class UnifiedCommandRunner
                     FindOption(snapshotArguments, "calibration-view"),
                     FindOption(snapshotArguments, "project"),
                     FindOption(snapshotArguments, "project-dialog"),
-                    HasOption(snapshotArguments, "about-dialog"),
                     HasOption(snapshotArguments, "preset-dialog"),
                     HasOption(snapshotArguments, "dock"),
                     FindOption(snapshotArguments, "burn-source"),
@@ -132,9 +131,9 @@ internal static class UnifiedCommandRunner
               ui-snapshot --output SCREENSHOT.png [--tab N] [--width 1366] [--height 768]
                           [--project FILE.discproj] [--live-input IMAGE --live-disc cd|dvd]
                           [--dock] [--burn-source project|calibration]
-                          [--about-dialog] [--preset-dialog] [--settings-dialog]
-                          [--language zh-CN|zh-TW|en|ja|system]
-                          [--settings-view general|storage] [--theme dark|light|system]
+                          [--preset-dialog] [--settings-dialog]
+                          [--language zh-CN|zh-TW|en|ja|tr|system]
+                          [--settings-view general|storage|about] [--theme dark|light|system]
                           [--expand] [--scroll N] [--home-hover]
                           [--burn-progress write|buffer|finalize]
                           [--project-update] [--project-save] [--tone-preview]

@@ -1,1244 +1,1440 @@
 {
-  "Xaml.AboutDiscImageStudio": {
-    "zh-CN": "关于 Disc Image Studio",
-    "en": "About Disc Image Studio",
-    "zh-TW": "關於 Disc Image Studio",
-    "ja": "Disc Image Studio について"
-  },
   "Xaml.About": {
     "zh-CN": "关于",
     "en": "About",
     "zh-TW": "關於",
-    "ja": "バージョン情報"
+    "ja": "バージョン情報",
+    "tr": "Hakkında"
   },
   "Xaml.DiscImageStudioIsAnAllInOneWorkspace": {
     "zh-CN": "Disc Image Studio是帮助您在光盘表面印刷图案的一站式工作台。",
     "en": "Disc Image Studio is an all-in-one workspace for creating visible artwork on optical discs.",
     "zh-TW": "Disc Image Studio 是協助您在光碟表面製作圖案的整合工作台。",
-    "ja": "Disc Image Studio は、ディスクの記録面に図柄を描き出すためのオールインワン ワークスペースです。"
+    "ja": "Disc Image Studio は、ディスクの記録面に図柄を描き出すためのオールインワン ワークスペースです。",
+    "tr": "Disc Image Studio, optik diskler üzerinde görünür görsel sanat eserleri oluşturmak için hepsi bir arada bir çalışma alanıdır."
   },
   "Xaml.ReleasedUnderTheGNUGeneralPublicLicenseV30": {
     "zh-CN": "本项目以 GNU General Public License v3.0 or later 发布；重新分发须随附对应源代码并保留第三方声明。",
     "en": "Released under the GNU General Public License v3.0 or later. Redistribution must include the corresponding source code and retain third-party notices.",
     "zh-TW": "本專案依 GNU General Public License v3.0 or later 發布；重新散佈時須附上對應原始碼並保留第三方聲明。",
-    "ja": "本プロジェクトは GNU General Public License v3.0 or later の下で公開されています。再配布する場合は、対応するソース コードを添付し、サードパーティの表示を保持する必要があります。"
+    "ja": "本プロジェクトは GNU General Public License v3.0 or later の下で公開されています。再配布する場合は、対応するソース コードを添付し、サードパーティの表示を保持する必要があります。",
+    "tr": "GNU Genel Kamu Lisansı v3.0 veya sonraki sürümü altında yayınlanmıştır. Yeniden dağıtım, ilgili kaynak kodunu içermeli ve üçüncü taraf bildirimlerini korumalıdır."
+  },
+  "Xaml.GitHub": {
+    "zh-CN": "GitHub",
+    "en": "GitHub",
+    "zh-TW": "GitHub",
+    "ja": "GitHub",
+    "tr": "GitHub",
+    "es": "GitHub"
   },
   "Xaml.OpenSourceComponents": {
     "zh-CN": "开源组件",
     "en": "Open-source components",
     "zh-TW": "開放原始碼元件",
-    "ja": "オープンソース コンポーネント"
+    "ja": "オープンソース コンポーネント",
+    "tr": "Açık kaynaklı bileşenler"
   },
   "Xaml.HarmonyOSSansSCHarmonyOSSansFontLicense": {
     "zh-CN": "HarmonyOS Sans SC — HarmonyOS Sans 字体许可协议",
     "en": "HarmonyOS Sans SC — HarmonyOS Sans Font License",
     "zh-TW": "HarmonyOS Sans SC — HarmonyOS Sans 字型授權條款",
-    "ja": "HarmonyOS Sans SC — HarmonyOS Sans Font License"
+    "ja": "HarmonyOS Sans SC — HarmonyOS Sans Font License",
+    "tr": "HarmonyOS Sans SC — HarmonyOS Sans Yazı Tipi Lisansı"
   },
   "Xaml.MahAppsMetroIconPacksLucideLucideIconsMITLicense": {
     "zh-CN": "MahApps.Metro.IconPacks.Lucide（Lucide Icons）— MIT 许可协议",
     "en": "MahApps.Metro.IconPacks.Lucide (Lucide Icons) — MIT License",
     "zh-TW": "MahApps.Metro.IconPacks.Lucide（Lucide Icons）— MIT 授權條款",
-    "ja": "MahApps.Metro.IconPacks.Lucide (Lucide Icons) — MIT License"
+    "ja": "MahApps.Metro.IconPacks.Lucide (Lucide Icons) — MIT License",
+    "tr": "MahApps.Metro.IconPacks.Lucide (Lucide Simgeleri) — MIT Lisansı"
   },
   "Xaml.CommunityToolkitMvvmApacheLicense20": {
     "zh-CN": "CommunityToolkit.Mvvm — Apache 许可协议 2.0",
     "en": "CommunityToolkit.Mvvm — Apache License 2.0",
     "zh-TW": "CommunityToolkit.Mvvm — Apache 授權條款 2.0",
-    "ja": "CommunityToolkit.Mvvm — Apache License 2.0"
+    "ja": "CommunityToolkit.Mvvm — Apache License 2.0",
+    "tr": "CommunityToolkit.Mvvm — Apache Lisansı 2.0"
   },
   "Xaml.GNUGPLV30OrLaterProjectLicense": {
     "zh-CN": "GNU GPL v3.0 或更新版本（项目许可证）",
     "en": "GNU GPL v3.0 or later (project license)",
     "zh-TW": "GNU GPL v3.0 或更新版本（專案授權條款）",
-    "ja": "GNU GPL v3.0 or later (プロジェクトのライセンス)"
+    "ja": "GNU GPL v3.0 or later (プロジェクトのライセンス)",
+    "tr": "GNU GPL v3.0 veya üstü (proje lisansı)"
   },
   "Xaml.ThirdPartyNotices": {
     "zh-CN": "第三方声明",
     "en": "Third-party notices",
     "zh-TW": "第三方聲明",
-    "ja": "サードパーティの表示"
+    "ja": "サードパーティの表示",
+    "tr": "Üçüncü taraf bildirimleri"
   },
   "Xaml.HarmonyOSSansFontLicense": {
     "zh-CN": "HarmonyOS Sans 字体协议",
     "en": "HarmonyOS Sans Font License",
     "zh-TW": "HarmonyOS Sans 字型授權條款",
-    "ja": "HarmonyOS Sans Font License"
+    "ja": "HarmonyOS Sans Font License",
+    "tr": "HarmonyOS Sans Yazı Tipi Lisansı"
   },
   "Xaml.Cancel": {
     "zh-CN": "取消",
     "en": "Cancel",
     "zh-TW": "取消",
-    "ja": "キャンセル"
+    "ja": "キャンセル",
+    "tr": "İptal"
   },
   "Xaml.StopTheCurrentTaskIfItSupportsCancellation": {
     "zh-CN": "停止正在运行且支持取消的任务。",
     "en": "Stop the current task if it supports cancellation.",
     "zh-TW": "停止目前執行中且支援取消的任務。",
-    "ja": "実行中のタスクがキャンセルに対応している場合は停止します。"
+    "ja": "実行中のタスクがキャンセルに対応している場合は停止します。",
+    "tr": "İptal edilmeyi destekliyorsa geçerli görevi durdurun."
   },
   "Xaml.OpenOutputFolder": {
     "zh-CN": "打开输出位置",
     "en": "Open output folder",
     "zh-TW": "開啟輸出位置",
-    "ja": "出力先を開く"
+    "ja": "出力先を開く",
+    "tr": "Çıktı klasörünü aç"
   },
   "Xaml.PreviewOutput": {
     "zh-CN": "查看读回预览",
     "en": "Preview output",
     "zh-TW": "檢視讀回預覽",
-    "ja": "読み戻しプレビューを表示"
+    "ja": "読み戻しプレビューを表示",
+    "tr": "Geri okuma önizlemesini görüntüle"
   },
   "Xaml.SimulateReadingBackTheMostRecentlyGeneratedFileIn": {
     "zh-CN": "把最近生成的文件作为输入镜像，在预览工作区模拟读回。",
     "en": "Simulate reading back the most recently generated file in the Preview workspace.",
     "zh-TW": "將最近產生的檔案作為輸入映像，在預覽工作區模擬讀回。",
-    "ja": "最後に生成したファイルを入力イメージとして、プレビュー ワークスペースで読み戻しをシミュレートします。"
+    "ja": "最後に生成したファイルを入力イメージとして、プレビュー ワークスペースで読み戻しをシミュレートします。",
+    "tr": "En son oluşturulan dosyayı Önizleme çalışma alanında geri okuyarak simüle edin."
   },
   "Xaml.ClearLog": {
     "zh-CN": "清空日志",
     "en": "Clear log",
     "zh-TW": "清除記錄",
-    "ja": "ログをクリア"
+    "ja": "ログをクリア",
+    "tr": "Günlüğü temizle"
   },
   "Xaml.TaskDetails": {
     "zh-CN": "任务详情",
     "en": "Task details",
     "zh-TW": "任務詳細資訊",
-    "ja": "タスクの詳細"
+    "ja": "タスクの詳細",
+    "tr": "Görev ayrıntıları"
   },
   "Xaml.TaskDetailsLog": {
     "zh-CN": "任务详情 / 运行日志",
     "en": "Task details / Log",
     "zh-TW": "任務詳細資訊 / 執行記錄",
-    "ja": "タスクの詳細 / ログ"
+    "ja": "タスクの詳細 / ログ",
+    "tr": "Görev ayrıntıları / Günlük"
   },
   "Xaml.NewProject": {
     "zh-CN": "新建工程",
     "en": "New project",
     "zh-TW": "新增專案",
-    "ja": "新しいプロジェクト"
+    "ja": "新しいプロジェクト",
+    "tr": "Yeni proje"
   },
   "Xaml.DeletePreset": {
     "zh-CN": "删除预设",
     "en": "Delete preset",
     "zh-TW": "刪除預設",
-    "ja": "プリセットを削除"
+    "ja": "プリセットを削除",
+    "tr": "Önayarı sil"
   },
   "Xaml.ChangePreset": {
     "zh-CN": "换用预设",
     "en": "Change preset",
     "zh-TW": "切換預設",
-    "ja": "プリセットを変更"
+    "ja": "プリセットを変更",
+    "tr": "Önayarı değiştir"
   },
   "Xaml.SelectingAnotherPresetReplacesTheCurrentGeometryParametersAfter": {
     "zh-CN": "选择其他预设会用它的几何参数覆盖当前参数，切换前会先确认。",
     "en": "Selecting another preset replaces the current geometry parameters after confirmation.",
     "zh-TW": "選擇其他預設將以其幾何參數覆寫目前參數，切換前會先確認。",
-    "ja": "別のプリセットを選択すると、そのジオメトリ パラメーターで現在の値が上書きされます。切り替える前に確認が表示されます。"
+    "ja": "別のプリセットを選択すると、そのジオメトリ パラメーターで現在の値が上書きされます。切り替える前に確認が表示されます。",
+    "tr": "Başka bir önayar seçildiğinde, onaylandıktan sonra geçerli geometri parametrelerinin üzerine yazılır."
   },
   "Xaml.Custom": {
     "zh-CN": "自定",
     "en": "Custom",
     "zh-TW": "自訂",
-    "ja": "カスタム"
+    "ja": "カスタム",
+    "tr": "Özel"
   },
   "Xaml.PresetDetails": {
     "zh-CN": "预设详细信息",
     "en": "Preset details",
     "zh-TW": "預設詳細資訊",
-    "ja": "プリセットの詳細"
+    "ja": "プリセットの詳細",
+    "tr": "Önayar ayrıntıları"
   },
   "Xaml.ProjectName": {
     "zh-CN": "工程名",
     "en": "Project name",
     "zh-TW": "專案名稱",
-    "ja": "プロジェクト名"
+    "ja": "プロジェクト名",
+    "tr": "Proje adı"
   },
   "Xaml.InnerR0Mm": {
     "zh-CN": "内半径 r0 (mm)",
     "en": "Inner r0 (mm)",
     "zh-TW": "內半徑 r0 (mm)",
-    "ja": "内半径 r0 (mm)"
+    "ja": "内半径 r0 (mm)",
+    "tr": "İç r0 (mm)"
   },
   "Xaml.OuterR1Mm": {
     "zh-CN": "外半径 r1 (mm)",
     "en": "Outer r1 (mm)",
     "zh-TW": "外半徑 r1 (mm)",
-    "ja": "外半径 r1 (mm)"
+    "ja": "外半径 r1 (mm)",
+    "tr": "Dış r1 (mm)"
   },
   "Xaml.Sectors": {
     "zh-CN": "扇区数",
     "en": "Sectors",
     "zh-TW": "磁區數",
-    "ja": "セクター数"
+    "ja": "セクター数",
+    "tr": "Sektör sayısı"
   },
   "Xaml.LinearTerm": {
     "zh-CN": "相对一次项",
     "en": "Linear term",
     "zh-TW": "相對一次項",
-    "ja": "相対 1 次項"
+    "ja": "相対 1 次項",
+    "tr": "Bağıl doğrusal terim"
   },
   "Xaml.QuadraticTerm": {
     "zh-CN": "相对二次项",
     "en": "Quadratic term",
     "zh-TW": "相對二次項",
-    "ja": "相対 2 次項"
+    "ja": "相対 2 次項",
+    "tr": "Bağıl karesel terim"
   },
   "Xaml.CubicTerm": {
     "zh-CN": "相对三次项",
     "en": "Cubic term",
     "zh-TW": "相對三次項",
-    "ja": "相対 3 次項"
+    "ja": "相対 3 次項",
+    "tr": "Bağıl kübik terim"
   },
   "Xaml.SingleLayerBDRSectorsMustBeAMultiple": {
     "zh-CN": "单层 BD-R：扇区数须为 32 的倍数，使用恒定轨距与 0° 起始角。",
     "en": "Single-layer BD-R: sectors must be a multiple of 32. Uses constant track pitch and a 0° start angle.",
     "zh-TW": "單層 BD-R：磁區數須為 32 的倍數，使用恆定軌距與 0° 起始角。",
-    "ja": "1 層 BD-R: セクター数は 32 の倍数である必要があります。一定のトラック ピッチと 0° の開始角を使用します。"
+    "ja": "1 層 BD-R: セクター数は 32 の倍数である必要があります。一定のトラック ピッチと 0° の開始角を使用します。",
+    "tr": "Tek katmanlı BD-R: Sektör sayısı 32'nin katı olmalıdır. Sabit iz aralığı ve 0° başlangıç açısı kullanır."
   },
   "Xaml.DiscType": {
     "zh-CN": "盘型",
     "en": "Disc type",
     "zh-TW": "光碟類型",
-    "ja": "ディスクの種類"
+    "ja": "ディスクの種類",
+    "tr": "Disk türü"
   },
   "Xaml.SaveParametersAsPreset": {
     "zh-CN": "将此套参数保存为预设",
     "en": "Save parameters as preset",
     "zh-TW": "將這組參數儲存為預設",
-    "ja": "このパラメーターをプリセットとして保存"
+    "ja": "このパラメーターをプリセットとして保存",
+    "tr": "Bu parametreleri önayar olarak kaydet"
   },
   "Xaml.SaveLocation": {
     "zh-CN": "保存位置",
     "en": "Save location",
     "zh-TW": "儲存位置",
-    "ja": "保存先"
+    "ja": "保存先",
+    "tr": "Kayıt konumu"
   },
   "Xaml.Browse": {
     "zh-CN": "浏览…",
     "en": "Browse…",
     "zh-TW": "瀏覽…",
-    "ja": "参照…"
+    "ja": "参照…",
+    "tr": "Gözat…"
   },
   "Xaml.Burn": {
     "zh-CN": "刻录",
     "en": "Burn",
     "zh-TW": "燒錄",
-    "ja": "書き込み"
+    "ja": "書き込み",
+    "tr": "Diske Yaz"
   },
   "Xaml.StreamDataDirectlyToABlankDiscWithoutFirst": {
     "zh-CN": "即时刻录将数据直接流式写入空白盘片，不必单独生成镜像文件再刻录。",
     "en": "Stream data directly to a blank disc without first generating an image file.",
     "zh-TW": "即時燒錄會將資料直接串流寫入空白光碟，無須先產生映像檔。",
-    "ja": "イメージ ファイルを生成せずに、データを空のディスクへ直接ストリーミングして書き込みます。"
+    "ja": "イメージ ファイルを生成せずに、データを空のディスクへ直接ストリーミングして書き込みます。",
+    "tr": "Verileri önce bir imaj dosyası oluşturmadan doğrudan boş bir diske akışla yazın."
   },
   "Xaml.ContentToWrite": {
     "zh-CN": "写入内容",
     "en": "Content to write",
     "zh-TW": "寫入內容",
-    "ja": "書き込む内容"
+    "ja": "書き込む内容",
+    "tr": "Yazılacak içerik"
   },
   "Xaml.DesignComposite": {
     "zh-CN": "设计页合成图",
     "en": "Design composite",
     "zh-TW": "設計頁合成圖",
-    "ja": "デザインの合成画像"
+    "ja": "デザインの合成画像",
+    "tr": "Tasarım birleşik görseli"
   },
   "Xaml.CalibrationPattern": {
     "zh-CN": "辅助标定图案",
     "en": "Calibration pattern",
     "zh-TW": "輔助校準圖案",
-    "ja": "キャリブレーション パターン"
+    "ja": "キャリブレーション パターン",
+    "tr": "Yardımcı kalibrasyon deseni"
   },
   "Xaml.OpenCalibration": {
     "zh-CN": "打开标定工作区",
     "en": "Open Calibration",
     "zh-TW": "開啟校準工作區",
-    "ja": "キャリブレーションを開く"
+    "ja": "キャリブレーションを開く",
+    "tr": "Kalibrasyon çalışma alanını aç"
   },
   "Xaml.RecorderAndSpeed": {
     "zh-CN": "刻录机与速度",
     "en": "Recorder and speed",
     "zh-TW": "燒錄機與速度",
-    "ja": "ドライブと速度"
+    "ja": "ドライブと速度",
+    "tr": "Yazıcı ve hız"
   },
   "Xaml.Recorder": {
     "zh-CN": "刻录机",
     "en": "Recorder",
     "zh-TW": "燒錄機",
-    "ja": "ドライブ"
+    "ja": "ドライブ",
+    "tr": "Yazıcı"
   },
   "Xaml.Refresh": {
     "zh-CN": "刷新",
     "en": "Refresh",
     "zh-TW": "重新整理",
-    "ja": "更新"
+    "ja": "更新",
+    "tr": "Yenile"
   },
   "Xaml.WriteSpeed": {
     "zh-CN": "刻录速度",
     "en": "Write speed",
     "zh-TW": "燒錄速度",
-    "ja": "書き込み速度"
+    "ja": "書き込み速度",
+    "tr": "Yazma hızı"
   },
   "Xaml.ReadDisc": {
     "zh-CN": "读取盘片",
     "en": "Read disc",
     "zh-TW": "讀取光碟片",
-    "ja": "ディスクを読み取る"
+    "ja": "ディスクを読み取る",
+    "tr": "Diski oku"
   },
   "Xaml.BeforeBurning": {
     "zh-CN": "刻录前确认",
     "en": "Before burning",
     "zh-TW": "燒錄前確認",
-    "ja": "書き込み前の確認"
+    "ja": "書き込み前の確認",
+    "tr": "Yazmadan önce onay"
   },
   "Xaml.StreamingRequiresBlankMediaInterruptionsPowerLossOrInsufficient": {
     "zh-CN": "流式刻录仅支持空白介质。刻录开始后，中断、断电或生成速度不足都可能导致盘片报废。",
     "en": "Streaming requires blank media. Interruptions, power loss, or insufficient generation speed may make the disc unusable.",
     "zh-TW": "串流燒錄僅支援空白媒體。開始燒錄後，中斷、斷電或資料產生速度不足，都可能導致光碟報廢。",
-    "ja": "ストリーミング書き込みは空のメディアのみに対応しています。書き込み開始後に中断、停電、または生成速度の不足が発生すると、ディスクが使用できなくなる場合があります。"
+    "ja": "ストリーミング書き込みは空のメディアのみに対応しています。書き込み開始後に中断、停電、または生成速度の不足が発生すると、ディスクが使用できなくなる場合があります。",
+    "tr": "Akışla yazma yalnızca boş ortam gerektirir. Kesintiler, elektrik kesintisi veya yetersiz oluşturma hızı diski kullanılamaz hale getirebilir."
   },
   "Xaml.IHaveInsertedTheCorrectBlankDisc": {
     "zh-CN": "我确认已放入正确的空白盘",
     "en": "I have inserted the correct blank disc",
     "zh-TW": "我確認已放入正確的空白光碟",
-    "ja": "正しい空のディスクを挿入したことを確認しました"
+    "ja": "正しい空のディスクを挿入したことを確認しました",
+    "tr": "Doğru boş diski taktığımı onaylıyorum"
   },
   "Xaml.StartStreamingBurn": {
     "zh-CN": "开始流式刻录",
     "en": "Start streaming burn",
     "zh-TW": "開始串流燒錄",
-    "ja": "ストリーミング書き込みを開始"
+    "ja": "ストリーミング書き込みを開始",
+    "tr": "Akışla yazmayı başlat"
   },
   "Xaml.CancelBurn": {
     "zh-CN": "取消刻录",
     "en": "Cancel burn",
     "zh-TW": "取消燒錄",
-    "ja": "書き込みをキャンセル"
+    "ja": "書き込みをキャンセル",
+    "tr": "Yazmayı iptal et"
   },
   "Xaml.SaveAsPreset": {
     "zh-CN": "保存为预设",
     "en": "Save as preset",
     "zh-TW": "儲存為預設",
-    "ja": "プリセットとして保存"
+    "ja": "プリセットとして保存",
+    "tr": "Önayar olarak kaydet"
   },
   "Xaml.PresetName": {
     "zh-CN": "预设名称",
     "en": "Preset name",
     "zh-TW": "預設名稱",
-    "ja": "プリセット名"
+    "ja": "プリセット名",
+    "tr": "Önayar adı"
   },
   "Xaml.Save": {
     "zh-CN": "保存",
     "en": "Save",
     "zh-TW": "儲存",
-    "ja": "保存"
-  },
-  "Xaml.About2": {
-    "zh-CN": "关于…",
-    "en": "About…",
-    "zh-TW": "關於…",
-    "ja": "バージョン情報…"
+    "ja": "保存",
+    "tr": "Kaydet"
   },
   "Xaml.BackToHome": {
     "zh-CN": "返回主页",
     "en": "Back to Home",
     "zh-TW": "返回主頁",
-    "ja": "ホームに戻る"
+    "ja": "ホームに戻る",
+    "tr": "Ana Sayfaya Dön"
   },
   "Xaml.ProjectSettings": {
     "zh-CN": "工程设置",
     "en": "Project settings",
     "zh-TW": "專案設定",
-    "ja": "プロジェクトの設定"
+    "ja": "プロジェクトの設定",
+    "tr": "Proje ayarları"
   },
   "Xaml.Unsaved": {
     "zh-CN": "未保存",
     "en": "Unsaved",
     "zh-TW": "未儲存",
-    "ja": "未保存"
+    "ja": "未保存",
+    "tr": "Kaydedilmedi"
   },
   "Xaml.ParametersUpdated": {
     "zh-CN": "参数已更新",
     "en": "Parameters updated",
     "zh-TW": "參數已更新",
-    "ja": "パラメーターが更新されました"
+    "ja": "パラメーターが更新されました",
+    "tr": "Parametreler güncellendi"
   },
   "Xaml.Design": {
     "zh-CN": "设计",
     "en": "Design",
     "zh-TW": "設計",
-    "ja": "デザイン"
+    "ja": "デザイン",
+    "tr": "Tasarım"
   },
   "Xaml.Preview": {
     "zh-CN": "预览",
     "en": "Preview",
     "zh-TW": "預覽",
-    "ja": "プレビュー"
+    "ja": "プレビュー",
+    "tr": "Önizleme"
   },
   "Xaml.Export": {
     "zh-CN": "导出",
     "en": "Export",
     "zh-TW": "匯出",
-    "ja": "エクスポート"
+    "ja": "エクスポート",
+    "tr": "Dışa Aktar"
   },
   "Xaml.Calibration": {
     "zh-CN": "标定",
     "en": "Calibration",
     "zh-TW": "校準",
-    "ja": "キャリブレーション"
+    "ja": "キャリブレーション",
+    "tr": "Kalibrasyon"
   },
   "Xaml.CollapseSidebar": {
     "zh-CN": "收起侧边栏",
     "en": "Collapse sidebar",
     "zh-TW": "收起側邊欄",
-    "ja": "サイドバーを折りたたむ"
-  },
-  "Xaml.Browse2": {
-    "zh-CN": "浏览",
-    "en": "Browse",
-    "zh-TW": "瀏覽",
-    "ja": "参照"
+    "ja": "サイドバーを折りたたむ",
+    "tr": "Kenar çubuğunu daralt"
   },
   "Xaml.ExportTheDesignCompositeAsABurnableImageAdjust": {
     "zh-CN": "导出设计页的合成图为可刻录的镜像。相关参数请在“工程设置”中修改",
     "en": "Export the design composite as a burnable image. Adjust its parameters in Project settings.",
     "zh-TW": "將設計頁的合成圖匯出為可燒錄的映像。請在「專案設定」中修改相關參數。",
-    "ja": "デザインの合成画像を書き込み可能なイメージとしてエクスポートします。関連するパラメーターは「プロジェクトの設定」で変更してください。"
+    "ja": "デザインの合成画像を書き込み可能なイメージとしてエクスポートします。関連するパラメーターは「プロジェクトの設定」で変更してください。",
+    "tr": "Tasarım sayfasındaki birleşik görseli yazdırılabilir bir imaj olarak dışa aktarın. Parametrelerini Proje ayarlarından düzenleyin."
   },
   "Xaml.NextBurn": {
     "zh-CN": "下一步：刻录",
     "en": "Next: Burn",
     "zh-TW": "下一步：燒錄",
-    "ja": "次へ: 書き込み"
+    "ja": "次へ: 書き込み",
+    "tr": "Sonraki: Diske Yaz"
   },
   "Xaml.SourceImage": {
     "zh-CN": "源图片",
     "en": "Source image",
     "zh-TW": "來源圖片",
-    "ja": "ソース画像"
+    "ja": "ソース画像",
+    "tr": "Kaynak görsel"
   },
   "Xaml.ProjectSettings2": {
     "zh-CN": "工程设置…",
     "en": "Project settings…",
     "zh-TW": "專案設定…",
-    "ja": "プロジェクトの設定…"
+    "ja": "プロジェクトの設定…",
+    "tr": "Proje ayarları…"
   },
   "Xaml.EditGeometryRadiiSectorsAndTrackPitchInProject": {
     "zh-CN": "几何参数（半径、扇区、轨距）在工程设置中修改。",
     "en": "Edit geometry (radii, sectors, and track pitch) in Project settings.",
     "zh-TW": "幾何參數（半徑、磁區、軌距）在專案設定中修改。",
-    "ja": "ジオメトリ パラメーター (半径、セクター、トラック ピッチ) はプロジェクトの設定で変更します。"
+    "ja": "ジオメトリ パラメーター (半径、セクター、トラック ピッチ) はプロジェクトの設定で変更します。",
+    "tr": "Geometriyi (yarıçaplar, sektörler ve iz aralığı) Proje ayarlarından düzenleyin."
   },
   "Xaml.ImportImagesInDesign": {
     "zh-CN": "前往设计导入图片",
     "en": "Import images in Design",
     "zh-TW": "前往設計匯入圖片",
-    "ja": "デザインで画像をインポート"
+    "ja": "デザインで画像をインポート",
+    "tr": "Görselleri Tasarımda içe aktarın"
   },
   "Xaml.OutputFile": {
     "zh-CN": "输出文件",
     "en": "Output file",
     "zh-TW": "輸出檔案",
-    "ja": "出力ファイル"
+    "ja": "出力ファイル",
+    "tr": "Çıktı dosyası"
   },
   "Xaml.Select": {
     "zh-CN": "选择…",
     "en": "Select…",
     "zh-TW": "選擇…",
-    "ja": "選択…"
+    "ja": "選択…",
+    "tr": "Seç…"
   },
   "Xaml.VolumeLabel": {
     "zh-CN": "卷标",
     "en": "Volume label",
     "zh-TW": "卷標",
-    "ja": "ボリューム ラベル"
+    "ja": "ボリューム ラベル",
+    "tr": "Birim etiketi"
   },
   "Xaml.CDDAEncoding": {
     "zh-CN": "CD-DA 编码",
     "en": "CD-DA encoding",
     "zh-TW": "CD-DA 編碼",
-    "ja": "CD-DA エンコード"
+    "ja": "CD-DA エンコード",
+    "tr": "CD-DA kodlama"
   },
   "Xaml.ApplyCDDADelayInterleavingWhenGeneratingAudioTracks": {
     "zh-CN": "生成音轨时按 CD-DA 标准做延迟交织。不清楚请默认勾选此项。",
     "en": "Apply CD-DA delay interleaving when generating audio tracks. Leave this enabled if unsure.",
     "zh-TW": "產生音軌時依 CD-DA 標準進行延遲交錯。若不確定，請保留勾選。",
-    "ja": "オーディオ トラックの生成時に CD-DA 規格の遅延インターリーブを適用します。不明な場合はオンのままにしてください。"
+    "ja": "オーディオ トラックの生成時に CD-DA 規格の遅延インターリーブを適用します。不明な場合はオンのままにしてください。",
+    "tr": "Ses izleri oluştururken CD-DA gecikmeli serpiştirmeyi uygulayın. Emin değilseniz bunu etkin bırakın."
   },
   "Xaml.EnableCDDADelayInterleaving": {
     "zh-CN": "启用 CD-DA 延迟交织",
     "en": "Enable CD-DA delay interleaving",
     "zh-TW": "啟用 CD-DA 延遲交錯",
-    "ja": "CD-DA 遅延インターリーブを有効にする"
+    "ja": "CD-DA 遅延インターリーブを有効にする",
+    "tr": "CD-DA gecikmeli serpiştirmeyi etkinleştir"
   },
   "Xaml.AlsoExportACUEFile": {
     "zh-CN": "同时导出 CUE 文件",
     "en": "Also export a CUE file",
     "zh-TW": "同時匯出 CUE 檔案",
-    "ja": "CUE ファイルもエクスポートする"
+    "ja": "CUE ファイルもエクスポートする",
+    "tr": "Ayrıca bir CUE dosyası dışa aktar"
   },
   "Xaml.OutputISO": {
     "zh-CN": "输出 ISO",
     "en": "Output ISO",
     "zh-TW": "輸出 ISO",
-    "ja": "ISO を出力"
+    "ja": "ISO を出力",
+    "tr": "ISO çıktısı al"
   },
   "Xaml.WritingAFileDoesNotModifyTheDisc": {
     "zh-CN": "写入文件不会改动盘片。",
     "en": "Writing a file does not modify the disc.",
     "zh-TW": "寫入檔案不會變更光碟內容。",
-    "ja": "ファイルへの書き出しではディスクは変更されません。"
+    "ja": "ファイルへの書き出しではディスクは変更されません。",
+    "tr": "Bir dosyaya yazmak diski değiştirmez."
   },
   "Xaml.DonTSave": {
     "zh-CN": "不保存",
     "en": "Don't save",
     "zh-TW": "不儲存",
-    "ja": "保存しない"
+    "ja": "保存しない",
+    "tr": "Kaydetme"
   },
   "Xaml.ConfirmBurn": {
     "zh-CN": "确认刻录",
     "en": "Confirm burn",
     "zh-TW": "確認燒錄",
-    "ja": "書き込みの確認"
+    "ja": "書き込みの確認",
+    "tr": "Yazmayı onayla"
   },
   "Xaml.DesignProjectionQuicklyMapsTheSourceImageUsingProject": {
     "zh-CN": "“设计投影”按工程参数将源图投到盘面上，速度快；“成品读回”则读取已生成的镜像文件还原。生成几何参数请在工程设置中修改。",
     "en": "Design projection quickly maps the source image using project parameters. Output readback reconstructs a generated image file. Edit generation geometry in Project settings.",
     "zh-TW": "「設計投影」依專案參數將來源圖片投影至碟面，速度較快；「成品讀回」則讀取已產生的映像檔來還原。請在專案設定中修改產生映像所用的幾何參數。",
-    "ja": "「デザイン投影」はプロジェクトのパラメーターに基づいてソース画像を記録面に高速に投影します。「出力の読み戻し」は生成済みのイメージ ファイルを読み取って復元します。生成のジオメトリ パラメーターはプロジェクトの設定で変更してください。"
+    "ja": "「デザイン投影」はプロジェクトのパラメーターに基づいてソース画像を記録面に高速に投影します。「出力の読み戻し」は生成済みのイメージ ファイルを読み取って復元します。生成のジオメトリ パラメーターはプロジェクトの設定で変更してください。",
+    "tr": "Tasarım izdüşümü, kaynak görseli proje parametrelerini kullanarak diske hızla yansıtır. Çıktı geri okuması, oluşturulan imaj dosyasını yeniden yapılandırır. Geometriyi Proje ayarlarında düzenleyin."
   },
   "Xaml.NextExport": {
     "zh-CN": "下一步：导出",
     "en": "Next: Export",
     "zh-TW": "下一步：匯出",
-    "ja": "次へ: エクスポート"
+    "ja": "次へ: エクスポート",
+    "tr": "Sonraki: Dışa Aktar"
   },
   "Xaml.DesignProjection": {
     "zh-CN": "设计投影",
     "en": "Design projection",
     "zh-TW": "設計投影",
-    "ja": "デザイン投影"
+    "ja": "デザイン投影",
+    "tr": "Tasarım izdüşümü"
   },
   "Xaml.OutputReadback": {
     "zh-CN": "成品读回",
     "en": "Output readback",
     "zh-TW": "成品讀回",
-    "ja": "出力の読み戻し"
+    "ja": "出力の読み戻し",
+    "tr": "Çıktı geri okuması"
   },
   "Xaml.ProjectParameters": {
     "zh-CN": "当前工程参数",
     "en": "Geometry",
     "zh-TW": "目前專案參數",
-    "ja": "現在のプロジェクト パラメーター"
+    "ja": "現在のプロジェクト パラメーター",
+    "tr": "Geometri"
   },
   "Xaml.MeasurementsAndQualityAdvanced": {
     "zh-CN": "实测参数与预览精度（高级）",
     "en": "Advanced preview settings",
     "zh-TW": "實測參數與預覽精度（進階）",
-    "ja": "実測パラメーターとプレビュー精度 (詳細)"
+    "ja": "実測パラメーターとプレビュー精度 (詳細)",
+    "tr": "Gelişmiş önizleme ayarları"
   },
   "Xaml.InnerRadiusMm": {
     "zh-CN": "内半径 (mm)",
     "en": "Inner r (mm)",
     "zh-TW": "內半徑 (mm)",
-    "ja": "内半径 (mm)"
+    "ja": "内半径 (mm)",
+    "tr": "İç r (mm)"
   },
   "Xaml.OuterRadiusMm": {
     "zh-CN": "外半径 (mm)",
     "en": "Outer r (mm)",
     "zh-TW": "外半徑 (mm)",
-    "ja": "外半径 (mm)"
+    "ja": "外半径 (mm)",
+    "tr": "Dış r (mm)"
   },
   "Xaml.PreviewQuality": {
     "zh-CN": "预览精度",
     "en": "Preview quality",
     "zh-TW": "預覽精度",
-    "ja": "プレビュー精度"
+    "ja": "プレビュー精度",
+    "tr": "Önizleme kalitesi"
   },
   "Xaml.OutputSizePx": {
     "zh-CN": "导出尺寸 (px)",
     "en": "Output size (px)",
     "zh-TW": "匯出尺寸 (px)",
-    "ja": "出力サイズ (px)"
+    "ja": "出力サイズ (px)",
+    "tr": "Çıktı boyutu (px)"
   },
   "Xaml.SamplesPerSector": {
     "zh-CN": "每扇区采样",
     "en": "Samples/sector",
     "zh-TW": "每磁區取樣",
-    "ja": "セクターあたりのサンプル数"
+    "ja": "セクターあたりのサンプル数",
+    "tr": "Sektör başına örnek"
   },
   "Xaml.LargerSizesShowMoreDetailButTakeLongerTo": {
     "zh-CN": "尺寸越大投影越细，刷新越慢。",
     "en": "Larger sizes show more detail but take longer to refresh.",
     "zh-TW": "尺寸越大，投影越精細，重新整理所需時間也越長。",
-    "ja": "サイズが大きいほど細かく投影されますが、更新に時間がかかります。"
+    "ja": "サイズが大きいほど細かく投影されますが、更新に時間がかかります。",
+    "tr": "Daha büyük boyutlar daha fazla ayrıntı gösterir ancak yenilenmesi daha uzun sürer."
   },
   "Xaml.Deinterleave": {
     "zh-CN": "逆交织",
     "en": "Deinterleave",
     "zh-TW": "解交錯",
-    "ja": "デインターリーブ"
+    "ja": "デインターリーブ",
+    "tr": "Ters serpiştirme"
   },
   "Xaml.EnableThisIfTheAudioTrackWasGeneratedWith": {
     "zh-CN": "若音轨生成时启用了延迟交织，则应勾选该选项。",
     "en": "Enable this if the audio track was generated with delay interleaving.",
     "zh-TW": "若音軌產生時啟用了延遲交錯，則應勾選該選項。",
-    "ja": "オーディオ トラックの生成時に遅延インターリーブを有効にしていた場合は、オンにしてください。"
+    "ja": "オーディオ トラックの生成時に遅延インターリーブを有効にしていた場合は、オンにしてください。",
+    "tr": "Ses izi gecikmeli serpiştirme ile oluşturulmuşsa bunu etkinleştirin."
   },
   "Xaml.RefreshPreview": {
     "zh-CN": "刷新预览",
     "en": "Refresh preview",
     "zh-TW": "重新整理預覽",
-    "ja": "プレビューを更新"
+    "ja": "プレビューを更新",
+    "tr": "Önizlemeyi yenile"
   },
   "Xaml.ExportPreview": {
     "zh-CN": "导出预览",
     "en": "Export preview",
     "zh-TW": "匯出預覽",
-    "ja": "プレビューをエクスポート"
+    "ja": "プレビューをエクスポート",
+    "tr": "Önizlemeyi dışa aktar"
   },
   "Xaml.ExportTheCurrentPreviewToTheInputSourceFolder": {
     "zh-CN": "导出当前预览图到输入来源所在文件夹",
     "en": "Export the current preview to the input source folder",
     "zh-TW": "匯出目前預覽圖到輸入來源所在資料夾",
-    "ja": "現在のプレビューを入力元のフォルダーにエクスポート"
+    "ja": "現在のプレビューを入力元のフォルダーにエクスポート",
+    "tr": "Geçerli önizlemeyi giriş kaynağının bulunduğu klasöre aktarın"
   },
   "Xaml.YellowFileAreaIncludingFilesystem": {
     "zh-CN": "黄色：文件区（含文件系统）",
     "en": "Yellow: file area (including filesystem)",
     "zh-TW": "黃色：檔案區（含檔案系統）",
-    "ja": "黄: ファイル領域 (ファイル システムを含む)"
+    "ja": "黄: ファイル領域 (ファイル システムを含む)",
+    "tr": "Sarı: dosya alanı (dosya sistemi dahil)"
   },
   "Xaml.CreateAndBurnVisibleArtworkOnOpticalDiscs": {
     "zh-CN": "全能的光盘盘面可见图像生成与刻录工作台",
     "en": "Create and burn visible artwork on optical discs",
     "zh-TW": "整合光碟表面圖像製作與燒錄的工作台",
-    "ja": "ディスクの記録面に見えるアートワークを作成・書き込みするオールインワン ワークスペース"
+    "ja": "ディスクの記録面に見えるアートワークを作成・書き込みするオールインワン ワークスペース",
+    "tr": "Optik disklerde görünür sanat eserleri oluşturun ve diske yazın"
   },
   "Xaml.ReturnToTheOpenProjectAndContinueInDesign": {
     "zh-CN": "回到打开的工程，从设计工作区继续。",
     "en": "Return to the open project and continue in Design.",
     "zh-TW": "回到開啟的專案，從設計工作區繼續。",
-    "ja": "開いているプロジェクトに戻り、デザイン ワークスペースから続行します。"
+    "ja": "開いているプロジェクトに戻り、デザイン ワークスペースから続行します。",
+    "tr": "Açık olan projeye dönün ve Tasarımda devam edin."
   },
   "Xaml.BackToProject": {
     "zh-CN": "返回工程",
     "en": "Back to project",
     "zh-TW": "返回專案",
-    "ja": "プロジェクトに戻る"
+    "ja": "プロジェクトに戻る",
+    "tr": "Projeye dön"
   },
   "Xaml.OpenProject": {
     "zh-CN": "打开工程",
     "en": "Open project",
     "zh-TW": "開啟專案",
-    "ja": "プロジェクトを開く"
+    "ja": "プロジェクトを開く",
+    "tr": "Proje aç"
   },
   "Xaml.StartFromATemplate": {
     "zh-CN": "从模板开始",
     "en": "Start from a template",
     "zh-TW": "從範本開始",
-    "ja": "テンプレートから開始"
+    "ja": "テンプレートから開始",
+    "tr": "Bir şablondan başla"
   },
   "Xaml.RecentProjects": {
     "zh-CN": "最近工程",
     "en": "Recent projects",
     "zh-TW": "最近專案",
-    "ja": "最近使ったプロジェクト"
+    "ja": "最近使ったプロジェクト",
+    "tr": "Son projeler"
   },
   "Xaml.Clear": {
     "zh-CN": "清空",
     "en": "Clear",
     "zh-TW": "清除",
-    "ja": "クリア"
+    "ja": "クリア",
+    "tr": "Temizle"
   },
   "Xaml.RemoveFromList": {
     "zh-CN": "从列表中移除",
     "en": "Remove from list",
     "zh-TW": "從清單中移除",
-    "ja": "一覧から削除"
+    "ja": "一覧から削除",
+    "tr": "Listeden kaldır"
   },
   "Xaml.Calibration2": {
     "zh-CN": "辅助标定",
     "en": "Calibration",
     "zh-TW": "輔助校準",
-    "ja": "キャリブレーション"
+    "ja": "キャリブレーション",
+    "tr": "Yardımcı Kalibrasyon"
   },
   "Xaml.UseDiscImageStudioSBuiltInAlgorithmsTo": {
     "zh-CN": "通过 Disc Image Studio 内置的智能算法，您可以利用数张实拍图片轻松确定盘片的真实物理数据",
     "en": "Use Disc Image Studio's built-in algorithms to determine physical disc parameters from photographs.",
     "zh-TW": "利用 Disc Image Studio 內建的智慧演算法，只需數張實拍相片，即可輕鬆確定光碟的實際物理參數。",
-    "ja": "Disc Image Studio に内蔵されたアルゴリズムを使って、数枚の写真からディスクの実際の物理パラメーターを簡単に求めることができます。"
+    "ja": "Disc Image Studio に内蔵されたアルゴリズムを使って、数枚の写真からディスクの実際の物理パラメーターを簡単に求めることができます。",
+    "tr": "Fotoğraflardan gerçek fiziksel disk parametrelerini belirlemek için Disc Image Studio'nun yerleşik akıllı algoritmalarını kullanın."
   },
   "Xaml.CalibrationPhoto": {
     "zh-CN": "标定照片",
     "en": "Calibration photo",
     "zh-TW": "校準相片",
-    "ja": "キャリブレーション用写真"
+    "ja": "キャリブレーション用写真",
+    "tr": "Kalibrasyon fotoğrafı"
   },
   "Xaml.ZoomOut": {
     "zh-CN": "缩小",
     "en": "Zoom out",
     "zh-TW": "縮小",
-    "ja": "縮小"
+    "ja": "縮小",
+    "tr": "Uzaklaştır"
   },
   "Xaml.ZoomIn": {
     "zh-CN": "放大",
     "en": "Zoom in",
     "zh-TW": "放大",
-    "ja": "拡大"
+    "ja": "拡大",
+    "tr": "Yakınlaştır"
   },
   "Xaml.FitToWindow": {
     "zh-CN": "适合窗口",
     "en": "Fit to window",
     "zh-TW": "符合視窗大小",
-    "ja": "全体表示"
+    "ja": "全体表示",
+    "tr": "Pencereye sığdır"
   },
   "Xaml.ShowBurnPattern": {
     "zh-CN": "查看刻录图案",
     "en": "Burn pattern",
     "zh-TW": "檢視燒錄圖案",
-    "ja": "書き込みパターン"
+    "ja": "書き込みパターン",
+    "tr": "Yazma desenini görüntüle"
   },
   "Xaml.ShowRectifiedPreview": {
     "zh-CN": "查看矫正预览",
     "en": "Rectified preview",
     "zh-TW": "檢視校正預覽",
-    "ja": "補正プレビュー"
+    "ja": "補正プレビュー",
+    "tr": "Düzeltilmiş önizlemeyi görüntüle"
   },
   "Xaml.OverlayFittedCurves": {
     "zh-CN": "叠加拟合曲线",
     "en": "Fitted curves",
     "zh-TW": "疊加擬合曲線",
-    "ja": "フィット曲線"
+    "ja": "フィット曲線",
+    "tr": "Uydurulan eğrileri üst üste bindir"
   },
   "Xaml.ScrollToZoomRightDragToPanDragPoints": {
     "zh-CN": "滚轮缩放，右键平移。拖动已有点修正位置；描线时点击添加点，Delete 删除选中点。",
     "en": "Scroll to zoom; right-drag to pan. Drag points to adjust them. Click to add trace points; press Delete to remove the selected point.",
     "zh-TW": "以滾輪縮放、右鍵拖曳平移。拖曳現有點可修正位置；描線時按一下可新增點，按 Delete 刪除選取點。",
-    "ja": "ホイールでズーム、右ドラッグでパンします。既存の点をドラッグして位置を調整します。トレース中はクリックで点を追加し、Delete キーで選択した点を削除します。"
+    "ja": "ホイールでズーム、右ドラッグでパンします。既存の点をドラッグして位置を調整します。トレース中はクリックで点を追加し、Delete キーで選択した点を削除します。",
+    "tr": "Yakınlaştırmak için kaydırın, kaydırmak için sağ tıklayıp sürükleyin. Noktaları ayarlamak için sürükleyin. Çizim noktası eklemek için tıklayın; seçilen noktayı kaldırmak için Delete tuşuna basın."
   },
   "Xaml.PhysicalOuterEdge": {
     "zh-CN": "实体外缘",
     "en": "Physical outer edge",
     "zh-TW": "實體外緣",
-    "ja": "物理的な外縁"
+    "ja": "物理的な外縁",
+    "tr": "Fiziksel dış kenar"
   },
   "Xaml.PhysicalInnerEdge": {
     "zh-CN": "实体内缘",
     "en": "Physical inner edge",
     "zh-TW": "實體內緣",
-    "ja": "物理的な内縁"
+    "ja": "物理的な内縁",
+    "tr": "Fiziksel iç kenar"
   },
   "Xaml.DeletePoint": {
     "zh-CN": "删除选中点",
     "en": "Delete point",
     "zh-TW": "刪除選取點",
-    "ja": "選択した点を削除"
+    "ja": "選択した点を削除",
+    "tr": "Seçili noktayı sil"
   },
   "Xaml.ClearCurves": {
     "zh-CN": "清空曲线",
     "en": "Clear curves",
     "zh-TW": "清除曲線",
-    "ja": "曲線をクリア"
+    "ja": "曲線をクリア",
+    "tr": "Eğrileri temizle"
   },
   "Xaml.Photograph": {
     "zh-CN": "实拍输入",
     "en": "Photograph",
     "zh-TW": "實拍輸入",
-    "ja": "写真入力"
+    "ja": "写真入力",
+    "tr": "Fotoğraf girdisi"
   },
   "Xaml.Prediction": {
     "zh-CN": "参数预测",
     "en": "Prediction",
     "zh-TW": "參數預測",
-    "ja": "パラメーター推定"
+    "ja": "パラメーター推定",
+    "tr": "Parametre tahmini"
   },
   "Xaml.LargeDeviation": {
     "zh-CN": "偏离较大",
     "en": "Large deviation",
     "zh-TW": "偏離較大",
-    "ja": "偏差大"
+    "ja": "偏差大",
+    "tr": "Büyük sapma"
   },
   "Xaml.CreateCalibrationDisc": {
     "zh-CN": "生成标定盘",
     "en": "Create target",
     "zh-TW": "產生校準光碟",
-    "ja": "キャリブレーション ディスクを作成"
+    "ja": "キャリブレーション ディスクを作成",
+    "tr": "Hedef oluştur"
   },
   "Xaml.CreateTargetFromParameters": {
     "zh-CN": "从当前参数新建标靶",
     "en": "Create target from parameters",
     "zh-TW": "從目前參數新增標靶",
-    "ja": "現在のパラメーターからターゲットを作成"
+    "ja": "現在のパラメーターからターゲットを作成",
+    "tr": "Geçerli parametrelerden hedef oluştur"
   },
   "Xaml.OpenStreamingBurn": {
     "zh-CN": "前往流式刻录",
     "en": "Open streaming burn",
     "zh-TW": "前往串流燒錄",
-    "ja": "ストリーミング書き込みへ"
+    "ja": "ストリーミング書き込みへ",
+    "tr": "Akışla yazmaya git"
   },
   "Xaml.OpenBurnToSelectARecorderAndConfirmWriting": {
     "zh-CN": "前往刻录工作区，选择设备并确认写入。",
     "en": "Open Burn to select a recorder and confirm writing.",
     "zh-TW": "前往燒錄工作區，選擇裝置並確認寫入。",
-    "ja": "書き込みワークスペースを開き、ドライブを選択して書き込みを確定します。"
+    "ja": "書き込みワークスペースを開き、ドライブを選択して書き込みを確定します。",
+    "tr": "Bir yazıcı seçmek ve yazmayı onaylamak için Yazma çalışma alanını açın."
   },
   "Xaml.ExternalBurning": {
     "zh-CN": "外部刻录",
     "en": "External burning",
     "zh-TW": "外部燒錄",
-    "ja": "外部ソフトで書き込み"
+    "ja": "外部ソフトで書き込み",
+    "tr": "Harici diske yazma"
   },
   "Xaml.GenerateAnImageOrAudioTrackForExternalBurning": {
     "zh-CN": "生成镜像或音轨，用外部刻录软件写入。",
     "en": "Generate an image or audio track for external burning software.",
     "zh-TW": "產生映像或音軌，用外部燒錄軟體寫入。",
-    "ja": "イメージまたはオーディオ トラックを生成し、外部の書き込みソフトウェアで書き込みます。"
+    "ja": "イメージまたはオーディオ トラックを生成し、外部の書き込みソフトウェアで書き込みます。",
+    "tr": "Harici yazma yazılımları için bir imaj veya ses izi oluşturun."
   },
   "Xaml.ChooseLocation": {
     "zh-CN": "选择位置",
     "en": "Choose location",
     "zh-TW": "選擇位置",
-    "ja": "場所を選択"
+    "ja": "場所を選択",
+    "tr": "Konum seçin"
   },
   "Xaml.GenerateImageTrack": {
     "zh-CN": "生成镜像／音轨",
     "en": "Generate image / track",
     "zh-TW": "產生映像／音軌",
-    "ja": "イメージ / トラックを生成"
+    "ja": "イメージ / トラックを生成",
+    "tr": "İmaj / iz oluştur"
   },
   "Xaml.ExportPatternPNG": {
     "zh-CN": "导出图案 PNG",
     "en": "Export pattern PNG",
     "zh-TW": "匯出圖案 PNG",
-    "ja": "パターンを PNG でエクスポート"
+    "ja": "パターンを PNG でエクスポート",
+    "tr": "Desen PNG'si aktar"
   },
   "Xaml.CalibrationSessionAdvanced": {
     "zh-CN": "标定记录（高级）",
     "en": "Calibration session (advanced)",
     "zh-TW": "校準記錄（進階）",
-    "ja": "キャリブレーション記録 (詳細)"
+    "ja": "キャリブレーション記録 (詳細)",
+    "tr": "Kalibrasyon oturumu (gelişmiş)"
   },
   "Xaml.SaveCalibrationSession": {
     "zh-CN": "保存标定记录",
     "en": "Save calibration session",
     "zh-TW": "儲存校準記錄",
-    "ja": "キャリブレーション記録を保存"
+    "ja": "キャリブレーション記録を保存",
+    "tr": "Kalibrasyon oturumunu kaydet"
   },
   "Xaml.OpenCalibrationSession": {
     "zh-CN": "打开标定记录",
     "en": "Open calibration session",
     "zh-TW": "開啟校準記錄",
-    "ja": "キャリブレーション記録を開く"
+    "ja": "キャリブレーション記録を開く",
+    "tr": "Kalibrasyon oturumu aç"
   },
   "Xaml.RectifyPhoto": {
     "zh-CN": "照片矫正",
     "en": "Rectify photo",
     "zh-TW": "相片校正",
-    "ja": "写真の補正"
+    "ja": "写真の補正",
+    "tr": "Fotoğraf düzeltme"
   },
   "Xaml.PhotographBothPhysicalEdgesAndAtLeastOneRadial": {
     "zh-CN": "拍清外缘、内缘和至少一条径向曲线。合理打光，无需涂黑；控制点定位于实体外缘与内缘。",
     "en": "Photograph both physical edges and at least one radial curve clearly. Use suitable lighting; no black coating is needed. Place control points on the physical edges.",
     "zh-TW": "清楚拍攝外緣、內緣與至少一條徑向曲線。適當打光，無須塗黑；控制點應位於實體外緣與內緣。",
-    "ja": "外縁、内縁、および少なくとも 1 本の放射状の曲線が鮮明に写るように撮影してください。適切に照明を当てれば黒く塗る必要はありません。制御点は物理的な外縁と内縁に配置します。"
+    "ja": "外縁、内縁、および少なくとも 1 本の放射状の曲線が鮮明に写るように撮影してください。適切に照明を当てれば黒く塗る必要はありません。制御点は物理的な外縁と内縁に配置します。",
+    "tr": "Hem fiziksel kenarları hem de en az bir radyal eğriyi net bir şekilde fotoğraflayın. Uygun aydınlatma kullanın; siyaha boyama gerekmez. Denetim noktalarını fiziksel kenarlara yerleştirin."
   },
   "Xaml.ImportDiscPhoto": {
     "zh-CN": "导入盘片照片",
     "en": "Import disc photo",
     "zh-TW": "匯入光碟片相片",
-    "ja": "ディスクの写真をインポート"
+    "ja": "ディスクの写真をインポート",
+    "tr": "Disk fotoğrafı içe aktar"
   },
   "Xaml.DiscSize": {
     "zh-CN": "盘片尺寸",
     "en": "Disc size",
     "zh-TW": "光碟片尺寸",
-    "ja": "ディスク サイズ"
+    "ja": "ディスク サイズ",
+    "tr": "Disk boyutu"
   },
   "Xaml.CalculateRectification": {
     "zh-CN": "计算矫正",
     "en": "Calculate rectification",
     "zh-TW": "計算校正",
-    "ja": "補正を計算"
+    "ja": "補正を計算",
+    "tr": "Düzeltmeyi hesapla"
   },
   "Xaml.ConfirmAndTraceCurves": {
     "zh-CN": "确认矫正，开始描线",
     "en": "Confirm and trace curves",
     "zh-TW": "確認校正，開始描線",
-    "ja": "補正を確定して曲線をトレース"
+    "ja": "補正を確定して曲線をトレース",
+    "tr": "Düzeltmeyi onayla ve eğrileri çiz"
   },
   "Xaml.TraceAndSolve": {
     "zh-CN": "描曲线并反推",
     "en": "Trace & solve",
     "zh-TW": "描繪曲線並反推",
-    "ja": "曲線をトレースして推定"
+    "ja": "曲線をトレースして推定",
+    "tr": "Eğri çiz & tersine çöz"
   },
   "Xaml.PlacePointsEvenlyAlongAClearCurveFromInside": {
     "zh-CN": "沿清楚的曲线由内向外均匀打点，建议 16 点以上。",
     "en": "Place points evenly along a clear curve from inside to outside; at least 16 points are recommended.",
     "zh-TW": "沿清楚的曲線由內向外均勻打點，建議 16 點以上。",
-    "ja": "鮮明な曲線に沿って内側から外側へ均等に点を打ってください。16 点以上を推奨します。"
+    "ja": "鮮明な曲線に沿って内側から外側へ均等に点を打ってください。16 点以上を推奨します。",
+    "tr": "İçten dışa doğru net bir eğri boyunca noktaları eşit aralıklarla yerleştirin; en az 16 nokta önerilir."
   },
   "Xaml.BackToPhotoCorrection": {
     "zh-CN": "返回修正照片",
     "en": "Back to photo correction",
     "zh-TW": "返回相片校正",
-    "ja": "写真の補正に戻る"
+    "ja": "写真の補正に戻る",
+    "tr": "Fotoğraf düzeltmeye dön"
   },
   "Xaml.FitCubicDVDTrackPitch": {
     "zh-CN": "拟合 DVD 三次轨距分布",
     "en": "Fit cubic DVD track pitch",
     "zh-TW": "擬合 DVD 三次軌距分佈",
-    "ja": "DVD のトラック ピッチを 3 次式でフィット"
+    "ja": "DVD のトラック ピッチを 3 次式でフィット",
+    "tr": "DVD üçüncü dereceden iz aralığı uydur"
   },
   "Xaml.UseAtLeast16PointsAtDifferentRadiiSpanning": {
     "zh-CN": "至少 16 个不同半径的点，覆盖刻录环带宽度的 60% 以上。",
     "en": "Use at least 16 points at different radii, spanning more than 60% of the recorded band width.",
     "zh-TW": "至少需有 16 個不同半徑的點，涵蓋燒錄環帶寬度的 60% 以上。",
-    "ja": "異なる半径の点を 16 点以上使用し、記録帯の幅の 60% 以上をカバーしてください。"
+    "ja": "異なる半径の点を 16 点以上使用し、記録帯の幅の 60% 以上をカバーしてください。",
+    "tr": "Kayıt şeridi genişliğinin %60'ından fazlasını kapsayan, farklı yarıçaplarda en az 16 nokta kullanın."
   },
   "Xaml.SolveParameters": {
     "zh-CN": "反推参数",
     "en": "Solve parameters",
     "zh-TW": "反推參數",
-    "ja": "パラメーターを推定"
+    "ja": "パラメーターを推定",
+    "tr": "Parametreleri çöz"
   },
   "Xaml.CancelCalculation": {
     "zh-CN": "取消计算",
     "en": "Cancel calculation",
     "zh-TW": "取消計算",
-    "ja": "計算をキャンセル"
+    "ja": "計算をキャンセル",
+    "tr": "Hesaplamayı iptal et"
   },
   "Xaml.SelectACandidateToSeeItsPredictedCurvesOn": {
     "zh-CN": "选择候选并查看照片上的预测曲线",
     "en": "Select a candidate to see its predicted curves on the photo",
     "zh-TW": "選擇候選並檢視相片上的預測曲線",
-    "ja": "候補を選択すると、写真上に予測曲線が表示されます"
+    "ja": "候補を選択すると、写真上に予測曲線が表示されます",
+    "tr": "Fotoğraf üzerindeki tahmin edilen eğrilerini görmek için bir aday seçin"
   },
   "Xaml.ICheckedTheFullCurveItsShapeAndTurns": {
     "zh-CN": "已对照整条曲线，形状与绕圈一致",
     "en": "I checked the full curve; its shape and turns match",
     "zh-TW": "已對照整條曲線，形狀與繞圈一致",
-    "ja": "曲線全体を確認し、形状と周回が一致しています"
+    "ja": "曲線全体を確認し、形状と周回が一致しています",
+    "tr": "Tüm eğriyi kontrol ettim; şekli ve dönüşleri eşleşiyor"
   },
   "Xaml.ApplyCalibration": {
     "zh-CN": "应用标定参数",
     "en": "Apply calibration",
     "zh-TW": "套用校準參數",
-    "ja": "キャリブレーションを適用"
+    "ja": "キャリブレーションを適用",
+    "tr": "Kalibrasyon parametrelerini uygula"
   },
   "Xaml.NotStarted": {
     "zh-CN": "待开始",
     "en": "Not started",
     "zh-TW": "待開始",
-    "ja": "未開始"
+    "ja": "未開始",
+    "tr": "Başlamadı"
   },
   "Xaml.InProgress": {
     "zh-CN": "进行中",
     "en": "In progress",
     "zh-TW": "進行中",
-    "ja": "進行中"
+    "ja": "進行中",
+    "tr": "Devam ediyor"
   },
   "Xaml.Complete": {
     "zh-CN": "已完成",
     "en": "Complete",
     "zh-TW": "已完成",
-    "ja": "完了"
+    "ja": "完了",
+    "tr": "Tamamlandı"
   },
   "Xaml.LayerName": {
     "zh-CN": "图层名",
     "en": "Layer name",
     "zh-TW": "圖層名稱",
-    "ja": "レイヤー名"
+    "ja": "レイヤー名",
+    "tr": "Katman adı"
   },
   "Xaml.Rotation": {
     "zh-CN": "旋转 (°)",
     "en": "Rotation (°)",
     "zh-TW": "旋轉 (°)",
-    "ja": "回転 (°)"
+    "ja": "回転 (°)",
+    "tr": "Döndürme (°)"
   },
   "Xaml.Scale": {
     "zh-CN": "缩放 (%)",
     "en": "Scale (%)",
     "zh-TW": "縮放 (%)",
-    "ja": "拡大率 (%)"
+    "ja": "拡大率 (%)",
+    "tr": "Ölçek (%)"
   },
   "Xaml.NextPreview": {
     "zh-CN": "下一步：预览",
     "en": "Next: Preview",
     "zh-TW": "下一步：預覽",
-    "ja": "次へ: プレビュー"
+    "ja": "次へ: プレビュー",
+    "tr": "Sonraki: Önizleme"
   },
   "Xaml.Layers": {
     "zh-CN": "图层",
     "en": "Layers",
     "zh-TW": "圖層",
-    "ja": "レイヤー"
+    "ja": "レイヤー",
+    "tr": "Katmanlar"
   },
   "Xaml.ShowOrHideLayer": {
     "zh-CN": "显示或隐藏图层",
     "en": "Show or hide layer",
     "zh-TW": "顯示或隱藏圖層",
-    "ja": "レイヤーの表示/非表示"
+    "ja": "レイヤーの表示/非表示",
+    "tr": "Katmanı göster veya gizle"
   },
   "Xaml.ShowHide": {
     "zh-CN": "显示 / 隐藏",
     "en": "Show / Hide",
     "zh-TW": "顯示 / 隱藏",
-    "ja": "表示 / 非表示"
+    "ja": "表示 / 非表示",
+    "tr": "Göster / Gizle"
   },
   "Xaml.MoveLayerUp": {
     "zh-CN": "上移图层",
     "en": "Move layer up",
     "zh-TW": "上移圖層",
-    "ja": "レイヤーを上へ移動"
+    "ja": "レイヤーを上へ移動",
+    "tr": "Katmanı yukarı taşı"
   },
   "Xaml.MoveUpOneLayer": {
     "zh-CN": "上移一层",
     "en": "Move up one layer",
     "zh-TW": "上移一層",
-    "ja": "1 つ上へ移動"
+    "ja": "1 つ上へ移動",
+    "tr": "Bir katman yukarı taşı"
   },
   "Xaml.MoveLayerDown": {
     "zh-CN": "下移图层",
     "en": "Move layer down",
     "zh-TW": "下移圖層",
-    "ja": "レイヤーを下へ移動"
+    "ja": "レイヤーを下へ移動",
+    "tr": "Katmanı aşağı taşı"
   },
   "Xaml.MoveDownOneLayer": {
     "zh-CN": "下移一层",
     "en": "Move down one layer",
     "zh-TW": "下移一層",
-    "ja": "1 つ下へ移動"
+    "ja": "1 つ下へ移動",
+    "tr": "Bir katman aşağı taşı"
   },
   "Xaml.DeleteLayer": {
     "zh-CN": "删除图层",
     "en": "Delete layer",
     "zh-TW": "刪除圖層",
-    "ja": "レイヤーを削除"
+    "ja": "レイヤーを削除",
+    "tr": "Katmanı sil"
   },
   "Xaml.DeleteSelectedLayerDel": {
     "zh-CN": "删除选中图层（Del）",
     "en": "Delete selected layer (Del)",
     "zh-TW": "刪除選取圖層（Del）",
-    "ja": "選択したレイヤーを削除 (Del)"
+    "ja": "選択したレイヤーを削除 (Del)",
+    "tr": "Seçili katmanı sil (Del)"
   },
   "Xaml.ImportImages": {
     "zh-CN": "导入图片",
     "en": "Import images",
     "zh-TW": "匯入圖片",
-    "ja": "画像をインポート"
+    "ja": "画像をインポート",
+    "tr": "Görselleri içe aktar"
   },
   "Xaml.DiscFiles": {
     "zh-CN": "随盘文件",
     "en": "Disc files",
     "zh-TW": "隨碟檔案",
-    "ja": "ディスクに収録するファイル"
+    "ja": "ディスクに収録するファイル",
+    "tr": "Diske eklenecek dosyalar"
   },
   "Xaml.Folder": {
     "zh-CN": "文件夹",
     "en": "Folder",
     "zh-TW": "資料夾",
-    "ja": "フォルダー"
+    "ja": "フォルダー",
+    "tr": "Klasör"
   },
   "Xaml.Browse3": {
     "zh-CN": "选文件夹…",
     "en": "Browse…",
     "zh-TW": "選資料夾…",
-    "ja": "フォルダーを選択…"
+    "ja": "フォルダーを選択…",
+    "tr": "Klasör seç…"
   },
   "Xaml.FilePlacement": {
     "zh-CN": "文件位置",
     "en": "File placement",
     "zh-TW": "檔案位置",
-    "ja": "ファイルの配置"
+    "ja": "ファイルの配置",
+    "tr": "Dosya konumu"
   },
   "Xaml.InnerRing": {
     "zh-CN": "内圈",
     "en": "Inner ring",
     "zh-TW": "內圈",
-    "ja": "内周"
+    "ja": "内周",
+    "tr": "İç halka"
   },
   "Xaml.OuterRing": {
     "zh-CN": "外圈",
     "en": "Outer ring",
     "zh-TW": "外圈",
-    "ja": "外周"
+    "ja": "外周",
+    "tr": "Dış halka"
   },
   "Xaml.UsesAnAudioTrackWithoutFilesSwitchesToA": {
     "zh-CN": "不附文件时使用音轨；附文件时自动使用数据盘。",
     "en": "Uses an audio track without files; switches to a data disc when files are included.",
     "zh-TW": "不附檔案時使用音軌；附檔案時自動使用資料光碟。",
-    "ja": "ファイルがない場合はオーディオ トラックを使用し、ファイルを含める場合は自動的にデータ ディスクを使用します。"
+    "ja": "ファイルがない場合はオーディオ トラックを使用し、ファイルを含める場合は自動的にデータ ディスクを使用します。",
+    "tr": "Dosya olmadığında ses izi kullanır; dosyalar dahil edildiğinde otomatik olarak veri diskine geçer."
   },
   "Xaml.FolderOptional": {
     "zh-CN": "文件夹（留空则整盘只绘图）",
     "en": "Folder (optional)",
     "zh-TW": "資料夾（留空則整張光碟只繪圖）",
-    "ja": "フォルダー (空欄の場合はディスク全体に描画のみ)"
+    "ja": "フォルダー (空欄の場合はディスク全体に描画のみ)",
+    "tr": "Klasör (isteğe bağlı, boş bırakılırsa diskin tamamına çizim yapılır)"
   },
   "Xaml.CtrlAltScrollToZoomMiddleDragToPan": {
     "zh-CN": "Ctrl/Alt + 滚轮同样可以缩放；中键拖动平移",
     "en": "Ctrl/Alt + scroll to zoom; middle-drag to pan",
     "zh-TW": "Ctrl/Alt + 滾輪同樣可以縮放；中鍵拖曳平移",
-    "ja": "Ctrl/Alt + ホイールでもズームできます。中ボタンのドラッグでパンします"
+    "ja": "Ctrl/Alt + ホイールでもズームできます。中ボタンのドラッグでパンします",
+    "tr": "Ctrl/Alt + kaydırarak yakınlaştırın; orta tuşla sürükleyerek kaydırın"
   },
   "Xaml.FitToWindow2": {
     "zh-CN": "适应窗口",
     "en": "Fit to window",
     "zh-TW": "符合視窗大小",
-    "ja": "ウィンドウに合わせる"
+    "ja": "ウィンドウに合わせる",
+    "tr": "Pencereye sığdır"
   },
   "Xaml.FitToWindowOrDoubleClickEmptySpace": {
     "zh-CN": "适应窗口（双击空白处同样生效）",
     "en": "Fit to window (or double-click empty space)",
     "zh-TW": "符合視窗大小（也可按兩下空白處）",
-    "ja": "ウィンドウに合わせる (空白部分のダブルクリックでも可)"
+    "ja": "ウィンドウに合わせる (空白部分のダブルクリックでも可)",
+    "tr": "Pencereye sığdır (veya boş alana çift tıklayın)"
   },
   "Xaml.Properties": {
     "zh-CN": "属性",
     "en": "Properties",
     "zh-TW": "屬性",
-    "ja": "プロパティ"
+    "ja": "プロパティ",
+    "tr": "Özellikler"
   },
   "Xaml.SelectALayerOnTheCanvasToEditIts": {
     "zh-CN": "在画布上点击一个图层以编辑它的位置、旋转与缩放。",
     "en": "Select a layer on the canvas to edit its position, rotation, and scale.",
     "zh-TW": "在畫布上選取圖層，即可編輯其位置、旋轉角度與縮放比例。",
-    "ja": "キャンバス上のレイヤーをクリックすると、位置、回転、拡大率を編集できます。"
+    "ja": "キャンバス上のレイヤーをクリックすると、位置、回転、拡大率を編集できます。",
+    "tr": "Konumunu, döndürmesini ve ölçeğini düzenlemek için tuval üzerinde bir katman seçin."
   },
   "Xaml.Tone": {
     "zh-CN": "影调",
     "en": "Tone",
     "zh-TW": "影調",
-    "ja": "トーン"
+    "ja": "トーン",
+    "tr": "Ton"
   },
   "Xaml.NoPreview": {
     "zh-CN": "暂无预览",
     "en": "No preview",
     "zh-TW": "暫無預覽",
-    "ja": "プレビューなし"
+    "ja": "プレビューなし",
+    "tr": "Önizleme yok"
   },
   "Xaml.Dithering": {
     "zh-CN": "抖动强度",
     "en": "Dithering",
     "zh-TW": "抖動強度",
-    "ja": "ディザリング強度"
+    "ja": "ディザリング強度",
+    "tr": "Sarsıntı"
   },
   "Xaml.Brightness": {
     "zh-CN": "亮度",
     "en": "Brightness",
     "zh-TW": "亮度",
-    "ja": "明るさ"
+    "ja": "明るさ",
+    "tr": "Parlaklık"
   },
   "Xaml.GrayLevels": {
     "zh-CN": "灰阶档位",
     "en": "Gray levels",
     "zh-TW": "灰階級數",
-    "ja": "階調数"
+    "ja": "階調数",
+    "tr": "Gri ton basamakları"
   },
   "Xaml.2Levels": {
     "zh-CN": "2 级",
     "en": "2 levels",
     "zh-TW": "2 級",
-    "ja": "2 階調"
+    "ja": "2 階調",
+    "tr": "2 basamak"
   },
   "Xaml.4Levels": {
     "zh-CN": "4 级",
     "en": "4 levels",
     "zh-TW": "4 級",
-    "ja": "4 階調"
+    "ja": "4 階調",
+    "tr": "4 basamak"
   },
   "Xaml.FourLevelsUseFourTonesToRevealFinerDetails": {
     "zh-CN": "4 级即四种颜色，可呈现出更好的图案细节。",
     "en": "Four levels use four tones to reveal finer details.",
     "zh-TW": "4 級即四種顏色，可呈現出更好的圖案細節。",
-    "ja": "4 階調では 4 つの色調を使い、図柄の細部をより表現できます。"
+    "ja": "4 階調では 4 つの色調を使い、図柄の細部をより表現できます。",
+    "tr": "4 basamak, daha ince ayrıntıları ortaya çıkarmak için dört ton kullanır."
   },
   "Xaml.SRGBLinearizationGamma": {
     "zh-CN": "sRGB 线性化（伽马校准）",
     "en": "sRGB linearization (gamma)",
     "zh-TW": "sRGB 線性化（Gamma 校正）",
-    "ja": "sRGB 線形化 (ガンマ補正)"
+    "ja": "sRGB 線形化 (ガンマ補正)",
+    "tr": "sRGB doğrusallaştırma (gama)"
   },
   "Xaml.SRGBLinearization": {
     "zh-CN": "sRGB 线性化",
     "en": "sRGB linearization",
     "zh-TW": "sRGB 線性化",
-    "ja": "sRGB 線形化"
+    "ja": "sRGB 線形化",
+    "tr": "sRGB doğrusallaştırma"
   },
   "Xaml.MayImproveTheVisibilityOfTheDiscArtwork": {
     "zh-CN": "可能使盘面上的图案更明显。",
     "en": "May improve the visibility of the disc artwork.",
     "zh-TW": "可能使碟面上的圖案更明顯。",
-    "ja": "記録面のアートワークが見やすくなる場合があります。"
+    "ja": "記録面のアートワークが見やすくなる場合があります。",
+    "tr": "Disk üzerindeki görselin görünürlüğünü artırabilir."
   },
   "Xaml.Invert3T6TMapping": {
     "zh-CN": "反转 3T / 6T 映射",
     "en": "Invert 3T / 6T mapping",
     "zh-TW": "反轉 3T / 6T 映射",
-    "ja": "3T / 6T のマッピングを反転"
+    "ja": "3T / 6T のマッピングを反転",
+    "tr": "3T / 6T eşlemesini tersine çevir"
   },
   "Xaml.SwapDarkAndLightRegionsActualDiscContrastDepends": {
     "zh-CN": "交换暗部与亮部。实盘明暗仍以标定结果为准。",
     "en": "Swap dark and light regions. Actual disc contrast depends on calibration.",
     "zh-TW": "交換暗部與亮部。實際光碟的明暗仍以校準結果為準。",
-    "ja": "暗部と明部を入れ替えます。実際のディスクの明暗はキャリブレーション結果によります。"
+    "ja": "暗部と明部を入れ替えます。実際のディスクの明暗はキャリブレーション結果によります。",
+    "tr": "Karanlık ve aydınlık bölgeleri değiştirir. Gerçek disk kontrastı kalibrasyona bağlıdır."
   },
   "Xaml.ResetDefaults": {
     "zh-CN": "恢复默认",
     "en": "Reset defaults",
     "zh-TW": "還原預設值",
-    "ja": "既定値に戻す"
+    "ja": "既定値に戻す",
+    "tr": "Varsayılanlara sıfırla"
   },
   "Xaml.DismissNotification": {
     "zh-CN": "关闭通知",
     "en": "Dismiss notification",
     "zh-TW": "關閉通知",
-    "ja": "通知を閉じる"
+    "ja": "通知を閉じる",
+    "tr": "Bildirimi kapat"
   },
   "Xaml.Close": {
     "zh-CN": "关闭",
     "en": "Close",
     "zh-TW": "關閉",
-    "ja": "閉じる"
-  },
-  "Xaml.AppMenu": {
-    "zh-CN": "应用菜单",
-    "en": "App menu",
-    "zh-TW": "應用程式選單",
-    "ja": "アプリ メニュー"
-  },
-  "Xaml.SettingsButton": {
-    "zh-CN": "设置",
-    "en": "Settings",
-    "zh-TW": "設定",
-    "ja": "設定"
+    "ja": "閉じる",
+    "tr": "Kapat"
   },
   "Xaml.OpenSettingsShortcut": {
     "zh-CN": "打开设置 (Ctrl+,)",
     "en": "Open settings (Ctrl+,)",
     "zh-TW": "開啟設定 (Ctrl+,)",
-    "ja": "設定を開く (Ctrl+,)"
+    "ja": "設定を開く (Ctrl+,)",
+    "tr": "Ayarları aç (Ctrl+,)"
   },
   "Xaml.Minimize": {
     "zh-CN": "最小化",
     "en": "Minimize",
     "zh-TW": "最小化",
-    "ja": "最小化"
+    "ja": "最小化",
+    "tr": "Simge durumuna küçült"
   },
   "Xaml.Maximize": {
     "zh-CN": "最大化",
     "en": "Maximize",
     "zh-TW": "最大化",
-    "ja": "最大化"
+    "ja": "最大化",
+    "tr": "Ekranı kapla"
   },
   "Xaml.LayerCountFormat": {
     "zh-CN": "{0} 层",
     "en": "{0} layers",
     "zh-TW": "{0} 層",
-    "ja": "{0} レイヤー"
+    "ja": "{0} レイヤー",
+    "tr": "{0} katman"
+  },
+  "Xaml.GroupDiscMaking": {
+    "zh-CN": "制盘",
+    "en": "Disc making",
+    "zh-TW": "製盤",
+    "ja": "ディスク作成",
+    "tr": "Disk oluşturma",
+    "es": "Creación de discos"
+  },
+  "Xaml.GroupCalibration": {
+    "zh-CN": "标定",
+    "en": "Calibration",
+    "zh-TW": "校準",
+    "ja": "キャリブレーション",
+    "tr": "Kalibrasyon",
+    "es": "Calibración"
   }
 }

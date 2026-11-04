@@ -71,11 +71,13 @@ internal static class ProjectDialogPresetTests
         };
         Require(dialog.TemplateCategoryIndex == ProjectDialogViewModel.RecentCategoryIndex
             && dialog.Family == OpticalDiscFamily.CompactDisc, "recent CD preset starts selected");
+        Require(string.IsNullOrEmpty(dialog.Name), "new project starts with an empty name");
         dialog.DeletePresetCommand.Execute(dialog.SelectedTemplate);
         Require(string.IsNullOrEmpty(dialog.ErrorMessage), "deleting the selected recent preset succeeds");
         Require(dialog.SelectedTemplate?.PresetId == "bd-r-sl-25gb", "next recent preset becomes selected");
         Require(dialog.Family == OpticalDiscFamily.BluRay, "next recent preset changes the form's disc family");
         Require(dialog.SectorsText == "12219392", "next recent preset applies the matching geometry");
+        dialog.Name = "最近预设工程";
         dialog.ConfirmCommand.Execute(null);
         Require(dialog.Result?.Family == OpticalDiscFamily.BluRay
             && dialog.Result.Sectors == 12219392, "created project matches the highlighted recent preset");

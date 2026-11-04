@@ -4,6 +4,13 @@
 
 ### 中文
 
+- 新增威宝 BD-R (64293) 内置预设，参数与 64099 相同，贡献者 bczhc。
+- 新增威宝 DVD+R AZO (43498) 内置预设，贡献者 Disappear9。
+- 新增铼德 DVD-R E时代系列内置预设，贡献者 bczhc。
+- 新增铼德 BD-R 12x 内置预设：内半径 23.98795 mm、外半径 58.02236 mm，贡献者 DeepAQ。
+- 新增铼德 DVD+R E时代系列内置预设。
+- 新建工程不再按模板自动填充工程名，输入框保持为空；填写名称后才能创建。
+- 侧栏工程头卡片右侧新增软盘保存按钮。
 - **实验性功能：macOS 原生 SwiftUI 图形界面。** `macos/` 新增 SwiftUI 客户端（SwiftPM），界面形态与 Windows 桌面版一致：主页（模板／最近工程）、设计（图层画布／属性／影调／随盘文件）、预览（设计投影／成品读回）、导出（CD 音轨或数据盘、DVD/BD ISO）、刻录（`drutil` 文件模式与 DiscRecording 流式模式）、标定（完整辅助标定向导）与设置／关于。工程文件 `.discproj` 与 Windows 双向兼容，所有编码仍由 `disc-image-studio` 子进程完成，参数构造与 Windows 的 `ExportViewModel`／`LivePreviewViewModel` 对齐。
 - CLI 新增 `catalog [--json]`、`presets --json`、`bd-preview`、`bd-preview-readback`：分别输出机器可读的命令目录与盘片预设、渲染蓝光设计投影与成品读回图；GUI 与 CLI 共享同一份命令与预设描述。
 - **实验性功能：macOS 辅助标定升级为完整流程。** 标定页提供生成标靶、照片双椭圆矫正、沿曲线/分界描点反推、按阈值应用参数的三步向导，判定阈值与 Windows 一致（平均 ≤0.35 mm、最大 ≤0.8 mm）；额外支持 issue #49 的「两张法」（半黑白粗调盘 → 内置靶标精调盘）。标定会话是工程 `calibration/<id>.calibration.json`（schema 6，Windows 双向兼容），照片、轮廓、描线与确认状态都写在该文件里，是唯一事实来源；工程通过 `calibrationSessionPath` 恢复，重开时解码会话、重建矫正图并自动重算候选（候选不另存），记录列表直接扫描 `*.calibration.json`。粗调需要人工描点，不内置密集环相位自动提取。
@@ -14,6 +21,13 @@
 
 ### English
 
+- Added a built-in Verbatim BD-R (64293) preset with the same parameters as 64099, contributed by bczhc.
+- Added a built-in Verbatim DVD+R AZO (43498) preset, contributed by Disappear9.
+- Added a built-in Ritek DVD-R E-Series preset, contributed by bczhc.
+- Added a built-in Ritek BD-R 12x preset with inner radius 23.98795 mm and outer radius 58.02236 mm, contributed by DeepAQ.
+- Added a built-in Ritek DVD+R E-Series preset.
+- New projects leave the project name empty instead of filling it from the selected template; the project can be created once a name is entered.
+- Added a floppy-disk Save button on the right of the sidebar project header.
 - **Experimental feature: a native SwiftUI GUI for macOS.** A new SwiftUI client under `macos/` (SwiftPM) follows the same workflow as the Windows desktop app: home (templates and recent projects), design (layer canvas, properties, tone, disc-bundled files), preview (design projection and artifact read-back), export (CD audio tracks or data discs, DVD/BD ISOs), burn (`drutil` file mode and DiscRecording streaming), calibration (the full assisted calibration wizard), and settings/about. Project files are `.discproj`, interoperable with Windows; all encoding still runs through the `disc-image-studio` child process, with arguments aligned to the Windows `ExportViewModel` / `LivePreviewViewModel`.
 - The CLI gains `catalog [--json]`, `presets --json`, `bd-preview`, and `bd-preview-readback`: a machine-readable command catalog and disc preset list, plus Blu-ray design-projection and artifact read-back renders. The GUI and the CLI share one command and preset description.
 - **Experimental feature: full assisted calibration on macOS.** The calibration page walks through target generation, two-ellipse photo rectification, tracing and parameter fitting, and applying the calibrated geometry, with the same thresholds as Windows (mean ≤0.35 mm, max ≤0.8 mm). It also implements the issue #49 two-disc approach — a half-black/half-white coarse disc followed by a fine disc generated from the built-in target. Calibration sessions are per-project `calibration/<id>.calibration.json` files (schema 6, Windows-compatible) that hold the photo, outline, traces, and confirmation state as the single source of truth; the project's `calibrationSessionPath` restores them, reopening decodes the session, rebuilds the rectified image, and recomputes candidates without storing them, and the record list is just a scan of `*.calibration.json`. Coarse calibration still requires manual tracing; automatic dense-ring phase extraction is not included.

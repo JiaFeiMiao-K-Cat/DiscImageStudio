@@ -1,4 +1,5 @@
 using DiscImageStudio.Localization;
+using System.ComponentModel;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -23,6 +24,16 @@ public partial class BurnViewModel : ObservableObject
     private int _burnPreparationRevision;
     private string? _sourceIdentity;
     private bool _isPreparingBurn;
+    // The speeds the current disc reported, kept so the status line can be re-worded after a
+    // language switch without touching the drive again.
+    private IReadOnlyList<OpticalWriteSpeed>? _supportedSpeeds;
+    // Probe failures are cached for the same reason: their text carries an exception message
+    // that must not be replaced by the idle hint after a language switch. The in-flight flags
+    // keep a switch from showing the idle hint while a probe is still running.
+    private string? _deviceStatusError;
+    private string? _speedStatusError;
+    private bool _isRefreshingDevices;
+    private bool _isRefreshingSpeeds;
 
     [ObservableProperty]
     private IReadOnlyList<OpticalBurnDevice>? _devices;
@@ -62,6 +73,10 @@ public partial class BurnViewModel : ObservableObject
 
     [ObservableProperty]
     private string _burnStatusText = L.T("等待开始");
+
+    // The status line is stored as a key so a language switch can re-read it; progress and
+    // error details stay in their own fields.
+    private string _burnStatusKey = "等待开始";
 
     [ObservableProperty]
     private double _burnProgressValue;
@@ -305,6 +320,67 @@ public partial class BurnViewModel : ObservableObject
         }
     }
 
+    /// <summary>Re-reads the cached source, device and speed text. The source identity is
+    /// unchanged, so confirmation and detected devices stay exactly where they were.</summary>
+    private void SetBurnStatus(string key)
+    {
+        _burnStatusKey = key;
+        BurnStatusText = L.T(key);
+    }
+
+    internal void Relocalize()
+    {
+        OnPropertyChanged(nameof(FamilyLabel));
+        UpdateSourceSummary();
+        BurnStatusText = L.T(_burnStatusKey);
+        if (_isRefreshingDevices)
+        {
+            DeviceStatusText = L.T("正在检测刻录机…");
+        }
+        else if (Devices is { } devices)
+        {
+            DeviceStatusText = devices.Count == 0
+                ? L.T("未检测到支持 IMAPI2 的 CD/DVD/BD 刻录机。")
+                : L.F($"检测到 {devices.Count} 台刻录机");
+        }
+        else
+        {
+            DeviceStatusText = _deviceStatusError is { } deviceError
+                ? L.T("检测刻录机失败：") + deviceError
+                : L.T("进入此页面后会检测本机刻录机。");
+        }
+
+        foreach (BurnWriteSpeedOption option in Speeds)
+        {
+            option.RefreshLabel();
+        }
+
+        OnPropertyChanged(nameof(SelectedSpeed));
+        if (SelectedDevice is null)
+        {
+            SpeedStatusText = L.T("请先选择刻录机。");
+        }
+        else if (_isRefreshingSpeeds)
+        {
+            SpeedStatusText = L.T("正在读取当前盘片支持的刻录速度…");
+        }
+        else if (_supportedSpeeds is { } supported)
+        {
+            OpticalBurnMediaKind mediaKind = CurrentMediaKind;
+            SpeedStatusText = supported.Count == 0
+                ? L.T("当前盘片未报告可选速度，将使用刻录接口的保守回退设置。")
+                : L.F($"当前盘片报告 {supported.Count} 种写入配置；自动模式将使用最低值 ")
+                    + L.F($"{FormatBurnWriteSpeed(supported[0], mediaKind)}，最终以刻录机采用值为准。");
+        }
+        else if (_speedStatusError is { } speedError)
+        {
+            SpeedStatusText =
+                L.T("未能读取当前盘片速度，将使用刻录接口的保守回退设置：") + speedError;
+        }
+
+        UpdateActionState();
+    }
+
     private void UpdateActionState() => StartBurnCommand.NotifyCanExecuteChanged();
 
     internal async Task RefreshDevicesAsync()
@@ -315,6 +391,8 @@ public partial class BurnViewModel : ObservableObject
         }
 
         Devices = null;
+        _deviceStatusError = null;
+        _isRefreshingDevices = true;
         DeviceStatusText = L.T("正在检测刻录机…");
         try
         {
@@ -330,10 +408,12 @@ public partial class BurnViewModel : ObservableObject
         {
             Devices = null;
             SelectedDevice = null;
+            _deviceStatusError = exception.Message;
             DeviceStatusText = L.T("检测刻录机失败：") + exception.Message;
         }
         finally
         {
+            _isRefreshingDevices = false;
             UpdateActionState();
         }
     }
@@ -349,9 +429,14 @@ public partial class BurnViewModel : ObservableObject
         OpticalWriteSpeed? previousSpeed = SelectedSpeed?.Speed;
         Speeds = [BurnWriteSpeedOption.Automatic];
         SelectedSpeed = BurnWriteSpeedOption.Automatic;
+        _supportedSpeeds = null;
+        _speedStatusError = null;
 
         if (SelectedDevice is not OpticalBurnDevice device)
         {
+            // This call owns the latest revision, so it also clears the in-flight marker the
+            // superseded probe will no longer clear.
+            _isRefreshingSpeeds = false;
             IsSpeedComboEnabled = false;
             IsSpeedRefreshEnabled = false;
             SpeedStatusText = L.T("请先选择刻录机。");
@@ -359,6 +444,7 @@ public partial class BurnViewModel : ObservableObject
         }
 
         OpticalBurnMediaKind mediaKind = CurrentMediaKind;
+        _isRefreshingSpeeds = true;
         IsSpeedComboEnabled = false;
         IsSpeedRefreshEnabled = false;
         SpeedStatusText = L.T("正在读取当前盘片支持的刻录速度…");
@@ -378,6 +464,7 @@ public partial class BurnViewModel : ObservableObject
                 speed,
                 FormatBurnWriteSpeed(speed, mediaKind))));
             Speeds = options;
+            _supportedSpeeds = speeds;
             int selectedIndex = previousSpeed is null
                 ? 0
                 : options.FindIndex(option => option.Speed == previousSpeed);
@@ -391,6 +478,7 @@ public partial class BurnViewModel : ObservableObject
         {
             if (revision == _burnWriteSpeedRefreshRevision)
             {
+                _speedStatusError = exception.Message;
                 SpeedStatusText =
                     L.T("未能读取当前盘片速度，将使用刻录接口的保守回退设置：") + exception.Message;
             }
@@ -399,6 +487,7 @@ public partial class BurnViewModel : ObservableObject
         {
             if (revision == _burnWriteSpeedRefreshRevision)
             {
+                _isRefreshingSpeeds = false;
                 IsSpeedComboEnabled = true;
                 IsSpeedRefreshEnabled = true;
             }
@@ -588,7 +677,7 @@ public partial class BurnViewModel : ObservableObject
 
             if (_shell.IsBusy || preparationRevision != _burnPreparationRevision || !ConfirmChecked)
             {
-                BurnStatusText = L.T("刻录来源或选项已变化，请重新确认后开始。");
+                SetBurnStatus("刻录来源或选项已变化，请重新确认后开始。");
                 return;
             }
 
@@ -601,7 +690,7 @@ public partial class BurnViewModel : ObservableObject
             // showing a second progress surface inside this page.
             _shell.BeginBurnDockJob(request.MediaKind, request.ContentLength);
             BurnProgressValue = 0;
-            BurnStatusText = L.T("正在流式刻录，进度见底部任务栏。");
+            SetBurnStatus("正在流式刻录，进度见底部任务栏。");
             _shell.AppendLog(
                 L.F($"\n[{DateTime.Now:HH:mm:ss}] 开始流式刻录：{contentDescription}；")
                 + L.F($"设备={device.DisplayName}；请求速度={selectedWriteSpeed.DisplayName}。\n"));
@@ -620,7 +709,7 @@ public partial class BurnViewModel : ObservableObject
                 progress,
                 burnCancellation.Token);
             BurnProgressValue = 100;
-            BurnStatusText = L.T("刻录完成，可以取出光盘。");
+            SetBurnStatus("刻录完成，可以取出光盘。");
             _shell.CompleteDockJob(L.T("完成：流式刻录 ") + contentDescription);
             _shell.AppendLog(
                 L.F($"[{DateTime.Now:HH:mm:ss}] 流式刻录完成：{result.BytesWritten} 字节，")
@@ -633,14 +722,14 @@ public partial class BurnViewModel : ObservableObject
         }
         catch (OperationCanceledException)
         {
-            BurnStatusText = L.T("已请求取消；光驱可能仍需一段时间才能停止。");
+            SetBurnStatus("已请求取消；光驱可能仍需一段时间才能停止。");
             _shell.AbortDockJob(L.T("已取消：流式刻录"), expandLog: false);
             _shell.AppendLog(
                 L.F($"[{DateTime.Now:HH:mm:ss}] 已取消流式刻录；当前盘片可能无法继续使用。\n"));
         }
         catch (Exception exception)
         {
-            BurnStatusText = L.T("刻录未完成，请查看错误信息。");
+            SetBurnStatus("刻录未完成，请查看错误信息。");
             _shell.AbortDockJob(L.T("失败：流式刻录"), expandLog: true);
             _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 流式刻录失败：{exception.Message}\n"));
             _shell.ShowToast(
@@ -736,7 +825,7 @@ public partial class BurnViewModel : ObservableObject
     private void CancelStreamBurn()
     {
         CancelBurnCommand.NotifyCanExecuteChanged();
-        BurnStatusText = L.T("正在请求停止刻录，请不要取出盘片…");
+        SetBurnStatus("正在请求停止刻录，请不要取出盘片…");
         _burnCancellation?.Cancel();
     }
 
@@ -782,11 +871,22 @@ public partial class BurnViewModel : ObservableObject
         return options;
     }
 
+    /// <summary>One selectable write speed. The automatic entry names itself in the current
+    /// language, so the label is computed and can notify without replacing the list (which
+    /// would disturb the selection and the burn confirmation).</summary>
     public sealed record BurnWriteSpeedOption(
         OpticalWriteSpeed? Speed,
-        string DisplayName)
+        string? SpeedLabel) : INotifyPropertyChanged
     {
-        public static BurnWriteSpeedOption Automatic { get; } =
-            new(null, L.T("自动（最低速率，推荐）"));
+        public static BurnWriteSpeedOption Automatic { get; } = new(null, null);
+
+        public string DisplayName => Speed is null
+            ? L.T("自动（最低速率，推荐）")
+            : SpeedLabel ?? string.Empty;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        internal void RefreshLabel()
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DisplayName)));
     }
 }

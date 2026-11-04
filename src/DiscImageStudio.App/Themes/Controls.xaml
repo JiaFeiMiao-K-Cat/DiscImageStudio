@@ -364,6 +364,17 @@
         <Setter Property="Focusable" Value="False" />
     </Style>
 
+    <!-- Trailing action inside the project header: no chrome at rest so it keeps the
+         header surface, and the shared ghost hover lifts it one step when pointed at. -->
+    <Style x:Key="HeaderActionButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    </Style>
+
     <!-- Start-page tile: no chrome at rest, the whole card is the hit target, and hover
          lifts the surface the way a sidebar row does. -->
     <Style x:Key="TileButton" TargetType="Button">
@@ -1284,7 +1295,16 @@
                                                         Background="{DynamicResource Surface3Brush}" VerticalAlignment="Center"
                                                         Margin="10,0,0,0">
                                                     <TextBlock x:Name="StateChipText" Style="{StaticResource MicroText}"
-                                                               Text="{loc:Text Xaml.NotStarted}" />
+                                                               loc:LocalizedText.Key="Xaml.NotStarted">
+                                                        <TextBlock.Text>
+                                                            <MultiBinding Converter="{x:Static loc:LocalizedTextConverter.Instance}">
+                                                                <Binding Path="(loc:LocalizedText.Key)"
+                                                                         RelativeSource="{RelativeSource Self}" />
+                                                                <Binding Path="Revision"
+                                                                         Source="{x:Static loc:LocalizedTextSource.Instance}" />
+                                                            </MultiBinding>
+                                                        </TextBlock.Text>
+                                                    </TextBlock>
                                                 </Border>
                                                 <iconPacks:PackIconLucide Grid.Column="3" x:Name="HeaderChevron" Kind="ChevronDown"
                                                                           Width="16" Height="16" Margin="10,0,0,0" VerticalAlignment="Center"
@@ -1308,7 +1328,7 @@
                                                          Value="Active">
                                                 <Setter TargetName="StepDot" Property="Background" Value="{DynamicResource PrimaryBrush}" />
                                                 <Setter TargetName="StepNumberText" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                                                <Setter TargetName="StateChipText" Property="Text" Value="{loc:Text Xaml.InProgress}" />
+                                                <Setter TargetName="StateChipText" Property="loc:LocalizedText.Key" Value="Xaml.InProgress" />
                                                 <Setter TargetName="StateChipText" Property="Foreground" Value="{DynamicResource PrimaryHoverBrush}" />
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding State, RelativeSource={RelativeSource AncestorType={x:Type controls:StepCard}}}"
@@ -1316,7 +1336,7 @@
                                                 <Setter TargetName="StepDot" Property="Background" Value="{DynamicResource SuccessSoftBrush}" />
                                                 <Setter TargetName="StepNumberText" Property="Visibility" Value="Collapsed" />
                                                 <Setter TargetName="DoneCheck" Property="Visibility" Value="Visible" />
-                                                <Setter TargetName="StateChipText" Property="Text" Value="{loc:Text Xaml.Complete}" />
+                                                <Setter TargetName="StateChipText" Property="loc:LocalizedText.Key" Value="Xaml.Complete" />
                                                 <Setter TargetName="StateChipText" Property="Foreground" Value="{DynamicResource SuccessBrush}" />
                                             </DataTrigger>
                                         </ControlTemplate.Triggers>

@@ -6,7 +6,7 @@
 
 <h2>An all-in-one tool for generating and burning visible images onto optical discs</h2>
 
-The Windows desktop app designs and burns disc images. The **experimental Linux and macOS CLI** generates CD, DVD and Blu-ray images offline.
+Disc Image Studio is a multi-platform disc-surface image generation and burning tool that helps you etch images visible to the naked eye onto any DVD / CD / single-layer Blu-ray disc with any recorder.
 
 ![.NET version](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-0078d6?style=flat-square)
@@ -91,12 +91,6 @@ See the [assisted calibration guide](docs/CALIBRATION.md) for the workflow and p
 - **Disc image output**: Export complete ISO / RAW files and burn them manually with suitable burning software.
 - **Live streaming burn (experimental)**: Generate and burn CD, DVD, and BD-R data simultaneously without saving a complete disc image. BD-R uses MMC sequential writing.
 - **Do not use non-blank media!**
-
-### Application
-
-- Multilingual interface: Click **Settings** in the upper-right corner, then choose Simplified Chinese, Traditional Chinese, English, Japanese, or **System** under **General → Language**. Save and restart the app to apply the language change. Language and theme both follow the system by default; existing explicitly saved preferences are preserved. For the system language, `zh-TW`, `zh-HK`, `zh-MO`, and `zh-Hant` use Traditional Chinese, other Chinese locales use Simplified Chinese, Japanese locales use Japanese, and all other locales use English.
-- Two entry points: Launch without arguments to open the GUI, or with arguments to use the unified command line.
-- Modular design: CD, DVD, and Blu-ray connect through `IOpticalDiscModule`, sharing a command catalog and job contracts. See the [architecture guide](docs/ARCHITECTURE.md).
 
 ## System and Hardware Requirements
 

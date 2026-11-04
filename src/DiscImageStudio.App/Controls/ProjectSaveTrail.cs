@@ -4,22 +4,22 @@ using System.Windows.Media;
 
 namespace DiscImageStudio.Controls;
 
-/// <summary>Saved-project acknowledgement: one green segment runs once around the project
-/// header's rounded rectangle. The head follows a cubic Bezier timing curve and the tail
-/// length follows the same curve's instantaneous speed, so the trail stretches while the
-/// segment accelerates through the middle of the lap and contracts as it eases into the
-/// start again. Presentation only: never hit-testable, and the caller may skip it when the
+/// <summary>Saved-project acknowledgement: one solid line segment runs once around the
+/// project header's rounded rectangle. The head follows a cubic Bezier timing curve and the
+/// tail length follows the same curve's instantaneous speed, so the segment stretches
+/// through the fast middle of the lap and contracts as it eases into the start again. The
+/// stroke keeps one alpha along its whole length: no fade-out tail, no halo, no glow and no
+/// head dot. Presentation only: never hit-testable, and the caller may skip it when the
 /// header is not on screen.</summary>
 public sealed class ProjectSaveTrail : FrameworkElement
 {
     private const double LapDurationMs = 1150;
     private const double FadeInFraction = 0.07;
     private const double FadeOutFraction = 0.18;
-    private const double SegmentCount = 30;
     private const double PathSampleStep = 1.5;
 
     // Cubic Bezier(0.55, 0, 0.2, 1): slow start, fast middle, long settle at the end. The
-    // same curve drives progress and the derivative that scales the trail.
+    // same curve drives progress and the derivative that scales the trail length.
     private const double EaseX1 = 0.55;
     private const double EaseY1 = 0;
     private const double EaseX2 = 0.2;
@@ -54,11 +54,8 @@ public sealed class ProjectSaveTrail : FrameworkElement
     private double _totalLength;
     private Size _builtSize;
     private double _builtRadius = double.NaN;
-    private RadialGradientBrush? _glowBrush;
-    private Pen[] _corePens = [];
-    private Pen[] _haloPens = [];
-    private SolidColorBrush? _headBrush;
-    private Color _penCore;
+    private Pen? _pen;
+    private Color _penColor;
     private double _penThickness = double.NaN;
 
     public ProjectSaveTrail()
@@ -87,7 +84,7 @@ public sealed class ProjectSaveTrail : FrameworkElement
         set => SetValue(CoreThicknessProperty, value);
     }
 
-    /// <summary>Length of the tail at full speed; the curve scales it down as the head
+    /// <summary>Length of the segment at full speed; the curve scales it down as the head
     /// slows near the start and the end of the lap.</summary>
     public double TrailLength
     {
@@ -193,114 +190,69 @@ public sealed class ProjectSaveTrail : FrameworkElement
 
     private void DrawTrail(DrawingContext drawingContext, double progress)
     {
-        double eased = EaseProgress(progress);
         double fade = Fade(progress);
         if (fade <= 0)
         {
             return;
         }
 
-        double trail = TrailLengthAt(progress, TrailLength);
-        double head = eased * _totalLength;
-        double tail = Math.Max(0, head - trail);
-        if (head - tail < 1)
+        double head = EaseProgress(progress) * _totalLength;
+        double tail = Math.Max(0, head - TrailLengthAt(progress, TrailLength));
+        if (head - tail < 0.5)
         {
             return;
         }
 
-        Color core = ResolveColor();
-        double thickness = CoreThickness;
-        EnsureBrushes(core, thickness);
+        EnsurePen();
         drawingContext.PushOpacity(fade);
-
-        // Two passes: a wide low-alpha halo under a crisp core. The halo is what makes the
-        // segment read as light instead of a painted dash without a WPF blur effect.
-        DrawTail(drawingContext, tail, head, _haloPens);
-        DrawTail(drawingContext, tail, head, _corePens);
-
-        Point headPoint = PointAt(head);
-        double glowRadius = Math.Max(7, thickness * 4.5);
-        drawingContext.DrawEllipse(_glowBrush, null, headPoint, glowRadius, glowRadius);
-        drawingContext.DrawEllipse(
-            _headBrush,
-            null,
-            headPoint,
-            thickness * 1.15,
-            thickness * 1.15);
-
+        drawingContext.DrawGeometry(null, _pen!, BuildTrailGeometry(tail, head));
         drawingContext.Pop();
     }
 
-    private void DrawTail(DrawingContext drawingContext, double tail, double head, Pen[] pens)
+    /// <summary>The segment follows the sampled path instead of joining tail and head with a
+    /// straight chord, so it stays on the rounded rectangle while the head turns a corner.
+    /// </summary>
+    private StreamGeometry BuildTrailGeometry(double tail, double head)
     {
-        int segments = pens.Length;
-        for (int index = 0; index < segments; index++)
+        StreamGeometry geometry = new();
+        using (StreamGeometryContext context = geometry.Open())
         {
-            double from = tail + (head - tail) * index / segments;
-            double to = tail + (head - tail) * (index + 1) / segments;
-            drawingContext.DrawLine(pens[index], PointAt(from), PointAt(to));
+            context.BeginFigure(PointAt(tail), isFilled: false, isClosed: false);
+
+            int found = _distances.BinarySearch(tail);
+            int first = found >= 0 ? found + 1 : ~found;
+            for (int index = first; index < _distances.Count && _distances[index] < head; index++)
+            {
+                context.LineTo(_path[index], isStroked: true, isSmoothJoin: true);
+            }
+
+            context.LineTo(PointAt(head), isStroked: true, isSmoothJoin: true);
         }
+
+        geometry.Freeze();
+        return geometry;
     }
 
-    private void EnsureBrushes(Color core, double thickness)
+    private void EnsurePen()
     {
-        if (_corePens.Length == (int)SegmentCount && _penCore == core
-            && Math.Abs(_penThickness - thickness) < 0.001)
+        Color color = ResolveColor();
+        double thickness = CoreThickness;
+        if (_pen is not null && _penColor == color && Math.Abs(_penThickness - thickness) < 0.001)
         {
             return;
         }
 
-        _penCore = core;
+        _penColor = color;
         _penThickness = thickness;
-
-        // Quadratic ramp puts most of the opacity near the head and lets the last third
-        // dissolve, which is what makes the tail read as a trailing streak. The fade of the
-        // whole lap is a separate drawing opacity, so these pens only change when the head
-        // color or the thickness does.
-        int segments = (int)SegmentCount;
-        _corePens = new Pen[segments];
-        _haloPens = new Pen[segments];
-        for (int index = 0; index < segments; index++)
-        {
-            double t = (index + 1) / (double)segments;
-            double ramp = t * t;
-            _corePens[index] = CreatePen(
-                Color.FromArgb((byte)Math.Round(core.A * ramp), core.R, core.G, core.B),
-                thickness);
-            _haloPens[index] = CreatePen(
-                Color.FromArgb((byte)Math.Round(46 * ramp), core.R, core.G, core.B),
-                thickness * 3.2);
-        }
-
-        RadialGradientBrush glow = new()
-        {
-            GradientOrigin = new Point(0.5, 0.5),
-            Center = new Point(0.5, 0.5),
-            RadiusX = 0.5,
-            RadiusY = 0.5,
-        };
-        glow.GradientStops.Add(new GradientStop(Color.FromArgb(120, core.R, core.G, core.B), 0));
-        glow.GradientStops.Add(new GradientStop(Color.FromArgb(42, core.R, core.G, core.B), 0.55));
-        glow.GradientStops.Add(new GradientStop(Color.FromArgb(0, core.R, core.G, core.B), 1));
-        glow.Freeze();
-        _glowBrush = glow;
-
-        SolidColorBrush head = new(Color.FromArgb(255, core.R, core.G, core.B));
-        head.Freeze();
-        _headBrush = head;
-    }
-
-    private static Pen CreatePen(Color color, double thickness)
-    {
         SolidColorBrush brush = new(color);
         brush.Freeze();
-        Pen pen = new(brush, thickness)
+        _pen = new Pen(brush, thickness)
         {
             StartLineCap = PenLineCap.Round,
             EndLineCap = PenLineCap.Round,
+            LineJoin = PenLineJoin.Round,
         };
-        pen.Freeze();
-        return pen;
+        _pen.Freeze();
     }
 
     private static double Fade(double progress)
@@ -481,9 +433,9 @@ public sealed class ProjectSaveTrail : FrameworkElement
     internal static double EaseProgress(double progress)
         => CubicBezier(Math.Clamp(progress, 0, 1));
 
-    /// <summary>Tail length at a linear time fraction. The same Bezier's derivative is the
-    /// head speed, so the trail contracts while the head eases in and out and stretches on
-    /// the fast middle of the lap.</summary>
+    /// <summary>Segment length at a linear time fraction. The same Bezier's derivative is
+    /// the head speed, so the segment contracts while the head eases in and out and
+    /// stretches through the fast middle of the lap.</summary>
     internal static double TrailLengthAt(double progress, double baseTrailLength)
     {
         double p = Math.Clamp(progress, 0, 1);

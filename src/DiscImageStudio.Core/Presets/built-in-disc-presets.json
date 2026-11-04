@@ -26,7 +26,7 @@
     },
     {
       "id": "verbatim-azo-43438",
-      "displayName": "Verbatim CD-R AZO (43438)（实测）",
+      "displayName": "威宝 CD-R AZO (43438)（实测）",
       "description": "实测参数：内半径 24.837775 mm、外半径 58.020875 mm、359,848 扇区；扫描速度采用 1200 mm/s。",
       "sectors": 359848,
       "innerRadiusMm": 24.837775,
@@ -61,8 +61,8 @@
     },
     {
       "id": "verbatim-dvd-r-azo-43533",
-      "displayName": "Verbatim DVD-R AZO (43533)（实测）",
-      "description": "Verbatim DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
+      "displayName": "威宝 DVD-R AZO (43533)（实测）",
+      "description": "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
       "totalSectors": 2297888,
       "innerRadiusMm": 23.991460627731737,
       "outerRadiusMm": 57.964893657925366,
@@ -72,6 +72,81 @@
       "pitchCubic": -4.670918950137523E-05,
       "displayNameResourceKey": "DiscPreset_VerbatimDvdAzo43533_DisplayName",
       "descriptionResourceKey": "DiscPreset_VerbatimDvdAzo43533_Description"
+    },
+    {
+      "id": "verbatim-dvd-r-azo-43523",
+      "displayName": "威宝 DVD-R AZO (43523)（实测）",
+      "description": "威宝 DVD-R AZO 43523 实测标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布；参数与 43533 一致。",
+      "totalSectors": 2297888,
+      "innerRadiusMm": 23.991460627731737,
+      "outerRadiusMm": 57.964893657925366,
+      "channelBitLengthNm": 133.3,
+      "pitchLinear": -3.9256854319227684E-05,
+      "pitchQuadratic": 6.964795915429256E-05,
+      "pitchCubic": -4.670918950137523E-05,
+      "displayNameResourceKey": "DiscPreset_VerbatimDvdAzo43523_DisplayName",
+      "descriptionResourceKey": "DiscPreset_VerbatimDvdAzo43523_Description",
+      "contributor": "H4CNPE"
+    },
+    {
+      "id": "verbatim-dvd-plus-r-azo-43498",
+      "displayName": "威宝 DVD+R AZO (43498)（实测）",
+      "description": "威宝 DVD+R AZO (43498) 实测标定参数：23.954070–57.981456 mm，共 2,295,104 个扇区；采用三次轨距分布。",
+      "totalSectors": 2295104,
+      "innerRadiusMm": 23.954070288547207,
+      "outerRadiusMm": 57.981456053451275,
+      "channelBitLengthNm": 133.3,
+      "pitchLinear": -1.1055153059816393E-05,
+      "pitchQuadratic": -1.7233535436312236E-06,
+      "pitchCubic": 5.55123860136712E-06,
+      "displayNameResourceKey": "DiscPreset_VerbatimDvdPlusRAzo43498_DisplayName",
+      "descriptionResourceKey": "DiscPreset_VerbatimDvdPlusRAzo43498_Description",
+      "contributor": "Disappear9"
+    },
+    {
+      "id": "philips-dvd-plus-r",
+      "displayName": "PHILIPS DVD+R（实测）",
+      "description": "PHILIPS DVD+R 实测标定参数：24.157724–57.881039 mm，共 2,295,104 个扇区；采用三次轨距分布。",
+      "totalSectors": 2295104,
+      "innerRadiusMm": 24.157723798864616,
+      "outerRadiusMm": 57.881039159257099,
+      "channelBitLengthNm": 133.3,
+      "pitchLinear": -0.00015487792452410765,
+      "pitchQuadratic": 0.0001962455822194293,
+      "pitchCubic": -8.6683602888291885E-05,
+      "displayNameResourceKey": "DiscPreset_PhilipsDvdPlusR_DisplayName",
+      "descriptionResourceKey": "DiscPreset_PhilipsDvdPlusR_Description",
+      "contributor": "DBPolp"
+    },
+    {
+      "id": "ritek-dvd-plus-r-e-series",
+      "displayName": "铼德 DVD+R E时代系列（实测）",
+      "description": "铼德 DVD+R E时代系列实测标定参数：24.0482013258–58.0264881612 mm，共 2,295,104 个扇区；采用三次轨距分布。",
+      "totalSectors": 2295104,
+      "innerRadiusMm": 24.048201325754512,
+      "outerRadiusMm": 58.02648816120639,
+      "channelBitLengthNm": 133.3,
+      "pitchLinear": 0.00004448895078187968,
+      "pitchQuadratic": -0.00010130233076827166,
+      "pitchCubic": 0.00006625808735161595,
+      "displayNameResourceKey": "DiscPreset_RitekDvdPlusRESeries_DisplayName",
+      "descriptionResourceKey": "DiscPreset_RitekDvdPlusRESeries_Description",
+      "contributor": "EternalEve"
+    },
+    {
+      "id": "ritek-dvd-r-e-series",
+      "displayName": "铼德 DVD-R E时代系列（实测）",
+      "description": "铼德 DVD-R E时代系列实测标定参数：24.0631091841–58.2337337546 mm，共 2,298,496 个扇区；采用三次轨距分布。",
+      "totalSectors": 2298496,
+      "innerRadiusMm": 24.063109184084034,
+      "outerRadiusMm": 58.23373375457525,
+      "channelBitLengthNm": 133.3,
+      "pitchLinear": -3.2229430281730407E-06,
+      "pitchQuadratic": 1.0507210681810583E-05,
+      "pitchCubic": -8.562064227346657E-06,
+      "displayNameResourceKey": "DiscPreset_RitekDvdRESeries_DisplayName",
+      "descriptionResourceKey": "DiscPreset_RitekDvdRESeries_Description",
+      "contributor": "bczhc"
     },
     {
       "id": "dvd-5-80mm",
@@ -105,13 +180,33 @@
       "invertMapping": false
     },
     {
+      "id": "bd-r-ritek-12x",
+      "displayName": "铼德 BD-R 12x（实测）",
+      "description": "实测参数：内半径 23.987950 mm、外半径 58.022360 mm、12,219,392 扇区。",
+      "totalSectors": 12219392,
+      "innerRadiusMm": 23.98795,
+      "outerRadiusMm": 58.02236,
+      "invertMapping": false,
+      "contributor": "DeepAQ"
+    },
+    {
       "id": "bd-r-verbatim-64099",
-      "displayName": "Verbatim BD-R (64099)（实测）",
+      "displayName": "威宝 BD-R (64099)（实测）",
       "description": "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。",
       "totalSectors": 12219392,
       "innerRadiusMm": 23.987042157339335,
       "outerRadiusMm": 57.987960341783236,
       "invertMapping": false
+    },
+    {
+      "id": "bd-r-verbatim-64293",
+      "displayName": "威宝 BD-R (64293)（实测）",
+      "description": "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区；参数与 64099 一致。",
+      "totalSectors": 12219392,
+      "innerRadiusMm": 23.987042157339335,
+      "outerRadiusMm": 57.987960341783236,
+      "invertMapping": false,
+      "contributor": "bczhc"
     }
   ]
 }

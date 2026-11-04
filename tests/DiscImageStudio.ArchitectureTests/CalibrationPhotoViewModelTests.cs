@@ -30,6 +30,9 @@ internal static class CalibrationPhotoViewModelTests
             CdInnerRadius = "24.5", CdOuterRadius = "56.8", CdSectors = "300000", CdInterleave = true,
         };
         var model = CreateModel(state);
+        Require(ReferenceEquals(model.SelectedPhysicalDiscSize, model.PhysicalDiscSizeChoices[0])
+            && ReferenceEquals(model.SelectedCoarseSearchRange, model.CoarseSearchRangeChoices[0]),
+            "default disc size and search range reference the listed items so both selectors start selected");
         model.CreateTargetCommand.Execute(null);
         var target = model.Target ?? throw new InvalidOperationException(model.LastStatusMessage);
         Require(target.SchemaVersion == CalibrationTarget.CurrentSchemaVersion && model.IsPhotoStep && !model.SolveCommand.CanExecute(null), "new target starts in photo step");
