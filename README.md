@@ -135,6 +135,8 @@ CLI 可读取 PNG、JPEG、BMP 和 GIF，使用动画图片的第一帧。下面
 | `calibrate` | 标定投影：按生成几何从 DVD 源图片取样，按实测几何投到盘面 |
 | `simulate` | 按实测半径对生成的 DVD ISO 做读回模拟 |
 | `selftest` | 运行 DVD 引擎的确定性回归自检 |
+| `dvd-calib-pattern` | 生成可自定位的 DVD 标定图案；需要 Python 工具 `disc-calib` |
+| `dvd-calib-solve` | 根据已刻录标定盘的照片反推实际内外半径；需要 Python 工具 `disc-calib` |
 | `cd-generate` | 无随盘文件时生成 WAV + CUE / RAW 音轨；指定 `--data-dir` 时生成 CD 数据盘 ISO |
 | `cd-preview-warp` | 标定投影：按实测几何投影 CD 源图片 |
 | `cd-preview-track` | 按标定几何渲染已有的 WAV 或 RAW CD-DA 音轨（读回模拟） |

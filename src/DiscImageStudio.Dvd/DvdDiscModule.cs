@@ -61,6 +61,30 @@ public sealed class DvdDiscModule : IOpticalDiscModule
                 "Runs the DVD engine's deterministic regression suite.",
                 DiscModuleCapabilities.None,
                 []),
+            new DiscCommandDescriptor(
+                DiscCalibBridge.PatternCommand,
+                "Render DVD calibration target",
+                "Renders a self-locating calibration target and its JSON spec (needs the Python disc-calib tool).",
+                DiscModuleCapabilities.None,
+                [
+                    new("inner-radius-mm", "Inner radius", DiscOptionValueType.Decimal, DefaultValue: "24.0", Unit: "mm"),
+                    new("outer-radius-mm", "Outer radius", DiscOptionValueType.Decimal, DefaultValue: "58.0", Unit: "mm"),
+                    new("output", "Target PNG", DiscOptionValueType.OutputFile, DefaultValue: "target_code.png"),
+                ]),
+            new DiscCommandDescriptor(
+                DiscCalibBridge.SolveCommand,
+                "Solve DVD radii from photos",
+                "Solves a burned target's actual radii from photos of the disc (needs the Python disc-calib tool).",
+                DiscModuleCapabilities.None,
+                [
+                    new("photo", "Disc photo, repeatable", DiscOptionValueType.InputFile, Required: true),
+                    new("inner-radius-mm", "Generated inner radius", DiscOptionValueType.Decimal, Required: true, Unit: "mm"),
+                    new("outer-radius-mm", "Generated outer radius", DiscOptionValueType.Decimal, Required: true, Unit: "mm"),
+                    new("total-sectors", "Generated sectors", DiscOptionValueType.Integer, Required: true),
+                    new("channel-bit-nm", "Channel-bit length", DiscOptionValueType.Decimal, DefaultValue: "133.3", Unit: "nm"),
+                    new("cubic", "Fit a cubic pitch curve", DiscOptionValueType.Boolean),
+                    new("output", "Output folder", DiscOptionValueType.OutputFile, DefaultValue: "out"),
+                ]),
         ]);
 
     public DiscModuleDescriptor Descriptor => ModuleDescriptor;
@@ -88,7 +112,9 @@ public sealed class DvdDiscModule : IOpticalDiscModule
             request.Command,
             request.Arguments);
         string[] commandLine = [request.Command, .. normalizedArguments];
-        int exitCode = DvdCommandRunner.Run(commandLine);
+        int exitCode = DiscCalibBridge.Handles(request.Command)
+            ? DiscCalibBridge.Run(request.Command, normalizedArguments)
+            : DvdCommandRunner.Run(commandLine);
         string? outputPath = FindOutputPath(request.Arguments);
         string summary = exitCode == 0
             ? $"DVD command {request.Command} completed."

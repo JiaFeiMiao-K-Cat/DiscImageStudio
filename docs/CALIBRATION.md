@@ -112,6 +112,25 @@ CD 非零系数采用与 DVD、BD 相同的弧长模型：总轨长为 `扇区�
 
 已有盘片请打开当时生成的记录。程序按记录恢复对应的参考图、组合图案、时标、短弧或宽带，旧三点或拖弧数据也会保留。旧单线盘仍沿 6 mm 粗线的**中线**连续描点，半黑半白盘按其直径分界描点。已有宽带盘可沿半径重新量边；带内刻有角度标记的盘片，需要在同一方向取得六个单点，才能用三处标记修正。仅有宽带的旧盘可继续测量宽带边缘，无法补读未刻入的角度标记。
 
+## 命令行自动标定（DVD）
+
+`dvd-calib-pattern` 和 `dvd-calib-solve` 提供不需要描线的另一条流程：图案自带编码，从手机照片直接解出实际内外半径。这两个命令转发给 `tools/disc-calib` 中的 Python 工具，它依赖 OpenCV 和 SciPy，不打包进单文件 CLI，需要单独安装：
+
+```sh
+uv tool install "git+https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio#subdirectory=tools/disc-calib"
+```
+
+依次查找 `DISC_CALIB` 环境变量指定的可执行文件和 `PATH` 中的 `disc-calib`；从源码运行时还会回退到 `uv run` 仓库内的工具。设置 `DISC_CALIB` 后不再尝试其他位置。找不到工具时退出码为 127。
+
+```sh
+./disc-image-studio dvd-calib-pattern --inner-radius-mm 24 --outer-radius-mm 58 --output target_code.png
+./disc-image-studio solve --image target_code.png --iso-output target.iso --inner-radius-mm 24 --outer-radius-mm 58 --total-sectors 2295104
+# 刻录后拍照，--photo 可重复
+./disc-image-studio dvd-calib-solve --photo 1.jpg --photo 2.jpg --inner-radius-mm 24 --outer-radius-mm 58 --total-sectors 2295104 --output out
+```
+
+结果写入 `<output>/code.fit.json`，并在终端打印质量和实际半径。拟合质量为 `poor` 时退出码为 2，此时不要采用该结果。
+
 ## 参考说明
 
 明暗边界测量思路参考 [社区讨论 #49](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues/49)。十字线沿用项目原有参考图，原图及文件信息见[参考图说明](../src/DiscImageStudio.Core/Calibration/Patterns/README.md)。
