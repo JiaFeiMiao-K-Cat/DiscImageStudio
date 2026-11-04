@@ -156,6 +156,7 @@ ThemePaletteTests.Run();
 TempFilesCacheTests.Run();
 RelocalizationTests.Run();
 CalibrationReturnButtonTests.Run();
+BurnWriteSpeedSelectionTests.Run();
 
 Console.WriteLine("architecture-selftest: all checks passed");
 return;

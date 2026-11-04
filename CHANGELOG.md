@@ -4,6 +4,7 @@
 
 ### 中文
 
+- 修复流式刻录速度首次选择后可能无法再次切换的问题；普通刻录和独立标定刻录在重新读取盘片速度或切换界面语言后仍可正常改选。
 - 设计合成图、缩略图与预览缓存按应用会话隔离；多个实例共用缓存目录时不再覆盖彼此的图片，清理缓存时跳过其他仍在运行的会话。
 - CD、BD 固定参考图标定的导出与直接刻录接入图片采样加速，保持原输出字节、环带裁切和明暗极性；固定 sRGB 转换改为精确查表，减少逐字节重复计算。
 - CD 音轨、内置标定图案及 Mode 1 文件盘默认分块并行采样和影调计算，使用固定上限的缓冲区，并按原顺序交织、写出和报告进度。
@@ -23,6 +24,7 @@
 
 ### English
 
+- Fixed streaming burn speed selection becoming stuck after the first choice. Both project and standalone calibration recording retain working speed selection after refreshing disc speeds or changing the interface language.
 - Isolated design composites, thumbnails, and preview caches by application session so instances sharing a cache folder cannot overwrite each other's images. Cache cleanup skips other running sessions.
 - Accelerated sampling for CD and Blu-ray fixed-reference calibration exports and direct recording while preserving output bytes, annulus clipping, and polarity. Cached the exact sRGB transfer curve to avoid repeated per-byte calculations.
 - CD audio, built-in calibration artwork, and Mode 1 drawing payloads now sample and apply tone in bounded parallel blocks while preserving interleaving, output order, and progress callbacks.

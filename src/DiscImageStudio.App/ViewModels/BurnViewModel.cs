@@ -917,10 +917,15 @@ public partial class BurnViewModel : ObservableObject
     /// <summary>One selectable write speed. The automatic entry names itself in the current
     /// language, so the label is computed and can notify without replacing the list (which
     /// would disturb the selection and the burn confirmation).</summary>
-    public sealed record BurnWriteSpeedOption(
+    // Selector indexes items by their hash. Notification subscriptions must not change an
+    // option's identity when DisplayMemberPath creates or removes its label binding.
+    public sealed class BurnWriteSpeedOption(
         OpticalWriteSpeed? Speed,
         string? SpeedLabel) : INotifyPropertyChanged
     {
+        public OpticalWriteSpeed? Speed { get; } = Speed;
+        public string? SpeedLabel { get; } = SpeedLabel;
+
         public static BurnWriteSpeedOption Automatic { get; } = new(null, null);
 
         public string DisplayName => Speed is null
