@@ -5,6 +5,7 @@ uint32_t DRStreamBlockSizeForKind(DRStreamKind kind) {
         case DRStreamKindCDAudio:
             return 2352;
         case DRStreamKindDVDData:
+        case DRStreamKindBDData:
             return 2048;
     }
     return 2048;
@@ -16,6 +17,8 @@ NSString *DRStreamKindName(DRStreamKind kind) {
             return @"cd-audio";
         case DRStreamKindDVDData:
             return @"dvd-data";
+        case DRStreamKindBDData:
+            return @"bd-data";
     }
     return @"unknown";
 }
@@ -58,15 +61,6 @@ static BOOL ParsePositiveDouble(NSString *text, double *outValue) {
     }
     *outValue = value;
     return YES;
-}
-
-/// True for "--kind" values that ask for Blu-ray streaming, which this helper
-/// deliberately refuses (the DiscRecording BD path is not validated).
-static BOOL IsBluRayKindToken(NSString *value) {
-    NSString *lowered = value.lowercaseString;
-    return [lowered isEqualToString:@"bd-data"] || [lowered isEqualToString:@"bd"] ||
-           [lowered isEqualToString:@"bdre"] || [lowered isEqualToString:@"bluray"] ||
-           [lowered isEqualToString:@"blu-ray"];
 }
 
 @implementation DRStreamOptions
@@ -117,16 +111,14 @@ static BOOL IsBluRayKindToken(NSString *value) {
             NSString *value = nextValue(argument);
             if (value == nil) { break; }
             index += 1;
-            if (IsBluRayKindToken(value)) {
-                fail(@"Blu-ray streaming is not supported by this helper");
-                break;
-            }
             if ([value.lowercaseString isEqualToString:@"cd-audio"]) {
                 options->_kind = DRStreamKindCDAudio;
             } else if ([value.lowercaseString isEqualToString:@"dvd-data"]) {
                 options->_kind = DRStreamKindDVDData;
+            } else if ([value.lowercaseString isEqualToString:@"bd-data"]) {
+                options->_kind = DRStreamKindBDData;
             } else {
-                fail(@"unsupported --kind value \"%@\" (expected cd-audio or dvd-data)", value);
+                fail(@"unsupported --kind value \"%@\" (expected cd-audio, dvd-data or bd-data)", value);
                 break;
             }
             sawKind = YES;
@@ -229,16 +221,16 @@ static BOOL IsBluRayKindToken(NSString *value) {
             "\n"
             "Usage:\n"
             "  disc-burn-stream --list-drives\n"
-            "  disc-burn-stream --kind cd-audio|dvd-data --sectors N [--drive I] [--speed X]\n"
+            "  disc-burn-stream --kind cd-audio|dvd-data|bd-data --sectors N [--drive I] [--speed X]\n"
             "                    [--no-verify] [--no-eject] [--test]\n"
             "  disc-burn-stream --help\n"
             "\n"
             "Options:\n"
             "  --list-drives  Print a JSON array describing the attached drives and exit.\n"
-            "  --kind         cd-audio (2352-byte blocks) or dvd-data (2048-byte blocks).\n"
+            "  --kind         cd-audio (2352-byte blocks), dvd-data or bd-data (2048-byte blocks).\n"
             "  --sectors N    Number of blocks to read from stdin and burn (required).\n"
             "  --drive I      1-based drive index as reported by --list-drives (default 1).\n"
-            "  --speed X      Requested speed factor; CD 1x is 176 KB/s, DVD 1x is 1385 KB/s.\n"
+            "  --speed X      Requested speed factor; CD 1x is 176 KB/s, DVD 1x is 1385 KB/s, BD 1x is 4496 KB/s.\n"
             "  --no-verify    Skip disc verification (verification is on by default).\n"
             "  --no-eject     Keep the disc in the drive when the burn completes.\n"
             "  --test         Test burn: the disc is not actually written.\n"

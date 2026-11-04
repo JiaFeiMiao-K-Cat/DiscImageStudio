@@ -327,10 +327,16 @@ static NSDictionary *TrackProperties(DRStreamOptions *options, uint32_t blockSiz
         properties[DRTrackModeKey] = @(kDRTrackModeAudio);
         // Let DiscRecording add the standard 2-second pregap for audio.
     } else {
+        // DVD and BD data tracks share the 2048-byte sector model; DiscRecording
+        // has no separate BD block/data-form constants (the media class and burn
+        // strategy select BD behaviour).
         properties[DRBlockTypeKey] = @(kDRBlockTypeDVDData);
         properties[DRDataFormKey] = @(kDRDataFormDVDData);
         properties[DRSessionFormatKey] = @(kDRSessionFormatDVDData);
         properties[DRTrackModeKey] = @(kDRTrackModeDVDData);
+        if (options.kind == DRStreamKindBDData) {
+            properties[DRBurnStrategyKey] = (__bridge NSString *)kDRBurnStrategyBDDAO;
+        }
     }
 
     // stdin cannot be rewound, so "produce again" verification is impossible;
@@ -343,10 +349,16 @@ static NSDictionary *TrackProperties(DRStreamOptions *options, uint32_t blockSiz
     return properties;
 }
 
-/// One CD "×" is 176.4 KB/s, one DVD "×" is 1385 KB/s; DRBurnRequestedSpeedKey
-/// is expressed in kilobytes per second.
+/// One CD "×" is 176.4 KB/s, one DVD "×" is 1385 KB/s, one BD "×" is 4496 KB/s
+/// (kDRDeviceBurnSpeedBD1x); DRBurnRequestedSpeedKey is expressed in
+/// kilobytes per second.
 static double KilobytesPerSecondForSpeedFactor(DRStreamKind kind, double speedFactor) {
-    double unit = (kind == DRStreamKindCDAudio) ? 176.4 : 1385.0;
+    double unit = 1385.0;
+    if (kind == DRStreamKindCDAudio) {
+        unit = 176.4;
+    } else if (kind == DRStreamKindBDData) {
+        unit = 4496.0;
+    }
     return speedFactor * unit;
 }
 
@@ -356,6 +368,9 @@ static NSDictionary *BurnProperties(DRStreamOptions *options) {
         properties[DRBurnRequestedSpeedKey] = @(KilobytesPerSecondForSpeedFactor(options.kind, options.speedFactor));
     }
     properties[DRBurnVerifyDiscKey] = @(options.verify);
+    if (options.kind == DRStreamKindBDData) {
+        properties[DRBurnStrategyKey] = (__bridge NSString *)kDRBurnStrategyBDDAO;
+    }
     if (options.testBurn) {
         properties[DRBurnTestingKey] = @YES;
     }
@@ -385,13 +400,19 @@ static int RunBurn(DRStreamOptions *options) {
 
     DRDevice *device = devices[(NSUInteger)(options.driveIndex - 1)];
     BOOL isAudio = (options.kind == DRStreamKindCDAudio);
+    BOOL isDVD = (options.kind == DRStreamKindDVDData);
+    BOOL isBD = (options.kind == DRStreamKindBDData);
 
     if (isAudio && !DeviceCanWriteCD(device)) {
         WriteError(@"drive %ld cannot write CD-R media", (long)options.driveIndex);
         return 2;
     }
-    if (!isAudio && !DeviceCanWriteDVD(device)) {
+    if (isDVD && !DeviceCanWriteDVD(device)) {
         WriteError(@"drive %ld cannot write DVD-R media", (long)options.driveIndex);
+        return 2;
+    }
+    if (isBD && !DeviceCanWriteBluRay(device)) {
+        WriteError(@"drive %ld cannot write BD-R media", (long)options.driveIndex);
         return 2;
     }
     if (!MediaIsPresent(device)) {
@@ -404,10 +425,6 @@ static int RunBurn(DRStreamOptions *options) {
     NSString *mediaType = FriendlyMediaType(rawMediaType);
     NSString *mediaClass = MediaClassPrefix(rawMediaType);
 
-    if (mediaClass != nil && [mediaClass hasPrefix:@"BD"]) {
-        WriteError(@"Blu-ray streaming is not supported by this helper");
-        return 2;
-    }
     if (mediaClass != nil && [mediaClass hasPrefix:@"HDDVD"]) {
         WriteError(@"HD DVD media is not supported by this helper");
         return 2;
@@ -417,10 +434,22 @@ static int RunBurn(DRStreamOptions *options) {
                    (long)options.driveIndex, mediaType ?: @"unsupported");
         return 2;
     }
-    if (!isAudio && !(mediaClass != nil && [mediaClass hasPrefix:@"DVD"])) {
+    if (isDVD && !(mediaClass != nil && [mediaClass hasPrefix:@"DVD"])) {
         WriteError(@"drive %ld holds %@ media, but --kind dvd-data needs a blank DVD-R",
                    (long)options.driveIndex, mediaType ?: @"unsupported");
         return 2;
+    }
+    if (isBD) {
+        if (!(mediaClass != nil && [mediaClass hasPrefix:@"BD"])) {
+            WriteError(@"drive %ld holds %@ media, but --kind bd-data needs a blank BD-R",
+                       (long)options.driveIndex, mediaType ?: @"unsupported");
+            return 2;
+        }
+        if (![mediaType isEqualToString:@"BD-R"]) {
+            WriteError(@"drive %ld holds %@ media, but --kind bd-data needs a blank BD-R",
+                       (long)options.driveIndex, mediaType ?: @"unsupported");
+            return 2;
+        }
     }
     if (![mediaInfo[DRDeviceMediaIsBlankKey] boolValue]) {
         WriteError(@"media in drive %ld is not blank (%@)",

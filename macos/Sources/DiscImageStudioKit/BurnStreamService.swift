@@ -50,19 +50,23 @@ import Foundation
 public enum StreamBurnKind: String, Sendable, Equatable, CaseIterable {
     case cdAudio = "cd-audio"
     case dvdData = "dvd-data"
+    /// DiscRecording 公开了 BD 能力与 `kDRBurnStrategyBDDAO`；这是实验性路径，
+    /// 没有实机 BD-R 验证前不要视为与 CD/DVD 同等可靠。
+    case bdData = "bd-data"
 
     public var displayName: String {
         switch self {
         case .cdAudio: return "音频 CD（流式）"
         case .dvdData: return "DVD 数据盘（流式）"
+        case .bdData: return "蓝光 BD-R（流式，实验性）"
         }
     }
 
-    /// Size of one raw block on stdin: 2352 bytes for CD-DA, 2048 for DVD data.
+    /// Size of one raw block on stdin: 2352 bytes for CD-DA, 2048 for data.
     public var blockSize: Int {
         switch self {
         case .cdAudio: return 2352
-        case .dvdData: return 2048
+        case .dvdData, .bdData: return 2048
         }
     }
 
@@ -72,6 +76,7 @@ public enum StreamBurnKind: String, Sendable, Equatable, CaseIterable {
         let upper = mediaType.uppercased()
         if upper.hasPrefix("CD") { return .cdAudio }
         if upper.hasPrefix("DVD") { return .dvdData }
+        if upper.hasPrefix("BD") { return .bdData }
         return nil
     }
 }
@@ -135,6 +140,7 @@ public struct StreamDrive: Sendable, Equatable, Identifiable, Codable {
         switch kind {
         case .cdAudio: return cdWritable
         case .dvdData: return dvdWritable
+        case .bdData: return bdWritable
         }
     }
 
@@ -328,7 +334,7 @@ public enum StreamBurnError: Error, Sendable, LocalizedError, Equatable {
             let type = mediaType.map { "（\($0)）" } ?? ""
             return "第 \(index) 台刻录机中的盘片\(type)不是空白盘，流式刻录会拒绝写入。请改用空白盘片。"
         case .bluRayUnsupported:
-            return "macOS 的 DiscRecording 蓝光流式刻录尚未验证，暂不支持。请改用文件模式或第三方软件。"
+            return "蓝光流式写入仅支持空白 BD-R，且尚未经实机验证；BD-RE 与多层蓝光请改用文件模式或第三方软件。"
         }
     }
 }
@@ -408,7 +414,14 @@ public struct BurnStreamService: Sendable {
 
         if let drive {
             if drive.isBluRayMedia {
-                throw StreamBurnError.bluRayUnsupported
+                guard kind == .bdData else {
+                    throw StreamBurnError.invalidPlan(reason: "蓝光介质需要使用 bd-data 流式刻录。")
+                }
+                guard drive.mediaType?.uppercased() == "BD-R" else {
+                    throw StreamBurnError.bluRayUnsupported
+                }
+            } else if kind == .bdData {
+                throw StreamBurnError.invalidPlan(reason: "bd-data 需要空白 BD-R 介质。")
             }
             guard drive.isWritable(for: kind) else {
                 throw StreamBurnError.driveNotWritable(index: drive.index, kind: kind)

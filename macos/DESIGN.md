@@ -464,7 +464,7 @@ CLI 先生成镜像/音轨，再交给系统 `drutil` 刻录：
 - 音频 CD：CLI 生成 `.wav`，`BurnService` 把它硬链接（失败时复制）进只含该 WAV 的临时目录，执行
   `drutil [-drive N] burn -eject -audio <目录>`（红皮书音频盘）。
 - 数据盘：`.iso` / `.dmg` / `.cue` / `.bin` / `.toc` 直接 `drutil [-drive N] burn -eject <文件>`。
-- 蓝光：`drutil`/DiscRecording 的 BD 支持未验证，默认拒绝并提示改用第三方软件。
+- 蓝光：`drutil` 文件模式不提供 BD；`disc-burn-stream --kind bd-data` 提供实验性 DiscRecording 流式写入（未实机验证，GUI 暂未接线）。
 
 `BurnService`（`macos/Sources/DiscImageStudioKit/BurnService.swift`）负责：`drutil list` 解析、`status`+`toc` 介质状态、
 刻录计划（`BurnPlan`，含临时目录清理）、以及用 `CliRunner` 启动 `drutil` 并复用同一套事件流。
@@ -488,8 +488,8 @@ disc-burn-stream（Objective-C + DiscRecording：DRTrack producer + DRBurn）
 - 命令契约：
   - `disc-burn-stream --list-drives` → stdout 输出 JSON 数组：
     `[{"index":1,"vendor":"…","product":"…","firmware":"…","cdWritable":true,"dvdWritable":true,"bdWritable":false,"mediaPresent":true,"mediaBlank":true,"mediaType":"CD-R"}]`
-  - `disc-burn-stream --kind cd-audio|dvd-data --sectors N [--drive I] [--speed N] [--no-verify] [--no-eject] [--test]`
-    从 stdin 读原始块（cd-audio 每块 2352 字节，dvd-data 每块 2048 字节），写 stderr 进度：
+  - `disc-burn-stream --kind cd-audio|dvd-data|bd-data --sectors N [--drive I] [--speed N] [--no-verify] [--no-eject] [--test]`
+    从 stdin 读原始块（cd-audio 每块 2352 字节，dvd-data/bd-data 每块 2048 字节；bd-data 使用 BD-R 介质、`kDRBurnStrategyBDDAO` 与 BD 1×=4496 KB/s），写 stderr 进度：
     `state: preparing|writing|verifying|done|failed`、`percent: 42.3`、`error: …`；退出码 0 成功、1 失败、2 参数/设备/介质问题。
   - 介质非空白（`kDRDeviceMediaIsBlankKey` 为 false）或不存在时拒绝并退出 2。
 - CLI 侧（`src/DiscImageStudio.Cli`）：
@@ -502,7 +502,7 @@ disc-burn-stream（Objective-C + DiscRecording：DRTrack producer + DRBurn）
 ### 5.3 边界与安全
 
 - 两条路径都只接受空白盘；GUI 在刻录前展示 `drutil status` / helper 报告的介质信息并要求用户确认。
-- 流式模式仅覆盖 CD-DA 与 DVD 数据（BD-R 的 DiscRecording 路径未经实机验证，默认不出现在 UI，文档标注为待验证）。
+- 流式模式覆盖 CD-DA、DVD 数据与实验性 BD-R（`bd-data`：2048 B 块、`kDRBurnStrategyBDDAO`、BD 1×=4496 KB/s）。BD 路径未经实机验证，GUI 的流式刻录尚未接线，文档统一标注为实验性。
 - 没有刻录机或没有空白盘时，两条路径都必须给出明确提示，而不是静默失败。
 
 ## 六、并行边界

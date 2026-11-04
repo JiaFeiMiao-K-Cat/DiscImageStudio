@@ -12,13 +12,14 @@ NS_ASSUME_NONNULL_BEGIN
 typedef NS_ENUM(NSInteger, DRStreamKind) {
     DRStreamKindCDAudio = 0,
     DRStreamKindDVDData = 1,
+    DRStreamKindBDData = 2,
 };
 
 /// Raw block size of one sector for the given kind: CD-DA is 2352 bytes
-/// (raw 2352-byte audio blocks), DVD data is 2048 bytes.
+/// (raw 2352-byte audio blocks); DVD and BD data are 2048 bytes.
 FOUNDATION_EXPORT uint32_t DRStreamBlockSizeForKind(DRStreamKind kind);
 
-/// The name used on the command line ("cd-audio" / "dvd-data").
+/// The name used on the command line ("cd-audio" / "dvd-data" / "bd-data").
 FOUNDATION_EXPORT NSString *DRStreamKindName(DRStreamKind kind);
 
 /// Parsed command line. Instances are immutable and only produced by

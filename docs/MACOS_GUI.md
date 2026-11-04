@@ -278,16 +278,16 @@ drutil burn -eject disc.iso             # 等价：hdiutil burn disc.iso
 # 列出刻录机与介质状态（stdout 为 JSON 数组）
 macos/build/DiscImageStudio.app/Contents/Resources/bin/disc-burn-stream --list-drives
 
-# 写入：stdin 读原始块（cd-audio 每块 2352 字节，dvd-data 每块 2048 字节）
+# 写入：stdin 读原始块（cd-audio 每块 2352 字节；dvd-data/bd-data 每块 2048 字节）
 macos/build/cli/osx-arm64/disc-image-studio cd-generate \
   --input artwork.png --output - --sectors 300 \
   | macos/build/DiscImageStudio.app/Contents/Resources/bin/disc-burn-stream \
       --kind cd-audio --sectors 300 --drive 1
 ```
 
-- 参数：`--kind cd-audio|dvd-data`、`--sectors N`，可选 `--drive I`、`--speed N`、`--no-verify`、`--no-eject`、`--test`；stderr 进度行是 `state:` / `percent:` / `error:`，退出码 0 成功、1 失败、2 参数/设备/介质问题。
+- 参数：`--kind cd-audio|dvd-data|bd-data`、`--sectors N`，可选 `--drive I`、`--speed N`、`--no-verify`、`--no-eject`、`--test`；stderr 进度行是 `state:` / `percent:` / `error:`，退出码 0 成功、1 失败、2 参数/设备/介质问题。
 - 介质非空白、没有介质或没有刻录机时，助手直接拒绝（退出码 2 并写 `error:`），界面展示原因而不是静默失败。
-- 支持 CD-DA 与 DVD 数据；**BD-R 默认不提供**（DiscRecording 的 BD 写入路径未在实机验证），蓝光请生成 ISO 后用第三方软件刻录。
+- 支持 CD-DA、DVD 数据与**实验性 BD-R 流式写入**（`disc-burn-stream --kind bd-data`，走 DiscRecording 的设备能力与 `kDRBurnStrategyBDDAO`）。BD 路径未在实机验证，默认不出现在 GUI 的刻录流程里；文件模式（drutil）仍不支持蓝光，建议生成 ISO 后用第三方软件。
 - 该路径与 `--output -` 同属实验性能力，尚未在实机验证；CI 只覆盖助手构建与 `--list-drives` 自检。
 
 ### 安全要求
@@ -478,14 +478,14 @@ macos/build/DiscImageStudio.app/Contents/Resources/bin/disc-burn-stream --list-d
 | 界面提示「未检测到光盘驱动器」 | 没有刻录机，或外置驱动器未被系统识别 | `drutil list` 确认；检查连接/供电，必要时重新插拔后重开应用 |
 | `drutil` 报媒体错误 / 写入立即失败 | 无介质、介质类型与镜像不匹配、或介质不可写 | `drutil status` 查看 `Type:`；换成匹配的空白介质重试 |
 | 界面拒绝写入并提示介质非空白 | 盘上已有轨道/会话 | `drutil toc` 查看现有内容，换一张空白盘；不要强行擦除不可报废的介质 |
-| 蓝光无法写入 | DiscRecording 不支持 BD 写入 | 生成 `.iso` 后用第三方刻录软件；应用不会尝试写入 BD-R |
+| 蓝光无法写入 | 文件模式（drutil）不支持 BD；流式助手的 `bd-data` 仅实验性且未实机验证 | 生成 `.iso` 后用第三方刻录软件；或等实机验证后在 `disc-burn-stream --kind bd-data` 上试验 |
 | 编译时出现 DiscRecording 弃用警告 | Apple 已把 DiscRecording 标记为弃用头文件 | 只是警告，不影响构建与运行；升级系统后如完全移除该框架，文件模式仍可用 `drutil` |
 | `disc-burn-stream --list-drives` 没有输出或报错 | 应用是旧包（没有内置助手），或助手启动失败 | 重新 `macos/scripts/build-app.sh`；报错时看 stderr 的 `error:` 行，无刻录机时返回空数组属正常 |
 
 ## 已知限制
 
 - **实验性**：与上游发布说明一致，macOS/Linux CLI 及本图形界面均为实验性功能，行为可能随版本变化。
-- **刻录覆盖范围有限**：文件模式复用系统 `drutil`，可写 CD-DA 与 CD/DVD 数据镜像；流式模式（`disc-burn-stream`）覆盖 CD-DA 与 DVD 数据；**BD-R 不在支持范围**（Apple 的 DiscRecording 未提供可靠的 BD 写入路径，请生成 ISO 后用第三方软件）。刻录属于实验性功能，只能使用空白或可报废介质。
+- **刻录覆盖范围有限**：文件模式复用系统 `drutil`，可写 CD-DA 与 CD/DVD 数据镜像；流式模式（`disc-burn-stream`）覆盖 CD-DA、DVD 数据与实验性 BD-R（`--kind bd-data`，DiscRecording BDDAO）。BD 流式路径没有实机验证、GUI 尚未接线；BD 文件模式不提供，建议生成 ISO 后用第三方软件。刻录属于实验性功能，只能使用空白或可报废介质。
 - **随盘文件工程的投影范围是近似值**：DVD `calibrate` 需要显式的绘图起止（`--lba/--fill-sectors`），当前 GUI 固定按整盘（0..总扇区）预览；BD `bd-preview` 同样固定整盘绘图区间。未选择随盘文件时与真实生成完全一致，选择文件夹后预览的文件区高亮可能偏大，以导出后的成品读回为准。
 - **标定不内置自动环数识别**：粗调需人工沿黑白分界描点，精调需人工沿一条径向曲线描点；没有「密集环相位自动提取」，也不自动识别同心圆。
 - **标定需要实机刻录与拍摄**：自动化只能覆盖图案生成、矫正与拟合算法；真实盘面可见度、镜头状态与描点精度需人工确认。

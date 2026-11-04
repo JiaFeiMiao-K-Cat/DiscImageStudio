@@ -10,6 +10,7 @@
 - CLI 新增标定命令组：`calibration-target`、`calibration-photo`、`calibration-fit`、`calibration-coarse-target`、`calibration-coarse-fit`、`calibration-session-write`、`calibration-session-read`，覆盖图案生成、照片矫正、拟合候选与会话读写，供 GUI 与脚本复用。
 - 新增 `macos/scripts/` 构建与打包脚本（CLI 自包含发布、`.app` 组装、zip 分发）、`docs/MACOS_GUI.md` 与 `macos-gui` CI 工作流。
 - 四份 README 补充 macOS 图形界面的入口、工作流形态、构建方式与文档索引。
+- macOS 流式刻录助手新增实验性 BD-R 路径（`disc-burn-stream --kind bd-data`，DiscRecording `kDRBurnStrategyBDDAO`、BD 1×=4496 KB/s）；未实机验证，GUI 尚未接线，蓝光写盘仍建议生成 ISO 后用第三方工具。
 
 ### English
 
@@ -19,6 +20,7 @@
 - The CLI gains a calibration command group: `calibration-target`, `calibration-photo`, `calibration-fit`, `calibration-coarse-target`, `calibration-coarse-fit`, `calibration-session-write`, and `calibration-session-read`, covering pattern generation, photo rectification, fit candidates, and session read/write for both the GUI and scripts.
 - Added the `macos/scripts/` build and packaging scripts (self-contained CLI publish, `.app` assembly, zip distribution), `docs/MACOS_GUI.md`, and a `macos-gui` CI workflow.
 - All four READMEs now describe the macOS GUI's workflow, its build steps, and the new documentation.
+- Added an experimental BD-R path to the macOS streaming burn helper (`disc-burn-stream --kind bd-data`, DiscRecording `kDRBurnStrategyBDDAO`, BD 1× = 4496 KB/s). It is not hardware-verified and not wired into the GUI yet; for Blu-ray, prefer generating an ISO and burning it with third-party tools.
 
 ## [1.3.6] - 2026-11-02
 

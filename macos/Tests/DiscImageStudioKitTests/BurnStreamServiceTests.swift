@@ -450,6 +450,7 @@ final class BurnStreamServiceTests: XCTestCase {
         func drive(
             cdWritable: Bool = true,
             dvdWritable: Bool = true,
+            bdWritable: Bool = false,
             mediaPresent: Bool = true,
             mediaBlank: Bool = true,
             mediaType: String? = "CD-R"
@@ -461,7 +462,7 @@ final class BurnStreamServiceTests: XCTestCase {
                 firmware: "1",
                 cdWritable: cdWritable,
                 dvdWritable: dvdWritable,
-                bdWritable: false,
+                bdWritable: bdWritable,
                 mediaPresent: mediaPresent,
                 mediaBlank: mediaBlank,
                 mediaType: mediaType
@@ -469,7 +470,38 @@ final class BurnStreamServiceTests: XCTestCase {
         }
 
         XCTAssertThrowsError(try service.makePlan(kind: .cdAudio, sectors: 1, drive: drive(mediaType: "BD-R"))) { error in
+            guard case StreamBurnError.invalidPlan(let reason) = error else {
+                return XCTFail("蓝光介质搭配 cd-audio 应抛 invalidPlan，实际是 \(error)")
+            }
+            XCTAssertTrue(reason.contains("bd-data"))
+        }
+        // BD-R + bd-data：能力、介质、空白都满足时生成流式刻录计划。
+        let bdPlan = try? service.makePlan(
+            kind: .bdData,
+            sectors: 1024,
+            drive: drive(bdWritable: true, mediaType: "BD-R")
+        )
+        XCTAssertEqual(bdPlan?.kind, .bdData)
+        XCTAssertTrue(bdPlan?.helperArguments.contains("bd-data") == true)
+        XCTAssertTrue(bdPlan?.helperArguments.contains("1024") == true)
+        // BD-RE 尚未验证：明确拒绝。
+        XCTAssertThrowsError(try service.makePlan(
+            kind: .bdData,
+            sectors: 1024,
+            drive: drive(bdWritable: true, mediaType: "BD-RE")
+        )) { error in
             XCTAssertEqual(error as? StreamBurnError, .bluRayUnsupported)
+        }
+        // BD 请求但盘片不是蓝光：拒绝。
+        XCTAssertThrowsError(try service.makePlan(
+            kind: .bdData,
+            sectors: 1024,
+            drive: drive(mediaType: "DVD-R")
+        )) { error in
+            guard case StreamBurnError.invalidPlan(let reason) = error else {
+                return XCTFail("bd-data 搭配 DVD 介质应抛 invalidPlan，实际是 \(error)")
+            }
+            XCTAssertTrue(reason.contains("BD-R"))
         }
         XCTAssertThrowsError(try service.makePlan(kind: .dvdData, sectors: 1, drive: drive(dvdWritable: false))) { error in
             XCTAssertEqual(
@@ -501,8 +533,11 @@ final class BurnStreamServiceTests: XCTestCase {
         XCTAssertEqual(StreamBurnKind.kind(forMediaType: "CD-R"), .cdAudio)
         XCTAssertEqual(StreamBurnKind.kind(forMediaType: "cd-rw"), .cdAudio)
         XCTAssertEqual(StreamBurnKind.kind(forMediaType: "DVD+R"), .dvdData)
-        XCTAssertNil(StreamBurnKind.kind(forMediaType: "BD-R"))
+        XCTAssertEqual(StreamBurnKind.kind(forMediaType: "BD-R"), .bdData)
+        XCTAssertEqual(StreamBurnKind.kind(forMediaType: "bd-re"), .bdData)
         XCTAssertNil(StreamBurnKind.kind(forMediaType: nil))
+        XCTAssertEqual(StreamBurnKind.bdData.blockSize, 2048)
+        XCTAssertEqual(StreamBurnKind.bdData.rawValue, "bd-data")
 
         let success = StreamBurnResult(
             helperExitCode: 0,
