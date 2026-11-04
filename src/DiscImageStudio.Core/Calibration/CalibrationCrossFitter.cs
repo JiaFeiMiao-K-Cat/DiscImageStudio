@@ -26,13 +26,18 @@ public static partial class CalibrationCrossFitter
     {
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(traces);
+        if (target.HasBoundaryPattern && traces.Count > 0)
+            throw new ArgumentException("边界中标请使用边界描点，不能把不相连的交界拼成十字线的连续曲线。");
         if (traces.Count > 4) throw new ArgumentException("十字线最多包含四条臂。");
         var arms = new HashSet<int>();
         int count = 0;
         foreach (CalibrationCrossTrace trace in traces)
         {
-            if (trace is null || trace.ArmIndex is < 0 or > 3 || !arms.Add(trace.ArmIndex) || trace.Points is null)
+            if (trace is null || trace.ArmIndex is < 0 or > 3 || (target.HasSingleRadialLine && trace.ArmIndex != 0)
+                || !arms.Add(trace.ArmIndex) || trace.Points is null)
                 throw new ArgumentException("曲线编号无效或重复。");
+            if (!target.HasCrossArms && trace.Points.Count > 0)
+                throw new ArgumentException("此标靶没有十字臂，请使用精标盘照片描线。");
             count += trace.Points.Count;
             if (count > 20_000) throw new ArgumentException("曲线点数量超出限制。");
             foreach (CalibrationPoint point in trace.Points)
@@ -83,6 +88,13 @@ public static partial class CalibrationCrossFitter
     {
         var warnings = new List<string>(inputWarnings);
         CalibrationParameters center = options.SearchCenter ?? target.Parameters;
+        if (target.HasSingleRadialLine)
+            center = center with
+            {
+                PitchLinear = target.Parameters.PitchLinear,
+                PitchQuadratic = target.Parameters.PitchQuadratic,
+                PitchCubic = target.Parameters.PitchCubic,
+            };
         var original = new CalibrationGeometry(target.Parameters);
         double lowerInner = Math.Max(0.1, center.InnerRadiusMm - options.RadiusRangeMm);
         double upperInner = center.InnerRadiusMm + options.RadiusRangeMm;
@@ -223,7 +235,7 @@ public static partial class CalibrationCrossFitter
             return new CalibrationFitCandidate(center with { InnerRadiusMm = solution.Inner, OuterRadiusMm = solution.Outer },
                 Normalize(solution.Rotation), solution.Rms, solution.Cost, maxError, outliers);
         }).ToArray();
-        if (target.Parameters.Kind == CalibrationDiscKind.Dvd && options.FitDvdPitch)
+        if (options.FitDvdPitch && !target.HasSingleRadialLine)
             return FitCubic(target, data, coverage, options, candidates, warnings, best.Residuals,
                 delta, boundaryLimited, cancellationToken);
         var fitResult = new CalibrationFitResult(true, candidates[0].Parameters, candidates[0].RotationRadians,

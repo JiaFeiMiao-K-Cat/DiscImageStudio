@@ -9,6 +9,7 @@ internal static class CalibrationCoreTests
 {
     internal static void Run()
     {
+        CalibrationStagedArtworkTests.Run();
         TestTargetAndSession();
         TestDraftsAndInsufficientInput();
         foreach (CalibrationDiscKind kind in Enum.GetValues<CalibrationDiscKind>())
@@ -32,7 +33,7 @@ internal static class CalibrationCoreTests
 
     private static void TestTargetAndSession()
     {
-        CalibrationTarget target = CalibrationTarget.Create(Parameters());
+        CalibrationTarget target = new(6, Guid.NewGuid().ToString("N"), Parameters(), new CalibrationPatternOptions(), []);
         Check(target.SchemaVersion == 6 && target.Cells.Count == 0 && target.Groups.Count == 4
             && target.ControlCells.Count == 4 && target.ControlPoints.Count == 8,
             "only four radial arms provide control geometry; rings are observation guides");
@@ -76,7 +77,7 @@ internal static class CalibrationCoreTests
         Check(CalibrationSessionJson.Serialize(restored) == json, "stable session serialization");
         Check(!json.Contains("controlPoints", StringComparison.Ordinal) && !json.Contains("radialLine", StringComparison.Ordinal),
             "derived geometry is reconstructed from schema rules");
-        foreach (int version in new[] { 1, 2, 3, 4, 5, 7 })
+        foreach (int version in new[] { 1, 2, 3, 4, 5, CalibrationTarget.CurrentSchemaVersion + 1 })
         {
             JsonNode old = JsonNode.Parse(json)!;
             old["target"]!["schemaVersion"] = version;

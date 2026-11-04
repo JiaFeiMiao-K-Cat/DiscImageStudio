@@ -16,6 +16,8 @@ public static class L
     public const string English = "en";
     public const string Japanese = "ja";
     public const string Turkish = "tr";
+    public const string Spanish = "es";
+    public const string Czech = "cs";
     public const string SystemLanguage = "system";
 
     private static readonly CultureInfo StartupCulture = CultureInfo.CurrentUICulture;
@@ -36,6 +38,10 @@ public static class L
         string name when name.StartsWith("ja-", StringComparison.Ordinal) => Japanese,
         "tr" => Turkish,
         string name when name.StartsWith("tr-", StringComparison.Ordinal) => Turkish,
+        "es" => Spanish,
+        string name when name.StartsWith("es-", StringComparison.Ordinal) => Spanish,
+        "cs" => Czech,
+        string name when name.StartsWith("cs-", StringComparison.Ordinal) => Czech,
         string name when IsTraditionalChinese(name) => TraditionalChinese,
         "zh-cn" or "zh-sg" or "zh" or "zh-hans" or "zh-chs" => Chinese,
         string name when name.StartsWith("zh-hans-", StringComparison.Ordinal) => Chinese,
@@ -50,6 +56,8 @@ public static class L
         CultureInfo culture = systemCulture ?? StartupCulture;
         if (culture.TwoLetterISOLanguageName == "ja") return Japanese;
         if (culture.TwoLetterISOLanguageName == "tr") return Turkish;
+        if (culture.TwoLetterISOLanguageName == "es") return Spanish;
+        if (culture.TwoLetterISOLanguageName == "cs") return Czech;
         if (culture.TwoLetterISOLanguageName != "zh") return English;
         return IsTraditionalChinese(culture.Name) ? TraditionalChinese : Chinese;
     }
@@ -86,8 +94,10 @@ public static class L
     {
         ArgumentNullException.ThrowIfNull(key);
         if (!Catalog.TryGetValue(key, out Dictionary<string, string>? translations)) return key;
-        if (translations.TryGetValue(CurrentLanguage, out string? translated)) return translated;
-        return translations.TryGetValue(Chinese, out string? fallback) ? fallback : key;
+        if (translations.TryGetValue(CurrentLanguage, out string? translated)
+            && !string.IsNullOrWhiteSpace(translated)) return translated;
+        return translations.TryGetValue(Chinese, out string? fallback)
+            && !string.IsNullOrWhiteSpace(fallback) ? fallback : key;
     }
 
     public static string F(FormattableString text)

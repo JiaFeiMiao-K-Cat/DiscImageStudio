@@ -20,7 +20,7 @@ public sealed record AppSettings
 
     public AppTheme Theme { get; init; } = AppTheme.System;
 
-    /// <summary>UI language: zh-CN, zh-TW, en, ja, tr, or system. Unset preferences follow the system.</summary>
+    /// <summary>UI language: zh-CN, zh-TW, en, ja, tr, es, cs, or system. Unset preferences follow the system.</summary>
     public string Language { get; init; } = L.SystemLanguage;
 
     /// <summary>Default folder for the new-project dialog; empty means the system Documents
@@ -28,7 +28,7 @@ public sealed record AppSettings
     public string DefaultProjectDirectory { get; init; } = string.Empty;
 
     /// <summary>Working folder for rendered composites, previews and thumbnails; empty means
-    /// the system temp folder.</summary>
+    /// the DiscImageStudio-cache folder beside the executable.</summary>
     public string CacheDirectory { get; init; } = string.Empty;
 
     /// <summary>Drops values that cannot be represented on this machine: an unknown enum,

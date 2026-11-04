@@ -24,6 +24,7 @@ internal static class RelocalizationTests
         TestPresetGeometryStability();
         TestPreviewStateStability();
         TestSearchRangeSelection();
+        TestCalibrationSelectionStability();
         TestToneStatusStability();
         TestBurnStatusStability();
         TestControlLoadedRefresh();
@@ -262,6 +263,58 @@ internal static class RelocalizationTests
         });
     }
 
+    private static void TestCalibrationSelectionStability()
+    {
+        RunOnSta(() =>
+        {
+            string originalLanguage = L.CurrentLanguage;
+            ShellViewModel? shell = null;
+            try
+            {
+                L.Initialize(L.Chinese);
+                shell = new ShellViewModel(Dispatcher.CurrentDispatcher);
+                var calibration = shell.Calibration;
+                var target = CalibrationTarget.Create(
+                    new(CalibrationDiscKind.Cd, 24.5, 56.8, 359848, 1200),
+                    artwork: CalibrationArtwork.AngleSweepBands);
+                Invoke(calibration, "InstallTarget", [target, null, true]);
+                calibration.SelectedRingIndex = 3;
+                calibration.SelectedArcBand = 2;
+                var edge = calibration.RingChoices.Single(choice => choice.Index == 3);
+                var band = calibration.ArcBandNames[2];
+                var direction = calibration.ArcDirections[1];
+                string edgeLabel = edge.Label, bandLabel = band.Label, directionLabel = direction.Label;
+                string preset = calibration.Parameters.SelectedCdPreset.Id;
+                string radius = calibration.Parameters.CdOuterRadius;
+                int refreshed = 0;
+                edge.PropertyChanged += (_, args) => { if (args.PropertyName == "Label") refreshed++; };
+                band.PropertyChanged += (_, args) => { if (args.PropertyName == "Label") refreshed++; };
+                direction.PropertyChanged += (_, args) => { if (args.PropertyName == "Label") refreshed++; };
+
+                L.SetLanguage(L.English);
+                shell.Relocalize();
+
+                Require(refreshed == 3 && edge.Label != edgeLabel && band.Label != bandLabel
+                    && direction.Label != directionLabel,
+                    "calibration choices notify their translated labels without replacing items");
+                Require(ReferenceEquals(edge, calibration.RingChoices.Single(choice => choice.Index == 3))
+                    && ReferenceEquals(band, calibration.ArcBandNames[2])
+                    && calibration.SelectedRingIndex == 3 && calibration.SelectedArcBand == 2,
+                    "language changes preserve selected calibration measurements");
+                Require(ReferenceEquals(target, calibration.Target)
+                    && calibration.Parameters.SelectedCdPreset.Id == preset
+                    && calibration.Parameters.CdOuterRadius == radius,
+                    "language changes preserve the independent calibration preset, geometry and target");
+            }
+            finally
+            {
+                shell?.Calibration.OnWindowClosed();
+                shell?.LivePreview.OnWindowClosed();
+                L.Initialize(originalLanguage);
+            }
+        });
+    }
+
     private static void TestToneStatusStability()
     {
         RunOnSta(() =>
@@ -403,25 +456,11 @@ internal static class RelocalizationTests
 
     private static void TestControlLoadedRefresh()
     {
-        RunOnSta(() =>
+        WpfTestHost.Run(() =>
         {
             string originalLanguage = L.CurrentLanguage;
-            bool ownsApplication = Application.Current is null;
             try
             {
-                if (ownsApplication)
-                {
-                    Application application = new() { ShutdownMode = ShutdownMode.OnExplicitShutdown };
-                    application.Resources.MergedDictionaries.Add(new ResourceDictionary
-                    {
-                        Source = new Uri("pack://application:,,,/DiscImageStudio;component/Themes/Tokens.xaml"),
-                    });
-                    application.Resources.MergedDictionaries.Add(new ResourceDictionary
-                    {
-                        Source = new Uri("pack://application:,,,/DiscImageStudio;component/Themes/Controls.xaml"),
-                    });
-                }
-
                 RequireLoadRefresh(() => new SourceChip(), chip => chip.ChipText.Text,
                     "来自设计页合成图", "Composite from Design", "the source chip");
                 RequireLoadRefresh(() => new PathField(), field => field.BrowseButton.Content as string ?? string.Empty,
@@ -450,10 +489,6 @@ internal static class RelocalizationTests
             finally
             {
                 L.Initialize(originalLanguage);
-                if (ownsApplication)
-                {
-                    Dispatcher.CurrentDispatcher.InvokeShutdown();
-                }
             }
         });
     }

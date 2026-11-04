@@ -7,7 +7,7 @@ public static class CalibrationCrossPrediction
         CalibrationParameters actual, double rotationRadians = 0, int armIndex = 0)
     {
         CalibrationCrossModel model = CreateModel(target, actual, rotationRadians, armIndex);
-        double startAngle = -Math.PI / 2 + armIndex * Math.PI / 2 + rotationRadians;
+        double startAngle = -Math.PI / 2 + armIndex * (target.HasBoundaryPattern ? Math.PI : Math.PI / 2) + rotationRadians;
         return radius => ToPoint(Sample(model, radius), startAngle);
     }
 
@@ -27,7 +27,7 @@ public static class CalibrationCrossPrediction
             throw new ArgumentException("预测曲线需要有限、递增且大于零的观测半径区间。");
         if (maxPoints is < 2 or > 1_000_000) throw new ArgumentOutOfRangeException(nameof(maxPoints));
         CalibrationCrossModel model = CreateModel(target, actual, rotationRadians, armIndex);
-        double startAngle = -Math.PI / 2 + armIndex * Math.PI / 2 + rotationRadians;
+        double startAngle = -Math.PI / 2 + armIndex * (target.HasBoundaryPattern ? Math.PI : Math.PI / 2) + rotationRadians;
         var points = new List<CalibrationPoint>();
         CalibrationCrossSample first = Sample(model, minimumObservedRadiusMm);
         CalibrationCrossSample last = Sample(model, maximumObservedRadiusMm);
@@ -72,9 +72,10 @@ public static class CalibrationCrossPrediction
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(actual);
         target.ValidateCompatible(actual);
-        if (!double.IsFinite(rotationRadians) || armIndex is < 0 or > 3)
+        if (!double.IsFinite(rotationRadians) || armIndex is < 0 or > 3 || (target.HasSingleRadialLine && armIndex != 0)
+            || (target.HasBoundaryPattern && armIndex > 1))
             throw new ArgumentException("曲线旋转或臂编号无效。");
-        return new(new(target.Parameters), new(actual), target.Parameters.Kind, target.Parameters == actual);
+        return new(new(target.Parameters), new(actual), target.Parameters.Kind, target.Parameters == actual, target);
     }
 
     private static CalibrationCrossSample Sample(CalibrationCrossModel model, double radius)
@@ -99,45 +100,62 @@ internal readonly record struct CalibrationCrossSample(double Radius, double Sou
 
 /// <summary>One shared forward phase model for fitting and visible prediction.</summary>
 internal sealed class CalibrationCrossModel(CalibrationGeometry generated, CalibrationGeometry actual,
-    CalibrationDiscKind kind, bool identical)
+    CalibrationDiscKind kind, bool identical, CalibrationTarget? sourceTarget = null)
 {
     internal bool TryAtRadius(double radius, out CalibrationCrossSample sample)
     {
         sample = default;
         if (!double.IsFinite(radius) || radius <= 0 || !double.IsFinite(radius * radius)) return false;
-        // Identical geometry must be an exact straight line even far outside [ri,ro].
-        // This also avoids unnecessary cancellation near the positive-radius domain limit.
+        // Identical geometry adds no distortion to the frozen source boundary, even
+        // outside [ri,ro]. Avoid cancellation near the positive-radius domain limit.
         if (identical)
         {
             if (!actual.IsConstantPitch && !actual.TryProgressAtRadiusExtended(radius, out _)) return false;
-            sample = new(radius, radius, 0, 0); return true;
+            sample = AddSourceProfile(new(radius, radius, 0, 0), 1); return true;
         }
         if (!actual.TryProgressAtRadiusExtended(radius, out double progress)
             || !generated.TryAtProgressExtended(progress, out var source)) return false;
         double ba = actual.RadialGrowthAtRadius(radius), bg = generated.RadialGrowthAtRadius(source.Radius);
         double phase = actual.AngleAtRadius(radius) - source.Angle;
-        double ratio = kind == CalibrationDiscKind.Cd ? radius / source.Radius
-            : Math.Sqrt(radius * radius + ba * ba) / Math.Sqrt(source.Radius * source.Radius + bg * bg);
+        double ratio = actual.ArcLengthFactor(radius) / generated.ArcLengthFactor(source.Radius);
         double derivative = (1 - ratio) / ba;
         if (!double.IsFinite(phase) || !double.IsFinite(derivative)) return false;
-        sample = new(radius, source.Radius, phase, derivative);
+        sample = AddSourceProfile(new(radius, source.Radius, phase, derivative), bg / ba * ratio);
         return true;
     }
 
+    private CalibrationCrossSample AddSourceProfile(CalibrationCrossSample sample, double sourceDerivative)
+        => sourceTarget?.HasWavyBoundary != true ? sample : sample with
+        {
+            Phase = sample.Phase + sourceTarget.BoundaryPhaseAtSourceRadius(sample.SourceRadius),
+            Derivative = sample.Derivative + sourceTarget.BoundaryPhaseDerivative(sample.SourceRadius) * sourceDerivative,
+        };
+
     internal double DerivativeBound(CalibrationCrossSample first, CalibrationCrossSample last)
     {
-        if (identical) return 0;
-        if (kind == CalibrationDiscKind.Cd)
+        double profileBound = sourceTarget?.BoundaryPhaseDerivativeBound ?? 0;
+        if (identical) return profileBound;
+        if (kind == CalibrationDiscKind.Cd && generated.UsesAreaApproximation && actual.UsesAreaApproximation)
+        {
             // sourceRadius² = A*observedRadius²+B: observed/source ratio is monotonic.
-            return Math.Max(Math.Abs(first.Derivative), Math.Abs(last.Derivative));
+            double firstRatio = first.Radius / first.SourceRadius, lastRatio = last.Radius / last.SourceRadius;
+            double baCd = actual.RadialGrowthAtRadius(first.Radius), bgCd = generated.RadialGrowthAtRadius(first.SourceRadius);
+            return Math.Max(Math.Abs(1 - firstRatio), Math.Abs(1 - lastRatio)) / baCd
+                + profileBound * bgCd / baCd * Math.Max(firstRatio, lastRatio);
+        }
         var ba = actual.RadialGrowthBounds(first.Radius, last.Radius);
         var bg = generated.RadialGrowthBounds(first.SourceRadius, last.SourceRadius);
-        // Positive-radius arc-length continuation is monotonic. Bound the exact DVD
+        // Positive-radius arc-length continuation is monotonic. Bound the exact
         // derivative over the interval, without reducing phase modulo a full turn.
-        double minimumRatio = Math.Sqrt(first.Radius * first.Radius + ba.Minimum * ba.Minimum)
-            / Math.Sqrt(last.SourceRadius * last.SourceRadius + bg.Maximum * bg.Maximum);
-        double maximumRatio = Math.Sqrt(last.Radius * last.Radius + ba.Maximum * ba.Maximum)
-            / Math.Sqrt(first.SourceRadius * first.SourceRadius + bg.Minimum * bg.Minimum);
-        return Math.Max(Math.Abs(1 - minimumRatio), Math.Abs(1 - maximumRatio)) / ba.Minimum;
+        double actualMinimumSquared = actual.UsesAreaApproximation ? 0 : ba.Minimum * ba.Minimum;
+        double actualMaximumSquared = actual.UsesAreaApproximation ? 0 : ba.Maximum * ba.Maximum;
+        double sourceMinimumSquared = generated.UsesAreaApproximation ? 0 : bg.Minimum * bg.Minimum;
+        double sourceMaximumSquared = generated.UsesAreaApproximation ? 0 : bg.Maximum * bg.Maximum;
+        double minimumRatio = Math.Sqrt(first.Radius * first.Radius + actualMinimumSquared)
+            / Math.Sqrt(last.SourceRadius * last.SourceRadius + sourceMaximumSquared);
+        double maximumRatio = Math.Sqrt(last.Radius * last.Radius + actualMaximumSquared)
+            / Math.Sqrt(first.SourceRadius * first.SourceRadius + sourceMinimumSquared);
+        return Math.Max(Math.Abs(1 - minimumRatio), Math.Abs(1 - maximumRatio)) / ba.Minimum
+            + profileBound * bg.Maximum / ba.Minimum * maximumRatio;
     }
 }

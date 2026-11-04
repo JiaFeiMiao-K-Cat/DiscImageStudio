@@ -239,17 +239,17 @@
                                         <TextBox Text="{Binding SectorsText, UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
                                     <StackPanel Width="124" Margin="0,0,16,14"
-                                                Visibility="{Binding IsDvdFieldsVisibility}">
+                                                Visibility="Visible">
                                         <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.LinearTerm}" />
                                         <TextBox Text="{Binding PitchLinearText, UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
                                     <StackPanel Width="124" Margin="0,0,16,14"
-                                                Visibility="{Binding IsDvdFieldsVisibility}">
+                                                Visibility="Visible">
                                         <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.QuadraticTerm}" />
                                         <TextBox Text="{Binding PitchQuadraticText, UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
                                     <StackPanel Width="124" Margin="0,0,0,14"
-                                                Visibility="{Binding IsDvdFieldsVisibility}">
+                                                Visibility="Visible">
                                         <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.CubicTerm}" />
                                         <TextBox Text="{Binding PitchCubicText, UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>

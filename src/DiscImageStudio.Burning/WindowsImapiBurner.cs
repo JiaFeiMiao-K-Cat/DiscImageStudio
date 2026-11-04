@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
@@ -25,6 +26,104 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         CancellationToken cancellationToken = default)
         => _operationGate.RunAsync(() => RunOnStaThread(() => EnumerateDevices(cancellationToken)),
             cancellationToken);
+
+    public Task<long> GetMediaSectorCountAsync(string deviceId, OpticalBurnMediaKind mediaKind,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+        _ = OpticalBurnMedia.GetSectorBytes(mediaKind);
+        return _operationGate.RunAsync(() => RunOnStaThread(() =>
+            ReadMediaSectorCount(deviceId, mediaKind, cancellationToken)), cancellationToken);
+    }
+
+    private static long ReadMediaSectorCount(string deviceId, OpticalBurnMediaKind mediaKind, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        dynamic? recorder = null;
+        dynamic? format = null;
+        try
+        {
+            recorder = CreateRecorder(deviceId);
+            format = CreateComObject("IMAPI2.MsftDiscFormat2Data");
+            format.Recorder = recorder;
+            format.ClientName = "Disc Image Studio";
+            ValidateRequestedMedia(mediaKind, recorder, format);
+            // These are media queries. PrepareMedia would enter a recording session.
+            long sectors;
+            if (mediaKind == OpticalBurnMediaKind.DvdData)
+            {
+                // Includes used sectors. Never use FreeSectorsOnMedia or a mounted volume's length.
+                sectors = ReadDvdSectorCount(Convert.ToInt32(format.CurrentPhysicalMediaType),
+                    Convert.ToInt64(format.TotalSectorsOnMedia));
+            }
+            else
+            {
+                var transport = new ImapiMmcCommandTransport((object)recorder);
+                sectors = OpticalBurnMedia.UsesCdDao(mediaKind)
+                    ? ReadCdAtipSectorCount(transport)
+                    : ReadBluRaySectorCount(transport);
+            }
+            token.ThrowIfCancellationRequested();
+            return sectors;
+        }
+        catch (COMException ex) when (ex.HResult == unchecked((int)0xC0AA0202))
+        {
+            throw new InvalidOperationException("所选光驱中没有盘片。", ex);
+        }
+        finally
+        {
+            if (format is not null) ReleaseComObject(format);
+            if (recorder is not null) ReleaseComObject(recorder);
+        }
+    }
+
+    internal static long ReadCdAtipSectorCount(IMmcCommandTransport transport)
+    {
+        // READ TOC/PMA/ATIP format 4. Unlike a session TOC, the pre-groove lead-out
+        // describes the recordable disc even if only part of it has been written.
+        const byte allocation = 64;
+        byte[] cdb = [0x43, 0x02, 0x04, 0, 0, 0, 0, 0, allocation, 0];
+        MmcCommandResult response = transport.Execute(cdb, allocation, 30);
+        if (response.HResult < 0 || response.HResult == BluRayMmcCommands.CommandHasSenseData)
+            throw new MmcCommandException(cdb[0], response);
+        byte[] data = response.Data;
+        if (data.Length < 15)
+            throw new IOException("光驱返回的 CD 预刻槽引出区信息不完整。");
+        int declared = BinaryPrimitives.ReadUInt16BigEndian(data) + 2;
+        if (declared < 15 || data.Length < Math.Min(allocation, declared))
+            throw new IOException("光驱返回的 CD 预刻槽引出区信息不完整。");
+        int minutes = data[12], seconds = data[13], frames = data[14];
+        // Binary MSF. LBA 0 starts at 00:02:00; the lead-out address is exclusive.
+        int count = ((minutes * 60 + seconds) * 75 + frames) - 150;
+        if (minutes >= 100 || seconds >= 60 || frames >= 75 || count <= 0)
+            throw new IOException("光驱返回的 CD 引出区地址无效。");
+        return count;
+    }
+
+    internal static long ReadBluRaySectorCount(IMmcCommandTransport transport)
+    {
+        var (blocks, status, spareClusters) = new BluRayMmcCommands(transport).ReadFormatCapacity();
+        // Type 1 counts data-zone blocks; spareClusters is the possible maximum.
+        // Type 2 counts user blocks; spareClusters is actually allocated space.
+        // Smaller drawing ranges can be authored, but the recorder requires the
+        // complete physical layout of the supported no-spare 25 GB single layer.
+        if (status is not (1 or 2))
+            throw new InvalidOperationException("光驱未报告当前 BD-R 的有效容量。");
+        if (status == 2 && spareClusters != 0)
+            throw new InvalidOperationException("BD-R 已分配备用区，逻辑容量不能用于无备用区标定。");
+        if (blocks != BluRaySingleLayerSectors)
+            throw new InvalidOperationException($"BD-R 报告 {blocks:N0} 扇区，当前标定仅支持 25 GB 单层无备用区的 12,219,392 扇区布局。");
+        return blocks;
+    }
+
+    internal static long ReadDvdSectorCount(int physicalMediaType, long totalSectorsOnMedia)
+    {
+        if (physicalMediaType is 0x8 or 0xB or 0xD)
+            throw new InvalidOperationException("双层 DVD 不适用于单层盘片标定。");
+        if (totalSectorsOnMedia <= 0)
+            throw new InvalidOperationException("光驱未报告有效的 DVD 总扇区数。");
+        return totalSectorsOnMedia;
+    }
 
     public Task<IReadOnlyList<OpticalWriteSpeed>> GetSupportedWriteSpeedsAsync(
         string deviceId,

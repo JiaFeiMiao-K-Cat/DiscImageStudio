@@ -1,0 +1,191 @@
+{
+  "HalfDisc.Stage": {
+    "zh-CN": "边界标定",
+    "zh-TW": "邊界校準",
+    "en": "Boundary calibration",
+    "ja": "境界校正",
+    "tr": "Sınır kalibrasyonu",
+    "es": "Calibración por límites",
+    "cs": "Kalibrace podle hranic"
+  },
+  "HalfDisc.RecordSeed": {
+    "zh-CN": "以本盘记录的半径开始边界标定：内 {0} mm，外 {1} mm。",
+    "zh-TW": "以本碟記錄的半徑開始邊界校準：內 {0} mm，外 {1} mm。",
+    "en": "Boundary calibration starts from this disc’s recorded radii: inner {0} mm, outer {1} mm.",
+    "ja": "このディスクに記録された半径（内 {0} mm、外 {1} mm）から境界校正を始めます。",
+    "tr": "Sınır kalibrasyonu diskin kayıtlı yarıçaplarından başlar: iç {0} mm, dış {1} mm.",
+    "es": "La calibración por límites parte de los radios registrados en este disco: interior {0} mm, exterior {1} mm.",
+    "cs": "Kalibrace podle hranic vychází z poloměrů zaznamenaných pro tento disk: vnitřní {0} mm, vnější {1} mm."
+  },
+  "HalfDisc.ComparisonCandidate": {
+    "zh-CN": "候选 {0} · 偏差 {1:0.###} mm · 需人工核对",
+    "zh-TW": "候選 {0} · 偏差 {1:0.###} mm · 需人工核對",
+    "en": "Candidate {0} · error {1:0.###} mm · manual review needed",
+    "ja": "候補{0} · 誤差{1:0.###} mm · 目視確認が必要",
+    "tr": "Aday {0} · hata {1:0.###} mm · elle kontrol gerekli",
+    "es": "Candidato {0} · error {1:0.###} mm · requiere revisión manual",
+    "cs": "Kandidát {0} · odchylka {1:0.###} mm · nutná ruční kontrola"
+  },
+  "HalfDisc.ComparisonOnly": {
+    "zh-CN": "此候选不是自动推荐结果。请核对预测与照片可见部分，确认吻合后再应用。",
+    "zh-TW": "此候選不是自動推薦結果。請核對預測與照片可見部分，確認吻合後再套用。",
+    "en": "This candidate is not the recommended result. Compare its prediction with the visible photo and confirm the match before applying.",
+    "ja": "この候補は自動推奨の結果ではありません。予測と写真の見える部分を照合し、一致を確認してから適用してください。",
+    "tr": "Bu aday önerilen sonuç değil. Tahmini fotoğrafta görünen bölümle karşılaştırıp eşleşmeyi onayladıktan sonra uygulayın.",
+    "es": "Este candidato no es el resultado recomendado. Compare su predicción con la parte visible de la foto y confirme la coincidencia antes de aplicarlo.",
+    "cs": "Tento kandidát není doporučeným výsledkem. Porovnejte jeho předpověď s viditelnou částí fotografie a před použitím potvrďte shodu."
+  },
+  "HalfDisc.Purpose": {
+    "zh-CN": "沿可见交界修正半径",
+    "zh-TW": "沿可見交界修正半徑",
+    "en": "Refine radii along visible boundaries",
+    "ja": "見える境界に沿って半径を補正",
+    "tr": "Görünen sınırlar boyunca yarıçapları düzelt",
+    "es": "Ajustar radios siguiendo los límites visibles",
+    "cs": "Zpřesnit poloměry podle viditelných hranic"
+  },
+  "HalfDisc.Create": {
+    "zh-CN": "新建边界标定图案",
+    "zh-TW": "建立邊界校準圖案",
+    "en": "Create boundary calibration target",
+    "ja": "境界校正用ターゲットを作成",
+    "tr": "Sınır kalibrasyonu hedefi oluştur",
+    "es": "Crear patrón de calibración por límites",
+    "cs": "Vytvořit terč pro kalibraci podle hranic"
+  },
+  "HalfDisc.Target": {
+    "zh-CN": "明暗各半的边界标定图案。分段描清楚的交界，无需追踪整圈。",
+    "zh-TW": "明暗各半的邊界校準圖案。分段描繪清楚的交界，無需追蹤整圈。",
+    "en": "Half-light, half-dark target for boundary calibration. Trace clear boundary sections; full turns are not required.",
+    "ja": "明暗が半分ずつの境界校正用パターンです。鮮明な境界を区間ごとにたどります。全周をたどる必要はありません。",
+    "tr": "Sınır kalibrasyonu için yarısı açık, yarısı koyu hedef. Belirgin sınır bölümlerini işaretleyin; tam turları izlemeniz gerekmez.",
+    "es": "Patrón mitad claro y mitad oscuro para calibración por límites. Trace los tramos de límite visibles; no necesita seguir vueltas completas.",
+    "cs": "Terč pro kalibraci podle hranic se světlou a tmavou polovinou. Označujte zřetelné úseky hranice; celé otáčky nejsou nutné."
+  },
+  "HalfDisc.Trace": {
+    "zh-CN": "直线、缓弯、折返都按实拍交界描点。连续清楚时，一段至少 6 点，覆盖半径范围 55% 以上。被遮挡则点「另描一段」：可选两段以上长段，每段至少 6 点、各跨 10% 以上；或至少 4 段短段，每段至少 3 点。整体覆盖 55% 以上，分布到内、中、外圈，只连接看得清的同一段。",
+    "zh-TW": "直線、緩彎、折返都按實拍交界描點。連續清楚時，一段至少 6 點，涵蓋半徑範圍 55% 以上。被遮擋則按「另描一段」：可選兩段以上長段，每段至少 6 點、各跨 10% 以上；或至少 4 段短段，每段至少 3 點。整體涵蓋 55% 以上，分布到內、中、外圈，只連接看得清的同一段。",
+    "en": "Mark the photographed boundary whether straight, gently curved or turning back. One continuous section needs at least 6 points spanning 55% of the recording width. Start another segment where it is hidden. Use either two or more long sections with at least 6 points and 10% width each, or at least 4 short sections with 3 points each. Together they must span 55% of the width. Include inner, middle and outer radii; join only visible points on the same section.",
+    "ja": "直線・緩い曲線・折り返しのいずれも、写真の境界をたどります。連続した1区間なら6点以上、記録幅の55%以上を含めます。見えない部分では「別の区間を追加」を押します。各6点以上・幅10%以上の長い区間を2つ以上、または各3点以上の短い区間を4つ以上選びます。全体で幅55%以上を含め、内周・中央・外周に分散させ、見える同じ区間の点だけを結んでください。",
+    "tr": "Düz, eğri veya geri dönen sınırı fotoğrafta göründüğü gibi işaretleyin. Tek kesintisiz bölüm, kayıt genişliğinin en az %55’ini kapsayan 6 nokta gerektirir. Örtülü yerlerde yeni bölüm başlatın. Her biri en az 6 noktalı ve genişliğin %10’unu kapsayan en az iki uzun bölüm veya her biri en az 3 noktalı dört kısa bölüm kullanın. Toplamda genişliğin %55’ini kapsayın. İç, orta ve dış yarıçaplara dağıtın; yalnızca aynı bölümdeki görünen noktaları birleştirin.",
+    "es": "Marque el límite fotografiado, sea recto, curvo o con retrocesos. Un tramo continuo requiere al menos 6 puntos que cubran el 55 % del ancho de grabación. Inicie otro tramo donde quede oculto. Use dos o más tramos largos de al menos 6 puntos y un 10 % del ancho cada uno, o al menos 4 tramos cortos de 3 puntos cada uno. En conjunto deben cubrir el 55 % del ancho, con radios interiores, centrales y exteriores. Una solo los puntos visibles del mismo tramo.",
+    "cs": "Označujte hranici na fotografii, ať je rovná, zakřivená nebo se vrací. Jeden souvislý úsek potřebuje alespoň 6 bodů přes 55 % šířky záznamu. Při zakrytí začněte další úsek. Použijte nejméně dva dlouhé úseky, každý alespoň se 6 body přes 10 % šířky, nebo alespoň 4 krátké úseky po 3 bodech. Dohromady musí pokrýt 55 % šířky. Zahrňte vnitřní, střední i vnější poloměry; spojujte jen viditelné body stejného úseku."
+  },
+  "HalfDisc.Confirm": {
+    "zh-CN": "已核对两条预测交界与实拍可见部分吻合",
+    "zh-TW": "已核對兩條預測交界與實拍可見部分吻合",
+    "en": "I checked both predicted boundaries against the visible photographed sections",
+    "ja": "2本の予測境界が写真の見える部分と一致することを確認しました",
+    "tr": "Tahmini iki sınırı fotoğrafta görünen bölümlerle karşılaştırdım",
+    "es": "He comparado ambos límites previstos con los tramos visibles de la foto",
+    "cs": "Ověřil jsem obě předpovězené hranice podle viditelných úseků na fotografii"
+  },
+  "HalfDisc.Summary": {
+    "zh-CN": "已描 {0} 段 · {1} 点 · 各段独立连接",
+    "zh-TW": "已描 {0} 段 · {1} 點 · 各段獨立連接",
+    "en": "{0} segments · {1} points · sections stay separate",
+    "ja": "{0}区間 · {1}点 · 区間ごとに接続",
+    "tr": "{0} bölüm · {1} nokta · bölümler ayrı tutulur",
+    "es": "{0} tramos · {1} puntos · los tramos se mantienen separados",
+    "cs": "{0} úseků · {1} bodů · úseky zůstávají oddělené"
+  },
+  "HalfDisc.Segment": {
+    "zh-CN": "第 {0} 段 · {1} 点",
+    "zh-TW": "第 {0} 段 · {1} 點",
+    "en": "Segment {0} · {1} points",
+    "ja": "区間{0} · {1}点",
+    "tr": "Bölüm {0} · {1} nokta",
+    "es": "Tramo {0} · {1} puntos",
+    "cs": "Úsek {0} · {1} bodů"
+  },
+  "HalfDisc.SegmentBadge": {
+    "zh-CN": "段 {0}",
+    "zh-TW": "段 {0}",
+    "en": "S{0}",
+    "ja": "区間{0}",
+    "tr": "B{0}",
+    "es": "T{0}",
+    "cs": "Ú{0}"
+  },
+  "HalfDisc.CurrentSegment": {
+    "zh-CN": "当前可见边界段",
+    "zh-TW": "目前可見邊界段",
+    "en": "Current boundary segment",
+    "ja": "現在の境界区間",
+    "tr": "Geçerli sınır bölümü",
+    "es": "Tramo de límite actual",
+    "cs": "Aktuální úsek hranice"
+  },
+  "HalfDisc.AddSegment": {
+    "zh-CN": "另描一段",
+    "zh-TW": "另描一段",
+    "en": "Start another segment",
+    "ja": "別の区間を追加",
+    "tr": "Başka bölüm başlat",
+    "es": "Iniciar otro tramo",
+    "cs": "Začít další úsek"
+  },
+  "HalfDisc.DeleteSegment": {
+    "zh-CN": "删除这段",
+    "zh-TW": "刪除此段",
+    "en": "Delete this segment",
+    "ja": "この区間を削除",
+    "tr": "Bu bölümü sil",
+    "es": "Eliminar este tramo",
+    "cs": "Smazat tento úsek"
+  },
+  "HalfDisc.CanvasHint": {
+    "zh-CN": "第 {0} 段：顺着交界点，两端都可延伸；悬停预览连线，贴近连线可补点。单击端点固定续点，Esc 解除。断处点「另描一段」。",
+    "zh-TW": "第 {0} 段：順著交界點，兩端皆可延伸；停留預覽連線，貼近連線可補點。點選端點固定續點，Esc 解除。斷處按「另描一段」。",
+    "en": "Segment {0}: trace from either end. Hover to preview the connection; click near a line to insert a point. Click an endpoint to keep extending it; Esc releases it. Start another segment at a gap.",
+    "ja": "区間{0}：境界の両端から延長できます。カーソル位置で接続をプレビューし、線の近くをクリックして点を挿入します。端点をクリックして延長を固定し、Escで解除します。途切れた部分では別の区間を追加します。",
+    "tr": "Bölüm {0}: iki uçtan da ilerleyebilirsiniz. Bağlantıyı önizlemek için imleci gezdirin; nokta eklemek için çizgi yakınına tıklayın. Bir uca tıklayarak o uçtan devam edin; Esc ile serbest bırakın. Kesintide yeni bölüm başlatın.",
+    "es": "Tramo {0}: trace desde cualquiera de los extremos. Pase el cursor para previsualizar la unión; pulse cerca de una línea para insertar un punto. Pulse un extremo para seguir desde él; Esc lo libera. Inicie otro tramo donde haya un hueco.",
+    "cs": "Úsek {0}: pokračujte z kteréhokoli konce. Přejetím zobrazíte náhled spojnice; kliknutím poblíž čáry vložíte bod. Kliknutím na koncový bod zvolíte pokračování z něj; Esc volbu zruší. Při mezeře začněte další úsek."
+  },
+  "HalfDisc.EndpointFixed": {
+    "zh-CN": "第 {0} 段：从高亮端点继续描。单击另一端可换向，Esc 恢复两端延伸；拖点只调整位置，Delete 删除选中点。",
+    "zh-TW": "第 {0} 段：從醒目端點繼續描。點選另一端可換向，Esc 恢復兩端延伸；拖點只調整位置，Delete 刪除選取點。",
+    "en": "Segment {0}: continue from the highlighted endpoint. Click the other endpoint to switch, or press Esc for either-end extension. Drag to move a point; Delete removes the selected point.",
+    "ja": "区間{0}：強調された端点から続けます。反対の端点をクリックすると切り替わり、Escで両端からの延長に戻ります。ドラッグで点を移動し、Deleteで選択点を削除します。",
+    "tr": "Bölüm {0}: vurgulanan uçtan devam edin. Yön değiştirmek için diğer uca tıklayın; iki uçtan uzatmak için Esc’ye basın. Noktayı taşımak için sürükleyin; seçili noktayı silmek için Delete’ye basın.",
+    "es": "Tramo {0}: continúe desde el extremo resaltado. Pulse el otro extremo para cambiar, o Esc para extender desde ambos. Arrastre un punto para moverlo; Supr elimina el punto seleccionado.",
+    "cs": "Úsek {0}: pokračujte ze zvýrazněného konce. Kliknutím na druhý konec změníte směr, klávesou Esc povolíte oba konce. Tažením bod přesunete; Delete smaže vybraný bod."
+  },
+  "HalfDisc.ContinueBadge": {
+    "zh-CN": "续点端",
+    "zh-TW": "續點端",
+    "en": "Continue here",
+    "ja": "ここから延長",
+    "tr": "Buradan devam et",
+    "es": "Continuar aquí",
+    "cs": "Pokračovat zde"
+  },
+  "HalfDisc.SearchHint": {
+    "zh-CN": "默认搜索范围为初始半径 ±0.01 mm，不会自动扩大。候选有歧义时，请补充其他半径处的清楚交界。",
+    "zh-TW": "預設搜尋範圍為初始半徑 ±0.01 mm，不會自動擴大。候選有歧義時，請補充其他半徑處的清楚交界。",
+    "en": "The search stays within ±0.01 mm of the initial radii by default. If candidates remain ambiguous, add clear boundary points at other radii.",
+    "ja": "探索範囲は初期半径の±0.01 mm以内で、自動拡大しません。候補を区別できない場合は、別の半径で鮮明な境界の点を追加してください。",
+    "tr": "Varsayılan arama, başlangıç yarıçaplarının ±0.01 mm çevresinde kalır. Adaylar belirsizse başka yarıçaplarda belirgin sınır noktaları ekleyin.",
+    "es": "Por defecto, la búsqueda se limita a ±0.01 mm de los radios iniciales. Si los candidatos siguen siendo ambiguos, añada puntos de límite claros en otros radios.",
+    "cs": "Výchozí hledání zůstává v rozsahu ±0.01 mm od počátečních poloměrů. Pokud jsou kandidáti nejednoznační, přidejte zřetelné body hranice na jiných poloměrech."
+  },
+  "WavyBoundary.Target": {
+    "zh-CN": "宽明暗区域与波浪形交界。沿照片中清楚的交界描点。",
+    "zh-TW": "寬明暗區域與波浪形交界。沿照片中清楚的交界描點。",
+    "en": "Broad light and dark regions with a wavy boundary. Trace the clear boundary in the photo.",
+    "ja": "明暗の広い領域と波状の境界です。写真で鮮明に見える境界をたどってください。",
+    "tr": "Dalgalı sınırı olan geniş açık ve koyu bölgeler. Fotoğraftaki belirgin sınırı işaretleyin.",
+    "es": "Regiones anchas claras y oscuras con un límite ondulado. Trace el límite visible en la foto.",
+    "cs": "Široké světlé a tmavé oblasti se zvlněnou hranicí. Označujte zřetelnou hranici na fotografii."
+  },
+  "WavyBoundary.Trace": {
+    "zh-CN": "沿照片中清楚的交界描点，包括弯曲和折返处。",
+    "zh-TW": "沿照片中清楚的交界描點，包括彎曲和折返處。",
+    "en": "Trace the clear boundary in the photo, including bends and turns.",
+    "ja": "曲がった部分や折り返しも含め、写真で鮮明に見える境界をたどってください。",
+    "tr": "Kıvrımlar ve dönüşler dahil, fotoğraftaki belirgin sınırı işaretleyin.",
+    "es": "Trace el límite visible en la foto, incluidas las curvas y los cambios de dirección.",
+    "cs": "Označujte zřetelnou hranici na fotografii včetně ohybů a otočení."
+  }
+}

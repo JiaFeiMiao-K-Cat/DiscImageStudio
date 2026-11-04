@@ -1,0 +1,38 @@
+{
+  "Standalone.Back": {
+    "zh-CN": "返回",
+    "zh-TW": "返回",
+    "en": "Back",
+    "ja": "戻る",
+    "tr": "Geri",
+    "es": "Volver",
+    "cs": "Zpět"
+  },
+  "Standalone.RecordingLog": {
+    "zh-CN": "标定盘刻录日志",
+    "zh-TW": "校準光碟燒錄記錄",
+    "en": "Calibration disc recording log",
+    "ja": "校正ディスクの書き込みログ",
+    "tr": "Kalibrasyon diski kayıt günlüğü",
+    "es": "Registro de grabación del disco de calibración",
+    "cs": "Protokol záznamu kalibračního disku"
+  },
+  "Standalone.BurnTitle": {
+    "zh-CN": "刻录标定盘",
+    "zh-TW": "燒錄校準光碟",
+    "en": "Burn calibration disc",
+    "ja": "校正ディスクの書き込み",
+    "tr": "Kalibrasyon diski yazdır",
+    "es": "Grabar disco de calibración",
+    "cs": "Vypálit kalibrační disk"
+  },
+  "Standalone.ReturnToCalibration": {
+    "zh-CN": "返回辅助标定",
+    "zh-TW": "返回輔助校準",
+    "en": "Back to calibration",
+    "ja": "校正に戻る",
+    "tr": "Kalibrasyona dön",
+    "es": "Volver a la calibración",
+    "cs": "Zpět ke kalibraci"
+  }
+}

@@ -54,8 +54,9 @@ internal static class UiPreviewRenderer
             "system" => AppTheme.System,
             _ => throw new ArgumentException("Snapshot theme must be dark, light or system.", nameof(theme)),
         };
-        if (language is not (null or "zh-CN" or "zh-TW" or "en" or "ja" or "tr" or "system"))
-            throw new ArgumentException("Snapshot language must be zh-CN, zh-TW, en, ja, tr or system.", nameof(language));
+        if (language is not (null or "zh-CN" or "zh-TW" or "en" or "ja" or "tr" or "es" or "cs" or "system"))
+            throw new ArgumentException(
+                "Snapshot language must be zh-CN, zh-TW, en, ja, tr, es, cs or system.", nameof(language));
         Application application = AppHost.CreateApplication(ShutdownMode.OnExplicitShutdown, requestedTheme,
             language ?? L.Chinese);
         if (settingsDialog)
@@ -230,8 +231,10 @@ internal static class UiPreviewRenderer
             "about" => 2,
             _ => throw new ArgumentException("Settings snapshot view must be general, storage or about.", nameof(view)),
         };
+        // The snapshot never saves, but keep its throwaway store beside the requested output
+        // instead of the system temp folder.
         AppSettingsStore store = new(Path.Combine(
-            Path.GetTempPath(),
+            Path.GetDirectoryName(Path.GetFullPath(outputPath))!,
             "disc-settings-snapshot-" + Guid.NewGuid().ToString("N") + ".json"));
         SettingsViewModel viewModel = new(settings, store);
         SettingsWindow window = new(viewModel)

@@ -57,6 +57,8 @@ public partial class SettingsViewModel : ObservableObject
             L.English => 3,
             L.Japanese => 4,
             L.Turkish => 5,
+            L.Spanish => 6,
+            L.Czech => 7,
             _ => 0,
         };
         ThemeIndex = normalized.Theme switch
@@ -152,6 +154,8 @@ public partial class SettingsViewModel : ObservableObject
                 3 => L.English,
                 4 => L.Japanese,
                 5 => L.Turkish,
+                6 => L.Spanish,
+                7 => L.Czech,
                 _ => L.SystemLanguage,
             },
             Theme = ThemeIndex switch

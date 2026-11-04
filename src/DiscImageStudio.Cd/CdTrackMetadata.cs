@@ -22,13 +22,21 @@ public sealed record CdTrackMetadata(
     double ToneDitherStrength = 0,
     int ToneLevels = 2,
     double ToneBrightness = 0,
-    bool ToneSrgbLinearization = false)
+    bool ToneSrgbLinearization = false,
+    double PitchLinear = 0,
+    double PitchQuadratic = 0,
+    double PitchCubic = 0)
 {
     internal const string FormatName = "cd-da-track-v1";
 
     /// <summary>Serialised file marker; the reader rejects anything else at that path.</summary>
     [JsonPropertyName("format")]
     public string Format { get; init; } = FormatName;
+
+    public CdDiscParameters CreateParameters() => new(
+        InnerRadiusMm, OuterRadiusMm, Sectors, LinearVelocityMmPerSecond,
+        StartAngleDegrees * Math.PI / 180.0, ImageOuterRadiusMm,
+        PitchLinear, PitchQuadratic, PitchCubic);
 
     /// <summary>Reads the sidecar of a track, or null when it is absent or unreadable.</summary>
     public static CdTrackMetadata? TryLoad(string trackPath)

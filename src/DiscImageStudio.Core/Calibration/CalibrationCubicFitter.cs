@@ -43,7 +43,7 @@ public static partial class CalibrationCrossFitter
             CalibrationGeometry geometry;
             try { parameters.Validate(); geometry = new(parameters); }
             catch (ArgumentException) { return Invalid(); }
-            var model = new CalibrationCrossModel(generated, geometry, CalibrationDiscKind.Dvd,
+            var model = new CalibrationCrossModel(generated, geometry, target.Parameters.Kind,
                 target.Parameters == parameters);
             var angles = new double[data.Length];
             var means = new double[traces];
@@ -128,7 +128,7 @@ public static partial class CalibrationCrossFitter
         if (Math.Max(Math.Abs(best.Parameters.InnerRadiusMm - center.InnerRadiusMm),
             Math.Abs(best.Parameters.OuterRadiusMm - center.OuterRadiusMm)) > options.RadiusRangeMm * 0.995)
             warnings.Add("最佳结果靠近搜索边界，建议扩大搜索范围并补充曲线点复核。");
-        warnings.Add("已拟合 DVD 三次轨距；三个形状系数与内外半径可能互相补偿，低残差不表示参数唯一，应用前请核对整条预测曲线。");
+        warnings.Add("已拟合三次轨距；三个形状系数与内外半径可能互相补偿，低残差不表示参数唯一，应用前请核对整条预测曲线。");
         if (Math.Max(Math.Abs(best.Parameters.PitchLinear - center.PitchLinear),
             Math.Max(Math.Abs(best.Parameters.PitchQuadratic - center.PitchQuadratic),
                 Math.Abs(best.Parameters.PitchCubic - center.PitchCubic))) > options.PitchCoefficientRange * 0.995)

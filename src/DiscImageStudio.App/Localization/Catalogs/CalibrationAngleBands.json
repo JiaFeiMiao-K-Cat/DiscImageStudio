@@ -1,0 +1,119 @@
+{
+  "AngleBands.Restart": {
+    "zh-CN": "清除全部交界并重标",
+    "zh-TW": "清除所有交界並重標",
+    "en": "Clear all boundaries and start over",
+    "ja": "境界をすべて消して測り直す",
+    "tr": "Tüm sınırları temizleyip yeniden işaretle",
+    "es": "Borrar todos los límites y empezar de nuevo",
+    "cs": "Vymazat všechny hranice a začít znovu"
+  },
+  "AngleBands.OldMeasurements": {
+    "zh-CN": "已保留原记录的测量。要读取角度标记，请将六个交界沿同一条半径重新选点。",
+    "zh-TW": "已保留原記錄的量測。要讀取角度標記，請沿同一條半徑重新點選六個交界。",
+    "en": "The saved measurements are retained. To read the angle marks, mark all six boundaries along one radius.",
+    "ja": "以前の測定値を保持しています。角度マークを読み取るには、同じ半径方向で6本の境界を測り直してください。",
+    "tr": "Kayıtlı ölçümler korundu. Açı işaretlerini okumak için altı sınırı da aynı yarıçap doğrultusunda işaretleyin.",
+    "es": "Se conservan las mediciones guardadas. Para leer las marcas angulares, marque los seis límites sobre un mismo radio.",
+    "cs": "Uložená měření zůstala zachována. Pro čtení úhlových značek označte všech šest hranic podél jednoho poloměru."
+  },
+  "AngleBands.Setup": {
+    "zh-CN": "沿同一条半径，从内到外依次点六个宽带交界。",
+    "zh-TW": "沿同一條半徑，從內到外依序點選六個寬帶交界。",
+    "en": "Mark the six band boundaries along one radius, from the centre outwards.",
+    "ja": "同じ半径上で、内側から外側へ6本の帯の境界を指定します。",
+    "tr": "Merkezden dışa doğru, aynı yarıçap üzerinde altı bant sınırını işaretleyin.",
+    "es": "Marque los seis límites de las bandas sobre un mismo radio, del centro hacia fuera.",
+    "cs": "Označte šest hranic pásů podél jednoho poloměru, od středu ven."
+  },
+  "AngleBands.Unsupported": {
+    "zh-CN": "当前盘型、容量或绘图区不支持角度粗标定。请核对盘片预设和扇区数，或改用边界标定。",
+    "zh-TW": "目前碟片類型、容量或繪圖區不支援角度粗校準。請確認碟片預設和磁區數，或改用邊界校準。",
+    "en": "This disc type, capacity or drawing range does not support coarse angle calibration. Check the preset and sector count, or use boundary calibration.",
+    "ja": "このディスクの種類、容量または描画範囲では角度による概略校正を行えません。プリセットとセクター数を確認するか、境界校正を使用してください。",
+    "tr": "Bu disk türü, kapasitesi veya çizim aralığı kaba açı kalibrasyonunu desteklemiyor. Ön ayarı ve sektör sayısını kontrol edin veya sınır kalibrasyonunu kullanın.",
+    "es": "Este tipo de disco, capacidad o área de dibujo no admite la calibración angular inicial. Revise el preajuste y el número de sectores, o use la calibración por límites.",
+    "cs": "Tento typ disku, kapacita nebo oblast kreslení nepodporuje hrubou úhlovou kalibraci. Zkontrolujte předvolbu a počet sektorů, případně použijte kalibraci podle hranic."
+  },
+  "AngleBands.CheckSetup": {
+    "zh-CN": "请核对生成参数中的半径、扇区数和盘片设置。",
+    "zh-TW": "請核對產生參數中的半徑、磁區數及碟片設定。",
+    "en": "Check the radii, sector count and disc settings.",
+    "ja": "半径、セクター数、ディスク設定を確認してください。",
+    "tr": "Yarıçapları, sektör sayısını ve disk ayarlarını kontrol edin.",
+    "es": "Compruebe los radios, el número de sectores y los ajustes del disco.",
+    "cs": "Zkontrolujte poloměry, počet sektorů a nastavení disku."
+  },
+  "AngleBands.Angles": {
+    "zh-CN": "内、中、外三处每圈转角偏差：{0}。正值表示相同扇区数在实盘上转过的角度更大。",
+    "zh-TW": "內、中、外三處每圈轉角偏差：{0}。正值表示相同磁區數在實碟上轉過的角度更大。",
+    "en": "Angle offsets per nominal turn at the inner, middle and outer marks: {0}. Positive values mean the same sectors span a larger angle on the disc.",
+    "ja": "描画時の1回転あたりの角度との差（内・中・外）は {0} です。正の値は同じセクター数で実ディスクの回転角が大きいことを示します。",
+    "tr": "İç, orta ve dış işaretlerde nominal tur başına açı sapması: {0}. Pozitif değerler, aynı sektörlerin diskte daha büyük bir açı kapladığını gösterir.",
+    "es": "Desviaciones angulares por vuelta nominal en las marcas interior, central y exterior: {0}. Un valor positivo indica que los mismos sectores abarcan un ángulo mayor en el disco.",
+    "cs": "Úhlové odchylky na jmenovitou otáčku u vnitřní, střední a vnější značky: {0}. Kladné hodnoty znamenají, že stejný počet sektorů zabírá na disku větší úhel."
+  },
+  "AngleBands.Target": {
+    "zh-CN": "宽带与角度标记。标记六个交界后读取带内条纹，按固定轨距修正初始半径。",
+    "zh-TW": "寬帶與角度標記。標記六個交界後讀取帶內條紋，依固定軌距修正初始半徑。",
+    "en": "Broad bands with angle marks. Mark all six boundaries to read the stripes and refine the initial radii assuming constant track pitch.",
+    "ja": "広い帯と角度マークです。6本の境界を指定すると帯内の縞を読み取り、トラックピッチが一定として初期半径を補正します。",
+    "tr": "Açı işaretli geniş bantlar. Çizgileri okumak ve sabit iz aralığı varsayımıyla başlangıç yarıçaplarını düzeltmek için altı sınırı da işaretleyin.",
+    "es": "Bandas anchas con marcas angulares. Marque los seis límites para leer las franjas y ajustar los radios iniciales suponiendo un paso de pista constante.",
+    "cs": "Široké pásy s úhlovými značkami. Označte všech šest hranic pro čtení proužků a úpravu počátečních poloměrů při předpokládané stálé rozteči stop."
+  },
+  "AngleBands.Edges": {
+    "zh-CN": "沿同一方向，从内到外点三条宽带各自的内缘、外缘。请点宽带与空白间隔的交界，避开带内条纹。",
+    "zh-TW": "沿同一方向，從內到外點選三條寬帶各自的內緣、外緣。請點寬帶與空白間隔的交界，避開帶內條紋。",
+    "en": "Along one direction, mark the inner and outer edges of all three bands, working outwards. Click the boundary with the blank gap, avoiding stripes inside the bands.",
+    "ja": "同じ方向で、内側から外側へ3本の帯の内縁と外縁を指定します。帯内の縞を避け、帯と空白の境界をクリックしてください。",
+    "tr": "Aynı yönde, içten dışa doğru üç bandın iç ve dış kenarlarını işaretleyin. Bant içindeki çizgileri değil, boş aralıkla olan sınırları tıklayın.",
+    "es": "En una misma dirección, marque los bordes interior y exterior de las tres bandas, de dentro hacia fuera. Pulse el límite con el espacio en blanco, evitando las franjas interiores.",
+    "cs": "V jednom směru označte vnitřní a vnější okraje všech tří pásů, od středu ven. Klikejte na hranice s prázdnými mezerami, ne na proužky uvnitř pásů."
+  },
+  "AngleBands.Solve": {
+    "zh-CN": "估算半径并读取角度标记",
+    "zh-TW": "估算半徑並讀取角度標記",
+    "en": "Estimate radii and read angle marks",
+    "ja": "半径を推定して角度マークを読む",
+    "tr": "Yarıçapları tahmin et ve açı işaretlerini oku",
+    "es": "Estimar radios y leer marcas angulares",
+    "cs": "Odhadnout poloměry a přečíst úhlové značky"
+  },
+  "AngleBands.Result": {
+    "zh-CN": "修正半径：内 {0:0.000} mm，外 {1:0.000} mm；已核对 {2} 处角度标记。宽带估值：{3:0.000} / {4:0.000} mm。应用时采用修正值。",
+    "zh-TW": "修正半徑：內 {0:0.000} mm，外 {1:0.000} mm；已核對 {2} 處角度標記。寬帶估值：{3:0.000} / {4:0.000} mm。套用時採用修正值。",
+    "en": "Corrected radii: inner {0:0.000} mm, outer {1:0.000} mm; {2} angle marks verified. Band estimate: {3:0.000} / {4:0.000} mm. Apply uses the corrected values.",
+    "ja": "補正半径：内 {0:0.000} mm、外 {1:0.000} mm。角度マーク {2} か所を確認しました。帯からの推定値：{3:0.000} / {4:0.000} mm。適用時は補正値を使用します。",
+    "tr": "Düzeltilmiş yarıçaplar: iç {0:0.000} mm, dış {1:0.000} mm; {2} açı işareti doğrulandı. Bant tahmini: {3:0.000} / {4:0.000} mm. Uygulamada düzeltilmiş değerler kullanılır.",
+    "es": "Radios corregidos: interior {0:0.000} mm, exterior {1:0.000} mm; {2} marcas angulares verificadas. Estimación por bandas: {3:0.000} / {4:0.000} mm. Al aplicar se usan los valores corregidos.",
+    "cs": "Opravené poloměry: vnitřní {0:0.000} mm, vnější {1:0.000} mm; ověřeno značek: {2}. Odhad z pásů: {3:0.000} / {4:0.000} mm. Při použití se převezmou opravené hodnoty."
+  },
+  "AngleBands.NeedSix": {
+    "zh-CN": "当前为宽带估值。补齐六个交界后可读取角度标记。",
+    "zh-TW": "目前為寬帶估值。補齊六個交界後可讀取角度標記。",
+    "en": "Estimate from band edges only. Mark all six boundaries to read the angle marks.",
+    "ja": "帯の境界のみの推定値です。6本の境界を指定すると角度マークを読み取れます。",
+    "tr": "Yalnızca bant kenarlarına dayalı tahmin. Açı işaretlerini okumak için altı sınırı da işaretleyin.",
+    "es": "Estimación basada solo en los bordes de las bandas. Marque los seis límites para leer las marcas angulares.",
+    "cs": "Odhad pouze podle okrajů pásů. Pro čtení úhlových značek označte všech šest hranic."
+  },
+  "AngleBands.Weak": {
+    "zh-CN": "带内条纹不足或各处读数不一致。本次仅采用宽带估值；可在同一张盘上换个光照方向重拍。",
+    "zh-TW": "帶內條紋不足或各處讀數不一致。本次僅採用寬帶估值；可在同一張碟上換個光照方向重拍。",
+    "en": "The stripes were too weak or the readings disagreed. Only the band-edge estimate is available. Try photographing the same disc with different lighting.",
+    "ja": "縞が不鮮明か、マークの測定値が一致しません。帯の境界だけの推定値を使います。照明の向きを変えて同じディスクを撮影できます。",
+    "tr": "Çizgiler yeterince belirgin değil veya okumalar tutarsız. Yalnızca bant kenarı tahmini kullanılabilir. Aynı diski farklı ışık altında fotoğraflamayı deneyin.",
+    "es": "Las franjas no son suficientemente claras o las lecturas no coinciden. Solo está disponible la estimación por bordes. Pruebe a fotografiar el mismo disco con otra iluminación.",
+    "cs": "Proužky jsou příliš slabé nebo se odečty neshodují. K dispozici je pouze odhad podle okrajů pásů. Zkuste stejný disk vyfotografovat při jiném osvětlení."
+  },
+  "当前盘型、容量或绘图区不适用 v13 角度粗标。": {
+    "zh-CN": "当前盘型、容量或绘图区不支持角度粗标定。",
+    "zh-TW": "目前碟片類型、容量或繪圖區不支援角度粗校準。",
+    "en": "This disc type, capacity or drawing range does not support coarse angle calibration.",
+    "ja": "このディスクの種類、容量または描画範囲では角度による概略校正を行えません。",
+    "tr": "Bu disk türü, kapasitesi veya çizim aralığı kaba açı kalibrasyonunu desteklemiyor.",
+    "es": "Este tipo de disco, capacidad o área de dibujo no admite la calibración angular inicial.",
+    "cs": "Tento typ disku, kapacita nebo oblast kreslení nepodporuje hrubou úhlovou kalibraci."
+  }
+}

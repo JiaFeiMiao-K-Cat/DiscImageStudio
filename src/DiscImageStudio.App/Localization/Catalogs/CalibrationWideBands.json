@@ -1,0 +1,119 @@
+{
+  "宽带粗标靶需要 70–85 分钟、1200 mm/s 的标准 12 cm CD。": {
+    "zh-CN": "宽带粗标定靶需要 70–85 分钟、1200 mm/s 的标准 12 cm CD。",
+    "zh-TW": "寬帶粗標定靶需要 70–85 分鐘、1200 mm/s 的標準 12 cm CD。",
+    "en": "The broad-band target requires a standard 12 cm, 70–85 minute CD at 1200 mm/s.",
+    "ja": "太いリングのターゲットには70～85分、1200 mm/sの標準12 cm CDが必要です。",
+    "tr": "Geniş bant hedefi, 1200 mm/s hızında standart 12 cm, 70–85 dakikalık CD gerektirir.",
+    "es": "El patrón de bandas anchas requiere un CD estándar de 12 cm, de 70–85 minutos, a 1200 mm/s.",
+    "cs": "Terč se širokými pásy vyžaduje standardní 12cm CD na 70–85 minut při rychlosti 1200 mm/s."
+  },
+  "宽带测量需要 12 cm 盘片的矫正照片，用于估算下一张盘的初始半径。": {
+    "zh-CN": "宽带测量需要 12 cm 盘片的矫正照片，用于估算下一张盘的初始半径。",
+    "zh-TW": "寬帶量測需要 12 cm 碟片的校正照片，用於估算下一張碟的初始半徑。",
+    "en": "Broad-band measurements require a rectified photo of a 12 cm disc and provide initial radii for the next target.",
+    "ja": "太いリングの測定には12 cmディスクの補正済み写真が必要です。次のターゲットの初期半径を求めます。",
+    "tr": "Geniş bant ölçümü, 12 cm diskin düzeltilmiş fotoğrafını gerektirir ve sonraki hedefin başlangıç yarıçaplarını verir.",
+    "es": "Las medidas de bandas anchas requieren una foto rectificada de un disco de 12 cm y proporcionan los radios iniciales del siguiente patrón.",
+    "cs": "Měření širokých pásů vyžaduje rektifikovanou fotografii 12cm disku a určuje počáteční poloměry dalšího terče."
+  },
+  "请量取最内和最外两条宽带靠盘心的边缘。": {
+    "zh-CN": "请量取最内和最外两条宽带靠盘心的边缘。",
+    "zh-TW": "請量取最內和最外兩條寬帶靠盤心的邊緣。",
+    "en": "Measure the edge facing the disc centre on both the innermost and outermost bands.",
+    "ja": "最も内側と最も外側のリングで、ディスクの中心に近い縁を測ってください。",
+    "tr": "En iç ve en dış bantların disk merkezine bakan kenarlarını ölçün.",
+    "es": "Mide el borde orientado hacia el centro del disco de las bandas más interior y más exterior.",
+    "cs": "U nejvnitřnějšího a nejvnějšího pásu změřte okraj směřující ke středu disku."
+  },
+  "中间带的位置与内外两带相差超过 0.40 mm，请核对圈号、内缘和照片矫正。": {
+    "zh-CN": "中间带的位置与内外两带相差超过 0.40 mm，请核对圈号、内缘和照片矫正。",
+    "zh-TW": "中間帶的位置與內外兩帶相差超過 0.40 mm，請核對圈號、內緣和照片校正。",
+    "en": "The middle edge differs by over 0.40 mm from its position predicted by the other two. Check the band numbers, the inner edges and photo rectification.",
+    "ja": "中央リングの位置が内外の2本から予測される位置と0.40 mmを超えて異なります。番号、内縁、写真補正を確認してください。",
+    "tr": "Orta kenar, diğer ikisinden tahmin edilen konumdan 0,40 mm'den fazla sapıyor. Bant numaralarını, iç kenarları ve fotoğraf düzeltmesini kontrol edin.",
+    "es": "El borde central difiere más de 0,40 mm de la posición estimada a partir de los otros dos. Comprueba los números de banda, los bordes interiores y la rectificación de la foto.",
+    "cs": "Prostřední okraj se liší o více než 0,40 mm od polohy odhadnuté ze zbývajících dvou. Zkontrolujte čísla pásů, vnitřní okraje a rektifikaci fotografie."
+  },
+  "WideBands.Target": {
+    "zh-CN": "三条宽环。可沿用已量内缘，或在本盘照片上补量外缘，核对带间距。",
+    "zh-TW": "三條寬環。可沿用已量內緣，或在本盤照片上補量外緣，核對帶間距。",
+    "en": "Three broad rings. Reuse measured inner edges or add outer edges on this disc’s photo to check the spacing.",
+    "ja": "太いリング3本。測定済みの内縁を利用するか、このディスクの写真で外縁も測り、間隔を確認できます。",
+    "tr": "Üç geniş halka. Kayıtlı iç kenar ölçümlerini kullanabilir veya bu diskin fotoğrafında dış kenarları da ölçerek bant aralıklarını kontrol edebilirsiniz.",
+    "es": "Tres anillos anchos. Reutiliza las medidas de los bordes interiores o mide también los exteriores en la foto de este disco para comprobar las separaciones.",
+    "cs": "Tři široké prstence. Použijte uložená měření vnitřních okrajů nebo na fotografii tohoto disku přidejte vnější okraje a zkontrolujte rozestupy."
+  },
+  "WideBands.Result": {
+    "zh-CN": "初始内半径约 {0:0.00} mm，外半径约 {1:0.00} mm。",
+    "zh-TW": "初始內半徑約 {0:0.00} mm，外半徑約 {1:0.00} mm。",
+    "en": "Estimated initial radii: {0:0.00} mm inner, {1:0.00} mm outer.",
+    "ja": "推定初期半径は内側約{0:0.00} mm、外側約{1:0.00} mmです。",
+    "tr": "Tahmini başlangıç yarıçapları: iç {0:0.00} mm, dış {1:0.00} mm.",
+    "es": "Radios iniciales estimados: interior {0:0.00} mm y exterior {1:0.00} mm.",
+    "cs": "Odhad počátečních poloměrů: vnitřní {0:0.00} mm, vnější {1:0.00} mm."
+  },
+  "WideBands.Pair": {
+    "zh-CN": "两条边缘用于求两个半径。可再量 2 号检查读数；照片尺度取决于实体外缘和中心孔的矫正。",
+    "zh-TW": "兩條邊緣用於求兩個半徑。可再量 2 號檢查讀數；照片比例取決於實體外緣和中心孔的校正。",
+    "en": "Two edges determine the two radii. Measure band 2 to check the readings. Photo scale depends on alignment of the physical rim and centre hole.",
+    "ja": "2本の縁から2つの半径を求めました。2番を測ると読み取りを確認できます。縮尺は外周と中心穴の位置合わせに依存します。",
+    "tr": "İki kenar iki yarıçapı belirler. Ölçümleri kontrol etmek için 2. bandı ölçün. Fotoğraf ölçeği, fiziksel dış kenar ve merkez deliğinin hizalanmasına bağlıdır.",
+    "es": "Dos bordes determinan los dos radios. Mide la banda 2 para comprobar las medidas. La escala de la foto depende de la alineación del borde físico y del orificio central.",
+    "cs": "Dva okraje určují oba poloměry. Pro kontrolu změřte pás 2. Měřítko fotografie závisí na zarovnání skutečného obvodu a středového otvoru."
+  },
+  "WideBands.Size": {
+    "zh-CN": "这张标定盘适用于标准 12 cm CD。请返回照片矫正，核对实体尺寸。",
+    "zh-TW": "這張標定碟適用於標準 12 cm CD。請返回照片校正，核對實體尺寸。",
+    "en": "This target is for a standard 12 cm CD. Return to photo rectification to check the physical size.",
+    "ja": "このターゲットは標準の12 cm CD用です。写真補正に戻って実物のサイズを確認してください。",
+    "tr": "Bu hedef standart 12 cm CD içindir. Fiziksel boyutu kontrol etmek için fotoğraf düzeltmesine dönün.",
+    "es": "Este patrón es para un CD estándar de 12 cm. Vuelve a la rectificación de la foto para comprobar el tamaño físico.",
+    "cs": "Tento terč je určen pro standardní 12cm CD. Vraťte se k rektifikaci fotografie a ověřte skutečnou velikost."
+  },
+  "WideBands.FineHint": {
+    "zh-CN": "这张盘用于量宽环。描十字线时，请用粗标定半径新建精细标定靶。",
+    "zh-TW": "這張盤用於量寬環。描十字線時，請用粗標定半徑建立精細標定靶。",
+    "en": "This disc is for measuring broad bands. Create a fine calibration target with the coarse radii to trace a cross.",
+    "ja": "このディスクでは太いリングを測定します。十字線を測るには概略半径で精密校正用ターゲットを作成してください。",
+    "tr": "Bu disk geniş bantları ölçmek içindir. Artıyı izlemek için kaba tahmin yarıçaplarıyla hassas kalibrasyon hedefi oluşturun.",
+    "es": "Este disco sirve para medir bandas anchas. Crea un patrón de calibración precisa con los radios aproximados para trazar la cruz.",
+    "cs": "Tento disk slouží k měření širokých pásů. Pro obtažení kříže vytvořte terč pro jemnou kalibraci s hrubě odhadnutými poloměry."
+  },
+  "WideBands.PreviewSaved": {
+    "zh-CN": "已保存示意图和标定记录。请生成音轨或光盘镜像，或选择流式刻录。",
+    "zh-TW": "已儲存示意圖和標定記錄。請產生音軌或光碟映像，或選擇串流燒錄。",
+    "en": "Schematic and calibration record saved. Generate an audio track or disc image, or choose streaming burn.",
+    "ja": "模式図と校正記録を保存しました。音声トラックまたはディスクイメージを生成するか、ストリーミング書き込みを選んでください。",
+    "tr": "Şema ve kalibrasyon kaydı kaydedildi. Ses izi veya disk görüntüsü oluşturun ya da akışla yazmayı seçin.",
+    "es": "Esquema y registro de calibración guardados. Genera una pista de audio o una imagen de disco, o elige la grabación en streaming.",
+    "cs": "Schéma a záznam kalibrace byly uloženy. Vytvořte zvukovou stopu nebo obraz disku, případně zvolte průběžné vypalování."
+  },
+  "宽带测量用于估算下一张盘的初始半径。": {
+    "zh-CN": "宽带测量用于估算下一张盘的初始半径。",
+    "zh-TW": "寬帶量測用於估算下一張碟的初始半徑。",
+    "en": "Use the band measurements to estimate initial radii for the next disc.",
+    "ja": "帯の測定値は次のディスクの初期半径の推定に使います。",
+    "tr": "Sonraki diskin başlangıç yarıçaplarını tahmin etmek için bant ölçümlerini kullanın.",
+    "es": "Usa las medidas de las bandas para estimar los radios iniciales del siguiente disco.",
+    "cs": "Z měření pásů odhadněte počáteční poloměry dalšího disku."
+  },
+  "宽带粗标靶需要完整的 DVD 扇区块或蓝光簇，且绘图区须足以分辨六个交界并估算全盘半径。": {
+    "zh-CN": "请使用完整的 DVD 扇区块或蓝光簇，并留出足以分辨六个交界的绘图范围。",
+    "zh-TW": "請使用完整的 DVD 磁區塊或藍光叢集，並保留足以分辨六個交界的繪圖範圍。",
+    "en": "Use complete DVD sector blocks or Blu-ray clusters, with enough drawing space to distinguish six boundaries.",
+    "ja": "完全な DVD セクターブロックまたは Blu-ray クラスタを使い、6本の境界を区別できる描画範囲を確保してください。",
+    "tr": "Tam DVD sektör blokları veya Blu-ray kümeleri kullanın; çizim alanı altı sınırı ayırt etmeye yetecek genişlikte olmalıdır.",
+    "es": "Usa bloques completos de sectores DVD o clústeres Blu-ray y un área de dibujo suficiente para distinguir los seis límites.",
+    "cs": "Použijte celé bloky sektorů DVD nebo clustery Blu-ray a dostatečně širokou kreslicí oblast pro rozlišení šesti hranic."
+  },
+  "宽带反推的半径超出盘片的可测范围，请核对照片尺度和交界。": {
+    "zh-CN": "宽带反推的半径超出盘片的可测范围，请核对照片尺度和交界。",
+    "zh-TW": "寬帶反推的半徑超出碟片可量測的範圍，請核對照片比例及交界。",
+    "en": "The estimated radii fall outside the disc. Check the photo scale and the marked boundaries.",
+    "ja": "推定半径がディスクの測定範囲外です。写真の縮尺と測定した境界を確認してください。",
+    "tr": "Tahmini yarıçaplar diskin dışında. Fotoğraf ölçeğini ve işaretlenen sınırları kontrol edin.",
+    "es": "Los radios estimados quedan fuera del disco. Comprueba la escala de la foto y los límites marcados.",
+    "cs": "Odhadnuté poloměry leží mimo disk. Zkontrolujte měřítko fotografie a označené hranice."
+  }
+}

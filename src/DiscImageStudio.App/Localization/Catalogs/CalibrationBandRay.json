@@ -1,0 +1,65 @@
+{
+  "BandRay.First": {
+    "zh-CN": "点照片上的{0}，确定本次读数的方向。",
+    "zh-TW": "點照片上的{0}，確定本次讀數的方向。",
+    "en": "Click the {0} on the photo to set the reading direction.",
+    "ja": "写真上の「{0}」をクリックして測定方向を指定します。",
+    "tr": "Okuma yönünü belirlemek için fotoğraftaki {0} öğesine tıklayın.",
+    "es": "Pulse {0} en la foto para fijar la dirección de lectura.",
+    "cs": "Kliknutím na {0} ve fotografii určete směr odečtu."
+  },
+  "BandRay.Next": {
+    "zh-CN": "沿辅助线点{0}。",
+    "zh-TW": "沿輔助線點{0}。",
+    "en": "Click the {0} along the guide.",
+    "ja": "ガイドに沿って「{0}」をクリックします。",
+    "tr": "Kılavuz boyunca {0} öğesine tıklayın.",
+    "es": "Pulse {0} a lo largo de la guía.",
+    "cs": "Klikněte na {0} podél vodítka."
+  },
+  "BandRay.AlreadyMarked": {
+    "zh-CN": "{0}已有读数。请先重标当前交界，再重新选点。",
+    "zh-TW": "{0}已有讀數。請先重標目前交界，再重新選點。",
+    "en": "The {0} already has a reading. Remeasure the selected edge to replace it.",
+    "ja": "「{0}」は測定済みです。変更するには選択した境界を測り直してください。",
+    "tr": "{0} için zaten bir okuma var. Değiştirmek için seçili kenarı yeniden ölçün.",
+    "es": "{0} ya tiene una lectura. Vuelva a medir el borde seleccionado para sustituirla.",
+    "cs": "Pro {0} již existuje odečet. Chcete-li jej nahradit, znovu změřte vybraný okraj."
+  },
+  "BandRay.Complete": {
+    "zh-CN": "六个交界已量完，可以估算半径。",
+    "zh-TW": "六個交界已量完，可以估算半徑。",
+    "en": "All six edges have been measured. You can now estimate the radii.",
+    "ja": "6つの境界をすべて測定しました。半径を推定できます。",
+    "tr": "Altı kenar da ölçüldü. Artık yarıçapları tahmin edebilirsiniz.",
+    "es": "Se han medido los seis bordes. Ya puede estimar los radios.",
+    "cs": "Všech šest okrajů je změřeno. Nyní lze odhadnout poloměry."
+  },
+  "BandRay.Direction": {
+    "zh-CN": "请沿同一条辅助线取点，各点方位角之差应在 {0}° 内；换方向可先清除单线点。",
+    "zh-TW": "請沿同一條輔助線取點，各點方位角之差應在 {0}° 內；要改方向可先清除單線點。",
+    "en": "Click along the same guide. Keep the bearings within {0}° of each other, or clear the single-ray points to change direction.",
+    "ja": "同じガイドに沿って各点の方位差を {0}° 以内にしてください。方向を変えるには単一方向の点を消去します。",
+    "tr": "Aynı kılavuz boyunca tıklayın. Yönler arasındaki fark {0}° içinde olmalı; yönü değiştirmek için tek doğrultulu noktaları temizleyin.",
+    "es": "Pulse a lo largo de la misma guía. Mantenga las direcciones dentro de {0}° entre sí, o borre los puntos del mismo radio para cambiar de dirección.",
+    "cs": "Klikejte podél stejného vodítka. Rozdíl směrů musí zůstat do {0}°; pro změnu směru vymažte body na společném paprsku."
+  },
+  "BandRay.Order": {
+    "zh-CN": "该点的半径和已量交界的顺序不符。请核对选中的交界并重新点击。",
+    "zh-TW": "此點的半徑與已量交界的順序不符。請確認所選交界並重新點選。",
+    "en": "This radius would cross a previously marked edge. Check the selected edge and click again.",
+    "ja": "すでに測定した境界と半径の順序が逆になります。選択した境界を確認し、再度クリックしてください。",
+    "tr": "Bu yarıçap, daha önce işaretlenen kenarların sırasını bozuyor. Seçili kenarı kontrol edip yeniden tıklayın.",
+    "es": "Este radio alteraría el orden de un borde ya marcado. Compruebe el borde seleccionado y vuelva a pulsar.",
+    "cs": "Tento poloměr by překřížil dříve označený okraj. Zkontrolujte vybraný okraj a klikněte znovu."
+  },
+  "单线取点记录中的交界或照片状态无效。": {
+    "zh-CN": "单线取点记录中的交界或照片状态无效。",
+    "zh-TW": "單線取點記錄的交界或照片狀態無效。",
+    "en": "The selected edge or photo state in the single-ray record is invalid.",
+    "ja": "単一方向の測定記録で、選択した境界または写真の状態が無効です。",
+    "tr": "Tek doğrultulu kayıttaki seçili kenar veya fotoğraf durumu geçersiz.",
+    "es": "El borde seleccionado o el estado de la foto en el registro de un solo radio no es válido.",
+    "cs": "Vybraný okraj nebo stav fotografie v záznamu společného paprsku není platný."
+  }
+}
