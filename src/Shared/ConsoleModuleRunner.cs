@@ -101,8 +101,9 @@ internal static class ConsoleModuleRunner
                 // every line blocks the pipe and the GUI. One line per percent or
                 // per second is enough.
                 long now = Environment.TickCount64;
-                if (value.Fraction < _lastFraction + 0.01 && now - _lastTick < 1000) return;
-                _lastFraction = value.Fraction;
+                double fraction = value.Fraction ?? 0;
+                if (fraction < _lastFraction + 0.01 && now - _lastTick < 1000) return;
+                _lastFraction = fraction;
                 _lastTick = now;
                 Console.Error.WriteLine(value.Message);
                 Console.Error.Flush();
