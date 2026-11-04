@@ -368,8 +368,8 @@ def check_calibration(executable: Path, work: Path) -> None:
         cwd=work, check=True)
     check_png(target_png, 2400)
     document = json.loads(base_session.read_text(encoding="utf-8"))
-    if document["target"]["schemaVersion"] != 6:
-        raise ValueError("calibration-target did not write a schema 6 session")
+    if document["target"]["schemaVersion"] != 7:
+        raise ValueError("calibration-target did not write a schema 7 session")
     if document["target"]["parameters"]["kind"] != "Cd":
         raise ValueError("calibration-target session has the wrong disc kind")
     if document["observations"] or document["photo"] is not None:
