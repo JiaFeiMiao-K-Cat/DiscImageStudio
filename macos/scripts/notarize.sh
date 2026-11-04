@@ -258,6 +258,17 @@ else
   fi
 fi
 
+# staple 会改写 DMG，packaging 阶段先算的 .sha256 会失效；这里重算一次。
+if [[ "$IS_DMG" -eq 1 && -f "$APP_PATH.sha256" ]]; then
+  DMG_DIR="$(cd "$(dirname "$APP_PATH")" && pwd -P)"
+  DMG_NAME="$(basename "$APP_PATH")"
+  (
+    cd "$DMG_DIR"
+    shasum -a 256 "$DMG_NAME" > "$DMG_NAME.sha256"
+  )
+  note "校验和        : 已在 stapling 后重算 $APP_PATH.sha256"
+fi
+
 note ""
 note "完成。"
 note "应用/DMG      : $APP_PATH"
