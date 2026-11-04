@@ -58,6 +58,10 @@ final class BurnModel {
     var streamResult: StreamBurnResult?
     var streamErrorMessage: String?
     var streamWasCancelled = false
+    /// 流式刻录速度倍数；nil 表示交给驱动器自动（通常最高），默认 2×。
+    var streamSpeed: Double? = 2
+    /// 成功后是否弹出光盘；失败/取消时助手不会弹盘。
+    var streamEject = true
     private(set) var streamPlan: StreamBurnPlan?
 
     @ObservationIgnored private var streamJob: BurnStreamJob?
@@ -459,8 +463,9 @@ final class BurnModel {
                 kind: kind,
                 sectors: sectors,
                 drive: drive,
+                speed: streamSpeed,
                 verify: true,
-                eject: true,
+                eject: streamEject,
                 test: false
             )
             streamPlan = plan

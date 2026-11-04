@@ -1871,3 +1871,17 @@
 "App 内置 CLI" = "Bundled CLI";
 "PATH" = "PATH";
 "dotnet run" = "dotnet run";
+"导入预设…" = "Import presets…";
+"导入预设" = "Import presets";
+"已导入预设：%@（CD %@ / DVD %@ / BD %@）。" = "Imported presets: %@ (CD %@ / DVD %@ / BD %@).";
+"保存为盘片预设" = "Save as disc preset";
+"把当前工程的盘片几何与实测参数写入用户预设，新建工程时可直接选择。" = "Write the current project geometry and measured parameters to user presets so new projects can select them.";
+"预设名称" = "Preset name";
+"保存" = "Save";
+"保存为预设…" = "Save as preset…";
+"已保存为预设：%@（共 %@ 个预设）。" = "Saved preset: %@ (%@ presets total).";
+"由标定向导保存的实测参数。" = "Measured parameters saved by the calibration wizard.";
+"预设名称不能为空。" = "Preset name cannot be empty.";
+"写入速度" = "Write speed";
+"默认 2×；生成速度跟不上时会出现 underrun，可降到 1×。" = "Default 2×; drop to 1× if generation cannot keep up and underruns occur.";
+"完成后弹出光盘" = "Eject disc when finished";

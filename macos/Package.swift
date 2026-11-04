@@ -22,6 +22,7 @@ let package = Package(
             linkerSettings: [
                 .linkedFramework("Foundation"),
                 .linkedFramework("DiscRecording"),
+                .linkedFramework("IOKit"),
             ]
         ),
         .executableTarget(

@@ -594,6 +594,53 @@ def check_calibration(executable: Path, work: Path) -> None:
           f"{inner_error:.4f}/{outer_error:.4f} mm")
 
 
+
+def check_presets_import(executable: Path, work: Path) -> None:
+    """User presets can be imported/merged from a schema 4 JSON via the CLI."""
+    incoming = work / "incoming-presets.json"
+    user = work / "user-presets.json"
+    preset = {
+        "id": "imported-calibrated-cd",
+        "displayName": "Imported calibrated CD",
+        "description": "From calibration",
+        "sectors": 359845,
+        "innerRadiusMm": 24.911275,
+        "outerRadiusMm": 57.931155,
+        "linearVelocityMmPerSecond": 1200,
+    }
+    incoming.write_text(json.dumps({
+        "schemaVersion": 4,
+        "cdPresets": [preset],
+        "dvdPresets": [],
+        "bluRayPresets": [],
+    }), encoding="utf-8")
+
+    completed = subprocess.run(
+        [executable, "presets-import", "--file", str(incoming), "--path", str(user)],
+        cwd=work, check=True, capture_output=True)
+    summary = json.loads(completed.stdout)
+    if not summary.get("ok") or summary.get("path") != str(user):
+        raise ValueError(f"presets-import returned an unexpected summary: {summary!r}")
+
+    listed = subprocess.run(
+        [executable, "presets", "--json", "--path", str(user)],
+        cwd=work, check=True, capture_output=True)
+    document = json.loads(listed.stdout)
+    ids = [item["id"] for item in document["cdPresets"]]
+    if "imported-calibrated-cd" not in ids:
+        raise ValueError("presets-import did not add the imported CD preset")
+
+    # Importing the same id again replaces it instead of duplicating it.
+    subprocess.run(
+        [executable, "presets-import", "--file", str(incoming), "--path", str(user)],
+        cwd=work, check=True, capture_output=True)
+    listed = subprocess.run(
+        [executable, "presets", "--json", "--path", str(user)],
+        cwd=work, check=True, capture_output=True)
+    document = json.loads(listed.stdout)
+    if [item["id"] for item in document["cdPresets"]].count("imported-calibrated-cd") != 1:
+        raise ValueError("presets-import duplicated an existing preset id")
+
 def check_package(executable: Path) -> None:
     fixture = Path(__file__).resolve().parents[1] / "src/DiscImageStudio.App/Assets/DiscImageStudio-256.png"
     with tempfile.TemporaryDirectory() as directory:
@@ -620,6 +667,7 @@ def check_package(executable: Path) -> None:
 
         check_catalog(executable, work)
         check_presets(executable, work)
+        check_presets_import(executable, work)
 
         run("selftest")
         run("cd-generate", "--input", "input image.png", "--output", "track.wav", "--sectors", "2")

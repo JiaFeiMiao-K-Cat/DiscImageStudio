@@ -12,6 +12,7 @@ internal static class Program
             Console.WriteLine("Usage: disc-image-studio COMMAND [OPTIONS]");
             Console.WriteLine("  catalog [--json]      Print the command catalog as JSON for GUI clients");
             Console.WriteLine("  presets [--json]      Print the disc preset catalog for GUI clients");
+            Console.WriteLine("  presets-import --file FILE   Merge a preset JSON into the user preset file");
             Console.WriteLine("  bd-preview            Render a Blu-ray design projection PNG");
             Console.WriteLine("  bd-preview-readback   Render a Blu-ray read-back PNG from an ISO sidecar");
             Console.WriteLine("  calibration-target    Render the built-in calibration target and session skeleton");
@@ -38,6 +39,11 @@ internal static class Program
         if (args[0].Equals("presets", StringComparison.OrdinalIgnoreCase))
         {
             return RunAuxiliary(() => PresetsCommand.Run(args));
+        }
+
+        if (args[0].Equals("presets-import", StringComparison.OrdinalIgnoreCase))
+        {
+            return RunAuxiliary(() => PresetsImportCommand.Run(args));
         }
 
         if (args[0].Equals("bd-preview", StringComparison.OrdinalIgnoreCase))

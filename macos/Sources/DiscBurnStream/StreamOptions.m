@@ -65,6 +65,8 @@ static BOOL ParsePositiveDouble(NSString *text, double *outValue) {
 
 @implementation DRStreamOptions
 
+@synthesize burnStrategy = _burnStrategy;
+
 + (nullable instancetype)optionsFromArguments:(NSArray<NSString *> *)arguments
                                         error:(NSString *_Nullable *_Nullable)errorMessage {
     DRStreamOptions *options = [[DRStreamOptions alloc] init];
@@ -74,6 +76,7 @@ static BOOL ParsePositiveDouble(NSString *text, double *outValue) {
     options->_speedFactor = 0.0;
     options->_verify = YES;
     options->_eject = YES;
+    options->_burnStrategy = @"auto";
 
     __block NSString *failure = nil;
     void (^fail)(NSString *, ...) = ^(NSString *format, ...) {
@@ -105,6 +108,19 @@ static BOOL ParsePositiveDouble(NSString *text, double *outValue) {
         }
         if ([argument isEqualToString:@"--list-drives"]) {
             options->_listDrives = YES;
+            continue;
+        }
+        if ([argument isEqualToString:@"--strategy"]) {
+            NSString *value = nextValue(argument);
+            if (value == nil) { break; }
+            index += 1;
+            NSString *lowered = value.lowercaseString;
+            if (![lowered isEqualToString:@"auto"] && ![lowered isEqualToString:@"bddao"]) {
+                fail(@"unsupported --strategy value \"%@\" (expected auto or bddao)", value);
+                break;
+            }
+            options->_burnStrategy = lowered;
+            sawBurnOption = YES;
             continue;
         }
         if ([argument isEqualToString:@"--kind"]) {
@@ -231,6 +247,7 @@ static BOOL ParsePositiveDouble(NSString *text, double *outValue) {
             "  --sectors N    Number of blocks to read from stdin and burn (required).\n"
             "  --drive I      1-based drive index as reported by --list-drives (default 1).\n"
             "  --speed X      Requested speed factor; CD 1x is 176 KB/s, DVD 1x is 1385 KB/s, BD 1x is 4496 KB/s.\n"
+            "  --strategy     BD burn strategy: auto (default) or bddao.\n"
             "  --no-verify    Skip disc verification (verification is on by default).\n"
             "  --no-eject     Keep the disc in the drive when the burn completes.\n"
             "  --test         Test burn: the disc is not actually written.\n"

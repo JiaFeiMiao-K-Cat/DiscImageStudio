@@ -862,6 +862,69 @@ final class CalibrationModel {
         }
     }
 
+    /// 把当前已应用的工程几何保存为用户预设（写入 CLI 的用户 disc-presets.json）。
+    func saveAsPreset(named name: String) async -> Bool {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            errorMessage = L("预设名称不能为空。")
+            return false
+        }
+        guard let invocation = project.cliInvocation else {
+            errorMessage = L("请先配置 disc-image-studio CLI。")
+            return false
+        }
+        let document = project.document
+        let geometry = document.geometry
+        let family: String
+        switch document.discFamily {
+        case .cd: family = "cd"
+        case .dvd: family = "dvd"
+        case .bd: family = "bluRay"
+        }
+        var preset: [String: Any] = [
+            "id": "calibrated-\(family)-\(UUID().uuidString.lowercased())",
+            "displayName": trimmed,
+            "description": L("由标定向导保存的实测参数。"),
+            "innerRadiusMm": geometry.innerRadiusMm,
+            "outerRadiusMm": geometry.outerRadiusMm,
+        ]
+        switch document.discFamily {
+        case .cd:
+            preset["sectors"] = Int(geometry.sectors)
+            preset["linearVelocityMmPerSecond"] = 1200
+        case .dvd:
+            preset["totalSectors"] = Int(geometry.sectors)
+            preset["channelBitLengthNm"] = 133.3
+            preset["pitchLinear"] = geometry.pitchLinear
+            preset["pitchQuadratic"] = geometry.pitchQuadratic
+            preset["pitchCubic"] = geometry.pitchCubic
+        case .bd:
+            preset["totalSectors"] = Int(geometry.sectors)
+            preset["invertMapping"] = document.bluRaySettings.invertMapping
+        }
+        let payload: [String: Any] = [
+            "schemaVersion": 4,
+            "cdPresets": document.discFamily == .cd ? [preset] : [],
+            "dvdPresets": document.discFamily == .dvd ? [preset] : [],
+            "bluRayPresets": document.discFamily == .bd ? [preset] : [],
+        ]
+        do {
+            let data = try JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
+            let url = FileManager.default.temporaryDirectory
+                .appendingPathComponent("calibration-preset-\(UUID().uuidString).json")
+            try data.write(to: url, options: .atomic)
+            defer { try? FileManager.default.removeItem(at: url) }
+            let summary = try await PresetImportService(cliInvocation: invocation)
+                .importPresets(from: url)
+            statusMessage = L("已保存为预设：%@（共 %@ 个预设）。",
+                              trimmed, String(summary.cdPresets + summary.dvdPresets + summary.bluRayPresets))
+            return true
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            return false
+        }
+    }
+
     // MARK: - 会话写入
 
     private func writeSessionNow(confirmed: Bool, points: [CalibrationPoint]) async throws {

@@ -464,7 +464,7 @@ CLI 先生成镜像/音轨，再交给系统 `drutil` 刻录：
 - 音频 CD：CLI 生成 `.wav`，`BurnService` 把它硬链接（失败时复制）进只含该 WAV 的临时目录，执行
   `drutil [-drive N] burn -eject -audio <目录>`（红皮书音频盘）。
 - 数据盘：`.iso` / `.dmg` / `.cue` / `.bin` / `.toc` 直接 `drutil [-drive N] burn -eject <文件>`。
-- 蓝光：文件模式用 `drutil` 写 BD 数据镜像（实验性），流式用 `disc-burn-stream --kind bd-data`（DiscRecording BDDAO，实验性）；两条路径均未实机验证，音频 CD 不支持蓝光。
+- 蓝光：文件模式（drutil）不支持 BD；流式用 `disc-burn-stream --kind bd-data`，绕开 DiscRecording，直接通过 IOKit `SCSITaskDeviceInterface` 发 MMC（`SET CD SPEED`、`WRITE(10)`、`SYNCHRONIZE CACHE`、`CLOSE TRACK/SESSION`）。已在 MATSHITA UJ260AF + 25GB BD-R 上 4× 实测通过；BD-RE/多层仍需验证。
 
 `BurnService`（`macos/Sources/DiscImageStudioKit/BurnService.swift`）负责：`drutil list` 解析、`status`+`toc` 介质状态、
 刻录计划（`BurnPlan`，含临时目录清理）、以及用 `CliRunner` 启动 `drutil` 并复用同一套事件流。
@@ -489,7 +489,7 @@ disc-burn-stream（Objective-C + DiscRecording：DRTrack producer + DRBurn）
   - `disc-burn-stream --list-drives` → stdout 输出 JSON 数组：
     `[{"index":1,"vendor":"…","product":"…","firmware":"…","cdWritable":true,"dvdWritable":true,"bdWritable":false,"mediaPresent":true,"mediaBlank":true,"mediaType":"CD-R"}]`
   - `disc-burn-stream --kind cd-audio|dvd-data|bd-data --sectors N [--drive I] [--speed N] [--no-verify] [--no-eject] [--test]`
-    从 stdin 读原始块（cd-audio 每块 2352 字节，dvd-data/bd-data 每块 2048 字节；bd-data 使用 BD-R 介质、`kDRBurnStrategyBDDAO` 与 BD 1×=4496 KB/s），写 stderr 进度：
+    从 stdin 读原始块（cd-audio 每块 2352 字节，dvd-data/bd-data 每块 2048 字节；bd-data 使用 BD-R SRM 的原始 MMC 路径，BD 1×=4496 KB/s），写 stderr 进度：
     `state: preparing|writing|verifying|done|failed`、`percent: 42.3`、`error: …`；退出码 0 成功、1 失败、2 参数/设备/介质问题。
   - 介质非空白（`kDRDeviceMediaIsBlankKey` 为 false）或不存在时拒绝并退出 2。
 - CLI 侧（`src/DiscImageStudio.Cli`）：
@@ -502,7 +502,7 @@ disc-burn-stream（Objective-C + DiscRecording：DRTrack producer + DRBurn）
 ### 5.3 边界与安全
 
 - 两条路径都只接受空白盘；GUI 在刻录前展示 `drutil status` / helper 报告的介质信息并要求用户确认。
-- 流式模式覆盖 CD-DA、DVD 数据（`solve --iso-output -`，含随盘文件的混合 ISO）与实验性 BD 数据（`bd-data`：2048 B 块、`kDRBurnStrategyBDDAO`、BD 1×=4496 KB/s）；GUI 直接用当前工程生成并刻录。BD 路径未经实机验证，文档统一标注为实验性。
+- 流式模式覆盖 CD-DA、DVD 数据（`solve --iso-output -`，含随盘文件的混合 ISO）与 BD-R SRM 数据（`bd-data`：2048 B 块，IOKit MMC `WRITE(10)`）；GUI 直接用当前工程生成并刻录。BD 已在 MATSHITA UJ260AF + 25GB BD-R 上 4× 实测通过，其他驱动器/BD-RE/多层仍需验证。
 - 没有刻录机或没有空白盘时，两条路径都必须给出明确提示，而不是静默失败。
 
 ## 六、并行边界

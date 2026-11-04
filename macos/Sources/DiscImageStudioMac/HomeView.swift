@@ -22,6 +22,18 @@ struct HomeView: View {
                 actionCard
                     .padding(.top, 20)
 
+                if let message = app.presetImportMessage {
+                    Label(message, systemImage: "checkmark.circle.fill")
+                        .font(Typography.caption)
+                        .foregroundStyle(.green)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 8)
+                }
+                if let error = app.presetImportError {
+                    errorBanner(error)
+                        .padding(.top, 8)
+                }
+
                 if let error = app.projectError {
                     errorBanner(error)
                         .padding(.top, 12)
@@ -109,6 +121,19 @@ struct HomeView: View {
                 app.openProjectPanel()
             }
             .controlSize(.large)
+
+            Button {
+                guard let url = FilePanels.choosePresetFile() else { return }
+                Task { await app.importPresetJSON(url) }
+            } label: {
+                if app.isImportingPresets {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Text("导入预设…")
+                }
+            }
+            .controlSize(.large)
+            .disabled(app.isImportingPresets)
 
             Button("新建工程") {
                 app.beginNewProject()

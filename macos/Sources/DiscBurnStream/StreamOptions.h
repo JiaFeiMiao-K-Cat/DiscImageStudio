@@ -31,6 +31,7 @@ FOUNDATION_EXPORT NSString *DRStreamKindName(DRStreamKind kind);
 @property (nonatomic, readonly) uint64_t sectors;
 @property (nonatomic, readonly) NSInteger driveIndex;   // 1-based, defaults to 1
 @property (nonatomic, readonly) double speedFactor;     // 0 means "drive maximum"
+@property (nonatomic, readonly) NSString *burnStrategy;     // "auto" (default) or "bddao"
 @property (nonatomic, readonly) BOOL verify;            // default YES, --no-verify turns it off
 @property (nonatomic, readonly) BOOL eject;             // default YES, --no-eject turns it off
 @property (nonatomic, readonly) BOOL testBurn;          // --test

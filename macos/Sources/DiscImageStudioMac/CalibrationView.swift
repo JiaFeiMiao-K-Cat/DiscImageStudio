@@ -8,6 +8,8 @@ struct CalibrationView: View {
     let project: ProjectModel
 
     @State private var model: CalibrationModel?
+    @State private var showsPresetSheet = false
+    @State private var presetName = ""
 
     var body: some View {
         Group {
@@ -26,6 +28,41 @@ struct CalibrationView: View {
                 await created.restoreIfNeeded()
             }
         }
+        .sheet(isPresented: $showsPresetSheet) {
+            savePresetSheet
+        }
+    }
+
+    private var savePresetSheet: some View {
+        VStack(alignment: .leading, spacing: Spacing.l) {
+            Text("保存为盘片预设")
+                .font(.system(size: 17, weight: .semibold))
+            Text("把当前工程的盘片几何与实测参数写入用户预设，新建工程时可直接选择。")
+                .font(Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            TextField("预设名称", text: $presetName)
+                .textFieldStyle(.roundedBorder)
+            HStack {
+                Spacer(minLength: 0)
+                Button("取消") { showsPresetSheet = false }
+                    .keyboardShortcut(.cancelAction)
+                Button("保存") {
+                    Task {
+                        guard let model else { return }
+                        if await model.saveAsPreset(named: presetName) {
+                            await app.refreshEnvironment()
+                            showsPresetSheet = false
+                        }
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(presetName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(Spacing.xl)
+        .frame(width: 420)
     }
 
     @ViewBuilder
@@ -629,6 +666,17 @@ struct CalibrationView: View {
             .tint(.green)
             .disabled(model.isBusy || !model.canApply)
             .accessibilityIdentifier("calibration-apply")
+
+            Button {
+                presetName = "\(project.document.name) 实测参数"
+                showsPresetSheet = true
+            } label: {
+                Label("保存为预设…", systemImage: "square.and.arrow.down")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .disabled(model.isBusy || model.appliedMessage == nil)
+            .accessibilityIdentifier("calibration-save-preset")
 
             if let applied = model.appliedMessage {
                 Label(applied, systemImage: "checkmark.circle.fill")

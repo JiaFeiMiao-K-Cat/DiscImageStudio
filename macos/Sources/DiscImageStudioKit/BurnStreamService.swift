@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 
 // BurnStreamService.swift
 //
@@ -722,10 +723,18 @@ private final class BurnStreamController: @unchecked Sendable {
     private func startReading(_ handle: FileHandle, source: StreamLogLine.Source) {
         DispatchQueue.global(qos: .utility).async { [weak self] in
             guard let self else { return }
+            let fd = handle.fileDescriptor
+            var buffer = [UInt8](repeating: 0, count: 8192)
             while true {
-                let data = try? handle.read(upToCount: 8192)
-                guard let data, !data.isEmpty else { break }
-                self.consume(data, source: source)
+                // POSIX read() returns as soon as any pipe data is available.
+                // FileHandle.read(upToCount:) can wait for a full chunk, which
+                // made the GUI log arrive in visible batches rather than live.
+                let count = buffer.withUnsafeMutableBytes { raw -> Int in
+                    guard let base = raw.baseAddress else { return 0 }
+                    return Darwin.read(fd, base, raw.count)
+                }
+                if count <= 0 { break }
+                self.consume(Data(buffer[0..<count]), source: source)
             }
             self.outputFinished(source)
         }

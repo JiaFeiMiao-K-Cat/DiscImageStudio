@@ -122,10 +122,12 @@ struct LogTextView: NSViewRepresentable {
 
         func update(with lines: [LogLine]) {
             guard let textView, let storage = textView.textStorage else { return }
-            storage.beginEditing()
-            defer { storage.endEditing() }
-
             let shouldFollow = isPinnedToBottom()
+
+            // Mutating the text storage while NSLayoutManager is doing a layout
+            // pass (or calling ensureLayout inside beginEditing) can throw an
+            // Objective-C exception. Finish editing before laying out/scrolling.
+            storage.beginEditing()
             let prefixIntact = renderedCount > 0
                 && lines.count >= renderedCount
                 && lines[renderedCount - 1].id == lastRenderedID
@@ -140,6 +142,7 @@ struct LogTextView: NSViewRepresentable {
                     storage.append(Self.attributed(line))
                 }
             }
+            storage.endEditing()
 
             renderedCount = lines.count
             lastRenderedID = lines.last?.id
@@ -157,14 +160,11 @@ struct LogTextView: NSViewRepresentable {
         }
 
         private func scrollToBottom() {
-            guard let textView, let scrollView else { return }
-            if let container = textView.textContainer {
-                textView.layoutManager?.ensureLayout(for: container)
-            }
-            let visibleHeight = scrollView.contentView.bounds.height
-            let bottom = max(0, textView.bounds.height - visibleHeight)
-            scrollView.contentView.scroll(to: NSPoint(x: 0, y: bottom))
-            scrollView.reflectScrolledClipView(scrollView.contentView)
+            guard let textView, textView.window != nil,
+                  textView.bounds.height > 0,
+                  (textView.textStorage?.length ?? 0) > 0
+            else { return }
+            textView.scrollToEndOfDocument(nil)
         }
 
         static func attributed(_ line: LogLine) -> NSAttributedString {

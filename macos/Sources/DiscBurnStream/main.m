@@ -14,6 +14,7 @@
 #import <DiscRecording/DiscRecording.h>
 
 #import "StreamOptions.h"
+#import "BdMmcWriter.h"
 #import "StreamProducer.h"
 
 #include <math.h>
@@ -115,6 +116,9 @@ static NSString *BurnFailureMessage(NSDictionary *status) {
         if (text.length > 0) { return text; }
         NSNumber *code = [errorStatus objectForKey:(__bridge NSString *)kDRErrorStatusErrorKey];
         if (code != nil) {
+            if (text.length > 0) {
+                return [NSString stringWithFormat:@"%@ (OSStatus %d)", text, code.intValue];
+            }
             return [NSString stringWithFormat:@"burn failed with OSStatus %d", code.intValue];
         }
     }
@@ -175,6 +179,7 @@ static NSString *BurnFailureMessage(NSDictionary *status) {
             if ([state isEqualToString:@"failed"]) {
                 _failed = YES;
                 _failureMessage = [BurnFailureMessage(status) copy];
+                fprintf(stderr, "status: %s\n", status.description.UTF8String ?: "unknown");
             }
         } else {
             EmitState(state);
@@ -330,12 +335,18 @@ static NSDictionary *TrackProperties(DRStreamOptions *options, uint32_t blockSiz
         // DVD and BD data tracks share the 2048-byte sector model; DiscRecording
         // has no separate BD block/data-form constants (the media class and burn
         // strategy select BD behaviour).
-        properties[DRBlockTypeKey] = @(kDRBlockTypeDVDData);
-        properties[DRDataFormKey] = @(kDRDataFormDVDData);
-        properties[DRSessionFormatKey] = @(kDRSessionFormatDVDData);
-        properties[DRTrackModeKey] = @(kDRTrackModeDVDData);
         if (options.kind == DRStreamKindBDData) {
-            properties[DRBurnStrategyKey] = (__bridge NSString *)kDRBurnStrategyBDDAO;
+            // BD data uses the generic Mode 1 data track shape; kDRTrackModeDVDData
+            // is DVD-specific and makes drives reject the BD layout.
+            properties[DRBlockTypeKey] = @(kDRBlockTypeMode1Data);
+            properties[DRDataFormKey] = @(kDRDataFormMode1Data);
+            properties[DRSessionFormatKey] = @(kDRSessionFormatMode1Data);
+            properties[DRTrackModeKey] = @(kDRTrackMode1Data);
+        } else {
+            properties[DRBlockTypeKey] = @(kDRBlockTypeDVDData);
+            properties[DRDataFormKey] = @(kDRDataFormDVDData);
+            properties[DRSessionFormatKey] = @(kDRSessionFormatDVDData);
+            properties[DRTrackModeKey] = @(kDRTrackModeDVDData);
         }
     }
 
@@ -368,25 +379,24 @@ static NSDictionary *BurnProperties(DRStreamOptions *options) {
         properties[DRBurnRequestedSpeedKey] = @(KilobytesPerSecondForSpeedFactor(options.kind, options.speedFactor));
     }
     properties[DRBurnVerifyDiscKey] = @(options.verify);
-    if (options.kind == DRStreamKindBDData) {
+    if (options.kind == DRStreamKindBDData && [options.burnStrategy isEqualToString:@"bddao"]) {
         properties[DRBurnStrategyKey] = (__bridge NSString *)kDRBurnStrategyBDDAO;
     }
     if (options.testBurn) {
         properties[DRBurnTestingKey] = @YES;
     }
-    // The framework defaults to ejecting, so --no-eject must ask for something
-    // else explicitly: mounting keeps the disc in the drive.
-    if (options.eject) {
-        properties[DRBurnCompletionActionKey] = DRBurnCompletionActionEject;
-    } else {
-        properties[DRBurnCompletionActionKey] = DRBurnCompletionActionMount;
-    }
+    // Always mount at the end. Ejecting is handled only after a successful
+    // burn below, so a failure or cancellation leaves the disc in the drive.
+    properties[DRBurnCompletionActionKey] = DRBurnCompletionActionMount;
     return properties;
 }
 
 // MARK: - Burn
 
 static int RunBurn(DRStreamOptions *options) {
+    if (options.kind == DRStreamKindBDData) {
+        return DRRunBdMmcBurn(options);
+    }
     NSArray<DRDevice *> *devices = [DRDevice devices];
     if (devices.count == 0) {
         WriteError(@"no writable drive");
@@ -516,6 +526,14 @@ static int RunBurn(DRStreamOptions *options) {
     if (observer.failed) {
         WriteError(@"%@", observer.failureMessage ?: @"burn failed");
         return 1;
+    }
+
+    // Eject only on a successful burn; failures/cancellation keep the disc in
+    // the drive so it can be inspected instead of being spat out.
+    if (options.eject) {
+        if (![device ejectMedia]) {
+            fprintf(stderr, "warning: burn succeeded, but ejectMedia failed\n");
+        }
     }
     return 0;
 }

@@ -318,6 +318,13 @@ gh secret set APPLE_APP_SPECIFIC_PASSWORD --repo NaiveTomcat/DiscImageStudio
 
 > 首次公证可能被 Apple 拒绝；`notarize.sh` 会输出 `notarytool` 的 JSON，并在失败时打印 `notarytool log`。常见原因是嵌套二进制未签名或 CLI 缺少 JIT/library-validation entitlements，检查 `codesign --verify --deep --strict` 与 log 中的 `invalid` 项。
 
+### 预设导入与标定模板
+
+- **主页 → 导入预设…**：选择 schema 4 预设 JSON，调用 `presets-import --file` 合并到用户预设文件，刷新模板列表；同 id 覆盖，新 id 追加。
+- **标定页 → 保存为预设…**：在「应用参数到工程」之后可用，把当前工程的内外半径、扇区、DVD 三次轨距或 BD 极性写成用户预设；弹窗输入名称后写入同一个用户文件，并刷新主页模板。
+- 用户预设文件路径：`~/Library/Application Support/DiscImageStudio/disc-presets.json`（CLI 输出 `source:` 行可确认）。
+- CLI 对应命令：`presets-import --file <json> [--path <user.json>]`，输出 JSON 摘要供 GUI 解析。
+
 ## 刻录
 
 macOS 侧不引入第三方刻录库，只使用系统自带的 DiscRecording（`drutil` 与 `DRTrack`/`DRBurn`）。有两条路径：
@@ -325,7 +332,7 @@ macOS 侧不引入第三方刻录库，只使用系统自带的 DiscRecording（
 | 路径 | 实现 | 覆盖范围 | 状态 |
 | --- | --- | --- | --- |
 | 文件模式 | CLI 生成镜像或音轨文件 → `/usr/bin/drutil` 写入 | CD-DA 音频、CD/DVD 数据镜像 | 可用 |
-| 流式模式 | GUI 用当前工程生成，内置助手 `Contents/Resources/bin/disc-burn-stream` 读取 CLI 的 stdout 管道，用 DRTrack producer + DRBurn 写入 | CD-DA、DVD 数据（含随盘文件）、BD 数据 | 实验性 |
+| 流式模式 | GUI 用当前工程生成，内置助手 `Contents/Resources/bin/disc-burn-stream` 读取 CLI 的 stdout 管道；CD/DVD 用 DRTrack producer + DRBurn，BD 用 IOKit SCSI MMC 直接写 | CD-DA、DVD 数据（含随盘文件）、BD-R SRM 数据 | 实验性；BD 已在 MATSHITA UJ260AF + 25GB BD-R 上 4× 实测通过 |
 
 ```mermaid
 flowchart LR
@@ -377,7 +384,7 @@ macos/build/cli/osx-arm64/disc-image-studio cd-generate \
 
 - 参数：`--kind cd-audio|dvd-data|bd-data`、`--sectors N`，可选 `--drive I`、`--speed N`、`--no-verify`、`--no-eject`、`--test`；stderr 进度行是 `state:` / `percent:` / `error:`，退出码 0 成功、1 失败、2 参数/设备/介质问题。
 - 介质非空白、没有介质或没有刻录机时，助手直接拒绝（退出码 2 并写 `error:`），界面展示原因而不是静默失败。
-- 支持 CD-DA、DVD 数据与**实验性 BD 写入**：文件模式用 `drutil` 写 BD 数据镜像，流式模式用 `disc-burn-stream --kind bd-data`（DiscRecording `kDRBurnStrategyBDDAO`）。两条 BD 路径都未实机验证，只建议用可报废 BD-R；音频 CD 走 CD-R。
+- 支持 CD-DA、DVD 数据与 **BD-R 流式写入**：CD/DVD 走 DiscRecording 的 DRTrack + DRBurn；BD 绕开 DiscRecording，助手用 IOKit `SCSITaskDeviceInterface` 直接发 MMC `WRITE(10)`、`SYNCHRONIZE CACHE`、`CLOSE TRACK/SESSION`，并尝试 `SET CD SPEED`。已在 MATSHITA UJ260AF + 25GB BD-R 上以 4× 完整写入并验证图案。文件模式（drutil）仍只覆盖 CD/DVD；音频 CD 走 CD-R。
 - 该路径与 `--output -` 同属实验性能力，尚未在实机验证；CI 只覆盖助手构建与 `--list-drives` 自检。
 
 ### 安全要求
@@ -568,7 +575,7 @@ macos/build/DiscImageStudio.app/Contents/Resources/bin/disc-burn-stream --list-d
 | 界面提示「未检测到光盘驱动器」 | 没有刻录机，或外置驱动器未被系统识别 | `drutil list` 确认；检查连接/供电，必要时重新插拔后重开应用 |
 | `drutil` 报媒体错误 / 写入立即失败 | 无介质、介质类型与镜像不匹配、或介质不可写 | `drutil status` 查看 `Type:`；换成匹配的空白介质重试 |
 | 界面拒绝写入并提示介质非空白 | 盘上已有轨道/会话 | `drutil toc` 查看现有内容，换一张空白盘；不要强行擦除不可报废的介质 |
-| 蓝光无法写入 | 文件模式的 BD 写入与流式 `bd-data` 都是实验性、未实机验证；音频 CD 不支持蓝光 | 生成 `.iso` 后用第三方刻录软件，或用 `disc-burn-stream --kind bd-data` 在可报废 BD-R 上试验 |
+| 蓝光无法写入 | 文件模式（drutil）不支持 BD；流式 BD 走 MMC，已在 MATSHITA UJ260AF + 25GB BD-R 4× 验证 | 用 GUI 的流式模式；不要用文件模式写 BD |
 | 编译时出现 DiscRecording 弃用警告 | Apple 已把 DiscRecording 标记为弃用头文件 | 只是警告，不影响构建与运行；升级系统后如完全移除该框架，文件模式仍可用 `drutil` |
 | `disc-burn-stream --list-drives` 没有输出或报错 | 应用是旧包（没有内置助手），或助手启动失败 | 重新 `macos/scripts/build-app.sh`；报错时看 stderr 的 `error:` 行，无刻录机时返回空数组属正常 |
 
@@ -587,7 +594,7 @@ macOS 应用跟随系统语言，目前提供 **简体中文（zh-Hans）** 与 
 ## 已知限制
 
 - **实验性**：与上游发布说明一致，macOS/Linux CLI 及本图形界面均为实验性功能，行为可能随版本变化。
-- **刻录覆盖范围有限**：文件模式复用系统 `drutil`，可写 CD-DA、CD/DVD 数据镜像，并实验性写入 BD 数据镜像（`drutil` 的 BD 路径与 DiscRecording BDDAO 同源，但 Apple 未在 man 中承诺，未实机验证）；流式模式（`disc-burn-stream`）覆盖 CD-DA、DVD 数据与实验性 BD-R（`--kind bd-data`）。BD 两条路径都没有实机验证；建议只使用可报废 BD-R，失败时改用第三方软件。刻录属于实验性功能，只能使用空白或可报废介质。
+- **刻录覆盖范围有限**：文件模式复用系统 `drutil`，只覆盖 CD-DA 与 CD/DVD 数据镜像；流式模式覆盖 CD-DA、DVD 数据（含随盘文件）与 BD-R SRM（MMC）。BD 流式已在 MATSHITA UJ260AF + 25GB BD-R 上 4× 实测通过；BD-RE/多层、其他驱动器仍需验证。刻录只能使用空白或可报废介质。
 - **随盘文件工程的投影范围是近似值**：DVD `calibrate` 需要显式的绘图起止（`--lba/--fill-sectors`），当前 GUI 固定按整盘（0..总扇区）预览；BD `bd-preview` 同样固定整盘绘图区间。未选择随盘文件时与真实生成完全一致，选择文件夹后预览的文件区高亮可能偏大，以导出后的成品读回为准。
 - **标定不内置自动环数识别**：粗调需人工沿黑白分界描点，精调需人工沿一条径向曲线描点；没有「密集环相位自动提取」，也不自动识别同心圆。
 - **标定需要实机刻录与拍摄**：自动化只能覆盖图案生成、矫正与拟合算法；真实盘面可见度、镜头状态与描点精度需人工确认。

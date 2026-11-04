@@ -29,6 +29,9 @@ final class AppModel {
     var cliErrorMessage: String?
     var presets: PresetCatalog?
     var presetsErrorMessage: String?
+    var isImportingPresets = false
+    var presetImportMessage: String?
+    var presetImportError: String?
     var isLoadingCatalog = false
     var isLoadingPresets = false
     var recents: [RecentProject] = []
@@ -175,6 +178,34 @@ final class AppModel {
         }
         project?.updateCLI(resolvedCandidate.invocation)
         burnModel.updateCLI(resolvedCandidate)
+    }
+
+    /// 让用户选择一个 schema 4 预设 JSON，合并进用户预设文件并刷新模板。
+    func importPresetJSON(_ url: URL) async {
+        guard !isImportingPresets else { return }
+        guard let invocation = resolvedCli?.invocation else {
+            presetImportError = L("请先配置 disc-image-studio CLI。")
+            presetImportMessage = nil
+            return
+        }
+        isImportingPresets = true
+        presetImportError = nil
+        presetImportMessage = nil
+        defer { isImportingPresets = false }
+        do {
+            let summary = try await PresetImportService(cliInvocation: invocation)
+                .importPresets(from: url)
+            await refreshEnvironment()
+            presetImportMessage = L(
+                "已导入预设：%@（CD %@ / DVD %@ / BD %@）。",
+                String(url.lastPathComponent),
+                String(summary.cdPresets),
+                String(summary.dvdPresets),
+                String(summary.bluRayPresets)
+            )
+        } catch {
+            presetImportError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
     }
 
     func refreshPresets() async {

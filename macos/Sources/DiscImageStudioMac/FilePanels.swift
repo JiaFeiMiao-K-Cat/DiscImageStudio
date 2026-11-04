@@ -30,6 +30,19 @@ enum FilePanels {
         return run(panel)
     }
 
+    static func choosePresetFile(title: String = L("导入预设")) -> URL? {
+        let panel = NSOpenPanel()
+        panel.title = title
+        panel.prompt = L("导入")
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.resolvesAliases = true
+        panel.allowedContentTypes = [.json]
+        NSApp.activate(ignoringOtherApps: true)
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
     static func chooseImages(title: String = L("导入图片"), currentPath: String? = nil) -> [URL] {
         let panel = NSOpenPanel()
         panel.title = title

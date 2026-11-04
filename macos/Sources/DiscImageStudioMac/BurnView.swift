@@ -11,6 +11,7 @@ struct BurnView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var showsConfirmation = false
     @State private var streamAcknowledged = false
+    @State private var streamEject = true
 
     var body: some View {
         ScrollView {
@@ -588,6 +589,46 @@ struct BurnView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                HStack(spacing: Spacing.s) {
+                    Text("写入速度")
+                        .font(Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 64, alignment: .leading)
+                    Picker("写入速度", selection: streamSpeedSelection) {
+                        Text("自动（驱动器最高）").tag(Double?.none)
+                        Text("1×").tag(Double?.some(1.0))
+                        Text("2×").tag(Double?.some(2.0))
+                        Text("4×").tag(Double?.some(4.0))
+                        Text("8×").tag(Double?.some(8.0))
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 260)
+                    .disabled(burnModel.isStreamBurning)
+                    Text("默认 2×；生成速度跟不上时会出现 underrun，可降到 1×。")
+                        .font(Typography.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+
+                if burnModel.isStreamBurning || !burnModel.streamLogLines.isEmpty {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(Array(burnModel.streamLogLines.suffix(6))) { line in
+                            Text(line.text)
+                                .font(Typography.monoSmall)
+                                .foregroundStyle(line.stream == .system ? .secondary : .primary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(Spacing.s)
+                    .insetSurface()
+                }
+
+                Toggle("完成后弹出光盘", isOn: $streamEject)
+                    .toggleStyle(.checkbox)
+                    .font(.system(size: 12.5, weight: .medium))
+
                 Toggle("这是空白盘，且是可报废的测试介质", isOn: $streamAcknowledged)
                     .toggleStyle(.checkbox)
                     .font(.system(size: 12.5, weight: .medium))
@@ -609,6 +650,7 @@ struct BurnView: View {
                         .disabled(burnModel.streamWasCancelled)
                     } else {
                         Button {
+                            burnModel.streamEject = streamEject
                             Task { await burnModel.startStreamingBurn() }
                         } label: {
                             Label("生成并刻录", systemImage: "play.circle.fill")
@@ -674,6 +716,14 @@ struct BurnView: View {
             Text(burnModel.streamStage ?? (burnModel.isStreamBurning ? "准备中…" : "未开始"))
                 .font(Typography.caption2)
                 .foregroundStyle(.tertiary)
+            if let last = burnModel.streamLogLines.last {
+                Text(last.text)
+                    .font(Typography.monoSmall)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .truncationMode(.middle)
+                    .textSelection(.enabled)
+            }
         }
     }
 
@@ -725,6 +775,13 @@ struct BurnView: View {
             return result.succeeded ? "100%" : L("中断")
         }
         return "—"
+    }
+
+    private var streamSpeedSelection: Binding<Double?> {
+        Binding(
+            get: { burnModel.streamSpeed },
+            set: { burnModel.streamSpeed = $0 }
+        )
     }
 
     private var streamDriveSelection: Binding<Int> {
