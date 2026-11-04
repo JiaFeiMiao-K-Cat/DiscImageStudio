@@ -61,6 +61,24 @@ note() {
   printf '%s\n' "$*"
 }
 
+# stapler validate / spctl 需要访问 Apple 的票据服务；CI runner 偶发网络抖动会
+# 返回 error 68（CloudKit 连接丢失），这里做有限重试。
+retry() {
+  local attempts="${NOTARY_RETRY_ATTEMPTS:-5}"
+  local delay="${NOTARY_RETRY_DELAY:-5}"
+  local i
+  for ((i = 1; i <= attempts; i++)); do
+    if "$@"; then
+      return 0
+    fi
+    if [[ $i -lt $attempts ]]; then
+      note "重试 $i/$attempts 失败，${delay}s 后重试：$*" >&2
+      sleep "$delay"
+    fi
+  done
+  return 1
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --app)
@@ -183,7 +201,7 @@ TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/disc-image-studio-notarize.XXXXXX")"
 trap 'rm -rf "$TMP_DIR"' EXIT
 if [[ "$IS_DMG" -eq 1 ]]; then
   ARCHIVE="$APP_PATH"
-  note "==> 提交 DMG（$ARCHIVE）"
+  note "==> 提交 DMG（${ARCHIVE}）"
 else
   ARCHIVE="$TMP_DIR/DiscImageStudio.zip"
   note "==> 打包待公证应用"
@@ -220,18 +238,20 @@ note "公证状态      : Accepted（${SUBMISSION_ID}）"
 
 # 5. stapling + 验证。
 note "==> stapler staple"
-xcrun stapler staple "$APP_PATH"
+retry xcrun stapler staple "$APP_PATH" \
+  || die "stapler staple 失败（多次重试后）。" 1
 note "==> stapler validate"
-xcrun stapler validate "$APP_PATH"
+retry xcrun stapler validate "$APP_PATH" \
+  || die "stapler validate 失败（多次重试后；常见原因是网络无法访问 Apple 票据服务）。" 1
 note "==> spctl 评估"
 if [[ "$IS_DMG" -eq 1 ]]; then
-  if spctl --assess --type open --context context:primary-signature --verbose=2 "$APP_PATH" 2>&1; then
+  if retry spctl --assess --type open --context context:primary-signature --verbose=2 "$APP_PATH" 2>&1; then
     note "Gatekeeper    : accepted"
   else
     die "DMG 的 spctl 评估未通过；公证已 Accepted 但 stapling/Gatekeeper 检查失败。" 1
   fi
 else
-  if spctl --assess --type execute --verbose=2 "$APP_PATH" 2>&1; then
+  if retry spctl --assess --type execute --verbose=2 "$APP_PATH" 2>&1; then
     note "Gatekeeper    : accepted"
   else
     die "spctl 评估未通过；公证已 Accepted 但 stapling/Gatekeeper 检查失败。" 1
