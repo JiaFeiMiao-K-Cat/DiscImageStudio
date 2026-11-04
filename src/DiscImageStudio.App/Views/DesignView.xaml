@@ -253,6 +253,7 @@
                                                               IsChecked="{Binding State.DvdFilesInTransparency}" />
                                                     <controls:VisibilityGate IsOpen="{Binding HasCapacityText}">
                                                         <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontSize="11"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                                                    Text="{Binding CapacityText}" />
                                                     </controls:VisibilityGate>
                                                 </StackPanel>

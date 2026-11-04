@@ -13,6 +13,8 @@
 - 新增铼德 DVD+R E时代系列内置预设。
 - 新建工程不再按模板自动填充工程名，输入框保持为空；填写名称后才能创建。
 - 侧栏工程头卡片右侧新增软盘保存按钮。
+- DVD 混合盘新增「文件放在图片透明区域」：随盘文件按扇区粒度放进图片的空白处，可分成多段；透明像素、接近白色的像素，以及占盘面环带至少 15% 的纯色背景都算空白。设计页会估算可用空白和所需段数。命令行使用 `--file-position transparent`，用 `--white-is-blank`、`--background-is-blank` 控制空白判定。
+- 文件和图案共用的 ECC 块先固定文件扇区，再整块计算 ECC/EFM，不会在编码之后覆盖数据；透明区放置默认按顺序回放整盘的 EFMPlus 边界链，命令行可用 `--exact-physical-chain false` 换回更快的并行输出。
 
 ### English
 
@@ -25,6 +27,8 @@
 - Added a built-in Ritek DVD+R E-Series preset.
 - New projects leave the project name empty instead of filling it from the selected template; the project can be created once a name is entered.
 - Added a floppy-disk Save button on the right of the sidebar project header.
+- DVD hybrid discs can place files in the blank areas of the picture ("Place files in transparent area"). Files are stored sector by sector and may be split over several runs. Transparent pixels, near-white pixels, and a flat background colour covering at least 15% of the printable ring all count as blank. The Design page estimates the free space and the number of runs needed. On the command line, use `--file-position transparent`; `--white-is-blank` and `--background-is-blank` control blank detection.
+- ECC blocks shared by files and picture fix the file sectors first and then compute ECC/EFM for the whole block, so no data is overwritten after encoding. Transparent-area placement replays the whole-disc EFMPlus boundary chain in order by default; `--exact-physical-chain false` restores the faster parallel output.
 
 ## [1.3.6] - 2026-11-02
 

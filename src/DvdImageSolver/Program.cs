@@ -1551,7 +1551,10 @@ internal static class Program
               --constraint-step N       Constrain every Nth channel bit (single block default 1)
               --fill-sectors N          Fill N consecutive sectors; N must be a multiple of 16
               --data-dir DIR            Hybrid disc: store this directory together with the drawing
-              --file-position MODE      inner (default) or outer; outer requires --data-dir
+              --file-position MODE      inner (default), outer or transparent; outer/transparent require --data-dir
+                                        transparent places files in blank parts of the picture
+              --white-is-blank true|false Treat near-white pixels as blank for transparent placement (default true)
+              --background-is-blank true|false Treat the dominant flat ring colour as blank (default true)
               --drawing-start-lba N     Hybrid override; must follow all files and align to an ECC Block
               --fast-output true|false Direct dispersion ISO output (default false; true in hybrid mode)
               --exact-physical-chain true|false Replay ECC/EFM boundary across every output block
