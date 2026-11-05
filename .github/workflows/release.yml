@@ -219,6 +219,9 @@ jobs:
 
       - name: Cache sequoia sq
         uses: actions/cache@v4
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
+        if: ${{ env.SIGN_PRIVATE_KEY != '' }}
         id: cache_sq
         with:
           path: |
@@ -242,6 +245,9 @@ jobs:
             --root "./sequoia"
       - name: Append sequoia to path
         shell: bash
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
+        if: ${{ env.SIGN_PRIVATE_KEY != '' }}
         run: echo "$PWD/sequoia/bin" >> "$GITHUB_PATH"
       - name: Sign release artifacts
         shell: bash
