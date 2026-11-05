@@ -240,7 +240,8 @@ jobs:
             --features crypto-openssl \
             --root "./sequoia"
       - name: Append sequoia to path
-        run: echo "./sequoia/bin" >> "$GITHUB_PATH"
+        shell: bash
+        run: echo "$PWD/sequoia/bin" >> "$GITHUB_PATH"
       - name: Sign release artifacts
         shell: bash
         env:
