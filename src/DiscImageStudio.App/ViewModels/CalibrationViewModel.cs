@@ -803,7 +803,7 @@ public partial class CalibrationViewModel : ObservableObject
             {
                 CrossPredictionContours = [];
                 ContourConfirmed = false;
-                Report(ex);
+                Report(ex, "标定轮廓预览");
             }
         }
         finally
@@ -922,7 +922,11 @@ public partial class CalibrationViewModel : ObservableObject
                 _sessionPath = Path.ChangeExtension(path, ".calibration.json");
                 _statusMessage = L.T("标定文件与同名标定记录已生成。刻录后打开记录、导入照片，即可矫正和描线。");
             }
-            finally { Directory.Delete(staging, recursive: true); }
+            finally
+            {
+                JobDiagnostics.TryCleanup(() => Directory.Delete(staging, recursive: true),
+                    _shell.AppendLog, $"清理标定临时目录：{staging}");
+            }
         });
     }
 
@@ -1061,7 +1065,7 @@ public partial class CalibrationViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            Report(ex);
+            Report(ex, message);
             _shell.AbortDockJob(_statusMessage, expandLog: true);
         }
         finally
@@ -1073,9 +1077,10 @@ public partial class CalibrationViewModel : ObservableObject
         }
     }
 
-    private void Report(Exception ex)
+    private void Report(Exception ex, string? context = null)
     {
         _statusMessage = L.T(ex.Message);
+        _shell.AppendLog(JobDiagnostics.FormatLog(context ?? "标定操作", ex));
         _shell.ShowToast(L.T("标定操作未完成"), _statusMessage, ToastKind.Error);
     }
 

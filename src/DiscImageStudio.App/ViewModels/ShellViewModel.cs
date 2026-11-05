@@ -1063,19 +1063,22 @@ public partial class ShellViewModel : ObservableObject
         process.Start();
     }
 
-    /// Streams a disc job through UnifiedCommandRunner on an STA thread: busy gating, console
-    /// redirection and result reporting into the job dock. The dock stays where the user is,
-    /// so a job never navigates away from the workspace it was started from.
-    internal async Task RunDiscJobAsync(
+    /// <summary>Executes a typed image operation on an STA worker. Engine exceptions and progress
+    /// reach the GUI directly; CLI parsing, console streams and exit codes stay at the CLI boundary.</summary>
+    internal async Task<bool> RunImageJobAsync(
         string status,
-        string[] arguments,
-        string outputPath)
+        string outputPath,
+        Func<IProgress<DiscJobProgress>, CancellationToken, DiscImageResult> generate,
+        string? details = null)
     {
         if (_isBusy)
         {
             ShowToast(L.T("操作未执行"), L.T("已有任务正在运行。"), ToastKind.Info);
-            return;
+            return false;
         }
+
+        ArgumentNullException.ThrowIfNull(generate);
+        outputPath = Path.GetFullPath(outputPath);
 
         ResetBurnTelemetry();
         JobTitle = status;
@@ -1084,28 +1087,32 @@ public partial class ShellViewModel : ObservableObject
         IsJobProgressIndeterminate = true;
         JobHasResult = false;
         HasJobOutput = false;
-        bool canCancel = UnifiedCommandRunner.SupportsCancellation(arguments[0]);
-        using CancellationTokenSource? cancellation = canCancel ? new CancellationTokenSource() : null;
+        using CancellationTokenSource cancellation = new();
         _jobCancellation = cancellation;
         OnPropertyChanged(nameof(CancelJobVisibility));
         CancelJobCommand.NotifyCanExecuteChanged();
         SetBusy(true);
 
         LogAppended?.Invoke($"\n[{DateTime.Now:HH:mm:ss}] {status}\n");
+        AppendLog(outputPath + "\n");
+        if (!string.IsNullOrWhiteSpace(details)) AppendLog(details + "\n");
+        bool acceptingProgress = true;
         Progress<DiscJobProgress> progress = new(value =>
         {
-            IsJobProgressIndeterminate = false;
-            JobProgressValue = Math.Clamp((value.Fraction ?? 0) * 100, 0, 100);
-            JobStatusText = value.Message;
+            if (!acceptingProgress || !ReferenceEquals(_jobCancellation, cancellation)) return;
+            IsJobProgressIndeterminate = value.Fraction is null;
+            if (value.Fraction is { } fraction) JobProgressValue = Math.Clamp(fraction * 100, 0, 100);
+            if (!cancellation.IsCancellationRequested) JobStatusText = value.Message;
         });
-        int exitCode = -1;
+        DiscImageResult? result = null;
         bool canceled = false;
         try
         {
-            DiscJobResult result = await StaWorker.RunAsync(
-                () => UnifiedCommandRunner.RunJob(arguments, progress, cancellation?.Token ?? default));
-            AppendLog(result.Summary ?? string.Empty);
-            exitCode = result.ExitCode;
+            DiscImageResult completed = await StaWorker.RunAsync(() => generate(progress, cancellation.Token));
+            if (!File.Exists(completed.OutputPath))
+                throw new FileNotFoundException(L.T("任务未完成"), completed.OutputPath);
+            result = completed;
+            if (!string.IsNullOrWhiteSpace(result.Summary)) AppendLog(result.Summary + "\n");
         }
         catch (OperationCanceledException)
         {
@@ -1113,10 +1120,11 @@ public partial class ShellViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 任务异常：{exception.Message}\n"));
+            AppendLog(JobDiagnostics.FormatLog(status + " · " + outputPath, exception));
         }
         finally
         {
+            acceptingProgress = false;
             _jobCancellation = null;
             OnPropertyChanged(nameof(CancelJobVisibility));
             CancelJobCommand.NotifyCanExecuteChanged();
@@ -1131,10 +1139,11 @@ public partial class ShellViewModel : ObservableObject
             AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 任务已取消\n"));
             ShowToast(L.T("任务已取消"), L.T("未完成的输出文件可能留在磁盘上。"), ToastKind.Info);
         }
-        else if (exitCode == 0)
+        else if (result is not null)
         {
-            _lastOutputPath = Path.GetFullPath(outputPath);
+            _lastOutputPath = Path.GetFullPath(result.OutputPath);
             OpenOutputEnabled = true;
+            IsJobProgressIndeterminate = false;
             JobProgressValue = 100;
             JobHasResult = true;
             HasJobOutput = true;
@@ -1144,15 +1153,15 @@ public partial class ShellViewModel : ObservableObject
         }
         else
         {
-            JobStatusText = L.F($"失败：退出码 {exitCode}");
+            IsJobProgressIndeterminate = false;
+            JobStatusText = L.T("任务未完成");
             IsJobDockExpanded = true;
-            AppendLog(
-                L.F($"[{DateTime.Now:HH:mm:ss}] 任务失败：退出码 {exitCode}，未生成 {Path.GetFullPath(outputPath)}\n"));
             ShowToast(L.T("任务未完成"), L.T("详情见窗口底部的任务日志。"), ToastKind.Warning);
         }
+        return result is not null;
     }
 
-    // ---- Job dock reporting for work that does not run through the CLI job runner ----
+    // ---- Job dock reporting for tasks with their own orchestration ----
 
     /// <summary>Claims the dock for a task the shell starts itself (the streaming burn), so the
     /// running task, its percentage and its outcome appear in the one status surface instead of

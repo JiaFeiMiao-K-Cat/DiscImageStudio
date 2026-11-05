@@ -1,4 +1,5 @@
 using DiscImageStudio.ImageIO;
+using System.Text.Json;
 using DvdImageSolver.Encoding;
 
 namespace DvdImageSolver.Solver;
@@ -52,16 +53,18 @@ public sealed record IsoReadbackSummary(
     public double PitchCubicMicrometres => TrackPitchMicrometres * PitchCubic;
 }
 
-internal static class IsoReadbackRenderer
+public static class IsoReadbackRenderer
 {
     /// <summary>Half of the 16-bit payload code word the generator targets.</summary>
     private const int CodeWordCenterOffset = 8;
 
-    internal static IsoReadbackSummary Render(
+    public static IsoReadbackSummary Render(
         string isoPath,
         string outputPath,
-        IsoReadbackOptions options)
+        IsoReadbackOptions options,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         Validate(options);
         string isoFullPath = Path.GetFullPath(isoPath);
         long isoSectors = new FileInfo(isoFullPath).Length / DvdEccBlockEncoder.PayloadBytesPerSector;
@@ -105,7 +108,7 @@ internal static class IsoReadbackRenderer
         }
 
         int totalBlocks = checked((int)(options.FillSectors / DvdEccBlockEncoder.SectorCount));
-        Parallel.For(0, workerCount, worker =>
+        Parallel.For(0, workerCount, new ParallelOptions { CancellationToken = cancellationToken }, worker =>
         {
             byte[] block = new byte[DvdEccBlockEncoder.PayloadBytesPerBlock];
             using FileStream iso = new(
@@ -117,6 +120,7 @@ internal static class IsoReadbackRenderer
                 FileOptions.SequentialScan);
             for (int blockIndex = worker; blockIndex < totalBlocks; blockIndex += workerCount)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 uint blockStartLba = options.StartLba
                     + checked((uint)blockIndex * DvdEccBlockEncoder.SectorCount);
                 iso.Seek(
@@ -176,6 +180,7 @@ internal static class IsoReadbackRenderer
 
         for (int pixelIndex = 0; pixelIndex < sampleCounts.Length; pixelIndex++)
         {
+            if ((pixelIndex & 0xFFF) == 0) cancellationToken.ThrowIfCancellationRequested();
             int count = sampleCounts[pixelIndex];
             if (count == 0)
             {
@@ -189,6 +194,7 @@ internal static class IsoReadbackRenderer
             pixels[offset + 2] = level;
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         WritePng(Path.GetFullPath(outputPath), size, pixels);
         return new IsoReadbackSummary(
             isoFullPath,
@@ -212,6 +218,34 @@ internal static class IsoReadbackRenderer
             options.PitchQuadratic,
             options.PitchCubic);
     }
+
+    /// <summary>Restores the drawing interval used by CLI simulation. A missing or malformed
+    /// JSON sidecar falls back to the visible ISO length; I/O errors remain observable.</summary>
+    public static (uint StartLba, uint FillSectors) ReadDrawingRange(string isoPath, uint totalSectors)
+    {
+        var summary = ReadSolveSummary(isoPath + ".json");
+        long isoSectors = new FileInfo(isoPath).Length / DvdEccBlockEncoder.PayloadBytesPerSector;
+        uint fillSectors = summary.FillSectors != 0 ? summary.FillSectors
+            : checked((uint)Math.Min(isoSectors, totalSectors) - summary.StartLba);
+        return (summary.StartLba, fillSectors);
+    }
+
+    internal static (uint StartLba, uint FillSectors, uint TotalSectors) ReadSolveSummary(string sidecarPath)
+    {
+        if (!File.Exists(sidecarPath)) return (0, 0, 0);
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(sidecarPath));
+            JsonElement root = document.RootElement;
+            return (GetUInt(root, "startLba"), GetUInt(root, "fillSectors"), GetUInt(root, "totalSectors"));
+        }
+        catch (JsonException) { return (0, 0, 0); }
+    }
+
+    private static uint GetUInt(JsonElement element, string name)
+        => element.ValueKind == JsonValueKind.Object
+            && element.TryGetProperty(name, out JsonElement value)
+            && value.ValueKind == JsonValueKind.Number && value.TryGetUInt32(out uint result) ? result : 0u;
 
     private static void WritePng(string outputPath, int size, byte[] pixels)
     {

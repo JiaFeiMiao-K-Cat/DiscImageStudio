@@ -466,15 +466,15 @@ public partial class DesignViewModel : ObservableObject
         string? outputPath = null;
         if (items.Count > 0)
         {
-            outputPath = TempFiles.GetCacheFilePath(
-                Family switch
-                {
-                    OpticalDiscFamily.Dvd => "design-composite-dvd.png",
-                    OpticalDiscFamily.BluRay => "design-composite-bd.png",
-                    _ => "design-composite-cd.png",
-                });
             try
             {
+                outputPath = TempFiles.GetCacheFilePath(
+                    Family switch
+                    {
+                        OpticalDiscFamily.Dvd => "design-composite-dvd.png",
+                        OpticalDiscFamily.BluRay => "design-composite-bd.png",
+                        _ => "design-composite-cd.png",
+                    });
                 await StaWorker.RunAsync(() =>
                 {
                     DesignComposer.Render(items, CanvasOuterRadiusMm, PreviewCompositeSize, outputPath);
@@ -483,7 +483,7 @@ public partial class DesignViewModel : ObservableObject
             }
             catch (Exception exception)
             {
-                _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 设计合成失败：{exception.Message}\n"));
+                _shell.AppendLog(JobDiagnostics.FormatLog(L.T("设计合成失败"), exception));
                 _shell.ShowToast(L.T("设计合成失败"), exception.Message, ToastKind.Error);
                 return;
             }
@@ -542,20 +542,21 @@ public partial class DesignViewModel : ObservableObject
             return null;
         }
 
-        List<DesignLayerRenderItem> items = BuildRenderItems();
-        string outputPath = TempFiles.GetCacheFilePath("design-thumbnail.png");
-        await StaWorker.RunAsync(() =>
-        {
-            DesignComposer.Render(items, CanvasOuterRadiusMm, ProjectDocument.ThumbnailDecodeSize, outputPath);
-            return 0;
-        });
-
+        string? outputPath = null;
         try
         {
+            List<DesignLayerRenderItem> items = BuildRenderItems();
+            outputPath = TempFiles.GetCacheFilePath("design-thumbnail.png");
+            await StaWorker.RunAsync(() =>
+            {
+                DesignComposer.Render(items, CanvasOuterRadiusMm, ProjectDocument.ThumbnailDecodeSize, outputPath);
+                return 0;
+            });
             return Convert.ToBase64String(await File.ReadAllBytesAsync(outputPath));
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
+            _shell.AppendLog(JobDiagnostics.FormatLog($"生成可选工程缩略图：{outputPath}", exception, warning: true));
             return null;
         }
     }

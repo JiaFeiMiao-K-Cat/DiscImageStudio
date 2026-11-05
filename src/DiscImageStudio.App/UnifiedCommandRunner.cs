@@ -8,23 +8,6 @@ internal static class UnifiedCommandRunner
 {
     private static DiscModuleCatalog Modules => ConsoleModuleRunner.Catalog;
 
-    internal static bool SupportsCancellation(string command)
-        => Modules.Resolve(command).Descriptor.SupportsCancellation;
-
-    /// <summary>The GUI job path: same modules and arguments as the CLI, but progress and
-    /// cancellation flow through the caller instead of Console.CancelKeyPress.</summary>
-    internal static DiscJobResult RunJob(string[] arguments,
-        IProgress<DiscJobProgress>? progress, CancellationToken cancellationToken)
-    {
-        if (arguments.Length == 0)
-        {
-            throw new ArgumentException("Missing command.");
-        }
-
-        DiscJobRequest request = new(arguments[0], arguments.Skip(1));
-        return Modules.ExecuteAsync(request, progress, cancellationToken).GetAwaiter().GetResult();
-    }
-
     internal static int Run(string[] arguments)
     {
         try

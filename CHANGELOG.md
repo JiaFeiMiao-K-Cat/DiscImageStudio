@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### 中文
+
+- CD、DVD、蓝光的界面导出改为调用类型化内部生成接口；DVD 设计投影和读回预览直接调用渲染器，支持取消并保留原始异常。命令行参数、控制台输出和退出码留在 CLI 边界，现有命令保持兼容。
+- 导出、标定、设计合成与影调预览日志保留异常堆栈、内部异常及诊断上下文；失败导出不再更新读回输入，标定清理失败不再覆盖原始结果，容量读取失败不再显示为任务成功。
+
+### English
+
+- GUI CD, DVD, and Blu-ray exports now call typed internal generation APIs. DVD projection and readback previews call renderers directly, support cancellation, and preserve original exceptions. Argument parsing, console output, and exit codes remain at the CLI boundary; existing commands remain compatible.
+- Export, calibration, design composition, and tone preview logs retain exception stacks, inner causes, and diagnostic context. Failed exports no longer replace readback inputs; calibration cleanup errors preserve the original outcome, and capacity-read errors no longer complete successfully.
+
 ## [1.4.1] - 2026-11-05
 
 ### 中文

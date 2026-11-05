@@ -351,7 +351,7 @@ public static class DvdStreamingGenerator
             stopwatch.Elapsed);
     }
 
-    private static MultiBlockSolveOptions CreateSolveOptions(
+    internal static MultiBlockSolveOptions CreateSolveOptions(
         DvdStreamingOptions options,
         uint startLba,
         uint fillSectors)
