@@ -73,21 +73,6 @@ public partial class BurnViewModel : ObservableObject
     private bool _confirmChecked;
 
     [ObservableProperty]
-    private string _burnStatusText = L.T("等待开始");
-
-    // The status line is stored as a key so a language switch can re-read it; progress and
-    // error details stay in their own fields.
-    private string _burnStatusKey = "等待开始";
-    private Func<string>? _burnStatusTextFactory;
-
-    [ObservableProperty]
-    private double _burnProgressValue;
-
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasCalibrationBurnLog))]
-    private string _calibrationBurnLog = string.Empty;
-    public bool HasCalibrationBurnLog => CalibrationBurnLog.Length > 0;
-
-    [ObservableProperty]
     private bool _isBurnRunning;
 
     public BurnViewModel(ShellViewModel shell, DiscParametersState state, DesignViewModel design)
@@ -140,6 +125,7 @@ public partial class BurnViewModel : ObservableObject
             if (args.PropertyName is nameof(IsBurnRunning))
             {
                 CancelBurnCommand.NotifyCanExecuteChanged();
+                _shell.RefreshCancelJobState();
             }
         };
     }
@@ -329,19 +315,11 @@ public partial class BurnViewModel : ObservableObject
 
     /// <summary>Re-reads the cached source, device and speed text. The source identity is
     /// unchanged, so confirmation and detected devices stay exactly where they were.</summary>
-    private void SetBurnStatus(string key)
-    {
-        _burnStatusKey = key;
-        _burnStatusTextFactory = null;
-        BurnStatusText = L.T(key);
-    }
-
     internal void Relocalize()
     {
         OnPropertyChanged(nameof(PageTitle));
         OnPropertyChanged(nameof(FamilyLabel));
         UpdateSourceSummary();
-        BurnStatusText = _burnStatusTextFactory?.Invoke() ?? L.T(_burnStatusKey);
         if (_isRefreshingDevices)
         {
             DeviceStatusText = L.T("正在检测刻录机…");
@@ -522,11 +500,6 @@ public partial class BurnViewModel : ObservableObject
 
         bool ownsBusyState = false;
         _isPreparingBurn = true;
-        if (UseCalibrationPattern)
-        {
-            CalibrationBurnLog = string.Empty;
-            BurnProgressValue = 0;
-        }
         OnPropertyChanged(nameof(IsSetupEnabled));
         UpdateActionState();
         try
@@ -691,7 +664,7 @@ public partial class BurnViewModel : ObservableObject
 
             if (_shell.IsBusy || preparationRevision != _burnPreparationRevision || !ConfirmChecked)
             {
-                SetBurnStatus("刻录来源或选项已变化，请重新确认后开始。");
+                _shell.ShowToast(L.T("操作未执行"), L.T("刻录来源或选项已变化，请重新确认后开始。"), ToastKind.Info);
                 return;
             }
 
@@ -700,15 +673,8 @@ public partial class BurnViewModel : ObservableObject
             IsBurnRunning = true;
             CancellationTokenSource burnCancellation = new();
             _burnCancellation = burnCancellation;
-            // Calibration owns this recording's display; the project dock retains its last job and file.
-            BurnProgressDisplay? calibrationProgress = null;
-            if (UseCalibrationPattern)
-                calibrationProgress = new BurnProgressDisplay(request.MediaKind, request.ContentLength);
-            else
-                _shell.BeginBurnDockJob(request.MediaKind, request.ContentLength);
-            BurnProgressValue = 0;
-            SetBurnStatus(UseCalibrationPattern ? "流式刻录" : "正在流式刻录，进度见底部任务栏。");
-            AppendRecordingLog(
+            _shell.BeginBurnDockJob(request.MediaKind, request.ContentLength);
+            _shell.AppendLog(
                 L.F($"\n[{DateTime.Now:HH:mm:ss}] 开始流式刻录：{contentDescription}；")
                 + L.F($"设备={device.DisplayName}；请求速度={selectedWriteSpeed.DisplayName}。\n"));
             Progress<OpticalBurnProgress> progress = new(value =>
@@ -718,31 +684,14 @@ public partial class BurnViewModel : ObservableObject
                     return;
                 }
 
-                if (calibrationProgress is null)
-                {
-                    _shell.ReportBurnProgress(value);
-                    BurnProgressValue = _shell.JobProgressValue;
-                    return;
-                }
-                string? diagnostic = calibrationProgress.Apply(value);
-                if (!string.IsNullOrWhiteSpace(diagnostic)) AppendRecordingLog($"[{DateTime.Now:HH:mm:ss}] {diagnostic}\n");
-                BurnProgressValue = calibrationProgress.Percent;
-                if (value.Stage == "write")
-                {
-                    _burnStatusTextFactory = () => $"{calibrationProgress.AmountText} · {calibrationProgress.RateText} · {calibrationProgress.MultiplierText}";
-                    BurnStatusText = _burnStatusTextFactory();
-                }
-                else if (value.Stage is "device" or "media" or "buffer" or "finalize")
-                    SetBurnStatus(value.Message);
+                _shell.ReportBurnProgress(value, cancellationRequested: burnCancellation.IsCancellationRequested);
             });
             OpticalBurnResult result = await _opticalDiscBurner.BurnAsync(
                 request,
                 progress,
                 burnCancellation.Token);
-            BurnProgressValue = 100;
-            SetBurnStatus("刻录完成，可以取出光盘。");
-            if (!UseCalibrationPattern) _shell.CompleteDockJob(L.T("完成：流式刻录 ") + contentDescription);
-            AppendRecordingLog(
+            _shell.CompleteDockJob(L.T("完成：流式刻录 ") + contentDescription);
+            _shell.AppendLog(
                 L.F($"[{DateTime.Now:HH:mm:ss}] 流式刻录完成：{result.BytesWritten} 字节，")
                 + L.F($"耗时 {result.Elapsed.TotalSeconds:F1} 秒")
                 + (result.ActualWriteSpeed is null
@@ -751,21 +700,21 @@ public partial class BurnViewModel : ObservableObject
             ConfirmChecked = false;
             _shell.ShowToast(L.T("流式刻录完成"), L.T("流式刻录已经完成，可以取出光盘。"), ToastKind.Success);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException exception)
         {
-            SetBurnStatus("已请求取消；光驱可能仍需一段时间才能停止。");
-            if (!UseCalibrationPattern) _shell.AbortDockJob(L.T("已取消：流式刻录"), expandLog: false);
-            AppendRecordingLog(
+            if (ownsBusyState) _shell.AbortDockJob(L.T("已取消：流式刻录"), expandLog: false);
+            _shell.AppendLog(
                 L.F($"[{DateTime.Now:HH:mm:ss}] 已取消流式刻录；当前盘片可能无法继续使用。\n"));
+            _shell.AppendLog(OpticalBurnDiagnostics.FormatException(exception) + "\n");
         }
         catch (Exception exception)
         {
-            SetBurnStatus("刻录未完成，请查看错误信息。");
-            if (!UseCalibrationPattern) _shell.AbortDockJob(L.T("失败：流式刻录"), expandLog: true);
-            AppendRecordingLog(L.F($"[{DateTime.Now:HH:mm:ss}] 流式刻录失败：{exception.Message}\n"));
+            if (ownsBusyState) _shell.AbortDockJob(L.T("失败：流式刻录"), expandLog: true);
+            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 流式刻录失败：{exception.Message}\n"));
+            _shell.AppendLog(OpticalBurnDiagnostics.FormatException(exception) + "\n");
             _shell.ShowToast(
                 L.T("流式刻录未完成"),
-                exception.Message + L.T("\n\n如果写入已经开始，当前盘片可能无法继续使用。"),
+                L.T("详情见窗口底部的任务日志。") + L.T("\n\n如果写入已经开始，当前盘片可能无法继续使用。"),
                 ToastKind.Error);
         }
         finally
@@ -783,12 +732,6 @@ public partial class BurnViewModel : ObservableObject
             OnPropertyChanged(nameof(IsSetupEnabled));
             UpdateActionState();
         }
-    }
-
-    private void AppendRecordingLog(string text)
-    {
-        if (UseCalibrationPattern) CalibrationBurnLog += text;
-        _shell.AppendLog(text);
     }
 
     // Build the layout before physical writing and capture all generation options.
@@ -862,7 +805,7 @@ public partial class BurnViewModel : ObservableObject
     private void CancelStreamBurn()
     {
         CancelBurnCommand.NotifyCanExecuteChanged();
-        SetBurnStatus("正在请求停止刻录，请不要取出盘片…");
+        _shell.JobStatusText = L.T("正在请求停止刻录，请不要取出盘片…");
         _burnCancellation?.Cancel();
     }
 

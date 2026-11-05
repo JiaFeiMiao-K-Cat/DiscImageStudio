@@ -220,10 +220,12 @@ public partial class MainWindow : Window
     // Snapshot-only synthetic telemetry. No burner or recorder is created here.
     internal void ShowBurnProgressForSnapshot(string phase)
     {
-        if (phase is not ("write" or "buffer" or "finalize"))
-            throw new ArgumentException("Burn progress snapshot must be write, buffer or finalize.");
-        var kind = _shell.Burn.IsBluRayBurn ? DiscImageStudio.Burning.OpticalBurnMediaKind.BluRayData
-            : _shell.Burn.IsDvdBurn ? DiscImageStudio.Burning.OpticalBurnMediaKind.DvdData
+        if (phase is not ("write" or "buffer" or "finalize" or "write-complete" or "verify"
+            or "flush" or "close-track" or "close-disc" or "release"))
+            throw new ArgumentException("Unknown burn progress snapshot phase.");
+        var burn = _shell.CurrentWorkspace == Workspace.CalibrationBurn ? _shell.CalibrationBurn : _shell.Burn;
+        var kind = burn.IsBluRayBurn ? DiscImageStudio.Burning.OpticalBurnMediaKind.BluRayData
+            : burn.IsDvdBurn ? DiscImageStudio.Burning.OpticalBurnMediaKind.DvdData
             : DiscImageStudio.Burning.OpticalBurnMediaKind.CdAudio;
         long total = kind == DiscImageStudio.Burning.OpticalBurnMediaKind.CdAudio ? 800L * 1024 * 1024
             : kind == DiscImageStudio.Burning.OpticalBurnMediaKind.BluRayData ? 12219392L * 2048 : 2295104L * 2048;
@@ -232,8 +234,19 @@ public partial class MainWindow : Window
         _shell.ReportBurnProgress(new("buffer", L.T("正在准备防断流缓冲区…"), 0, total));
         if (phase != "buffer")
             _shell.ReportBurnProgress(new("write", L.T("刻录机开始写入。"), total / 3, total, 8.25 * 1024 * 1024));
-        if (phase == "finalize")
-            _shell.ReportBurnProgress(new("finalize", L.T("正在刷新缓存并关闭刻录会话…"), total / 3, total));
+        string? phaseMessage = phase switch
+        {
+            "finalize" => "正在完成写入并关闭刻录会话…",
+            "write-complete" => "Windows 刻录接口报告写入完成，正在等待返回…",
+            "verify" => "正在验证刻录数据…",
+            "flush" => "刷新 BD-R 缓存（请等待完成）",
+            "close-track" => "关闭 BD-R 轨道（请等待完成）",
+            "close-disc" => "封闭 BD-R 盘片（请等待完成）",
+            "release" => "释放 BD-R 刻录机访问权",
+            _ => null,
+        };
+        if (phaseMessage is not null)
+            _shell.ReportBurnProgress(new(phase, phaseMessage, total / 3, total));
     }
 
     /// <summary>Snapshot hook: forces the hovered state on the first recent-project card
@@ -643,9 +656,7 @@ public partial class MainWindow : Window
     private void UpdateProjectHeader()
     {
         SidebarBorder.Visibility = _shell.IsProjectMode ? Visibility.Visible : Visibility.Collapsed;
-        // The job dock is chrome for the workspace shell: on the start screen there is no
-        // project to work on, so it stays out of the way.
-        DockHost.Visibility = _shell.IsProjectMode ? Visibility.Visible : Visibility.Collapsed;
+        UpdateJobDockVisibility();
         if (!_shell.IsProjectOpen)
         {
             return;
@@ -658,6 +669,8 @@ public partial class MainWindow : Window
 
     private void Shell_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(ShellViewModel.IsJobDockVisible))
+            UpdateJobDockVisibility();
         if (e.PropertyName is nameof(ShellViewModel.CurrentWorkspace)
             or nameof(ShellViewModel.IsProjectOpen)
             or nameof(ShellViewModel.IsDirty)
@@ -672,6 +685,9 @@ public partial class MainWindow : Window
             }
         }
     }
+
+    private void UpdateJobDockVisibility()
+        => DockHost.Visibility = _shell.IsJobDockVisible ? Visibility.Visible : Visibility.Collapsed;
 
     // ---- Stage rails ----
 

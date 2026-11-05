@@ -160,12 +160,10 @@ public partial class CalibrationViewModel : ObservableObject
 
     public bool IsBluRayTarget => _target?.Parameters.Kind == CalibrationDiscKind.BluRay;
     [ObservableProperty] private string _outputPath = string.Empty;
-    // Page-bottom status is gone; the surviving consumers are the log page (RunAsync logs
-    // the result) and the toasts (errors). This field feeds the log only.
+    // The shared job dock displays running operations and their outcomes; errors also toast.
     private string _statusMessage = string.Empty;
 
-    /// <summary>Last operation message, kept for diagnostics (tests, future consumers);
-    /// the log page carries the same lines.</summary>
+    /// <summary>Last operation message, also reported in the shared task log.</summary>
     public string LastStatusMessage => _statusMessage;
     [ObservableProperty] private string _fitAssessment = L.T("全部有效点都会参与计算，结果需与实拍曲线核对。");
     public bool IsBusy => _shell.IsBusy;
@@ -1043,16 +1041,29 @@ public partial class CalibrationViewModel : ObservableObject
     {
         if (IsBusy) return;
         _cancellation = new();
-        _shell.SetBusy(true);
         _statusMessage = message;
+        _shell.BeginDockJob(L.T("Xaml.Calibration"), determinate: false);
+        _shell.ReportDockJob(message, 0);
+        _shell.SetBusy(true);
         _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 标定：{message}\n"));
-        try { await action(_cancellation.Token); }
+        try
+        {
+            await action(_cancellation.Token);
+            // Calibration owns its files and records; completing a task must not register
+            // one as the drawing project's output or relabel an earlier project artifact.
+            _shell.CompleteDockJob(_statusMessage);
+        }
         catch (OperationCanceledException)
         {
             if (_isSolving) InvalidateFit();
             _statusMessage = L.T("操作已取消。");
+            _shell.AbortDockJob(_statusMessage, expandLog: false);
         }
-        catch (Exception ex) { Report(ex); }
+        catch (Exception ex)
+        {
+            Report(ex);
+            _shell.AbortDockJob(_statusMessage, expandLog: true);
+        }
         finally
         {
             _isSolving = false;

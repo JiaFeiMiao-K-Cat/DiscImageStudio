@@ -135,7 +135,7 @@ internal static class UnifiedCommandRunner
                           [--language zh-CN|zh-TW|en|ja|tr|es|cs|system]
                           [--settings-view general|storage|about] [--theme dark|light|system]
                           [--expand] [--scroll N] [--home-hover]
-                          [--burn-progress write|buffer|finalize]
+                          [--burn-progress write|buffer|finalize|write-complete|verify|flush|close-track|close-disc|release]
                           [--project-update] [--project-save] [--tone-preview]
               burn-devices
               burn-build-info

@@ -49,7 +49,7 @@ internal sealed class DynamicBluRaySequentialSession : IBluRaySequentialSession
 
     internal DynamicBluRaySequentialSession(object recorder, object speedFormat,
         Action<long, long>? reportWriteProgress = null, Action<string>? reportCleanupWarning = null,
-        Action<string>? reportDiagnostics = null)
+        Action<string>? reportDiagnostics = null, Action<int, int>? reportRecordedLba = null)
     {
         ArgumentNullException.ThrowIfNull(recorder);
         ArgumentNullException.ThrowIfNull(speedFormat);
@@ -58,7 +58,7 @@ internal sealed class DynamicBluRaySequentialSession : IBluRaySequentialSession
         _reportWriteProgress = reportWriteProgress;
         _reportDiagnostics = reportDiagnostics;
         _transport = new ImapiMmcCommandTransport(recorder);
-        _commands = new BluRayMmcCommands(_transport);
+        _commands = new BluRayMmcCommands(_transport, reportRecordedLba);
         _cleanup = new BluRaySessionCleanup(
             acquireExclusive: () => _recorder.AcquireExclusiveAccess(false, "Disc Image Studio"),
             disableMcn: () => _recorder.DisableMcn(),

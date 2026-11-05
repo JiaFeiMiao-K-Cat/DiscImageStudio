@@ -62,7 +62,7 @@ internal sealed class MmcCommandException : IOException
 /// Only reads, removal protection, SYNCHRONIZE CACHE and CLOSE TRACK/SESSION are
 /// issued here. In particular, this path never issues FORMAT UNIT or allocates spare areas.
 /// </summary>
-internal sealed class BluRayMmcCommands(IMmcCommandTransport transport)
+internal sealed class BluRayMmcCommands(IMmcCommandTransport transport, Action<int, int>? reportRecordedLba = null)
 {
     internal const int CommandHasSenseData = 0x00AA0200;
 
@@ -168,6 +168,19 @@ internal sealed class BluRayMmcCommands(IMmcCommandTransport transport)
             throw new IOException("蓝光盘返回了不同的轨道编号，已停止刻录操作。");
         if ((track[5] & 0x20) != 0)
             throw new IOException("蓝光轨道已标记为损坏，已停止刻录操作。");
+        // Reuse an existing READ TRACK INFORMATION response. LRA_V is bit 1;
+        // never infer physical recording from NWA or acknowledged WRITE data.
+        // No additional device command is issued for diagnostics, even on failure.
+        if ((track[7] & 2) != 0)
+        {
+            uint start = BinaryPrimitives.ReadUInt32BigEndian(track.AsSpan(8, 4));
+            uint lastRecorded = BinaryPrimitives.ReadUInt32BigEndian(track.AsSpan(28, 4));
+            if (start <= lastRecorded && lastRecorded <= int.MaxValue)
+            {
+                try { reportRecordedLba?.Invoke((int)start, (int)lastRecorded); }
+                catch { /* Telemetry must not change the result of a device command. */ }
+            }
+        }
         return track;
     }
 
