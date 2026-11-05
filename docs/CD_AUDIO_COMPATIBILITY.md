@@ -115,7 +115,7 @@ DiscImageStudio.exe cd-generate --input picture.png --output cd-track.wav `
 - WAV 预览：解析 RIFF 的 `fmt ` / `data`，跳过未知块及奇数长度填充，限制读取范围，归一化字节序；拒绝非 PCM、非 44.1 kHz、非 16 位或非双声道数据。不同采样步长下与对应 RAW 预览一致。预览仍是文件字节映射，未模拟完整物理 CIRC/EFM，不能替代实盘判定。
 - 读回一致性：同一源图分别生成交织与不交织的音轨，`--deinterleave true` 读回交织音轨与按文件顺序读回不交织音轨的结果，除延迟线尾部一个扇区内的像素外逐像素相同（900 px、非对称测试图下差异仅落在尾部投影内，变异测试把帧延迟改动 24 字节即报 245 处不一致）。
 - 标定投影一致性：同一源图先按生成几何 `(24.5, 56.8)` 生成音轨，再把 `cd-preview-warp` 的投影（实测=生成、实测=`24.3/56.6`）与 `cd-preview-track` 用对应几何读回的结果逐像素比较，阈值化后完全一致（900 px）；实测半径缩小时投影的重心半径随之减小，因此两套几何不会串位。
-- Windows 内存实验：向现有 `MsftRawCDImageCreator` 输入 300 个非对称音频扇区，扫描完整的 2448 字节 RAW 结果扇区，全部音频字节原样保留。生成器不会替调用者交换字节。测试不创建刻录设备、不写入光盘。
+- Windows 内存实验：向现有 `MsftRawCDImageCreator` 输入 300 个非对称音频扇区，在 Cooked R-W 与 Raw P-W 两种结果类型下分别扫描完整的 2448 字节 RAW 结果扇区，全部音频字节原样保留；另一项回归确认两种类型的完整镜像逐字节相同，R-W 子通道为空。生成器不会替调用者交换字节。测试不创建刻录设备、不写入光盘。
 - 2026-09-12 用户在本次修复后完成实盘试验，反馈已无重影。这是用户提供的实体盘结果；流式、cdrecord、ImgBurn 三个入口的逐项实测细节未单独记录。
 
 微软 `WriteMedia` 文档没有说明它内部的字节交换实现；上述结论没有把内存实验等同于观察到设备传输时的交换。[Microsoft WriteMedia 文档](https://learn.microsoft.com/en-us/windows/win32/api/imapi2/nf-imapi2-idiscformat2rawcd-writemedia)

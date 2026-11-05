@@ -16,25 +16,28 @@ internal static class CdDataRawImageTests
     {
         // Only in-memory IMAPI image creation is used: no recorder, preparation,
         // WriteMedia, finalization, or other optical device operation occurs.
-        VerifyNativeImage();
+        VerifyNativeImage(CdRawSectorType.SubcodeIsCooked);
+        VerifyNativeImage(CdRawSectorType.SubcodeIsRaw);
         VerifyAtipGeometryAndInputGuards();
         VerifyGeneratedContent();
         VerifyInnerAndOuterIsoRoundTrip();
-        Console.WriteLine("cd-data-raw-image: passed (ATIP length, inner/outer ISO round-trip, Mode 1 bytes, data TOC/Q CRC, P pause, partial reads and forward-only streams)");
+        Console.WriteLine("cd-data-raw-image: passed (ATIP length, inner/outer ISO round-trip, Mode 1 bytes, data TOC/Q CRC, P pause, partial reads and forward-only streams; cooked R-W and raw P-W templates)");
     }
 
-    private static void VerifyNativeImage()
+    private static void VerifyNativeImage(int sectorType)
     {
         byte[] iso = new byte[Sectors * 2048];
         new Random(982349).NextBytes(iso);
         BufferStream source = new(iso, maxRead: 73, allowSeek: false);
         using CdDataRawImageSession session = new();
-        IStream image = session.CreateImage(source);
+        IStream image = session.CreateImage(source, sectorType);
         using DynamicCdRawImageSession referenceSession = new();
-        IStream reference = referenceSession.CreateImage(new BufferStream(new byte[Sectors * 2352]));
+        IStream reference = referenceSession.CreateImage(new BufferStream(new byte[Sectors * 2352]), sectorType);
         image.Stat(out STATSTG stat, 1);
         reference.Stat(out STATSTG referenceStat, 1);
         Require(session.StartOfLeadout == Sectors, "all ISO sectors remain in the program area");
+        Require(session.ResultingImageType == sectorType && referenceSession.ResultingImageType == sectorType,
+            "data template and reference use the requested sector type");
         Require(stat.cbSize == referenceStat.cbSize, "DAO framing length matches the native template");
         Require(source.BytesRead == 0, "creating the image does not consume its ISO");
 
@@ -106,21 +109,29 @@ internal static class CdDataRawImageTests
         const long ritekMedicalAtip = 359845;
         BufferStream declaredIso = new([], declaredLength: ritekMedicalAtip * 2048, allowSeek: false);
         using CdDataRawImageSession session = new();
-        IStream image = session.CreateImage(declaredIso);
+        IStream image = session.CreateImage(declaredIso, CdRawSectorType.SubcodeIsRaw);
         image.Stat(out STATSTG stat, 1);
         Require(session.StartOfLeadout == ritekMedicalAtip, "Ritek Medical ATIP 359845 is retained, without a two-sector deduction");
         Require(stat.cbSize == (ProgramStart + ritekMedicalAtip + 6750) * RawBytes, "ATIP geometry determines DAO length");
         Require(declaredIso.BytesRead == 0, "full-disc image construction is lazy");
-        Throws<InvalidOperationException>(() => session.CreateImage(declaredIso), "session cannot be reused");
+        Throws<InvalidOperationException>(() => session.CreateImage(declaredIso, CdRawSectorType.SubcodeIsRaw),
+            "session cannot be reused");
 
         foreach (long invalid in new[] { 299L * 2048, 300L * 2048 + 1 })
         {
             using CdDataRawImageSession rejected = new();
-            Throws<ArgumentException>(() => rejected.CreateImage(new BufferStream([], declaredLength: invalid)),
+            Throws<ArgumentException>(() => rejected.CreateImage(new BufferStream([], declaredLength: invalid),
+                    CdRawSectorType.SubcodeIsRaw),
                 "short or partial tracks are rejected instead of padded");
         }
+        // PQ-only templates use 2368-byte sectors, which would misframe every patched sector.
+        using CdDataRawImageSession pqOnly = new();
+        Throws<ArgumentOutOfRangeException>(() => pqOnly.CreateImage(
+                new BufferStream([], declaredLength: Sectors * 2048L), 1),
+            "PQ-only templates are rejected before any sector is framed");
         using CdDataRawImageSession truncatedSession = new();
-        IStream truncated = truncatedSession.CreateImage(new BufferStream(new byte[2047], declaredLength: Sectors * 2048L));
+        IStream truncated = truncatedSession.CreateImage(new BufferStream(new byte[2047], declaredLength: Sectors * 2048L),
+            CdRawSectorType.SubcodeIsRaw);
         truncated.Seek((long)ProgramStart * RawBytes, 0, IntPtr.Zero);
         Throws<EndOfStreamException>(() => truncated.Read(new byte[RawBytes], RawBytes, IntPtr.Zero),
             "truncated ISO is rejected instead of writing a partial sector");
@@ -133,7 +144,7 @@ internal static class CdDataRawImageTests
         using GeneratedContentComStream source = new(iso.Length, (output, _) => output.Write(iso), null, CancellationToken.None);
         source.WaitUntilPrebuffered(CancellationToken.None);
         using CdDataRawImageSession session = new();
-        IStream image = session.CreateImage(source);
+        IStream image = session.CreateImage(source, CdRawSectorType.SubcodeIsRaw);
         // Skipping part of a data sector must consume only the corresponding
         // forward-only source; the buffered remainder is returned next.
         const int lba = 137;
@@ -198,7 +209,7 @@ internal static class CdDataRawImageTests
                         parameters, layout, cancellationToken: cancellation), null, CancellationToken.None);
                 source.WaitUntilPrebuffered(CancellationToken.None);
                 using CdDataRawImageSession session = new();
-                IStream image = session.CreateImage(source);
+                IStream image = session.CreateImage(source, CdRawSectorType.SubcodeIsRaw);
                 image.Seek((long)ProgramStart * RawBytes, 0, IntPtr.Zero);
                 byte[] recoveredIso = new byte[expectedIso.Length];
                 for (int lba = 0; lba < Sectors; lba++)

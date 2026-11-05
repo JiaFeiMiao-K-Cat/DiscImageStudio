@@ -8,7 +8,6 @@ namespace DiscImageStudio.Burning;
 public sealed class WindowsImapiBurner : IOpticalDiscBurner
 {
     private readonly OpticalBurnOperationGate _operationGate = new();
-    private const int CdRawSubcodeIsCooked = 2;
     private const int CdDaoFallbackSpeedSectorsPerSecond = 1200;
     // DAO avoids the two-sector TAO track overhead observed on the tested drive.
     // Keep only a very small physical overburn allowance for nearby measured presets.
@@ -336,7 +335,9 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                     ReportOperation,
                     speed => ReportWriteSpeed(progress, speed, request),
                     CaptureFailure,
-                    message => cleanupWarnings.Add(message));
+                    message => cleanupWarnings.Add(message),
+                    message => progress?.Report(new OpticalBurnProgress(
+                        "diagnostic", message, 0, request.ContentLength)));
             }
             else if (request.MediaKind == OpticalBurnMediaKind.BluRayData)
             {
@@ -649,8 +650,10 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         OpticalBurnRequest request,
         CancellationToken cancellationToken,
         Action<string>? reportOperation = null,
-        Action<OpticalWriteSpeed>? reportWriteSpeed = null)
-        => BurnCdDao(format, imageSession, content, request, cancellationToken, reportOperation, reportWriteSpeed);
+        Action<OpticalWriteSpeed>? reportWriteSpeed = null,
+        Action<string>? reportDiagnostic = null)
+        => BurnCdDao(format, imageSession, content, request, cancellationToken, reportOperation, reportWriteSpeed,
+            reportDiagnostic: reportDiagnostic);
 
     internal static OpticalWriteSpeed BurnCdDao(
         ICdRawSession format,
@@ -661,7 +664,8 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         Action<string>? reportOperation = null,
         Action<OpticalWriteSpeed>? reportWriteSpeed = null,
         Action<Exception>? reportFailure = null,
-        Action<string>? reportCleanupWarning = null)
+        Action<string>? reportCleanupWarning = null,
+        Action<string>? reportDiagnostic = null)
     {
         if (!OpticalBurnMedia.UsesCdDao(request.MediaKind))
             throw new ArgumentException("CD DAO requires an audio or CD data request.", nameof(request));
@@ -681,13 +685,10 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             }
 
             SetOperation("设置 CD DAO 扇区格式");
-            if (!format.SupportedSectorTypes.Contains(CdRawSubcodeIsCooked))
-            {
-                throw new InvalidOperationException(
-                    "所选光驱不支持 CD DAO 所需的 Cooked R-W 子通道格式。");
-            }
-
-            format.SetRequestedSectorType(CdRawSubcodeIsCooked);
+            IReadOnlyList<int> supportedSectorTypes = format.SupportedSectorTypes;
+            int sectorType = ResolveCdDaoSectorType(supportedSectorTypes);
+            reportDiagnostic?.Invoke(DescribeCdDaoSectorType(sectorType, supportedSectorTypes));
+            format.SetRequestedSectorType(sectorType);
             if (request.WriteSpeed is not null)
             {
                 SetOperation("设置 CD 刻录速度");
@@ -708,7 +709,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             reportWriteSpeed?.Invoke(actualWriteSpeed);
 
             SetOperation($"构造 CD DAO {trackDescription}");
-            IStream rawImage = imageSession.CreateImage(content);
+            IStream rawImage = imageSession.CreateImage(content, sectorType);
             long startOfLeadout = imageSession.StartOfLeadout;
             long lastPossibleStartOfLeadout = format.LastPossibleStartOfLeadout;
             long excessSectors = startOfLeadout - lastPossibleStartOfLeadout;
@@ -1032,6 +1033,34 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             .ThenBy(speed => speed.RotationTypeIsPureCav)
             .FirstOrDefault();
     }
+
+    // Prefer raw P-W. IMAPI's image creator writes no R-W data, so cooked and raw images
+    // are byte-identical; only the subchannel layout announced to the recorder differs.
+    // Some recorders list cooked R-W yet reject its first lead-in WRITE: an HP BD-RE BU20N
+    // (firmware 0403) returned 5/64/00 for data block type 2, which IMAPI reports as
+    // 0xC0AA0301, while a direct SCSI Test Write with data block type 3 (raw P-W) accepted
+    // the first 3,000 lead-in sectors at 4x on the same disc. cdrecord also recommends
+    // raw96r over raw96p.
+    internal static int ResolveCdDaoSectorType(IReadOnlyCollection<int> supportedSectorTypes)
+    {
+        ArgumentNullException.ThrowIfNull(supportedSectorTypes);
+        if (supportedSectorTypes.Contains(CdRawSectorType.SubcodeIsRaw))
+            return CdRawSectorType.SubcodeIsRaw;
+        if (supportedSectorTypes.Contains(CdRawSectorType.SubcodeIsCooked))
+            return CdRawSectorType.SubcodeIsCooked;
+        throw new InvalidOperationException(
+            "所选光驱不支持 CD DAO 所需的 Raw P-W 或 Cooked R-W 子通道格式"
+            + $"（光驱报告：{FormatSectorTypes(supportedSectorTypes)}）。");
+    }
+
+    internal static string DescribeCdDaoSectorType(int sectorType, IReadOnlyCollection<int> supportedSectorTypes)
+        => (sectorType == CdRawSectorType.SubcodeIsRaw
+                ? "CD DAO 子通道格式：Raw P-W（IMAPI 类型 3）"
+                : "CD DAO 子通道格式：Cooked R-W（IMAPI 类型 2）")
+            + $"；光驱报告支持：{FormatSectorTypes(supportedSectorTypes)}。";
+
+    private static string FormatSectorTypes(IReadOnlyCollection<int> sectorTypes)
+        => sectorTypes.Count == 0 ? "无" : string.Join(", ", sectorTypes);
 
     private static void TryCancel(dynamic format, bool cdAudio)
     {

@@ -884,6 +884,7 @@ static void TestStreamingGeneration(string sourcePath)
     }
 
     TestCdRawDaoCallOrder();
+    TestCdRawDaoSectorTypeSelection();
     TestCdRawImageConstruction();
 }
 
@@ -920,6 +921,14 @@ static void TestCdRawDaoCallOrder()
         + "WriteMedia,ReleaseMedia",
         string.Join(',', session.Calls),
         "CD Raw DAO preparation order");
+    Equal(
+        CdRawSectorType.SubcodeIsCooked,
+        session.RequestedSectorType ?? 0,
+        "CD Raw DAO keeps cooked R-W when raw P-W is not listed");
+    Equal(
+        CdRawSectorType.SubcodeIsCooked,
+        imageSession.ImageSectorType ?? 0,
+        "CD Raw DAO image matches the requested cooked R-W layout");
 
     RecordingCdRawSession fallbackSpeedSession = new();
     using RecordingCdRawImageSession fallbackSpeedImage = new(fallbackSpeedSession.Calls);
@@ -1011,11 +1020,169 @@ static void TestCdRawDaoCallOrder()
     }
 }
 
+static void TestCdRawDaoSectorTypeSelection()
+{
+    Equal(
+        CdRawSectorType.SubcodeIsRaw,
+        WindowsImapiBurner.ResolveCdDaoSectorType([1, 2, 3]),
+        "CD DAO prefers raw P-W when the recorder lists it");
+    Equal(
+        CdRawSectorType.SubcodeIsRaw,
+        WindowsImapiBurner.ResolveCdDaoSectorType([3]),
+        "CD DAO accepts a raw-only recorder");
+    Equal(
+        CdRawSectorType.SubcodeIsCooked,
+        WindowsImapiBurner.ResolveCdDaoSectorType([1, 2]),
+        "CD DAO falls back to cooked R-W");
+    foreach (int[] unusable in new[] { new[] { 1 }, Array.Empty<int>() })
+    {
+        try
+        {
+            WindowsImapiBurner.ResolveCdDaoSectorType(unusable);
+            throw new InvalidOperationException("CD DAO sector type: expected rejection.");
+        }
+        catch (InvalidOperationException exception)
+        {
+            True(
+                exception.Message.Contains(
+                    unusable.Length == 0 ? "光驱报告：无" : "光驱报告：1",
+                    StringComparison.Ordinal),
+                "CD DAO rejects PQ-only or empty sector type lists and reports them");
+        }
+    }
+
+    Equal(
+        "CD DAO 子通道格式：Raw P-W（IMAPI 类型 3）；光驱报告支持：1, 2, 3。",
+        WindowsImapiBurner.DescribeCdDaoSectorType(CdRawSectorType.SubcodeIsRaw, [1, 2, 3]),
+        "CD DAO log line names raw P-W and the reported types");
+    Equal(
+        "CD DAO 子通道格式：Cooked R-W（IMAPI 类型 2）；光驱报告支持：2。",
+        WindowsImapiBurner.DescribeCdDaoSectorType(CdRawSectorType.SubcodeIsCooked, [2]),
+        "CD DAO log line names cooked R-W");
+
+    byte[] sector = new byte[2352];
+    using GeneratedContentComStream content = new(
+        sector.Length,
+        (output, _) => output.Write(sector),
+        progress: null,
+        CancellationToken.None);
+    content.WaitUntilPrebuffered(CancellationToken.None);
+    OpticalBurnRequest request = new(
+        "test-recorder",
+        OpticalBurnMediaKind.CdAudio,
+        sector.Length,
+        (_, _) => { },
+        new OpticalWriteSpeed(1200, false));
+    foreach ((int[] reported, int expected) in new[]
+    {
+        (new[] { 1, 2, 3 }, CdRawSectorType.SubcodeIsRaw),
+        (new[] { 3 }, CdRawSectorType.SubcodeIsRaw),
+        (new[] { 1, 2 }, CdRawSectorType.SubcodeIsCooked),
+    })
+    {
+        RecordingCdRawSession session = new() { ReportedSectorTypes = reported };
+        using RecordingCdRawImageSession imageSession = new(session.Calls);
+        List<string> diagnostics = [];
+        WindowsImapiBurner.BurnCdAudio(
+            session,
+            imageSession,
+            content,
+            request,
+            CancellationToken.None,
+            reportDiagnostic: diagnostics.Add);
+        string reportedText = string.Join(",", reported);
+        Equal(expected, session.RequestedSectorType ?? 0, $"CD DAO requests type {expected} for [{reportedText}]");
+        Equal(expected, imageSession.ImageSectorType ?? 0, $"CD DAO image uses type {expected} for [{reportedText}]");
+        Equal(
+            1,
+            session.Calls.Count(call => call == nameof(ICdRawSession.SupportedSectorTypes)),
+            "CD DAO reads the supported sector types once");
+        True(
+            diagnostics.Count == 1
+                && diagnostics[0] == WindowsImapiBurner.DescribeCdDaoSectorType(expected, reported),
+            "CD DAO logs the chosen subchannel format once");
+        True(session.Calls.Contains(nameof(ICdRawSession.WriteMedia)), "CD DAO writes with a usable sector type");
+    }
+
+    RecordingCdRawSession pqOnlySession = new() { ReportedSectorTypes = [1] };
+    using RecordingCdRawImageSession pqOnlyImage = new(pqOnlySession.Calls);
+    try
+    {
+        WindowsImapiBurner.BurnCdAudio(
+            pqOnlySession,
+            pqOnlyImage,
+            content,
+            request,
+            CancellationToken.None);
+        throw new InvalidOperationException("CD DAO PQ-only recorder: expected InvalidOperationException.");
+    }
+    catch (InvalidOperationException exception)
+    {
+        True(
+            exception.Message.Contains("光驱报告：1", StringComparison.Ordinal),
+            "CD DAO explains why a PQ-only recorder is rejected");
+        True(
+            !pqOnlySession.Calls.Contains(nameof(ICdRawSession.SetRequestedSectorType))
+                && !pqOnlySession.Calls.Contains(nameof(ICdRawSession.SetWriteSpeed))
+                && !pqOnlySession.Calls.Contains(nameof(ICdRawImageSession.CreateImage))
+                && !pqOnlySession.Calls.Contains(nameof(ICdRawSession.WriteMedia))
+                && pqOnlySession.Calls[^1] == nameof(ICdRawSession.ReleaseMedia),
+            "CD DAO releases prepared media without writing when no P-W layout is available");
+    }
+}
+
 static void TestCdRawImageConstruction()
 {
-    byte[] sector = Enumerable.Repeat((byte)0x5A, 2352).ToArray();
     const int sectorCount = 300;
-    using GeneratedContentComStream content = new(
+    const int rawSectorBytes = 2448;
+    byte[] sector = Enumerable.Repeat((byte)0x5A, 2352).ToArray();
+    using GeneratedContentComStream cookedContent = CreateRepeatedSectorStream(sector, sectorCount);
+    using GeneratedContentComStream rawContent = CreateRepeatedSectorStream(sector, sectorCount);
+    using DynamicCdRawImageSession cookedSession = new();
+    using DynamicCdRawImageSession rawSession = new();
+    IStream cookedImage = cookedSession.CreateImage(cookedContent, CdRawSectorType.SubcodeIsCooked);
+    IStream rawImage = rawSession.CreateImage(rawContent, CdRawSectorType.SubcodeIsRaw);
+    cookedImage.Stat(out STATSTG cookedStat, 1);
+    rawImage.Stat(out STATSTG stat, 1);
+    Equal(300L, cookedSession.StartOfLeadout, "Raw CD image lead-out matches audio length");
+    Equal(300L, rawSession.StartOfLeadout, "raw P-W CD image lead-out matches audio length");
+    True(
+        stat.cbSize > sectorCount * (long)sector.Length,
+        "Raw CD image includes DAO lead-in, subcode, and lead-out");
+    Equal(cookedStat.cbSize, stat.cbSize, "cooked R-W and raw P-W CD images have the same length");
+    // The creator defaults to cooked R-W, so only the raw run proves the type reaches IMAPI.
+    Equal(CdRawSectorType.SubcodeIsRaw, rawSession.ResultingImageType, "raw P-W type reaches the IMAPI image creator");
+    Equal(0L, stat.cbSize % rawSectorBytes, "raw P-W CD image uses complete 2448-byte sectors");
+    using DynamicCdRawImageSession pqOnlySession = new();
+    Throws<ArgumentOutOfRangeException>(
+        () => pqOnlySession.CreateImage(rawImage, 1),
+        "PQ-only 2368-byte CD images are rejected");
+
+    // IMAPI writes no R-W data, so both layouts must carry identical bytes; the
+    // requested type then only changes the subchannel layout announced to the recorder.
+    byte[] cookedChunk = new byte[rawSectorBytes * 64];
+    byte[] rawChunk = new byte[cookedChunk.Length];
+    for (long offset = 0; offset < stat.cbSize; offset += rawChunk.Length)
+    {
+        int count = (int)Math.Min(rawChunk.Length, stat.cbSize - offset);
+        ReadComStreamExactly(cookedImage, cookedChunk, count);
+        ReadComStreamExactly(rawImage, rawChunk, count);
+        True(
+            cookedChunk.AsSpan(0, count).SequenceEqual(rawChunk.AsSpan(0, count)),
+            $"cooked R-W and raw P-W CD images match from byte {offset}");
+        for (int subcode = 2352; subcode < count; subcode += rawSectorBytes)
+        {
+            for (int index = subcode; index < subcode + 96; index++)
+            {
+                True((rawChunk[index] & 0x3F) == 0, "IMAPI CD images carry no R-W data");
+            }
+        }
+    }
+}
+
+static GeneratedContentComStream CreateRepeatedSectorStream(byte[] sector, int sectorCount)
+{
+    GeneratedContentComStream content = new(
         sectorCount * (long)sector.Length,
         (output, _) =>
         {
@@ -1027,14 +1194,33 @@ static void TestCdRawImageConstruction()
         progress: null,
         CancellationToken.None);
     content.WaitUntilPrebuffered(CancellationToken.None);
+    return content;
+}
 
-    using DynamicCdRawImageSession imageSession = new();
-    IStream rawImage = imageSession.CreateImage(content);
-    rawImage.Stat(out STATSTG stat, 1);
-    Equal(300L, imageSession.StartOfLeadout, "Raw CD image lead-out matches audio length");
-    True(
-        stat.cbSize > sectorCount * (long)sector.Length,
-        "Raw CD image includes DAO lead-in, subcode, and lead-out");
+static void ReadComStreamExactly(IStream stream, byte[] buffer, int count)
+{
+    IntPtr read = Marshal.AllocCoTaskMem(sizeof(int));
+    try
+    {
+        int offset = 0;
+        while (offset < count)
+        {
+            byte[] part = offset == 0 ? buffer : new byte[count - offset];
+            stream.Read(part, count - offset, read);
+            int got = Marshal.ReadInt32(read);
+            True(got > 0, "COM stream returns data before its declared end");
+            if (offset != 0)
+            {
+                Buffer.BlockCopy(part, 0, buffer, offset, got);
+            }
+
+            offset += got;
+        }
+    }
+    finally
+    {
+        Marshal.FreeCoTaskMem(read);
+    }
 }
 
 static void WriteSolidPng(string path, int width, int height, byte level)
@@ -1104,11 +1290,15 @@ sealed class RecordingCdRawSession : ICdRawSession
 
     internal long LastLeadoutSector { get; init; } = 1;
 
+    internal IReadOnlyList<int> ReportedSectorTypes { get; init; } = [CdRawSectorType.SubcodeIsCooked];
+
     internal Exception? WriteMediaError { get; init; }
 
     internal Exception? ReleaseMediaError { get; init; }
 
     internal int LastRequestedWriteSpeed { get; private set; }
+
+    internal int? RequestedSectorType { get; private set; }
 
     public bool MediaPhysicallyBlank
     {
@@ -1133,7 +1323,7 @@ sealed class RecordingCdRawSession : ICdRawSession
         get
         {
             Calls.Add(nameof(SupportedSectorTypes));
-            return [2];
+            return ReportedSectorTypes;
         }
     }
 
@@ -1158,7 +1348,10 @@ sealed class RecordingCdRawSession : ICdRawSession
     public void PrepareMedia() => Calls.Add(nameof(PrepareMedia));
 
     public void SetRequestedSectorType(int sectorType)
-        => Calls.Add(nameof(SetRequestedSectorType));
+    {
+        Calls.Add(nameof(SetRequestedSectorType));
+        RequestedSectorType = sectorType;
+    }
 
     public void SetWriteSpeed(int sectorsPerSecond, bool rotationTypeIsPureCav)
     {
@@ -1191,6 +1384,8 @@ sealed class RecordingCdRawImageSession(List<string> calls) : ICdRawImageSession
 {
     internal long ImageStartOfLeadout { get; init; } = 1;
 
+    internal int? ImageSectorType { get; private set; }
+
     public long StartOfLeadout
     {
         get
@@ -1200,9 +1395,10 @@ sealed class RecordingCdRawImageSession(List<string> calls) : ICdRawImageSession
         }
     }
 
-    public IStream CreateImage(IStream audioContent)
+    public IStream CreateImage(IStream audioContent, int sectorType)
     {
         calls.Add(nameof(CreateImage));
+        ImageSectorType = sectorType;
         return audioContent;
     }
 

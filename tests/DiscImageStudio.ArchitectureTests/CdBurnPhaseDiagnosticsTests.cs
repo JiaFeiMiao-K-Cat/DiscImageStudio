@@ -58,7 +58,7 @@ internal static class CdBurnPhaseDiagnosticsTests
     private sealed class FakeImage : ICdRawImageSession
     {
         public long StartOfLeadout => 32;
-        public IStream CreateImage(IStream content) => content;
+        public IStream CreateImage(IStream content, int sectorType) => content;
         public void Dispose() { }
     }
 
