@@ -27,6 +27,8 @@ public partial class CalibrationViewModel : ObservableObject
     private CalibrationTarget? _target;
     private CalibrationParameters? _searchCenter;
     private CalibrationFitResult? _fit;
+    private int _fitStatusPointCount;
+    private string? _fitStatusText;
     private CancellationTokenSource? _cancellation;
     private CancellationTokenSource? _previewCancellation;
     private bool _cdInterleave = true;
@@ -229,6 +231,7 @@ public partial class CalibrationViewModel : ObservableObject
         RefreshCoarseSetup();
         NotifyTraceStage();
         RefreshApplyParametersState();
+        RelocalizeFitStatus();
         RelocalizePhoto();
         foreach (RingChoice choice in RingChoices) choice.RefreshLabel();
         foreach (ArcBandChoice choice in ArcBandNames) choice.RefreshLabel();
@@ -534,6 +537,7 @@ public partial class CalibrationViewModel : ObservableObject
         _inputRevision++;
         if (_isSolving) _cancellation?.Cancel();
         _fit = null;
+        _fitStatusText = null;
         ContourConfirmed = false;
         _previewCancellation?.Cancel();
         _previewReady = false;
@@ -597,15 +601,38 @@ public partial class CalibrationViewModel : ObservableObject
             await ShowCandidateAsync(SelectedCoarseCandidate);
             token.ThrowIfCancellationRequested();
             UpdateFitAssessment();
-            if (!result.Succeeded)
-                _statusMessage = result.Candidates.Count > 0
-                    ? L.Format("CalibrationApply.FailedWithCandidates", pointCount, string.Join("\n", result.Warnings))
-                    : L.F($"计算未通过，已保留全部 {pointCount} 点。\n{string.Join("\n", result.Warnings)}");
-            else if (SelectedCoarseCandidate is { } selected && !CandidateResidualAccepted(selected))
-                _statusMessage = L.T("CalibrationApply.ResidualWarning");
-            else if (_previewReady)
-                _statusMessage = L.F($"已用全部 {pointCount} 点生成参数候选{(attempt.Expanded ? L.F($"，搜索范围自动扩大至 ±{attempt.RangeMm:0.###} mm") : string.Empty)}。请核对橙色预测是否沿青色实拍点连续贴合，再决定是否应用。");
+            _fitStatusPointCount = pointCount;
+            if (FormatFitStatus() is { } status)
+                _statusMessage = _fitStatusText = status;
         });
+    }
+
+    private string? FormatFitStatus()
+    {
+        if (_fit is not { } result) return null;
+        if (!result.Succeeded)
+        {
+            string reasons = string.Join("\n", result.Warnings.Select(L.T));
+            return result.Candidates.Count > 0
+                ? L.Format("CalibrationApply.FailedWithCandidates", _fitStatusPointCount, reasons)
+                : L.F($"计算未通过，已保留全部 {_fitStatusPointCount} 点。\n{reasons}");
+        }
+        if (SelectedCoarseCandidate is { } selected && !CandidateResidualAccepted(selected))
+            return L.T("CalibrationApply.ResidualWarning");
+        return _previewReady
+            ? L.F($"已用全部 {_fitStatusPointCount} 点生成参数候选{(_fitRangeExpanded ? L.F($"，搜索范围自动扩大至 ±{_fitRangeMm:0.###} mm") : string.Empty)}。请核对橙色预测是否沿青色实拍点连续贴合，再决定是否应用。")
+            : null;
+    }
+
+    private void RelocalizeFitStatus()
+    {
+        // Recompose from the raw fit reasons without touching the fit or rewriting
+        // historical logs. A newer operation owns the dock once its text changes.
+        if (_fitStatusText is not { } previous || _statusMessage != previous
+            || FormatFitStatus() is not { } status) return;
+        _statusMessage = _fitStatusText = status;
+        OnPropertyChanged(nameof(LastStatusMessage));
+        if (!IsBusy && _shell.JobStatusText == previous) _shell.JobStatusText = status;
     }
 
     /// <summary>
@@ -803,7 +830,7 @@ public partial class CalibrationViewModel : ObservableObject
             {
                 CrossPredictionContours = [];
                 ContourConfirmed = false;
-                Report(ex, "标定轮廓预览");
+                Report(ex, L.T("标定轮廓预览"));
             }
         }
         finally
@@ -1045,6 +1072,7 @@ public partial class CalibrationViewModel : ObservableObject
     {
         if (IsBusy) return;
         _cancellation = new();
+        _fitStatusText = null;
         _statusMessage = message;
         _shell.BeginDockJob(L.T("Xaml.Calibration"), determinate: false);
         _shell.ReportDockJob(message, 0);
@@ -1080,7 +1108,7 @@ public partial class CalibrationViewModel : ObservableObject
     private void Report(Exception ex, string? context = null)
     {
         _statusMessage = L.T(ex.Message);
-        _shell.AppendLog(JobDiagnostics.FormatLog(context ?? "标定操作", ex));
+        _shell.AppendLog(JobDiagnostics.FormatLog(context ?? L.T("标定操作"), ex));
         _shell.ShowToast(L.T("标定操作未完成"), _statusMessage, ToastKind.Error);
     }
 

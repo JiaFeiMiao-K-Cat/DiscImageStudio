@@ -528,7 +528,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             speed.Validate();
             reportWriteSpeed?.Invoke(speed);
             cancellationToken.ThrowIfCancellationRequested();
-            SetOperation("BD-R 刻后校验未启用（当前顺序写入路径不执行数据读回校验）");
+            SetOperation("BD-R 刻后读回校验：未启用");
             SetOperation($"无备用区顺序写入 BD-R：{request.ContentLength / 2048:N0} 扇区");
             using (cancellationToken.Register(session.CancelWrite))
             {
@@ -728,7 +728,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
 
             using CancellationTokenRegistration registration = cancellationToken.Register(
                 format.CancelWrite);
-            SetOperation("CD 刻后校验未启用（当前 DAO 路径不执行数据读回校验）");
+            SetOperation("CD 刻后读回校验：未启用");
             SetOperation($"写入 CD DAO {trackDescription}");
             format.WriteMedia(rawImage);
             SetOperation("CD 原始写入调用已返回");
@@ -801,7 +801,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         format.ForceOverwrite = false;
         reportOperation?.Invoke("设置 DVD 刻后校验为 NONE");
         DvdBurnVerification.Disable((object)format);
-        reportOperation?.Invoke("DVD 刻后校验已关闭（NONE）；仍执行刷新缓存和封盘");
+        reportOperation?.Invoke("DVD 刻后校验：已关闭（NONE）");
         if (request.WriteSpeed is not null)
         {
             reportOperation?.Invoke("设置 DVD 刻录速度");

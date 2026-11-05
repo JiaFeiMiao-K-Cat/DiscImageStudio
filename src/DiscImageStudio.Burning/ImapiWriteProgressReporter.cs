@@ -196,15 +196,15 @@ internal sealed class ImapiWriteProgressReporter
         Publish(new("diagnostic", GetDiagnosticSummary(), _completedBytes, _totalBytes));
     }
 
+    // Keep the last value and its source for each field; values can come from
+    // different events. Accepted LBAs describe WRITE acknowledgements, while
+    // written LBAs describe device reports. Neither replaces write completion.
     internal string GetDiagnosticSummary()
         => $"刻录状态缓存：Stage={_stage}；EventSource={_eventSource ?? "unknown"}；"
             + $"CurrentAction={Number(_currentAction)}（来源={_actionSource ?? "unknown"}）；"
             + $"StartLba={Number(_deviceStartLba)}（来源={_startSource ?? "unknown"}）；"
             + $"LastWrittenLba={Number(_lastWrittenLba)}"
-            + $"（来源={_writtenSource ?? "unknown"}）；LastAcceptedLba={Number(_lastAcceptedLba)}。"
-            + "这是最近可读取的事件快照，字段可能来自不同事件；诊断快照不会额外查询设备。"
-            + "LastWrittenLba 来自标明来源的设备报告，LastAcceptedLba 仅表示 WRITE 命令已接收，可能仍在缓存中；"
-            + "数据传输结束或完成事件不能替代写入调用成功返回。";
+            + $"（来源={_writtenSource ?? "unknown"}）；LastAcceptedLba={Number(_lastAcceptedLba)}。";
 
     private static string Number(int? value)
         => value?.ToString(CultureInfo.InvariantCulture) ?? "unknown";

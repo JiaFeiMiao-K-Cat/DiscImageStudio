@@ -432,13 +432,13 @@
     "cs": "[{0:HH:mm:ss}] Živý náhled selhal: {1}\n"
   },
   "[{0:HH:mm:ss}] 已取消流式刻录；当前盘片可能无法继续使用。\n": {
-    "zh-CN": "[{0:HH:mm:ss}] 已取消流式刻录；当前盘片可能无法继续使用。\n",
-    "en": "[{0:HH:mm:ss}] Streaming burn canceled; the disc may no longer be usable.\n",
-    "zh-TW": "[{0:HH:mm:ss}] 已取消串流燒錄；目前光碟片可能無法繼續使用。\n",
-    "ja": "[{0:HH:mm:ss}] ストリーミング書き込みをキャンセルしました。このディスクは使用できなくなる可能性があります。\n",
-    "tr": "[{0:HH:mm:ss}] Akışla yazma iptal edildi; mevcut disk bir daha kullanılamayabilir.\n",
-    "es": "[{0:HH:mm:ss}] Grabación en streaming cancelada; es posible que el disco ya no se pueda utilizar.\n",
-    "cs": "[{0:HH:mm:ss}] Přímé vypalování zrušeno; disk možná nepůjde dál použít.\n"
+    "zh-CN": "[{0:HH:mm:ss}] 已取消流式刻录。\n",
+    "en": "[{0:HH:mm:ss}] Streaming burn canceled.\n",
+    "zh-TW": "[{0:HH:mm:ss}] 已取消串流燒錄。\n",
+    "ja": "[{0:HH:mm:ss}] ストリーミング書き込みをキャンセルしました。\n",
+    "tr": "[{0:HH:mm:ss}] Akışla yazma iptal edildi.\n",
+    "es": "[{0:HH:mm:ss}] Grabación en streaming cancelada.\n",
+    "cs": "[{0:HH:mm:ss}] Přímé vypalování zrušeno.\n"
   },
   "[{0:HH:mm:ss}] 已按 {1} 的 sidecar 载入几何：": {
     "zh-CN": "[{0:HH:mm:ss}] 已按 {1} 的 sidecar 载入几何：",
