@@ -1,4 +1,3 @@
-using System.IO;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using DiscImageStudio.Services;
@@ -43,11 +42,15 @@ public partial class DesignLayerViewModel : ObservableObject
 
     partial void OnScaleChanged(double value) => OnPropertyChanged(nameof(ScalePercent));
 
-    /// <summary>Decodes the image and derives the base size. Returns false when the file
-    /// cannot be read; the layer then renders as a placeholder box.</summary>
-    public bool LoadImage(double contentOuterRadiusMm)
+    /// <summary>Applies the image and derives the base size. Returns false when the file cannot
+    /// be read; the layer then renders as a placeholder box. <paramref name="preloaded"/> carries
+    /// a decode that already happened on a background thread, so opening a project does not pay
+    /// for it on the UI thread.</summary>
+    public bool LoadImage(
+        double contentOuterRadiusMm,
+        (BitmapSource? Image, BitmapSource? Thumbnail)? preloaded = null)
     {
-        Image = DesignComposer.DecodeFrozenImage(ImagePath);
+        Image = preloaded?.Image ?? DesignComposer.DecodeFrozenImage(ImagePath);
         if (Image is null)
         {
             return false;
@@ -76,29 +79,9 @@ public partial class DesignLayerViewModel : ObservableObject
 
         if (Thumbnail is null)
         {
-            Thumbnail = DecodeThumbnail();
+            Thumbnail = preloaded?.Thumbnail ?? DesignComposer.DecodeThumbnail(ImagePath);
         }
 
         return true;
-    }
-
-    private BitmapSource? DecodeThumbnail()
-    {
-        try
-        {
-            using FileStream stream = new(ImagePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            BitmapImage bitmap = new();
-            bitmap.BeginInit();
-            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.DecodePixelWidth = 96;
-            bitmap.StreamSource = stream;
-            bitmap.EndInit();
-            bitmap.Freeze();
-            return bitmap;
-        }
-        catch (Exception)
-        {
-            return null;
-        }
     }
 }

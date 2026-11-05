@@ -118,14 +118,36 @@
                                                    Style="{StaticResource HintText}" HorizontalAlignment="Right" />
                                     </Grid>
                                 </Border>
-                                <ListBox Grid.Row="1" ItemsSource="{Binding Layers}"
+                                <ListBox x:Name="LayerList" Grid.Row="1" ItemsSource="{Binding Layers}"
                                          SelectedItem="{Binding SelectedLayer, Mode=TwoWay}"
                                          Background="Transparent" BorderThickness="0" Padding="0"
                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                         ScrollViewer.CanContentScroll="False"
+                                         VirtualizingPanel.IsVirtualizing="False"
+                                         PreviewMouseLeftButtonDown="OnLayerListPreviewMouseLeftButtonDown"
+                                         PreviewMouseRightButtonDown="OnLayerListPreviewMouseRightButtonDown"
+                                         PreviewMouseMove="OnLayerListPreviewMouseMove"
+                                         PreviewMouseLeftButtonUp="OnLayerListPreviewMouseLeftButtonUp"
+                                         LostMouseCapture="OnLayerListLostMouseCapture">
                                     <ListBox.ItemContainerStyle>
                                         <Style TargetType="ListBoxItem" BasedOn="{StaticResource RowListBoxItem}">
                                             <Setter Property="Padding" Value="10,6" />
+                                            <!-- The menu opens in its own popup and cannot reach the list's
+                                                 DataContext, so the row carries the command and the menu
+                                                 reads it back off its placement target. -->
+                                            <Setter Property="Tag"
+                                                    Value="{Binding DataContext.RemoveSelectedCommand,
+                                                            RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                                            <Setter Property="ContextMenu">
+                                                <Setter.Value>
+                                                    <ContextMenu>
+                                                        <MenuItem Header="{loc:Text Xaml.DeleteLayer}"
+                                                                  Command="{Binding PlacementTarget.Tag,
+                                                                            RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                    </ContextMenu>
+                                                </Setter.Value>
+                                            </Setter>
                                         </Style>
                                     </ListBox.ItemContainerStyle>
                                     <ListBox.ItemTemplate>
@@ -175,6 +197,13 @@
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>
+                                <!-- The dragged row rides here, in the same cell as the list and
+                                     above it. Staying inside the card's own visual tree is what
+                                     keeps the mouse capture alive: a popup would open its own
+                                     window and take the drag away from the list. -->
+                                <Canvas x:Name="DragOverlay" Grid.Row="1" Panel.ZIndex="2"
+                                        IsHitTestVisible="False" ClipToBounds="True"
+                                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
                                 <StackPanel Grid.Row="2" Margin="12,10,12,12">
                                     <!-- Selection actions: operate on the highlighted layer only. -->
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10"

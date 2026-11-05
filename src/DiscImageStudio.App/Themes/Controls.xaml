@@ -468,15 +468,18 @@
                                      Stroke="{DynamicResource DividerBrush}" StrokeThickness="1" />
                         </Grid>
 
-                        <!-- The sleeve, on top: its surface hides the disc's left half. -->
-                        <Border x:Name="PART_Card" Grid.Column="0"
-                                Background="{DynamicResource Surface1Brush}"
-                                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
-                                CornerRadius="{StaticResource RadiusCard}" Padding="16,0,46,0">
-                            <Border.RenderTransform>
+                        <!-- The sleeve, on top: its surface hides the disc's left half. The
+                             wrapper exists so the loading trail can ride the same shape and
+                             the same hover offset as the sleeve itself. -->
+                        <Grid x:Name="PART_CardHost" Grid.Column="0">
+                            <Grid.RenderTransform>
                                 <TranslateTransform x:Name="PART_CardTranslate" />
-                            </Border.RenderTransform>
-                            <StackPanel VerticalAlignment="Center">
+                            </Grid.RenderTransform>
+                            <Border x:Name="PART_Card"
+                                    Background="{DynamicResource Surface1Brush}"
+                                    BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                                    CornerRadius="{StaticResource RadiusCard}" Padding="16,0,46,0">
+                                <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="{TemplateBinding Title}" Style="{StaticResource RowText}"
                                            FontWeight="Medium" />
                                 <!-- Star column, not a horizontal StackPanel: a bounded width is
@@ -529,8 +532,15 @@
                                         </Rectangle>
                                     </Grid>
                                 </Grid>
-                            </StackPanel>
-                        </Border>
+                                </StackPanel>
+                            </Border>
+                            <!-- Same stroke as the save acknowledgement, but looping: while a
+                                 recent project opens, this tile is the only thing on screen —
+                                 the project header that normally carries the trail is not. -->
+                            <controls:ProjectSaveTrail x:Name="PART_LoadTrail"
+                                                       Stroke="{DynamicResource SuccessBrush}"
+                                                       CornerRadius="12" Visibility="Collapsed" />
+                        </Grid>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">

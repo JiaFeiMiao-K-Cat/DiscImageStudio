@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -32,6 +33,11 @@ public partial class DesignViewModel : ObservableObject
     private long _previewRenderedRevision = -1;
     private long _exportRenderedRevision = -1;
     private bool _suppressLayerEvents;
+
+    /// <summary>Layer images decoded off the UI thread by <see cref="PreloadLayerImagesAsync"/>,
+    /// consumed and dropped by the next <see cref="LoadLayers"/>.</summary>
+    private readonly Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)> _preloadedImages =
+        new(StringComparer.OrdinalIgnoreCase);
 
     public DesignViewModel(ShellViewModel shell, DiscParametersState state, Dispatcher dispatcher)
     {
@@ -292,6 +298,34 @@ public partial class DesignViewModel : ObservableObject
         }
     }
 
+    /// <summary>Moves a layer to an insertion slot expressed in the list's pre-drag order. The
+    /// slot counts the gaps between rows (0 before the first row, Count after the last), so a
+    /// drop below the source lands one position earlier once that row itself leaves the
+    /// sequence — the same convention the up/down buttons use.</summary>
+    public void MoveLayer(DesignLayerViewModel layer, int slotIndex)
+    {
+        if (_shell.IsBusy)
+        {
+            return;
+        }
+
+        int from = Layers.IndexOf(layer);
+        if (from < 0)
+        {
+            return;
+        }
+
+        int target = slotIndex > from ? slotIndex - 1 : slotIndex;
+        target = Math.Clamp(target, 0, Layers.Count - 1);
+        if (target == from)
+        {
+            return;
+        }
+
+        Layers.Move(from, target);
+        SelectedLayer = layer;
+    }
+
     // ---- Geometry snapshot ----
 
     /// <summary>Re-reads the radii from State and refreshes the canvas mapping. Called by the
@@ -337,6 +371,50 @@ public partial class DesignViewModel : ObservableObject
 
     // ---- Project load / capture ----
 
+    /// <summary>Decodes a project's layer images off the UI thread, ahead of
+    /// <see cref="LoadLayers"/>. Each large photo costs about a tenth of a second to decode
+    /// plus its thumbnail; done inline, a two-dozen-layer project froze the window for seconds
+    /// while opening. Distinct paths decode once, in parallel.</summary>
+    public async Task PreloadLayerImagesAsync(IReadOnlyList<ProjectLayer> layers)
+    {
+        _preloadedImages.Clear();
+        string[] paths = layers
+            .Select(layer => layer.ImagePath)
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (paths.Length == 0)
+        {
+            return;
+        }
+
+        Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)> decoded =
+            await Task.Run(() =>
+            {
+                Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)> map =
+                    new(StringComparer.OrdinalIgnoreCase);
+                object gate = new();
+                Parallel.ForEach(
+                    paths,
+                    new ParallelOptions { MaxDegreeOfParallelism = Math.Min(4, Environment.ProcessorCount) },
+                    path =>
+                    {
+                        (BitmapSource? Image, BitmapSource? Thumbnail) entry =
+                            (DesignComposer.DecodeFrozenImage(path), DesignComposer.DecodeThumbnail(path));
+                        lock (gate)
+                        {
+                            map[path] = entry;
+                        }
+                    });
+                return map;
+            });
+
+        foreach (KeyValuePair<string, (BitmapSource?, BitmapSource?)> entry in decoded)
+        {
+            _preloadedImages[entry.Key] = entry.Value;
+        }
+    }
+
     public void LoadLayers(IReadOnlyList<ProjectLayer> layers)
     {
         _suppressLayerEvents = true;
@@ -359,7 +437,14 @@ public partial class DesignViewModel : ObservableObject
                     RotationDeg = layer.RotationDeg,
                     Scale = layer.Scale,
                 };
-                if (viewModel.LoadImage(ContentOuterRadiusMm))
+                (BitmapSource? Image, BitmapSource? Thumbnail)? preloaded = null;
+                if (layer.ImagePath is { Length: > 0 } path
+                    && _preloadedImages.TryGetValue(path, out (BitmapSource? Image, BitmapSource? Thumbnail) cached))
+                {
+                    preloaded = cached;
+                }
+
+                if (viewModel.LoadImage(ContentOuterRadiusMm, preloaded))
                 {
                     SubscribeLayer(viewModel);
                     Layers.Add(viewModel);
@@ -369,6 +454,8 @@ public partial class DesignViewModel : ObservableObject
                     unreadable.Add(layer.ImagePath);
                 }
             }
+
+            _preloadedImages.Clear();
 
             if (unreadable.Count > 0)
             {

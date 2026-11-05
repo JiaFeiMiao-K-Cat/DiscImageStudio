@@ -566,9 +566,13 @@ public partial class ShellViewModel : ObservableObject
             return;
         }
 
+        // Decode the layer images before the document is applied. The decode is what used to
+        // freeze the window while opening: about a tenth of a second of UI-thread work per
+        // layer, so a two-dozen-layer project hung for seconds.
+        await Design.PreloadLayerImagesAsync(document.Layers);
+
         CloseCurrentProject();
         OpenDocument(path, document);
-        await Task.CompletedTask;
     }
 
     /// <summary>Snapshot/CLI entry: opens a project synchronously, throwing on load errors so

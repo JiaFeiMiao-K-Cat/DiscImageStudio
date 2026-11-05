@@ -150,6 +150,7 @@
                                                         FamilyLabel="{Binding FamilyLabel}"
                                                         LocationText="{Binding LocationText}"
                                                         ThumbnailSource="{Binding Thumbnail}"
+                                                        IsLoading="{Binding IsLoading}"
                                                         Command="{Binding DataContext.OpenRecentCommand,
                                                                   RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                         CommandParameter="{Binding}"

@@ -49,6 +49,7 @@ public sealed class ProjectSaveTrail : FrameworkElement
     private readonly List<double> _distances = [];
     private bool _rendering;
     private bool _playPending;
+    private bool _loop;
     private bool _hasSnapshot;
     private double _snapshotProgress;
     private double _totalLength;
@@ -92,16 +93,21 @@ public sealed class ProjectSaveTrail : FrameworkElement
         set => SetValue(TrailLengthProperty, value);
     }
 
-    /// <summary>Runs the lap once. A second call while running restarts it.</summary>
-    public void Play()
+    /// <summary>Runs the lap once; a second call while running restarts it. With
+    /// <paramref name="loop"/> the lap repeats seamlessly until <see cref="StopLoop"/>, which
+    /// turns the same stroke into a waiting signal ("still working") instead of an
+    /// acknowledgement ("done").</summary>
+    public void Play(bool loop = false)
     {
         if (RenderSize.Width <= 0 || RenderSize.Height <= 0)
         {
+            _loop = loop;
             _playPending = true;
             return;
         }
 
         _playPending = false;
+        _loop = loop;
         _hasSnapshot = false;
         EnsurePath();
         _clock.Restart();
@@ -114,8 +120,13 @@ public sealed class ProjectSaveTrail : FrameworkElement
         InvalidateVisual();
     }
 
+    /// <summary>Ends a looping lap. The current lap keeps running and fades out on its own
+    /// schedule, so ending a wait never blinks the stroke away mid-corner.</summary>
+    public void StopLoop() => _loop = false;
+
     public void Stop()
     {
+        _loop = false;
         if (_rendering)
         {
             CompositionTarget.Rendering -= OnRendering;
@@ -147,7 +158,7 @@ public sealed class ProjectSaveTrail : FrameworkElement
         _builtSize = default;
         if (_playPending)
         {
-            Play();
+            Play(_loop);
         }
     }
 
@@ -156,9 +167,17 @@ public sealed class ProjectSaveTrail : FrameworkElement
         double progress = _clock.Elapsed.TotalMilliseconds / LapDurationMs;
         if (progress >= 1)
         {
-            Stop();
-            InvalidateVisual();
-            return;
+            if (!_loop)
+            {
+                Stop();
+                InvalidateVisual();
+                return;
+            }
+
+            // The lap's last sampled point is its first, so restarting the clock continues the
+            // motion across the seam instead of blinking back to the start.
+            _clock.Restart();
+            progress = 0;
         }
 
         _snapshotProgress = progress;
@@ -190,7 +209,9 @@ public sealed class ProjectSaveTrail : FrameworkElement
 
     private void DrawTrail(DrawingContext drawingContext, double progress)
     {
-        double fade = Fade(progress);
+        // A looping lap is a wait, not a confirmation: it must not fade in and out at the seam
+        // where one lap hands over to the next.
+        double fade = _loop ? 1.0 : Fade(progress);
         if (fade <= 0)
         {
             return;
