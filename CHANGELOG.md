@@ -2,15 +2,17 @@
 
 ## Unreleased
 
+## [1.4.1] - 2026-11-05
+
 ### 中文
 
-- CD、DVD、蓝光刻录分别记录收尾、写入完成与校验状态，蓝光另区分刷新缓存、关闭轨道和封盘。日志保留最后设备状态、写入扇区来源及完整异常，便于区分写入失败与收尾失败；未执行的校验不会显示为成功。DVD 在写入前明确禁用刻后完整性校验并回读确认，设置失败时不开始写入。
+- CD、DVD、蓝光刻录分别记录收尾、写入完成与校验状态，蓝光另区分刷新缓存、关闭轨道和封盘。日志保留最后设备状态、写入扇区来源及完整异常，便于区分写入失败与收尾失败；未执行的校验不会显示为成功。DVD 在写入前明确禁用刻后完整性校验并回读确认，设置失败时不开始写入。本轮诊断改动尚未经过实盘验证，不能据此认定 #90 的读回问题已解决。
 - 独立辅助标定与工程页面共用底部任务栏；流式刻录的阶段、写入量、速度、进度和日志统一在底栏查看，并可直接取消。任务运行中返回首页仍显示底栏，刻录完成后不再显示上次导出文件的结果按钮。
 - 标定照片在长边 8192 px、总像素 32 × 1024 × 1024 的限制内保留原始尺寸，超限时按比例缩小；矫正图按盘面像素密度自适应，最高 5792 × 5792。记录内嵌 PNG 保留工作分辨率，保存重开不再缩图；高位深照片统一为每通道 8 位 BGRA。高分辨率记录占用更多空间，旧版程序可能无法读取；旧记录丢失的细节需重新导入原照片。
 
 ### English
 
-- CD, DVD, and Blu-ray recording now log finalization, write completion, and verification separately; Blu-ray also distinguishes cache flushing, track closing, and disc finalization. Logs retain the last device state, the source of sector progress, and complete exception details to distinguish writing failures from finalization failures. Verification that was not performed is never reported as successful. DVD recording explicitly disables post-burn integrity verification and confirms the setting before writing; a configuration failure prevents writing from starting.
+- CD, DVD, and Blu-ray recording now log finalization, write completion, and verification separately; Blu-ray also distinguishes cache flushing, track closing, and disc finalization. Logs retain the last device state, the source of sector progress, and complete exception details to distinguish writing failures from finalization failures. Verification that was not performed is never reported as successful. DVD recording explicitly disables post-burn integrity verification and confirms the setting before writing; a configuration failure prevents writing from starting. These diagnostic changes have not yet been validated with physical burns and do not establish that the readback problem in #90 is resolved.
 - Standalone calibration and project pages now share the bottom task dock. Streaming burn stages, written bytes, speed, progress, logs, and cancellation are available there, including while visiting Home during a task. Completed burns no longer show result buttons for an earlier exported file.
 - Calibration photos retain their original dimensions within limits of 8192 px on the long edge and 32 × 1024 × 1024 pixels, scaling proportionally when either limit is exceeded. Rectification adapts to the disc's pixel density, up to 5792 × 5792. Embedded PNGs preserve the working resolution across save and reopen; high-bit-depth photos use 8-bit-per-channel BGRA. Larger records require more storage and may not open in older versions; recovering detail lost in existing records requires importing the original photo again.
 
