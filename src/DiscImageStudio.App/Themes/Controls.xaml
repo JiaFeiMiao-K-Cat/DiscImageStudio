@@ -534,17 +534,23 @@
                                 </Grid>
                                 </StackPanel>
                             </Border>
-                            <!-- Same stroke as the save acknowledgement, but looping: while a
-                                 recent project opens, this tile is the only thing on screen —
-                                 the project header that normally carries the trail is not. -->
+                            <!-- Same shape as the save acknowledgement, but looping and neutral
+                                 gray: an open in progress is a wait, not a success, and this
+                                 tile is the only thing on screen — the project header that
+                                 normally carries the trail is not. -->
                             <controls:ProjectSaveTrail x:Name="PART_LoadTrail"
-                                                       Stroke="{DynamicResource SuccessBrush}"
+                                                       Stroke="{DynamicResource TextMutedBrush}"
                                                        CornerRadius="12" Visibility="Collapsed" />
                         </Grid>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4" />
+                        </Trigger>
+                        <!-- The shared open command is disabled while it runs, which would dim
+                             the very wait stroke that tells the user the click was taken. -->
+                        <Trigger Property="IsLoading" Value="True">
+                            <Setter Property="Opacity" Value="1" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

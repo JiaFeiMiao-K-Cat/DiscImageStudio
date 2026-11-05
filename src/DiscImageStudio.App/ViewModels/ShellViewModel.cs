@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -28,6 +29,7 @@ public partial class ShellViewModel : ObservableObject
     private bool _isWindowLoaded;
     private string? _lastOutputPath;
     private bool _isApplyingProject;
+    private int _openProjectGeneration;
     private Workspace _calibrationReturnPage = Workspace.Home;
     private bool _isWritingComposite;
     private BurnProgressDisplay? _burnProgressDisplay;
@@ -550,11 +552,6 @@ public partial class ShellViewModel : ObservableObject
     /// funnels through here, so the unsaved-changes check has exactly one home.</summary>
     internal async Task OpenProjectFromAsync(string path)
     {
-        if (!await EnsureNoUnsavedChangesAsync(L.T("打开其他工程")))
-        {
-            return;
-        }
-
         ProjectDocument document;
         try
         {
@@ -566,13 +563,31 @@ public partial class ShellViewModel : ObservableObject
             return;
         }
 
-        // Decode the layer images before the document is applied. The decode is what used to
-        // freeze the window while opening: about a tenth of a second of UI-thread work per
-        // layer, so a two-dozen-layer project hung for seconds.
-        await Design.PreloadLayerImagesAsync(document.Layers);
+        // The window stays interactive while the images decode (that is the point of moving
+        // the decode off the UI thread), so a second open can start, and edits can land on
+        // the project this call is about to replace. The generation token makes the newest
+        // open the only one that applies; the check below runs after the decode so those
+        // edits are still seen by the unsaved-changes prompt.
+        int generation = ++_openProjectGeneration;
+        Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)> preloadedImages =
+            await Design.PreloadLayerImagesAsync(document.Layers);
+        if (generation != _openProjectGeneration)
+        {
+            return;
+        }
+
+        if (!await EnsureNoUnsavedChangesAsync(L.T("打开其他工程")))
+        {
+            return;
+        }
+
+        if (generation != _openProjectGeneration)
+        {
+            return;
+        }
 
         CloseCurrentProject();
-        OpenDocument(path, document);
+        OpenDocument(path, document, preloadedImages);
     }
 
     /// <summary>Snapshot/CLI entry: opens a project synchronously, throwing on load errors so
@@ -584,7 +599,10 @@ public partial class ShellViewModel : ObservableObject
         OpenDocument(path, document);
     }
 
-    private void OpenDocument(string path, ProjectDocument document)
+    private void OpenDocument(
+        string path,
+        ProjectDocument document,
+        IReadOnlyDictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)>? preloadedLayers = null)
     {
         _isApplyingProject = true;
         try
@@ -596,7 +614,7 @@ public partial class ShellViewModel : ObservableObject
             Design.SetDiscFamily(document.Family);
             LivePreview.SetDiscType(document.Family, clearResult: true);
             ProjectSession.ApplyToState(document, State);
-            Design.LoadLayers(document.Layers);
+            Design.LoadLayers(document.Layers, preloadedLayers);
         }
         finally
         {
@@ -767,6 +785,9 @@ public partial class ShellViewModel : ObservableObject
 
     private void CloseCurrentProject()
     {
+        // Any in-flight open belongs to the project being replaced; it must not apply on top
+        // of whatever replaces this one (for example a new project created while it decoded).
+        _openProjectGeneration++;
         IsProjectOpen = false;
         CurrentProject = null;
         ProjectFilePath = null;

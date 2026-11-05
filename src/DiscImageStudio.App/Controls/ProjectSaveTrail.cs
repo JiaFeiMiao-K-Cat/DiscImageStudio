@@ -174,8 +174,8 @@ public sealed class ProjectSaveTrail : FrameworkElement
                 return;
             }
 
-            // The lap's last sampled point is its first, so restarting the clock continues the
-            // motion across the seam instead of blinking back to the start.
+            // Restarting the clock continues the head across the seam; the tail is carried
+            // over the wrap when drawing, so the stroke does not collapse here.
             _clock.Restart();
             progress = 0;
         }
@@ -207,6 +207,23 @@ public sealed class ProjectSaveTrail : FrameworkElement
         DrawTrail(drawingContext, _snapshotProgress);
     }
 
+    /// <summary>Visible pieces of the lap for one frame. A looping lap wraps the tail across
+    /// the seam: the segment behind the head belongs to the end of the path while the head
+    /// has not yet travelled its own length. Clamping the tail to zero there would drop that
+    /// piece and make the stroke collapse and regrow once per lap.</summary>
+    internal static (double Tail, double Head)[] TrailSegments(
+        double progress, double totalLength, double baseTrailLength, bool loop)
+    {
+        double head = EaseProgress(progress) * totalLength;
+        double tail = head - TrailLengthAt(progress, baseTrailLength);
+        if (loop && tail < 0 && totalLength > 0)
+        {
+            return [(tail + totalLength, totalLength), (0, head)];
+        }
+
+        return [(Math.Max(0, tail), head)];
+    }
+
     private void DrawTrail(DrawingContext drawingContext, double progress)
     {
         // A looping lap is a wait, not a confirmation: it must not fade in and out at the seam
@@ -217,16 +234,18 @@ public sealed class ProjectSaveTrail : FrameworkElement
             return;
         }
 
-        double head = EaseProgress(progress) * _totalLength;
-        double tail = Math.Max(0, head - TrailLengthAt(progress, TrailLength));
-        if (head - tail < 0.5)
-        {
-            return;
-        }
-
         EnsurePen();
         drawingContext.PushOpacity(fade);
-        drawingContext.DrawGeometry(null, _pen!, BuildTrailGeometry(tail, head));
+        foreach ((double tail, double head) in TrailSegments(progress, _totalLength, TrailLength, _loop))
+        {
+            if (head - tail < 0.5)
+            {
+                continue;
+            }
+
+            drawingContext.DrawGeometry(null, _pen!, BuildTrailGeometry(tail, head));
+        }
+
         drawingContext.Pop();
     }
 

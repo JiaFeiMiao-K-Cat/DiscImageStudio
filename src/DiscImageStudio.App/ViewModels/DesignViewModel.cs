@@ -34,11 +34,6 @@ public partial class DesignViewModel : ObservableObject
     private long _exportRenderedRevision = -1;
     private bool _suppressLayerEvents;
 
-    /// <summary>Layer images decoded off the UI thread by <see cref="PreloadLayerImagesAsync"/>,
-    /// consumed and dropped by the next <see cref="LoadLayers"/>.</summary>
-    private readonly Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)> _preloadedImages =
-        new(StringComparer.OrdinalIgnoreCase);
-
     public DesignViewModel(ShellViewModel shell, DiscParametersState state, Dispatcher dispatcher)
     {
         _shell = shell;
@@ -374,10 +369,12 @@ public partial class DesignViewModel : ObservableObject
     /// <summary>Decodes a project's layer images off the UI thread, ahead of
     /// <see cref="LoadLayers"/>. Each large photo costs about a tenth of a second to decode
     /// plus its thumbnail; done inline, a two-dozen-layer project froze the window for seconds
-    /// while opening. Distinct paths decode once, in parallel.</summary>
-    public async Task PreloadLayerImagesAsync(IReadOnlyList<ProjectLayer> layers)
+    /// while opening. Distinct paths decode once, in parallel. The result belongs to the
+    /// caller: keeping it off this view model means a superseded open cannot leak its images
+    /// into the next project.</summary>
+    public async Task<Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)>> PreloadLayerImagesAsync(
+        IReadOnlyList<ProjectLayer> layers)
     {
-        _preloadedImages.Clear();
         string[] paths = layers
             .Select(layer => layer.ImagePath)
             .Where(path => !string.IsNullOrWhiteSpace(path))
@@ -385,37 +382,33 @@ public partial class DesignViewModel : ObservableObject
             .ToArray();
         if (paths.Length == 0)
         {
-            return;
+            return [];
         }
 
-        Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)> decoded =
-            await Task.Run(() =>
-            {
-                Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)> map =
-                    new(StringComparer.OrdinalIgnoreCase);
-                object gate = new();
-                Parallel.ForEach(
-                    paths,
-                    new ParallelOptions { MaxDegreeOfParallelism = Math.Min(4, Environment.ProcessorCount) },
-                    path =>
-                    {
-                        (BitmapSource? Image, BitmapSource? Thumbnail) entry =
-                            (DesignComposer.DecodeFrozenImage(path), DesignComposer.DecodeThumbnail(path));
-                        lock (gate)
-                        {
-                            map[path] = entry;
-                        }
-                    });
-                return map;
-            });
-
-        foreach (KeyValuePair<string, (BitmapSource?, BitmapSource?)> entry in decoded)
+        return await Task.Run(() =>
         {
-            _preloadedImages[entry.Key] = entry.Value;
-        }
+            Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)> map =
+                new(StringComparer.OrdinalIgnoreCase);
+            object gate = new();
+            Parallel.ForEach(
+                paths,
+                new ParallelOptions { MaxDegreeOfParallelism = Math.Min(4, Environment.ProcessorCount) },
+                path =>
+                {
+                    (BitmapSource? Image, BitmapSource? Thumbnail) entry =
+                        (DesignComposer.DecodeFrozenImage(path), DesignComposer.DecodeThumbnail(path));
+                    lock (gate)
+                    {
+                        map[path] = entry;
+                    }
+                });
+            return map;
+        });
     }
 
-    public void LoadLayers(IReadOnlyList<ProjectLayer> layers)
+    public void LoadLayers(
+        IReadOnlyList<ProjectLayer> layers,
+        IReadOnlyDictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)>? preloadedImages = null)
     {
         _suppressLayerEvents = true;
         try
@@ -439,7 +432,8 @@ public partial class DesignViewModel : ObservableObject
                 };
                 (BitmapSource? Image, BitmapSource? Thumbnail)? preloaded = null;
                 if (layer.ImagePath is { Length: > 0 } path
-                    && _preloadedImages.TryGetValue(path, out (BitmapSource? Image, BitmapSource? Thumbnail) cached))
+                    && preloadedImages is not null
+                    && preloadedImages.TryGetValue(path, out (BitmapSource? Image, BitmapSource? Thumbnail) cached))
                 {
                     preloaded = cached;
                 }
@@ -454,8 +448,6 @@ public partial class DesignViewModel : ObservableObject
                     unreadable.Add(layer.ImagePath);
                 }
             }
-
-            _preloadedImages.Clear();
 
             if (unreadable.Count > 0)
             {

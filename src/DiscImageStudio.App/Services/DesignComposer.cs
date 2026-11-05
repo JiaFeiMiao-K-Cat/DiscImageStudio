@@ -122,12 +122,10 @@ internal static class DesignComposer
             bitmap.Freeze();
             return bitmap;
         }
-        catch (Exception exception) when (exception is IOException
-                                              or UnauthorizedAccessException
-                                              or NotSupportedException
-                                              or OutOfMemoryException
-                                              or ArgumentException)
+        catch (Exception)
         {
+            // Thumbnails are cosmetic; this replaces the layer view model's old catch-all, so
+            // a damaged file or an exotic codec must not fail the whole project open.
             return null;
         }
     }
