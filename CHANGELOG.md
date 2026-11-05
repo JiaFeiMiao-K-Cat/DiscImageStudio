@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### 中文
+
+- 标定照片在长边 8192 px、总像素 32 × 1024 × 1024 的限制内保留原始尺寸，超限时按比例缩小；矫正图按盘面像素密度自适应，最高 5792 × 5792。记录内嵌 PNG 保留工作分辨率，保存重开不再缩图；高位深照片统一为每通道 8 位 BGRA。高分辨率记录占用更多空间，旧版程序可能无法读取；旧记录丢失的细节需重新导入原照片。
+
+### English
+
+- Calibration photos retain their original dimensions within limits of 8192 px on the long edge and 32 × 1024 × 1024 pixels, scaling proportionally when either limit is exceeded. Rectification adapts to the disc's pixel density, up to 5792 × 5792. Embedded PNGs preserve the working resolution across save and reopen; high-bit-depth photos use 8-bit-per-channel BGRA. Larger records require more storage and may not open in older versions; recovering detail lost in existing records requires importing the original photo again.
+
 ## [1.4.0] - 2026-11-05
 
 ### 中文
