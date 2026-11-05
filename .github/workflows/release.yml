@@ -216,11 +216,19 @@ jobs:
         working-directory: release
         shell: bash
         run: sha256sum --strict --check SHA256SUMS.txt
+      - name: Cache sequoia sq
+        uses: actions/cache@v4
+        id: cache_sq
+        with:
+          path: |
+            ./sequoia/bin
+          # Change random value to rebuild
+          key: cargo-install-sequoia-sq-90eac161c1fbdcb66ae35b3e42af6443fa4bddbd9220a03f65718d5c301b23f3
       - name: Build Sequoia SQ with OpenSSL
         shell: bash
         env:
           SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
-        if: ${{ env.SIGN_PRIVATE_KEY != '' }}
+        if: ${{ env.SIGN_PRIVATE_KEY != '' && steps.cache_sq.outputs.cache-hit !='true'}}
         run: |
           sudo apt-get update
           ## No PQC support but faster
@@ -230,9 +238,9 @@ jobs:
             --locked \
             --no-default-features \
             --features crypto-openssl \
-            --root "$RUNNER_TEMP/sequoia"
-
-          echo "$RUNNER_TEMP/sequoia/bin" >> "$GITHUB_PATH"
+            --root "./sequoia"
+      - name: Append sequoia to path
+        run: echo "./sequoia/bin" >> "$GITHUB_PATH"
       - name: Sign release artifacts
         shell: bash
         env:
