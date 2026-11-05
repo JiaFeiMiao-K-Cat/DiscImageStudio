@@ -367,9 +367,8 @@ public static class FastDispersionImageWriter
         CancellationToken cancellationToken,
         ModulationBoundary? initialBoundary = null,
         bool replayPhysicalBoundary = false)
-        CancellationToken cancellationToken)
         => WriteBlockStream((index, buffer) => GenerateBlock(index, sampler, options, buffer, cancellationToken),
-            output, options, progress, cancellationToken);
+            output, options, progress, cancellationToken, initialBoundary, replayPhysicalBoundary);
 
     /// <summary>Writes an opaque DVD texture selected once per logical sector, before scrambling.</summary>
     public static FastDvdStreamSummary WriteSectorPatternStream(
@@ -399,7 +398,9 @@ public static class FastDispersionImageWriter
         Stream output,
         MultiBlockSolveOptions options,
         Action<FastDvdStreamProgress>? progress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ModulationBoundary? initialBoundary = null,
+        bool replayPhysicalBoundary = false)
     {
         if (replayPhysicalBoundary && initialBoundary is null)
             throw new ArgumentException(
