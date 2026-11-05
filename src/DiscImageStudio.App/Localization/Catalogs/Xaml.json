@@ -1682,6 +1682,42 @@
     "es": "Mostrar / Ocultar",
     "cs": "Zobrazit / skrýt"
   },
+  "Xaml.ShowDataRegion": {
+    "zh-CN": "显示数据区",
+    "en": "Show data area",
+    "zh-TW": "顯示資料區",
+    "ja": "データ領域を表示",
+    "tr": "Veri alanını göster",
+    "es": "Mostrar zona de datos",
+    "cs": "Zobrazit oblast dat"
+  },
+  "Xaml.ShowDataRegionHint": {
+    "zh-CN": "在画布上标出随盘文件占用的区域，便于把图片放在数据之外。CD 与影调预览一致，DVD/BD 按文件夹大小估算。",
+    "en": "Marks the area the disc files occupy on the canvas, so pictures can be placed away from the data. Exact for CD (same as the tone preview); estimated from the folder size for DVD/BD.",
+    "zh-TW": "在畫布上標出隨碟檔案佔用的區域，便於把圖片放在資料之外。CD 與影調預覽一致，DVD/BD 依資料夾大小估算。",
+    "ja": "キャンバス上でディスクファイルが占める領域を表示し、写真をデータの外に配置できます。CD はトーンプレビューと同一、DVD/BD はフォルダサイズからの推定です。",
+    "tr": "Kanvasda disk dosyalarının kapladığı alanı işaretler, böylece fotoğrafları veriden uzak yerleştirebilirsiniz. CD için kesin (gölgeleme önizlemesiyle aynı), DVD/BD için klasör boyutuna göre tahmindir.",
+    "es": "Marca en el lienzo el área que ocupan los archivos del disco para colocar las imágenes fuera de los datos. Exacta para CD (igual que la vista previa de tono); estimada por el tamaño de la carpeta en DVD/BD.",
+    "cs": "Označí na plátně oblast zabranou soubory disku, aby se obrázky daly umístit mimo data. Pro CD přesná (stejná jako náhled tónů); pro DVD/BD odhadovaná podle velikosti složky."
+  },
+  "Xaml.ShowDataRegionEstimated": {
+    "zh-CN": "显示数据区（估算）",
+    "en": "Show data area (estimated)",
+    "zh-TW": "顯示資料區（估算）",
+    "ja": "データ領域を表示（推定）",
+    "tr": "Veri alanını göster (tahmini)",
+    "es": "Mostrar zona de datos (estimada)",
+    "cs": "Zobrazit oblast dat (odhad)"
+  },
+  "Xaml.ShowDataRegionHintEstimated": {
+    "zh-CN": "按文件夹大小估算的随盘文件占用区域（DVD/蓝光），便于把图片放在数据之外。",
+    "en": "Estimated area the disc files occupy, from the folder size (DVD/Blu-ray), so pictures can be placed away from the data.",
+    "zh-TW": "依資料夾大小估算的隨碟檔案佔用區域（DVD/藍光），便於把圖片放在資料之外。",
+    "ja": "フォルダサイズから推定したディスクファイルの占める領域（DVD/Blu-ray）。写真をデータの外に配置できます。",
+    "tr": "Klasör boyutuna göre tahmin edilen disk dosyalarının kapladığı alan (DVD/Blu-ray); fotoğrafları veriden uzak yerleştirin.",
+    "es": "Zona que ocupan los archivos del disco estimada por el tamaño de la carpeta (DVD/Blu-ray) para colocar las imágenes fuera de los datos.",
+    "cs": "Odhadovaná oblast zabraná soubory disku podle velikosti složky (DVD/Blu-ray), aby se obrázky daly umístit mimo data."
+  },
   "Xaml.MoveLayerUp": {
     "zh-CN": "上移图层",
     "en": "Move layer up",

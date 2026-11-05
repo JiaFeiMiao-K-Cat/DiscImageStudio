@@ -303,6 +303,11 @@ public class DiscDesignCanvas : FrameworkElement
             DrawLayer(drawingContext, _design.Layers[index]);
         }
 
+        if (_design.ShowDataRegion && _design.DataRegion is { } dataRegion)
+        {
+            DrawDataRegion(drawingContext, center, dataRegion);
+        }
+
         DrawDimMask(drawingContext, center, outerRadius, innerRadius);
 
         if (_design.SelectedLayer is { } selected)
@@ -367,6 +372,26 @@ public class DiscDesignCanvas : FrameworkElement
                 .ToArray();
             context.DrawGeometry(null, placeholderPen, PolygonGeometry(corners));
         }
+    }
+
+    /// <summary>The data-occupied zone as a yellow ring, the canvas twin of the tone
+    /// mini-preview's tint (#FACC15): painted over the layers on purpose, so a picture that
+    /// slides onto the files is visibly covered by the guide. Faint fill, stroked edges.</summary>
+    private void DrawDataRegion(DrawingContext context, Point center, DesignViewModel.DataRegionMm region)
+    {
+        double outer = ScreenLength(region.OuterRadiusMm);
+        double inner = ScreenLength(region.InnerRadiusMm);
+        if (outer <= 0 || inner < 0)
+        {
+            return;
+        }
+
+        PathGeometry ring = new() { FillRule = FillRule.EvenOdd };
+        ring.Figures.Add(DiscRenderCore.CircleFigure(center, outer));
+        ring.Figures.Add(DiscRenderCore.CircleFigure(center, inner));
+        // Monochrome, borderless: same yellow as the tone preview file regions, kept light
+        // so the pictures underneath stay readable.
+        context.DrawGeometry(new SolidColorBrush(Color.FromArgb(0x1F, 0xFA, 0xCC, 0x15)), null, ring);
     }
 
     /// <summary>Everything outside the content ring is dimmed with one EvenOdd path: the

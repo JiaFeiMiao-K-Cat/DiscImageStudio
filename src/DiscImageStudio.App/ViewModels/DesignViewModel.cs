@@ -8,8 +8,10 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DiscImageStudio.BluRay;
 using DiscImageStudio.Cd;
 using DiscImageStudio.Core;
+using DiscImageStudio.Dvd;
 using DiscImageStudio.Imaging;
 using DiscImageStudio.Services;
 
@@ -28,6 +30,7 @@ public partial class DesignViewModel : ObservableObject
 
     private readonly ShellViewModel _shell;
     private readonly DiscParametersState _state;
+    private readonly Dispatcher _dispatcher;
     private readonly DispatcherTimer _compositeTimer;
     private long _compositeRevision;
     private long _previewRenderedRevision = -1;
@@ -38,7 +41,10 @@ public partial class DesignViewModel : ObservableObject
     {
         _shell = shell;
         _state = state;
+        _dispatcher = dispatcher;
         _compositeTimer = new DispatcherTimer { Interval = CompositeDebounce };
+        _shell.PropertyChanged += Shell_PropertyChanged;
+        _state.PropertyChanged += State_PropertyChanged;
         _compositeTimer.Tick += (_, _) =>
         {
             _compositeTimer.Stop();
@@ -57,6 +63,8 @@ public partial class DesignViewModel : ObservableObject
         });
         Layers.CollectionChanged += Layers_CollectionChanged;
         Tone = new ToneViewModel(shell, state, this);
+        L.LanguageChanged += (_, _) => RefreshDataRegionLabel();
+        RefreshDataRegionLabel();
     }
 
     /// <summary>The right rail's tone module: its preview projects the same composite this
@@ -69,6 +77,28 @@ public partial class DesignViewModel : ObservableObject
 
     /// <summary>Disc files are shared with export, preview and burn; they are not image layers.</summary>
     public DiscParametersState State => _state;
+
+    /// <summary>The disc area the data files occupy, as mm radii, drawn on the canvas as the
+    /// yellow guide ring (the designer's twin of the tone mini-preview's data tint): CD uses
+    /// the exact layout plan, DVD/BD estimate it from the folder size in 2048-byte sectors.</summary>
+    public sealed record DataRegionMm(double InnerRadiusMm, double OuterRadiusMm);
+
+    /// <summary>Draws the data-occupied zone on the canvas so picture layers can be placed
+    /// away from the files.</summary>
+    [ObservableProperty]
+    private bool _showDataRegion;
+
+    /// <summary>Null while unchecked, computing, or when the family has no data folder.</summary>
+    [ObservableProperty]
+    private DataRegionMm? _dataRegion;
+
+    /// <summary>Checkbox caption: the "(estimated)" variant on DVD/Blu-ray, where the tone
+    /// preview has no exact yellow region to mirror.</summary>
+    [ObservableProperty]
+    private string _showDataRegionLabel = string.Empty;
+
+    [ObservableProperty]
+    private string _showDataRegionHint = string.Empty;
 
     public RelayCommand BrowseDataCommand => _shell.Export.BrowseDataCommand;
 
@@ -352,7 +382,220 @@ public partial class DesignViewModel : ObservableObject
         OnPropertyChanged(nameof(IsBluRay));
         OnPropertyChanged(nameof(FamilyLabel));
         OnPropertyChanged(nameof(CanvasOuterRadiusMm));
+        RefreshDataRegionLabel();
         RefreshGeometry();
+        RecomputeDataRegion();
+    }
+
+    /// <summary>CD shows the exact plan (as in the tone preview); DVD/Blu-ray estimate the
+    /// zone from the folder size, so the caption says so.</summary>
+    private void RefreshDataRegionLabel()
+    {
+        bool exact = Family == OpticalDiscFamily.CompactDisc;
+        ShowDataRegionLabel = L.T(exact ? "Xaml.ShowDataRegion" : "Xaml.ShowDataRegionEstimated");
+        ShowDataRegionHint = L.T(exact ? "Xaml.ShowDataRegionHint" : "Xaml.ShowDataRegionHintEstimated");
+    }
+
+    // ---- Data region guide ----
+
+    private long _dataRegionRevision;
+
+    partial void OnShowDataRegionChanged(bool value) => RecomputeDataRegion();
+
+    private void Shell_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ShellViewModel.IsProjectOpen)
+            or nameof(ShellViewModel.CurrentProject))
+        {
+            RecomputeDataRegion();
+        }
+    }
+
+    private void State_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is
+            nameof(DiscParametersState.CdDataDirectory) or nameof(DiscParametersState.CdVolumeLabel)
+            or nameof(DiscParametersState.CdFilesAtOuterRing)
+            or nameof(DiscParametersState.CdInnerRadius) or nameof(DiscParametersState.CdOuterRadius)
+            or nameof(DiscParametersState.CdSectors)
+            or nameof(DiscParametersState.CdPitchLinear) or nameof(DiscParametersState.CdPitchQuadratic)
+            or nameof(DiscParametersState.CdPitchCubic)
+            or nameof(DiscParametersState.DvdDataDirectory) or nameof(DiscParametersState.DvdFilesAtOuterRing)
+            or nameof(DiscParametersState.DvdTotalSectors)
+            or nameof(DiscParametersState.DvdInnerRadius) or nameof(DiscParametersState.DvdOuterRadius)
+            or nameof(DiscParametersState.DvdPitchLinear) or nameof(DiscParametersState.DvdPitchQuadratic)
+            or nameof(DiscParametersState.DvdPitchCubic)
+            or nameof(DiscParametersState.BdDataDirectory) or nameof(DiscParametersState.BdFilesAtOuterRing)
+            or nameof(DiscParametersState.BdTotalSectors)
+            or nameof(DiscParametersState.BdInnerRadius) or nameof(DiscParametersState.BdOuterRadius)
+            or nameof(DiscParametersState.BdPitchLinear) or nameof(DiscParametersState.BdPitchQuadratic)
+            or nameof(DiscParametersState.BdPitchCubic))
+        {
+            RecomputeDataRegion();
+        }
+    }
+
+    /// <summary>Recomputes the guide ring off the UI thread (the CD plan scans the folder)
+    /// and publishes it back on the dispatcher; superseded runs are dropped by revision.</summary>
+    private void RecomputeDataRegion()
+    {
+        if (!ShowDataRegion)
+        {
+            _dataRegionRevision++;
+            DataRegion = null;
+            CanvasChanged?.Invoke();
+            return;
+        }
+
+        long revision = ++_dataRegionRevision;
+        _ = Task.Run(async () =>
+        {
+            DataRegionMm? region = null;
+            try
+            {
+                region = await StaWorker.RunAsync(() => ComputeDataRegion());
+            }
+            catch
+            {
+                // A missing folder or invalid geometry simply hides the guide.
+            }
+
+            if (revision != _dataRegionRevision)
+            {
+                return;
+            }
+
+            _dispatcher.Invoke(() =>
+            {
+                if (revision != _dataRegionRevision)
+                {
+                    return;
+                }
+
+                DataRegion = region;
+                CanvasChanged?.Invoke();
+            });
+        });
+    }
+
+    private DataRegionMm? ComputeDataRegion() => Family switch
+    {
+        OpticalDiscFamily.Dvd => ComputeDvdDataRegion(),
+        OpticalDiscFamily.BluRay => ComputeBluRayDataRegion(),
+        _ => ComputeCdDataRegion(),
+    };
+
+    /// <summary>Exact, same plan the tone mini-preview tints with. The plan's LBA span is
+    /// the drawing (picture) range: the files occupy everything outside it, inner or outer
+    /// depending on the ring choice — the tint is that complement, like the preview.</summary>
+    private DataRegionMm? ComputeCdDataRegion()
+    {
+        string directory = _state.CdDataDirectory.Trim();
+        if (directory.Length == 0)
+        {
+            return null;
+        }
+
+        CdDiscParameters parameters = new(
+            ParameterParser.ParsePositiveDouble(_state.CdInnerRadius, L.T("内半径")),
+            ParameterParser.ParsePositiveDouble(_state.CdOuterRadius, L.T("内半径")),
+            ParameterParser.ParsePositiveLong(_state.CdSectors, L.T("扇区数")),
+            PitchLinear: ParameterParser.ParseDouble(_state.CdPitchLinear, L.T("相对一次项")),
+            PitchQuadratic: ParameterParser.ParseDouble(_state.CdPitchQuadratic, L.T("相对二次项")),
+            PitchCubic: ParameterParser.ParseDouble(_state.CdPitchCubic, L.T("相对三次项")));
+        parameters.Validate();
+        CdDataLayoutPlan plan = CdDataImageGenerator.PrepareLayout(
+            directory, parameters, _state.CdVolumeLabel.Trim(), _state.CdFilesAtOuterRing);
+        double drawingInner = parameters.RadiusFromByte((long)plan.DrawingStartLba * CdDiscParameters.BytesPerSector);
+        double drawingOuter = parameters.RadiusFromByte((long)plan.DrawingEndLbaExclusive * CdDiscParameters.BytesPerSector);
+        return _state.CdFilesAtOuterRing
+            ? new DataRegionMm(drawingOuter, parameters.OuterRadiusMm)
+            : new DataRegionMm(parameters.InnerRadiusMm, drawingInner);
+    }
+
+    /// <summary>Estimated: the folder's bytes as 2048-byte sectors on the DVD geometry; the
+    /// ISO filesystem overhead is small compared to a real data load, and the ring is a
+    /// placement guide, not a capacity claim.</summary>
+    private DataRegionMm? ComputeDvdDataRegion()
+    {
+        string directory = _state.DvdDataDirectory.Trim();
+        if (directory.Length == 0)
+        {
+            return null;
+        }
+
+        long totalSectors = ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, L.T("总扇区数"));
+        if (totalSectors > uint.MaxValue)
+        {
+            return null;
+        }
+
+        double inner = ParameterParser.ParsePositiveDouble(_state.DvdInnerRadius, L.T("内半径"));
+        double outer = ParameterParser.ParsePositiveDouble(_state.DvdOuterRadius, L.T("内半径"));
+        double pitchLinear = ParameterParser.ParseDouble(_state.DvdPitchLinear, L.T("相对一次项"));
+        double pitchQuadratic = ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("相对二次项"));
+        double pitchCubic = ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("相对三次项"));
+        double length = (double)totalSectors * 38688.0 * DvdStreamingOptions.StandardChannelBitLengthNm * 1e-6;
+        DvdTrackGeometry geometry = DvdTrackGeometry.Create(
+            inner, outer, length, pitchLinear, pitchQuadratic, pitchCubic);
+        long dataSectors = Math.Min(totalSectors, FolderSectorCount(directory));
+        // The span grows from the ring the files sit on: inward for inner files,
+        // outward for outer files (so a little data is a thin ring at that edge).
+        double spanStart = _state.DvdFilesAtOuterRing
+            ? geometry.RadiusAtArcLength(length * (totalSectors - dataSectors) / totalSectors)
+            : geometry.RadiusAtArcLength(length * (double)dataSectors / totalSectors);
+        return _state.DvdFilesAtOuterRing
+            ? new DataRegionMm(spanStart, outer)
+            : new DataRegionMm(inner, spanStart);
+    }
+
+    /// <summary>Estimated like the DVD one, on the BluRay sector geometry.</summary>
+    private DataRegionMm? ComputeBluRayDataRegion()
+    {
+        string directory = _state.BdDataDirectory.Trim();
+        if (directory.Length == 0)
+        {
+            return null;
+        }
+
+        long totalSectors = ParameterParser.ParsePositiveLong(_state.BdTotalSectors, L.T("蓝光总扇区数"));
+        if (totalSectors > uint.MaxValue)
+        {
+            return null;
+        }
+
+        BluRayDiscParameters parameters = new(
+            checked((uint)totalSectors),
+            1,
+            ParameterParser.ParsePositiveDouble(_state.BdInnerRadius, L.T("蓝光内半径")),
+            ParameterParser.ParsePositiveDouble(_state.BdOuterRadius, L.T("蓝光外半径")),
+            PitchLinear: ParameterParser.ParseDouble(_state.BdPitchLinear, L.T("相对一次项")),
+            PitchQuadratic: ParameterParser.ParseDouble(_state.BdPitchQuadratic, L.T("相对二次项")),
+            PitchCubic: ParameterParser.ParseDouble(_state.BdPitchCubic, L.T("相对三次项")));
+        parameters.Validate();
+        BluRayTrackGeometry geometry = new(parameters);
+        long dataSectors = Math.Min(totalSectors, FolderSectorCount(directory));
+        // The span grows from the ring the files sit on: inward for inner files,
+        // outward for outer files (so a little data is a thin ring at that edge).
+        double spanStart = _state.BdFilesAtOuterRing
+            ? geometry.AtSector(totalSectors - dataSectors).RadiusMm
+            : geometry.AtSector(dataSectors).RadiusMm;
+        return _state.BdFilesAtOuterRing
+            ? new DataRegionMm(spanStart, parameters.OuterRadiusMm)
+            : new DataRegionMm(parameters.InnerRadiusMm, spanStart);
+    }
+
+    /// <summary>Folder bytes rounded up to 2048-byte data sectors; enumeration failures
+    /// (missing folder, access denied) surface as the outer catch hiding the guide.</summary>
+    private static long FolderSectorCount(string directory)
+    {
+        long bytes = 0;
+        foreach (string file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
+        {
+            bytes += new FileInfo(file).Length;
+        }
+
+        return Math.Max(0, (bytes + 2047) / 2048);
     }
 
     private static double ParseMm(string raw, double fallback)

@@ -298,6 +298,13 @@
                                             </controls:VisibilityGate>
                                         </StackPanel>
                                     </controls:VisibilityGate>
+                                    <!-- The canvas twin of the tone preview's yellow data tint: a
+                                         guide ring marking where the files land on the disc. -->
+                                    <CheckBox Style="{StaticResource CompactCheckBox}"
+                                              Margin="0,14,0,0"
+                                              Content="{Binding ShowDataRegionLabel}"
+                                              ToolTip="{Binding ShowDataRegionHint}"
+                                              IsChecked="{Binding ShowDataRegion}" />
                                 </StackPanel>
                             </Border>
                         </controls:VisibilityGate>
