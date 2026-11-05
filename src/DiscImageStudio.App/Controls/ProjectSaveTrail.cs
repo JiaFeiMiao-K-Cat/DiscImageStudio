@@ -49,6 +49,7 @@ public sealed class ProjectSaveTrail : FrameworkElement
     private readonly List<double> _distances = [];
     private bool _rendering;
     private bool _playPending;
+    private bool _loop;
     private bool _hasSnapshot;
     private double _snapshotProgress;
     private double _totalLength;
@@ -92,16 +93,21 @@ public sealed class ProjectSaveTrail : FrameworkElement
         set => SetValue(TrailLengthProperty, value);
     }
 
-    /// <summary>Runs the lap once. A second call while running restarts it.</summary>
-    public void Play()
+    /// <summary>Runs the lap once; a second call while running restarts it. With
+    /// <paramref name="loop"/> the lap repeats seamlessly until <see cref="StopLoop"/>, which
+    /// turns the same stroke into a waiting signal ("still working") instead of an
+    /// acknowledgement ("done").</summary>
+    public void Play(bool loop = false)
     {
         if (RenderSize.Width <= 0 || RenderSize.Height <= 0)
         {
+            _loop = loop;
             _playPending = true;
             return;
         }
 
         _playPending = false;
+        _loop = loop;
         _hasSnapshot = false;
         EnsurePath();
         _clock.Restart();
@@ -114,8 +120,13 @@ public sealed class ProjectSaveTrail : FrameworkElement
         InvalidateVisual();
     }
 
+    /// <summary>Ends a looping lap. The current lap keeps running and fades out on its own
+    /// schedule, so ending a wait never blinks the stroke away mid-corner.</summary>
+    public void StopLoop() => _loop = false;
+
     public void Stop()
     {
+        _loop = false;
         if (_rendering)
         {
             CompositionTarget.Rendering -= OnRendering;
@@ -147,7 +158,7 @@ public sealed class ProjectSaveTrail : FrameworkElement
         _builtSize = default;
         if (_playPending)
         {
-            Play();
+            Play(_loop);
         }
     }
 
@@ -156,9 +167,17 @@ public sealed class ProjectSaveTrail : FrameworkElement
         double progress = _clock.Elapsed.TotalMilliseconds / LapDurationMs;
         if (progress >= 1)
         {
-            Stop();
-            InvalidateVisual();
-            return;
+            if (!_loop)
+            {
+                Stop();
+                InvalidateVisual();
+                return;
+            }
+
+            // Restarting the clock continues the head across the seam; the tail is carried
+            // over the wrap when drawing, so the stroke does not collapse here.
+            _clock.Restart();
+            progress = 0;
         }
 
         _snapshotProgress = progress;
@@ -188,24 +207,45 @@ public sealed class ProjectSaveTrail : FrameworkElement
         DrawTrail(drawingContext, _snapshotProgress);
     }
 
-    private void DrawTrail(DrawingContext drawingContext, double progress)
+    /// <summary>Visible pieces of the lap for one frame. A looping lap wraps the tail across
+    /// the seam: the segment behind the head belongs to the end of the path while the head
+    /// has not yet travelled its own length. Clamping the tail to zero there would drop that
+    /// piece and make the stroke collapse and regrow once per lap.</summary>
+    internal static (double Tail, double Head)[] TrailSegments(
+        double progress, double totalLength, double baseTrailLength, bool loop)
     {
-        double fade = Fade(progress);
-        if (fade <= 0)
+        double head = EaseProgress(progress) * totalLength;
+        double tail = head - TrailLengthAt(progress, baseTrailLength);
+        if (loop && tail < 0 && totalLength > 0)
         {
-            return;
+            return [(tail + totalLength, totalLength), (0, head)];
         }
 
-        double head = EaseProgress(progress) * _totalLength;
-        double tail = Math.Max(0, head - TrailLengthAt(progress, TrailLength));
-        if (head - tail < 0.5)
+        return [(Math.Max(0, tail), head)];
+    }
+
+    private void DrawTrail(DrawingContext drawingContext, double progress)
+    {
+        // A looping lap is a wait, not a confirmation: it must not fade in and out at the seam
+        // where one lap hands over to the next.
+        double fade = _loop ? 1.0 : Fade(progress);
+        if (fade <= 0)
         {
             return;
         }
 
         EnsurePen();
         drawingContext.PushOpacity(fade);
-        drawingContext.DrawGeometry(null, _pen!, BuildTrailGeometry(tail, head));
+        foreach ((double tail, double head) in TrailSegments(progress, _totalLength, TrailLength, _loop))
+        {
+            if (head - tail < 0.5)
+            {
+                continue;
+            }
+
+            drawingContext.DrawGeometry(null, _pen!, BuildTrailGeometry(tail, head));
+        }
+
         drawingContext.Pop();
     }
 

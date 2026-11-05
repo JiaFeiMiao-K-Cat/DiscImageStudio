@@ -7,12 +7,14 @@
 - 修复 CD 流式刻录（音轨与数据盘 DAO）在部分刻录机上首次写入导入区即失败、Windows 刻录接口返回 `0xC0AA0301` 的问题。刻录机报告支持时改用 Raw P-W 子通道（`IMAPI_FORMAT2_RAW_CD_SUBCODE_IS_RAW`，仍为 2448 字节扇区），否则保留 Cooked R-W。IMAPI 在两种格式下生成的镜像逐字节相同，盘面内容不变，只改变告知刻录机的子通道格式；刻录日志会记录实际采用的格式。该问题在 HP BD-RE BU20N（HL-DT-ST，固件 0403）上发现：v1.3.6 以 4× 刻录时返回 `0xC0AA0301`。独立 SCSI 工具的模拟刻录（Test Write）中，Cooked R-W（数据块类型 2）在 4× 与 16× 下第一个写入命令即被拒绝（5/64/00），Raw P-W（数据块类型 3）以 4× 接受了前 3,000 个导入区扇区，SAO 以 4× 正常写入。这些模拟未经过 IMAPI；修复版随后已在同一刻录机上通过 IMAPI 完成 CD-R 流式实盘刻录（用户实测）。
 - CD、DVD、蓝光的界面导出改为调用类型化内部生成接口；DVD 设计投影和读回预览直接调用渲染器，支持取消并保留原始异常。命令行参数、控制台输出和退出码留在 CLI 边界，现有命令保持兼容。
 - 导出、标定、设计合成与影调预览日志保留异常堆栈、内部异常及诊断上下文；失败导出不再更新读回输入，标定清理失败不再覆盖原始结果，容量读取失败不再显示为任务成功。
+- 设计页图层列表支持拖拽排序（整行快照随指针浮动、相邻行缓动让位、Esc 取消回弹）与右键删除；打开工程时图层图片与缩略图改为后台并行解码，界面不再因逐张解码而冻结；最近工程卡片在等待打开时沿圆角循环显示与保存确认同源的光迹。
 
 ### English
 
 - Fixed CD streaming burns (audio and data-disc DAO) failing with `0xC0AA0301` at the first lead-in write on some recorders. When the recorder reports support, the burner now uses raw P-W subchannel data (`IMAPI_FORMAT2_RAW_CD_SUBCODE_IS_RAW`, still 2448-byte sectors) and otherwise keeps cooked R-W. IMAPI produces byte-identical images in both layouts, so the disc content is unchanged and only the subchannel layout announced to the recorder differs; the burn log records the format in use. Found on an HP BD-RE BU20N (HL-DT-ST, firmware 0403): v1.3.6 failed at 4× with `0xC0AA0301`. In Test Write runs with a standalone SCSI tool, cooked R-W (data block type 2) was rejected at the first write command at 4× and 16× (5/64/00), raw P-W (data block type 3) accepted the first 3,000 lead-in sectors at 4×, and SAO wrote normally at 4×. Those runs did not go through IMAPI; the fixed build has since completed a real CD-R streaming burn through IMAPI on the same recorder (user test).
 - GUI CD, DVD, and Blu-ray exports now call typed internal generation APIs. DVD projection and readback previews call renderers directly, support cancellation, and preserve original exceptions. Argument parsing, console output, and exit codes remain at the CLI boundary; existing commands remain compatible.
 - Export, calibration, design composition, and tone preview logs retain exception stacks, inner causes, and diagnostic context. Failed exports no longer replace readback inputs; calibration cleanup errors preserve the original outcome, and capacity-read errors no longer complete successfully.
+- Design layers can be reordered by dragging (a row snapshot follows the pointer, neighbouring rows ease one slot aside, Escape cancels) and deleted from a single-item right-click menu. Layer image and thumbnail decodes now run off the UI thread before a project is applied, so opening a multi-layer project no longer freezes the window. Recent-project cards show a looping save-trail stroke while their project opens.
 
 ## [1.4.1] - 2026-11-05
 

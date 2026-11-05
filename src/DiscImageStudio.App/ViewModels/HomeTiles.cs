@@ -1,6 +1,7 @@
 using DiscImageStudio.Localization;
 using System.IO;
 using System.Windows.Media.Imaging;
+using CommunityToolkit.Mvvm.ComponentModel;
 using DiscImageStudio.Core;
 using DiscImageStudio.Services;
 using MahApps.Metro.IconPacks;
@@ -52,9 +53,13 @@ public sealed record HomeTemplateTile(
 /// <summary>One card in the home page's recent-project list. The thumbnail is the picture
 /// rendered into the project file at last save; a missing file degrades the card but keeps
 /// its row so the path stays discoverable.</summary>
-public sealed class RecentProjectTile
+public sealed partial class RecentProjectTile : ObservableObject
 {
     private readonly bool _projectExists;
+
+    /// <summary>This tile's project is being opened, so the sleeve shows the looping wait
+    /// stroke. Set by the home page around the open call and cleared when it returns.</summary>
+    [ObservableProperty] private bool _isLoading;
 
     private RecentProjectTile(RecentProjectEntry entry, BitmapSource? thumbnail, bool projectExists)
     {

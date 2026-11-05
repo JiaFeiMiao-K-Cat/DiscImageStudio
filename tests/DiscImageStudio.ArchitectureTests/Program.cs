@@ -146,6 +146,7 @@ CalibrationShapeSeedTests.Run();
 CalibrationPhotoTests.Run();
 CalibrationPhotoCanvasTests.Run();
 DesignCanvasZoomTests.Run();
+LayerPanelTests.Run();
 CalibrationBurnWorkflowTests.Run();
 CalibrationBurnSourceTests.Run();
 BurnJobDockTests.Run();
