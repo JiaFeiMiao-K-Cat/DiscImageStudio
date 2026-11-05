@@ -23,3 +23,6 @@ __pycache__/
 *.pfx
 *.p12
 *.key
+
+tools/disc-calib/uv.lock
+tools/disc-calib/.venv/

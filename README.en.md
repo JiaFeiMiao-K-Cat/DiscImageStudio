@@ -135,6 +135,8 @@ The CLI reads PNG, JPEG, BMP and GIF, using the first frame of animated images. 
 | `calibrate` | Calibration projection: sample the DVD source image using the generation geometry and project it onto the disc using the measured geometry |
 | `simulate` | Simulate readback of a generated DVD ISO using measured radii |
 | `selftest` | Run deterministic regression self-tests for the DVD engine |
+| `dvd-calib-pattern` | Render a self-locating DVD calibration target; needs the Python `disc-calib` tool |
+| `dvd-calib-solve` | Solve the actual inner and outer radii from photos of a burned target; needs the Python `disc-calib` tool |
 | `cd-generate` | Generate WAV + CUE / RAW audio tracks when no files are included on the disc; generate a CD data disc ISO when `--data-dir` is specified |
 | `cd-preview-warp` | Calibration projection: project the CD source image using measured geometry |
 | `cd-preview-track` | Render an existing WAV or RAW CD-DA audio track using calibrated geometry (readback simulation) |

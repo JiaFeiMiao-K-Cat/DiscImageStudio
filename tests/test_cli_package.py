@@ -1,5 +1,6 @@
 """Smoke-test a published CLI from a working directory outside the checkout."""
 
+import os
 import shutil
 import subprocess
 import sys
@@ -34,6 +35,24 @@ def check_package(executable: Path) -> None:
 
         run("bd-generate", "--input", "input image.png", "--output", "bd.iso", "--total-sectors", "1024")
         check_size("bd.iso", 1024 * 2048)
+
+        recorder = work / "fake-disc-calib"
+        recorder.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > forwarded.txt\nexit 3\n', encoding="utf-8")
+        recorder.chmod(0o755)
+
+        def run_calib(tool: Path, *args: str) -> int:
+            environment = {**os.environ, "DISC_CALIB": str(tool)}
+            return subprocess.run([executable, *args], cwd=work, env=environment).returncode
+
+        code = run_calib(recorder, "dvd-calib-solve", "--photo", "disc photo.jpg", "--total-sectors", "160")
+        if code != 3:
+            raise ValueError(f"dvd-calib-solve did not keep the tool's exit code: {code}")
+        forwarded = (work / "forwarded.txt").read_text(encoding="utf-8").splitlines()
+        if forwarded != ["code", "--photo", "disc photo.jpg", "--total-sectors", "160"]:
+            raise ValueError(f"dvd-calib-solve forwarded {forwarded}")
+        code = run_calib(work / "missing-tool", "dvd-calib-pattern")
+        if code != 127:
+            raise ValueError(f"dvd-calib-pattern with no tool exited with {code}")
 
 
 if __name__ == "__main__":

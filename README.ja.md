@@ -135,6 +135,8 @@ CLI は PNG、JPEG、BMP、GIF を読み込み、アニメーション画像に�
 | `calibrate` | キャリブレーション投影：生成ジオメトリで DVD のソース画像をサンプリングし、実測ジオメトリで記録面に投影します |
 | `simulate` | 実測半径に基づき、生成した DVD ISO の読み戻しをシミュレートします |
 | `selftest` | DVD エンジンの決定論的な回帰セルフテストを実行します |
+| `dvd-calib-pattern` | 自己位置決め可能な DVD キャリブレーション図案を生成します。Python ツール `disc-calib` が必要です |
+| `dvd-calib-solve` | 焼いた図案の写真から実際の内外半径を求めます。Python ツール `disc-calib` が必要です |
 | `cd-generate` | ディスク同梱ファイルがない場合は WAV + CUE / RAW 音声トラックを生成し、`--data-dir` を指定した場合は CD データディスクの ISO を生成します |
 | `cd-preview-warp` | キャリブレーション投影：実測ジオメトリで CD のソース画像を投影します |
 | `cd-preview-track` | 既存の WAV または RAW CD-DA 音声トラックをキャリブレーション済みジオメトリでレンダリングします（読み戻しシミュレーション） |

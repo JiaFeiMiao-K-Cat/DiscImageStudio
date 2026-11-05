@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### 中文
+
+- 新增 `dvd-calib-pattern` 和 `dvd-calib-solve` 命令，转发给 `tools/disc-calib`，从已刻录标定盘的照片反推 DVD 实际内外半径；需要单独安装该 Python 工具。
+
+### English
+
+- Added `dvd-calib-pattern` and `dvd-calib-solve` commands that forward to `tools/disc-calib` and solve a DVD's actual inner and outer radii from photos of a burned target; the Python tool is installed separately.
+
 ## [1.4.0] - 2026-11-05
 
 ### 中文
