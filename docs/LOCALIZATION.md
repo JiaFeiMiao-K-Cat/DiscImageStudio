@@ -6,32 +6,43 @@
 
 ## 添加和维护文案
 
-翻译位于 `src/DiscImageStudio.App/Localization/Catalogs/*.json`，构建时嵌入程序集，无额外运行时依赖。每个键包含 `zh-CN`、`zh-TW`、`en`、`ja`、`tr`、`es` 和 `cs` 七种文本；繁体中文使用独立资源，采用「設定」「專案」「檔案」「燒錄」等用语，不在运行时转换用户数据：
+翻译位于 `src/DiscImageStudio.App/Localization/Catalogs/*.json`，构建时嵌入程序集，无额外运行时依赖。每个键必须提供非空的简体中文 `zh-CN`。繁体中文 `zh-TW`、英文 `en`、日文 `ja`、土耳其文 `tr`、西班牙文 `es` 和捷克文 `cs` 可按进度补充，允许省略或留空；当前语言缺失或为空时显示该键的 `zh-CN` 文案，不要求一次补齐全部语言。例如，下面的条目目前只提供中英文：
 
 ```json
 {
-  "示例 {0}": { "zh-CN": "示例 {0}", "zh-TW": "範例 {0}", "en": "Example {0}", "ja": "例 {0}", "tr": "Örnek {0}", "es": "Ejemplo {0}", "cs": "Příklad {0}" }
+  "示例 {0}": { "zh-CN": "示例 {0}", "en": "Example {0}" }
 }
 ```
 
-C# 用 `L.T("源文案")`，插值用 `L.F($"示例 {value}")`，资源键为其 .NET 复合格式 `示例 {0}`；需要显式资源键时可用 `L.Format(key, arguments)`。翻译可调整参数顺序，但必须保留索引和格式说明符。XAML 使用 `xmlns:loc="clr-namespace:DiscImageStudio.Localization"` 与 `{loc:Text ResourceKey}`；`TextExtension` 在加载时按当前语言写入，并在语言切换时原地重写已加载的控件和模板。
+C# 用 `L.T("源文案")`，插值用 `L.F($"示例 {value}")`，资源键为其 .NET 复合格式 `示例 {0}`；需要显式资源键时可用 `L.Format(key, arguments)`。翻译可调整参数顺序，但必须保留索引和格式说明符。XAML 使用 `xmlns:loc="clr-namespace:DiscImageStudio.Localization"` 与 `{loc:Text ResourceKey}`，已加载的控件和模板会随语言切换原地刷新。
 
-共享短语只需定义一次，所有资源文件中的键必须唯一。找不到当前语言时回落到中文；键不存在时显示键本身。启动时先初始化语言，再创建窗口及 ViewModel。只设置 UI culture，保留 numeric culture；不要翻译协议标识、命令、路径、用户数据或把翻译后的文本用于逻辑判断。
+共享短语只需定义一次，所有资源文件中的键必须唯一。键不存在时显示键本身。启动时先初始化语言，再创建窗口及 ViewModel。只设置 UI culture，保留 numeric culture；不要翻译协议标识、命令、路径、用户数据或把翻译后的文本用于逻辑判断。繁体中文使用独立资源，采用「設定」「專案」「檔案」「燒錄」等用语，不在运行时转换用户数据。
 
 范围为桌面应用界面及应用层提示；独立命令行帮助、底层编码器诊断和第三方/操作系统错误保留各自语言，许可证原文保持不变。
 
+## 提交补译 PR
+
+1. 在对应的 JSON 文件中找到待翻译的键，结合 `zh-CN` 原文和实际页面确认含义。可以只补充一个语言、一个页面或少量条目，保留已有译文与资源键。
+2. 添加或填写对应语言字段。尚未确认的译文可以继续省略或留空，由简体中文回退；无需把中文复制到其他语言字段来凑齐条目。
+3. 保留 `{0}`、`{1:0.00}` 等 .NET 占位符、换行和有意使用的标记。按下面的命令检查资源，再用目标语言查看涉及的页面，留意按钮宽度、换行及术语一致性。
+4. 在 PR 描述中列出补译的语言、页面和验证结果。后续 PR 可以继续补充其余条目。
+
 ## 验证
 
-`LocalizationTests` 检查资源语言完整性、格式参数、系统语言回落、设置保存和取消行为，以及保存失败不会应用语言；捷克文另有排版与术语约束检查；`RelocalizationTests` 检查运行时切换语言后工程几何、进行中的读取、预览结果和已打开页面的文案保持不变或正确刷新。
+`LocalizationTests` 检查每个资源键都有非空 `zh-CN`，并校验已有非空译文的 .NET 格式参数。其他语言缺失或为空是允许的，测试同时验证简体中文回退、系统语言选择、设置保存和取消行为，以及保存失败不会应用语言。非空捷克文译文还需通过排版与术语检查；需要英文对照的检查只在该键有非空英文时执行。`RelocalizationTests` 检查运行时切换语言后工程几何、进行中的读取和预览结果保持不变，已打开页面的文案正确刷新。
+
+先构建并运行包含上述检查的回归程序：
 
 ```powershell
-dotnet run --project src/DiscImageStudio.App -c Release -- ui-snapshot --settings-dialog --language en --output artifacts/settings-en.png
-dotnet run --project src/DiscImageStudio.App -c Release -- ui-snapshot --settings-dialog --language zh-CN --output artifacts/settings-zh.png
-dotnet run --project src/DiscImageStudio.App -c Release -- ui-snapshot --settings-dialog --language zh-TW --output artifacts/settings-tw.png
-dotnet run --project src/DiscImageStudio.App -c Release -- ui-snapshot --settings-dialog --language ja --output artifacts/settings-ja.png
-dotnet run --project src/DiscImageStudio.App -c Release -- ui-snapshot --settings-dialog --language tr --output artifacts/settings-tr.png
-dotnet run --project src/DiscImageStudio.App -c Release -- ui-snapshot --settings-dialog --language es --output artifacts/settings-es.png
-dotnet run --project src/DiscImageStudio.App -c Release -- ui-snapshot --settings-dialog --language cs --output artifacts/settings-cs.png
+dotnet build DiscImageStudio.slnx --configuration Release
+dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Release
 ```
 
-截图使用一次性设置文件，不改变用户配置。增加语言时同时扩展语言规范化和解析规则、设置下拉选项、各资源及测试。
+再按本次补译的语言和页面渲染截图。例如检查西班牙文设置页和捷克文标定页：
+
+```powershell
+dotnet run --project src/DiscImageStudio.App -c Release -- ui-snapshot --settings-dialog --language es --output artifacts/settings-es.png
+dotnet run --project src/DiscImageStudio.App -c Release -- ui-snapshot --tab 5 --language cs --output artifacts/calibration-cs.png
+```
+
+截图使用一次性设置文件，不改变用户配置。也可在应用中切换语言，确认已有输入和测量进度保留。增加一种尚未支持的语言时，需要同时扩展语言规范化和解析规则、设置下拉选项及测试；该语言的资源翻译仍可分批补充。

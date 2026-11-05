@@ -25,6 +25,7 @@ public partial class CalibrationView : UserControl
         {
             _calibration = calibration;
             calibration.PropertyChanged += OnCalibrationPropertyChanged;
+            IsVisibleChanged += (_, _) => calibration.SetTargetPreviewVisible(IsVisible);
         }
         DataContext = viewModel;
     }
@@ -118,4 +119,5 @@ public partial class CalibrationView : UserControl
     private void OnZoomIn(object sender, RoutedEventArgs e) => PhotoCanvas.ZoomBy(1.3);
     private void OnResetView(object sender, RoutedEventArgs e) => PhotoCanvas.ResetView();
     private void OnRemoveTracePoint(object sender, RoutedEventArgs e) => PhotoCanvas.RemoveSelectedTracePoint();
+    private void OnRemoveRing(object sender, RoutedEventArgs e) => PhotoCanvas.RemoveSelectedRing();
 }

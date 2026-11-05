@@ -108,8 +108,8 @@ public sealed class BluRayGray8Raster
     private static double SafeTravel(double edgeDistance, double tangent, double curvatureBound)
     {
         if (edgeDistance <= 0) return 0;
-        // For an outward Archimedean spiral, curvature <= 2 / innerRadius,
-        // hence each coordinate's Taylor remainder <= s*s / innerRadius.
+        // curvatureBound is half the coordinate acceleration bound for the
+        // sampled curve, so its Taylor remainder is at most k*s*s.
         // Solve k*s*s + v*s < distance. Use the stable form for each sign of v
         // so a boundary behind the tangent does not suffer subtractive cancellation.
         double root = Math.Sqrt(tangent * tangent + 4 * curvatureBound * edgeDistance);
@@ -132,6 +132,11 @@ public sealed class BluRayImagePayloadMapping : IBluRayBatchPayloadMapping
     private readonly bool _supportsParallelGeneration;
     private readonly BluRayGray8Raster? _raster;
     private readonly double _rasterScale;
+    private readonly bool _clipRasterAnnulus;
+    private readonly double _minimumRadiusSquared;
+    private readonly double _maximumRadiusSquared;
+    private readonly double _minimumRadius;
+    private readonly double _maximumRadius;
 
     public BluRayImagePayloadMapping(BluRayDiscParameters disc, BluRayGray8Raster raster,
         IBluRayLuminanceMapping mapping)
@@ -139,6 +144,23 @@ public sealed class BluRayImagePayloadMapping : IBluRayBatchPayloadMapping
     {
         _raster = raster;
         _rasterScale = Math.Max(raster.Width, raster.Height) / (2 * disc.OuterRadiusMm);
+    }
+
+    // A saved calibration image can clip the raster to a narrower recording
+    // annulus. Keep the original squared-radius comparison, including the
+    // caller's tolerance; reuse must stop before either radial boundary.
+    internal BluRayImagePayloadMapping(BluRayDiscParameters disc, BluRayGray8Raster raster,
+        IBluRayLuminanceMapping mapping, double minimumRadiusSquared, double maximumRadiusSquared)
+        : this(disc, raster, mapping)
+    {
+        if (!double.IsFinite(minimumRadiusSquared) || minimumRadiusSquared < 0
+            || !double.IsFinite(maximumRadiusSquared) || maximumRadiusSquared <= minimumRadiusSquared)
+            throw new ArgumentOutOfRangeException(nameof(maximumRadiusSquared));
+        _clipRasterAnnulus = true;
+        _minimumRadiusSquared = minimumRadiusSquared;
+        _maximumRadiusSquared = maximumRadiusSquared;
+        _minimumRadius = Math.Sqrt(minimumRadiusSquared);
+        _maximumRadius = Math.Sqrt(maximumRadiusSquared);
     }
 
     internal bool CanGenerateInParallel(BluRayDiscParameters disc)
@@ -165,8 +187,9 @@ public sealed class BluRayImagePayloadMapping : IBluRayBatchPayloadMapping
         double clusterBase = (long)(firstSector / 32) * BluRayDiscParameters.ChannelBitsPerRecordingUnit;
         double margin = _geometry.PixelReuseSafetyMarginMm;
         double mmPerBit = _geometry.MillimetresPerChannelBit;
-        double curvatureBound = 1 / _disc.InnerRadiusMm;
-        double tangentMargin = 4 * margin / _disc.InnerRadiusMm + 64 * 2.2204460492503131e-16;
+        double curvatureBound = _geometry.PixelReuseCurvatureBound;
+        double tangentMargin = _geometry.PixelReuseTangentMargin
+            + 4 * margin / _disc.InnerRadiusMm + 64 * 2.2204460492503131e-16;
         double safeUntil = double.NegativeInfinity;
         byte luminance = 255;
         // LDC payload order jumps around the spiral. Walk physical positions in
@@ -189,8 +212,30 @@ public sealed class BluRayImagePayloadMapping : IBluRayBatchPayloadMapping
                     / (BluRayDiscParameters.ChannelBitsPerRecordingUnit / 32.0));
                 double x = point.Xmm, y = point.Ymm;
                 (double tangentX, double tangentY) = _geometry.UnitTangent(x, y, point.RadiusMm);
-                luminance = _raster.SampleWithTravelMargin(x, y, _rasterScale,
-                    tangentX, tangentY, curvatureBound, margin, tangentMargin, out double travelMm);
+                double travelMm;
+                double squared = x * x + y * y;
+                bool clipped = _clipRasterAnnulus
+                    && (squared < _minimumRadiusSquared || squared > _maximumRadiusSquared);
+                if (clipped)
+                {
+                    luminance = 255;
+                    travelMm = double.PositiveInfinity;
+                }
+                else
+                    luminance = _raster.SampleWithTravelMargin(x, y, _rasterScale,
+                        tangentX, tangentY, curvatureBound, margin, tangentMargin, out travelMm);
+                if (_clipRasterAnnulus)
+                {
+                    // Radius is 1-Lipschitz in physical arc length. The fast
+                    // interpolated curve's speed relative to nominal arc length
+                    // is bounded by 1 + tangentMargin. Include that speed and
+                    // both endpoints' roundoff before reusing across radial edges.
+                    double radius = Math.Sqrt(squared);
+                    double distance = clipped
+                        ? Math.Max(_minimumRadius - radius, radius - _maximumRadius)
+                        : Math.Min(radius - _minimumRadius, _maximumRadius - radius);
+                    travelMm = Math.Min(travelMm, Math.Max(0, distance - margin) / (1 + tangentMargin));
+                }
                 safeUntil = Math.Min(BluRayDiscParameters.ChannelBitsPerRecordingUnit,
                     channel + travelMm / mmPerBit);
             }
@@ -287,7 +332,7 @@ public sealed class BluRayImagePayloadMapping : IBluRayBatchPayloadMapping
                         // per-lane trig, sharing only the exact geometry arithmetic.
                         double x = radius * Math.Cos(angle), y = radius * Math.Sin(angle);
                         destination[offset + lane] = _raster is not null
-                            ? _raster.SampleWithScale(x, y, _rasterScale)
+                            ? SampleRaster(x, y)
                             : _sampleLuminance(x, y);
                     }
                 }
@@ -297,7 +342,8 @@ public sealed class BluRayImagePayloadMapping : IBluRayBatchPayloadMapping
                 double sectorPosition = (clusterBase + offsets[offset])
                     / (BluRayDiscParameters.ChannelBitsPerRecordingUnit / 32.0);
                 BluRayTrackPoint point = _geometry.AtSector(sectorPosition);
-                destination[offset] = _sampleLuminance(point.Xmm, point.Ymm);
+                destination[offset] = _raster is not null
+                    ? SampleRaster(point.Xmm, point.Ymm) : _sampleLuminance(point.Xmm, point.Ymm);
             }
             runLength.MapLuminances(destination);
         }
@@ -306,11 +352,28 @@ public sealed class BluRayImagePayloadMapping : IBluRayBatchPayloadMapping
             for (int offset = 0; offset < destination.Length; offset++)
             {
                 BluRayPayloadBytePosition position = GetPositionCore(context.Sector, offset, context.PhysicalSectorNumber);
-                byte luminance = _sampleLuminance(position.TrackPoint.Xmm, position.TrackPoint.Ymm);
+                byte luminance = _clipRasterAnnulus
+                    ? SampleRaster(position.TrackPoint.Xmm, position.TrackPoint.Ymm)
+                    : _sampleLuminance(position.TrackPoint.Xmm, position.TrackPoint.Ymm);
                 destination[offset] = _mapping.Map(luminance, position);
             }
         }
     }
+
+    private byte SampleRaster(double x, double y)
+    {
+        if (_clipRasterAnnulus)
+        {
+            double squared = x * x + y * y;
+            if (squared < _minimumRadiusSquared || squared > _maximumRadiusSquared) return 255;
+        }
+        return _raster!.SampleWithScale(x, y, _rasterScale);
+    }
+
+    // The same LDC/recording-frame layout is used for fixed-address calibration and image sampling.
+    internal static ReadOnlySpan<double> PayloadChannelOffsets(uint sector, int count) =>
+        PayloadLayout.ChannelOffsets.AsSpan((int)(sector % BluRayDiscParameters.SectorsPerCluster)
+            * BluRayDiscParameters.BytesPerSector, count);
 
     private static class PayloadLayout
     {

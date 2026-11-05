@@ -15,11 +15,8 @@ using DiscImageStudio.Services;
 namespace DiscImageStudio.ViewModels;
 
 /// <summary>
-/// Workspace shell: the home start screen (no sidebar) and the project workspaces
-/// (sidebar with design/preview/export/burn/calibration). All workspaces share one
-/// <see cref="DiscParametersState"/>; an open <see cref="ProjectDocument"/> fills it on open
-/// and captures it on save. Long-running work reports into the job dock, which lives in the
-/// window chrome, so a job never navigates the user away from the surface they were using.
+/// Hosts the project workspaces and the independent calibration tool. An open project
+/// owns State, while calibration keeps its own setup, target and recording source.
 /// </summary>
 public partial class ShellViewModel : ObservableObject
 {
@@ -31,6 +28,7 @@ public partial class ShellViewModel : ObservableObject
     private bool _isWindowLoaded;
     private string? _lastOutputPath;
     private bool _isApplyingProject;
+    private Workspace _calibrationReturnPage = Workspace.Home;
     private bool _isWritingComposite;
     private BurnProgressDisplay? _burnProgressDisplay;
     private DispatcherTimer? _burnTelemetryTimer;
@@ -43,6 +41,7 @@ public partial class ShellViewModel : ObservableObject
     internal ShellViewModel(Dispatcher dispatcher, IOpticalDiscBurner opticalDiscBurner)
     {
         _dispatcher = dispatcher;
+        OpticalBurner = opticalDiscBurner;
         State = new DiscParametersState();
         State.PropertyChanged += State_PropertyChanged;
         _presetLoadWarning = State.TryLoadPresets();
@@ -50,8 +49,12 @@ public partial class ShellViewModel : ObservableObject
         Design = new DesignViewModel(this, State, dispatcher);
         LivePreview = new LivePreviewViewModel(_dispatcher, this, State);
         Home = new HomeViewModel(this, State, _recentProjects);
-        Calibration = new CalibrationViewModel(this, State);
+        var calibrationState = new DiscParametersState();
+        calibrationState.UsePresetCatalog(State);
+        calibrationState.SelectDefaultPresets();
+        Calibration = new CalibrationViewModel(this, calibrationState);
         Burn = new BurnViewModel(this, State, Design, opticalDiscBurner);
+        CalibrationBurn = new BurnViewModel(this, calibrationState, Design, opticalDiscBurner, useCalibrationPattern: true);
         Export = new ExportViewModel(this, State, Design);
         Design.CompositeRendered += Design_CompositeRendered;
         Design.DesignEdited += () => MarkProjectDirty();
@@ -69,10 +72,13 @@ public partial class ShellViewModel : ObservableObject
         SaveProjectCommand = new AsyncRelayCommand(SaveProjectAsync, () => IsProjectOpen && !IsBusy);
         SaveProjectAsCommand = new AsyncRelayCommand(SaveProjectAsAsync, () => IsProjectOpen && !IsBusy);
         BackHomeCommand = new AsyncRelayCommand(BackHomeAsync);
+        ReturnFromCalibrationCommand = new RelayCommand(() =>
+            NavigateTo(IsProjectOpen ? _calibrationReturnPage : Workspace.Home));
         NavigateCommand = new RelayCommand<Workspace>(NavigateTo);
     }
 
     public DiscParametersState State { get; }
+    internal IOpticalDiscBurner OpticalBurner { get; }
 
     public DesignViewModel Design { get; }
 
@@ -84,11 +90,10 @@ public partial class ShellViewModel : ObservableObject
     /// the file destination; disc writing lives in the burn workspace next door.</summary>
     public ExportViewModel Export { get; }
 
-    /// <summary>The burn workspace: streams the design composite or the calibration target to
-    /// a blank disc. It reads the same shared state the export workspace writes with, so the
-    /// two delivery surfaces can never present different material for one project.</summary>
+    /// <summary>Streams the active project's composite using its project geometry.</summary>
     public BurnViewModel Burn { get; }
 
+    public BurnViewModel CalibrationBurn { get; }
     public CalibrationViewModel Calibration { get; }
 
     public ObservableCollection<ToastItem> Toasts { get; } = [];
@@ -212,13 +217,19 @@ public partial class ShellViewModel : ObservableObject
         SaveProjectAsCommand.NotifyCanExecuteChanged();
     }
 
-    /// <summary>The sidebar (workspace navigation) is visible exactly when a workspace shows,
-    /// which in practice means a project is open.</summary>
-    public bool IsProjectMode => CurrentWorkspace != Workspace.Home;
+    public bool IsProjectMode => CurrentWorkspace is Workspace.Design or Workspace.Preview or Workspace.Export or Workspace.Burn
+        || IsProjectOpen && CurrentWorkspace is Workspace.Calibration or Workspace.CalibrationBurn;
 
     partial void OnIsJobDockExpandedChanged(bool value) => OnPropertyChanged(nameof(DockToggleVisibility));
 
-    partial void OnCurrentWorkspaceChanged(Workspace value) => OnPropertyChanged(nameof(IsProjectMode));
+    partial void OnCurrentWorkspaceChanged(Workspace oldValue, Workspace newValue)
+    {
+        if (newValue is Workspace.Calibration or Workspace.CalibrationBurn
+            && oldValue is not (Workspace.Calibration or Workspace.CalibrationBurn))
+            _calibrationReturnPage = oldValue;
+        OnPropertyChanged(nameof(IsProjectMode));
+        OnPropertyChanged(nameof(ProjectTitleDisplay));
+    }
 
     /// <summary>Progress bar visibility in the job dock: running work or a finished result.</summary>
     public Visibility JobProgressVisibility =>
@@ -305,6 +316,7 @@ public partial class ShellViewModel : ObservableObject
     public IAsyncRelayCommand SaveProjectAsCommand { get; }
 
     public IAsyncRelayCommand BackHomeCommand { get; }
+    public IRelayCommand ReturnFromCalibrationCommand { get; }
 
     /// <summary>Workspace navigation for page headers ("下一步：…") and any other in-page
     /// affordance that moves the user along the design → preview → export → burn path.</summary>
@@ -317,16 +329,9 @@ public partial class ShellViewModel : ObservableObject
 
     public event Action? LogCleared;
 
-    /// <summary>Raised when a calibration result has been written into the shared project
-    /// parameters. The window plays the project-header acknowledgement; the fitter stays
-    /// independent of any window chrome.</summary>
-    public event Action? CalibrationParametersApplied;
-
     /// <summary>Raised after a successful save (Ctrl+S / 另存为). The window runs the
     /// project-header green trail; failures toast from the save path instead.</summary>
     public event Action? ProjectSaved;
-
-    internal void NotifyCalibrationParametersApplied() => CalibrationParametersApplied?.Invoke();
 
     /// <summary>The entire log so far. It lives here rather than only in the log TextBox because
     /// the log page is one of several: output produced while that page is hidden has to survive,
@@ -368,11 +373,15 @@ public partial class ShellViewModel : ObservableObject
             JobStatusText = L.T("尚未运行任务。");
         }
 
+        // Refresh the independent selection before State publishes its localized catalog;
+        // otherwise matching the old translated preset objects can fall back to Custom.
+        Calibration.Parameters.Relocalize();
         State.Relocalize();
         Home.Relocalize();
         LivePreview.Relocalize();
         Design.Relocalize();
         Burn.Relocalize();
+        CalibrationBurn.Relocalize();
         Export.Relocalize();
         Calibration.Relocalize();
     }
@@ -401,15 +410,13 @@ public partial class ShellViewModel : ObservableObject
                 LivePreview.Schedule();
                 break;
             case Workspace.Burn:
-                Burn.UpdateSourceSummary();
-                if (Burn.Devices is null || Burn.Devices.Count == 0)
+            case Workspace.CalibrationBurn:
+                var burn = workspace == Workspace.Burn ? Burn : CalibrationBurn;
+                burn.UpdateSourceSummary();
+                if (!IsBusy && burn.Devices is not { Count: > 0 })
                 {
-                    _ = Burn.RefreshDevicesAsync();
+                    _ = burn.RefreshDevicesAsync();
                 }
-
-                break;
-            case Workspace.Calibration:
-                Calibration.EnsureTarget();
                 break;
         }
     }
@@ -559,7 +566,6 @@ public partial class ShellViewModel : ObservableObject
             Design.SetDiscFamily(document.Family);
             LivePreview.SetDiscType(document.Family, clearResult: true);
             ProjectSession.ApplyToState(document, State);
-            Calibration.ClearTargetForProjectChange();
             Design.LoadLayers(document.Layers);
         }
         finally
@@ -610,11 +616,17 @@ public partial class ShellViewModel : ObservableObject
                     State.BdInnerRadius = ProjectSession.Format(result.InnerRadiusMm);
                     State.BdOuterRadius = ProjectSession.Format(result.OuterRadiusMm);
                     State.BdTotalSectors = result.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    State.BdPitchLinear = ProjectSession.Format(result.PitchLinear);
+                    State.BdPitchQuadratic = ProjectSession.Format(result.PitchQuadratic);
+                    State.BdPitchCubic = ProjectSession.Format(result.PitchCubic);
                     break;
                 default:
                     State.CdInnerRadius = ProjectSession.Format(result.InnerRadiusMm);
                     State.CdOuterRadius = ProjectSession.Format(result.OuterRadiusMm);
                     State.CdSectors = result.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    State.CdPitchLinear = ProjectSession.Format(result.PitchLinear);
+                    State.CdPitchQuadratic = ProjectSession.Format(result.PitchQuadratic);
+                    State.CdPitchCubic = ProjectSession.Format(result.PitchCubic);
                     break;
             }
 
@@ -730,7 +742,6 @@ public partial class ShellViewModel : ObservableObject
         ProjectFilePath = null;
         IsDirty = false;
         Design.ClearLayers();
-        Calibration.ClearTargetForProjectChange();
         State.CdImagePath = string.Empty;
         State.DvdImagePath = string.Empty;
         State.BdImagePath = string.Empty;
@@ -780,6 +791,9 @@ public partial class ShellViewModel : ObservableObject
     [
         nameof(DiscParametersState.CdInnerRadius),
         nameof(DiscParametersState.CdOuterRadius),
+        nameof(DiscParametersState.CdPitchLinear),
+        nameof(DiscParametersState.CdPitchQuadratic),
+        nameof(DiscParametersState.CdPitchCubic),
         nameof(DiscParametersState.CdSectors),
         nameof(DiscParametersState.CdImagePath),
         nameof(DiscParametersState.CdOutputPath),
@@ -802,6 +816,9 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.DvdVolumeLabel),
         nameof(DiscParametersState.BdInnerRadius),
         nameof(DiscParametersState.BdOuterRadius),
+        nameof(DiscParametersState.BdPitchLinear),
+        nameof(DiscParametersState.BdPitchQuadratic),
+        nameof(DiscParametersState.BdPitchCubic),
         nameof(DiscParametersState.BdTotalSectors),
         nameof(DiscParametersState.BdImagePath),
         nameof(DiscParametersState.BdOutputPath),
@@ -838,6 +855,14 @@ public partial class ShellViewModel : ObservableObject
 
     private void State_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        // Both pages see edits to the shared catalog but retain their own selected values.
+        if (e.PropertyName is nameof(DiscParametersState.CdPresets)
+            or nameof(DiscParametersState.DvdPresets) or nameof(DiscParametersState.BluRayPresets))
+        {
+            if (e.PropertyName == nameof(DiscParametersState.BluRayPresets))
+                Calibration?.Parameters.UsePresetCatalog(State);
+            return;
+        }
         // Any parameter edit refreshes the burn summary and schedules the debounced live
         // preview; both were driven by TextChanged/SelectionChanged before the merge.
         Burn?.UpdateSourceSummary();

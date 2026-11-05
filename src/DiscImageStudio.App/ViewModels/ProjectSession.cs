@@ -59,6 +59,9 @@ internal static class ProjectSession
                 state.BdTotalSectors = sectors;
                 state.BdActualInnerRadius = inner;
                 state.BdActualOuterRadius = outer;
+                state.BdPitchLinear = state.BdActualPitchLinear = Format(geometry.PitchLinear);
+                state.BdPitchQuadratic = state.BdActualPitchQuadratic = Format(geometry.PitchQuadratic);
+                state.BdPitchCubic = state.BdActualPitchCubic = Format(geometry.PitchCubic);
                 state.BdOutputPath = outputs.OutputPath;
                 state.BdDataDirectory = outputs.DataDirectory;
                 state.BdFilesAtOuterRing = outputs.FilesAtOuterRing;
@@ -74,6 +77,9 @@ internal static class ProjectSession
                 state.CdSectors = sectors;
                 state.CdActualInnerRadius = inner;
                 state.CdActualOuterRadius = outer;
+                state.CdPitchLinear = state.CdActualPitchLinear = Format(geometry.PitchLinear);
+                state.CdPitchQuadratic = state.CdActualPitchQuadratic = Format(geometry.PitchQuadratic);
+                state.CdPitchCubic = state.CdActualPitchCubic = Format(geometry.PitchCubic);
                 state.CdDataDirectory = outputs.DataDirectory;
                 state.CdFilesAtOuterRing = outputs.FilesAtOuterRing;
                 state.CdVolumeLabel = string.IsNullOrWhiteSpace(outputs.VolumeLabel) ? "CD_IMAGE" : outputs.VolumeLabel;
@@ -102,12 +108,18 @@ internal static class ProjectSession
                 return new ProjectGeometry(
                     ParameterParser.ParsePositiveDouble(state.BdInnerRadius, L.T("蓝光内半径")),
                     ParameterParser.ParsePositiveDouble(state.BdOuterRadius, L.T("蓝光外半径")),
-                    ParameterParser.ParsePositiveLong(state.BdTotalSectors, L.T("蓝光总扇区数")));
+                    ParameterParser.ParsePositiveLong(state.BdTotalSectors, L.T("蓝光总扇区数")),
+                    ParameterParser.ParseDouble(state.BdPitchLinear, L.T("相对一次项")),
+                    ParameterParser.ParseDouble(state.BdPitchQuadratic, L.T("相对二次项")),
+                    ParameterParser.ParseDouble(state.BdPitchCubic, L.T("相对三次项")));
             default:
                 return new ProjectGeometry(
                     ParameterParser.ParsePositiveDouble(state.CdInnerRadius, L.T("CD 内半径")),
                     ParameterParser.ParsePositiveDouble(state.CdOuterRadius, L.T("CD 外半径")),
-                    ParameterParser.ParsePositiveLong(state.CdSectors, L.T("CD 扇区数")));
+                    ParameterParser.ParsePositiveLong(state.CdSectors, L.T("CD 扇区数")),
+                    ParameterParser.ParseDouble(state.CdPitchLinear, L.T("相对一次项")),
+                    ParameterParser.ParseDouble(state.CdPitchQuadratic, L.T("相对二次项")),
+                    ParameterParser.ParseDouble(state.CdPitchCubic, L.T("相对三次项")));
         }
     }
 

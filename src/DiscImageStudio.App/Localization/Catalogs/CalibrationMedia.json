@@ -1,0 +1,119 @@
+{
+  "CalibrationMedia.Preset": {
+    "zh-CN": "盘片预设",
+    "zh-TW": "盤片預設",
+    "en": "Disc preset",
+    "ja": "ディスクプリセット",
+    "tr": "Disk ön ayarı",
+    "es": "Preajuste de disco",
+    "cs": "Předvolba disku"
+  },
+  "CalibrationMedia.ReadButton": {
+    "zh-CN": "从光盘读取",
+    "zh-TW": "從光碟讀取",
+    "en": "Read from disc",
+    "ja": "ディスクから取得",
+    "tr": "Diskten oku",
+    "es": "Leer del disco",
+    "cs": "Načíst z disku"
+  },
+  "CalibrationMedia.ReadHint": {
+    "zh-CN": "读取所选盘型的盘片总扇区数，填入新标靶参数。",
+    "zh-TW": "讀取所選碟型的光碟總磁區數，填入新標靶參數。",
+    "en": "Read the loaded disc’s total sector count for the new target.",
+    "ja": "選択した種類のディスクから総セクター数を読み取り、新しいターゲットに使用します。",
+    "tr": "Yeni hedef için takılı diskin toplam sektör sayısını okuyun.",
+    "es": "Lea el número total de sectores del disco insertado para el nuevo patrón.",
+    "cs": "Načtěte celkový počet sektorů vloženého disku pro nový terč."
+  },
+  "CalibrationMedia.Reading": {
+    "zh-CN": "正在读取盘片总扇区数…",
+    "zh-TW": "正在讀取光碟總磁區數…",
+    "en": "Reading total sectors from the disc…",
+    "ja": "ディスクの総セクター数を読み取り中…",
+    "tr": "Diskin toplam sektör sayısı okunuyor…",
+    "es": "Leyendo el número total de sectores del disco…",
+    "cs": "Načítání celkového počtu sektorů disku…"
+  },
+  "CalibrationMedia.NoDevices": {
+    "zh-CN": "未检测到刻录机。连接刻录机后可重新读取，也可手动填写扇区数。",
+    "zh-TW": "未偵測到燒錄機。連接燒錄機後可重新讀取，也可手動填寫磁區數。",
+    "en": "No recorder found. Connect a recorder and retry, or enter the sector count manually.",
+    "ja": "レコーダーが見つかりません。接続して再読み込みするか、セクター数を入力してください。",
+    "tr": "Yazıcı bulunamadı. Bir yazıcı bağlayıp yeniden deneyin veya sektör sayısını elle girin.",
+    "es": "No se ha encontrado ninguna grabadora. Conecte una y vuelva a intentarlo, o introduzca manualmente el número de sectores.",
+    "cs": "Nebyla nalezena vypalovačka. Připojte ji a zkuste to znovu, nebo zadejte počet sektorů ručně."
+  },
+  "CalibrationMedia.PickDevice": {
+    "zh-CN": "请选择装有盘片的刻录机，再点「从光盘读取」。",
+    "zh-TW": "請選擇裝有光碟的燒錄機，再點「從光碟讀取」。",
+    "en": "Choose the recorder containing your disc, then select Read from disc.",
+    "ja": "ディスクを挿入したレコーダーを選択して、もう一度読み取ってください。",
+    "tr": "Diskinizin takılı olduğu yazıcıyı seçip Diskten oku düğmesine basın.",
+    "es": "Elija la grabadora que contiene el disco y seleccione Leer del disco.",
+    "cs": "Vyberte vypalovačku s vloženým diskem a zvolte Načíst z disku."
+  },
+  "CalibrationMedia.SelectionChanged": {
+    "zh-CN": "盘型或刻录机已切换，请重新读取。",
+    "zh-TW": "碟型或燒錄機已切換，請重新讀取。",
+    "en": "The disc type or recorder changed. Read the disc again.",
+    "ja": "ディスクの種類またはレコーダーが変更されました。もう一度読み取ってください。",
+    "tr": "Disk türü veya yazıcı değişti. Diski yeniden okuyun.",
+    "es": "Ha cambiado el tipo de disco o la grabadora. Vuelva a leer el disco.",
+    "cs": "Typ disku nebo vypalovačka se změnily. Načtěte disk znovu."
+  },
+  "CalibrationMedia.UnsupportedCapacity": {
+    "zh-CN": "读取到 {0:N0} 扇区，超出 {1} 标定支持的范围。",
+    "zh-TW": "讀取到 {0:N0} 磁區，超出 {1} 標定支援的範圍。",
+    "en": "Read {0:N0} sectors, outside the supported range for {1} calibration.",
+    "ja": "{0:N0} セクターを読み取りました。{1} 校正で対応する範囲外です。",
+    "tr": "{0:N0} sektör okundu; {1} kalibrasyonunun desteklediği aralığın dışında.",
+    "es": "Se han leído {0:N0} sectores, fuera del rango admitido para la calibración de {1}.",
+    "cs": "Načteno {0:N0} sektorů, mimo podporovaný rozsah kalibrace pro {1}."
+  },
+  "CalibrationMedia.Read": {
+    "zh-CN": "{0} · {1}，已填入 {2:N0} 扇区。",
+    "zh-TW": "{0} · {1}，已填入 {2:N0} 磁區。",
+    "en": "{0} · {1}. Entered {2:N0} sectors.",
+    "ja": "{0} · {1}、{2:N0} セクターを入力しました。",
+    "tr": "{0} · {1}. {2:N0} sektör girildi.",
+    "es": "{0} · {1}. Se han introducido {2:N0} sectores.",
+    "cs": "{0} · {1}. Zadáno {2:N0} sektorů."
+  },
+  "CalibrationMedia.Failed": {
+    "zh-CN": "读取失败。{0}",
+    "zh-TW": "讀取失敗。{0}",
+    "en": "Unable to read the disc. {0}",
+    "ja": "ディスクを読み取れませんでした。{0}",
+    "tr": "Disk okunamadı. {0}",
+    "es": "No se ha podido leer el disco. {0}",
+    "cs": "Disk nelze načíst. {0}"
+  },
+  "CalibrationMedia.Encoding": {
+    "zh-CN": "其他标定参数",
+    "zh-TW": "其他標定參數",
+    "en": "Additional calibration parameters",
+    "ja": "その他の校正パラメーター",
+    "tr": "Ek kalibrasyon parametreleri",
+    "es": "Parámetros de calibración adicionales",
+    "cs": "Další parametry kalibrace"
+  },
+  "CalibrationMedia.CdInterleave": {
+    "zh-CN": "启用 CD 延迟交织",
+    "zh-TW": "啟用 CD 延遲交錯",
+    "en": "Use CD delay interleaving",
+    "ja": "CD の遅延インターリーブを使用",
+    "tr": "CD gecikmeli iç içe geçirmeyi kullan",
+    "es": "Usar intercalado con retardo de CD",
+    "cs": "Použít zpožděné prokládání CD"
+  },
+  "CalibrationMedia.ApplyRadii": {
+    "zh-CN": "采用为新标靶的初始半径",
+    "zh-TW": "採用為新標靶的初始半徑",
+    "en": "Use as initial radii for new targets",
+    "ja": "新しいターゲットの初期半径に採用",
+    "tr": "Yeni hedefler için başlangıç yarıçapları olarak kullan",
+    "es": "Usar como radios iniciales de nuevos patrones",
+    "cs": "Použít jako počáteční poloměry nových terčů"
+  }
+}

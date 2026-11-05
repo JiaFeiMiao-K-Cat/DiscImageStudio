@@ -10,6 +10,27 @@ using System.Runtime.InteropServices.ComTypes;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
+if (args is ["--benchmark-cd-pitch"])
+{
+    CdCubicPitchTests.Benchmark();
+    return;
+}
+if (args is ["--benchmark-cd-parallel"])
+{
+    CdParallelGenerationBenchmark.Run();
+    return;
+}
+if (args is ["--benchmark-bd-pitch"])
+{
+    BluRayCubicPitchTests.Benchmark();
+    return;
+}
+if (args is ["--benchmark-dvd-sampling"])
+{
+    DvdSampleReuseBenchmark.Run();
+    return;
+}
+
 DiscModuleCatalog catalog = new(
 [
     new CdDiscModule(),
@@ -46,17 +67,21 @@ BluRayPreviewTests.Run();
 BluRayImageMappingTests.Run();
 BluRayParallelGenerationTests.Run();
 BluRayPixelReuseTests.Run();
+BluRayCubicPitchTests.Run();
+BluRayCubicPreviewTests.Run();
 BluRayIsoTests.Run();
 BluRayDrawingModeTests.Run();
 BluRaySidecarTests.Run();
 BluRayFilePlacementTests.Run();
 BluRayPatternRangeTests.Run();
+BluRayReferenceRouteTests.Run();
 UdfFilesystemTests.Run();
 UdfLargeFileTests.Run();
 GeneratedContentProgressTests.Run();
 OpticalWriteProgressTests.Run();
 BurnProgressDisplayTests.Run();
 OpticalBurnOperationGateTests.Run();
+MediaSectorCountTests.Run();
 BluRaySequentialBurnTests.Run();
 BluRayFlushDiagnosticsTests.Run();
 BluRaySequentialWriterTests.Run();
@@ -72,7 +97,9 @@ FilePlacementProjectTests.Run();
 FilePlacementPreviewTests.Run();
 DesignComposerTests.Run();
 CdAudioCompatibilityTests.Run();
+CdParallelAudioTests.Run();
 CdDataImageTests.Run();
+CdParallelDataTests.Run();
 CdDataBurnTests.Run();
 CdDataDaoWorkflowTests.Run();
 CdMode1SectorTests.Run();
@@ -80,6 +107,7 @@ CdDataRawImageTests.Run();
 CdRawImageByteOrderTests.Run();
 CdBinaryTests.Run();
 CdSimdSamplingTests.Run();
+CdCubicPitchTests.Run();
 FourLevelPreviewTests.Run();
 FourLevelDitherTests.Run();
 ThreeLevelDitherTests.Run();
@@ -91,9 +119,24 @@ SaveTrailTests.Run();
 DvdCubicPipelineTests.Run();
 DvdFilePlacementTests.Run();
 DvdSimdSamplingTests.Run();
+DvdStableRegionTests.Run();
+DvdSampleReuseTests.Run();
 AppCubicTests.Run();
+AppCubicMediaTests.Run();
 CalibrationEncoderTests.Run();
 CalibrationCoreTests.Run();
+CalibrationHalfDiscArtworkTests.Run();
+CalibrationBoundaryFitterTests.Run();
+CalibrationRingFitterTests.Run();
+CalibrationClockArtworkTests.Run();
+CalibrationWideBandArtworkTests.Run();
+CalibrationRadialArcArtworkTests.Run();
+CalibrationRadialArcFitterTests.Run();
+CalibrationSectorScaleTests.Run();
+CalibrationClockReaderTests.Run();
+CalibrationAngleSweepReaderTests.Run();
+CalibrationStandaloneTests.Run();
+CalibrationMediaReadTests.Run();
 CalibrationCubicPitchTests.Run();
 CalibrationCrossExtensionTests.Run();
 BluRayObservedCurveRegressionTests.Run();
@@ -105,11 +148,15 @@ CalibrationBurnWorkflowTests.Run();
 CalibrationBurnSourceTests.Run();
 CalibrationOutputPublisherTests.Run();
 CalibrationPhotoViewModelTests.Run();
+CalibrationThreeStageTests.Run();
+CalibrationBoundaryWorkflowTests.Run();
 AppSettingsTests.Run();
 LocalizationTests.Run();
 ThemePaletteTests.Run();
 TempFilesCacheTests.Run();
 RelocalizationTests.Run();
+CalibrationReturnButtonTests.Run();
+BurnWriteSpeedSelectionTests.Run();
 
 Console.WriteLine("architecture-selftest: all checks passed");
 return;

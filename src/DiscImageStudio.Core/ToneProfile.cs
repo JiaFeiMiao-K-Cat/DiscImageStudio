@@ -20,6 +20,24 @@ public readonly record struct ToneProfile(
     public const double MinimumBrightness = -64;
     public const double MaximumBrightness = 64;
 
+    // Gray inputs are bytes. Retain the exact double result of the original
+    // transfer function so CD/DVD need no per-payload-byte Math.Pow. Brightness
+    // and final rounding still run in the original order for every profile.
+    private static readonly double[] SrgbLinearValues = CreateSrgbLinearValues();
+
+    private static double[] CreateSrgbLinearValues()
+    {
+        var values = new double[256];
+        for (int gray = 0; gray < values.Length; gray++)
+        {
+            double value = gray / 255.0;
+            values[gray] = value <= 0.04045
+                ? value / 12.92
+                : Math.Pow((value + 0.055) / 1.055, 2.4);
+        }
+        return values;
+    }
+
     /// <summary>The pre-tone behaviour: one hard threshold at mid-grey, two levels.</summary>
     public static ToneProfile LegacyBinary { get; } = new(0, TwoLevels, 0);
 
@@ -41,14 +59,7 @@ public readonly record struct ToneProfile(
     /// gamma changes black/white dot density, not the output voltage or reflectance.</summary>
     public byte AdjustedGray(byte gray)
     {
-        double value = gray / 255.0;
-        if (SrgbLinearization)
-        {
-            value = value <= 0.04045
-                ? value / 12.92
-                : Math.Pow((value + 0.055) / 1.055, 2.4);
-        }
-
+        double value = SrgbLinearization ? SrgbLinearValues[gray] : gray / 255.0;
         value = Math.Clamp(value + (Brightness / 255.0), 0.0, 1.0);
         return (byte)Math.Round(value * 255.0, MidpointRounding.AwayFromZero);
     }

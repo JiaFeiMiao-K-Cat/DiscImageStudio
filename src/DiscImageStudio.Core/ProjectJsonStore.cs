@@ -319,10 +319,6 @@ public static class ProjectJsonStore
                 throw new InvalidDataException("蓝光外半径不能超过 60 mm。");
             }
 
-            if (geometry.PitchLinear != 0 || geometry.PitchQuadratic != 0 || geometry.PitchCubic != 0)
-            {
-                throw new InvalidDataException("蓝光使用恒定轨距，pitch 系数必须为 0。");
-            }
         }
 
         try

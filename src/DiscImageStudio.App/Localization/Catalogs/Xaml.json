@@ -1,4 +1,220 @@
 {
+  "Xaml.VerifySectorScale": {
+    "zh-CN": "用扇区核对照片尺度",
+    "en": "Check photo scale against the sector",
+    "zh-TW": "以扇區核對相片尺度",
+    "ja": "扇形パターンで写真の縮尺を検証",
+    "tr": "Fotoğraf ölçeğini sektör deseniyle kontrol et",
+    "es": "Comprobar la escala de la foto con el sector",
+    "cs": "Ověřit měřítko fotografie podle sektorového vzoru"
+  },
+  "Xaml.UseVerifiedRadii": {
+    "zh-CN": "将核对后的半径用于新标靶",
+    "en": "Use the scale-checked radii for new targets",
+    "zh-TW": "將核對後的半徑用於新標靶",
+    "ja": "検証後の半径を新しいターゲットに使用",
+    "tr": "Doğrulanan yarıçapları yeni hedeflerde kullan",
+    "es": "Usar los radios verificados en nuevos patrones",
+    "cs": "Použít ověřené poloměry pro nové kalibrační vzory"
+  },
+  "Xaml.CoarseRingThreePoints": {
+    "zh-CN": "同侧三点量环",
+    "en": "Measure with three points on one side",
+    "zh-TW": "同側三點量環",
+    "ja": "同じ側の3点で測定",
+    "tr": "Aynı taraftaki üç noktayla ölç",
+    "es": "Medir con tres puntos del mismo lado",
+    "cs": "Měřit třemi body na jedné straně"
+  },
+  "Xaml.CoarseRingNumber": {
+    "zh-CN": "圈号（从内到外）",
+    "en": "Ring (inside to outside)",
+    "zh-TW": "圈號（由內至外）",
+    "ja": "リング番号（内側から）",
+    "tr": "Halka (içten dışa)",
+    "es": "Anillo (de dentro hacia fuera)",
+    "cs": "Kružnice (od středu ven)"
+  },
+  "Xaml.CoarseRingUndoPoint": {
+    "zh-CN": "撤销上一点",
+    "en": "Undo last point",
+    "zh-TW": "復原上一點",
+    "ja": "直前の点を取り消す",
+    "tr": "Son noktayı geri al",
+    "es": "Deshacer el último punto",
+    "cs": "Vrátit poslední bod"
+  },
+  "Xaml.CoarseRingRestartPoints": {
+    "zh-CN": "重标此圈",
+    "en": "Remeasure ring",
+    "zh-TW": "重標此圈",
+    "ja": "このリングを測り直す",
+    "tr": "Halkayı yeniden ölç",
+    "es": "Volver a medir el anillo",
+    "cs": "Znovu změřit kružnici"
+  },
+  "Xaml.CoarseRingPointHint": {
+    "zh-CN": "先选圈号，在同一圈靠盘心一侧的边缘上沿弧分开点 3 下。只需一段清楚的圆弧。",
+    "en": "Choose a ring. Click three spaced points along a clear arc on its inner edge, the edge facing the disc centre.",
+    "zh-TW": "先選圈號，在同一圈靠盤心一側的邊緣上沿弧分開點 3 下。只需一段清楚的圓弧。",
+    "ja": "リング番号を選び、中心穴に近い方の縁に沿って、見やすい円弧の3か所を間隔を空けてクリックします。",
+    "tr": "Bir halka seçin. Disk merkezine bakan iç kenarındaki net bir yay üzerinde aralıklı üç noktaya tıklayın.",
+    "es": "Elige un anillo. Marca tres puntos separados en un arco nítido de su borde interior, el que mira al centro del disco.",
+    "cs": "Vyberte kružnici. Označte tři od sebe vzdálené body na zřetelném oblouku jejího vnitřního okraje směřujícího ke středu disku."
+  },
+  "Xaml.CoarseRingPointStatus": {
+    "zh-CN": "沿同一段刻录环内缘点 3 下；Backspace 可撤销上一点。",
+    "en": "Click three points along the same inner edge. Backspace undoes the last point.",
+    "zh-TW": "沿同一段燒錄環內緣點 3 下；Backspace 可復原上一點。",
+    "ja": "同じ円弧の内縁を3点クリックします。Backspace で直前の点を取り消せます。",
+    "tr": "Aynı iç kenar üzerinde üç noktaya tıklayın. Backspace son noktayı geri alır.",
+    "es": "Marca tres puntos en el mismo borde interior. Retroceso deshace el último punto.",
+    "cs": "Označte tři body na stejném vnitřním okraji. Klávesa Backspace vrátí poslední bod."
+  },
+  "Xaml.PhotoCalibrationFeatures": {
+    "zh-CN": "导入与本记录配套的实盘照片，拍清实体外缘、中心孔和本阶段的图案。",
+    "en": "Import a photo of the disc for this record. Include the rim, centre hole and the recorded pattern for this stage.",
+    "zh-TW": "匯入與本記錄對應的實碟照片，拍清實體外緣、中心孔和此階段的圖案。",
+    "ja": "この記録に対応するディスクの写真を読み込みます。外周と中心穴、この段階の模様を写してください。",
+    "tr": "Bu kayda ait diskin fotoğrafını içe aktarın. Dış kenar, merkez deliği ve bu aşamanın kaydedilmiş deseni net görünsün.",
+    "es": "Importa una foto del disco correspondiente a este registro. Incluye el borde exterior, el orificio central y el patrón grabado de esta etapa.",
+    "cs": "Importujte fotografii disku odpovídajícího tomuto záznamu. Musí zachycovat vnější okraj, středový otvor a vzor zaznamenaný pro tuto fázi."
+  },
+  "Xaml.ConfirmRectifiedPhoto": {
+    "zh-CN": "确认矫正并进入标定",
+    "en": "Confirm rectification and calibrate",
+    "zh-TW": "確認校正並進入標定",
+    "ja": "補正を確定して校正へ",
+    "tr": "Düzeltmeyi onayla ve kalibre et",
+    "es": "Confirmar la rectificación y calibrar",
+    "cs": "Potvrdit korekci a přejít ke kalibraci"
+  },
+  "Xaml.CoarseCalibrationPhase": {
+    "zh-CN": "粗标定",
+    "en": "Coarse calibration",
+    "zh-TW": "粗校準",
+    "ja": "概略校正",
+    "tr": "Kaba kalibrasyon",
+    "es": "Calibración inicial",
+    "cs": "Hrubá kalibrace"
+  },
+  "Xaml.CoarseCalibrationPurpose": {
+    "zh-CN": "沿一条半径点六个交界",
+    "en": "Mark six band edges on one radius",
+    "zh-TW": "沿一條半徑點六個交界",
+    "ja": "同じ半径方向の帯の境界を6点指定",
+    "tr": "Aynı yarıçap üzerinde altı bant kenarı işaretleyin",
+    "es": "Marca seis bordes de banda sobre un mismo radio",
+    "cs": "Označte šest okrajů pásů podél jednoho poloměru"
+  },
+  "Xaml.FineCalibrationPhase": {
+    "zh-CN": "精细标定",
+    "en": "Fine calibration",
+    "zh-TW": "精細校準",
+    "ja": "十字線の精密校正",
+    "tr": "Hassas kalibrasyon",
+    "es": "Calibración fina",
+    "cs": "Jemná kalibrace"
+  },
+  "Xaml.FineCalibrationPurpose": {
+    "zh-CN": "沿一条十字臂描点，拟合盘片参数",
+    "en": "Fit disc parameters from one traced cross arm",
+    "zh-TW": "沿一條十字臂描點，擬合光碟參數",
+    "ja": "十字線の腕を1本なぞってディスクのパラメーターを推定",
+    "tr": "Çarpının bir kolunu izleyerek disk parametrelerini belirleyin",
+    "es": "Ajusta los parámetros del disco trazando un brazo de la cruz",
+    "cs": "Určete parametry disku podle bodů na jednom rameni kříže"
+  },
+  "Xaml.CoarseRingDragHint": {
+    "zh-CN": "把编号圆弧拖到对应刻录环的内缘（靠盘心的一侧）。已对准可点一下确认，模糊的环可跳过。实线表示已量取。",
+    "en": "Drag each numbered arc onto the inner edge of its recorded ring, facing the disc centre. Click to confirm an arc already in place. Skip unclear rings. Measured arcs become solid.",
+    "zh-TW": "將編號圓弧拖到對應燒錄環的內緣（靠盤心的一側）。已對準可點一下確認，模糊的環可略過。實線表示已量取。",
+    "ja": "番号付きの円弧を対応する記録リングの内縁（中心穴に近い方）へドラッグします。合っている円弧はクリックして確定します。不鮮明なリングは飛ばせます。測定済みの円弧は実線になります。",
+    "tr": "Numaralı yayları ilgili kayıt halkasının disk merkezine bakan iç kenarına sürükleyin. Zaten hizalı olan yayı tıklayarak onaylayın. Belirsiz halkaları atlayabilirsiniz. Ölçülen yaylar kesintisiz çizilir.",
+    "es": "Arrastra cada arco numerado al borde interior de su anillo grabado, hacia el centro del disco. Haz clic para confirmar un arco ya alineado. Omite los anillos poco nítidos. Los arcos medidos se muestran con línea continua.",
+    "cs": "Přetáhněte každý očíslovaný oblouk na vnitřní okraj příslušné zaznamenané kružnice směrem ke středu disku. Správně umístěný oblouk potvrďte kliknutím. Nezřetelné kružnice přeskočte. Změřené oblouky mají plnou čáru."
+  },
+  "Xaml.CoarseRingStatusHint": {
+    "zh-CN": "拖动圆弧调整半径，点击确认原位，Delete 取消所选测量。",
+    "en": "Drag to set the radius, click to confirm the current radius, or press Delete to clear the measurement.",
+    "zh-TW": "拖曳圓弧調整半徑，點選確認原位，Delete 取消所選測量。",
+    "ja": "円弧をドラッグして半径を調整します。クリックで現在の半径を確定し、Delete で測定を取り消します。",
+    "tr": "Yarıçapı sürükleyerek ayarlayın, tıklayarak onaylayın veya Delete ile ölçümü silin.",
+    "es": "Arrastra para ajustar el radio, haz clic para confirmarlo o pulsa Supr para borrar la medición.",
+    "cs": "Tažením upravte poloměr, kliknutím jej potvrďte nebo klávesou Delete vymažte měření."
+  },
+  "Xaml.CoarseRingRemove": {
+    "zh-CN": "取消选中环的测量",
+    "en": "Clear selected measurement",
+    "zh-TW": "取消所選環的量測",
+    "ja": "選択したリングの測定を取り消す",
+    "tr": "Seçili ölçümü temizle",
+    "es": "Borrar la medición seleccionada",
+    "cs": "Vymazat vybrané měření"
+  },
+  "Xaml.CoarseRingOrientation": {
+    "zh-CN": "圆弧方向",
+    "en": "Arc orientation",
+    "zh-TW": "圓弧方向",
+    "ja": "円弧の向き",
+    "tr": "Yay yönü",
+    "es": "Orientación del arco",
+    "cs": "Orientace oblouku"
+  },
+  "Xaml.CoarseRingRotateHint": {
+    "zh-CN": "把两侧圆弧转到照片清楚的位置",
+    "en": "Rotate the two arcs to a clear part of the photo",
+    "zh-TW": "將兩側圓弧轉到照片清晰的位置",
+    "ja": "写真の見やすい部分へ両側の円弧を回転します",
+    "tr": "İki yayı fotoğrafın net bir bölümüne döndürün",
+    "es": "Gira los dos arcos hacia una zona nítida de la foto",
+    "cs": "Otočte oba oblouky do zřetelné části fotografie"
+  },
+  "Xaml.CoarseRingSelected": {
+    "zh-CN": "环 {0} · 半径 {1:F3} mm",
+    "en": "Ring {0} · radius {1:F3} mm",
+    "zh-TW": "環 {0} · 半徑 {1:F3} mm",
+    "ja": "リング {0} · 半径 {1:F3} mm",
+    "tr": "Halka {0} · yarıçap {1:F3} mm",
+    "es": "Anillo {0} · radio {1:F3} mm",
+    "cs": "Kružnice {0} · poloměr {1:F3} mm"
+  },
+  "Xaml.RectifiedCalibrationCaption": {
+    "zh-CN": "矫正预览 · 确认后可量环或描线",
+    "en": "Rectified preview · confirm to measure rings or trace a curve",
+    "zh-TW": "校正預覽 · 確認後可量環或描線",
+    "ja": "補正プレビュー · 確定後にリング測定または曲線トレース",
+    "tr": "Düzeltilmiş önizleme · halkaları ölçmek veya eğriyi izlemek için onaylayın",
+    "es": "Vista previa rectificada · confirma para medir anillos o trazar una curva",
+    "cs": "Náhled po korekci · potvrďte pro měření kružnic nebo vyznačení křivky"
+  },
+  "Xaml.CoarseRingSolve": {
+    "zh-CN": "从已量圆环估算内外半径",
+    "en": "Estimate both radii from measured rings",
+    "zh-TW": "從已量圓環估算內外半徑",
+    "ja": "測定したリングから内外半径を推定",
+    "tr": "Ölçülen halkalardan iki yarıçapı tahmin et",
+    "es": "Estimar ambos radios a partir de los anillos medidos",
+    "cs": "Odhadnout oba poloměry ze změřených kružnic"
+  },
+  "Xaml.UseMeasuredRingSeed": {
+    "zh-CN": "选用本照片的粗估值",
+    "en": "Use the ring estimate from this photo",
+    "zh-TW": "選用本相片的粗估值",
+    "ja": "この写真のリング推定値を使用",
+    "tr": "Bu fotoğraftaki halka tahminini kullan",
+    "es": "Usar la estimación de los anillos de esta foto",
+    "cs": "Použít odhad podle kružnic z této fotografie"
+  },
+  "Xaml.RestoreFineInitial": {
+    "zh-CN": "恢复记录中的初值",
+    "en": "Restore initial values from the record",
+    "zh-TW": "還原記錄中的初值",
+    "ja": "記録の初期値に戻す",
+    "tr": "Kayıttaki başlangıç değerlerini geri yükle",
+    "es": "Restaurar los valores iniciales del registro",
+    "cs": "Obnovit počáteční hodnoty ze záznamu"
+  },
   "Xaml.About": {
     "zh-CN": "关于",
     "en": "About",
@@ -981,13 +1197,13 @@
     "cs": "Kalibrace"
   },
   "Xaml.UseDiscImageStudioSBuiltInAlgorithmsTo": {
-    "zh-CN": "通过 Disc Image Studio 内置的智能算法，您可以利用数张实拍图片轻松确定盘片的真实物理数据",
-    "en": "Use Disc Image Studio's built-in algorithms to determine physical disc parameters from photographs.",
-    "zh-TW": "利用 Disc Image Studio 內建的智慧演算法，只需數張實拍相片，即可輕鬆確定光碟的實際物理參數。",
-    "ja": "Disc Image Studio に内蔵されたアルゴリズムを使って、数枚の写真からディスクの実際の物理パラメーターを簡単に求めることができます。",
-    "tr": "Fotoğraflardan gerçek fiziksel disk parametrelerini belirlemek için Disc Image Studio'nun yerleşik akıllı algoritmalarını kullanın.",
-    "es": "Usa los algoritmos integrados de Disc Image Studio para determinar los parámetros físicos del disco a partir de fotografías.",
-    "cs": "Vestavěné algoritmy Disc Image Studio určí skutečné fyzické parametry disku z fotografií."
+    "zh-CN": "通过盘片照片逐步校准参数。可从粗标定开始，也可按已有参数选择边界标定或精细标定。",
+    "en": "Calibrate disc parameters from photos. Start with coarse calibration, or choose boundary or fine calibration when you already have suitable parameters.",
+    "zh-TW": "透過光碟照片逐步校準參數。可從粗校準開始，也可依已有參數選擇邊界校準或精細校準。",
+    "ja": "ディスクの写真からパラメーターを段階的に校正します。概略校正から始めるか、既知の値に応じて境界校正や精密校正を選んでください。",
+    "tr": "Fotoğraflardan disk parametrelerini kalibre edin. Kaba kalibrasyonla başlayın veya uygun parametreleriniz varsa sınır ya da hassas kalibrasyonu seçin.",
+    "es": "Calibra los parámetros del disco a partir de fotos. Empieza por la calibración inicial o elige la calibración por límites o la fina si ya dispones de parámetros adecuados.",
+    "cs": "Kalibrujte parametry disku podle fotografií. Začněte hrubou kalibrací, nebo zvolte kalibraci podle hranic či jemnou kalibraci, pokud již máte vhodné parametry."
   },
   "Xaml.CalibrationPhoto": {
     "zh-CN": "标定照片",
@@ -1314,22 +1530,22 @@
     "cs": "Zpět k narovnání fotografie"
   },
   "Xaml.FitCubicDVDTrackPitch": {
-    "zh-CN": "拟合 DVD 三次轨距分布",
-    "en": "Fit cubic DVD track pitch",
-    "zh-TW": "擬合 DVD 三次軌距分佈",
-    "ja": "DVD のトラック ピッチを 3 次式でフィット",
-    "tr": "DVD üçüncü dereceden iz aralığı uydur",
-    "es": "Ajustar paso cúbico de pista DVD",
+    "zh-CN": "拟合三次轨距分布",
+    "en": "Fit cubic track pitch",
+    "zh-TW": "擬合三次軌距分佈",
+    "ja": "トラックピッチを3次式でフィット",
+    "tr": "Üçüncü dereceden iz aralığını uydur",
+    "es": "Ajustar paso cúbico de pista",
     "cs": "Kubické proložení rozteče stop"
   },
-  "Xaml.UseAtLeast16PointsAtDifferentRadiiSpanning": {
-    "zh-CN": "至少 16 个不同半径的点，覆盖刻录环带宽度的 60% 以上。",
-    "en": "Use at least 16 points at different radii, spanning more than 60% of the recorded band width.",
-    "zh-TW": "至少需有 16 個不同半徑的點，涵蓋燒錄環帶寬度的 60% 以上。",
-    "ja": "異なる半径の点を 16 点以上使用し、記録帯の幅の 60% 以上をカバーしてください。",
-    "tr": "Kayıt şeridi genişliğinin %60'ından fazlasını kapsayan, farklı yarıçaplarda en az 16 nokta kullanın.",
-    "es": "Usa al menos 16 puntos a distintos radios que abarquen más del 60 % de la anchura de la banda grabada.",
-    "cs": "Použijte aspoň 16 bodů na různých poloměrech, které pokryjí víc než 60 % šířky vypalované oblasti."
+  "Xaml.CubicTrackPitchPointRequirement": {
+    "zh-CN": "至少 12 个不同半径的点，覆盖刻录环带宽度的 60% 以上。",
+    "en": "Use at least 12 points at different radii, spanning at least 60% of the recorded band width.",
+    "zh-TW": "至少需有 12 個不同半徑的點，涵蓋燒錄環帶寬度的 60% 以上。",
+    "ja": "異なる半径の点を 12 点以上使用し、記録帯の幅の 60% 以上をカバーしてください。",
+    "tr": "Kayıt şeridi genişliğinin %60'ından fazlasını kapsayan, farklı yarıçaplarda en az 12 nokta kullanın.",
+    "es": "Usa al menos 12 puntos a distintos radios que abarquen más del 60 % de la anchura de la banda grabada.",
+    "cs": "Použijte aspoň 12 bodů na různých poloměrech, které pokryjí víc než 60 % šířky vypalované oblasti."
   },
   "Xaml.SolveParameters": {
     "zh-CN": "反推参数",

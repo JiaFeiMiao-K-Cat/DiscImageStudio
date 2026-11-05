@@ -23,7 +23,7 @@ Components
   previews with StbImageWriteSharp 1.16.7 (StbImageWriteSharpTeam,
   https://github.com/StbSharp/StbImageWriteSharp, public domain). Both are
   C# ports of the stb libraries (https://github.com/nothings/stb).
-- Self-contained .NET / Windows Desktop runtime 10.0.11: MIT plus upstream
+- Self-contained .NET / Windows Desktop runtime 10.0.14: MIT plus upstream
   third-party licenses, reproduced below. Framework-dependent builds use the
   user's separately installed runtime instead.
 - HarmonyOS Sans SC Regular, Medium and Bold: Copyright 2021 Huawei Device
@@ -1633,8 +1633,8 @@ https://github.com/SixLabors/ImageSharp/blob/f4f689ce67ecbcc35cebddba5aacb603e6d
 
 
 ===============================================================================
-.NET Runtime 10.0.11 - MIT License
-Source: https://raw.githubusercontent.com/dotnet/runtime/v10.0.11/LICENSE.TXT
+.NET Runtime 10.0.14 - MIT License
+Source: https://raw.githubusercontent.com/dotnet/runtime/v10.0.14/LICENSE.TXT
 ===============================================================================
 
 The MIT License (MIT)
@@ -1663,8 +1663,8 @@ SOFTWARE.
 
 
 ===============================================================================
-.NET Runtime 10.0.11 - Upstream third-party notices
-Source: https://raw.githubusercontent.com/dotnet/runtime/v10.0.11/THIRD-PARTY-NOTICES.TXT
+.NET Runtime 10.0.14 - Upstream third-party notices
+Source: https://raw.githubusercontent.com/dotnet/runtime/v10.0.14/THIRD-PARTY-NOTICES.TXT
 ===============================================================================
 
 .NET Runtime uses third-party libraries or other resources that may be
@@ -3087,8 +3087,8 @@ You are solely responsible for determining the appropriateness of using and dist
 
 
 ===============================================================================
-.NET Windows Desktop Runtime 10.0.11 - MIT License
-Source: https://raw.githubusercontent.com/dotnet/windowsdesktop/v10.0.11/LICENSE
+.NET Windows Desktop Runtime 10.0.14 - MIT License
+Source: https://raw.githubusercontent.com/dotnet/windowsdesktop/v10.0.14/LICENSE
 ===============================================================================
 
 The MIT License (MIT)
@@ -3117,8 +3117,8 @@ SOFTWARE.
 
 
 ===============================================================================
-.NET WPF 10.0.11 - Upstream third-party notices
-Source: https://raw.githubusercontent.com/dotnet/wpf/v10.0.11/THIRD-PARTY-NOTICES.TXT
+.NET WPF 10.0.14 - Upstream third-party notices
+Source: https://raw.githubusercontent.com/dotnet/wpf/v10.0.14/THIRD-PARTY-NOTICES.TXT
 ===============================================================================
 
 .NET Core uses third-party libraries or other resources that may be
@@ -3186,8 +3186,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 ===============================================================================
-.NET Windows Forms 10.0.11 - Upstream third-party notices
-Source: https://raw.githubusercontent.com/dotnet/winforms/v10.0.11/THIRD-PARTY-NOTICES.TXT
+.NET Windows Forms 10.0.14 - Upstream third-party notices
+Source: https://raw.githubusercontent.com/dotnet/winforms/v10.0.14/THIRD-PARTY-NOTICES.TXT
 ===============================================================================
 
 .NET Core uses third-party libraries or other resources that may be

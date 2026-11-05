@@ -3,6 +3,8 @@ namespace DiscImageStudio.Core.Calibration;
 public sealed record CalibrationObservation(
     string CellId, int CornerIndex, double X, double Y, double Weight = 1);
 
+// FitDvdPitch is retained as the serialized/API name for existing calibration
+// sessions. It enables cubic-pitch fitting for CD, DVD and Blu-ray alike.
 public sealed record CalibrationFitOptions(
     CalibrationParameters? SearchCenter = null, double RadiusRangeMm = 0.02,
     double HuberDeltaMm = 0.8, int MaxCandidates = 8,

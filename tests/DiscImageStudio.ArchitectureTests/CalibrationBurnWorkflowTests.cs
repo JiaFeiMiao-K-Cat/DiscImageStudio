@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.IO;
 using System.Reflection;
+using System.Security.Cryptography;
 using DiscImageStudio.BluRay;
 using DiscImageStudio.Burning;
 using DiscImageStudio.Cd;
@@ -23,6 +24,7 @@ internal static class CalibrationBurnWorkflowTests
 
             TestCapturedRequest(directory, CalibrationDiscKind.Dvd, false);
             TestCapturedRequest(directory, CalibrationDiscKind.BluRay, false);
+            TestClockRuler(directory);
         }
         finally
         {
@@ -35,6 +37,66 @@ internal static class CalibrationBurnWorkflowTests
         }
 
         Console.WriteLine("calibration-burn-workflow: passed (memory-only requests, saved snapshots, reload isolation)");
+    }
+
+    private static void TestClockRuler(string directory)
+    {
+        const int prefixBytes = 300 * CdDiscParameters.BytesPerSector;
+        var parameters = new CalibrationParameters(CalibrationDiscKind.Cd, 24.5, 56.8, 359848, 1200);
+        var clock = CalibrationTarget.Create(parameters, artwork: CalibrationArtwork.ClockRuler);
+        string sessionPath = Path.Combine(directory, "clock.calibration.json");
+        CalibrationSessionJson.Save(sessionPath, new(clock, [], CdInterleave: true));
+        var restored = CalibrationSessionJson.Load(sessionPath);
+        // The whole logical track includes each guide/gutter boundary and every dither-table wrap.
+        // This reference is independent of the encoder; the validation does not retain a full CD in memory or on disk.
+        using (var hash = SHA256.Create())
+        using (var sink = new CryptoStream(Stream.Null, hash, CryptoStreamMode.Write))
+        {
+            CdTrackGenerator.GeneratePatternToStream(restored.Target, sink, false);
+            sink.FlushFinalBlock();
+            Require(Convert.ToHexStringLower(hash.Hash!) ==
+                "9edebaa241661eeb689e5cda5d75f1e01cf702e1db9145acd86342ba3078b4a9",
+                "complete logical clock track matches the independent schema 8 reference");
+        }
+        foreach (bool interleave in new[] { false, true })
+        {
+            string path = Path.Combine(directory, $"clock-{interleave}");
+            byte[] ExportPrefix(string extension)
+            {
+                string file = path + extension;
+                using CancellationTokenSource stop = new();
+                try
+                {
+                    CdTrackGenerator.GeneratePattern(restored.Target, file, interleave, _ => stop.Cancel(), stop.Token);
+                    throw new InvalidOperationException("Expected cancellation after the first progress report.");
+                }
+                catch (OperationCanceledException) when (stop.IsCancellationRequested) { }
+                using var input = File.OpenRead(file);
+                if (extension == ".wav") input.Position = 44;
+                var bytes = new byte[prefixBytes];
+                input.ReadExactly(bytes);
+                return bytes;
+            }
+            byte[] raw = ExportPrefix(".raw");
+
+            // The burn request uses different initial radii. The clock and address bands depend only on byte count.
+            var other = CalibrationTarget.Create(parameters with { InnerRadiusMm = 25, OuterRadiusMm = 57 },
+                artwork: CalibrationArtwork.ClockRuler);
+            var request = CreateRequest(other, interleave, new OpticalWriteSpeed(300, false));
+            byte[] streamed = new byte[prefixBytes];
+            using var limited = new MemoryStream(streamed, 0, streamed.Length, writable: true, publiclyVisible: false);
+            using var forward = new ForwardOnlyWriteStream(limited);
+            try
+            {
+                request.ProduceContent(forward, CancellationToken.None);
+                throw new InvalidOperationException("Expected the test sink to fill.");
+            }
+            catch (NotSupportedException) when (limited.Position == prefixBytes) { }
+            Require(request.ContentLength == parameters.Sectors * CdDiscParameters.BytesPerSector
+                && streamed.AsSpan().SequenceEqual(ExportPrefix(".wav")), "clock WAV and non-seekable little-endian burn agree");
+            for (int i = 0; i < raw.Length; i++) Require(raw[i] == streamed[i ^ 1],
+                "clock RAW and WAV differ only by 16-bit byte order after interleave");
+        }
     }
 
     private static void TestCapturedRequest(string directory, CalibrationDiscKind kind, bool interleave)
@@ -53,8 +115,8 @@ internal static class CalibrationBurnWorkflowTests
         };
         CalibrationParameters generated = ReadParameters(state, kind);
         CalibrationTarget target = CalibrationTarget.Create(generated);
-        Require(target.SchemaVersion == 6 && target.ControlCells.Count == 4 && target.ControlPoints.Count == 8,
-            "the burn request captures the current concentric-ring and cross geometry");
+        Require(target.SchemaVersion == 7 && target.VisibleRings.Count == 8,
+            "the burn request captures the current combined target and all eight coarse rings");
         CalibrationSession original = new(target, [], CdInterleave: state.CdInterleave);
         string path = Path.Combine(directory, $"{kind}-{interleave}.calibration.json");
         CalibrationSessionJson.Save(path, original);
@@ -62,8 +124,8 @@ internal static class CalibrationBurnWorkflowTests
         CalibrationSession activeSession = CalibrationSessionJson.Load(path);
         Require(activeSession.Target.Parameters == generated && activeSession.Target.Id == target.Id,
             "durable session restores original generation parameters and target identity");
-        Require(activeSession.Target.SchemaVersion == 6 && activeSession.Target.Cells.SequenceEqual(target.Cells),
-            "durable records retain the exact cross target geometry");
+        Require(activeSession.Target.SchemaVersion == target.SchemaVersion && activeSession.Target.VisibleRings.SequenceEqual(target.VisibleRings),
+            "durable records retain the target revision and engraved ring geometry");
 
         OpticalWriteSpeed speed = new(300, false);
         OpticalBurnRequest request = CreateRequest(activeSession.Target, activeSession.CdInterleave, speed);
@@ -106,7 +168,7 @@ internal static class CalibrationBurnWorkflowTests
         Require(target.Parameters == generated, "original target parameters remain immutable");
 
         CalibrationSession reloadedOriginal = CalibrationSessionJson.Deserialize(originalJson);
-        Require(reloadedOriginal.Target.SchemaVersion == 6 && reloadedOriginal.Target.Cells.SequenceEqual(target.Cells),
+        Require(reloadedOriginal.Target.SchemaVersion == target.SchemaVersion && reloadedOriginal.Target.VisibleRings.SequenceEqual(target.VisibleRings),
             "opening the saved snapshot does not reinterpret its engraving geometry");
         OpticalBurnRequest restoredRequest = CreateRequest(reloadedOriginal.Target, reloadedOriginal.CdInterleave, speed);
         Require(Produce(restoredRequest).AsSpan().SequenceEqual(expected),

@@ -9,18 +9,21 @@
          like every other workspace page. -->
     <ScrollViewer controls:ScrollMaskBehavior.Enabled="True">
         <StackPanel Margin="{StaticResource PagePadding}">
-            <controls:PageHeader Title="{loc:Text Xaml.Burn}" Badge="{Binding FamilyLabel}"
-                                 Workspace="{x:Static vm:Workspace.Burn}"
-                                 Hint="{loc:Text Xaml.StreamDataDirectlyToABlankDiscWithoutFirst}" />
+            <controls:PageHeader Title="{Binding PageTitle}" Badge="{Binding FamilyLabel}"
+                                 Workspace="{Binding PageWorkspace}"
+                                 ShowStages="{Binding DataContext.IsProjectMode, RelativeSource={RelativeSource AncestorType=Window}, FallbackValue=False}"
+                                 Hint="{loc:Text Xaml.StreamDataDirectlyToABlankDiscWithoutFirst}">
+                <controls:PageHeader.Actions>
+                    <controls:VisibilityGate IsOpen="{Binding UseCalibrationPattern}">
+                        <Button Style="{StaticResource CompactButton}" Content="{loc:Text Standalone.ReturnToCalibration}" IsEnabled="{Binding IsSetupEnabled}"
+                                Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:Workspace.Calibration}" />
+                    </controls:VisibilityGate>
+                </controls:PageHeader.Actions>
+            </controls:PageHeader>
 
-            <!-- Source: what lands on the disc. The switch is the page's own input selector,
-                 the same pattern as the preview workspace's 输入原图/输入镜像; the summary
-                 text below follows it. -->
+            <!-- Each entry point fixes the material sent to the recorder. -->
             <controls:SectionCard Header="{loc:Text Xaml.ContentToWrite}" IconKind="Flame" Margin="0,0,0,24">
                 <StackPanel>
-                    <controls:SegmentedControl HorizontalAlignment="Stretch" Margin="0,0,0,14"
-                                               LabelA="{loc:Text Xaml.DesignComposite}" LabelB="{loc:Text Xaml.CalibrationPattern}"
-                                               IsSecondSelected="{Binding UseCalibrationPattern}" />
                     <Border Background="{DynamicResource Surface2Brush}" BorderBrush="{DynamicResource DividerBrush}"
                             BorderThickness="1" CornerRadius="{StaticResource RadiusPanel}" Padding="14">
                         <StackPanel>
@@ -29,13 +32,6 @@
                                        Margin="0,6,0,0" />
                         </StackPanel>
                     </Border>
-                    <!-- Calibration branch: the pattern is owned by the calibration workspace. -->
-                    <controls:VisibilityGate IsOpen="{Binding UseCalibrationPattern}">
-                        <Button Style="{StaticResource CompactButton}" HorizontalAlignment="Left"
-                                Margin="0,12,0,0" Content="{loc:Text Xaml.OpenCalibration}"
-                                Command="{Binding NavigateCommand}"
-                                CommandParameter="{x:Static vm:Workspace.Calibration}" />
-                    </controls:VisibilityGate>
                 </StackPanel>
             </controls:SectionCard>
 
@@ -108,6 +104,16 @@
                     </StackPanel>
                     <TextBlock Text="{Binding BurnStatusText}" Style="{StaticResource CompactHint}"
                                Margin="0,12,0,0" />
+                    <controls:VisibilityGate IsOpen="{Binding HasCalibrationBurnLog}">
+                        <StackPanel Margin="0,8,0,0">
+                            <ProgressBar Style="{StaticResource CompactProgressBar}" Minimum="0" Maximum="100"
+                                         Value="{Binding BurnProgressValue, Mode=OneWay}" />
+                            <Expander Header="{loc:Text Standalone.RecordingLog}" Margin="0,8,0,0">
+                                <TextBox Text="{Binding CalibrationBurnLog, Mode=OneWay}" IsReadOnly="True"
+                                         TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" MaxHeight="160" />
+                            </Expander>
+                        </StackPanel>
+                    </controls:VisibilityGate>
                 </StackPanel>
             </Border>
         </StackPanel>

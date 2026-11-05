@@ -28,11 +28,14 @@ public partial class PageHeader : UserControl
         nameof(Subtitle), typeof(string), typeof(PageHeader),
         new PropertyMetadata(string.Empty, static (sender, _) => ((PageHeader)sender).UpdateVisuals()));
 
-    /// <summary>The workspace this header belongs to; the stage rail shows for every
-    /// workspace except the home start screen.</summary>
+    /// <summary>The workspace this header belongs to.</summary>
     public static readonly DependencyProperty WorkspaceProperty = DependencyProperty.Register(
         nameof(Workspace), typeof(Workspace), typeof(PageHeader),
         new PropertyMetadata(Workspace.Home, static (sender, _) => ((PageHeader)sender).UpdateVisuals()));
+
+    public static readonly DependencyProperty ShowStagesProperty = DependencyProperty.Register(
+        nameof(ShowStages), typeof(bool), typeof(PageHeader),
+        new PropertyMetadata(true, static (sender, _) => ((PageHeader)sender).UpdateVisuals()));
 
     /// <summary>The workspace the shell currently shows; forwarded to the stage rail.</summary>
     public static readonly DependencyProperty CurrentProperty = DependencyProperty.Register(
@@ -89,6 +92,13 @@ public partial class PageHeader : UserControl
         set => SetValue(WorkspaceProperty, value);
     }
 
+    /// <summary>Shows workspace navigation when the page is hosted by an open project.</summary>
+    public bool ShowStages
+    {
+        get => (bool)GetValue(ShowStagesProperty);
+        set => SetValue(ShowStagesProperty, value);
+    }
+
     public Workspace Current
     {
         get => (Workspace)GetValue(CurrentProperty);
@@ -112,6 +122,7 @@ public partial class PageHeader : UserControl
         SubtitleText.Text = Subtitle;
         SubtitleText.Visibility =
             string.IsNullOrWhiteSpace(Subtitle) ? Visibility.Collapsed : Visibility.Visible;
-        Stages.Visibility = Workspace == Workspace.Home ? Visibility.Collapsed : Visibility.Visible;
+        Stages.Visibility = ShowStages && Workspace != Workspace.Home
+            ? Visibility.Visible : Visibility.Collapsed;
     }
 }

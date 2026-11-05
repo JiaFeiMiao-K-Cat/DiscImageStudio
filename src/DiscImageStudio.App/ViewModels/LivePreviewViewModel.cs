@@ -263,6 +263,9 @@ public partial class LivePreviewViewModel : ObservableObject
             _state.CdSectors = parameters.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
             _state.CdInnerRadius = FormatNumber(parameters.InnerRadiusMm);
             _state.CdOuterRadius = FormatNumber(parameters.OuterRadiusMm);
+            _state.CdPitchLinear = FormatNumber(parameters.PitchLinear);
+            _state.CdPitchQuadratic = FormatNumber(parameters.PitchQuadratic);
+            _state.CdPitchCubic = FormatNumber(parameters.PitchCubic);
             _state.CdFilesAtOuterRing = dataMetadata.FilesAtOuterRing;
             _state.ToneDitherStrength = dataTone.DitherStrength;
             _state.ToneLevels = dataTone.Levels;
@@ -289,6 +292,9 @@ public partial class LivePreviewViewModel : ObservableObject
         if (state.CdSectors.Trim() == sectors
             && state.CdInnerRadius.Trim() == innerRadius
             && state.CdOuterRadius.Trim() == outerRadius
+            && state.CdPitchLinear.Trim() == FormatNumber(metadata.PitchLinear)
+            && state.CdPitchQuadratic.Trim() == FormatNumber(metadata.PitchQuadratic)
+            && state.CdPitchCubic.Trim() == FormatNumber(metadata.PitchCubic)
             && state.CdInterleave == metadata.Interleaved
             && state.ToneDitherStrength == tone.DitherStrength
             && state.ToneLevels == tone.Levels
@@ -301,6 +307,9 @@ public partial class LivePreviewViewModel : ObservableObject
         state.CdSectors = sectors;
         state.CdInnerRadius = innerRadius;
         state.CdOuterRadius = outerRadius;
+        state.CdPitchLinear = FormatNumber(metadata.PitchLinear);
+        state.CdPitchQuadratic = FormatNumber(metadata.PitchQuadratic);
+        state.CdPitchCubic = FormatNumber(metadata.PitchCubic);
         state.CdInterleave = metadata.Interleaved;
         state.ToneDitherStrength = tone.DitherStrength;
         state.ToneLevels = tone.Levels;
@@ -386,6 +395,12 @@ public partial class LivePreviewViewModel : ObservableObject
         state.BdTotalSectors = sectors;
         state.BdInnerRadius = innerRadius;
         state.BdOuterRadius = outerRadius;
+        state.BdPitchLinear = FormatNumber(metadata.PitchLinear);
+        state.BdPitchQuadratic = FormatNumber(metadata.PitchQuadratic);
+        state.BdPitchCubic = FormatNumber(metadata.PitchCubic);
+        state.BdActualPitchLinear = FormatNumber(metadata.PitchLinear);
+        state.BdActualPitchQuadratic = FormatNumber(metadata.PitchQuadratic);
+        state.BdActualPitchCubic = FormatNumber(metadata.PitchCubic);
         state.BdActualInnerRadius = innerRadius;
         state.BdActualOuterRadius = outerRadius;
         state.BdInvertMapping = metadata.InvertMapping;
@@ -677,10 +692,7 @@ public partial class LivePreviewViewModel : ObservableObject
 
         bool deinterleave = _state.CdInterleave;
         bool dataImage = Path.GetExtension(trackPath).Equals(".iso", StringComparison.OrdinalIgnoreCase);
-        Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
-            $"cd-live-preview-{revision}.png");
+        string outputPath = TempFiles.GetCacheFilePath($"cd-live-preview-{revision}.png");
         StatusText = L.F($"正在刷新 {outputSize} px 实时预览…");
         bool keepOutput = false;
         try
@@ -765,10 +777,7 @@ public partial class LivePreviewViewModel : ObservableObject
             return;
         }
 
-        Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
-            $"cd-live-warp-{revision}.png");
+        string outputPath = TempFiles.GetCacheFilePath($"cd-live-warp-{revision}.png");
         StatusText = L.F($"正在刷新 {outputSize} px 标定预览…");
         bool keepOutput = false;
         try
@@ -847,10 +856,7 @@ public partial class LivePreviewViewModel : ObservableObject
     /// bytes and splats them under the measured disc geometry.</summary>
     private async Task RefreshDvdReadbackAsync(int revision, CancellationToken cancellationToken)
     {
-        Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
-            $"dvd-live-preview-{revision}.png");
+        string outputPath = TempFiles.GetCacheFilePath($"dvd-live-preview-{revision}.png");
         string summaryJsonPath = outputPath + ".json";
         if (!TryBuildDvdCommand(
                 outputPath,
@@ -922,10 +928,7 @@ public partial class LivePreviewViewModel : ObservableObject
     /// generated radii and projects it onto the measured ones.</summary>
     private async Task RefreshDvdCalibrationAsync(int revision, CancellationToken cancellationToken)
     {
-        Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
-            $"dvd-live-warp-{revision}.png");
+        string outputPath = TempFiles.GetCacheFilePath($"dvd-live-warp-{revision}.png");
         string summaryJsonPath = outputPath + ".json";
         // Planning files in blank areas scans the whole disc spiral; keep it off the UI thread.
         StatusText = L.T("正在规划文件区域…");
@@ -1050,9 +1053,11 @@ public partial class LivePreviewViewModel : ObservableObject
         BluRayIsoPlan plan;
         try
         {
-            generated = ReadBluRayDisc(_state.BdTotalSectors, _state.BdInnerRadius, _state.BdOuterRadius);
+            generated = ReadBluRayDisc(_state.BdTotalSectors, _state.BdInnerRadius, _state.BdOuterRadius,
+                _state.BdPitchLinear, _state.BdPitchQuadratic, _state.BdPitchCubic);
             actual = ReadBluRayDisc(_state.BdTotalSectors,
-                _state.BdActualInnerRadius, _state.BdActualOuterRadius);
+                _state.BdActualInnerRadius, _state.BdActualOuterRadius,
+                _state.BdActualPitchLinear, _state.BdActualPitchQuadratic, _state.BdActualPitchCubic);
             outputSize = Math.Clamp(
                 ParameterParser.ParsePositiveInt(_state.BdPreviewSize, L.T("预览尺寸")), 64, MaximumPreviewSize);
             tone = _state.BluRayTone;
@@ -1075,10 +1080,7 @@ public partial class LivePreviewViewModel : ObservableObject
             return;
         }
 
-        Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
-            $"bd-live-projection-{revision}.png");
+        string outputPath = TempFiles.GetCacheFilePath($"bd-live-projection-{revision}.png");
         StatusText = L.F($"正在刷新 {outputSize} px 蓝光设计投影…");
         bool keepOutput = false;
         try
@@ -1155,7 +1157,8 @@ public partial class LivePreviewViewModel : ObservableObject
         try
         {
             actual = ReadBluRayDisc(_state.BdTotalSectors,
-                _state.BdActualInnerRadius, _state.BdActualOuterRadius);
+                _state.BdActualInnerRadius, _state.BdActualOuterRadius,
+                _state.BdActualPitchLinear, _state.BdActualPitchQuadratic, _state.BdActualPitchCubic);
             outputSize = Math.Clamp(
                 ParameterParser.ParsePositiveInt(_state.BdPreviewSize, L.T("预览尺寸")), 64, MaximumPreviewSize);
         }
@@ -1172,10 +1175,7 @@ public partial class LivePreviewViewModel : ObservableObject
             return;
         }
 
-        Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
-            $"bd-live-readback-{revision}.png");
+        string outputPath = TempFiles.GetCacheFilePath($"bd-live-readback-{revision}.png");
         StatusText = L.F($"正在刷新 {outputSize} px 蓝光成品读回…");
         bool keepOutput = false;
         try
@@ -1244,7 +1244,8 @@ public partial class LivePreviewViewModel : ObservableObject
     }
 
     private static BluRayDiscParameters ReadBluRayDisc(
-        string sectorsText, string innerText, string outerText)
+        string sectorsText, string innerText, string outerText,
+        string pitchLinear, string pitchQuadratic, string pitchCubic)
     {
         long sectors = ParameterParser.ParsePositiveLong(sectorsText, L.T("蓝光总扇区数"));
         if (sectors > uint.MaxValue)
@@ -1256,7 +1257,10 @@ public partial class LivePreviewViewModel : ObservableObject
             checked((uint)sectors),
             1,
             ParameterParser.ParsePositiveDouble(innerText, L.T("蓝光内半径")),
-            ParameterParser.ParsePositiveDouble(outerText, L.T("蓝光外半径")));
+            ParameterParser.ParsePositiveDouble(outerText, L.T("蓝光外半径")),
+            PitchLinear: ParameterParser.ParseDouble(pitchLinear, L.T("相对一次项")),
+            PitchQuadratic: ParameterParser.ParseDouble(pitchQuadratic, L.T("相对二次项")),
+            PitchCubic: ParameterParser.ParseDouble(pitchCubic, L.T("相对三次项")));
         disc.Validate();
         return disc;
     }
@@ -1307,7 +1311,10 @@ public partial class LivePreviewViewModel : ObservableObject
             parameters = new CdDiscParameters(
                 ParameterParser.ParsePositiveDouble(_state.CdInnerRadius, L.T("内半径")),
                 ParameterParser.ParsePositiveDouble(_state.CdOuterRadius, L.T("外半径")),
-                sectors);
+                sectors,
+                PitchLinear: ParameterParser.ParseDouble(_state.CdPitchLinear, L.T("相对一次项")),
+                PitchQuadratic: ParameterParser.ParseDouble(_state.CdPitchQuadratic, L.T("相对二次项")),
+                PitchCubic: ParameterParser.ParseDouble(_state.CdPitchCubic, L.T("相对三次项")));
             parameters.Validate();
 
             int configuredSize = ParameterParser.ParsePositiveInt(_state.CdPreviewSize, L.T("预览尺寸"));
@@ -1363,11 +1370,17 @@ public partial class LivePreviewViewModel : ObservableObject
             generated = new CdDiscParameters(
                 ParameterParser.ParsePositiveDouble(_state.CdInnerRadius, L.T("生成内半径")),
                 ParameterParser.ParsePositiveDouble(_state.CdOuterRadius, L.T("生成外半径")),
-                sectors);
+                sectors,
+                PitchLinear: ParameterParser.ParseDouble(_state.CdPitchLinear, L.T("相对一次项")),
+                PitchQuadratic: ParameterParser.ParseDouble(_state.CdPitchQuadratic, L.T("相对二次项")),
+                PitchCubic: ParameterParser.ParseDouble(_state.CdPitchCubic, L.T("相对三次项")));
             actual = new CdDiscParameters(
                 ParameterParser.ParsePositiveDouble(_state.CdActualInnerRadius, L.T("实测内半径")),
                 ParameterParser.ParsePositiveDouble(_state.CdActualOuterRadius, L.T("实测外半径")),
-                sectors);
+                sectors,
+                PitchLinear: ParameterParser.ParseDouble(_state.CdActualPitchLinear, L.T("相对一次项")),
+                PitchQuadratic: ParameterParser.ParseDouble(_state.CdActualPitchQuadratic, L.T("相对二次项")),
+                PitchCubic: ParameterParser.ParseDouble(_state.CdActualPitchCubic, L.T("相对三次项")));
             generated.Validate();
             actual.Validate();
 

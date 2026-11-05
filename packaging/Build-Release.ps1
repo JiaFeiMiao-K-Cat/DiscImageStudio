@@ -67,8 +67,7 @@ New-Item -ItemType Directory -Path $publishDirectory, $isolatedAppDirectory -For
     "-p:AssemblyVersion=$($metadata.FileVersion)" `
     "-p:FileVersion=$($metadata.FileVersion)" `
     -p:PublishSingleFile=true `
-    -p:IncludeNativeLibrariesForSelfExtract=true `
-    -p:IncludeAllContentForSelfExtract=true
+    -p:IncludeNativeLibrariesForSelfExtract=true
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish failed with exit code $LASTEXITCODE."
 }

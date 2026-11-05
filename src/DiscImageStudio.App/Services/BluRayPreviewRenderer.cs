@@ -265,6 +265,7 @@ public static class BluRayPreviewRenderer
         private readonly double _innerPrimitive;
         private readonly double _sectorsPerMm;
         private readonly double _angleOffset;
+        private readonly BluRayTrackGeometry? _variableGeometry;
 
         internal PixelProjection(BluRayDiscParameters disc, int size)
         {
@@ -272,6 +273,7 @@ public static class BluRayPreviewRenderer
             _size = size;
             _mmPerPixel = disc.OuterRadiusMm * 2 / size;
             BluRayTrackGeometry geometry = new(disc);
+            _variableGeometry = disc.HasVariablePitch ? geometry : null;
             _growth = geometry.EffectiveTrackPitchMicrometers / (2 * Math.PI * 1000);
             _innerPrimitive = Primitive(disc.InnerRadiusMm);
             _sectorsPerMm = disc.TotalSectors / geometry.TrackLengthPerLayerMm;
@@ -282,6 +284,8 @@ public static class BluRayPreviewRenderer
         {
             double x = (pixelX + 0.5 - _size / 2.0) * _mmPerPixel;
             double y = (_size / 2.0 - pixelY - 0.5) * _mmPerPixel;
+            if (_variableGeometry is not null)
+                return _variableGeometry.TryGetSectorAtPoint(x, y, out sector);
             double radius = Math.Sqrt(x * x + y * y);
             sector = 0;
             if (radius < _disc.InnerRadiusMm || radius >= _disc.OuterRadiusMm) return false;

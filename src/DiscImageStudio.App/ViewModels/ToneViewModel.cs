@@ -146,9 +146,15 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.BdInvertMapping)
             or nameof(DiscParametersState.BdInnerRadius)
             or nameof(DiscParametersState.BdOuterRadius)
+            or nameof(DiscParametersState.BdPitchLinear)
+            or nameof(DiscParametersState.BdPitchQuadratic)
+            or nameof(DiscParametersState.BdPitchCubic)
             or nameof(DiscParametersState.BdTotalSectors)
             or nameof(DiscParametersState.CdInnerRadius)
             or nameof(DiscParametersState.CdOuterRadius)
+            or nameof(DiscParametersState.CdPitchLinear)
+            or nameof(DiscParametersState.CdPitchQuadratic)
+            or nameof(DiscParametersState.CdPitchCubic)
             or nameof(DiscParametersState.CdSectors)
             or nameof(DiscParametersState.CdDataDirectory)
             or nameof(DiscParametersState.CdVolumeLabel)
@@ -243,14 +249,11 @@ public partial class ToneViewModel : ObservableObject
             return;
         }
 
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
-            $"design-tone-{revision}.png");
+        string outputPath = TempFiles.GetCacheFilePath($"design-tone-{revision}.png");
         bool keepOutput = false;
         try
         {
             await Task.Delay(180, cancellationToken);
-            Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
 
             int samplesPerSector;
             if (IsBluRay)
@@ -412,7 +415,10 @@ public partial class ToneViewModel : ObservableObject
             checked((uint)totalSectors),
             1,
             ParameterParser.ParsePositiveDouble(_state.BdInnerRadius, L.T("蓝光内半径")),
-            ParameterParser.ParsePositiveDouble(_state.BdOuterRadius, L.T("蓝光外半径")));
+            ParameterParser.ParsePositiveDouble(_state.BdOuterRadius, L.T("蓝光外半径")),
+            PitchLinear: ParameterParser.ParseDouble(_state.BdPitchLinear, L.T("相对一次项")),
+            PitchQuadratic: ParameterParser.ParseDouble(_state.BdPitchQuadratic, L.T("相对二次项")),
+            PitchCubic: ParameterParser.ParseDouble(_state.BdPitchCubic, L.T("相对三次项")));
         parameters.Validate();
         return parameters;
     }
@@ -422,7 +428,10 @@ public partial class ToneViewModel : ObservableObject
         CdDiscParameters parameters = new(
             ParameterParser.ParsePositiveDouble(_state.CdInnerRadius, L.T("内半径")),
             ParameterParser.ParsePositiveDouble(_state.CdOuterRadius, L.T("外半径")),
-            ParameterParser.ParsePositiveLong(_state.CdSectors, L.T("扇区数")));
+            ParameterParser.ParsePositiveLong(_state.CdSectors, L.T("扇区数")),
+            PitchLinear: ParameterParser.ParseDouble(_state.CdPitchLinear, L.T("相对一次项")),
+            PitchQuadratic: ParameterParser.ParseDouble(_state.CdPitchQuadratic, L.T("相对二次项")),
+            PitchCubic: ParameterParser.ParseDouble(_state.CdPitchCubic, L.T("相对三次项")));
         parameters.Validate();
         return parameters;
     }

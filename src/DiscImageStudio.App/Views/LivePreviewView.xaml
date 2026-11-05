@@ -92,9 +92,8 @@
                                                                  Text="{Binding Inspector.MeasuredOuterRadius, UpdateSourceTrigger=PropertyChanged}" />
                                                     </StackPanel>
                                                 </Grid>
-                                                <!-- DVD adds the cubic pitch distribution to the measured set;
-                                                     CD has no such degree of freedom and shows no row. -->
-                                                <controls:VisibilityGate IsOpen="{Binding Inspector.IsDvd}">
+                                                <!-- All disc families share the measured cubic pitch controls. -->
+                                                <controls:VisibilityGate IsOpen="True">
                                                     <StackPanel>
                                                         <Grid Margin="0,0,0,12">
                                                             <Grid.ColumnDefinitions>

@@ -221,6 +221,9 @@ public partial class ExportViewModel : ObservableObject
         [
             "--r0", _state.CdInnerRadius.Trim(),
             "--r1", _state.CdOuterRadius.Trim(),
+            "--pitch-linear", _state.CdPitchLinear.Trim(),
+            "--pitch-quadratic", _state.CdPitchQuadratic.Trim(),
+            "--pitch-cubic", _state.CdPitchCubic.Trim(),
             "--sectors", _state.CdSectors.Trim(),
             "--tone-dither", tone.DitherStrength.ToString("R", System.Globalization.CultureInfo.InvariantCulture),
             "--tone-levels", tone.Levels.ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -312,6 +315,9 @@ public partial class ExportViewModel : ObservableObject
             "--total-sectors", _state.BdTotalSectors.Trim(),
             "--r0", _state.BdInnerRadius.Trim(),
             "--r1", _state.BdOuterRadius.Trim(),
+            "--pitch-linear", _state.BdPitchLinear.Trim(),
+            "--pitch-quadratic", _state.BdPitchQuadratic.Trim(),
+            "--pitch-cubic", _state.BdPitchCubic.Trim(),
             "--invert", _state.BdInvertMapping.ToString().ToLowerInvariant(),
             "--volume-label", string.IsNullOrWhiteSpace(_state.BdVolumeLabel)
                 ? "BD_IMAGE" : _state.BdVolumeLabel.Trim(),

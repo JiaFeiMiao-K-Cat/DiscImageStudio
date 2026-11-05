@@ -24,12 +24,65 @@ internal static class TempFiles
 
     private static readonly string[] ManagedNames = ["design-thumbnail.png"];
 
+    // Static initializers run in textual order: the Lazy must exist before the field below reads it.
+    private static readonly Lazy<string> DefaultDirectoryValue = new(ResolveDefaultDirectory);
     private static readonly Lock Gate = new();
     private static string _livePreviewDirectory = DefaultDirectory;
 
-    internal static string DefaultDirectory => Path.Combine(
-        Path.GetTempPath(),
-        DefaultFolderName);
+    /// <summary>Cache folder next to the executable, so a portable copy keeps its artifacts with
+    /// itself. When that folder cannot be written (for example under Program Files) the cache
+    /// moves to %LOCALAPPDATA%\DiscImageStudio\cache. The system temp folder is never used.</summary>
+    internal static string DefaultDirectory => DefaultDirectoryValue.Value;
+
+    private static string ResolveDefaultDirectory()
+    {
+        // In a single-file bundle AppContext.BaseDirectory may be the extraction folder, so the
+        // executable's own path is the reliable anchor.
+        // When launched as "dotnet DiscImageStudio.dll" the process is the shared dotnet host,
+        // so the app's own folder is the anchor instead of the SDK directory.
+        string? processPath = Environment.ProcessPath;
+        bool hostedByDotnet = string.Equals(
+            Path.GetFileNameWithoutExtension(processPath), "dotnet", StringComparison.OrdinalIgnoreCase);
+        string? executableDirectory = hostedByDotnet
+            ? AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            : Path.GetDirectoryName(processPath);
+        if (!string.IsNullOrEmpty(executableDirectory))
+        {
+            string besideExecutable = Path.Combine(executableDirectory, DefaultFolderName + "-cache");
+            if (CanWrite(besideExecutable))
+            {
+                return besideExecutable;
+            }
+        }
+
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            DefaultFolderName,
+            "cache");
+    }
+
+    private static bool CanWrite(string directory)
+    {
+        try
+        {
+            Directory.CreateDirectory(directory);
+            string probe = Path.Combine(directory, ".write-probe-" + Guid.NewGuid().ToString("N"));
+            using (new FileStream(probe, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
+            }
+
+            File.Delete(probe);
+            return true;
+        }
+        catch (Exception exception) when (exception is ArgumentException
+                                              or IOException
+                                              or NotSupportedException
+                                              or UnauthorizedAccessException
+                                              or System.Security.SecurityException)
+        {
+            return false;
+        }
+    }
 
     /// <summary>Directory for newly written preview/composite artifacts. Never null; falls
     /// back to <see cref="DefaultDirectory"/>.</summary>
@@ -45,7 +98,7 @@ internal static class TempFiles
     }
 
     /// <summary>Points new cache writes at <paramref name="directory"/>. An empty value or an
-    /// unusable folder (relative path, unwritable) falls back to the default temp folder; the
+    /// unusable folder (relative path, unwritable) falls back to <see cref="DefaultDirectory"/>; the
     /// return value is the directory actually in use.</summary>
     internal static string TryConfigureCacheDirectory(string? directory)
     {
@@ -104,14 +157,47 @@ internal static class TempFiles
         }
     }
 
-    /// <summary>Bytes held by app-managed cache files in the current directory. Unrelated
+    /// <summary>Resolves a managed artifact inside this process's private cache session.
+    /// The returned path remains valid when the configured cache root changes.</summary>
+    internal static string GetCacheFilePath(string fileName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
+        if (Path.GetFileName(fileName) != fileName || fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0
+            || !IsManagedCacheFile(fileName))
+            throw new ArgumentException("Expected an app-managed cache file name.", nameof(fileName));
+
+        lock (Gate)
+        {
+            string directory = Path.Combine(_livePreviewDirectory, CacheSession.DirectoryName);
+            Directory.CreateDirectory(directory);
+            if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0)
+                throw new IOException("The cache session directory must not be a link.");
+            string leasePath = Path.Combine(directory, CacheSession.LeaseName);
+            if (CacheSession.Leases.TryGetValue(directory, out FileStream? existing) && !File.Exists(leasePath))
+            {
+                existing.Dispose();
+                CacheSession.Leases.Remove(directory);
+            }
+            if (!CacheSession.Leases.ContainsKey(directory))
+            {
+                // Keep the handle until process exit, including across cancellation
+                // and cache-root changes: an already-started job may still use it.
+                FileStream lease = new(leasePath,
+                    FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read | FileShare.Delete);
+                CacheSession.Leases.Add(directory, lease);
+            }
+            return Path.Combine(directory, fileName);
+        }
+    }
+
+    /// <summary>Bytes held by app-managed files in the current root and cleanable sessions. Unrelated
     /// files in a shared custom folder are not counted, matching what <see cref="ClearCache"/>
     /// would remove.</summary>
     internal static long GetCacheSize() => EnumerateManagedFiles()
         .Sum(file => GetLength(file));
 
-    /// <summary>Deletes only whitelisted cache artifacts and returns how many files were
-    /// removed. Directories are never touched.</summary>
+    /// <summary>Deletes only whitelisted artifacts in the current root, this session and
+    /// inactive sessions. Other running processes and all directories are left alone.</summary>
     internal static int ClearCache()
     {
         int removed = 0;
@@ -156,9 +242,21 @@ internal static class TempFiles
 
         try
         {
-            return Directory.EnumerateFiles(directory)
-                .Where(IsManagedCacheFile)
-                .ToArray();
+            List<string> files = Directory.EnumerateFiles(directory).Where(IsManagedCacheFile).ToList();
+            foreach (string session in Directory.EnumerateDirectories(directory))
+            {
+                if (!CanCleanSession(session)) continue;
+                try
+                {
+                    files.AddRange(Directory.EnumerateFiles(session).Where(IsManagedCacheFile));
+                }
+                catch (Exception exception) when (exception is IOException
+                                                      or UnauthorizedAccessException
+                                                      or System.Security.SecurityException)
+                {
+                }
+            }
+            return files;
         }
         catch (Exception exception) when (exception is IOException
                                               or UnauthorizedAccessException
@@ -180,5 +278,40 @@ internal static class TempFiles
         {
             return 0;
         }
+    }
+
+    private static bool CanCleanSession(string directory)
+    {
+        string name = Path.GetFileName(directory);
+        if (!name.StartsWith(CacheSession.Prefix, StringComparison.Ordinal)
+            || !Guid.TryParseExact(name[CacheSession.Prefix.Length..], "N", out _)) return false;
+        try
+        {
+            if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0) return false;
+            string leasePath = Path.Combine(directory, CacheSession.LeaseName);
+            if (!File.Exists(leasePath) || (File.GetAttributes(leasePath) & FileAttributes.ReparsePoint) != 0) return false;
+            lock (Gate)
+            {
+                if (CacheSession.Leases.ContainsKey(directory)) return true;
+            }
+            // Opening exclusively fails while another process holds its lease.
+            // Session names are never reused by subsequent processes.
+            using FileStream lease = new(leasePath, FileMode.Open, FileAccess.Read, FileShare.None);
+            return true;
+        }
+        catch (Exception exception) when (exception is IOException
+                                              or UnauthorizedAccessException
+                                              or System.Security.SecurityException)
+        {
+            return false;
+        }
+    }
+
+    private static class CacheSession
+    {
+        internal const string Prefix = "session-";
+        internal const string LeaseName = ".cache-session.lock";
+        internal static readonly string DirectoryName = Prefix + Guid.NewGuid().ToString("N");
+        internal static readonly Dictionary<string, FileStream> Leases = new(StringComparer.OrdinalIgnoreCase);
     }
 }

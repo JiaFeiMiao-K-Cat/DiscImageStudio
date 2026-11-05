@@ -46,7 +46,9 @@ public partial class CalibrationViewModel
     /// <summary>Outer/inner-edge deviations of the last rectification; empty until a fit
     /// exists. This is the only line under 确认矫正.</summary>
     [ObservableProperty] private string _rectificationSummary = string.Empty;
-    public string TraceSummary => L.F($"已保留 {TracePoints.Count} 点 · 偏离点自动标红");
+    public string TraceSummary => HasBoundarySegments
+        ? L.Format("HalfDisc.Summary", TracePoints.Select(p => p.Arm).Distinct().Count(), TracePoints.Count)
+        : L.F($"已保留 {TracePoints.Count} 点 · 偏离点自动标红");
     public IReadOnlyList<PhotoDiscSize> PhysicalDiscSizeChoices { get; } = PhotoDiscSizes;
     // The default must be the same instance the ComboBox lists: PhotoDiscSize is a reference
     // type, and a separate equal-looking object leaves SelectedIndex at -1. Selecting the
@@ -65,26 +67,28 @@ public partial class CalibrationViewModel
 
     private void InitializePhotoCommands()
     {
-        ImportPhotoCommand = new AsyncRelayCommand(ImportPhotoAsync, CanUseTarget);
+        ImportPhotoCommand = new AsyncRelayCommand(ImportPhotoAsync, () => CanUseTarget() && TargetMatchesStage);
         RectifyPhotoCommand = new AsyncRelayCommand(RectifyPhotoAsync,
-            () => CanUseTarget() && PhotoImage is not null && IsPhotoStep && PhotoBoundaryPoints.Count >= 10);
+            () => CanUseTarget() && TargetMatchesStage && PhotoImage is not null && IsPhotoStep && PhotoBoundaryPoints.Count >= 10);
         ConfirmRectificationCommand = new RelayCommand(ConfirmRectification,
-            () => !IsBusy && IsPhotoStep && IsRectificationReady && _photoTransform is not null);
+            () => !IsBusy && TargetMatchesStage && IsPhotoStep && IsRectificationReady && _photoTransform is not null);
         BackToPhotoCommand = new RelayCommand(() =>
         {
             IsPhotoStep = true;
             PreviewRectification = false;
             ContourConfirmed = false;
         }, () => !IsBusy && IsTraceStep);
-        ClearTracesCommand = new RelayCommand(ClearTraces, () => !IsBusy && TracePoints.Count > 0);
-        ClearSelectedTraceCommand = new RelayCommand(ClearTraces, () => !IsBusy && TracePoints.Count > 0);
+        ClearTracesCommand = new RelayCommand(ClearTraces, () => !IsBusy && IsLineFitStep && TracePoints.Count > 0);
+        ClearSelectedTraceCommand = new RelayCommand(ClearTraces, () => !IsBusy && IsLineFitStep && TracePoints.Count > 0);
         BoundaryEditedCommand = new RelayCommand<CalibrationBoundaryEdit>(EditBoundary,
             _ => !IsBusy && IsPhotoStep && !PreviewRectification && PhotoImage is not null);
         TraceEditedCommand = new RelayCommand<CalibrationTraceEdit>(EditTrace,
-            _ => !IsBusy && IsTraceStep && _photoTransform is not null);
+            _ => !IsBusy && IsLineFitStep && _photoTransform is not null);
+        InitializeBoundaryCommands();
     }
 
-    private bool CanSolveTrace() => CanUseTarget() && IsTraceStep && _photoTransform is not null && TracePoints.Count >= 6;
+    private bool CanSolveTrace() => CanUseTarget() && IsLineFitStep && _photoTransform is not null
+        && (HasBoundarySegments ? HasEnoughBoundaryPoints() : TracePoints.Count >= 6);
 
     // A new (or reset) picture always lands in boundary-editing view: the burn-pattern
     // overlay belongs to inspecting the target, not the photo.
@@ -96,6 +100,10 @@ public partial class CalibrationViewModel
         ShowTargetPreview = false;
         OnPropertyChanged(nameof(StepTwoState));
         OnPropertyChanged(nameof(StepThreeState));
+        OnPropertyChanged(nameof(IsRingStep));
+        OnPropertyChanged(nameof(IsClockStep));
+        OnPropertyChanged(nameof(IsRadialArcStep));
+        NotifyTraceStage();
         // The step column discloses one stage at a time: entering the trace step collapses
         // the rectification card and vice versa.
         StepTwoExpanded = IsPhotoStep;
@@ -105,6 +113,7 @@ public partial class CalibrationViewModel
     partial void OnTracePointsChanged(IReadOnlyList<CalibrationTracePoint> value)
     {
         OnPropertyChanged(nameof(TraceSummary));
+        if (HasBoundarySegments) RefreshBoundarySegments();
         RefreshPhotoCommands();
         SolveCommand?.NotifyCanExecuteChanged();
     }
@@ -122,6 +131,7 @@ public partial class CalibrationViewModel
         ConfirmRectificationCommand?.NotifyCanExecuteChanged(); BackToPhotoCommand?.NotifyCanExecuteChanged();
         ClearSelectedTraceCommand?.NotifyCanExecuteChanged(); ClearTracesCommand?.NotifyCanExecuteChanged();
         BoundaryEditedCommand?.NotifyCanExecuteChanged(); TraceEditedCommand?.NotifyCanExecuteChanged();
+        AddBoundarySegmentCommand?.NotifyCanExecuteChanged(); DeleteBoundarySegmentCommand?.NotifyCanExecuteChanged();
     }
 
     /// <summary>Re-reads the photo step's labels and measurement line. The choice labels are
@@ -134,6 +144,7 @@ public partial class CalibrationViewModel
         }
 
         OnPropertyChanged(nameof(TraceSummary));
+        RefreshBoundarySegments();
         if (_rectificationFit is { } fit)
         {
             RectificationSummary = L.F($"外缘偏差 {fit.OuterRmsPixels:0.0} 像素 · 内缘偏差 {fit.HoleRmsPixels:0.0} 像素");
@@ -146,7 +157,9 @@ public partial class CalibrationViewModel
         _photoTransform = null; _rectificationFit = null; _photoPng = null;
         PhotoImage = null; RectifiedPhoto = null;
         PhotoBoundaryPoints = []; PhotoBoundaryContours = [];
+        SetRingObservations();
         TracePoints = []; CrossPredictionContours = [];
+        ResetBoundarySegments();
         IsRectificationReady = false; PreviewRectification = false; IsPhotoStep = true;
         RectificationSummary = string.Empty;
         RefreshPhotoCommands();
@@ -158,6 +171,8 @@ public partial class CalibrationViewModel
         _photoTransform = null; _rectificationFit = null; RectifiedPhoto = null;
         IsRectificationReady = false; PreviewRectification = false; IsPhotoStep = true;
         PhotoBoundaryContours = []; TracePoints = [];
+        ResetBoundarySegments();
+        SetRingObservations();
         InvalidateFit();
         RectificationSummary = string.Empty;
         RefreshCommands();
@@ -230,7 +245,7 @@ public partial class CalibrationViewModel
             RectificationSummary = L.F($"外缘偏差 {fit.OuterRmsPixels:0.0} 像素 · 内缘偏差 {fit.HoleRmsPixels:0.0} 像素");
             IsRectificationReady = true;
             PreviewRectification = true;
-            _statusMessage = L.T("矫正预览已生成。检查盘面恢复正视效果后，确认并开始描线。");
+            _statusMessage = L.T("Phases.Rectified");
             RefreshPhotoCommands();
         });
     }
@@ -253,7 +268,9 @@ public partial class CalibrationViewModel
 
     private void EditTrace(CalibrationTraceEdit? edit)
     {
-        if (edit is null || !IsTraceStep || IsBusy || _photoTransform is null) return;
+        if (edit is null || !IsLineFitStep || IsBusy || _photoTransform is null) return;
+        int arm = HasBoundarySegments ? edit.Arm : 0;
+        if (HasBoundarySegments && !_boundarySegmentIds.Contains(arm)) return;
         if (!double.IsFinite(edit.XMm) || !double.IsFinite(edit.YMm)) return;
         double radius = Math.Sqrt(edit.XMm * edit.XMm + edit.YMm * edit.YMm);
         if (!edit.Remove && (radius < 7.5 || radius > SelectedPhysicalDiscSize.OuterRadiusMm))
@@ -261,21 +278,39 @@ public partial class CalibrationViewModel
             return;
         }
         var points = TracePoints.ToList();
-        int at = points.FindIndex(p => p.Index == edit.Index);
+        int at = points.FindIndex(p => p.Index == edit.Index && p.Arm == arm);
         if (edit.Remove)
         {
             if (at < 0) return;
             points.RemoveAt(at);
         }
-        else if (at >= 0) points[at] = new(0, edit.Index, edit.XMm, edit.YMm);
+        else if (at >= 0) points[at] = new(arm, edit.Index, edit.XMm, edit.YMm);
         else
         {
             if (edit.Index != -1 || points.Count >= 4000) return;
             int id = points.Count == 0 ? 0 : points.Max(p => p.Index) + 1;
-            points.Add(new(0, id, edit.XMm, edit.YMm));
+            if (HasBoundarySegments)
+            {
+                int insertAt;
+                if (edit.InsertBeforeIndex is int before)
+                {
+                    insertAt = points.FindIndex(p => p.Arm == arm && p.Index == before);
+                    if (insertAt < 0) return; // A stale insertion hint must not connect another segment.
+                }
+                else
+                {
+                    int last = points.FindLastIndex(p => p.Arm == arm);
+                    insertAt = last < 0 ? points.Count : last + 1;
+                }
+                points.Insert(insertAt, new(arm, id, edit.XMm, edit.YMm));
+            }
+            else points.Add(new(arm, id, edit.XMm, edit.YMm));
         }
-        // Point entry is not a timed pen stroke: radial order allows inserting points into any gap.
-        TracePoints = points.OrderBy(p => p.XMm * p.XMm + p.YMm * p.YMm).ToArray();
+        // Boundary paths keep their explicit neighbours through every edit. Numerical
+        // radial ordering belongs to the fitter, never to the user's visible polyline.
+        TracePoints = HasBoundarySegments
+            ? _boundarySegmentIds.SelectMany(segment => points.Where(p => p.Arm == segment)).ToArray()
+            : points.OrderBy(p => p.Arm).ThenBy(p => p.XMm * p.XMm + p.YMm * p.YMm).ToArray();
         InvalidateFit();
         RefreshCommands();
     }
@@ -283,17 +318,34 @@ public partial class CalibrationViewModel
     private void ClearTraces()
     {
         TracePoints = [];
+        ResetBoundarySegments();
         InvalidateFit();
         RefreshCommands();
     }
 
-    private IReadOnlyList<CalibrationCrossTrace> CrossTraces() => TracePoints.Count == 0 ? [] :
+    private IReadOnlyList<CalibrationCrossTrace> CrossTraces() => HasBoundarySegments || TracePoints.Count == 0 ? [] :
         [new(0, TracePoints.Select(p => new CalibrationPoint(p.XMm, p.YMm)).ToArray())];
 
-    private CalibrationPhotoSession? PhotoSession() => _photoPng is null ? null : new(_photoPng,
-        Boundary(CalibrationPhotoBoundaryKind.OuterEdge), Boundary(CalibrationPhotoBoundaryKind.CenterHole),
-        SelectedPhysicalDiscSize.OuterRadiusMm, _photoTransform is not null && TracePoints.Count > 0 || IsTraceStep,
-        CrossTraces());
+    private CalibrationPhotoSession? PhotoSession()
+    {
+        if (_photoPng is null) return null;
+        var rings = RingObservations();
+        CalibrationRingArcDraft? draft = HasWideBandTarget ? _oldWideBandDraft : _photoTransform is not null && ThreePointMode
+            && CanMeasureAtPhotoSize
+            && (IsTraceStep || RingPointMarkers.Count > 0 || rings.Length > 0)
+            && (uint)SelectedRingIndex < (uint)RingArcs.Count
+            ? new(SelectedRingIndex, !RingArcs[SelectedRingIndex].IsConfirmed ? RingPointMarkers : []) : null;
+        bool confirmed = _photoTransform is not null
+            && (IsTraceStep || TracePoints.Count > 0 || rings.Length > 0 || draft is not null || HasArcLengthMarks);
+        return new(_photoPng, Boundary(CalibrationPhotoBoundaryKind.OuterEdge), Boundary(CalibrationPhotoBoundaryKind.CenterHole),
+            SelectedPhysicalDiscSize.OuterRadiusMm,
+            confirmed,
+            CrossTraces(), IsCoarseMode, rings.Length == 0 ? null : rings, _acceptedRingSeed is not null, draft, PreferredClockAngle,
+            HasArcLengthMarks ? new CalibrationArcLengthSession(SelectedArcBand, _arcMarks.ToArray()) : null,
+            IsBandRayMode && draft is null && confirmed && CanMeasureAtPhotoSize
+                && (uint)SelectedRingIndex < (uint)RingArcs.Count ? SelectedRingIndex : null,
+            HasBoundarySegments ? BoundarySegments() : null);
+    }
 
     private static string EncodePhoto(BitmapSource source)
     {
@@ -324,6 +376,7 @@ public partial class CalibrationViewModel
                 ValidateOutputParameters(session.Target.Parameters);
                 BitmapSource? image = null, rectified = null;
                 CalibrationPhotoFitResult? fit = null;
+                CalibrationFitResult? ringFit = null;
                 if (session.Photo is { } photo)
                 {
                     image = DecodePhoto(photo.ImagePngBase64);
@@ -334,13 +387,23 @@ public partial class CalibrationViewModel
                         fit = CalibrationPhotoRectifier.Fit(photo.OuterBoundary, photo.HoleBoundary, photo.PhysicalOuterRadiusMm, 7.5, token);
                         if (!fit.Succeeded || fit.Transform is null) throw new ArgumentException(fit.Message);
                         rectified = CalibrationPhotoService.Rectify(image, fit.Transform, photo.PhysicalOuterRadiusMm + 3, 1400, token);
+                        if (photo.UseRingSeed)
+                        {
+                            ringFit = CalibrationRingFitter.Fit(session.Target, photo.RingObservations ?? [], token);
+                            if (!RingEstimateAccepted(ringFit, photo.PhysicalOuterRadiusMm))
+                                throw new ArgumentException(L.T("Rings.InvalidSavedSeed"));
+                        }
                     }
                 }
-                return (Session: session, Image: image, Rectified: rectified, Fit: fit);
+                return (Session: session, Image: image, Rectified: rectified, Fit: fit, RingFit: ringFit);
             }, token);
             token.ThrowIfCancellationRequested();
             var session = prepared.Session;
             InstallTarget(session.Target, session.FitOptions, session.CdInterleave);
+            RestoreStage(session);
+            WriteSetupParameters(session.Target.Parameters);
+            if (session.Target.Parameters.Kind == CalibrationDiscKind.Cd)
+                _state.CdInterleave = session.CdInterleave;
             if (session.Photo is { } photo)
             {
                 _restoringPhoto = true;
@@ -352,8 +415,28 @@ public partial class CalibrationViewModel
                 SetBoundaryPoints(photo.OuterBoundary, photo.HoleBoundary);
                 IsRectificationReady = _photoTransform is not null;
                 if (_photoTransform is not null) PhotoBoundaryContours = BoundaryContours(_photoTransform, photo.PhysicalOuterRadiusMm);
-                TracePoints = photo.Traces.SelectMany(t => t.Points).Select((p, i) => new CalibrationTracePoint(0, i, p.X, p.Y))
+                if (HasBoundarySegments) RestoreBoundarySegments(photo.BoundarySegments);
+                else TracePoints = photo.Traces.SelectMany(t => t.Points).Select((p, i) => new CalibrationTracePoint(0, i, p.X, p.Y))
                     .OrderBy(p => p.XMm * p.XMm + p.YMm * p.YMm).ToArray();
+                SetRingObservations(photo.RingObservations);
+                if (photo.BandRaySelection is int selectedEdge)
+                    SelectedRingIndex = selectedEdge;
+                SetPreferredClockAngle(photo.PreferredClockAngleDegrees);
+                SetArcLengthMarks(photo.RadialArcLengths);
+                if (photo.ArcDraft is { } draft)
+                {
+                    SelectedRingIndex = draft.RingIndex;
+                    if (HasWideBandTarget) _oldWideBandDraft = draft;
+                    else
+                    {
+                        ThreePointMode = true;
+                        if (draft.Points.Count > 0) SetRingMarkers(draft.Points);
+                    }
+                }
+                _ringFit = prepared.RingFit;
+                _acceptedRingSeed = _ringFit?.BestParameters;
+                NotifyRingResult();
+                UpdateFitAssessment();
                 IsPhotoStep = !photo.RectificationConfirmed;
                 RectificationSummary = prepared.Fit is { } restoredFit
                     ? L.F($"外缘偏差 {restoredFit.OuterRmsPixels:0.0} 像素 · 内缘偏差 {restoredFit.HoleRmsPixels:0.0} 像素")

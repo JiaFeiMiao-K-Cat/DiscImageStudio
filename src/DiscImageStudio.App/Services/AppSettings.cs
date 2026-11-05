@@ -28,7 +28,7 @@ public sealed record AppSettings
     public string DefaultProjectDirectory { get; init; } = string.Empty;
 
     /// <summary>Working folder for rendered composites, previews and thumbnails; empty means
-    /// the system temp folder.</summary>
+    /// the DiscImageStudio-cache folder beside the executable.</summary>
     public string CacheDirectory { get; init; } = string.Empty;
 
     /// <summary>Drops values that cannot be represented on this machine: an unknown enum,

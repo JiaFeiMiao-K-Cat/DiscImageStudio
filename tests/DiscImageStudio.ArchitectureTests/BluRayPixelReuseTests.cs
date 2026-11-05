@@ -13,9 +13,34 @@ internal static class BluRayPixelReuseTests
         Console.WriteLine("blu-ray-pixel-reuse: passed (pixel boundaries, axial tangents, white-margin re-entry, inner/middle/outer clusters, fallback)");
     }
 
-    private static void TestAlignedPixelAndImageEdges()
+    internal static void RunCubicPitch()
     {
-        BluRayDiscParameters nominal = new();
+        var large = Checkerboard(8192, 8192);
+        foreach (var disc in new[]
+        {
+            new BluRayDiscParameters(PitchLinear: .25, PitchQuadratic: -.125, PitchCubic: .125),
+            new BluRayDiscParameters(PitchLinear: 1e-12),
+            new BluRayDiscParameters(PitchLinear: .25001, PitchQuadratic: -.125, PitchCubic: .125),
+        })
+        {
+            TestAlignedPixelAndImageEdges(disc);
+            TestTravelAwayFromWhiteMargins(disc);
+            foreach (uint first in new[] { 0U, disc.TotalSectors / 64 * 32, disc.TotalSectors - 32 })
+            {
+                foreach (double perturbation in new[] { -1e-8, 1e-8 })
+                {
+                    var aligned = AlignToPixelCoordinate(disc, large, first + 17, 1091,
+                        horizontal: true, edge: 4109, perturbation);
+                    CheckCluster(aligned, large, first, false, "8K cubic pixel boundary");
+                }
+            }
+        }
+        Console.WriteLine("blu-ray-cubic-pixel-reuse: passed (8K boundaries, tiny coefficients, reuse-limit boundary, white-margin re-entry)");
+    }
+
+    private static void TestAlignedPixelAndImageEdges(BluRayDiscParameters? parameters = null)
+    {
+        BluRayDiscParameters nominal = parameters ?? new();
         uint middle = (nominal.TotalSectors / 64) * 32;
         uint last = nominal.TotalSectors - 32;
         // The narrow dimension deliberately cuts through the recording annulus,
@@ -121,9 +146,9 @@ internal static class BluRayPixelReuseTests
         }
     }
 
-    private static void TestTravelAwayFromWhiteMargins()
+    private static void TestTravelAwayFromWhiteMargins(BluRayDiscParameters? parameters = null)
     {
-        BluRayDiscParameters nominal = new();
+        BluRayDiscParameters nominal = parameters ?? new();
         uint[] starts = [0, (nominal.TotalSectors / 64) * 32, nominal.TotalSectors - 32];
         BluRayGray8Raster probeRaster = Checkerboard(1, 1);
         foreach (uint first in starts)
