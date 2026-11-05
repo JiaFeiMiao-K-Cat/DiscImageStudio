@@ -121,12 +121,149 @@ internal static class DvdFilePlacementTests
             noDrawingSpace[Array.IndexOf(noDrawingSpace, "--total-sectors") + 1] = "64";
             Require(DvdCommandRunner.Run(noDrawingSpace) != 0, "capacity rejected before creating ISO");
             Require(File.ReadAllBytes(rejected).SequenceEqual(sentinel), "invalid requests preserve existing output");
+            VerifyTransparentRegion(directory, data, rootBytes, nestedBytes);
         }
         finally
         {
             Directory.Delete(directory, recursive: true);
         }
         Console.WriteLine("dvd-file-placement: passed (ISO/Joliet extents, Unicode contents, full geometry, streaming parity, ranges and guards)");
+    }
+
+    private static void VerifyTransparentRegion(string directory, string data, byte[] rootBytes, byte[] nestedBytes)
+    {
+        string ring = Path.Combine(directory, "ring.png");
+        WriteRingImage(ring, transparentFrom: 30, transparentTo: 50);
+        DvdStreamingOptions options = new(256, 24, 58, FastParallelism: 1);
+        DvdHybridStreamingPlan plan = DvdStreamingGenerator.PrepareHybridInTransparency(data, ring, options, "PLACEMENT");
+        Require(plan.FilesInTransparentRegion && !plan.FilesAtOuterRing
+            && plan.FileSegments.All(s => s.StartLba >= plan.DrawingStartLba
+                && s.EndLbaExclusive <= plan.DrawingEndLbaExclusive),
+            "transparent segments are inside the drawing interval");
+        Require(plan.FileSegments.Any(s => s.StartLba % 16 != 0 || s.EndLbaExclusive % 16 != 0),
+            "test exercises a mixed ECC block at a non-block-aligned file boundary");
+        Require(plan.FileSegments[0].StartLba > plan.DrawingStartLba
+            && plan.FileSegments[^1].EndLbaExclusive < plan.DrawingEndLbaExclusive,
+            "picture remains on both sides of the file segments");
+
+        using MemoryStream output = new();
+        using ForwardOnlyStream forward = new(output);
+        DvdStreamingSummary summary = DvdStreamingGenerator.GenerateHybrid(ring, forward, options, plan);
+        byte[] streamBytes = output.ToArray();
+        Require(summary.BytesWritten == 256 * 2048 && streamBytes.Length == summary.BytesWritten,
+            "transparent layout writes the whole disc");
+        Dictionary<string, Entry> entries = ReadJoliet(streamBytes);
+        Require(entries["root.bin"].Bytes.SequenceEqual(rootBytes), "transparent root file bytes");
+        Require(entries["资料/中文.bin"].Bytes.SequenceEqual(nestedBytes), "transparent nested file bytes");
+        foreach (Entry entry in entries.Values.Where(entry => entry.Bytes.Length > 0))
+        {
+            uint end = entry.Lba + (uint)((entry.Bytes.Length + 2047) / 2048);
+            Require(plan.FileSegments.Any(s => entry.Lba >= s.StartLba && end <= s.EndLbaExclusive),
+                "all file extents stay inside the transparent segments");
+        }
+
+        string iso = Path.Combine(directory, "transparent.iso");
+        Require(DvdCommandRunner.Run(GenerateArguments(ring, data, iso, "transparent")) == 0,
+            "CLI transparent generation");
+        byte[] fileBytes = File.ReadAllBytes(iso);
+        NormalizeVolumeTimestamps(streamBytes);
+        NormalizeVolumeTimestamps(fileBytes);
+        Require(streamBytes.SequenceEqual(fileBytes), "transparent file and stream outputs match");
+        DvdImageMetadata metadata = DvdImageMetadata.TryLoad(iso)
+            ?? throw new InvalidOperationException("Missing transparent placement metadata.");
+        Require(metadata.FilesInTransparentRegion && metadata.HasFileSystem
+            && metadata.FileSegments!.SequenceEqual(plan.FileSegments)
+            && metadata.DrawingStartLba == plan.DrawingStartLba
+            && metadata.DrawingEndLbaExclusive == plan.DrawingEndLbaExclusive,
+            "sidecar records the transparent file region");
+
+        DvdTransparencyCapacity capacity = DvdStreamingGenerator.EstimateTransparentCapacity(
+            data, ring, options, "PLACEMENT");
+        Require(capacity.Fits && capacity.BlankSectors >= capacity.NeededSectors
+            && capacity.NeededSectors > 0 && capacity.SegmentsUsed >= 1
+            && capacity.RemainingBytes == capacity.BlankBytes - capacity.NeededBytes,
+            "capacity estimate fits the ring picture");
+
+        string opaque = Path.Combine(directory, "opaque.png");
+        WriteRingImage(opaque, transparentFrom: 0, transparentTo: 0);
+        DvdTransparencyCapacity none = DvdStreamingGenerator.EstimateTransparentCapacity(
+            data, opaque, options, "PLACEMENT");
+        Require(!none.Fits && none.BlankSectors == 0 && none.RemainingBytes < 0,
+            "capacity estimate reports the shortfall for an opaque picture");
+        Throws<ArgumentException>(() => DvdStreamingGenerator.PrepareHybridInTransparency(
+            data, opaque, options, "PLACEMENT"), "fully opaque picture has no room for files");
+
+        // A pale, slightly noisy opaque background (as exported by the designer) is blank paper too.
+        string pale = Path.Combine(directory, "pale.png");
+        WritePaleBackgroundImage(pale, figureFrom: 50, figureTo: 58);
+        DvdTransparencyCapacity paleOff = DvdStreamingGenerator.EstimateTransparentCapacity(
+            data, pale, options, "PLACEMENT", backgroundIsBlank: false);
+        Require(paleOff.BlankSectors == 0, "pale background is not blank when background detection is off");
+        DvdTransparencyCapacity paleOn = DvdStreamingGenerator.EstimateTransparentCapacity(
+            data, pale, options, "PLACEMENT");
+        Require(paleOn.Fits && paleOn.BlankSectors > 0, "pale background leaves room for files by default");
+        DvdHybridStreamingPlan palePlan = DvdStreamingGenerator.PrepareHybridInTransparency(
+            data, pale, options, "PLACEMENT");
+        using MemoryStream paleOutput = new();
+        DvdStreamingGenerator.GenerateHybrid(pale, paleOutput, options, palePlan);
+        Dictionary<string, Entry> paleEntries = ReadJoliet(paleOutput.ToArray());
+        Require(paleEntries["root.bin"].Bytes.SequenceEqual(rootBytes)
+            && paleEntries["资料/中文.bin"].Bytes.SequenceEqual(nestedBytes),
+            "files placed on a pale background keep their bytes");
+    }
+
+    private static void WritePaleBackgroundImage(string path, double figureFrom, double figureTo)
+    {
+        const int size = 256;
+        byte[] pixels = new byte[size * size * 4];
+        double scale = (size - 1) / (2.0 * 58);
+        Random noise = new(5);
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                double radius = Math.Sqrt(Math.Pow((x - (size - 1) / 2.0) / scale, 2)
+                    + Math.Pow((y - (size - 1) / 2.0) / scale, 2));
+                int offset = ((y * size) + x) * 4;
+                if (radius >= figureFrom && radius < figureTo)
+                {
+                    pixels[offset] = pixels[offset + 1] = pixels[offset + 2] = (byte)((x ^ y) * 9);
+                }
+                else
+                {
+                    // BGRA of a pale lavender (~#F9EFEA) with +-1 level of export noise.
+                    pixels[offset] = (byte)(249 + noise.Next(-1, 2));
+                    pixels[offset + 1] = (byte)(239 + noise.Next(-1, 2));
+                    pixels[offset + 2] = (byte)(234 + noise.Next(-1, 2));
+                }
+                pixels[offset + 3] = 255;
+            }
+        BitmapSource bitmap = BitmapSource.Create(size, size, 96, 96, PixelFormats.Bgra32, null, pixels, size * 4);
+        PngBitmapEncoder encoder = new();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using FileStream file = File.Create(path);
+        encoder.Save(file);
+    }
+
+    private static void WriteRingImage(string path, double transparentFrom, double transparentTo)
+    {
+        const int size = 256;
+        byte[] pixels = new byte[size * size * 4];
+        double scale = (size - 1) / (2.0 * 58);
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                double radius = Math.Sqrt(Math.Pow((x - (size - 1) / 2.0) / scale, 2)
+                    + Math.Pow((y - (size - 1) / 2.0) / scale, 2));
+                bool clear = radius >= transparentFrom && radius < transparentTo;
+                int offset = ((y * size) + x) * 4;
+                pixels[offset] = pixels[offset + 1] = pixels[offset + 2] = (byte)((x ^ y) * 9);
+                pixels[offset + 3] = clear ? (byte)0 : (byte)255;
+            }
+        BitmapSource bitmap = BitmapSource.Create(size, size, 96, 96, PixelFormats.Bgra32, null, pixels, size * 4);
+        PngBitmapEncoder encoder = new();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using FileStream file = File.Create(path);
+        encoder.Save(file);
     }
 
     private static string[] GenerateArguments(string image, string data, string iso, string position)

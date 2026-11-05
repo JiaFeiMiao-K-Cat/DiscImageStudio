@@ -812,6 +812,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.DvdOutputPath),
         nameof(DiscParametersState.DvdDataDirectory),
         nameof(DiscParametersState.DvdFilesAtOuterRing),
+        nameof(DiscParametersState.DvdFilesInTransparency),
         nameof(DiscParametersState.DvdVolumeLabel),
         nameof(DiscParametersState.BdInnerRadius),
         nameof(DiscParametersState.BdOuterRadius),

@@ -112,6 +112,18 @@ public sealed class DvdEccBlockEncoder
         return boundary;
     }
 
+    internal static ModulationBoundary ReplayPayloadBoundary(
+        ReadOnlySpan<byte> payloads,
+        uint firstPsn,
+        ModulationBoundary initialBoundary)
+    {
+        if (payloads.Length != PayloadBytesPerBlock)
+            throw new ArgumentException($"An ECC Block needs exactly {PayloadBytesPerBlock} payload bytes.", nameof(payloads));
+        if ((firstPsn & 0xF) != 0)
+            throw new ArgumentException("The first PSN is not aligned to a 16-sector ECC Block.", nameof(firstPsn));
+        return ReplayRecordingFrameBoundary(BuildRecordingFrames(payloads, firstPsn), initialBoundary);
+    }
+
     internal static byte[] BuildRecordingFrames(ReadOnlySpan<byte> payloads, uint firstPsn)
         => InterleaveRecordingFrames(BuildEccBytes(payloads, firstPsn));
 

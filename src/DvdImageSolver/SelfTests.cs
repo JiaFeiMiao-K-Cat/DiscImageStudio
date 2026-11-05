@@ -22,6 +22,7 @@ internal static class SelfTests
         TestImageMapping();
         TestIsoOutput();
         TestCalibrationAndRange();
+        TestHybridEccAwareStream();
         Console.WriteLine("selftest: all checks passed");
     }
 
@@ -1195,6 +1196,125 @@ internal static class SelfTests
             Directory.Delete(directory, recursive: true);
         }
     }
+    private static void TestHybridEccAwareStream()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), $"dvd-hybrid-solver-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            string imagePath = Path.Combine(directory, "source.png");
+            WriteTestPng(imagePath);
+            ImageMappingOptions mapping = new(
+                TotalSectors: 64,
+                InnerRadiusMm: 24,
+                OuterRadiusMm: 24.1,
+                ChannelBitLengthNm: 133.33,
+                StartAngleDegrees: 0,
+                Clockwise: false,
+                LuminanceThreshold: 128,
+                AlphaThreshold: 1,
+                SampleEveryChannelBits: 256);
+            MultiBlockSolveOptions options = new(
+                StartLba: 0,
+                FillSectors: 64,
+                PsnOffset: 0x30000,
+                IterationsPerBlock: 1,
+                MutationBytes: 4,
+                RandomSeed: 17,
+                InitialTemperature: 64,
+                FinalTemperature: 0.25,
+                ZeroInitialPayload: true,
+                ImageMapping: mapping,
+                Algorithm: SolverAlgorithm.Dispersion,
+                FastParallelism: 2);
+            (uint StartLba, uint EndLbaExclusive)[] extents = [(3, 5), (18, 20)];
+            using MemoryStream output = new();
+            FastDvdStreamSummary summary = FastDispersionImageWriter.WriteStreamEccAware(
+                imagePath,
+                output,
+                options,
+                extents,
+                (startLba, destination) =>
+                {
+                    for (int offset = 0; offset < destination.Length; offset++)
+                    {
+                        uint sector = startLba + checked((uint)(offset / DvdEccBlockEncoder.PayloadBytesPerSector));
+                        destination[offset] = checked((byte)((sector + (uint)(offset % DvdEccBlockEncoder.PayloadBytesPerSector)) % 251));
+                    }
+                },
+                new ModulationBoundary(1, 0, IsLand: true),
+                replayPhysicalBoundary: true);
+
+            Equal(4, summary.CompletedBlocks, "hybrid ECC block count");
+            Equal((long)64 * DvdEccBlockEncoder.PayloadBytesPerSector, summary.BytesWritten, "hybrid payload bytes");
+            byte[] bytes = output.ToArray();
+            Equal(summary.BytesWritten, bytes.LongLength, "hybrid output length");
+            foreach ((uint startLba, uint endLbaExclusive) in extents)
+            {
+                for (uint sector = startLba; sector < endLbaExclusive; sector++)
+                {
+                    int sectorOffset = checked((int)(sector * DvdEccBlockEncoder.PayloadBytesPerSector));
+                    for (int byteOffset = 0; byteOffset < DvdEccBlockEncoder.PayloadBytesPerSector; byteOffset++)
+                    {
+                        byte expected = checked((byte)((sector + (uint)byteOffset) % 251));
+                        Equal(expected, bytes[sectorOffset + byteOffset], $"hybrid locked sector {sector} byte {byteOffset}");
+                    }
+                }
+            }
+
+            ModulationBoundary expectedBoundary = new(1, 0, IsLand: true);
+            for (int block = 0; block < 4; block++)
+            {
+                byte[] payloads = bytes.AsSpan(
+                    block * DvdEccBlockEncoder.PayloadBytesPerBlock,
+                    DvdEccBlockEncoder.PayloadBytesPerBlock).ToArray();
+                byte[] ecc = DvdEccBlockEncoder.BuildEccBytes(payloads, checked(options.PsnOffset + (uint)(block * 16)));
+                for (int row = 0; row < 208; row++)
+                    True(ReedSolomon.HasZeroRemainder(ecc.AsSpan(row * 182, 182), 10), $"hybrid PI block {block} row {row}");
+                expectedBoundary = DvdEccBlockEncoder.ReplayPayloadBoundary(
+                    payloads,
+                    checked(options.PsnOffset + (uint)(block * 16)),
+                    expectedBoundary);
+            }
+            True(summary.FinalBoundary is not null, "hybrid exact boundary is present");
+            Equal(expectedBoundary, summary.FinalBoundary!.Value, "hybrid exact boundary chain");
+
+            using MemoryStream fastOutput = new();
+            FastDvdStreamSummary fastSummary = FastDispersionImageWriter.WriteStreamEccAware(
+                imagePath,
+                fastOutput,
+                options,
+                Array.Empty<(uint StartLba, uint EndLbaExclusive)>(),
+                (_, destination) => destination.Clear(),
+                new ModulationBoundary(1, 0, IsLand: true));
+            True(fastSummary.FinalBoundary is null, "fast hybrid mode omits exact boundary by default");
+
+            using CancellationTokenSource cancelled = new();
+            cancelled.Cancel();
+            bool cancellationObserved = false;
+            try
+            {
+                FastDispersionImageWriter.WriteStreamEccAware(
+                    imagePath,
+                    new MemoryStream(),
+                    options,
+                    extents,
+                    (_, destination) => destination.Clear(),
+                    new ModulationBoundary(1, 0, IsLand: true),
+                    cancellationToken: cancelled.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                cancellationObserved = true;
+            }
+            True(cancellationObserved, "hybrid stream cancellation");
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
 
     private static void WriteTestPng(string path, bool grayscale = false, bool binaryDither = false)
     {

@@ -24,17 +24,46 @@ internal static class FileRegionPreviewOverlay
     }
 
     internal static void ApplyDvd(string path, DvdStreamingOptions actual,
-        uint drawingStartLba, uint drawingEndLbaExclusive, CancellationToken token = default)
+        uint drawingStartLba, uint drawingEndLbaExclusive, CancellationToken token = default,
+        IReadOnlyList<DvdFileSegment>? fileSegments = null)
     {
         actual.Validate();
         ValidateRange(actual.TotalSectors, drawingStartLba, drawingEndLbaExclusive);
         double length = actual.TotalSectors * 38688.0 * actual.ChannelBitLengthNm * 1e-6;
         DvdTrackGeometry geometry = DvdTrackGeometry.Create(actual.InnerRadiusMm,
             actual.OuterRadiusMm, length, actual.PitchLinear, actual.PitchQuadratic, actual.PitchCubic);
+        Func<double, double, bool>? isFile = null;
+        if (fileSegments is { Count: > 0 })
+        {
+            DvdFileSegment[] segments = fileSegments.OrderBy(s => s.StartLba).ToArray();
+            double start = actual.StartAngleDegrees * Math.PI / 180.0;
+            // The generator always walks the track clockwise (direction -1).
+            const double direction = -1.0;
+            isFile = (xMm, yUpMm) =>
+            {
+                double radius = Math.Sqrt(xMm * xMm + yUpMm * yUpMm);
+                if (radius < actual.InnerRadiusMm || radius > actual.OuterRadiusMm) return false;
+                double expected = geometry.AngleAtRadius(radius);
+                double polar = Math.Atan2(yUpMm, xMm);
+                double delta = direction * (polar - start) - expected;
+                delta -= 2 * Math.PI * Math.Round(delta / (2 * Math.PI));
+                double angle = Math.Clamp(expected + delta, 0, geometry.TotalAngleRadians);
+                double lba = geometry.ArcLengthAtAngle(angle) / length * actual.TotalSectors;
+                int low = 0, high = segments.Length - 1;
+                while (low <= high)
+                {
+                    int mid = (low + high) / 2;
+                    if (lba < segments[mid].StartLba) high = mid - 1;
+                    else if (lba >= segments[mid].EndLbaExclusive) low = mid + 1;
+                    else return true;
+                }
+                return false;
+            };
+        }
         Apply(path, actual.InnerRadiusMm, actual.OuterRadiusMm,
             geometry.RadiusAtArcLength(length * ((double)drawingStartLba / actual.TotalSectors)),
             geometry.RadiusAtArcLength(length * ((double)drawingEndLbaExclusive / actual.TotalSectors)),
-            dvdPixelCoordinates: true, token);
+            dvdPixelCoordinates: true, token, fileTest: isFile);
     }
 
     internal static void ApplyBluRay(string path, BluRayDiscParameters actual,
@@ -57,7 +86,7 @@ internal static class FileRegionPreviewOverlay
 
     private static void Apply(string path, double inner, double outer,
         double drawingInner, double drawingOuter, bool dvdPixelCoordinates, CancellationToken token,
-        double? cdImageOuterRadius = null)
+        double? cdImageOuterRadius = null, Func<double, double, bool>? fileTest = null)
     {
         token.ThrowIfCancellationRequested();
         BitmapSource source;
@@ -88,8 +117,10 @@ internal static class FileRegionPreviewOverlay
             {
                 double dx = (x - centre) * mmPerPixel;
                 double radiusSquared = dx * dx + dy * dy;
-                if (radiusSquared < innerSquared || radiusSquared >= outerSquared
-                    || radiusSquared >= drawingInnerSquared && radiusSquared < drawingOuterSquared)
+                if (radiusSquared < innerSquared || radiusSquared >= outerSquared)
+                    continue;
+                bool inDrawing = radiusSquared >= drawingInnerSquared && radiusSquared < drawingOuterSquared;
+                if (inDrawing && !(fileTest is not null && fileTest(dx, -dy)))
                     continue;
                 int offset = y * stride + x * 4;
                 // #FACC15, matching the preview legend. File data is deliberately not

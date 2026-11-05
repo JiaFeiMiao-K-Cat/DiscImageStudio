@@ -13,5 +13,6 @@
   <Project Path="tests/DiscImageStudio.ArchitectureTests/DiscImageStudio.ArchitectureTests.csproj" />
   <Project Path="tools/FourLevelDither/FourLevelDither.csproj" />
   <Project Path="tools/DvdGrayProbe/DvdGrayProbe.csproj" />
+  <Project Path="tools/DvdTransparencyProbe/DvdTransparencyProbe.csproj" />
   <Project Path="tools/BluRayByteProbe/BluRayByteProbe.csproj" />
 </Solution>

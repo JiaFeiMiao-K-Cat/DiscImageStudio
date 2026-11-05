@@ -9,13 +9,16 @@ public sealed class ImageConstraint
     private readonly sbyte[] _channelWordTargets;
     private readonly sbyte[] _channelWordGrayscaleTargets;
     private readonly int[] _constrainedSectors;
+    private readonly int[] _mutablePayloadIndices;
+    private readonly bool _hasLockedPayload;
 
     private ImageConstraint(
         sbyte[] targets,
         int constrainedBits,
         ImageMappingSummary? imageMapping,
         sbyte[]? channelWordTargets = null,
-        sbyte[]? channelWordGrayscaleTargets = null)
+        sbyte[]? channelWordGrayscaleTargets = null,
+        bool[]? lockedPayload = null)
     {
         _targets = targets;
         _channelWordTargets = channelWordTargets ?? BuildChannelWordTargets(
@@ -48,9 +51,17 @@ public sealed class ImageConstraint
                     DvdEccBlockEncoder.ChannelBitsPerSector)
                 .IndexOfAnyExcept(Unconstrained) >= 0)
             .ToArray();
+        _hasLockedPayload = lockedPayload is not null;
+        _mutablePayloadIndices = Enumerable.Range(0, DvdEccBlockEncoder.PayloadBytesPerBlock)
+            .Where(index => lockedPayload is null || !lockedPayload[index])
+            .ToArray();
     }
 
     public int ConstrainedBits { get; }
+
+    internal bool HasMutablePayload => _mutablePayloadIndices.Length > 0;
+
+    internal int MutablePayloadCount => _mutablePayloadIndices.Length;
 
     public ImageMappingSummary? ImageMapping { get; }
 
@@ -172,10 +183,44 @@ public sealed class ImageConstraint
                 + random.Next(DvdEccBlockEncoder.PayloadBytesPerSector);
         }
 
-        return random.Next(DvdEccBlockEncoder.PayloadBytesPerBlock);
+        return _hasLockedPayload
+            ? _mutablePayloadIndices[random.Next(_mutablePayloadIndices.Length)]
+            : random.Next(DvdEccBlockEncoder.PayloadBytesPerBlock);
     }
 
     internal IReadOnlyList<int> ConstrainedSectors => _constrainedSectors;
+
+    internal ImageConstraint MaskPayloadSectors(ReadOnlySpan<bool> lockedSectors)
+    {
+        if (lockedSectors.Length != DvdEccBlockEncoder.SectorCount)
+            throw new ArgumentException("Locked sector mask must contain 16 entries.", nameof(lockedSectors));
+        sbyte[] targets = (sbyte[])_targets.Clone();
+        sbyte[] words = (sbyte[])_channelWordTargets.Clone();
+        sbyte[] grayscale = (sbyte[])_channelWordGrayscaleTargets.Clone();
+        bool[] lockedPayload = new bool[DvdEccBlockEncoder.PayloadBytesPerBlock];
+        for (int sector = 0; sector < lockedSectors.Length; sector++)
+        {
+            if (!lockedSectors[sector]) continue;
+            Array.Fill(targets, Unconstrained,
+                sector * DvdEccBlockEncoder.ChannelBitsPerSector,
+                DvdEccBlockEncoder.ChannelBitsPerSector);
+            Array.Fill(words, Unconstrained,
+                sector * (DvdEccBlockEncoder.ChannelBitsPerSector / 16),
+                DvdEccBlockEncoder.ChannelBitsPerSector / 16);
+            if (grayscale.Length > 0)
+            {
+                Array.Fill(grayscale, Unconstrained,
+                    sector * (DvdEccBlockEncoder.ChannelBitsPerSector / 16),
+                    DvdEccBlockEncoder.ChannelBitsPerSector / 16);
+            }
+            Array.Fill(lockedPayload, true,
+                sector * DvdEccBlockEncoder.PayloadBytesPerSector,
+                DvdEccBlockEncoder.PayloadBytesPerSector);
+        }
+        int constrained = targets.Count(value => value != Unconstrained);
+        return new ImageConstraint(targets, constrained, ImageMapping, words,
+            grayscale.Length == 0 ? null : grayscale, lockedPayload);
+    }
 
     internal static ImageConstraint Create(
         sbyte[] targets,

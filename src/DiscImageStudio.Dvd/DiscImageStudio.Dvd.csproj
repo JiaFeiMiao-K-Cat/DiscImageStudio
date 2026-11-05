@@ -9,6 +9,8 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DiscImageStudio.Core\DiscImageStudio.Core.csproj" />
+    <!-- Both targets stream hybrid ISO file regions through Iso9660ImageWriter. -->
+    <ProjectReference Include="..\DiscImageStudio.Iso\DiscImageStudio.Iso.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
     <ProjectReference Include="..\DvdImageSolver\DvdImageSolver.csproj" />
@@ -19,7 +21,6 @@
     <Compile Include="../DvdImageSolver/**/*.cs"
              Exclude="../DvdImageSolver/bin/**;../DvdImageSolver/obj/**"
              LinkBase="Engine" />
-    <ProjectReference Include="../DiscImageStudio.Iso/DiscImageStudio.Iso.csproj" />
     <ProjectReference Include="../DiscImageStudio.ImageIO/DiscImageStudio.ImageIO.csproj" />
   </ItemGroup>
 </Project>

@@ -20,8 +20,12 @@ public sealed record DvdImageMetadata(
     bool FilesAtOuterRing = false,
     uint DrawingStartLba = 0,
     uint DrawingEndLbaExclusive = 0,
-    bool HasFileSystem = false)
+    bool HasFileSystem = false,
+    IReadOnlyList<DvdFileSegment>? FileSegments = null)
 {
+    /// <summary>True when the files sit in blank parts of the picture, interleaved with the drawing.</summary>
+    public bool FilesInTransparentRegion => FileSegments is { Count: > 0 };
+
     /// <summary>Reads the sidecar of an ISO, or null when it is absent or unreadable.</summary>
     public static DvdImageMetadata? TryLoad(string isoPath)
     {
@@ -59,11 +63,27 @@ public sealed record DvdImageMetadata(
                 && iso.ValueKind == JsonValueKind.Object
                 && iso.TryGetProperty("mountableFilesystem", out JsonElement mountable)
                 && mountable.ValueKind == JsonValueKind.True;
+            List<DvdFileSegment> segments = [];
+            if (document.RootElement.TryGetProperty("fileSegments", out JsonElement segmentArray)
+                && segmentArray.ValueKind == JsonValueKind.Array)
+            {
+                uint previousEnd = 0;
+                foreach (JsonElement item in segmentArray.EnumerateArray())
+                {
+                    uint start = GetUInt32(item, "startLba");
+                    uint end = GetUInt32(item, "endLbaExclusive");
+                    if (end <= start || start < previousEnd || end > totalSectors)
+                        return null;
+                    segments.Add(new DvdFileSegment(start, end));
+                    previousEnd = end;
+                }
+            }
             DvdTrackGeometry.ValidatePitchCoefficients(linear, quadratic, cubic);
             return totalSectors > 0 && double.IsFinite(innerRadius) && double.IsFinite(outerRadius)
                 && innerRadius > 0 && outerRadius > innerRadius
                 ? new DvdImageMetadata(totalSectors, innerRadius, outerRadius, linear, quadratic, cubic,
-                    filesAtOuterRing, drawingStart, drawingStart + drawingSectors, hasFileSystem)
+                    filesAtOuterRing, drawingStart, drawingStart + drawingSectors, hasFileSystem,
+                    segments)
                 : null;
         }
         catch (Exception exception) when (exception is JsonException or IOException or ArgumentException)

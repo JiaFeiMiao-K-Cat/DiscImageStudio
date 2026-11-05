@@ -1790,6 +1790,24 @@
     "es": "Zona interior",
     "cs": "Vnitřní prstenec"
   },
+  "Xaml.FilesInTransparentArea": {
+    "zh-CN": "文件放在图片透明区域",
+    "en": "Place files in transparent area",
+    "zh-TW": "檔案放在圖片透明區域",
+    "ja": "ファイルを画像の透明部分に配置",
+    "tr": "Dosyaları saydam alana yerleştir",
+    "es": "Colocar archivos en la zona transparente",
+    "cs": "Umístit soubory do průhledné oblasti"
+  },
+  "Xaml.FilesInTransparentAreaTip": {
+    "zh-CN": "把文件放进图片的空白处：透明像素、接近白色的像素，以及占满盘面的单一浅色背景。图片内容不会被覆盖；优先于内圈／外圈。",
+    "en": "Stores files in the blank parts of the picture: transparent pixels, near-white pixels and a flat background colour that fills the disc. Picture content is never overwritten. Overrides inner/outer ring.",
+    "zh-TW": "把檔案放進圖片的空白處：透明像素、接近白色的像素，以及佔滿盤面的單一淺色背景。圖片內容不會被覆蓋；優先於內圈／外圈。",
+    "ja": "画像の空白部分にファイルを格納します：透明ピクセル、白に近いピクセル、盤面を占める単色の背景。画像の内容は上書きされません。内周／外周より優先されます。",
+    "tr": "Dosyaları resmin boş kısımlarına yerleştirir: saydam pikseller, beyaza yakın pikseller ve diski kaplayan düz arka plan rengi. Resim içeriğinin üzerine asla yazılmaz. İç/dış halka ayarını geçersiz kılar.",
+    "es": "Guarda los archivos en las partes vacías de la imagen: píxeles transparentes, píxeles casi blancos y un color de fondo uniforme que cubre el disco. El contenido de la imagen nunca se sobrescribe. Tiene prioridad sobre la zona interior/exterior.",
+    "cs": "Uloží soubory do prázdných částí obrázku: průhledné pixely, téměř bílé pixely, jednolitá barva pozadí na disku. Obsah obrázku se nikdy nepřepíše. Má přednost před vnitřním/vnějším prstencem."
+  },
   "Xaml.OuterRing": {
     "zh-CN": "外圈",
     "en": "Outer ring",

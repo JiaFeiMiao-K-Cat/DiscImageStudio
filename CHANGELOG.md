@@ -23,6 +23,8 @@
 - 新增铼德 DVD+R E时代系列内置预设。
 - 新建工程不再按模板自动填充工程名，输入框保持为空；填写名称后才能创建。
 - 侧栏工程头卡片右侧新增软盘保存按钮。
+- DVD 混合盘新增「文件放在图片透明区域」：随盘文件按扇区粒度放进图片的空白处，可分成多段；透明像素、接近白色的像素，以及占盘面环带至少 15% 的纯色背景都算空白。设计页会估算可用空白和所需段数。命令行使用 `--file-position transparent`，用 `--white-is-blank`、`--background-is-blank` 控制空白判定。
+- 文件和图案共用的 ECC 块先固定文件扇区，再整块计算 ECC/EFM，不会在编码之后覆盖数据；透明区放置默认按顺序回放整盘的 EFMPlus 边界链，命令行可用 `--exact-physical-chain false` 换回更快的并行输出。
 - 缓存位置留空时，缓存改为放在 EXE 旁的 `DiscImageStudio-cache` 文件夹；该处不可写入时（例如安装在 Program Files 下）改用 `%LOCALAPPDATA%\DiscImageStudio\cache`，不再写入系统临时目录。自定义缓存位置照常可用。
 - 单文件 EXE 不再在启动时把全部内容解压到 `%TEMP%\.net`，解压量从约 475 MB 降到约 8 MB，只剩 WPF 原生 DLL 需要解压。
 
@@ -45,6 +47,8 @@
 - Added a built-in Ritek DVD+R E-Series preset.
 - New projects leave the project name empty instead of filling it from the selected template; the project can be created once a name is entered.
 - Added a floppy-disk Save button on the right of the sidebar project header.
+- DVD hybrid discs can place files in the blank areas of the picture ("Place files in transparent area"). Files are stored sector by sector and may be split over several runs. Transparent pixels, near-white pixels, and a flat background colour covering at least 15% of the printable ring all count as blank. The Design page estimates the free space and the number of runs needed. On the command line, use `--file-position transparent`; `--white-is-blank` and `--background-is-blank` control blank detection.
+- ECC blocks shared by files and picture fix the file sectors first and then compute ECC/EFM for the whole block, so no data is overwritten after encoding. Transparent-area placement replays the whole-disc EFMPlus boundary chain in order by default; `--exact-physical-chain false` restores the faster parallel output.
 - When the cache location is left empty, the cache now lives in a `DiscImageStudio-cache` folder next to the EXE. If that folder is not writable (for example under Program Files), `%LOCALAPPDATA%\DiscImageStudio\cache` is used instead; the system temporary folder is no longer used. Custom cache locations work as before.
 - The single-file EXE no longer extracts its entire contents to `%TEMP%\.net` at startup. Extraction drops from about 475 MB to about 8 MB; only the WPF native DLLs still need to be extracted.
 

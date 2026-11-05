@@ -248,6 +248,14 @@
                                                                Text="{loc:Text Xaml.FilePlacement}" Margin="0,0,0,6" />
                                                     <controls:SegmentedControl LabelA="{loc:Text Xaml.InnerRing}" LabelB="{loc:Text Xaml.OuterRing}"
                                                                                IsSecondSelected="{Binding State.DvdFilesAtOuterRing}" />
+                                                    <CheckBox Margin="0,8,0,0" Content="{loc:Text Xaml.FilesInTransparentArea}"
+                                                              ToolTip="{loc:Text Xaml.FilesInTransparentAreaTip}"
+                                                              IsChecked="{Binding State.DvdFilesInTransparency}" />
+                                                    <controls:VisibilityGate IsOpen="{Binding HasCapacityText}">
+                                                        <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontSize="11"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                   Text="{Binding CapacityText}" />
+                                                    </controls:VisibilityGate>
                                                 </StackPanel>
                                             </controls:VisibilityGate>
                                         </StackPanel>
