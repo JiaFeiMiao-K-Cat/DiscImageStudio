@@ -27,6 +27,21 @@ internal static class SaveTrailTests
         True(fastMiddle > slowEnd * 2, "the segment contracts again as the head eases out");
         True(fastMiddle <= 60.001, "the segment never exceeds the requested trail length");
         True(slowStart >= 20.99 && slowEnd >= 20.99, "the segment keeps a readable minimum length");
+
+        // A looping lap hands the tail across the seam: at progress zero the piece behind the
+        // head still belongs to the end of the path, so the stroke never collapses and regrows.
+        (double Tail, double Head)[] wrap = ProjectSaveTrail.TrailSegments(0, 400, 60, loop: true);
+        True(wrap.Length == 2, "a looping lap wraps the tail across the seam");
+        Equal(400, wrap[0].Head, "the wrapped piece reaches the end of the path");
+        True(wrap[0].Head - wrap[0].Tail >= 20.99, "the wrapped piece keeps the minimum segment");
+        Equal(0, wrap[1].Tail, "the head starts at the seam");
+        Equal(0, wrap[1].Head, "the head is still at the seam at progress zero");
+
+        (double Tail, double Head)[] middle = ProjectSaveTrail.TrailSegments(0.5, 400, 60, loop: true);
+        True(middle.Length == 1 && middle[0].Tail > 0, "the wrap disappears once the tail is past the seam");
+
+        (double Tail, double Head)[] once = ProjectSaveTrail.TrailSegments(0, 400, 60, loop: false);
+        True(once.Length == 1 && once[0].Head == 0, "a one-shot lap starts from an empty segment");
     }
 
     private static void Equal(double expected, double actual, string name)

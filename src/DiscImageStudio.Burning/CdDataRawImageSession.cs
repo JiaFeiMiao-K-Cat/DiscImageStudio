@@ -17,7 +17,9 @@ internal sealed class CdDataRawImageSession : ICdRawImageSession
 
     public long StartOfLeadout => _templateSession.StartOfLeadout;
 
-    public IStream CreateImage(IStream isoContent)
+    internal int ResultingImageType => _templateSession.ResultingImageType;
+
+    public IStream CreateImage(IStream isoContent, int sectorType)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(isoContent);
@@ -26,7 +28,8 @@ internal sealed class CdDataRawImageSession : ICdRawImageSession
         if (stat.cbSize < 300L * 2048 || stat.cbSize % 2048 != 0)
             throw new ArgumentException("CD DAO data tracks require at least 300 complete 2048-byte sectors.", nameof(isoContent));
         long sectors = stat.cbSize / 2048;
-        IStream template = _templateSession.CreateImage(new ZeroAudioStream(checked(sectors * 2352)));
+        // Only P and Q are patched below; R-W passes through, so either 96-byte layout works.
+        IStream template = _templateSession.CreateImage(new ZeroAudioStream(checked(sectors * 2352)), sectorType);
         if (_templateSession.StartOfLeadout != sectors)
             throw new InvalidOperationException("IMAPI changed the requested CD data track length.");
         _image = new CdDataRawImageStream(template, isoContent, sectors);

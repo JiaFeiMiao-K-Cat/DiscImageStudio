@@ -228,7 +228,17 @@ public partial class HomeViewModel : ObservableObject
             return;
         }
 
-        await _shell.OpenProjectFromAsync(entry.ProjectPath);
+        // The tile carries the wait: the project header that normally shows progress is on the
+        // workspace shell, which is not on screen until the document has been applied.
+        tile.IsLoading = true;
+        try
+        {
+            await _shell.OpenProjectFromAsync(entry.ProjectPath);
+        }
+        finally
+        {
+            tile.IsLoading = false;
+        }
     }
 
     /// <summary>Right-click removal: drops one entry from the recent list without touching

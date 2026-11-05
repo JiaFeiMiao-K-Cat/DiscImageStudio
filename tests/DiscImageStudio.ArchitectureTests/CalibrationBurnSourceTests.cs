@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
+using System.Windows;
 using System.Windows.Threading;
 using DiscImageStudio.Burning;
 using DiscImageStudio.Core;
@@ -39,10 +40,11 @@ internal static class CalibrationBurnSourceTests
             RecordingBurner burner = new();
             shell = new ShellViewModel(Dispatcher.CurrentDispatcher, burner);
             shell.NavigateTo(Workspace.Calibration);
-            Require(!shell.IsProjectOpen && !shell.IsProjectMode && shell.Calibration.Target is null,
-                "calibration opens directly from Home with an empty setup and no project chrome");
+            Require(!shell.IsProjectOpen && !shell.IsProjectMode && shell.IsJobDockVisible && shell.Calibration.Target is null,
+                "calibration opens directly from Home with an empty setup and the shared job dock");
             shell.ReturnFromCalibrationCommand.Execute(null);
-            Require(shell.CurrentWorkspace == Workspace.Home, "home entry returns to home");
+            Require(shell.CurrentWorkspace == Workspace.Home && !shell.IsJobDockVisible,
+                "home entry returns to home without an idle job dock");
             DiscParametersState state = shell.Calibration.Parameters;
             Require(!ReferenceEquals(state, shell.State) && !shell.Burn.UseCalibrationPattern
                 && shell.CalibrationBurn.UseCalibrationPattern, "project and calibration have independent geometry and burn sources");
@@ -65,8 +67,8 @@ internal static class CalibrationBurnSourceTests
                 && shell.Calibration.SelectedDiscType == "BD", "BD setup builds a target without an open project");
             BurnViewModel burn = shell.CalibrationBurn;
             shell.NavigateTo(Workspace.CalibrationBurn);
-            Require(!shell.IsProjectMode && shell.CurrentWorkspace == Workspace.CalibrationBurn,
-                "calibration burn setup stays outside the project");
+            Require(!shell.IsProjectMode && shell.IsJobDockVisible && shell.CurrentWorkspace == Workspace.CalibrationBurn,
+                "calibration burn setup has a job dock without opening a project");
             VerifySource(shell, burner, "BD", OpticalBurnMediaKind.BluRayData);
             Require(burn.SourceDetails.Contains("74.5 nm", StringComparison.Ordinal)
                 && burn.SourceDetails.Contains("反转 3T/6T", StringComparison.Ordinal)
@@ -97,7 +99,6 @@ internal static class CalibrationBurnSourceTests
             VerifySource(shell, burner, "BD", OpticalBurnMediaKind.BluRayData);
             shell.Calibration.SaveSessionTo(Path.Combine(directory, "bd.calibration.json"));
             shell.RegisterOutput(Path.Combine(directory, "drawing.iso"));
-            string projectJobTitle = shell.JobTitle, projectJobStatus = shell.JobStatusText;
             string? confirmation = null;
             shell.ConfirmHandler = (_, message, _) =>
             {
@@ -114,12 +115,11 @@ internal static class CalibrationBurnSourceTests
             Require(shell.LogText.Contains("开始流式刻录：BD 标定图案", StringComparison.Ordinal)
                 && !shell.LogText.Contains("CD 标定图案", StringComparison.Ordinal),
                 "burn log describes BD calibration material");
-            Require(burn.HasCalibrationBurnLog && burn.CalibrationBurnLog.Contains("开始流式刻录：BD 标定图案", StringComparison.Ordinal)
-                && !burn.CalibrationBurnLog.Contains("drawing.iso", StringComparison.Ordinal)
-                && burn.BurnProgressValue == 100
-                && shell.JobTitle == projectJobTitle && shell.JobStatusText == projectJobStatus
-                && shell.JobHasResult && shell.CanPreviewLastOutput && shell.OpenOutputEnabled,
-                "standalone burning retains its own progress and log while the project keeps its previous file and job status");
+            Require(shell.IsBurnTelemetryVisible && shell.JobProgressValue == 100 && shell.JobHasResult
+                && shell.JobStatusText.Contains("BD 标定图案", StringComparison.Ordinal)
+                && shell.ResultActionsVisibility == Visibility.Collapsed
+                && shell.CanPreviewLastOutput && shell.OpenOutputEnabled,
+                "calibration burning reports completion in the shared dock without presenting the previous project file as its output");
 
             foreach ((string label, OpticalBurnMediaKind mediaKind) in new[]
             {

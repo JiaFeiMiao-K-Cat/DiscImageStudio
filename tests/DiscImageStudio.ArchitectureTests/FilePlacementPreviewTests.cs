@@ -1,3 +1,4 @@
+using DvdImageSolver.Solver;
 using System.IO;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
@@ -191,12 +192,12 @@ internal static class FilePlacementPreviewTests
             RunPreview(preview);
             RequirePreview(preview, true, $"DVD {(outer ? "outer" : "inner")} design projection");
             DvdHybridStreamingPlan plan = DvdStreamingGenerator.PrepareHybrid(files, disc, filesAtOuterRing: outer);
-            object?[] arguments = [Path.Combine(directory, "command.png"), null, null, 0, 0, null, null];
-            Require((bool)Invoke(preview, "TryBuildDvdCalibrateCommand", arguments)!, "DVD projection command builds");
-            string[] command = (string[])arguments[2]!;
-            Require(Argument(command, "--lba") == plan.DrawingStartLba.ToString()
-                && Argument(command, "--fill-sectors") == plan.DrawingSectors.ToString()
-                && Argument(command, "--total-sectors") == "256",
+            object?[] arguments = [null, null, null, null];
+            Require((bool)Invoke(preview, "TryBuildDvdCalibrationOptions", arguments)!, "DVD projection options build");
+            CalibrationPreviewOptions options = (CalibrationPreviewOptions)arguments[1]!;
+            Require(options.StartLba == plan.DrawingStartLba
+                && options.FillSectors == plan.DrawingSectors
+                && options.TotalSectors == 256,
                 "DVD projection limits the drawing range while preserving full-disc geometry");
 
             string iso = Path.Combine(directory, $"dvd-{outer}.iso");

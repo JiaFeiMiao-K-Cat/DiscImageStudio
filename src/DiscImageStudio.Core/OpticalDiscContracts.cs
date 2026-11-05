@@ -99,6 +99,10 @@ public sealed record DiscJobResult(
     public bool Succeeded => ExitCode == 0;
 }
 
+/// <summary>A completed file-generation operation. Failures propagate as exceptions;
+/// command-line exit codes belong to the CLI adapter, not the engine API.</summary>
+public sealed record DiscImageResult(string OutputPath, string? Summary = null);
+
 public interface IOpticalDiscModule
 {
     DiscModuleDescriptor Descriptor { get; }

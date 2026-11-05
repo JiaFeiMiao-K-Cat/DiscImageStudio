@@ -10,6 +10,23 @@ internal static class CdRawImageByteOrderTests
 
     internal static void Run()
     {
+        foreach (int sectorType in new[] { CdRawSectorType.SubcodeIsCooked, CdRawSectorType.SubcodeIsRaw })
+        {
+            try
+            {
+                VerifyByteOrder(sectorType);
+            }
+            catch (InvalidOperationException exception)
+            {
+                throw new InvalidOperationException($"IMAPI sector type {sectorType}: {exception.Message}", exception);
+            }
+        }
+
+        Console.WriteLine("cd-raw-image-byte-order: passed (300 asymmetric sectors preserved for cooked R-W and raw P-W)");
+    }
+
+    private static void VerifyByteOrder(int sectorType)
+    {
         byte[] audio = CreateAsymmetricAudio();
         byte[] swappedAudio = SwapSampleBytes(audio);
         using GeneratedContentComStream content = new(
@@ -21,8 +38,9 @@ internal static class CdRawImageByteOrderTests
 
         // This creates an in-memory image only; no recorder or write interface is used.
         using DynamicCdRawImageSession session = new();
-        IStream image = session.CreateImage(content);
+        IStream image = session.CreateImage(content, sectorType);
         image.Stat(out STATSTG stat, 1);
+        Require(session.ResultingImageType == sectorType, "IMAPI image creator uses the requested sector type");
         Require(session.StartOfLeadout == AudioSectorCount, "audio length matches lead-out");
         Require(stat.cbSize > audio.Length, "image includes RAW framing and lead-in/out");
         Require(stat.cbSize % RawSectorBytes == 0, "RAW image contains complete 2448-byte sectors");
@@ -86,7 +104,6 @@ internal static class CdRawImageByteOrderTests
         Require(matchedAudioSectors == AudioSectorCount, "all 300 audio sectors preserve the supplied byte order");
         Require(audioStartSector > 0, "audio follows the RAW lead-in and pregap");
         Require(audioStartSector + AudioSectorCount < rawSectorCount, "RAW lead-out follows the final audio sector");
-        Console.WriteLine("cd-raw-image-byte-order: passed (300 asymmetric sectors preserved)");
     }
 
     private static byte[] CreateAsymmetricAudio()

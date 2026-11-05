@@ -33,17 +33,8 @@
                            VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}"
                            Margin="10,0,10,0" />
                 <TextBlock Grid.Column="2" Text="{Binding JobStatusText}"
-                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock" BasedOn="{StaticResource CompactHint}">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsBurnTelemetryVisible}" Value="True">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
+                           Style="{StaticResource CompactHint}" ToolTip="{Binding JobStatusText}"
+                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                 <ProgressBar Grid.Column="3"
                              Width="180" VerticalAlignment="Center" Margin="0,0,16,0"
                              IsIndeterminate="{Binding IsJobProgressIndeterminate}"
@@ -126,7 +117,7 @@
                     BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0"
                     Visibility="{Binding IsJobDockExpanded, Converter={StaticResource BoolToVisibility}}">
                 <TextBox x:Name="LogTextBox" Style="{StaticResource BareTextBox}" IsReadOnly="True"
-                         AcceptsReturn="True" VerticalAlignment="Stretch"
+                         AcceptsReturn="True" VerticalAlignment="Stretch" VerticalContentAlignment="Top"
                          FontFamily="{StaticResource MonoFontFamily}" FontSize="12"
                          Foreground="{DynamicResource TextPrimaryBrush}"
                          Background="Transparent" BorderThickness="0"

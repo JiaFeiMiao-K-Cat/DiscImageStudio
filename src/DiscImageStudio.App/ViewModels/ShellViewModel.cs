@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -28,6 +29,7 @@ public partial class ShellViewModel : ObservableObject
     private bool _isWindowLoaded;
     private string? _lastOutputPath;
     private bool _isApplyingProject;
+    private int _openProjectGeneration;
     private Workspace _calibrationReturnPage = Workspace.Home;
     private bool _isWritingComposite;
     private BurnProgressDisplay? _burnProgressDisplay;
@@ -59,7 +61,7 @@ public partial class ShellViewModel : ObservableObject
         Design.CompositeRendered += Design_CompositeRendered;
         Design.DesignEdited += () => MarkProjectDirty();
         OpenOutputCommand = new RelayCommand(OpenOutput, () => OpenOutputEnabled);
-        CancelJobCommand = new RelayCommand(CancelJob, () => IsJobRunning && _jobCancellation is not null);
+        CancelJobCommand = new RelayCommand(CancelJob, CanCancelJob);
         PreviewLastOutputCommand = new RelayCommand(PreviewLastOutput, () => CanPreviewLastOutput);
         ToggleJobDockCommand = new RelayCommand(() => IsJobDockExpanded = !IsJobDockExpanded);
         ClearLogCommand = new RelayCommand(ClearLog, () => HasLogContent);
@@ -129,9 +131,13 @@ public partial class ShellViewModel : ObservableObject
     [ObservableProperty]
     private bool _isJobRunning;
 
-    /// <summary>True when the last job wrote a file that can be revealed or previewed.</summary>
+    /// <summary>True when the last job completed successfully, including a physical burn.</summary>
     [ObservableProperty]
     private bool _jobHasResult;
+
+    /// <summary>Only the current job's file enables output actions; older project files remain available separately.</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ResultActionsVisibility))]
+    private bool _hasJobOutput;
 
     /// <summary>True when that file is a disc artifact the read-back preview can open.</summary>
     [ObservableProperty]
@@ -220,6 +226,8 @@ public partial class ShellViewModel : ObservableObject
     public bool IsProjectMode => CurrentWorkspace is Workspace.Design or Workspace.Preview or Workspace.Export or Workspace.Burn
         || IsProjectOpen && CurrentWorkspace is Workspace.Calibration or Workspace.CalibrationBurn;
 
+    public bool IsJobDockVisible => CurrentWorkspace != Workspace.Home || IsJobRunning;
+
     partial void OnIsJobDockExpandedChanged(bool value) => OnPropertyChanged(nameof(DockToggleVisibility));
 
     partial void OnCurrentWorkspaceChanged(Workspace oldValue, Workspace newValue)
@@ -228,6 +236,7 @@ public partial class ShellViewModel : ObservableObject
             && oldValue is not (Workspace.Calibration or Workspace.CalibrationBurn))
             _calibrationReturnPage = oldValue;
         OnPropertyChanged(nameof(IsProjectMode));
+        OnPropertyChanged(nameof(IsJobDockVisible));
         OnPropertyChanged(nameof(ProjectTitleDisplay));
     }
 
@@ -237,14 +246,23 @@ public partial class ShellViewModel : ObservableObject
 
     partial void OnIsJobRunningChanged(bool value)
     {
+        OnPropertyChanged(nameof(IsJobDockVisible));
         OnPropertyChanged(nameof(JobProgressVisibility));
+        RefreshCancelJobState();
+    }
+
+    internal void RefreshCancelJobState()
+    {
         OnPropertyChanged(nameof(CancelJobVisibility));
         CancelJobCommand?.NotifyCanExecuteChanged();
     }
 
-    /// <summary>The cancel action exists only when the running module accepts a token.</summary>
+    private bool CanCancelJob() => IsJobRunning
+        && (_jobCancellation is not null || Burn?.IsBurnRunning == true || CalibrationBurn?.IsBurnRunning == true);
+
+    /// <summary>The dock cancels the active task, independently of the visible workspace.</summary>
     public Visibility CancelJobVisibility =>
-        IsJobRunning && _jobCancellation is not null ? Visibility.Visible : Visibility.Collapsed;
+        CanCancelJob() ? Visibility.Visible : Visibility.Collapsed;
 
     partial void OnJobHasResultChanged(bool value)
     {
@@ -254,7 +272,7 @@ public partial class ShellViewModel : ObservableObject
 
     /// <summary>Result/reveal actions only exist once a job has produced something.</summary>
     public Visibility ResultActionsVisibility =>
-        JobHasResult ? Visibility.Visible : Visibility.Collapsed;
+        JobHasResult && HasJobOutput ? Visibility.Visible : Visibility.Collapsed;
 
     /// <summary>"Clear log" only exists once there is a log to read.</summary>
     public Visibility LogActionsVisibility =>
@@ -278,6 +296,16 @@ public partial class ShellViewModel : ObservableObject
 
     private void CancelJob()
     {
+        if (Burn.IsBurnRunning)
+        {
+            Burn.CancelBurnCommand.Execute(null);
+            return;
+        }
+        if (CalibrationBurn.IsBurnRunning)
+        {
+            CalibrationBurn.CancelBurnCommand.Execute(null);
+            return;
+        }
         if (_jobCancellation is not { } cancellation)
         {
             return;
@@ -524,11 +552,6 @@ public partial class ShellViewModel : ObservableObject
     /// funnels through here, so the unsaved-changes check has exactly one home.</summary>
     internal async Task OpenProjectFromAsync(string path)
     {
-        if (!await EnsureNoUnsavedChangesAsync(L.T("打开其他工程")))
-        {
-            return;
-        }
-
         ProjectDocument document;
         try
         {
@@ -540,9 +563,31 @@ public partial class ShellViewModel : ObservableObject
             return;
         }
 
+        // The window stays interactive while the images decode (that is the point of moving
+        // the decode off the UI thread), so a second open can start, and edits can land on
+        // the project this call is about to replace. The generation token makes the newest
+        // open the only one that applies; the check below runs after the decode so those
+        // edits are still seen by the unsaved-changes prompt.
+        int generation = ++_openProjectGeneration;
+        Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)> preloadedImages =
+            await Design.PreloadLayerImagesAsync(document.Layers);
+        if (generation != _openProjectGeneration)
+        {
+            return;
+        }
+
+        if (!await EnsureNoUnsavedChangesAsync(L.T("打开其他工程")))
+        {
+            return;
+        }
+
+        if (generation != _openProjectGeneration)
+        {
+            return;
+        }
+
         CloseCurrentProject();
-        OpenDocument(path, document);
-        await Task.CompletedTask;
+        OpenDocument(path, document, preloadedImages);
     }
 
     /// <summary>Snapshot/CLI entry: opens a project synchronously, throwing on load errors so
@@ -554,7 +599,10 @@ public partial class ShellViewModel : ObservableObject
         OpenDocument(path, document);
     }
 
-    private void OpenDocument(string path, ProjectDocument document)
+    private void OpenDocument(
+        string path,
+        ProjectDocument document,
+        IReadOnlyDictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)>? preloadedLayers = null)
     {
         _isApplyingProject = true;
         try
@@ -566,7 +614,7 @@ public partial class ShellViewModel : ObservableObject
             Design.SetDiscFamily(document.Family);
             LivePreview.SetDiscType(document.Family, clearResult: true);
             ProjectSession.ApplyToState(document, State);
-            Design.LoadLayers(document.Layers);
+            Design.LoadLayers(document.Layers, preloadedLayers);
         }
         finally
         {
@@ -737,6 +785,9 @@ public partial class ShellViewModel : ObservableObject
 
     private void CloseCurrentProject()
     {
+        // Any in-flight open belongs to the project being replaced; it must not apply on top
+        // of whatever replaces this one (for example a new project created while it decoded).
+        _openProjectGeneration++;
         IsProjectOpen = false;
         CurrentProject = null;
         ProjectFilePath = null;
@@ -922,15 +973,7 @@ public partial class ShellViewModel : ObservableObject
         LogAppended?.Invoke(text);
     }
 
-    internal void RegisterOutput(string path)
-    {
-        _lastOutputPath = Path.GetFullPath(path);
-        OpenOutputEnabled = true;
-        OpenOutputCommand.NotifyCanExecuteChanged();
-        JobHasResult = true;
-        CanPreviewLastOutput = IsDiscArtifact(_lastOutputPath);
-        JobStatusText = L.T("完成：") + Path.GetFileName(_lastOutputPath);
-    }
+    internal void RegisterOutput(string path) => SetLastOutputPath(path);
 
     public void ClearLog()
     {
@@ -983,8 +1026,17 @@ public partial class ShellViewModel : ObservableObject
     {
         _lastOutputPath = Path.GetFullPath(path);
         OpenOutputEnabled = true;
-        JobHasResult = true;
         CanPreviewLastOutput = IsDiscArtifact(_lastOutputPath);
+        // Saving a preview remains available during a burn; it must not take over the
+        // running task's progress or turn that recording into a file-producing job.
+        if (IsJobRunning) return;
+        ResetBurnTelemetry();
+        JobTitle = L.T("Xaml.Export");
+        JobStatusText = L.T("完成：") + Path.GetFileName(_lastOutputPath);
+        JobProgressValue = 100;
+        IsJobProgressIndeterminate = false;
+        JobHasResult = true;
+        HasJobOutput = true;
     }
 
     /// <summary>Browse for the generated CD track used by the live read-back preview.</summary>
@@ -1036,50 +1088,56 @@ public partial class ShellViewModel : ObservableObject
         process.Start();
     }
 
-    /// Streams a disc job through UnifiedCommandRunner on an STA thread: busy gating, console
-    /// redirection and result reporting into the job dock. The dock stays where the user is,
-    /// so a job never navigates away from the workspace it was started from.
-    internal async Task RunDiscJobAsync(
+    /// <summary>Executes a typed image operation on an STA worker. Engine exceptions and progress
+    /// reach the GUI directly; CLI parsing, console streams and exit codes stay at the CLI boundary.</summary>
+    internal async Task<bool> RunImageJobAsync(
         string status,
-        string[] arguments,
-        string outputPath)
+        string outputPath,
+        Func<IProgress<DiscJobProgress>, CancellationToken, DiscImageResult> generate,
+        string? details = null)
     {
         if (_isBusy)
         {
             ShowToast(L.T("操作未执行"), L.T("已有任务正在运行。"), ToastKind.Info);
-            return;
+            return false;
         }
 
-        IsBurnTelemetryVisible = false;
-        _burnProgressDisplay = null;
-        _burnTelemetryTimer?.Stop();
+        ArgumentNullException.ThrowIfNull(generate);
+        outputPath = Path.GetFullPath(outputPath);
+
+        ResetBurnTelemetry();
         JobTitle = status;
         JobStatusText = L.T("正在运行…");
         JobProgressValue = 0;
         IsJobProgressIndeterminate = true;
         JobHasResult = false;
-        bool canCancel = UnifiedCommandRunner.SupportsCancellation(arguments[0]);
-        using CancellationTokenSource? cancellation = canCancel ? new CancellationTokenSource() : null;
+        HasJobOutput = false;
+        using CancellationTokenSource cancellation = new();
         _jobCancellation = cancellation;
         OnPropertyChanged(nameof(CancelJobVisibility));
         CancelJobCommand.NotifyCanExecuteChanged();
         SetBusy(true);
 
         LogAppended?.Invoke($"\n[{DateTime.Now:HH:mm:ss}] {status}\n");
+        AppendLog(outputPath + "\n");
+        if (!string.IsNullOrWhiteSpace(details)) AppendLog(details + "\n");
+        bool acceptingProgress = true;
         Progress<DiscJobProgress> progress = new(value =>
         {
-            IsJobProgressIndeterminate = false;
-            JobProgressValue = Math.Clamp((value.Fraction ?? 0) * 100, 0, 100);
-            JobStatusText = value.Message;
+            if (!acceptingProgress || !ReferenceEquals(_jobCancellation, cancellation)) return;
+            IsJobProgressIndeterminate = value.Fraction is null;
+            if (value.Fraction is { } fraction) JobProgressValue = Math.Clamp(fraction * 100, 0, 100);
+            if (!cancellation.IsCancellationRequested) JobStatusText = value.Message;
         });
-        int exitCode = -1;
+        DiscImageResult? result = null;
         bool canceled = false;
         try
         {
-            DiscJobResult result = await StaWorker.RunAsync(
-                () => UnifiedCommandRunner.RunJob(arguments, progress, cancellation?.Token ?? default));
-            AppendLog(result.Summary ?? string.Empty);
-            exitCode = result.ExitCode;
+            DiscImageResult completed = await StaWorker.RunAsync(() => generate(progress, cancellation.Token));
+            if (!File.Exists(completed.OutputPath))
+                throw new FileNotFoundException(L.T("任务未完成"), completed.OutputPath);
+            result = completed;
+            if (!string.IsNullOrWhiteSpace(result.Summary)) AppendLog(result.Summary + "\n");
         }
         catch (OperationCanceledException)
         {
@@ -1087,10 +1145,11 @@ public partial class ShellViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 任务异常：{exception.Message}\n"));
+            AppendLog(JobDiagnostics.FormatLog(status + " · " + outputPath, exception));
         }
         finally
         {
+            acceptingProgress = false;
             _jobCancellation = null;
             OnPropertyChanged(nameof(CancelJobVisibility));
             CancelJobCommand.NotifyCanExecuteChanged();
@@ -1105,41 +1164,42 @@ public partial class ShellViewModel : ObservableObject
             AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 任务已取消\n"));
             ShowToast(L.T("任务已取消"), L.T("未完成的输出文件可能留在磁盘上。"), ToastKind.Info);
         }
-        else if (exitCode == 0)
+        else if (result is not null)
         {
-            _lastOutputPath = Path.GetFullPath(outputPath);
+            _lastOutputPath = Path.GetFullPath(result.OutputPath);
             OpenOutputEnabled = true;
+            IsJobProgressIndeterminate = false;
             JobProgressValue = 100;
             JobHasResult = true;
+            HasJobOutput = true;
             CanPreviewLastOutput = IsDiscArtifact(_lastOutputPath);
             JobStatusText = L.T("完成：") + Path.GetFileName(_lastOutputPath);
             AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 完成：{_lastOutputPath}\n"));
         }
         else
         {
-            JobStatusText = L.F($"失败：退出码 {exitCode}");
+            IsJobProgressIndeterminate = false;
+            JobStatusText = L.T("任务未完成");
             IsJobDockExpanded = true;
-            AppendLog(
-                L.F($"[{DateTime.Now:HH:mm:ss}] 任务失败：退出码 {exitCode}，未生成 {Path.GetFullPath(outputPath)}\n"));
             ShowToast(L.T("任务未完成"), L.T("详情见窗口底部的任务日志。"), ToastKind.Warning);
         }
+        return result is not null;
     }
 
-    // ---- Job dock reporting for work that does not run through the CLI job runner ----
+    // ---- Job dock reporting for tasks with their own orchestration ----
 
     /// <summary>Claims the dock for a task the shell starts itself (the streaming burn), so the
     /// running task, its percentage and its outcome appear in the one status surface instead of
     /// a second copy inside a page.</summary>
     internal void BeginDockJob(string title, bool determinate)
     {
-        IsBurnTelemetryVisible = false;
-        _burnProgressDisplay = null;
-        _burnTelemetryTimer?.Stop();
+        ResetBurnTelemetry();
         JobTitle = title;
         JobStatusText = L.T("正在运行…");
         JobProgressValue = 0;
         IsJobProgressIndeterminate = !determinate;
         JobHasResult = false;
+        HasJobOutput = false;
     }
 
     internal void BeginBurnDockJob(OpticalBurnMediaKind mediaKind, long totalBytes)
@@ -1159,10 +1219,20 @@ public partial class ShellViewModel : ObservableObject
         _burnTelemetryTimer.Start();
     }
 
-    internal void ReportBurnProgress(OpticalBurnProgress progress)
+    private void ResetBurnTelemetry()
+    {
+        IsBurnTelemetryVisible = false;
+        _burnProgressDisplay = null;
+        _burnTelemetryTimer?.Stop();
+    }
+
+    internal void ReportBurnProgress(OpticalBurnProgress progress, bool cancellationRequested = false)
     {
         if (_burnProgressDisplay is null) return;
         string? diagnostic = _burnProgressDisplay.Apply(progress);
+        if (!cancellationRequested && progress.Stage is ("device" or "media" or "buffer" or "write" or "finalize"
+            or "write-complete" or "verify" or "flush" or "close-track" or "close-disc" or "release"))
+            JobStatusText = progress.Message;
         UpdateBurnTelemetry();
         if (!string.IsNullOrWhiteSpace(diagnostic)) AppendLog($"[{DateTime.Now:HH:mm:ss}] {diagnostic}\n");
     }
@@ -1184,6 +1254,7 @@ public partial class ShellViewModel : ObservableObject
 
     internal void CompleteDockJob(string status)
     {
+        IsJobProgressIndeterminate = false;
         _burnTelemetryTimer?.Stop();
         if (_burnProgressDisplay is { } burn)
         {
@@ -1200,6 +1271,7 @@ public partial class ShellViewModel : ObservableObject
     /// opens the log, because that is where the reason was written.</summary>
     internal void AbortDockJob(string status, bool expandLog)
     {
+        IsJobProgressIndeterminate = false;
         _burnTelemetryTimer?.Stop();
         _burnProgressDisplay?.Stop();
         UpdateBurnTelemetry();

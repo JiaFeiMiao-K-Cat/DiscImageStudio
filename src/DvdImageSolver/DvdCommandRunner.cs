@@ -1,8 +1,8 @@
 namespace DvdImageSolver;
 
 /// <summary>
-/// Stable facade used by the separate desktop front end. The original command-line
-/// entry point and all solver behavior remain unchanged.
+/// Compatibility entry point for command-line callers. Graphical hosts use the typed
+/// generation and rendering APIs so engine exceptions are not reduced to exit codes.
 /// </summary>
 public static class DvdCommandRunner
 {

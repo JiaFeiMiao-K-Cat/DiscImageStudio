@@ -63,8 +63,10 @@ public static class HybridIsoImageWriter
         uint volumeSectors, string volumeLabel)
         => Create(Plan(sourceDirectory, volumeSectors, volumeLabel), outputPath);
 
-    internal static HybridIsoWriteSummary Create(LayoutPlan plan, string outputPath)
+    internal static HybridIsoWriteSummary Create(LayoutPlan plan, string outputPath,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         string sourceFullPath = plan.SourceDirectory;
         uint volumeSectors = plan.VolumeSectors;
         string outputFullPath = Path.GetFullPath(outputPath);
@@ -84,21 +86,26 @@ public static class HybridIsoImageWriter
                 output.SetLength(checked((long)volumeSectors * IsoImageWriter.LogicalSectorBytes));
                 if (plan.FilesAtOuterRing)
                 {
-                    WriteOuterRingPrefix(plan, output, plan.MetadataEndLbaExclusive);
+                    WriteOuterRingPrefix(plan, output, plan.MetadataEndLbaExclusive, cancellationToken);
                     output.Position = checked((long)plan.FileDataStartLba * IsoImageWriter.LogicalSectorBytes);
-                    WriteOuterRingSuffix(plan, output, plan.FileDataStartLba);
+                    WriteOuterRingSuffix(plan, output, plan.FileDataStartLba, cancellationToken);
                 }
                 else
                 {
-                    WriteSequentialPrefix(plan, output, plan.DataEndLbaExclusive);
+                    WriteSequentialPrefix(plan, output, plan.DataEndLbaExclusive, cancellationToken);
                 }
+                cancellationToken.ThrowIfCancellationRequested();
                 output.Flush(flushToDisk: true);
             }
+            cancellationToken.ThrowIfCancellationRequested();
             File.Move(temporaryPath, outputFullPath, overwrite: true);
         }
         finally
         {
-            if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+            // Cleanup must not replace the original write or cancellation exception.
+            try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
         return new("hybrid-iso9660-joliet", volumeSectors, IsoImageWriter.LogicalSectorBytes,
             sourceFullPath, plan.FileCount, plan.DirectoryCount, plan.FileBytes,

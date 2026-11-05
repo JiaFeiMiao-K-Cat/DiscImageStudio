@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:loc="clr-namespace:DiscImageStudio.Localization"
              xmlns:controls="clr-namespace:DiscImageStudio.Controls"
-             xmlns:vm="clr-namespace:DiscImageStudio.ViewModels"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks">
     <!-- The page padding lives on the content, not on the scroller, so the scroll rail sits at
          the window edge like every other workspace. -->
@@ -11,18 +10,7 @@
         <!-- MaxWidth alone centers this column: Stretch + MaxWidth arranges it at 1120 and
              WPF centers the capped element, so the sections span the full page column. -->
         <StackPanel MaxWidth="1120" Margin="{StaticResource PagePadding}">
-            <DockPanel>
-                <Button DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"
-                        Style="{StaticResource SecondaryButton}" Padding="14,0"
-                        Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                        CommandParameter="{x:Static vm:Workspace.Calibration}">
-                    <StackPanel Orientation="Horizontal">
-                        <iconPacks:PackIconLucide Kind="Crosshair" Width="16" Height="16" VerticalAlignment="Center" />
-                        <TextBlock Text="{loc:Text Xaml.Calibration2}" Margin="8,0,0,0" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-                <TextBlock Text="Disc Image Studio" Style="{StaticResource H1Title}" />
-            </DockPanel>
+            <TextBlock Text="Disc Image Studio" Style="{StaticResource H1Title}" />
             <TextBlock Style="{StaticResource PageSubtitle}" Margin="0,8,0,0"
                        Text="{loc:Text Xaml.CreateAndBurnVisibleArtworkOnOpticalDiscs}" />
 
@@ -150,6 +138,7 @@
                                                         FamilyLabel="{Binding FamilyLabel}"
                                                         LocationText="{Binding LocationText}"
                                                         ThumbnailSource="{Binding Thumbnail}"
+                                                        IsLoading="{Binding IsLoading}"
                                                         Command="{Binding DataContext.OpenRecentCommand,
                                                                   RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                         CommandParameter="{Binding}"

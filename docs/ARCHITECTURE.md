@@ -6,9 +6,11 @@
 
 ```mermaid
 flowchart LR
-    GUI[Windows WPF GUI / CLI] --> Imaging[DiscImageStudio.Imaging]
-    Imaging --> Catalog[DiscModuleCatalog]
-    CLI[Linux / macOS CLI] --> Catalog
+    GUI[Windows WPF GUI] --> Imaging[DiscImageStudio.Imaging]
+    GUI --> CD[DiscImageStudio.Cd]
+    GUI --> DVD[DiscImageStudio.Dvd]
+    GUI --> BD[DiscImageStudio.BluRay]
+    CLI[Windows / Linux / macOS CLI] --> Catalog[DiscModuleCatalog]
     GUI --> Burning[DiscImageStudio.Burning]
     Burning --> IMAPI[Windows IMAPI2]
     Catalog --> Contract[IOpticalDiscModule]
@@ -21,7 +23,7 @@ flowchart LR
     BD --> Iso[DiscImageStudio.Iso / UDF 2.01]
 ```
 
-`DiscImageStudio.Cli` 和 Windows 桌面程序从同一份模块目录执行离线命令。`DiscImageStudio.ImageIO` 在 Windows 桌面目标使用 WIC，在通用 `net10.0` 目标使用 StbImageSharp 读图、StbImageWriteSharp 写 PNG。两个后端都向生成器提供相同顺序的 BGRA 像素。蓝光共用透明度合成和灰度转换代码，CD 和 DVD 也分别共用各自原有的采样算法。
+`DiscImageStudio.Cli` 和 Windows 桌面程序的命令行入口从同一份模块目录执行离线命令。GUI 导出直接构造 `CdImageRequest`、`DvdImageRequest` 或 `BluRayImageRequest` 并调用相应生成器，返回不含退出码的 `DiscImageResult`；DVD 预览直接调用类型化渲染器。内部调用通过进度对象和取消令牌协作，异常原样传至界面，命令行解析与控制台输出只在 CLI 适配边界发生。`DiscImageStudio.ImageIO` 在 Windows 桌面目标使用 WIC，在通用 `net10.0` 目标使用 StbImageSharp 读图、StbImageWriteSharp 写 PNG。两个后端都向生成器提供相同顺序的 BGRA 像素。蓝光共用透明度合成和灰度转换代码，CD 和 DVD 也分别共用各自原有的采样算法。
 
 ## Core 契约
 
@@ -32,7 +34,8 @@ flowchart LR
 - `DiscCommandDescriptor`：命令、能力和选项定义，可供未来动态生成界面。
 - `DiscJobRequest`：统一命令与参数载体。
 - `DiscJobProgress`：介质无关的进度、阶段、完成量和耗时。
-- `DiscJobResult`：退出码、摘要和输出路径。
+- `DiscJobResult`：CLI 命令适配结果（退出码、摘要和输出路径）。
+- `DiscImageResult`：内部文件生成结果（输出路径、摘要）；失败使用异常传播。
 - `DiscModuleCatalog`：命令路由、重复命令检查和模块执行。
 - `ToneProfile` / `ToneDither`：CD/DVD/BD 共用的影调模型（抖动强度、灰阶档位、亮度、sRGB 线性化）与确定性抖动相位。CD/DVD 在逻辑字节索引上抖动，因此 CD 延迟交织后仍可在预览中复现；BD 在源图分辨率一次性量化，生成、刻录与预览共用同一张二值栅格。
 

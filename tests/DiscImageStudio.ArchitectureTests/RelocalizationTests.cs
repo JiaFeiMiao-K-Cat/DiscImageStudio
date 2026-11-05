@@ -1,6 +1,5 @@
 using System.IO;
 using System.Reflection;
-using System.Runtime.ExceptionServices;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -510,16 +509,9 @@ internal static class RelocalizationTests
 
     private static void RunOnSta(Action action)
     {
-        Exception? error = null;
-        Thread thread = new(() =>
-        {
-            try { action(); }
-            catch (Exception exception) { error = exception; }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-        if (error is not null) ExceptionDispatchInfo.Capture(error).Throw();
+        // Language changes refresh every live XAML target in the process. Use the
+        // same UI dispatcher as control and snapshot tests, just as the app does.
+        WpfTestHost.Run(action);
     }
 
     private static Task StartPreview(LivePreviewViewModel preview)

@@ -78,6 +78,9 @@ public partial class CalibrationViewModel
             catch (Exception ex)
             {
                 _statusMessage = CapacityStatus = L.Format("CalibrationMedia.Failed", L.T(ex.Message));
+                // RunAsync owns the failed dock state and complete diagnostics. Returning
+                // normally here would label a failed read as a successful calibration task.
+                throw;
             }
         });
     }
