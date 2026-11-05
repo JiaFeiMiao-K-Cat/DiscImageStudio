@@ -420,7 +420,7 @@ public sealed class CalibrationTarget
     public void Validate()
     {
         if (SchemaVersion is < 6 or > CurrentSchemaVersion)
-            throw new ArgumentException($"不支持的标定会话版本 {SchemaVersion}。");
+            throw DiagnosticMessage.Argument($"不支持的标定会话版本 {SchemaVersion}。");
         if (!Enum.IsDefined(Artwork) || (SchemaVersion == 6 && Artwork != default)
             || ((SchemaVersion == 8) != HasClockRuler)
             || ((SchemaVersion is 9 or 10) != HasRadialArcDashes)

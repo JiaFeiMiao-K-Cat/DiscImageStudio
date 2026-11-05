@@ -47,7 +47,9 @@ internal static class LocalizationTests
         (Term(@"\bdiscs?\b"), Term(@"dis[kc]|\b(CD|DVD|BD)\b|Blu-ray|médi")),
     ];
 
-    public static void Run()
+    public static void Run() => WpfTestHost.Run(CheckLocalization);
+
+    private static void CheckLocalization()
     {
         string originalLanguage = L.CurrentLanguage;
         CultureInfo originalCulture = CultureInfo.CurrentCulture;
@@ -116,16 +118,45 @@ internal static class LocalizationTests
             foreach (string language in new[] { L.TraditionalChinese, L.English, L.Japanese, L.Turkish, L.Spanish, L.Czech })
             {
                 L.Initialize(language);
-                Require(L.T(key) == saved[L.Chinese], language + " missing text falls back to Chinese");
+                Require(L.T(key) == saved[L.Chinese], language + " uses Chinese when the requested and English translations are absent");
                 Require(L.Format(key, 3) == string.Format(CultureInfo.CurrentCulture, saved[L.Chinese], 3),
                     language + " fallback preserves format arguments");
                 translations[language] = " \t";
-                Require(L.T(key) == saved[L.Chinese], language + " blank text also falls back to Chinese");
+                Require(L.T(key) == saved[L.Chinese], language + " skips blank requested and English translations");
             }
             ValidateCatalogEntry(key, translations);
             TestCzechText();
+
+            translations[L.English] = "{0} layers";
+            foreach (string language in new[] { L.TraditionalChinese, L.Japanese, L.Turkish, L.Spanish, L.Czech })
+            {
+                L.Initialize(language);
+                translations.Remove(language);
+                Require(L.T(key) == "{0} layers" && L.Format(key, 3) == "3 layers",
+                    language + " uses English with its format arguments before Chinese");
+                translations[language] = " \t";
+                Require(L.T(key) == "{0} layers", language + " blank text also falls back to English");
+            }
+
+            L.Initialize(L.Chinese);
+            Require(L.T(key) == saved[L.Chinese], "the requested Chinese translation takes precedence over English");
             translations[L.Czech] = "Počet vrstev: {0}";
+            L.Initialize(L.Czech);
+            Require(L.Format(key, 3) == "Počet vrstev: 3", "the requested translation takes precedence over English and Chinese");
+            translations.Remove(L.English);
             TestCzechText(); // A supplied Czech translation does not require an English translation.
+            Require(L.Format(key, 3) == "Počet vrstev: 3", "a requested translation remains usable without English");
+
+            translations[L.Czech] = " ";
+            Require(L.T(key) == saved[L.Chinese], "missing English falls back to Chinese");
+            translations[L.English] = " \t";
+            Require(L.Format(key, 3) == string.Format(CultureInfo.CurrentCulture, saved[L.Chinese], 3),
+                "blank English also falls back to Chinese with its arguments");
+            translations[L.Chinese] = " \t";
+            Require(L.T(key) == key, "blank translations at every level return the original key");
+            translations.Clear();
+            Require(L.T(key) == key, "an entry without any translations returns its original key");
+            translations[L.Chinese] = saved[L.Chinese];
 
             translations[L.English] = "{1} layers";
             bool rejected = false;

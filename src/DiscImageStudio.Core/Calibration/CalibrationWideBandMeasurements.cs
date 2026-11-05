@@ -37,7 +37,7 @@ public static partial class CalibrationRingFitter
     public static CalibrationWideBandIntervals GetWideBandIntervals(CalibrationTarget target,
         IReadOnlyList<CalibrationRingObservation> observations)
     {
-        if (!target.HasWideAddressBands) throw new ArgumentException("当前标靶没有宽定位环。", nameof(target));
+        if (!target.HasWideAddressBands) throw DiagnosticMessage.Argument($"当前标靶没有宽定位环。", nameof(target));
         ValidateObservations(target, observations);
         int count = target.WideAddressBands.Count;
         var radii = new double?[2 * count];

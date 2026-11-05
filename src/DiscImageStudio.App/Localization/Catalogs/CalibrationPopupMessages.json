@@ -1,0 +1,22 @@
+{
+  "两条实体轮廓无法同时吻合：外缘误差 {0:0.##} px，内缘误差 {1:0.##} px。请检查内缘、外缘与盘片尺寸。": {
+    "zh-CN": "两条实体轮廓无法同时吻合：外缘误差 {0:0.##} px，内缘误差 {1:0.##} px。请检查内缘、外缘与盘片尺寸。",
+    "en": "The physical edges cannot be fitted together: outer edge error {0:0.##} px, center-hole edge error {1:0.##} px. Check the center-hole edge, outer edge, and disc dimensions."
+  },
+  "已联合校正外缘与内缘。轮廓误差：外缘 {0:0.##} px，内缘 {1:0.##} px。请继续核对两条轮廓。": {
+    "zh-CN": "已联合校正外缘与内缘。轮廓误差：外缘 {0:0.##} px，内缘 {1:0.##} px。请继续核对两条轮廓。",
+    "en": "The outer and center-hole edges have been rectified together. Outline errors: outer edge {0:0.##} px, center-hole edge {1:0.##} px. Check both outlines before continuing."
+  },
+  "不支持的标定会话版本 {0}。": {
+    "zh-CN": "不支持的标定会话版本 {0}。",
+    "en": "Unsupported calibration record version {0}."
+  },
+  "照片变换必须包含 9 个有限数值。": {
+    "zh-CN": "照片变换必须包含 9 个有限数值。",
+    "en": "The photo transform must contain 9 finite numbers."
+  },
+  "当前标靶没有宽定位环。": {
+    "zh-CN": "当前标靶没有宽定位环。",
+    "en": "This target has no wide positioning bands."
+  }
+}

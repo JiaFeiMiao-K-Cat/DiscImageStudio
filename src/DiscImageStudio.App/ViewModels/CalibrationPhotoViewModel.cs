@@ -6,6 +6,7 @@ using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DiscImageStudio.Controls;
+using DiscImageStudio.Core;
 using DiscImageStudio.Core.Calibration;
 using DiscImageStudio.Services;
 
@@ -234,7 +235,7 @@ public partial class CalibrationViewModel
         await RunAsync(L.T("正在根据实体边缘矫正照片…"), async token =>
         {
             var fit = await Task.Run(() => CalibrationPhotoRectifier.Fit(outer, hole, radius, 7.5, token), token);
-            if (!fit.Succeeded || fit.Transform is null) throw new ArgumentException(fit.Message);
+            if (!fit.Succeeded || fit.Transform is null) throw PhotoFitError(fit);
             var corrected = await Task.Run(() => CalibrationPhotoService.Rectify(image, fit.Transform, canvasRadius, cancellationToken: token), token);
             token.ThrowIfCancellationRequested();
             if (revision != _photoRevision || !ReferenceEquals(image, PhotoImage)) throw new OperationCanceledException();
@@ -249,6 +250,11 @@ public partial class CalibrationViewModel
             RefreshPhotoCommands();
         });
     }
+
+    private static ArgumentException PhotoFitError(CalibrationPhotoFitResult fit)
+        => fit.MessageTemplate is { } template
+            ? DiagnosticMessage.Argument(template)
+            : new ArgumentException(fit.Message);
 
     private static Point[][] BoundaryContours(CalibrationPhotoTransform transform, double radius) =>
         new[] { radius, 7.5 }.Select(r => Enumerable.Range(0, 181).Select(i =>
@@ -392,7 +398,7 @@ public partial class CalibrationViewModel
                     if (photo.RectificationConfirmed)
                     {
                         fit = CalibrationPhotoRectifier.Fit(photo.OuterBoundary, photo.HoleBoundary, photo.PhysicalOuterRadiusMm, 7.5, token);
-                        if (!fit.Succeeded || fit.Transform is null) throw new ArgumentException(fit.Message);
+                        if (!fit.Succeeded || fit.Transform is null) throw PhotoFitError(fit);
                         rectified = CalibrationPhotoService.Rectify(image, fit.Transform, photo.PhysicalOuterRadiusMm + 3, cancellationToken: token);
                         if (photo.UseRingSeed)
                         {
