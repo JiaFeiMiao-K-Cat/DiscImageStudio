@@ -517,7 +517,7 @@ public partial class ShellViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            ShowToast(L.T("无法创建工程"), exception.Message, ToastKind.Error);
+            ShowToast(L.T("无法创建工程"), L.Error(exception), ToastKind.Error);
             return;
         }
 
@@ -559,7 +559,7 @@ public partial class ShellViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            ShowToast(L.T("无法打开工程"), L.F($"{exception.Message}\n\n文件位置：\n{path}"), ToastKind.Error);
+            ShowToast(L.T("无法打开工程"), L.F($"{L.Error(exception)}\n\n文件位置：\n{path}"), ToastKind.Error);
             return;
         }
 
@@ -703,7 +703,7 @@ public partial class ShellViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            ShowToast(L.T("无法保存工程"), exception.Message, ToastKind.Error);
+            ShowToast(L.T("无法保存工程"), L.Error(exception), ToastKind.Error);
         }
     }
 
@@ -729,7 +729,7 @@ public partial class ShellViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            ShowToast(L.T("无法保存工程"), exception.Message, ToastKind.Error);
+            ShowToast(L.T("无法保存工程"), L.Error(exception), ToastKind.Error);
         }
     }
 
@@ -1002,7 +1002,7 @@ public partial class ShellViewModel : ObservableObject
     }
 
     public void ShowValidationError(Exception exception)
-        => ShowToast(L.T("请检查输入"), exception.Message, ToastKind.Warning);
+        => ShowToast(L.T("请检查输入"), L.Error(exception), ToastKind.Warning);
 
     private void OpenOutput()
     {

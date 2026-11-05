@@ -160,6 +160,7 @@ CalibrationPhotoViewModelTests.Run();
 CalibrationThreeStageTests.Run();
 CalibrationBoundaryWorkflowTests.Run();
 CalibrationFitLocalizationTests.Run();
+PopupLocalizationTests.Run();
 AppSettingsTests.Run();
 LocalizationTests.Run();
 ThemePaletteTests.Run();
