@@ -33,14 +33,14 @@ public static class CalibrationRadialArcFitter
         ArgumentNullException.ThrowIfNull(observations);
         cancellationToken.ThrowIfCancellationRequested();
         if (!target.HasRadialArcDashes || target.Parameters.Kind != CalibrationDiscKind.Cd)
-            throw new ArgumentException("当前标靶没有用于测量的短圆弧。", nameof(target));
+            throw DiagnosticMessage.Argument($"当前标靶没有用于测量的短圆弧。", nameof(target));
         if (!double.IsFinite(angularToleranceDegrees) || angularToleranceDegrees <= 0 || angularToleranceDegrees > 30)
             throw new ArgumentOutOfRangeException(nameof(angularToleranceDegrees));
         if (!double.IsFinite(radiusToleranceMm) || radiusToleranceMm <= 0)
             throw new ArgumentOutOfRangeException(nameof(radiusToleranceMm));
         if (observations.Count > target.RadialArcDashes.Count || observations.Any(o => o is null)
             || observations.Select(o => o.BandIndex).Distinct().Count() != observations.Count)
-            throw new ArgumentException("短圆弧编号无效或重复。", nameof(observations));
+            throw DiagnosticMessage.Argument($"短圆弧编号无效或重复。", nameof(observations));
 
         var geometry = new CalibrationGeometry(target.Parameters);
         var data = new List<Datum>();
@@ -51,7 +51,7 @@ public static class CalibrationRadialArcFitter
                 || !Enum.IsDefined(observation.Direction) || !double.IsFinite(observation.SpanDegrees)
                 || observation.SpanDegrees <= 0 || observation.SpanDegrees >= 360
                 || observation.ApparentRadiusMm is double p && (!double.IsFinite(p) || p < 7.5 || p > 60))
-                throw new ArgumentException("短圆弧测量值无效。", nameof(observations));
+                throw DiagnosticMessage.Argument($"短圆弧测量值无效。", nameof(observations));
             if (!observation.IsComplete || !observation.SingleTurnConfirmed || !observation.MonotonicConfirmed)
                 continue;
             var arc = target.RadialArcDashes[observation.BandIndex];

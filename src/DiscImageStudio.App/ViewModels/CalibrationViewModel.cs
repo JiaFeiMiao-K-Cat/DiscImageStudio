@@ -1107,7 +1107,7 @@ public partial class CalibrationViewModel : ObservableObject
 
     private void Report(Exception ex, string? context = null)
     {
-        _statusMessage = L.T(ex.Message);
+        _statusMessage = L.Error(ex);
         _shell.AppendLog(JobDiagnostics.FormatLog(context ?? L.T("标定操作"), ex));
         _shell.ShowToast(L.T("标定操作未完成"), _statusMessage, ToastKind.Error);
     }

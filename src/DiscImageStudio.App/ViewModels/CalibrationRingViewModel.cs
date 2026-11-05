@@ -316,7 +316,7 @@ public partial class CalibrationViewModel
             catch (ArgumentException ex)
             {
                 // Keep the first two clicks; the user can retry the third or undo either one.
-                SetRingMarkers(RingPointMarkers, L.T(ex.Message));
+                SetRingMarkers(RingPointMarkers, L.Error(ex));
             }
             return;
         }
