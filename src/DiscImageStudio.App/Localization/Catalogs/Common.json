@@ -440,14 +440,23 @@
     "es": "Selecciona una foto del disco.",
     "cs": "Vyberte fotografii disku."
   },
-  "照片尺寸上限应为 64–4096 像素。": {
-    "zh-CN": "照片尺寸上限应为 64–4096 像素。",
-    "en": "The photo dimension limit must be 64–4096 pixels.",
-    "zh-TW": "相片尺寸上限應為 64–4096 像素。",
-    "ja": "写真サイズの上限は 64–4096 ピクセルにしてください。",
-    "tr": "Fotoğraf boyut sınırı 64–4096 piksel olmalıdır.",
-    "es": "El límite de dimensiones de la foto debe estar entre 64 y 4096 píxeles.",
-    "cs": "Limit rozměru fotografie musí být 64–4096 pixelů."
+  "标定照片为空或过大，请重新导入照片。": {
+    "zh-CN": "标定照片为空或过大，请重新导入照片。",
+    "en": "The calibration photo is empty or too large. Import the photo again.",
+    "zh-TW": "標定相片為空或過大，請重新匯入相片。",
+    "ja": "キャリブレーション写真が空か、大きすぎます。写真を再度読み込んでください。",
+    "tr": "Kalibrasyon fotoğrafı boş veya çok büyük. Fotoğrafı yeniden içe aktarın.",
+    "es": "La foto de calibración está vacía o es demasiado grande. Vuelve a importarla.",
+    "cs": "Kalibrační fotografie je prázdná nebo příliš velká. Importujte ji znovu."
+  },
+  "照片尺寸上限应为 64–{0} 像素。": {
+    "zh-CN": "照片尺寸上限应为 64–{0} 像素。",
+    "en": "The photo dimension limit must be 64–{0} pixels.",
+    "zh-TW": "相片尺寸上限應為 64–{0} 像素。",
+    "ja": "写真サイズの上限は 64–{0} ピクセルにしてください。",
+    "tr": "Fotoğraf boyut sınırı 64–{0} piksel olmalıdır.",
+    "es": "El límite de dimensiones de la foto debe estar entre 64 y {0} píxeles.",
+    "cs": "Limit rozměru fotografie musí být 64–{0} pixelů."
   },
   "照片文件过大，请使用小于 256 MB 的图片。": {
     "zh-CN": "照片文件过大，请使用小于 256 MB 的图片。",
@@ -503,14 +512,14 @@
     "es": "Radio del lienzo de rectificación no válido.",
     "cs": "Neplatný poloměr plátna pro narovnání."
   },
-  "矫正图片尺寸应为 32–4096 像素。": {
-    "zh-CN": "矫正图片尺寸应为 32–4096 像素。",
-    "en": "Rectified image dimensions must be 32–4096 pixels.",
-    "zh-TW": "校正圖片尺寸應為 32–4096 像素。",
-    "ja": "補正画像のサイズは 32–4096 ピクセルにしてください。",
-    "tr": "Düzeltilmiş görsel boyutları 32–4096 piksel olmalıdır.",
-    "es": "Las dimensiones de la imagen rectificada deben estar entre 32 y 4096 píxeles.",
-    "cs": "Rozměry narovnaného obrázku musí být 32–4096 pixelů."
+  "矫正图片尺寸应为 32–{0} 像素。": {
+    "zh-CN": "矫正图片尺寸应为 32–{0} 像素。",
+    "en": "Rectified image dimensions must be 32–{0} pixels.",
+    "zh-TW": "校正圖片尺寸應為 32–{0} 像素。",
+    "ja": "補正画像のサイズは 32–{0} ピクセルにしてください。",
+    "tr": "Düzeltilmiş görsel boyutları 32–{0} piksel olmalıdır.",
+    "es": "Las dimensiones de la imagen rectificada deben estar entre 32 y {0} píxeles.",
+    "cs": "Rozměry narovnaného obrázku musí být 32–{0} pixelů."
   },
   "请先按照片尺寸上限载入图片，再进行矫正。": {
     "zh-CN": "请先按照片尺寸上限载入图片，再进行矫正。",

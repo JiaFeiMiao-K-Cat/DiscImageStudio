@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using Microsoft.CSharp.RuntimeBinder;
 
@@ -16,8 +17,20 @@ internal sealed class ImapiWriteProgressReporter
     private readonly Func<TimeSpan> _elapsed;
     private readonly Queue<(TimeSpan Time, long Bytes)> _samples = new();
     private int? _startLba;
+    private string? _sampleSource;
     private long _completedBytes;
     private TimeSpan _lastTime;
+    private string _stage = "unknown";
+    private string _stageMessage = "正在等待刻录机状态…";
+    private string? _lastPhaseKey;
+    private string? _eventSource;
+    private string? _actionSource;
+    private int? _currentAction;
+    private int? _deviceStartLba;
+    private string? _startSource;
+    private int? _lastWrittenLba;
+    private string? _writtenSource;
+    private int? _lastAcceptedLba;
 
     internal ImapiWriteProgressReporter(OpticalBurnMediaKind mediaKind, long totalBytes,
         Action<OpticalBurnProgress>? report, Func<TimeSpan>? elapsed = null)
@@ -38,46 +51,71 @@ internal sealed class ImapiWriteProgressReporter
 
     private void ReportUpdate(object eventArgs, bool rawCd, bool engine)
     {
-        int start, last;
-        try
+        dynamic args = eventArgs;
+        string source = engine ? "IMAPI WriteEngine" : rawCd ? "IMAPI RawCD" : "IMAPI Data";
+        _eventSource = source;
+        int? action = engine ? null : TryReadInt(() => args.CurrentAction);
+        int? start = TryReadInt(() => args.StartLba);
+        int? last = TryReadInt(() => args.LastWrittenLba);
+        // Read each optional property separately, including during finalization.
+        // An unavailable property must not erase earlier device evidence.
+        if (action is not null)
         {
-            dynamic args = eventArgs;
-            if (!engine)
-            {
-                int action = Convert.ToInt32(args.CurrentAction);
-                int writingAction = rawCd ? 2 : 4;
-                if (action != writingAction)
-                {
-                    bool finalizing = action == (rawCd ? 3 : 5) || (!rawCd && action is 6 or 7);
-                    ReportStage(finalizing ? "finalize" : "media",
-                        finalizing ? "正在刷新缓存并关闭刻录会话…" : "正在准备盘片和写入设备…");
-                    return;
-                }
-            }
-            start = Convert.ToInt32(args.StartLba);
-            last = Convert.ToInt32(args.LastWrittenLba);
+            _currentAction = action;
+            _actionSource = source;
         }
-        catch (Exception exception) when (exception is COMException or RuntimeBinderException
-            or InvalidCastException or FormatException or OverflowException)
+        if (start is not null)
         {
-            // Telemetry is optional. An unavailable event property must not abort
-            // a burn or turn stream consumption into fabricated write telemetry.
+            _deviceStartLba = start;
+            _startSource = source;
+        }
+        if (last is not null)
+        {
+            _lastWrittenLba = last;
+            _writtenSource = source;
+        }
+        if (!engine)
+        {
+            int? knownAction = action ?? (_actionSource == source ? _currentAction : null);
+            int writingAction = rawCd ? 2 : 4;
+            if (knownAction != writingAction)
+            {
+                if (rawCd && knownAction == 3)
+                    ReportStage("finalize", "正在结束 CD 原始写入…");
+                else if (!rawCd && knownAction == 5)
+                    ReportStage("finalize", "正在完成 DVD 写入并关闭刻录会话…");
+                else if (!rawCd && knownAction == 6)
+                    ReportStage("write-complete", "Windows 刻录接口报告写入完成，正在等待返回…");
+                else if (!rawCd && knownAction == 7)
+                    ReportStage("verify", "正在验证刻录数据…");
+                else if (knownAction is not null)
+                    ReportStage("media", "正在准备盘片和写入设备…");
+                else
+                    ReportStage(_stage, _stageMessage);
+                return;
+            }
+        }
+        if (start is null || last is null)
+        {
             ReportStage("write", "正在写入，等待刻录机进度…");
             return;
         }
-
-        if (rawCd)
+        // Preserve negative raw DAO addresses above, but exclude lead-in from
+        // payload progress and rate calculations.
+        if (rawCd && last < 0)
         {
-            // DAO can report a negative lead-in LBA. The request counts audio or
-            // ISO payload only, so lead-in sectors must not advance its byte counter.
-            if (last < 0)
-            {
-                ReportStage("media", "正在写入 CD 导入区…");
-                return;
-            }
-            start = Math.Max(0, start);
+            ReportStage("media", "正在写入 CD 导入区…");
+            return;
         }
-        ReportWrittenSectors(start, last);
+        ReportWrittenSectorsCore(rawCd ? Math.Max(0, start.Value) : start.Value, last.Value);
+    }
+
+    private static int? TryReadInt(Func<object?> read)
+    {
+        try { return read() is { } value ? Convert.ToInt32(value) : null; }
+        catch (Exception exception) when (exception is COMException or RuntimeBinderException
+            or InvalidCastException or FormatException or OverflowException)
+        { return null; }
     }
 
     internal void ReportAcceptedBytes(long completedBytes, long totalBytes)
@@ -90,11 +128,38 @@ internal sealed class ImapiWriteProgressReporter
 
     internal void ReportWrittenSectors(int startLba, int lastWrittenLba, bool acceptedByDevice = false)
     {
+        _eventSource = acceptedByDevice ? "MMC WRITE acknowledgement" : "Device sectors";
+        if (acceptedByDevice) _lastAcceptedLba = lastWrittenLba;
+        else
+        {
+            _deviceStartLba = startLba;
+            _startSource = _eventSource;
+            _lastWrittenLba = lastWrittenLba;
+            _writtenSource = _eventSource;
+        }
+        ReportWrittenSectorsCore(startLba, lastWrittenLba, acceptedByDevice);
+    }
+
+    internal void ReportRecordedSectors(int startLba, int lastWrittenLba)
+    {
+        // Reuse an already-issued READ TRACK INFORMATION response. This is
+        // separate recorded-address evidence, not another throughput sample.
+        const string source = "MMC READ TRACK INFORMATION (LRA_V=1)";
+        _deviceStartLba = startLba;
+        _startSource = source;
+        _lastWrittenLba = lastWrittenLba;
+        _writtenSource = source;
+        Publish(new("diagnostic", GetDiagnosticSummary(), _completedBytes, _totalBytes));
+    }
+
+    private void ReportWrittenSectorsCore(int startLba, int lastWrittenLba, bool acceptedByDevice = false)
+    {
         TimeSpan now = _elapsed();
         long writtenSectors = Math.Max(0, (long)lastWrittenLba - startLba + 1);
         long completed = Math.Min(writtenSectors, _totalBytes / _sectorBytes) * _sectorBytes;
-        if (_startLba != startLba || completed < _completedBytes || now < _lastTime)
+        if (_sampleSource != _eventSource || _startLba != startLba || completed < _completedBytes || now < _lastTime)
             _samples.Clear();
+        _sampleSource = _eventSource;
         _startLba = startLba;
         _completedBytes = completed;
         _lastTime = now;
@@ -107,6 +172,7 @@ internal sealed class ImapiWriteProgressReporter
         double seconds = (now - firstTime).TotalSeconds;
         double? rate = seconds >= 1 ? (completed - firstBytes) / seconds : null;
         string label = acceptedByDevice ? "刻录机已接收" : "正在刻录";
+        SetPhase("write", label);
         Publish(new("write",
             $"{label} {completed / (1024.0 * 1024.0):F1} / {_totalBytes / (1024.0 * 1024.0):F1} MiB…",
             completed, _totalBytes, rate));
@@ -116,8 +182,32 @@ internal sealed class ImapiWriteProgressReporter
     {
         _samples.Clear();
         _startLba = null;
+        SetPhase(stage, message);
         Publish(new(stage, message, _completedBytes, _totalBytes));
     }
+
+    private void SetPhase(string stage, string message)
+    {
+        _stage = stage;
+        _stageMessage = message;
+        string key = $"{stage}|{message}|{_eventSource}|{_actionSource}|{_currentAction}";
+        if (_lastPhaseKey == key) return;
+        _lastPhaseKey = key;
+        Publish(new("diagnostic", GetDiagnosticSummary(), _completedBytes, _totalBytes));
+    }
+
+    internal string GetDiagnosticSummary()
+        => $"刻录状态缓存：Stage={_stage}；EventSource={_eventSource ?? "unknown"}；"
+            + $"CurrentAction={Number(_currentAction)}（来源={_actionSource ?? "unknown"}）；"
+            + $"StartLba={Number(_deviceStartLba)}（来源={_startSource ?? "unknown"}）；"
+            + $"LastWrittenLba={Number(_lastWrittenLba)}"
+            + $"（来源={_writtenSource ?? "unknown"}）；LastAcceptedLba={Number(_lastAcceptedLba)}。"
+            + "这是最近可读取的事件快照，字段可能来自不同事件；诊断快照不会额外查询设备。"
+            + "LastWrittenLba 来自标明来源的设备报告，LastAcceptedLba 仅表示 WRITE 命令已接收，可能仍在缓存中；"
+            + "数据传输结束或完成事件不能替代写入调用成功返回。";
+
+    private static string Number(int? value)
+        => value?.ToString(CultureInfo.InvariantCulture) ?? "unknown";
 
     private void Publish(OpticalBurnProgress progress)
     {
