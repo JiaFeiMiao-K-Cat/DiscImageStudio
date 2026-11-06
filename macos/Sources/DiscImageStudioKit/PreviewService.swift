@@ -43,6 +43,8 @@ public struct PreviewRequest: Sendable, Equatable {
     public var artifactURL: URL?
     public var deinterleave: Bool
     public var byteStep: Int
+    /// 强制把 DVD ISO 按光栅 motif 上色（普通单色 ISO 也可用）。
+    public var gratingPreview: Bool
 
     public init(
         mode: PreviewMode = .designProjection,
@@ -56,7 +58,8 @@ public struct PreviewRequest: Sendable, Equatable {
         invertMapping: Bool = false,
         artifactURL: URL? = nil,
         deinterleave: Bool = true,
-        byteStep: Int = 48
+        byteStep: Int = 48,
+        gratingPreview: Bool = false
     ) {
         self.mode = mode
         self.previewSize = previewSize
@@ -70,6 +73,7 @@ public struct PreviewRequest: Sendable, Equatable {
         self.artifactURL = artifactURL
         self.deinterleave = deinterleave
         self.byteStep = byteStep
+        self.gratingPreview = gratingPreview
     }
 
     public func defaultRequest(for project: ProjectDocument) -> PreviewRequest {
@@ -229,6 +233,9 @@ public struct PreviewService: Sendable {
                 "--preview-size", String(size),
                 "--samples-per-sector", String(samples),
             ]
+            if request.gratingPreview {
+                arguments += ["--grating", "true"]
+            }
         case (.bd, .designProjection):
             arguments = [
                 "bd-preview",

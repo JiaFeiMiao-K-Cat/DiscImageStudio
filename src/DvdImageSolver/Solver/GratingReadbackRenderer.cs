@@ -151,22 +151,7 @@ public static class GratingReadbackRenderer
     }
 
     private static bool TryColour(byte q, out (string Name, byte R, byte G, byte B) colour)
-    {
-        switch (q)
-        {
-            case 0xA5: colour = Palette[0]; return true;
-            case 0x66: colour = Palette[1]; return true;
-            case 0xB9: colour = Palette[2]; return true;
-            case 0x09: case 0x88: case 0xA4: case 0x71:
-                colour = Palette[3]; return true;
-            case 0x43: case 0x80: case 0x69:
-                colour = Palette[4]; return true;
-            case 0xB2: case 0xD1: case 0xCB: case 0x3E: case 0xC0: case 0xCD: case 0xE6:
-                colour = Palette[5]; return true;
-            case 0x92: colour = Palette[6]; return true;
-            default: colour = default; return false;
-        }
-    }
+        => DvdGratingPalette.TryColour(q, out colour);
 
     private static void Validate(GratingReadbackOptions options)
     {

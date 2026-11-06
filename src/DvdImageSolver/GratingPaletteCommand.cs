@@ -12,17 +12,6 @@ namespace DvdImageSolver;
 /// </summary>
 internal static class GratingPaletteCommand
 {
-    private static readonly byte[][] Palette =
-    [
-        [0xA5],                                      // A 0.853 µm
-        [0x66],                                      // B 1.066 µm
-        [0xB9],                                      // G 1.421 µm
-        [0x09, 0x88, 0xA4, 0x71],                    // C 1.312 µm
-        [0x43, 0x80, 0x69],                          // D 1.600 µm
-        [0xB2, 0xD1, 0xCB, 0x3E, 0xC0, 0xCD, 0xE6],  // E 1.866 µm
-        [0x92],                                      // F 2.133 µm
-    ];
-
     internal static int Run(CliArguments args)
     {
         string imagePath = args.Require("image");
@@ -97,7 +86,7 @@ internal static class GratingPaletteCommand
         output.Flush();
         Console.Error.WriteLine(
             $"done: {outputPath}, sectors={totalSectors}, drawingStart={drawingStart}, "
-            + $"cell={cellMm * 1000:F1}um, palette8={Palette.Length}");
+            + $"cell={cellMm * 1000:F1}um, palette8={DvdGratingPalette.Motifs.Length}");
         return 0;
     }
 
@@ -160,7 +149,7 @@ internal static class GratingPaletteCommand
             if (col < 0 || col >= _cols || row < 0 || row >= _rows) return 0;
             byte value = _values[(row * _cols) + col];
             if (value == 0) return 0;
-            byte[] motifs = Palette[value - 1];
+            byte[] motifs = DvdGratingPalette.Motifs[value - 1];
             return motifs[(int)(sample.GlobalCodewordIndex % (ulong)motifs.Length)];
         }
 

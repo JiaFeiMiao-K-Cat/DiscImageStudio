@@ -107,6 +107,15 @@ struct PreviewView: View {
                         Button("选择…") { chooseArtifact() }
                             .controlSize(.small)
                     }
+                    if project.family == .dvd {
+                        Toggle(L("按光栅色板解析"), isOn: Binding(
+                            get: { project.gratingPreview },
+                            set: { project.gratingPreview = $0 }
+                        ))
+                        .toggleStyle(.switch)
+                        .font(.system(size: 11.5))
+                        .help(L("强制按 A/B/C/D/E/F/G motif 上色；普通单色 ISO 也能用"))
+                    }
                 }
             }
 

@@ -166,6 +166,7 @@ final class ProjectModel {
     var previewError: String?
 
     var artifactURL: URL?
+    var gratingPreview = false
     var exportError: String?
     var exportOutputURL: URL?
     var burnPrefillURL: URL?
@@ -513,7 +514,8 @@ final class ProjectModel {
             invertMapping: invertMapping,
             artifactURL: artifactDisplayURL,
             deinterleave: deinterleave,
-            byteStep: byteStep
+            byteStep: byteStep,
+            gratingPreview: gratingPreview
         )
     }
 
