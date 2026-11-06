@@ -101,6 +101,13 @@ public sealed class ProjectSession
 /// <summary>Same mm placement and topmost-first ordering as the WPF design composer.</summary>
 public static class DesignComposer
 {
+    internal static (double Width, double Height) LayerSize(double outerRadius, ProjectLayer layer, int imageWidth, int imageHeight)
+    {
+        // The longest side fits the design diameter at scale 1.
+        double fit = outerRadius * 2 / Math.Max(imageWidth, imageHeight);
+        return (imageWidth * fit * layer.Scale, imageHeight * fit * layer.Scale);
+    }
+
     public static void Render(ProjectDocument document, double radius, int size, string output)
     {
         if (!double.IsFinite(radius) || radius <= 0 || size is < 64 or > 8192)
@@ -115,10 +122,8 @@ public static class DesignComposer
         {
             using var image = SKBitmap.Decode(layer.ImagePath)
                 ?? throw new InvalidDataException($"无法读取图片：{layer.ImagePath}");
-            // WPF fits the longest side to the full design diameter at scale 1.
-            double fit = document.Geometry.OuterRadiusMm * 2 / Math.Max(image.Width, image.Height);
-            float w = (float)(image.Width * fit * layer.Scale);
-            float h = (float)(image.Height * fit * layer.Scale);
+            var (width, height) = LayerSize(document.Geometry.OuterRadiusMm, layer, image.Width, image.Height);
+            float w = (float)width, h = (float)height;
             canvas.Save();
             canvas.Translate((float)layer.TranslateXMm, (float)layer.TranslateYMm);
             canvas.RotateDegrees((float)layer.RotationDeg);

@@ -13,13 +13,16 @@ public sealed partial class MainWindow
 {
     private DiscCanvas Canvas(bool design = false)
     {
-        var canvas = new DiscCanvas { Session = Session, Height = 450, MinWidth = 260, SelectedLayer = _selectedLayer };
+        var canvas = new DiscCanvas { Session = Session, EditLayers = design, Height = 450, MinWidth = 260, SelectedLayer = _selectedLayer };
         _canvases.Add(canvas);
         if (design)
         {
             _designCanvas = canvas;
-            canvas.LayerEditCompleted += ShowLayerEditor;
-            canvas.LayerDragged += layer => { ReplaceLayer(layer); _composeTimer.Stop(); _composeTimer.Start(); };
+            canvas.LayerTransformed += layer =>
+            {
+                ReplaceLayer(layer);
+                _syncLayerFields?.Invoke(layer);
+            };
         }
         return canvas;
     }
@@ -48,7 +51,7 @@ public sealed partial class MainWindow
             Grid.SetColumn(stage, narrow ? 0 : 1); Grid.SetRow(stage, narrow ? 1 : 0);
             Grid.SetColumn(props, narrow ? 0 : 2); Grid.SetRow(props, narrow ? 2 : 0);
         };
-        RefreshLayers(); RefreshComposite();
+        RefreshLayers();
         return Column(layout, Row(Button("工程设置", EditGeometry), Button("下一步：预览", () => Navigate("预览"))));
     }
     private async Task ImportImage()
@@ -58,19 +61,22 @@ public sealed partial class MainWindow
         _ = DiscImageStudio.ImageIO.RasterCodec.LoadBgra32(path, 256 * 1024 * 1024, 100_000_000);
         var d = Session.Document!;
         Session.Update(d with { Layers = new[] { new ProjectLayer(Guid.NewGuid().ToString("N"), Path.GetFileName(path), path, true, 0, 0, 0, 1) }.Concat(d.Layers).ToArray() });
-        _selectedLayer = 0; RefreshLayers(); RefreshComposite();
+        _selectedLayer = 0; RefreshLayers();
     }
     private void RefreshLayers()
     {
         if (_layerList is null) return;
+        int selected = _selectedLayer;
         _layerList.ItemsSource = Session.Document!.Layers.Select(l => Row(Glyph(l.Visible ? "image" : "preview", 15),
             new TextBlock { Text = l.Name, FontSize = 12, TextTrimming = Avalonia.Media.TextTrimming.CharacterEllipsis,
                 VerticalAlignment = VerticalAlignment.Center })).ToArray();
-        _layerList.SelectedIndex = _selectedLayer;
+        _layerList.SelectedIndex = selected;
         ShowLayerEditor();
+        RefreshDesignImages();
     }
     private void ShowLayerEditor()
     {
+        _syncLayerFields = null;
         if (_layerEditor is null) return;
         var d = Session.Document!;
         if (_selectedLayer < 0 || _selectedLayer >= d.Layers.Count) { _layerEditor.Content = Text("选择或导入一张图片。"); return; }
@@ -79,21 +85,48 @@ public sealed partial class MainWindow
         var layer = Current();
         var fields = Column();
         var name = new TextBox { Text = layer.Name };
-        name.LostFocus += (_, _) => { ReplaceLayer(Current() with { Name = name.Text ?? "Image" }); RefreshLayers(); };
+        name.LostFocus += (_, _) =>
+        {
+            if (Session.Document?.Layers.FirstOrDefault(l => l.Id == id) is { } current
+                && !string.IsNullOrWhiteSpace(name.Text) && name.Text != current.Name)
+            {
+                ReplaceLayer(current with { Name = name.Text });
+                RefreshLayers();
+            }
+        };
         fields.Children.Add(name);
-        fields.Children.Add(Check("可见", layer.Visible, value => { ReplaceLayer(Current() with { Visible = value }); RefreshComposite(); }));
-        Number("X (mm)", layer.TranslateXMm, -500, 500, v => Edit(Current() with { TranslateXMm = v }), fields);
-        Number("Y (mm)", layer.TranslateYMm, -500, 500, v => Edit(Current() with { TranslateYMm = v }), fields);
-        Number("旋转 (°)", layer.RotationDeg, -36000, 36000, v => Edit(Current() with { RotationDeg = v }), fields, 1);
-        Number("缩放", layer.Scale, 0.01, 100, v => Edit(Current() with { Scale = v }), fields, 0.05);
+        fields.Children.Add(Check("可见", layer.Visible, value => { ReplaceLayer(Current() with { Visible = value }); RefreshDesignImages(); }));
+        bool syncing = false;
+        var x = Number("X (mm)", layer.TranslateXMm, -500, 500, v => Edit(l => l with { TranslateXMm = v }), fields);
+        var y = Number("Y (mm)", layer.TranslateYMm, -500, 500, v => Edit(l => l with { TranslateYMm = v }), fields);
+        var angle = Number("旋转 (°)", layer.RotationDeg, -36000, 36000, v => Edit(l => l with { RotationDeg = v }), fields, 1);
+        var scale = Number("缩放", layer.Scale, 0.01, 100, v => Edit(l => l with { Scale = v }), fields, 0.05);
+        _syncLayerFields = value =>
+        {
+            if (value.Id != id) return;
+            syncing = true;
+            try
+            {
+                x.Value = (decimal)value.TranslateXMm;
+                y.Value = (decimal)value.TranslateYMm;
+                angle.Value = (decimal)value.RotationDeg;
+                scale.Value = (decimal)value.Scale;
+            }
+            finally { syncing = false; }
+        };
         _layerEditor.Content = fields;
-        void Edit(ProjectLayer value) { ReplaceLayer(value); _composeTimer.Stop(); _composeTimer.Start(); }
+        void Edit(Func<ProjectLayer, ProjectLayer> change)
+        {
+            if (!syncing) ReplaceLayer(change(Current()));
+        }
     }
     private void ReplaceLayer(ProjectLayer layer)
     {
         if (_busy) return;
         var d = Session.Document!;
+        if (!d.Layers.Any(l => l.Id == layer.Id && l != layer)) return;
         Session.Update(d with { Layers = d.Layers.Select(l => l.Id == layer.Id ? layer : l).ToArray() });
+        _designCanvas?.InvalidateVisual();
     }
     private void MoveLayer(int delta)
     {
@@ -101,21 +134,20 @@ public sealed partial class MainWindow
         int target = _selectedLayer + delta;
         if (_selectedLayer < 0 || target < 0 || target >= layers.Count) return;
         (layers[target], layers[_selectedLayer]) = (layers[_selectedLayer], layers[target]);
-        Session.Update(Session.Document with { Layers = layers }); _selectedLayer = target; RefreshLayers(); RefreshComposite();
+        Session.Update(Session.Document with { Layers = layers }); _selectedLayer = target; RefreshLayers();
     }
     private void DeleteLayer()
     {
         var layers = Session.Document!.Layers.ToList();
         if (_selectedLayer < 0 || _selectedLayer >= layers.Count) return;
         layers.RemoveAt(_selectedLayer); _selectedLayer = Math.Min(_selectedLayer, layers.Count - 1);
-        Session.Update(Session.Document with { Layers = layers }); RefreshLayers(); RefreshComposite();
+        Session.Update(Session.Document with { Layers = layers }); RefreshLayers();
     }
-    private void RefreshComposite()
+    private void RefreshDesignImages()
     {
         try
         {
-            _projectPreview = Session.Document?.Layers.Any(l => l.Visible) == true ? Session.Compose(1024) : null;
-            _designCanvas?.SetImage(_projectPreview);
+            _designCanvas?.RefreshLayerImages();
         }
         catch (Exception e) { _status.Text = e.Message; Log(e.Message); }
     }
@@ -254,7 +286,7 @@ public sealed partial class MainWindow
         Log(result.Summary ?? "");
         if (!result.Succeeded) throw new InvalidOperationException(result.Summary ?? $"任务失败 ({result.ExitCode})");
     }
-    internal async Task RunWork(string title, bool canCancel, Func<CancellationToken, Task> work)
+    internal async Task RunWork(string title, bool canCancel, Func<CancellationToken, Task> work, string? completionStatus = null)
     {
         if (_busy) return;
         _busy = true; _status.Text = L.T(title); _progress.IsVisible = true; _progress.IsIndeterminate = true; _progress.Value = 0;
@@ -266,7 +298,7 @@ public sealed partial class MainWindow
         using var outputLog = new JobLogWriter(originalOutput, Log);
         using var errorLog = new JobLogWriter(originalError, Log);
         Console.SetOut(outputLog); Console.SetError(errorLog);
-        try { await work(cancellation.Token); _status.Text = L.T("完成"); _progress.Value = 100; }
+        try { await work(cancellation.Token); _status.Text = completionStatus ?? L.T("完成"); _progress.Value = 100; }
         catch (OperationCanceledException) { _status.Text = L.T("已取消"); Log("已取消；未完成的输出文件可能留在磁盘上。"); }
         finally { outputLog.Flush(); errorLog.Flush(); Console.SetOut(originalOutput); Console.SetError(originalError); _busy = false; _cancellation = null; _cancel.IsVisible = false; _page.IsEnabled = true; _navigation.IsEnabled = true; _progress.IsIndeterminate = false; }
     }

@@ -9,6 +9,8 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.Automation;
+using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using DiscImageStudio.BluRay;
 using DiscImageStudio.Core;
 using DiscImageStudio.Localization;
@@ -28,7 +30,6 @@ public sealed partial class MainWindow : Window
     private readonly StackPanel _navigation = new() { Spacing = 5, Margin = new Thickness(14, 20) };
     private readonly List<Button> _navButtons = [];
     private readonly List<DiscCanvas> _canvases = [];
-    private readonly DispatcherTimer _composeTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
     private CancellationTokenSource? _cancellation;
     private bool _busy;
     private bool _closingApproved;
@@ -36,10 +37,10 @@ public sealed partial class MainWindow : Window
     private string? _previewPath;
     private ProjectDocument? _previousDocument;
     private string? _lastArtifact;
-    private string? _projectPreview;
     private int _selectedLayer = -1;
     private ListBox? _layerList;
     private ContentControl? _layerEditor;
+    private Action<ProjectLayer>? _syncLayerFields;
     private DiscCanvas? _designCanvas;
     private TextBox? _artifactInput;
     private List<string> _recent = [];
@@ -106,7 +107,11 @@ public sealed partial class MainWindow : Window
         var statusRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         var status = Row(Glyph("check", 14), _status); status.VerticalAlignment = VerticalAlignment.Center;
         statusRow.Children.Add(status);
-        var logToggle = Quiet(Button("任务日志", () => _log.IsVisible = !_log.IsVisible));
+        var logToggle = Quiet(Button("任务日志", () =>
+        {
+            _log.IsVisible = !_log.IsVisible;
+            if (_log.IsVisible) _log.CaretIndex = _log.Text?.Length ?? 0;
+        }));
         var dockActions = Row(_cancel, logToggle);
         Grid.SetColumn(dockActions, 1); statusRow.Children.Add(dockActions);
         _cancel.Click += (_, _) => _cancellation?.Cancel();
@@ -127,7 +132,6 @@ public sealed partial class MainWindow : Window
             _previousDocument = d;
             _projectTitle.Text = d is not null ? $"{d.Name}{(Session.IsDirty ? " •" : "")}  /  {d.FamilyLabel}" : "Disc Image Studio";
         };
-        _composeTimer.Tick += (_, _) => { _composeTimer.Stop(); RefreshComposite(); };
         KeyDown += async (_, e) =>
         {
             if ((e.KeyModifiers & (KeyModifiers.Meta | KeyModifiers.Control)) == 0) return;
@@ -136,7 +140,7 @@ public sealed partial class MainWindow : Window
             if (e.Key == Key.N) { await Guard(() => NewProject()); e.Handled = true; }
         };
         Closing += OnClosing;
-        Closed += (_, _) => { _composeTimer.Stop(); Session.CleanCache(); DisposeCanvases(); _photoCanvas?.Dispose(); };
+        Closed += (_, _) => { Session.CleanCache(); DisposeCanvases(); _photoCanvas?.Dispose(); };
         Navigate("主页");
         // Deterministic snapshots are an explicit developer entry point, never a normal startup side effect.
         if (snapshot >= 0 && snapshot + 1 < args.Length)
@@ -209,6 +213,7 @@ public sealed partial class MainWindow : Window
     {
         foreach (var canvas in _canvases) canvas.Dispose();
         _canvases.Clear(); _designCanvas = null;
+        _syncLayerFields = null;
     }
     internal async Task Guard(Func<Task> action)
     {
@@ -235,7 +240,14 @@ public sealed partial class MainWindow : Window
     }
     internal void Log(string message)
     {
-        void Append() { _log.Text = ((_log.Text ?? "") + message + "\n"); if (_log.Text.Length > 60000) _log.Text = _log.Text[^40000..]; }
+        void Append()
+        {
+            string oldText = _log.Text ?? "";
+            bool follow = _log.CaretIndex == oldText.Length;
+            string newText = oldText + message + "\n";
+            _log.Text = newText.Length > 60000 ? newText[^40000..] : newText;
+            if (follow) _log.CaretIndex = _log.Text.Length;
+        }
         if (Dispatcher.UIThread.CheckAccess()) Append(); else Dispatcher.UIThread.Post(Append);
     }
     private async void OnClosing(object? sender, WindowClosingEventArgs e)
@@ -260,7 +272,7 @@ public sealed partial class MainWindow : Window
     {
         if (_busy) return;
         if (page != "主页" && Session.Document is null) { _status.Text = L.T("请先新建或打开工程。"); return; }
-        _composeTimer.Stop(); DisposeCanvases(); _photoCanvas?.Dispose(); _photoCanvas = null; _workspace = page;
+        DisposeCanvases(); _photoCanvas?.Dispose(); _photoCanvas = null; _workspace = page;
         for (int i = 0; i < _navButtons.Count; i++)
         {
             bool selected = new[] { "主页", "设计", "预览", "导出", "刻录", "标定" }[i] == page;
@@ -279,7 +291,23 @@ public sealed partial class MainWindow : Window
         content.Spacing = 10;
         body.Margin = new Thickness(0, 16, 0, 0);
         content.Children.Add(body);
-        _page.Content = new ScrollViewer { Content = content, Padding = new Thickness(28, 26) };
+        // Include the padding in the scrollable extent so the last controls clear the job dock.
+        var scroll = new ScrollViewer { Content = new Border { Child = content, Padding = new Thickness(28, 26) } };
+        scroll.AddHandler(PointerWheelChangedEvent, (_, e) =>
+        {
+            if (scroll.Extent.Height <= scroll.Viewport.Height || e.Source is not Visual source) return;
+            // Keep Shift-scroll available over the calibration photo, where the wheel normally zooms.
+            bool photoScroll = e.KeyModifiers.HasFlag(KeyModifiers.Shift)
+                && source.FindAncestorOfType<CalibrationCanvas>(includeSelf: true) is not null;
+            bool focusedSpinner = e.KeyModifiers != KeyModifiers.Shift
+                && source.FindAncestorOfType<NumericUpDown>(includeSelf: true) is { IsKeyboardFocusWithin: true };
+            if (!photoScroll && !focusedSpinner) return;
+            double delta = photoScroll && e.Delta.Y == 0 ? e.Delta.X : e.Delta.Y;
+            if (delta == 0) return;
+            scroll.Offset = new Vector(scroll.Offset.X, scroll.Offset.Y - delta * 50);
+            e.Handled = true;
+        }, RoutingStrategies.Tunnel);
+        _page.Content = scroll;
     }
     private Control Home()
     {

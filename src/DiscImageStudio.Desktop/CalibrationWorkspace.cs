@@ -65,7 +65,7 @@ public sealed partial class MainWindow
                 using var encoded = resized.Encode(SKEncodedImageFormat.Png, 100); using (var stream = File.Create(_photoPath)) encoded.SaveTo(stream);
                 _outerPoints.Clear(); _holePoints.Clear(); _tracePixels.Clear(); _photoTransform = null; _rectifiedPath = null; _fit = null;
                 mode.SelectedIndex = 0; SetMode();
-            }), mode, count, Text("点击布点，拖动修正，Alt + 点击删除。滚轮缩放，右键拖动平移。", 12));
+            }), mode, count, Text("点击布点，拖动已有点修正。拖动空白处或按住右键拖动可平移照片。滚轮缩放，Shift + 滚轮滚动页面，Option + 点击删除。", 12));
         fields.Children.Add(Check("8 cm 小盘（默认 12 cm）", _physicalRadius == 40, v =>
         {
             _physicalRadius = v ? 40 : 60; _photoTransform = null; _rectifiedPath = null; _tracePixels.Clear(); _fit = null; mode.SelectedIndex = 0; SetMode();

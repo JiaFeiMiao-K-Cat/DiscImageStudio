@@ -14,6 +14,7 @@ public sealed class CalibrationCanvas : Control, IDisposable
     private double _zoom = 1;
     private Vector _pan;
     private Point? _panStart;
+    private Point? _pendingPoint;
     private int _dragPoint = -1;
     public List<CalibrationPoint> Points { get; set; } = [];
     public IReadOnlyList<CalibrationPoint> Prediction { get; set; } = [];
@@ -30,15 +31,18 @@ public sealed class CalibrationCanvas : Control, IDisposable
     }
     public void SetImage(string? path)
     {
-        _image?.Dispose(); _image = path is null ? null : new Bitmap(path); _zoom = 1; _pan = default; InvalidateVisual();
+        _image?.Dispose(); _image = path is null ? null : new Bitmap(path); _zoom = 1; _pan = default;
+        ClearGesture();
+        InvalidateVisual();
     }
     public void Dispose() => _image?.Dispose();
     public override void Render(DrawingContext context)
     {
-        context.DrawRectangle(Brush.Parse("#151923"), null, Bounds);
+        var viewport = new Rect(Bounds.Size);
+        context.DrawRectangle(Brush.Parse("#151923"), null, viewport);
         if (_image is null) return;
         var rect = ImageRect;
-        using (context.PushClip(Bounds))
+        using (context.PushClip(viewport))
         {
             context.DrawImage(_image, rect);
             Point Map(CalibrationPoint p) => new(rect.X + p.X / _image.PixelSize.Width * rect.Width, rect.Y + p.Y / _image.PixelSize.Height * rect.Height);
@@ -50,26 +54,94 @@ public sealed class CalibrationCanvas : Control, IDisposable
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         if (_image is null) return;
-        var p = e.GetPosition(this); var rect = ImageRect;
-        if (e.GetCurrentPoint(this).Properties.IsRightButtonPressed) { _panStart = p; e.Pointer.Capture(this); return; }
-        if (!rect.Contains(p)) return;
-        var pixel = new CalibrationPoint((p.X - rect.X) / rect.Width * _image.PixelSize.Width, (p.Y - rect.Y) / rect.Height * _image.PixelSize.Height);
-        double threshold = 9 / rect.Width * _image.PixelSize.Width;
-        int index = Points.FindIndex(q => Math.Sqrt(Math.Pow(q.X - pixel.X, 2) + Math.Pow(q.Y - pixel.Y, 2)) < threshold);
-        if (e.KeyModifiers.HasFlag(KeyModifiers.Alt)) { if (index >= 0) { Points.RemoveAt(index); Edited?.Invoke(); InvalidateVisual(); } return; }
-        if (index < 0) { Points.Add(pixel); index = Points.Count - 1; Edited?.Invoke(); }
-        _dragPoint = index; e.Pointer.Capture(this); InvalidateVisual();
+        var current = e.GetCurrentPoint(this);
+        var p = current.Position;
+        var rect = ImageRect;
+        if (current.Properties.IsRightButtonPressed || current.Properties.IsMiddleButtonPressed)
+            _panStart = p;
+        else if (current.Properties.IsLeftButtonPressed)
+        {
+            if (!rect.Contains(p)) _panStart = p;
+            else
+            {
+                var pixel = ToPixel(p);
+                double threshold = 9 / rect.Width * _image.PixelSize.Width;
+                int index = Points.FindIndex(q => double.Hypot(q.X - pixel.X, q.Y - pixel.Y) < threshold);
+                if (e.KeyModifiers.HasFlag(KeyModifiers.Alt))
+                {
+                    if (index >= 0) { Points.RemoveAt(index); Edited?.Invoke(); InvalidateVisual(); }
+                    e.Handled = true;
+                    return;
+                }
+
+                if (index >= 0) _dragPoint = index;
+                else _pendingPoint = p;
+            }
+        }
+        else return;
+
+        e.Pointer.Capture(this);
+        e.Handled = true;
     }
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         var p = e.GetPosition(this);
-        if (_panStart is { } start) { _pan += p - start; _panStart = p; InvalidateVisual(); return; }
+        if (_pendingPoint is { } pending && ((Vector)(p - pending)).Length >= 4)
+        {
+            _pendingPoint = null;
+            _panStart = pending;
+        }
+        if (_panStart is { } start)
+        {
+            _pan += p - start;
+            _panStart = p;
+            InvalidateVisual();
+            e.Handled = true;
+            return;
+        }
         if (_image is null || _dragPoint < 0 || _dragPoint >= Points.Count) return;
-        var rect = ImageRect;
-        Points[_dragPoint] = new(Math.Clamp((p.X - rect.X) / rect.Width * _image.PixelSize.Width, 0, _image.PixelSize.Width),
-            Math.Clamp((p.Y - rect.Y) / rect.Height * _image.PixelSize.Height, 0, _image.PixelSize.Height));
-        Edited?.Invoke(); InvalidateVisual();
+        Points[_dragPoint] = ToPixel(p);
+        Edited?.Invoke();
+        InvalidateVisual();
+        e.Handled = true;
     }
-    protected override void OnPointerReleased(PointerReleasedEventArgs e) { _panStart = null; _dragPoint = -1; e.Pointer.Capture(null); }
-    protected override void OnPointerWheelChanged(PointerWheelEventArgs e) { _zoom = Math.Clamp(_zoom * Math.Pow(1.15, e.Delta.Y), 0.5, 16); InvalidateVisual(); e.Handled = true; }
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        if (_panStart is null && _pendingPoint is null && _dragPoint < 0) return;
+        var p = e.GetPosition(this);
+        if (_pendingPoint is { } start && ((Vector)(p - start)).Length < 4 && _image is not null && ImageRect.Contains(p))
+        {
+            Points.Add(ToPixel(p));
+            Edited?.Invoke();
+            InvalidateVisual();
+        }
+        ClearGesture();
+        e.Pointer.Capture(null);
+        e.Handled = true;
+    }
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        ClearGesture();
+    }
+    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+    {
+        if (_image is null || e.Delta.Y == 0 || e.KeyModifiers.HasFlag(KeyModifiers.Shift)) return;
+        _zoom = Math.Clamp(_zoom * Math.Pow(1.15, e.Delta.Y), 0.5, 16);
+        InvalidateVisual();
+        e.Handled = true;
+    }
+    private CalibrationPoint ToPixel(Point p)
+    {
+        var rect = ImageRect;
+        double width = _image!.PixelSize.Width, height = _image.PixelSize.Height;
+        return new(Math.Clamp((p.X - rect.X) / rect.Width * width, 0, width),
+            Math.Clamp((p.Y - rect.Y) / rect.Height * height, 0, height));
+    }
+    private void ClearGesture()
+    {
+        _panStart = null;
+        _pendingPoint = null;
+        _dragPoint = -1;
+    }
 }

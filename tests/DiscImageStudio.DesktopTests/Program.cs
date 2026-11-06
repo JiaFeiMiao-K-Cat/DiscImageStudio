@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
+using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -59,6 +60,7 @@ try
         {
             Check(File.ReadAllText(Path.ChangeExtension(output, ".cue")).Contains("FILE \"track.wav\" WAVE"), "Wrong WAV CUE");
             string aiff = Path.Combine(work, "track.aiff");
+            Check(MacDiscRecorder.GetAudioSectorCount(output) == 2, "WAV preflight read the wrong sector count");
             Check(MacDiscRecorder.WriteAudioAiff(output, aiff) == 2, "Wrong burn sector count");
             byte[] wave = File.ReadAllBytes(output), ai = File.ReadAllBytes(aiff);
             Check(ai.Length == 54 + 2 * 2352 && BinaryPrimitives.ReadUInt32BigEndian(ai.AsSpan(4, 4)) == ai.Length - 8, "Invalid AIFF header");
@@ -107,11 +109,68 @@ try
     Check(MacDiscRecorder.ReadSystemXml(xml).Root!.Name == "deviceList", "Failed to parse real drutil's anonymous DTD");
     var media = MacDiscRecorder.ParseMedia("<statusdoc><statusfordevice><device index='2'/><deviceStatus><mediaInfo><blank/><freeSpace msf='79:59:74'/><mediaClass value='CD'/><mediaType value='CD-R'/></mediaInfo></deviceStatus></statusfordevice></statusdoc>", "2");
     Check(media.Blank && media.FreeSectors == 359999, "Incorrect CD capacity conversion");
+    const string scopedStatus = "<statusdoc><statusfordevice><device name='lenovo Slim_USB_Burner'/><deviceStatus><mediaInfo><blank/><freeSpace blockCount='359847' msf='79:57:72'/><mediaClass value='CD'/><mediaType value='CD-R'/></mediaInfo></deviceStatus></statusfordevice></statusdoc>";
+    Check(MacDiscRecorder.ParseMedia(scopedStatus, "1") is { Blank: true, FreeSectors: 359847, Description: "CD-R" },
+        "Drive-scoped status must recognize a blank disc when the device index is omitted");
+    var blankCd = MacDiscRecorder.ParseMedia(scopedStatus, "1");
+    MacDiscRecorder.ValidateMedia(blankCd, true, 359697);
+    MacDiscRecorder.ValidateMedia(blankCd, false, 359847);
+    Reject(() => MacDiscRecorder.ValidateMedia(blankCd, true, 359698), "Audio preflight forgot the first-track gap");
     MacDiscRecorder.ValidateMedia(media, true, 359849);
     Reject(() => MacDiscRecorder.ValidateMedia(media with { Blank = false }, true, 1), "Accepted recorded media");
     Reject(() => MacDiscRecorder.ValidateMedia(media, true, 360000), "Accepted over-capacity image");
     Reject(() => MacDiscRecorder.ValidateMedia(media with { MediaClass = "DVD" }, true, 1), "Accepted audio on DVD");
     Reject(() => MacDiscRecorder.ParseMedia("<statusdoc/>", "1"), "Accepted missing media");
+    var burnUpdates = new List<MacBurnProgress>();
+    var burnDiagnostics = new List<string>();
+    using (var terminal = new StringReader("Burning Audio Disc: fixture\nPreparing...\nWriting track 1 ... 38% "
+        + "\b \b\b \b\b \b9% \r                     \rClosing... (this might take a while)"
+        + "\rVerifying... [=====] 96% \nBurn completed.\n"))
+        await MacDiscRecorder.ReadBurnOutputAsync(terminal, burnDiagnostics.Add, burnUpdates.Add);
+    Check(burnUpdates.SequenceEqual([
+        new(MacBurnStage.Preparing, null), new(MacBurnStage.Writing, 38), new(MacBurnStage.Writing, 39),
+        new(MacBurnStage.Closing, null), new(MacBurnStage.Verifying, 96)]),
+        "Burn progress must follow backspace updates and preserve the current stage");
+    Check(burnDiagnostics.SequenceEqual(["Burning Audio Disc: fixture", "Burn completed."]),
+        "Burn output must preserve diagnostic and completion lines");
+    if (OperatingSystem.IsMacOS())
+    {
+        string finish = Path.Combine(work, "finish terminal fixture");
+        var liveUpdate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        const string fixture = """
+            test -t 0 && test -t 1 && test "$(/bin/stty size)" = "24 80" || exit 31
+            printf 'Writing track 1 ... [=======] 38%% '
+            for second in 1 2 3 4 5 6; do
+                if test -f "$1"; then
+                    printf '\rClosing... (this might take a while)\nBurn completed.\n'
+                    exit 0
+                fi
+                sleep 1
+            done
+            exit 32
+            """;
+        Task burn = MacDiscRecorder.RunBurnToolAsync("/bin/sh", ["-c", fixture, "fixture", finish], _ => { },
+            update => { if (update is { Stage: MacBurnStage.Writing, Percent: 38 }) liveUpdate.TrySetResult(true); });
+        try
+        {
+            Task first = await Task.WhenAny(liveUpdate.Task, burn, Task.Delay(TimeSpan.FromSeconds(5)));
+            Check(first == liveUpdate.Task && !burn.IsCompleted, "The real terminal transport must report progress before exit");
+        }
+        finally
+        {
+            File.WriteAllText(finish, "");
+            await burn;
+        }
+
+        bool failed = false;
+        try
+        {
+            await MacDiscRecorder.RunBurnToolAsync("/bin/sh", ["-c", "printf 'Burn completed.\\n'; exit 29"],
+                _ => { }, _ => { });
+        }
+        catch (IOException e) { failed = e.Message.Contains("(29)", StringComparison.Ordinal); }
+        Check(failed, "The terminal transport must propagate a nonzero child exit even if it printed completion");
+    }
     var target = CalibrationTarget.Create(new(CalibrationDiscKind.Cd, 24.5, 56.8, 359849, 1200));
     var map = CalibrationCrossPrediction.CreateMapping(target, target.Parameters);
     var trace = Enumerable.Range(0, 24).Select(i => map(25 + i * 1.3)).ToArray();
@@ -136,6 +195,114 @@ try
         string path = Path.Combine(work, "ui-" + page + ".png"); bitmap.Save(path);
         Check(new FileInfo(path).Length > 5000, "Empty UI page: " + page);
     }
+    window.Navigate("设计");
+    window.UpdateLayout();
+    window.GetVisualDescendants().OfType<ListBox>().Single().SelectedIndex = 0;
+    window.UpdateLayout();
+    Dispatcher.UIThread.RunJobs();
+    var canvas = window.GetVisualDescendants().OfType<DiscCanvas>().Single();
+    var center = new Point(canvas.Bounds.Width / 2, canvas.Bounds.Height / 2);
+    var sample = center + new Vector(30, 100);
+    SKColor CanvasPixel()
+    {
+        using var frame = new RenderTargetBitmap(PixelSize.FromSize(canvas.Bounds.Size, 1), new Vector(96, 96));
+        frame.Render(canvas);
+        using var png = new MemoryStream();
+        frame.Save(png);
+        png.Position = 0;
+        using var image = SKBitmap.Decode(png);
+        return image.GetPixel((int)sample.X, (int)sample.Y);
+    }
+    var start = canvas.TranslatePoint(center, window)!.Value;
+    var end = start + new Vector(40, 0);
+    var originalPixel = CanvasPixel();
+    window.MouseDown(start, MouseButton.Left);
+    window.MouseMove(end, RawInputModifiers.LeftMouseButton);
+    Dispatcher.UIThread.RunJobs();
+    var draggedPixel = CanvasPixel();
+    Check(originalPixel.Red < 20 && draggedPixel.Red > 230 && draggedPixel.Green < 20,
+        $"Canvas must move the image before pointer release: {originalPixel} → {draggedPixel}");
+    window.MouseUp(end, MouseButton.Left);
+    window.MouseWheel(end, new Vector(0, -10));
+    Dispatcher.UIThread.RunJobs();
+    var scaledPixel = CanvasPixel();
+    Check(scaledPixel.Green > 180 && window.Session.Document!.Layers[0].Scale < 0.5,
+        "Wheel zoom must update the rendered layer and project on the same input");
+
+    Button FindAction(string title) => window.GetVisualDescendants().OfType<Button>()
+        .Single(button => AutomationProperties.GetName(button) == title);
+    var taskLog = FindAction("任务日志");
+    new ButtonAutomationPeer(taskLog).Invoke();
+    window.UpdateLayout();
+    Dispatcher.UIThread.RunJobs();
+    var brightness = window.GetVisualDescendants().OfType<NumericUpDown>().Single(field => field.Maximum == 64);
+    var scroll = brightness.GetVisualAncestors().OfType<ScrollViewer>().Single();
+    brightness.BringIntoView();
+    brightness.GetVisualDescendants().OfType<TextBox>().Single().Focus();
+    window.UpdateLayout();
+    Dispatcher.UIThread.RunJobs();
+    double scrollBeforeWheel = scroll.Offset.Y;
+    var brightnessValue = brightness.Value;
+    var wheelPoint = brightness.TranslatePoint(new Rect(brightness.Bounds.Size).Center, window)!.Value;
+    window.MouseWheel(wheelPoint, new Vector(0, -1));
+    Dispatcher.UIThread.RunJobs();
+    Check(scroll.Offset.Y > scrollBeforeWheel && brightness.Value == brightnessValue,
+        "Scrolling over a focused tone control must move the page without changing the tone");
+    scroll.ScrollToEnd();
+    window.UpdateLayout();
+    Dispatcher.UIThread.RunJobs();
+    var lastAction = FindAction("下一步：预览");
+    double lastBottom = lastAction.TranslatePoint(new Point(0, lastAction.Bounds.Height), window)!.Value.Y;
+    double scrollBottom = scroll.TranslatePoint(new Point(0, scroll.Bounds.Height), window)!.Value.Y;
+    Check(lastBottom <= scrollBottom - 20, "Last design action must scroll fully above the open job dock");
+
+    var progressBar = window.GetVisualDescendants().OfType<ProgressBar>().Single();
+    var log = window.GetVisualDescendants().OfType<TextBox>().Single(box => box.IsReadOnly);
+    bool ShowsBurnStatus(string status) => window.GetVisualDescendants().OfType<TextBlock>().Any(block => block.Text == status);
+    await window.RunBurnWork(report =>
+    {
+        report(new(MacBurnStage.Writing, 38));
+        Check(!progressBar.IsIndeterminate && progressBar.Value == 38 && ShowsBurnStatus("正在写入盘片 · 38%")
+            && log.Text!.Contains("正在写入盘片 · 38%"), "Burn percent must reach both the status bar and the log");
+        report(new(MacBurnStage.Closing, 100));
+        Check(progressBar.Value == 99 && ShowsBurnStatus("正在封盘 · 99%"), "Burn must not show 100% before completion");
+        return Task.CompletedTask;
+    });
+    Check(progressBar.Value == 100 && ShowsBurnStatus("刻录完成 · 100%") && log.Text!.Contains("刻录完成 · 100%"),
+        "A successful burn must report 100% in both places");
+
+    window.Navigate("标定");
+    window.UpdateLayout();
+    var photoCanvas = window.GetVisualDescendants().OfType<CalibrationCanvas>().Single();
+    photoCanvas.SetImage(input);
+    Dispatcher.UIThread.RunJobs();
+    var photoCenter = photoCanvas.TranslatePoint(new Rect(photoCanvas.Bounds.Size).Center, window)!.Value;
+    window.MouseDown(photoCenter, MouseButton.Left);
+    window.MouseUp(photoCenter, MouseButton.Left);
+    Check(photoCanvas.Points.Count == 1 && Math.Abs(photoCanvas.Points[0].X - 64) < .5, "A photo click must add a point");
+    var movedPoint = photoCenter + new Vector(30, 0);
+    window.MouseDown(photoCenter, MouseButton.Left);
+    window.MouseMove(movedPoint, RawInputModifiers.LeftMouseButton);
+    window.MouseUp(movedPoint, MouseButton.Left);
+    var pointBeforePan = photoCanvas.Points[0];
+    Check(pointBeforePan.X > 64, "Dragging an existing calibration point must update it");
+    var panStart = photoCenter - new Vector(30, 0);
+    var panEnd = panStart + new Vector(45, 0);
+    window.MouseDown(panStart, MouseButton.Left);
+    window.MouseMove(panEnd, RawInputModifiers.LeftMouseButton);
+    window.MouseUp(panEnd, MouseButton.Left);
+    Check(photoCanvas.Points.Count == 1 && photoCanvas.Points[0] == pointBeforePan,
+        "Dragging unmarked photo space must pan without changing the calibration points");
+    window.MouseDown(photoCenter, MouseButton.Left);
+    window.MouseUp(photoCenter, MouseButton.Left);
+    Check(photoCanvas.Points.Count == 2 && photoCanvas.Points[1].X < 60,
+        "A primary drag must move the photo and change the coordinate under the cursor");
+    var calibrationScroll = photoCanvas.GetVisualAncestors().OfType<ScrollViewer>().Single();
+    double calibrationOffset = calibrationScroll.Offset.Y;
+    window.MouseWheel(photoCenter, new Vector(0, -1), RawInputModifiers.Shift);
+    Dispatcher.UIThread.RunJobs();
+    Check(calibrationScroll.Offset.Y > calibrationOffset, "Shift-wheel over the photo must scroll the calibration page");
+
     var more = window.GetVisualDescendants().OfType<Button>().Single(b => AutomationProperties.GetName(b) == "更多操作");
     new ButtonAutomationPeer(more).Invoke(); Dispatcher.UIThread.RunJobs();
     Check(more.Flyout is MenuFlyout { IsOpen: true }, "More button did not expose Save As/project settings");

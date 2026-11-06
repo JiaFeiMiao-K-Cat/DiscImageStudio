@@ -4,25 +4,60 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using DiscImageStudio.Core;
+using SkiaSharp;
 
 namespace DiscImageStudio.Desktop;
 
 public sealed class DiscCanvas : Control, IDisposable
 {
     private Bitmap? _bitmap;
+    private readonly Dictionary<string, (Bitmap Image, int Width, int Height)> _layerImages = new(StringComparer.Ordinal);
     private Point? _dragStart;
     private ProjectLayer? _original;
+    public bool EditLayers { get; init; }
     public ProjectSession? Session { get; set; }
     public int SelectedLayer { get; set; } = -1;
-    public event Action<ProjectLayer>? LayerDragged;
-    public event Action? LayerEditCompleted;
+    public event Action<ProjectLayer>? LayerTransformed;
     public void SetImage(string? path)
     {
         _bitmap?.Dispose();
         _bitmap = path is null ? null : new Bitmap(path);
         InvalidateVisual();
     }
-    public void Dispose() => _bitmap?.Dispose();
+    public void RefreshLayerImages()
+    {
+        var paths = Session?.Document?.Layers.Where(layer => layer.Visible).Select(layer => layer.ImagePath)
+            .ToHashSet(StringComparer.Ordinal) ?? [];
+        foreach (string path in _layerImages.Keys.Where(path => !paths.Contains(path)).ToArray())
+        {
+            _layerImages[path].Image.Dispose();
+            _layerImages.Remove(path);
+        }
+
+        try
+        {
+            foreach (string path in paths)
+            {
+                if (_layerImages.ContainsKey(path)) continue;
+                using var codec = SKCodec.Create(path) ?? throw new InvalidDataException($"无法读取图片：{path}");
+                int width = codec.Info.Width, height = codec.Info.Height;
+                using var stream = File.OpenRead(path);
+                // Keep the editor's textures bounded. Preview and export read the original image.
+                const int maxSide = 2048;
+                Bitmap image = Math.Max(width, height) <= maxSide ? new Bitmap(stream)
+                    : width >= height ? Bitmap.DecodeToWidth(stream, maxSide) : Bitmap.DecodeToHeight(stream, maxSide);
+                _layerImages.Add(path, (image, width, height));
+            }
+        }
+        finally { InvalidateVisual(); }
+    }
+
+    public void Dispose()
+    {
+        _bitmap?.Dispose();
+        foreach (var layer in _layerImages.Values) layer.Image.Dispose();
+        _layerImages.Clear();
+    }
     public override void Render(DrawingContext context)
     {
         base.Render(context);
@@ -45,7 +80,24 @@ public sealed class DiscCanvas : Control, IDisposable
         using (context.PushGeometryClip(ring))
         {
             context.DrawRectangle(Brush.Parse("#E1E3E9"), null, rect);
-            if (_bitmap is not null) context.DrawImage(_bitmap, rect);
+            if (EditLayers && document is not null)
+            {
+                using var clip = context.PushClip(rect);
+                // Layers are stored topmost first. Draw the bottom layer first, as in export.
+                for (int i = document.Layers.Count - 1; i >= 0; i--)
+                {
+                    var layer = document.Layers[i];
+                    if (!layer.Visible || !_layerImages.TryGetValue(layer.ImagePath, out var image)) continue;
+                    var (width, height) = DesignComposer.LayerSize(document.Geometry.OuterRadiusMm, layer, image.Width, image.Height);
+                    width *= scale;
+                    height *= scale;
+                    var transform = Matrix.CreateRotation(layer.RotationDeg * Math.PI / 180)
+                        * Matrix.CreateTranslation(rect.Center.X + layer.TranslateXMm * scale, rect.Center.Y + layer.TranslateYMm * scale);
+                    using var placement = context.PushTransform(transform);
+                    context.DrawImage(image.Image, new Rect(-width / 2, -height / 2, width, height));
+                }
+            }
+            else if (_bitmap is not null) context.DrawImage(_bitmap, rect);
         }
         context.DrawEllipse(null, new Pen(Brush.Parse("#BCC2CD"), 1), rect.Center, outer * scale, outer * scale);
         context.DrawEllipse(null, new Pen(Brush.Parse("#BCC2CD"), 1), rect.Center, inner * scale, inner * scale);
@@ -54,7 +106,8 @@ public sealed class DiscCanvas : Control, IDisposable
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        if (Session?.Document is not { } document || SelectedLayer < 0 || SelectedLayer >= document.Layers.Count) return;
+        if (!EditLayers || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed
+            || Session?.Document is not { } document || SelectedLayer < 0 || SelectedLayer >= document.Layers.Count) return;
         _dragStart = e.GetPosition(this);
         _original = document.Layers[SelectedLayer];
         e.Pointer.Capture(this);
@@ -64,24 +117,30 @@ public sealed class DiscCanvas : Control, IDisposable
         if (_dragStart is not { } start || _original is null || Session is null) return;
         var p = e.GetPosition(this);
         double mmPerPixel = Session.CanvasRadius * 2 / Math.Max(10, Math.Min(Bounds.Width, Bounds.Height) - 56);
-        LayerDragged?.Invoke(_original with { TranslateXMm = _original.TranslateXMm + (p.X - start.X) * mmPerPixel,
+        LayerTransformed?.Invoke(_original with { TranslateXMm = _original.TranslateXMm + (p.X - start.X) * mmPerPixel,
             TranslateYMm = _original.TranslateYMm + (p.Y - start.Y) * mmPerPixel });
     }
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
+        if (_dragStart is null) return;
         _dragStart = null;
         _original = null;
         e.Pointer.Capture(null);
-        LayerEditCompleted?.Invoke();
+    }
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        _dragStart = null;
+        _original = null;
     }
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
-        if (Session?.Document is not { } document || SelectedLayer < 0 || SelectedLayer >= document.Layers.Count) return;
+        if (!EditLayers || e.Delta.Y == 0 || Session?.Document is not { } document
+            || SelectedLayer < 0 || SelectedLayer >= document.Layers.Count) return;
         var layer = document.Layers[SelectedLayer];
-        LayerDragged?.Invoke(e.KeyModifiers.HasFlag(KeyModifiers.Shift)
+        LayerTransformed?.Invoke(e.KeyModifiers.HasFlag(KeyModifiers.Shift)
             ? layer with { RotationDeg = layer.RotationDeg + e.Delta.Y * 2 }
             : layer with { Scale = Math.Clamp(layer.Scale * Math.Pow(1.08, e.Delta.Y), 0.01, 100) });
-        LayerEditCompleted?.Invoke();
         e.Handled = true;
     }
 }

@@ -28,7 +28,9 @@ public sealed partial class MainWindow
         {
             if (drives.SelectedIndex < 0) throw new InvalidOperationException("请选择刻录机。");
             var media = await MacDiscRecorder.InspectAsync(recorders[drives.SelectedIndex].Id);
-            summary.Text = $"{media.Description} · {(media.Blank ? "空白" : "非空白")} · {media.FreeSectors:N0} sectors";
+            summary.Text = $"{media.Description} · {(media.Blank ? "空白" : "非空白")} · 可用 {media.FreeSectors:N0} 扇区";
+            if (media.Blank && media.MediaClass == "CD" && media.FreeSectors > 0)
+                summary.Text += $" · WAV 音轨最多 {MacDiscRecorder.MaximumPayloadSectors(media, audio: true):N0} 扇区";
         }));
         fields.Children.Add(Text("仅使用可报废的空白盘测试。写入期间不能退出程序或断开光驱。此入口不擦除、不追加、不超刻。", 12));
         fields.Children.Add(Button("刻录文件…", async () =>
@@ -41,12 +43,9 @@ public sealed partial class MainWindow
             if (!audio && extension != ".iso") throw new ArgumentException("请使用导出的 WAV 或 ISO；RAW 请先重新生成 WAV。");
             if (Session.Document!.IsBluRay) throw new InvalidOperationException("蓝光 ISO 请使用支持 BD-R 的外部刻录软件。此入口尚未验证蓝光硬件。");
             var recorder = recorders[drives.SelectedIndex];
-            long sectors; string burnPath = artifact;
+            long sectors;
             if (audio)
-            {
-                burnPath = Session.CachePath("audio-burn"); Directory.CreateDirectory(burnPath);
-                sectors = MacDiscRecorder.WriteAudioAiff(artifact, Path.Combine(burnPath, "track.aiff"));
-            }
+                sectors = MacDiscRecorder.GetAudioSectorCount(artifact);
             else
             {
                 long bytes = new FileInfo(artifact).Length;
@@ -55,17 +54,21 @@ public sealed partial class MainWindow
             }
             var media = await MacDiscRecorder.InspectAsync(recorder.Id);
             MacDiscRecorder.ValidateMedia(media, audio, sectors);
+            string burnPath = artifact;
+            if (audio)
+            {
+                burnPath = Session.CachePath("audio-burn"); Directory.CreateDirectory(burnPath);
+                if (MacDiscRecorder.WriteAudioAiff(artifact, Path.Combine(burnPath, "track.aiff")) != sectors)
+                    throw new IOException("WAV 大小已变化，请重新选择文件。");
+            }
             if (!await Confirm("确认刻录", $"{recorder.Name}\n{artifact}\n{sectors:N0} sectors\n\n开始写入这张空白盘？")) return;
             // Recheck immediately before starting; users can swap media while the confirmation is open.
             MacDiscRecorder.ValidateMedia(await MacDiscRecorder.InspectAsync(recorder.Id), audio, sectors);
-            await RunWork("正在刻录，请勿断开设备…", false, async _ =>
-            {
-                List<string> args = ["-drive", recorder.Id, "burn", "-noerase", "-noappendable", "-eject"];
-                if (audio) args.AddRange(["-audio", "-pregap", "0"]);
-                if (speed > 0) args.AddRange(["-speed", speed.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
-                args.Add(burnPath);
-                await MacDiscRecorder.Run("/usr/bin/drutil", args, Log);
-            });
+            List<string> args = ["-drive", recorder.Id, "burn", "-noerase", "-noappendable", "-eject"];
+            if (audio) args.AddRange(["-audio", "-pregap", "0"]);
+            if (speed > 0) args.AddRange(["-speed", speed.ToString(System.Globalization.CultureInfo.InvariantCulture)]);
+            args.Add(burnPath);
+            await RunBurnWork(report => MacDiscRecorder.BurnAsync(args, Log, report));
         }));
         fields.Children.Add(Button("在 Finder 中显示成品", async () =>
         {
@@ -74,5 +77,39 @@ public sealed partial class MainWindow
             await MacDiscRecorder.Run("/usr/bin/open", ["-R", artifact]);
         }));
         return Card("刻录（实验性）", fields);
+    }
+
+    internal Task RunBurnWork(Func<Action<MacBurnProgress>, Task> burn)
+    {
+        string complete = $"{L.T("刻录完成")} · 100%";
+        return RunWork("正在刻录，请勿断开设备…", false, async _ =>
+        {
+            string? previous = null;
+            void Report(MacBurnProgress update)
+            {
+                if (update.Percent is int percent)
+                {
+                    _progress.IsIndeterminate = false;
+                    _progress.Value = Math.Max(_progress.Value, Math.Min(99, percent));
+                }
+
+                string stage = L.T(update.Stage switch
+                {
+                    MacBurnStage.Preparing => "准备刻录",
+                    MacBurnStage.Writing => "正在写入盘片",
+                    MacBurnStage.Closing => "正在封盘",
+                    _ => "正在校验盘片"
+                });
+                string message = _progress.IsIndeterminate ? stage : $"{stage} · {_progress.Value:0}%";
+                if (message == previous) return;
+                previous = message;
+                _status.Text = message;
+                Log(message);
+            }
+
+            Report(new(MacBurnStage.Preparing, 0));
+            await burn(Report);
+            Log(complete);
+        }, completionStatus: complete);
     }
 }
