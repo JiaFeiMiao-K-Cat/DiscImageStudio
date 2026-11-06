@@ -233,6 +233,30 @@
     "es": "Grabación completada",
     "cs": "Vypalování dokončeno"
   },
+  "准备刻录": {
+    "zh-CN": "准备刻录",
+    "en": "Preparing burn",
+    "zh-TW": "準備燒錄",
+    "ja": "書き込み準備中"
+  },
+  "正在写入盘片": {
+    "zh-CN": "正在写入盘片",
+    "en": "Writing disc",
+    "zh-TW": "正在寫入光碟",
+    "ja": "ディスクに書き込み中"
+  },
+  "正在封盘": {
+    "zh-CN": "正在封盘",
+    "en": "Finalizing disc",
+    "zh-TW": "正在封片",
+    "ja": "ディスクをファイナライズ中"
+  },
+  "正在校验盘片": {
+    "zh-CN": "正在校验盘片",
+    "en": "Verifying disc",
+    "zh-TW": "正在驗證光碟",
+    "ja": "ディスクを検証中"
+  },
   "包含随盘文件，导出为 CD 数据盘 ISO。": {
     "zh-CN": "包含随盘文件，导出为 CD 数据盘 ISO。",
     "en": "Files are included; export as a CD data disc ISO.",

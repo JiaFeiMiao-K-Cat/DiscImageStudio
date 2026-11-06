@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AssemblyName>DiscImageStudio.Desktop</AssemblyName>
+    <DefineConstants>$(DefineConstants);PORTABLE_DESKTOP</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
+    <PackageReference Include="SkiaSharp" Version="2.88.9" />
+    <ProjectReference Include="../DiscImageStudio.Core/DiscImageStudio.Core.csproj" />
+    <ProjectReference Include="../DiscImageStudio.ImageIO/DiscImageStudio.ImageIO.csproj" />
+    <ProjectReference Include="../DiscImageStudio.Cd/DiscImageStudio.Cd.csproj" />
+    <ProjectReference Include="../DiscImageStudio.Dvd/DiscImageStudio.Dvd.csproj" />
+    <ProjectReference Include="../DiscImageStudio.BluRay/DiscImageStudio.BluRay.csproj" />
+    <Compile Include="../DiscImageStudio.App/Localization/L.cs" Link="Localization/L.cs" />
+    <EmbeddedResource Include="../DiscImageStudio.App/Localization/Catalogs/*.json" LogicalName="DiscImageStudio.Localization.Catalogs.%(Filename)%(Extension)" />
+    <Compile Include="../Shared/BluRayImageLoader.cs" Link="Services/BluRayImageLoader.cs" />
+    <Compile Include="../Shared/ConsoleModuleRunner.cs" Link="Services/ConsoleModuleRunner.cs" />
+    <Compile Include="../DiscImageStudio.App/Services/BluRayPreviewRenderer.cs" Link="Services/BluRayPreviewRenderer.cs" />
+    <Compile Include="../DiscImageStudio.App/Services/FileRegionPreviewOverlay.cs" Link="Services/FileRegionPreviewOverlay.cs" />
+    <AvaloniaResource Include="../DiscImageStudio.App/Assets/Fonts/HarmonyOS_Sans_SC_Regular.ttf" Link="Assets/Fonts/HarmonyOS_Sans_SC_Regular.ttf" />
+  </ItemGroup>
+</Project>

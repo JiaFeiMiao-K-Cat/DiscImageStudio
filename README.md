@@ -41,6 +41,10 @@ Disc Image Studio 可将一张图片转换成符合 CD、DVD 与单层 BD-R 光�
 
 ---
 
+## macOS 图形界面（实验性源码版）
+
+新增 `DiscImageStudio.Desktop`：按 Windows 工作区流程提供图层设计、预览、导出与照片标定，复用现有工程格式与编码算法。Mac 刻录入口使用系统 DiscRecording 写入已生成的 WAV/ISO，尚未经实盘验证；BD-R 请使用外部刻录软件。构建 `.app`、操作步骤、验证方法和与 Windows 的差异见 [macOS 桌面说明](docs/MACOS_DESKTOP.md)。
+
 ## 快速开始
 
 Windows 下载 `win-x64.exe` 后可直接运行。Linux 或 macOS 请下载与 CPU 匹配的**实验性 CLI** 压缩包，解压后运行 `./disc-image-studio --help`。这些发布包均自带 .NET 运行时。 [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)

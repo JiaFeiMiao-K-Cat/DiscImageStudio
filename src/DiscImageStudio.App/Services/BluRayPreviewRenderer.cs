@@ -1,8 +1,14 @@
+#if !PORTABLE_DESKTOP
 using DiscImageStudio.Localization;
+#endif
 using System.IO;
 using System.Numerics;
+#if PORTABLE_DESKTOP
+using DiscImageStudio.ImageIO;
+#else
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+#endif
 using DiscImageStudio.BluRay;
 using DiscImageStudio.BluRay.Encoding;
 using DiscImageStudio.Core;
@@ -102,7 +108,13 @@ public static class BluRayPreviewRenderer
         using FileStream source = new(Path.GetFullPath(isoPath), FileMode.Open, FileAccess.Read,
             FileShare.Read, bufferSize: 1, FileOptions.RandomAccess);
         if (source.Length != actual.ContentLength)
-            throw new ArgumentException(L.F($"BD ISO 长度与总扇区数不符：需要 {actual.ContentLength:N0} 字节，实际 {source.Length:N0} 字节。"), nameof(isoPath));
+            throw new ArgumentException(
+#if PORTABLE_DESKTOP
+                $"BD ISO 长度与总扇区数不符：需要 {actual.ContentLength:N0} 字节，实际 {source.Length:N0} 字节。",
+#else
+                L.F($"BD ISO 长度与总扇区数不符：需要 {actual.ContentLength:N0} 字节，实际 {source.Length:N0} 字节。"),
+#endif
+                nameof(isoPath));
 
         PixelProjection projection = new(actual, outputSize);
         byte[] pixels = new byte[checked(outputSize * outputSize * 4)];
@@ -185,6 +197,10 @@ public static class BluRayPreviewRenderer
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         token.ThrowIfCancellationRequested();
+#if PORTABLE_DESKTOP
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+        RasterCodec.SavePng(path, size, size, pixels, grayscale: false);
+#else
         BitmapSource bitmap = BitmapSource.Create(size, size, 96, 96, PixelFormats.Bgra32, null, pixels, size * 4);
         PngBitmapEncoder encoder = new();
         encoder.Frames.Add(BitmapFrame.Create(bitmap));
@@ -192,6 +208,7 @@ public static class BluRayPreviewRenderer
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
         using FileStream output = new(fullPath, FileMode.Create, FileAccess.Write, FileShare.None);
         encoder.Save(output);
+#endif
         token.ThrowIfCancellationRequested();
     }
 

@@ -4,6 +4,9 @@
 
 ### 中文
 
+- 新增实验性 macOS 桌面入口（Avalonia），复用工程、图层、CD/DVD/BD 预览与导出及照片标定算法，配套 Intel/Apple Silicon 自包含应用打包与截图 CI。
+- 优化 Mac 光盘标志、矢量图标和按钮；拖动、缩放和旋转即时刷新，影调控件可滚动到任务栏上方，标定照片支持拖动空白处平移。
+- Mac CD/DVD 文件刻录增加空白盘与容量检查、音频首轨 150 扇区容量预留和无损 WAV→AIFF 转换；底栏与日志显示系统实时百分比，封盘确认后显示完成。已在 Lenovo Slim_USB_Burner DD11 与 HONGQI CD-R 上完成 CD 音轨写入和抽样读回，用户确认可见图案；其他设备与 DVD 实盘效果待验证。详情见 `docs/MACOS_DESKTOP.md`。
 - 将详细刻录诊断扩展到 DVD 和 BD：共同记录构建环境、光驱固件、物理盘片类型及空白状态；DVD 记录容量、缓冲保护／封盘设置和阶段耗时，BD 记录 profile、格式化状态、轨道与可写地址及刷新／封盘／释放耗时。失败前缓存源流与设备上下文，保留 BD 底层真实 SCSI sense；DVD 高层接口未提供的 sense 明确记为不可用。
 - 补充 CD 音轨／数据盘 DAO 刻录诊断：记录构建版本、系统、光驱固件、实际盘片类型与写前空白状态、子通道及速度设置、容量余量、阶段耗时、生成与主机缓冲状态；导入区事件快照每两秒最多记录一次。失败上下文在清理前保存，不额外查询故障设备；明确标注 IMAPI 未提供失败命令的 SCSI sense。
 - 统一 CD、DVD、BD 的影调预览为 512×512：记录区外与中心孔使用透明遮罩，取消固定裁切，并按实际文件布局标黄文件及文件系统区域。CD 显示适配记录外半径，保留生成时的图片采样比例；修改文件夹、卷标和内外圈位置会自动刷新。
@@ -14,6 +17,9 @@
 
 ### English
 
+- Add an experimental Avalonia macOS desktop using shared project, layer, CD/DVD/BD preview/export and photo-calibration algorithms, with self-contained Intel/Apple Silicon packaging and screenshot CI.
+- Refine Mac disc branding, vector icons and buttons. Layer dragging, scaling and rotation update immediately, tone controls scroll clear of the job dock, and dragging unmarked calibration-photo space pans the image.
+- Add Mac CD/DVD artifact recording with blank/capacity checks, a 150-sector first-track audio allowance and lossless WAV-to-AIFF conversion. The dock and log show live system percentages and confirm completion after closure. CD audio writing and sampled readback were exercised with a Lenovo Slim_USB_Burner DD11 and HONGQI CD-R, and the user confirmed visible artwork. Other recorders and DVD media require hardware validation. See `docs/MACOS_DESKTOP.md`.
 - Extended detailed burn diagnostics to DVD and BD, sharing build/runtime, recorder firmware, physical media type and blank-state reporting. DVD adds capacity, buffer/closure settings and phase timings; BD adds profile, format state, track/writable-address data and flush/close/release timings. Source and device context are cached before cleanup, preserving real BD command-level SCSI sense and explicitly marking sense unavailable through the high-level DVD API.
 - Added CD audio/data DAO diagnostics for the build, OS, recorder firmware, reported physical media type and pre-write blank state, sector/speed settings, capacity margin, phase timings and producer/host-buffer state. Lead-in event snapshots are throttled to at most one every two seconds. Failure context is retained before cleanup without querying the failing device; unavailable command-level SCSI sense is explicitly identified.
 - Unified CD, DVD and BD tone previews at 512×512, with transparent masks outside the recording area and inside the centre hole. Removed the fixed crop and highlighted file and filesystem regions from the actual layout plans. CD previews fit the recording radius while preserving the generator's source-image scale; folder, volume-label and inner/outer placement changes refresh automatically.
