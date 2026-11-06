@@ -146,7 +146,9 @@ internal static class GratingPaletteCommand
         internal byte Sample(DvdCodewordSample sample)
         {
             int col = (int)Math.Floor((sample.Xmm - _origin) / _cell);
-            int row = (int)Math.Floor((sample.Ymm - _origin) / _cell);
+            // The callback uses y-down (SamplePoint passes -yMm); the cell plan
+            // and RasterImage.SampleDisc use mathematical y-up.
+            int row = (int)Math.Floor(((-sample.Ymm) - _origin) / _cell);
             if (col < 0 || col >= _cols || row < 0 || row >= _rows) return 0;
             byte value = _values[(row * _cols) + col];
             if (value == 0) return 0xA5;       // black motif
