@@ -195,7 +195,8 @@ try
             done
             exit 32
             """;
-        Task burn = MacDiscRecorder.RunBurnToolAsync("/bin/sh", ["-c", fixture, "fixture", finish], _ => { },
+        // C# files are checked out as CRLF by this repository; POSIX shell input requires LF.
+        Task burn = MacDiscRecorder.RunBurnToolAsync("/bin/sh", ["-c", fixture.ReplaceLineEndings("\n"), "fixture", finish], _ => { },
             update => { if (update is { Stage: MacBurnStage.Writing, Percent: 38 }) liveUpdate.TrySetResult(true); });
         try
         {
