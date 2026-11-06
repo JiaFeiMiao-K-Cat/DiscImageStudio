@@ -4,6 +4,8 @@
 
 ### 中文
 
+- 将详细刻录诊断扩展到 DVD 和 BD：共同记录构建环境、光驱固件、物理盘片类型及空白状态；DVD 记录容量、缓冲保护／封盘设置和阶段耗时，BD 记录 profile、格式化状态、轨道与可写地址及刷新／封盘／释放耗时。失败前缓存源流与设备上下文，保留 BD 底层真实 SCSI sense；DVD 高层接口未提供的 sense 明确记为不可用。
+- 补充 CD 音轨／数据盘 DAO 刻录诊断：记录构建版本、系统、光驱固件、实际盘片类型与写前空白状态、子通道及速度设置、容量余量、阶段耗时、生成与主机缓冲状态；导入区事件快照每两秒最多记录一次。失败上下文在清理前保存，不额外查询故障设备；明确标注 IMAPI 未提供失败命令的 SCSI sense。
 - 统一 CD、DVD、BD 的影调预览为 512×512：记录区外与中心孔使用透明遮罩，取消固定裁切，并按实际文件布局标黄文件及文件系统区域。CD 显示适配记录外半径，保留生成时的图片采样比例；修改文件夹、卷标和内外圈位置会自动刷新。
 - 修复 CD 数据盘 DAO 子码沿用音轨 ADR3/ISRC 包的问题：按扇区位置重建完整 ADR1 时间包并重算 CRC，覆盖预间隙、数据区与导出区；保留原有 TOC、ADR1/ADR2 和 P/R-W 处理。补充边界、两种子通道格式及音轨输出逐字节不变的回归。
 - 新增默认关闭的「DVD 读取兼容性（实验性）」选项，用局部 `9B` 保护字节缓解 #90 中连续绘图纹理可能引起的读回错误；ISO 导出、流式刻录和标定使用相同规则，文件内容和透明区域不参与改写。工程与标定记录保存该选项，旧记录保持关闭；效果和盘面纹理仍需实盘反馈。
@@ -12,6 +14,8 @@
 
 ### English
 
+- Extended detailed burn diagnostics to DVD and BD, sharing build/runtime, recorder firmware, physical media type and blank-state reporting. DVD adds capacity, buffer/closure settings and phase timings; BD adds profile, format state, track/writable-address data and flush/close/release timings. Source and device context are cached before cleanup, preserving real BD command-level SCSI sense and explicitly marking sense unavailable through the high-level DVD API.
+- Added CD audio/data DAO diagnostics for the build, OS, recorder firmware, reported physical media type and pre-write blank state, sector/speed settings, capacity margin, phase timings and producer/host-buffer state. Lead-in event snapshots are throttled to at most one every two seconds. Failure context is retained before cleanup without querying the failing device; unavailable command-level SCSI sense is explicitly identified.
 - Unified CD, DVD and BD tone previews at 512×512, with transparent masks outside the recording area and inside the centre hole. Removed the fixed crop and highlighted file and filesystem regions from the actual layout plans. CD previews fit the recording radius while preserving the generator's source-image scale; folder, volume-label and inner/outer placement changes refresh automatically.
 - Fixed CD data-disc DAO subcode retaining audio ADR3/ISRC packets. Rebuild complete ADR1 timing packets and CRCs from the sector position in the pregap, program area and lead-out, while retaining existing TOC, ADR1/ADR2 and P/R-W handling. Added boundary, subchannel-format and byte-for-byte audio-output regression coverage.
 - Added an opt-in “DVD read compatibility (experimental)” option using local `9B` bridge bytes to mitigate readback errors associated with repeated drawing textures in #90. ISO export, streaming burns and calibration share the rule; file contents and alpha-excluded bytes are protected. Projects and calibration records retain the setting, with legacy records defaulting to off. Readability and visual effects still need physical-disc feedback.

@@ -25,6 +25,12 @@ internal sealed class GeneratedContentComStream : IStream, IDisposable
     private readonly Task _producerTask;
     private readonly Action<long, long>? _progress;
     private readonly Func<long> _getTimestamp;
+    private ProducerOutputStream? _producerOutput;
+    private Exception? _producerFailure;
+    private int _producerState;
+    private long _readBytes;
+    private int _readerWaitingForData;
+    private long _readerWaitCount;
     private byte[]? _currentChunk;
     private int _currentOffset;
     private long _position;
@@ -71,6 +77,36 @@ internal sealed class GeneratedContentComStream : IStream, IDisposable
     internal void WaitUntilPrebuffered(CancellationToken cancellationToken)
         => _prebufferReady.Task.WaitAsync(cancellationToken).GetAwaiter().GetResult();
 
+    // Independent, approximate samples of already-owned state. Never query the
+    // channel, wait for the producer, or use the seek position as bytes consumed:
+    // IMAPI may seek to the end and back while inspecting a stream's size.
+    internal GeneratedContentDiagnosticSnapshot GetDiagnosticSnapshot()
+    {
+        ProducerOutputStream? output = Volatile.Read(ref _producerOutput);
+        Exception? failure = Volatile.Read(ref _producerFailure);
+        long read = Interlocked.Read(ref _readBytes);
+        long published = output?.PublishedBytes ?? 0;
+        long generated = output?.GeneratedBytes ?? 0;
+        return new(
+            _length, generated, published, read, Math.Max(0, published - read),
+            BufferOptions.CapacityBytes, Math.Min(_length, BufferOptions.PrebufferBytes),
+            _prebufferReady.Task.IsCompletedSuccessfully,
+            Volatile.Read(ref _producerState) switch
+            {
+                1 => "Completed",
+                2 => "Failed",
+                3 => "Cancelled",
+                _ => "Running",
+            },
+            _cancellation.IsCancellationRequested,
+            output?.WaitingForBuffer ?? false,
+            Volatile.Read(ref _readerWaitingForData) != 0,
+            Interlocked.Read(ref _readerWaitCount),
+            failure?.GetType().FullName, failure?.HResult);
+    }
+
+    internal string GetDiagnosticSummary() => GetDiagnosticSnapshot().ToDiagnosticSummary();
+
     public void Read(byte[] pv, int cb, IntPtr pcbRead)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -98,6 +134,7 @@ internal sealed class GeneratedContentComStream : IStream, IDisposable
             _currentOffset += count;
             totalRead += count;
             _position += count;
+            Interlocked.Add(ref _readBytes, count);
         }
 
         if (totalRead == 0 && _position < _length)
@@ -257,12 +294,16 @@ internal sealed class GeneratedContentComStream : IStream, IDisposable
                 prebufferBytes,
                 _prebufferReady,
                 _cancellation.Token);
+            Volatile.Write(ref _producerOutput, output);
             producer(output, _cancellation.Token);
             output.Complete();
+            Volatile.Write(ref _producerState, 1);
             _channel.Writer.TryComplete();
         }
         catch (Exception exception)
         {
+            Volatile.Write(ref _producerFailure, exception);
+            Volatile.Write(ref _producerState, exception is OperationCanceledException ? 3 : 2);
             _prebufferReady.TrySetException(exception);
             _channel.Writer.TryComplete(exception);
             throw;
@@ -273,7 +314,7 @@ internal sealed class GeneratedContentComStream : IStream, IDisposable
     {
         try
         {
-            while (_channel.Reader.WaitToReadAsync(_cancellation.Token).AsTask().GetAwaiter().GetResult())
+            while (WaitForNextChunk())
             {
                 if (_channel.Reader.TryRead(out byte[]? chunk))
                 {
@@ -291,6 +332,16 @@ internal sealed class GeneratedContentComStream : IStream, IDisposable
 
         AwaitProducerCompletion();
         return false;
+    }
+
+    private bool WaitForNextChunk()
+    {
+        ValueTask<bool> wait = _channel.Reader.WaitToReadAsync(_cancellation.Token);
+        if (wait.IsCompleted) return wait.GetAwaiter().GetResult();
+        Interlocked.Increment(ref _readerWaitCount);
+        Volatile.Write(ref _readerWaitingForData, 1);
+        try { return wait.AsTask().GetAwaiter().GetResult(); }
+        finally { Volatile.Write(ref _readerWaitingForData, 0); }
     }
 
     private void AwaitProducerCompletion()
@@ -328,6 +379,21 @@ internal sealed class GeneratedContentComStream : IStream, IDisposable
         private int _buffered;
         private long _written;
         private bool _completed;
+        private int _waitingForBuffer;
+
+        internal long PublishedBytes => Interlocked.Read(ref _written);
+        internal long GeneratedBytes
+        {
+            get
+            {
+                long published = PublishedBytes;
+                // A publish and a snapshot can overlap. Clamp the independent
+                // partial-block sample rather than synchronizing the writer.
+                int partial = Volatile.Read(ref _buffered);
+                return published + Math.Min(Math.Max(0, partial), expectedLength - published);
+            }
+        }
+        internal bool WaitingForBuffer => Volatile.Read(ref _waitingForBuffer) != 0;
 
         public override bool CanRead => false;
 
@@ -443,8 +509,11 @@ internal sealed class GeneratedContentComStream : IStream, IDisposable
 
             byte[] chunk = new byte[_buffered];
             Buffer.BlockCopy(_buffer, 0, chunk, 0, _buffered);
-            writer.WriteAsync(chunk, cancellationToken).AsTask().GetAwaiter().GetResult();
-            _written = nextWritten;
+            ValueTask publish = writer.WriteAsync(chunk, cancellationToken);
+            if (!publish.IsCompleted) Volatile.Write(ref _waitingForBuffer, 1);
+            try { publish.AsTask().GetAwaiter().GetResult(); }
+            finally { Volatile.Write(ref _waitingForBuffer, 0); }
+            Interlocked.Exchange(ref _written, nextWritten);
             _buffered = 0;
             if (_written >= prebufferBytes)
             {
@@ -452,4 +521,30 @@ internal sealed class GeneratedContentComStream : IStream, IDisposable
             }
         }
     }
+}
+
+// PublishedBytes counts blocks accepted by the host queue; BufferedBytes also
+// includes any unconsumed part of the reader's current block. QueueCapacityBytes
+// limits only the channel, not that block or the producer's private staging block.
+internal sealed record GeneratedContentDiagnosticSnapshot(
+    long TotalBytes,
+    long GeneratedBytes,
+    long PublishedBytes,
+    long ReadBytes,
+    long BufferedBytes,
+    int QueueCapacityBytes,
+    long PrebufferThresholdBytes,
+    bool PrebufferReady,
+    string ProducerState,
+    bool CancellationRequested,
+    bool ProducerWaitingForBuffer,
+    bool ReaderWaitingForData,
+    long ReaderWaitCount,
+    string? ProducerExceptionType,
+    int? ProducerHResult)
+{
+    internal string ToDiagnosticSummary()
+        => FormattableString.Invariant($"生成流缓存（各字段为瞬时近似值；不代表盘片写入量）：TotalBytes={TotalBytes}；GeneratedBytes={GeneratedBytes}；PublishedBytes={PublishedBytes}；ReadBytes={ReadBytes}；BufferedBytes={BufferedBytes}；")
+            + FormattableString.Invariant($"QueueCapacityBytes={QueueCapacityBytes}；PrebufferThresholdBytes={PrebufferThresholdBytes}；PrebufferReady={PrebufferReady}；ProducerState={ProducerState}；CancellationRequested={CancellationRequested}；")
+            + FormattableString.Invariant($"ProducerWaitingForBuffer={ProducerWaitingForBuffer}；ReaderWaitingForData={ReaderWaitingForData}；ReaderWaitCount={ReaderWaitCount}；ProducerExceptionType={ProducerExceptionType ?? "none"}；ProducerHRESULT={(ProducerHResult is int value ? $"0x{value:X8}" : "none")}。");
 }

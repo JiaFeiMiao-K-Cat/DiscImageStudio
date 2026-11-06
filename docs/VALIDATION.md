@@ -4,6 +4,14 @@
 
 ## 本地验证
 
+2026-11-07，DVD／BD 详细诊断补齐：最终 Release solution 构建通过（`--no-restore -m:1 -nr:false`，0 警告、0 错误），DVD 引擎 selftest 和完整 ArchitectureTests 全部通过。新增回归覆盖所有 IMAPI 物理盘片类型、可选字段独立失败、DVD 设备操作顺序／容量／速度／校验失败阻断，以及在事件退订、取消注册注销和源流销毁前保存原始写入异常与快照；用阻塞的取消回调确认失败记录不会被清理延迟。BD 回归覆盖完整介质与轨道上下文、真实 MMC sense 保留、写入／刷新／关闭／释放失败及取消，检查未增加设备查询或改变清理顺序。CD 既有诊断与流式缓冲回归同时通过。未创建刻录设备、未执行实盘刻录；无 GUI 布局或编码链改动，selftest 覆盖项不变。日志位于 `artifacts/burn-diagnostics/`，测试 `TEMP`／`TMP` 使用该目录的 `temp` 子目录。
+
+English: the final Release solution build completed with zero warnings/errors; DVD selftest and the complete architecture suite passed. New checks cover shared physical media identification, DVD operation order and failure snapshots before event/cancellation cleanup, and BD cached media/track context, original MMC sense, finalization failures and cancellation. Existing CD and stream diagnostics also passed. No recorder or physical disc was used; the change adds diagnostics without changing encoded output or media support.
+
+2026-11-07，CD DAO 详细诊断（#182）：Release solution 构建通过（`--no-restore -m:1 -nr:false`，0 警告、0 错误），DVD 引擎 selftest 和完整 ArchitectureTests 全部通过。新增回归覆盖 CD-R/CD-RW 与未细分类型、可选 COM 属性失败、请求／实际速度与容量上下文、原始 `0xC0AA0301` 异常保留、清理前快照、日志回调异常隔离、导入区每两秒事件节流、IMAPI 缓冲字段来源与事件时间，以及流快照不消费数据、Seek／读取区分、队列背压、生成异常和取消。对照 CD 音轨／数据 DAO 及流式进度项目复核：写入格式和容量限制不变、负 LBA 仍不计载荷进度，异常后只读取缓存并保持一次介质释放。未创建刻录设备、未执行实盘刻录，不能据此认定 #182 已修复；高层 IMAPI 不提供的命令级 SCSI sense 明确记为不可用。无 GUI 布局或编码链改动，selftest 覆盖项不变。日志在 `artifacts/cd-burn-diagnostics/`；测试进程的 `TEMP`／`TMP` 指向其 `temp` 子目录，以避开系统临时目录的文件替换权限限制。
+
+English: the Release solution build, DVD selftest and complete architecture suite passed. New CD DAO checks cover media identification, optional telemetry failures, original exception and pre-cleanup context, throttled lead-in snapshots, IMAPI buffer provenance, and non-consuming producer/queue diagnostics. No device or physical burn was used; command-level sense remains explicitly unavailable through the existing RawCD API, and this change does not establish a fix for #182.
+
 2026-11-06 影调预览统一：Release solution 构建为零警告、零错误，完整 ArchitectureTests 和 DVD 引擎 selftest 通过；离屏检查三盘型无文件、内圈文件、外圈文件及 CD 自定义半径宽版面板。日志位于 `artifacts/tone-preview/`，截图位于 `artifacts/tone-preview-ui/screenshots/`。此次仅改变预览呈现，未改动音轨、数据盘或流式刻录的输出字节。
 
 影调预览回归：`TonePreviewTests` 通过真实设计合成与状态刷新链检查 CD/DVD/BD 的 512×512 输出、透明中孔和记录区外遮罩、实际内外圈文件布局、切换文件夹/几何后的刷新、连续更新淘汰旧结果，以及错误/关闭工程时清除旧图；原图与合成图哈希保持不变。`CdPreviewMaskTests` 对比音轨和数据盘的源图投影与成品回读，检查稀疏采样下环内仍为不透明白色，并用 59.5 mm 外半径确认显示适配不改变 57.5 mm 的源图采样比例。`CdBinaryTests` 同时验证灰阶和几何透明度。
