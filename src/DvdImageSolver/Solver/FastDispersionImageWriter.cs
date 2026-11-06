@@ -247,7 +247,14 @@ public static class FastDispersionImageWriter
                 uint sector = lba + offset;
                 var payload = buffer.AsSpan((int)offset * DvdEccBlockEncoder.PayloadBytesPerSector,
                     DvdEccBlockEncoder.PayloadBytesPerSector);
-                payload.Fill(DvdGrayscalePalette.GetScrambledByte(sectorLuminance(sector)));
+                byte anchor = DvdGrayscalePalette.GetScrambledByte(sectorLuminance(sector));
+                payload.Fill(anchor);
+                if (DvdGrayscalePalette.WriteSafeEnabled)
+                {
+                    long toneBase = (long)sector * DvdEccBlockEncoder.PayloadBytesPerSector;
+                    for (int i = 0; i < payload.Length; i++)
+                        payload[i] = DvdGrayscalePalette.ApplyWriteSafe(anchor, toneBase + i);
+                }
                 DvdDataFrameBuilder.TransformPayloadScrambling(payload, sector + options.PsnOffset);
             }
             return new GeneratedBlock(lba, buffer, buffer.Length);
@@ -654,9 +661,9 @@ public static class FastDispersionImageWriter
                 return new PayloadTarget(_sampleScrambledCodeword(new DvdCodewordSample(
                     xMm, -yMm, globalChannelBit / 16, trackAngle)), 255);
             if (_sampleCodeword is not null)
-                return new PayloadTarget(DvdGrayscalePalette.GetScrambledByte(
-                    _sampleCodeword(new DvdCodewordSample(
-                        xMm, -yMm, globalChannelBit / 16, trackAngle))), 255);
+                return new PayloadTarget(DvdGrayscalePalette.ApplyWriteSafe(
+                    DvdGrayscalePalette.GetScrambledByte(_sampleCodeword(new DvdCodewordSample(
+                        xMm, -yMm, globalChannelBit / 16, trackAngle))), toneIndex), 255);
             // RasterImage.SampleDisc flips mathematical y-up into image y-down.
             // Apply that same flip for analytic patterns, including the start angle.
             PixelSample sample = _sampleGray is not null
@@ -667,15 +674,20 @@ public static class FastDispersionImageWriter
 
         private byte ScrambledForLuminance(byte luminance, long toneIndex)
         {
+            byte anchor;
             if (_options.Tone is { IsLegacyBinary: false } tone)
             {
-                return DvdToneMapping.UseWhite(
+                anchor = DvdToneMapping.UseWhite(
                     luminance, _options.LuminanceThreshold, tone, toneIndex)
                     ? DvdGrayscalePalette.WhiteScrambledByte
                     : DvdGrayscalePalette.BlackScrambledByte;
             }
+            else
+            {
+                anchor = DvdGrayscalePalette.GetScrambledByte(luminance);
+            }
 
-            return DvdGrayscalePalette.GetScrambledByte(luminance);
+            return DvdGrayscalePalette.ApplyWriteSafe(anchor, toneIndex);
         }
 
         internal void SampleFour(ulong blockFirstGlobalBit, ReadOnlySpan<int> centres,

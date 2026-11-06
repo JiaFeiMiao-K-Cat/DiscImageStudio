@@ -188,6 +188,7 @@ internal static class SelfTests
             byte expected = (payloadIndex & 1) == 0
                 ? DispersionPoolSolver.BlackScrambledByte
                 : DispersionPoolSolver.WhiteScrambledByte;
+            expected = DvdGrayscalePalette.ApplyWriteSafe(expected, payloadIndex);
             Equal(
                 expected,
                 frames[DvdEccBlockEncoder.PayloadRecordingFrameIndex(payloadIndex)],
@@ -233,6 +234,19 @@ internal static class SelfTests
             {
                 Equal(transitionCounts[level], BitOperations.PopCount(EfmPlusTables.LookupMain(value, state).Word),
                     $"DVD tone 0x{value:X2} has stable transitions in state {state}");
+            }
+        }
+
+        foreach ((byte anchor, byte level) in new[] { ((byte)0xA5, (byte)0), ((byte)0x92, (byte)255) })
+        {
+            for (long tone = 0; tone < 32; tone++)
+            {
+                byte value = DvdGrayscalePalette.ApplyWriteSafe(anchor, tone);
+                if (!DvdGrayscalePalette.WriteSafeEnabled || tone % 4 != 0
+                    && !(anchor == 0xA5 && DvdGrayscalePalette.WriteSafeLevel == 2 && tone % 2 == 0))
+                    Equal(anchor, value, $"write-safe keeps anchor 0x{anchor:X2} at tone {tone}");
+                True(DvdGrayscalePalette.TryGetLuminance(value, out byte readback), "write-safe byte is classified");
+                Equal(level, readback, $"write-safe byte 0x{value:X2} reads back as its anchor tone");
             }
         }
 
@@ -293,11 +307,17 @@ internal static class SelfTests
                 int byteIndex = payloadIndex % DvdEccBlockEncoder.PayloadBytesPerSector;
                 byte q = (byte)(exact.Payloads[payloadIndex] ^ DvdDataFrameBuilder.PayloadScramblerMask(
                     fastOptions.StartLba + fastOptions.PsnOffset + (uint)sector)[byteIndex]);
-                Equal(expectedBytes[target * 2], q, "binary payload reverse scrambling");
+                Equal(DvdGrayscalePalette.ApplyWriteSafe(expectedBytes[target * 2],
+                    (long)fastOptions.StartLba * DvdEccBlockEncoder.PayloadBytesPerSector + payloadIndex),
+                    q, "binary payload reverse scrambling");
                 observedBytes.Add(q);
             }
 
-            Equal(2, observedBytes.Count, "both DVD tones generated from image");
+            if (DvdGrayscalePalette.WriteSafeEnabled)
+                True(observedBytes.Contains(0xA5) && observedBytes.Contains(0x92),
+                    "both DVD tones generated from image");
+            else
+                Equal(2, observedBytes.Count, "both DVD tones generated from image");
             True(!observedBytes.Contains(0x66) && !observedBytes.Contains(0xB9),
                 "new constrained payload never uses Q66 or QB9");
             True(preserved > 0, "binary image includes unconstrained alpha samples");
