@@ -8,7 +8,6 @@ public sealed class CdDiscModule : IOpticalDiscModule
 {
     public const string ModuleId = "cd-da";
 
-
     private static readonly IReadOnlyList<DiscOptionDefinition> GeometryOptions =
     [
         new("r0", "Inner radius", DiscOptionValueType.Decimal, DefaultValue: "24.5", Unit: "mm"),
@@ -109,11 +108,6 @@ public sealed class CdDiscModule : IOpticalDiscModule
         ArgumentNullException.ThrowIfNull(request);
         cancellationToken.ThrowIfCancellationRequested();
         CdCommandOptions options = CdCommandOptions.Parse(request.Arguments);
-        if (request.Command != "cd-generate" && options.GetString("output", string.Empty) == "-")
-        {
-            throw new ArgumentException("--output - (stdout) is supported only by cd-generate.");
-        }
-
         DiscJobResult result = request.Command switch
         {
             "cd-generate" => Generate(request, options, progress, cancellationToken),
@@ -134,7 +128,6 @@ public sealed class CdDiscModule : IOpticalDiscModule
     {
         string output = options.Require("output");
         string dataDirectory = options.GetString("data-dir", string.Empty).Trim();
-        bool outer = ReadFilePosition(options);
         if (output == "-")
         {
             if (dataDirectory.Length > 0)
@@ -169,42 +162,18 @@ public sealed class CdDiscModule : IOpticalDiscModule
                 "-");
         }
 
-        if (dataDirectory.Length > 0)
-        {
-            CdDiscParameters parameters = ReadParameters(options);
-            CdDataLayoutPlan plan = CdDataImageGenerator.PrepareLayout(dataDirectory, parameters,
-                options.GetString("volume-label", "CD_IMAGE"), outer);
-            CdGenerationSummary dataSummary = CdDataImageGenerator.Generate(options.Require("input"),
-                output, parameters, plan,
-                value => progress?.Report(new DiscJobProgress(ModuleId, "generate",
-                    $"CD data progress {value.Fraction:P1}", value.Fraction, value.CompletedBytes,
-                    value.TotalBytes, value.Elapsed)), cancellationToken, ReadTone(options));
-            return new DiscJobResult(ModuleId, request.Command, 0,
-                $"CD data image complete: {plan.FileCount} files, {plan.TotalSectors} sectors, "
-                + $"files={(outer ? "outer" : "inner")}, output={dataSummary.OutputTrack}", dataSummary.OutputTrack);
-        }
-        CdGenerationSummary summary = CdTrackGenerator.Generate(
+        CdImageRequest image = new(
             options.Require("input"),
-            output,
+            options.Require("output"),
             ReadParameters(options),
+            ReadTone(options),
             options.GetBoolean("interleave", true),
             options.GetBoolean("cue", true),
-            value => progress?.Report(new DiscJobProgress(
-                ModuleId,
-                "generate",
-                $"CD progress {value.Fraction:P1}",
-                value.Fraction,
-                value.CompletedBytes,
-                value.TotalBytes,
-                value.Elapsed)),
-            cancellationToken,
-            ReadTone(options));
-        string message =
-            $"CD track complete: {summary.Sectors} sectors, {summary.BytesWritten} bytes, "
-            + $"interleave={summary.Interleaved}, elapsed={summary.Elapsed.TotalSeconds:F1}s, "
-            + $"output={summary.OutputTrack}"
-            + (summary.CueSheetPath is null ? string.Empty : $", cue={summary.CueSheetPath}");
-        return new DiscJobResult(ModuleId, request.Command, 0, message, summary.OutputTrack);
+            options.GetString("data-dir", string.Empty),
+            options.GetString("volume-label", "CD_IMAGE"),
+            ReadFilePosition(options));
+        DiscImageResult result = CdImageGenerator.Generate(image, progress, cancellationToken);
+        return new DiscJobResult(ModuleId, request.Command, 0, result.Summary, result.OutputPath);
     }
 
     private static DiscJobResult PreviewWarp(
