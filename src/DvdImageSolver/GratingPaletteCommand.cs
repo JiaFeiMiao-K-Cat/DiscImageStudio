@@ -10,25 +10,43 @@ namespace DvdImageSolver;
 /// flat source image. This intentionally uses the same dispersion writer and ISO
 /// prefix as the proven monochrome path; only the payload-word callback changes.
 /// </summary>
-internal static class GratingPaletteCommand
+public static class GratingPaletteCommand
 {
     internal static int Run(CliArguments args)
     {
         string imagePath = args.Require("image");
         string outputPath = args.Require("output");
-        string volumeLabel = args.Get("volume-label", "SUZUME-GRATING");
-        uint totalSectors = args.GetUInt("total-sectors", 2_297_888);
-        double inner = args.GetDouble("inner-radius-mm", 24.063112765327595);
-        double outer = args.GetDouble("outer-radius-mm", 58.22734793558852);
-        double cellMm = args.GetDouble("cell-mm", 0.068);
-        double pitchLinear = args.GetDouble("pitch-linear", -3.625995787598983e-11);
-        double pitchQuadratic = args.GetDouble("pitch-quadratic", 5.59609470367389e-10);
-        double pitchCubic = args.GetDouble("pitch-cubic", 4.337809583594884e-10);
+        Write(
+            imagePath,
+            outputPath,
+            args.Get("volume-label", "SUZUME-GRATING"),
+            args.GetUInt("total-sectors", 2_297_888),
+            args.GetDouble("inner-radius-mm", 24.063112765327595),
+            args.GetDouble("outer-radius-mm", 58.22734793558852),
+            args.GetDouble("cell-mm", 0.068),
+            args.GetDouble("pitch-linear", -3.625995787598983e-11),
+            args.GetDouble("pitch-quadratic", 5.59609470367389e-10),
+            args.GetDouble("pitch-cubic", 4.337809583594884e-10));
+        return 0;
+    }
 
+    /// <summary>Writes a complete ISO to a file, or to stdout when outputPath is "-".</summary>
+    public static void Write(
+        string imagePath,
+        string outputPath,
+        string volumeLabel,
+        uint totalSectors,
+        double inner,
+        double outer,
+        double cellMm,
+        double pitchLinear,
+        double pitchQuadratic,
+        double pitchCubic)
+    {
         if (totalSectors == 0 || totalSectors % 16 != 0)
-            throw new ArgumentException("--total-sectors must be a positive multiple of 16.");
-        if (cellMm <= 0) throw new ArgumentException("--cell-mm must be positive.");
-        if (totalSectors > 4_000_000) throw new ArgumentException("--total-sectors is too large.");
+            throw new ArgumentException("total-sectors must be a positive multiple of 16.");
+        if (cellMm <= 0) throw new ArgumentException("cell-mm must be positive.");
+        if (totalSectors > 4_000_000) throw new ArgumentException("total-sectors is too large.");
 
         var image = RasterImage.Load(imagePath);
         var cells = new CellPlan(image, inner, outer, cellMm);
@@ -63,31 +81,38 @@ internal static class GratingPaletteCommand
             UseSimdSampling = false,
         };
 
-        using FileStream output = File.Create(outputPath);
-        Iso9660ImageWriter.WriteSequentialPrefix(isoPlan, output, drawingStart);
-        FastDispersionImageWriter.WriteScrambledCodewordPatternStream(
-            cells.Sample,
-            output,
-            options,
-            progress =>
-            {
-                if (progress.CompletedBlocks == 1
-                    || progress.CompletedBlocks == progress.TotalBlocks
-                    || progress.CompletedBlocks % 5000 == 0)
+        FileStream? file = outputPath == "-" ? null : File.Create(outputPath);
+        Stream output = file ?? Console.OpenStandardOutput();
+        try
+        {
+            Iso9660ImageWriter.WriteSequentialPrefix(isoPlan, output, drawingStart);
+            FastDispersionImageWriter.WriteScrambledCodewordPatternStream(
+                cells.Sample,
+                output,
+                options,
+                progress =>
                 {
-                    Console.Error.WriteLine(
-                        $"block {progress.CompletedBlocks}/{progress.TotalBlocks}, "
-                        + $"LBA={progress.BlockLba}, bytes={progress.BytesWritten}, "
-                        + $"elapsed={progress.Elapsed.TotalSeconds:F1}s");
-                    Console.Error.Flush();
-                }
-            });
-        output.SetLength((long)totalSectors * 2048);
-        output.Flush();
+                    if (progress.CompletedBlocks == 1
+                        || progress.CompletedBlocks == progress.TotalBlocks
+                        || progress.CompletedBlocks % 5000 == 0)
+                    {
+                        Console.Error.WriteLine(
+                            $"block {progress.CompletedBlocks}/{progress.TotalBlocks}, "
+                            + $"LBA={progress.BlockLba}, bytes={progress.BytesWritten}, "
+                            + $"elapsed={progress.Elapsed.TotalSeconds:F1}s");
+                        Console.Error.Flush();
+                    }
+                });
+            if (file is not null) file.SetLength((long)totalSectors * 2048);
+            output.Flush();
+        }
+        finally
+        {
+            if (file is not null) file.Dispose();
+        }
         Console.Error.WriteLine(
-            $"done: {outputPath}, sectors={totalSectors}, drawingStart={drawingStart}, "
-            + $"cell={cellMm * 1000:F1}um, palette8={DvdGratingPalette.Motifs.Length}");
-        return 0;
+            $"done: {(outputPath == "-" ? "stdout" : outputPath)}, sectors={totalSectors}, "
+            + $"drawingStart={drawingStart}, cell={cellMm * 1000:F1}um, palette={DvdGratingPalette.Motifs.Length}");
     }
 
     private static uint Align16(uint value) => (value + 15u) & ~15u;

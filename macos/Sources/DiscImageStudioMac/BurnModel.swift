@@ -64,6 +64,8 @@ final class BurnModel {
     var streamVerify = false
     /// 成功后是否弹出光盘；失败/取消时助手不会弹盘。
     var streamEject = true
+    /// 七色光栅模式：DVD 流式生成使用 C# `grating` 命令。
+    var streamGrating = false
     private(set) var streamPlan: StreamBurnPlan?
 
     @ObservationIgnored private var streamJob: BurnStreamJob?
@@ -448,17 +450,35 @@ final class BurnModel {
 
         do {
             let composite = try await project.prepareExportComposite()
-            var arguments = try ExportService.makePlan(
-                project: project.document,
-                compositeURL: composite
-            ).arguments
-            let outputOption = project.document.discFamily == .dvd ? "--iso-output" : "--output"
-            guard let outputIndex = arguments.firstIndex(of: outputOption), outputIndex + 1 < arguments.count else {
-                throw StreamBurnError.invalidPlan(reason: L("生成命令没有 %@ 参数。", String(outputOption)))
-            }
-            arguments[outputIndex + 1] = "-"
-            if kind == .cdAudio, let cueIndex = arguments.firstIndex(of: "--cue"), cueIndex + 1 < arguments.count {
-                arguments[cueIndex + 1] = "false"
+            let arguments: [String]
+            if streamGrating, kind == .dvdData {
+                let geometry = project.document.geometry
+                arguments = [
+                    "grating",
+                    "--image", composite.path,
+                    "--output", "-",
+                    "--total-sectors", String(sectors),
+                    "--cell-mm", "0.034",
+                    "--inner-radius-mm", self.cliNumber(geometry.innerRadiusMm),
+                    "--outer-radius-mm", self.cliNumber(geometry.outerRadiusMm),
+                    "--pitch-linear", self.cliNumber(geometry.pitchLinear),
+                    "--pitch-quadratic", self.cliNumber(geometry.pitchQuadratic),
+                    "--pitch-cubic", self.cliNumber(geometry.pitchCubic),
+                ]
+            } else {
+                var generated = try ExportService.makePlan(
+                    project: project.document,
+                    compositeURL: composite
+                ).arguments
+                let outputOption = project.document.discFamily == .dvd ? "--iso-output" : "--output"
+                guard let outputIndex = generated.firstIndex(of: outputOption), outputIndex + 1 < generated.count else {
+                    throw StreamBurnError.invalidPlan(reason: L("生成命令没有 %@ 参数。", String(outputOption)))
+                }
+                generated[outputIndex + 1] = "-"
+                if kind == .cdAudio, let cueIndex = generated.firstIndex(of: "--cue"), cueIndex + 1 < generated.count {
+                    generated[cueIndex + 1] = "false"
+                }
+                arguments = generated
             }
 
             let plan = try service.makePlan(
@@ -659,6 +679,10 @@ final class BurnModel {
 
     private func appendSystem(_ text: String) {
         logLines.append(LogLine(stream: .system, text: text))
+    }
+
+    private func cliNumber(_ value: Double) -> String {
+        String(format: "%.15g", locale: Locale(identifier: "en_US_POSIX"), value)
     }
 
     private static func parseBlockProgress(_ text: String) -> Double? {

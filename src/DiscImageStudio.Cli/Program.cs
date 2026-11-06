@@ -16,6 +16,7 @@ internal static class Program
             Console.WriteLine("  bd-preview            Render a Blu-ray design projection PNG");
             Console.WriteLine("  bd-preview-readback   Render a Blu-ray read-back PNG from an ISO sidecar");
             Console.WriteLine("  preview-grating       Render a coloured DVD grating read-back PNG from an ISO");
+            Console.WriteLine("  grating               Write a seven-colour grating DVD ISO (file or stdout)");
             Console.WriteLine("  calibration-target    Render the built-in calibration target and session skeleton");
             Console.WriteLine("  calibration-photo     Resize and rectify a calibration photo");
             Console.WriteLine("  calibration-fit       Fit disc radii from calibration traces");
@@ -60,6 +61,11 @@ internal static class Program
         if (args[0].Equals("preview-grating", StringComparison.OrdinalIgnoreCase))
         {
             return RunAuxiliary(() => PreviewIsoGratingCommand.Run(args));
+        }
+
+        if (args[0].Equals("grating", StringComparison.OrdinalIgnoreCase))
+        {
+            return RunAuxiliary(() => GratingCommand.Run(args));
         }
 
         if (args[0].Equals("calibration-target", StringComparison.OrdinalIgnoreCase))

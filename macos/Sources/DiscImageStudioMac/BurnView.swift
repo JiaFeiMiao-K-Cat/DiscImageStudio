@@ -626,6 +626,16 @@ struct BurnView: View {
                     .insetSurface()
                 }
 
+                if burnModel.streamKind == .dvdData {
+                    Toggle(L("七色光栅模式"), isOn: Binding(
+                        get: { burnModel.streamGrating },
+                        set: { burnModel.streamGrating = $0 }
+                    ))
+                    .toggleStyle(.checkbox)
+                    .font(.system(size: 12.5, weight: .medium))
+                    .help(L("使用 C# grating 生成 A5/92 黑白 + B/G/C/D/E 彩色光栅"))
+                }
+
                 Toggle("写入后校验（重读整张盘，较慢）", isOn: $streamVerify)
                     .toggleStyle(.checkbox)
                     .font(.system(size: 12.5, weight: .medium))

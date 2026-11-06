@@ -153,6 +153,9 @@ internal sealed class CliOptionSet
             ? value
             : throw new ArgumentException($"Missing required option --{name}.");
 
+    internal string GetString(string name, string fallback)
+        => _values.TryGetValue(name, out string? value) ? value : fallback;
+
     internal int GetInt(string name, int fallback)
         => _values.TryGetValue(name, out string? value)
             ? int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed)

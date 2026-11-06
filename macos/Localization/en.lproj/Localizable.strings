@@ -1891,3 +1891,5 @@
 "写入后校验（重读整张盘，较慢）" = "Verify after writing (reads the whole disc back; slow)";
 "按光栅色板解析" = "Read as grating palette";
 "强制按 A/B/C/D/E/F/G motif 上色；普通单色 ISO 也能用" = "Force A/B/C/D/E/F/G motif colours; works for ordinary monochrome ISOs too";
+"七色光栅模式" = "Seven-colour grating mode";
+"使用 C# grating 生成 A5/92 黑白 + B/G/C/D/E 彩色光栅" = "Generate A5/92 black-and-white plus B/G/C/D/E colour gratings with the C# grating generator";
