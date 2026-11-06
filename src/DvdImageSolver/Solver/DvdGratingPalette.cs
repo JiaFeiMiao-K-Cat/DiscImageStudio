@@ -29,8 +29,24 @@ public static class DvdGratingPalette
         (230, 100, 50),
     ];
 
-    public static bool TryColour(byte q, out (string Name, byte R, byte G, byte B) colour)
+    public static bool TryColour(byte q, bool monochrome, out (string Name, byte R, byte G, byte B) colour)
     {
+        if (monochrome)
+        {
+            // The monochrome palette deliberately uses two of the same bytes as
+            // grating A/F; in a monochrome ISO they mean black/white, not colours.
+            (string Name, byte R, byte G, byte B)[] mono =
+            [
+                ("black", 0, 0, 0),
+                ("white", 255, 255, 255),
+                ("dark", 48, 48, 48),
+                ("gray", 128, 128, 128),
+            ];
+            int index = q switch { 0xA5 => 0, 0x92 => 1, 0x66 => 2, 0xB9 => 3, _ => -1 };
+            if (index < 0) { colour = default; return false; }
+            colour = mono[index];
+            return true;
+        }
         for (int index = 0; index < Motifs.Length; index++)
         {
             if (Array.IndexOf(Motifs[index], q) >= 0)

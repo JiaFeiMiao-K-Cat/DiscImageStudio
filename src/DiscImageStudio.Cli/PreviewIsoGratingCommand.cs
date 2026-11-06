@@ -12,7 +12,7 @@ internal static class PreviewIsoGratingCommand
         [
             "iso", "output", "total-sectors", "lba", "fill-sectors", "psn-offset",
             "inner-radius-mm", "outer-radius-mm", "channel-bit-nm", "clockwise",
-            "preview-size", "samples-per-sector",
+            "preview-size", "samples-per-sector", "monochrome",
             "pitch-linear", "pitch-quadratic", "pitch-cubic",
         ]);
         string isoPath = Path.GetFullPath(options.Require("iso"));
@@ -28,6 +28,7 @@ internal static class PreviewIsoGratingCommand
             options.GetBool("clockwise", true),
             options.GetInt("preview-size", 1200),
             options.GetInt("samples-per-sector", 32),
+            options.GetBool("monochrome", false),
             options.GetDouble("pitch-linear", 0),
             options.GetDouble("pitch-quadratic", 0),
             options.GetDouble("pitch-cubic", 0));

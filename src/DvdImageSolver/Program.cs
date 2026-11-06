@@ -375,9 +375,10 @@ internal static class Program
             arguments.GetDouble("pitch-linear", 0),
             arguments.GetDouble("pitch-quadratic", 0),
             arguments.GetDouble("pitch-cubic", 0));
+        bool looksGrating = LooksLikeGrating(isoPath, startLba, fillSectors, options.PsnOffset);
         bool grating = arguments.Has("grating")
             ? ReadBoolean(arguments, "grating", fallback: false)
-            : LooksLikeGrating(isoPath, startLba, fillSectors, options.PsnOffset);
+            : looksGrating;
         if (grating)
         {
             GratingReadbackOptions gratingOptions = new(
@@ -385,6 +386,7 @@ internal static class Program
                 options.InnerRadiusMm, options.OuterRadiusMm,
                 options.ChannelBitLengthNm, options.Clockwise,
                 options.PreviewSize, options.SamplesPerSector,
+                !looksGrating,
                 options.PitchLinear, options.PitchQuadratic, options.PitchCubic);
             GratingReadbackSummary gratingSummary =
                 GratingReadbackRenderer.Render(isoPath, outputPath, gratingOptions);
@@ -464,6 +466,7 @@ internal static class Program
             ReadClockwise(arguments),
             arguments.GetInt("preview-size", 1024),
             arguments.GetInt("samples-per-sector", 32),
+            ReadBoolean(arguments, "monochrome", fallback: false),
             arguments.GetDouble("pitch-linear", 0),
             arguments.GetDouble("pitch-quadratic", 0),
             arguments.GetDouble("pitch-cubic", 0));

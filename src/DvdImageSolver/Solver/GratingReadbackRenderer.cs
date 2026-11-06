@@ -15,6 +15,7 @@ public sealed record GratingReadbackOptions(
     bool Clockwise,
     int PreviewSize,
     int SamplesPerSector,
+    bool MonochromePalette = false,
     double PitchLinear = 0,
     double PitchQuadratic = 0,
     double PitchCubic = 0);
@@ -103,7 +104,7 @@ public static class GratingReadbackRenderer
                     int byteIndex = (int)((sample + 0.5) * byteStep);
                     if (byteIndex >= payload.Length) byteIndex = payload.Length - 1;
                     byte q = (byte)(payload[byteIndex] ^ mask[byteIndex]);
-                    if (!TryColour(q, out var colour))
+                    if (!DvdGratingPalette.TryColour(q, options.MonochromePalette, out var colour))
                     {
                         if (q == 0) off++;
                         continue;
@@ -149,9 +150,6 @@ public static class GratingReadbackRenderer
             totalSamples, coloured, off, options.InnerRadiusMm, options.OuterRadiusMm,
             options.Clockwise ? "cw" : "ccw");
     }
-
-    private static bool TryColour(byte q, out (string Name, byte R, byte G, byte B) colour)
-        => DvdGratingPalette.TryColour(q, out colour);
 
     private static void Validate(GratingReadbackOptions options)
     {
