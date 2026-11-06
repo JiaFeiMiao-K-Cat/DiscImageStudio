@@ -64,8 +64,9 @@ note() {
 # stapler validate / spctl 需要访问 Apple 的票据服务；CI runner 偶发网络抖动会
 # 返回 error 68（CloudKit 连接丢失），这里做有限重试。
 retry() {
-  local attempts="${NOTARY_RETRY_ATTEMPTS:-5}"
-  local delay="${NOTARY_RETRY_DELAY:-5}"
+  local attempts="${NOTARY_RETRY_ATTEMPTS:-8}"
+  local delay="${NOTARY_RETRY_DELAY:-8}"
+  local max_delay="${NOTARY_RETRY_MAX_DELAY:-60}"
   local i
   for ((i = 1; i <= attempts; i++)); do
     if "$@"; then
@@ -74,6 +75,8 @@ retry() {
     if [[ $i -lt $attempts ]]; then
       note "重试 $i/$attempts 失败，${delay}s 后重试：$*" >&2
       sleep "$delay"
+      delay=$((delay * 2))
+      if [[ $delay -gt $max_delay ]]; then delay=$max_delay; fi
     fi
   done
   return 1
