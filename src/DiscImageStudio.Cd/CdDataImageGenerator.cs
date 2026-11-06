@@ -22,6 +22,14 @@ public sealed class CdDataLayoutPlan
     public uint DrawingStartLba { get; }
     public uint DrawingEndLbaExclusive { get; }
     public uint DrawingSectors => DrawingEndLbaExclusive - DrawingStartLba;
+
+    /// <summary>Occupied regions, in LBAs: the filesystem metadata always starts at the
+    /// inner edge, the file data sits at the chosen ring. The designer's data-region guide
+    /// maps both to radii; the dispersion reserve is added by the caller.</summary>
+    public uint MetadataEndLbaExclusive => IsoLayout.MetadataEndLbaExclusive;
+    public uint FileDataStartLba => IsoLayout.FileDataStartLba;
+    public uint DataEndLbaExclusive => IsoLayout.DataEndLbaExclusive;
+
     public bool FilesAtOuterRing => IsoLayout.FilesAtOuterRing;
     public int FileCount => IsoLayout.FileCount;
     public int DirectoryCount => IsoLayout.DirectoryCount;

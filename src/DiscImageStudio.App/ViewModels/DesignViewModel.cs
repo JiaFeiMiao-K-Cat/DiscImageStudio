@@ -8,9 +8,13 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DvdImageSolver;
+using DiscImageStudio.BluRay;
 using DiscImageStudio.Cd;
 using DiscImageStudio.Core;
+using DiscImageStudio.Dvd;
 using DiscImageStudio.Imaging;
+using DiscImageStudio.Iso;
 using DiscImageStudio.Services;
 
 namespace DiscImageStudio.ViewModels;
@@ -28,6 +32,7 @@ public partial class DesignViewModel : ObservableObject
 
     private readonly ShellViewModel _shell;
     private readonly DiscParametersState _state;
+    private readonly Dispatcher _dispatcher;
     private readonly DispatcherTimer _compositeTimer;
     private long _compositeRevision;
     private long _previewRenderedRevision = -1;
@@ -38,7 +43,10 @@ public partial class DesignViewModel : ObservableObject
     {
         _shell = shell;
         _state = state;
+        _dispatcher = dispatcher;
         _compositeTimer = new DispatcherTimer { Interval = CompositeDebounce };
+        _shell.PropertyChanged += Shell_PropertyChanged;
+        _state.PropertyChanged += State_PropertyChanged;
         _compositeTimer.Tick += (_, _) =>
         {
             _compositeTimer.Stop();
@@ -57,6 +65,8 @@ public partial class DesignViewModel : ObservableObject
         });
         Layers.CollectionChanged += Layers_CollectionChanged;
         Tone = new ToneViewModel(shell, state, this);
+        L.LanguageChanged += (_, _) => RefreshDataRegionLabel();
+        RefreshDataRegionLabel();
     }
 
     /// <summary>The right rail's tone module: its preview projects the same composite this
@@ -69,6 +79,42 @@ public partial class DesignViewModel : ObservableObject
 
     /// <summary>Disc files are shared with export, preview and burn; they are not image layers.</summary>
     public DiscParametersState State => _state;
+
+    /// <summary>One occupied annulus in millimetres. The canvas draws every region as a
+    /// yellow guide ring (the designer's twin of the tone mini-preview's data tint). All
+    /// families use the real ISO/UDF layout planners, so the regions are the fallback area
+    /// the files may occupy: the preview page shows the actual dispersed placement.</summary>
+    public sealed record DataRegionMm(double InnerRadiusMm, double OuterRadiusMm);
+
+    /// <summary>Draws the data-occupied zone on the canvas so picture layers can be placed
+    /// away from the files.</summary>
+    [ObservableProperty]
+    private bool _showDataRegion;
+
+    /// <summary>Null while unchecked, computing, or when the family has no data folder.
+    /// May hold several annuli: files at the outer ring still leave the filesystem metadata
+    /// at the inner edge, and both zones are marked. The list updates only with layout
+    /// inputs (files, disc parameters, ring choice) — never with picture edits — and is
+    /// drawn on the canvas only, never into the composite.</summary>
+    [ObservableProperty]
+    private IReadOnlyList<DataRegionMm>? _dataRegions;
+
+    /// <summary>True while the data-region guide is on and the data does not fit the disc
+    /// (the layout planner rejects it): the canvas stays empty and the "Disc files" panel
+    /// shows the red warning instead of a ring.</summary>
+    [ObservableProperty]
+    private bool _dataRegionOverflow;
+
+    [ObservableProperty]
+    private string _dataRegionOverflowText = string.Empty;
+
+    /// <summary>Checkbox caption and tooltip: the exact wording on CD, the "(estimated)"
+    /// variants where the guide also carries the dispersion reserve.</summary>
+    [ObservableProperty]
+    private string _showDataRegionLabel = string.Empty;
+
+    [ObservableProperty]
+    private string _showDataRegionHint = string.Empty;
 
     public RelayCommand BrowseDataCommand => _shell.Export.BrowseDataCommand;
 
@@ -352,7 +398,307 @@ public partial class DesignViewModel : ObservableObject
         OnPropertyChanged(nameof(IsBluRay));
         OnPropertyChanged(nameof(FamilyLabel));
         OnPropertyChanged(nameof(CanvasOuterRadiusMm));
+        RefreshDataRegionLabel();
         RefreshGeometry();
+        RecomputeDataRegion();
+    }
+
+    /// <summary>All families use the real layout plan, so the caption and hint are the same
+    /// everywhere; refresh on language changes.</summary>
+    private void RefreshDataRegionLabel()
+    {
+        ShowDataRegionLabel = L.T("Xaml.ShowDataRegion");
+        ShowDataRegionHint = L.T("Xaml.ShowDataRegionHint");
+        if (DataRegionOverflow)
+        {
+            DataRegionOverflowText = L.T("Xaml.DataRegionOverflow");
+        }
+    }
+
+    // ---- Data region guide ----
+
+    private long _dataRegionRevision;
+
+    partial void OnShowDataRegionChanged(bool value) => RecomputeDataRegion();
+
+    private void Shell_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ShellViewModel.IsProjectOpen)
+            or nameof(ShellViewModel.CurrentProject))
+        {
+            RecomputeDataRegion();
+        }
+    }
+
+    private void State_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is
+            nameof(DiscParametersState.CdDataDirectory) or nameof(DiscParametersState.CdVolumeLabel)
+            or nameof(DiscParametersState.CdFilesAtOuterRing)
+            or nameof(DiscParametersState.CdInnerRadius) or nameof(DiscParametersState.CdOuterRadius)
+            or nameof(DiscParametersState.CdSectors)
+            or nameof(DiscParametersState.CdPitchLinear) or nameof(DiscParametersState.CdPitchQuadratic)
+            or nameof(DiscParametersState.CdPitchCubic)
+            or nameof(DiscParametersState.DvdDataDirectory) or nameof(DiscParametersState.DvdFilesAtOuterRing)
+            or nameof(DiscParametersState.DvdTotalSectors)
+            or nameof(DiscParametersState.DvdInnerRadius) or nameof(DiscParametersState.DvdOuterRadius)
+            or nameof(DiscParametersState.DvdPitchLinear) or nameof(DiscParametersState.DvdPitchQuadratic)
+            or nameof(DiscParametersState.DvdPitchCubic)
+            or nameof(DiscParametersState.BdDataDirectory) or nameof(DiscParametersState.BdFilesAtOuterRing)
+            or nameof(DiscParametersState.BdTotalSectors)
+            or nameof(DiscParametersState.BdInnerRadius) or nameof(DiscParametersState.BdOuterRadius)
+            or nameof(DiscParametersState.BdPitchLinear) or nameof(DiscParametersState.BdPitchQuadratic)
+            or nameof(DiscParametersState.BdPitchCubic))
+        {
+            RecomputeDataRegion();
+        }
+    }
+
+    /// <summary>Recomputes the layout off the UI thread (the plans scan the folder) and
+    /// publishes it back on the dispatcher; superseded runs are dropped by revision.
+    /// The plan always runs — the capacity verdict belongs to the data, not to the guide —
+    /// but the rings are drawn only while the checkbox is on. Layout inputs only: picture
+    /// edits never retrigger this, and the result is drawn on the canvas without touching
+    /// the composite.</summary>
+    private void RecomputeDataRegion()
+    {
+        long revision = ++_dataRegionRevision;
+        _ = Task.Run(async () =>
+        {
+            IReadOnlyList<DataRegionMm>? regions = null;
+            bool overflow = false;
+            try
+            {
+                regions = await StaWorker.RunAsync(() => ComputeDataRegions());
+            }
+            catch (ArgumentException ex) when (IsCapacityExceeded(ex))
+            {
+                // The layout planner rejects the data: it exceeds the disc capacity
+                // (e.g. a folder far larger than a 700 MB CD, or a file above the
+                // format's single-file limit). Warn, with or without the guide checkbox.
+                // This catch must come before the range-exception one: the planners
+                // report such limits with ArgumentOutOfRangeException too.
+                overflow = true;
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                // Invalid disc geometry: hide the guide silently.
+            }
+            catch
+            {
+                // A missing folder or other planning failure simply hides the guide.
+            }
+
+            if (revision != _dataRegionRevision)
+            {
+                return;
+            }
+
+            _dispatcher.Invoke(() =>
+            {
+                if (revision != _dataRegionRevision)
+                {
+                    return;
+                }
+
+                DataRegions = ShowDataRegion ? regions : null;
+                DataRegionOverflow = overflow;
+                if (overflow)
+                {
+                    DataRegionOverflowText = L.T("Xaml.DataRegionOverflow");
+                }
+                CanvasChanged?.Invoke();
+            });
+        });
+    }
+
+    private IReadOnlyList<DataRegionMm>? ComputeDataRegions() => Family switch
+    {
+        OpticalDiscFamily.Dvd => ComputeDvdDataRegions(),
+        OpticalDiscFamily.BluRay => ComputeBluRayDataRegions(),
+        _ => ComputeCdDataRegions(),
+    };
+
+    /// <summary>The three layout planners report "does not fit" with these exact (unlocalized)
+    /// messages; every other ArgumentException means invalid geometry, not capacity.
+    /// If a planner changes its wording the guide degrades to hidden, never to a false warning.</summary>
+    private static bool IsCapacityExceeded(Exception ex) =>
+        ex.Message.Contains("leaves no CD sectors for drawing")
+        || ex.Message.Contains("exceed the disc capacity")
+        || ex.Message.Contains("disc has only")
+        || ex.Message.Contains("no complete drawing cluster")
+        // A single file too large for the format (ISO9660's 4 GiB limit) can never be
+        // placed on this disc family: report it as capacity, not as a geometry problem.
+        || ex.Message.Contains("larger than 4 GiB");
+
+    /// <summary>Exact, same plan the tone mini-preview tints with. The guide marks the
+    /// fallback occupancy: the filesystem metadata (with the shared dispersion reserve) at
+    /// its ring and the file data at its ring; contiguous spans merge into one annulus.</summary>
+    private IReadOnlyList<DataRegionMm>? ComputeCdDataRegions()
+    {
+        string directory = _state.CdDataDirectory.Trim();
+        if (directory.Length == 0)
+        {
+            return null;
+        }
+
+        CdDiscParameters parameters = new(
+            ParameterParser.ParsePositiveDouble(_state.CdInnerRadius, L.T("内半径")),
+            ParameterParser.ParsePositiveDouble(_state.CdOuterRadius, L.T("内半径")),
+            ParameterParser.ParsePositiveLong(_state.CdSectors, L.T("扇区数")),
+            PitchLinear: ParameterParser.ParseDouble(_state.CdPitchLinear, L.T("相对一次项")),
+            PitchQuadratic: ParameterParser.ParseDouble(_state.CdPitchQuadratic, L.T("相对二次项")),
+            PitchCubic: ParameterParser.ParseDouble(_state.CdPitchCubic, L.T("相对三次项")));
+
+        // The ISO plan (the "does it fit" verdict, same call PrepareLayout wraps) runs
+        // before the geometry validation: an oversized folder must report overflow even
+        // with degenerate pitch values, where the radius mapping degrades to a uniform
+        // area sweep anyway.
+        Iso9660ImageWriter.LayoutPlan layout = Iso9660ImageWriter.Plan(
+            directory, checked((uint)parameters.Sectors), _state.CdVolumeLabel.Trim(),
+            filesAtOuterRing: _state.CdFilesAtOuterRing);
+        uint drawingStart = _state.CdFilesAtOuterRing ? layout.MetadataEndLbaExclusive : layout.DataEndLbaExclusive;
+        uint drawingEnd = _state.CdFilesAtOuterRing ? layout.FileDataStartLba : layout.VolumeSectors;
+        if (drawingStart >= drawingEnd)
+        {
+            throw new ArgumentException("The filesystem leaves no CD sectors for drawing.");
+        }
+
+        parameters.Validate();
+
+        double Radius(uint lba) => parameters.RadiusFromByte((long)lba * CdDiscParameters.BytesPerSector);
+        return IsoDataRegions(parameters.InnerRadiusMm, parameters.OuterRadiusMm,
+            layout.MetadataEndLbaExclusive, layout.FileDataStartLba, layout.DataEndLbaExclusive,
+            FilesystemMetadataBudget.ReserveSectors(layout.FileCount), Radius);
+    }
+
+    /// <summary>Real layout plan for the DVD hybrid ISO (same writer the export uses),
+    /// projected onto the track geometry; metadata and file data are separate annuli when
+    /// the files sit at the outer ring.</summary>
+    private IReadOnlyList<DataRegionMm>? ComputeDvdDataRegions()
+    {
+        string directory = _state.DvdDataDirectory.Trim();
+        if (directory.Length == 0)
+        {
+            return null;
+        }
+
+        long totalSectors = ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, L.T("总扇区数"));
+        if (totalSectors > uint.MaxValue)
+        {
+            return null;
+        }
+
+        double inner = ParameterParser.ParsePositiveDouble(_state.DvdInnerRadius, L.T("内半径"));
+        double outer = ParameterParser.ParsePositiveDouble(_state.DvdOuterRadius, L.T("内半径"));
+        double pitchLinear = ParameterParser.ParseDouble(_state.DvdPitchLinear, L.T("相对一次项"));
+        double pitchQuadratic = ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("相对二次项"));
+        double pitchCubic = ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("相对三次项"));
+        // Plan first so an oversized folder reports overflow before the geometry is
+        // resolved (same order-of-operations rule as the CD path).
+        HybridIsoImageWriter.LayoutPlan plan = HybridIsoImageWriter.Plan(
+            directory, checked((uint)totalSectors), _state.DvdVolumeLabel.Trim(), _state.DvdFilesAtOuterRing);
+
+        double length = (double)totalSectors * 38688.0 * DvdStreamingOptions.StandardChannelBitLengthNm * 1e-6;
+        DvdTrackGeometry geometry = DvdTrackGeometry.Create(
+            inner, outer, length, pitchLinear, pitchQuadratic, pitchCubic);
+
+        double Radius(uint lba) => geometry.RadiusAtArcLength(length * (double)lba / totalSectors);
+        return IsoDataRegions(inner, outer,
+            plan.MetadataEndLbaExclusive, plan.FileDataStartLba, plan.DataEndLbaExclusive,
+            FilesystemMetadataBudget.ReserveSectors(plan.FileCount), Radius);
+    }
+
+    /// <summary>Real UDF layout plan for the Blu-ray volume (same writer the export uses):
+    /// one partition holds metadata and files, at the chosen ring, so the guide is a single
+    /// annulus that includes the shared dispersion reserve.</summary>
+    private IReadOnlyList<DataRegionMm>? ComputeBluRayDataRegions()
+    {
+        string directory = _state.BdDataDirectory.Trim();
+        if (directory.Length == 0)
+        {
+            return null;
+        }
+
+        long totalSectors = ParameterParser.ParsePositiveLong(_state.BdTotalSectors, L.T("蓝光总扇区数"));
+        if (totalSectors > uint.MaxValue)
+        {
+            return null;
+        }
+
+        BluRayDiscParameters parameters = new(
+            checked((uint)totalSectors),
+            1,
+            ParameterParser.ParsePositiveDouble(_state.BdInnerRadius, L.T("蓝光内半径")),
+            ParameterParser.ParsePositiveDouble(_state.BdOuterRadius, L.T("蓝光外半径")),
+            PitchLinear: ParameterParser.ParseDouble(_state.BdPitchLinear, L.T("相对一次项")),
+            PitchQuadratic: ParameterParser.ParseDouble(_state.BdPitchQuadratic, L.T("相对二次项")),
+            PitchCubic: ParameterParser.ParseDouble(_state.BdPitchCubic, L.T("相对三次项")));
+
+        // Plan first so an oversized folder reports overflow before the geometry is
+        // validated (same order-of-operations rule as the CD path).
+        UdfImageWriter.LayoutPlan plan = UdfImageWriter.Plan(
+            directory, checked((uint)totalSectors), _state.BdVolumeLabel.Trim(),
+            filesAtOuterRing: _state.BdFilesAtOuterRing);
+
+        parameters.Validate();
+        BluRayTrackGeometry geometry = new(parameters);
+
+        // Explicit narrowing before the add: Roslyn in the .NET 10 SDK rejects the
+        // standard uint + int mix with a bogus CS0266, so keep the addition uint + uint.
+        uint reserve = (uint)FilesystemMetadataBudget.ReserveSectors(plan.FileCount);
+        uint end = checked(plan.DataEndLbaExclusive + reserve);
+        double innerMm = geometry.AtSector(plan.PartitionStartLba).RadiusMm;
+        double outerMm = geometry.AtSector(Math.Min(end, plan.VolumeSectors)).RadiusMm;
+        return outerMm > innerMm
+            ? [new DataRegionMm(innerMm, Math.Min(outerMm, parameters.OuterRadiusMm))]
+            : [];
+    }
+
+    /// <summary>Maps the ISO9660/Joliet plan's occupied LBAs to mm annuli: metadata (plus
+    /// the dispersion reserve) and file data, merged when they are contiguous at the inner
+    /// edge. <paramref name="radiusAtLba"/> is the family's LBA-to-mm projection.</summary>
+    private static IReadOnlyList<DataRegionMm> IsoDataRegions(
+        double innerMm, double outerMm, uint metadataEndLba, uint fileDataStartLba,
+        uint dataEndLbaExclusive, int reserveSectors, Func<uint, double> radiusAtLba)
+    {
+        uint metadataEnd = checked(metadataEndLba + (uint)reserveSectors);
+        double metadataOuter = radiusAtLba(metadataEnd);
+        List<DataRegionMm> regions = new(2);
+        if (metadataOuter > innerMm)
+        {
+            regions.Add(new DataRegionMm(innerMm, metadataOuter));
+        }
+
+        if (fileDataStartLba < dataEndLbaExclusive)
+        {
+            double fileInner = radiusAtLba(fileDataStartLba);
+            double fileOuter = radiusAtLba(dataEndLbaExclusive);
+            if (fileDataStartLba <= metadataEnd)
+            {
+                // Contiguous with the metadata zone: one annulus to the further edge.
+                DataRegionMm merged = new(innerMm, Math.Max(metadataOuter, fileOuter));
+                if (regions.Count > 0)
+                {
+                    regions[0] = merged;
+                }
+                else
+                {
+                    regions.Add(merged);
+                }
+            }
+            else if (fileOuter > fileInner)
+            {
+                regions.Add(new DataRegionMm(fileInner, fileOuter));
+            }
+        }
+
+        return regions
+            .Select(region => new DataRegionMm(
+                Math.Clamp(region.InnerRadiusMm, innerMm, outerMm),
+                Math.Clamp(region.OuterRadiusMm, innerMm, outerMm)))
+            .Where(region => region.OuterRadiusMm > region.InnerRadiusMm)
+            .ToList();
     }
 
     private static double ParseMm(string raw, double fallback)

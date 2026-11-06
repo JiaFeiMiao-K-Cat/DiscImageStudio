@@ -1682,6 +1682,33 @@
     "es": "Mostrar / Ocultar",
     "cs": "Zobrazit / skrýt"
   },
+  "Xaml.ShowDataRegion": {
+    "zh-CN": "显示数据可能占用区域",
+    "en": "Show data occupancy area",
+    "zh-TW": "顯示資料可能佔用區域",
+    "ja": "データ占用可能な領域を表示",
+    "tr": "Olası veri kaplama alanını göster",
+    "es": "Mostrar la posible zona ocupada por los datos",
+    "cs": "Zobrazit pravděpodobně obsazenou zónu dat"
+  },
+  "Xaml.DataRegionOverflow": {
+    "zh-CN": "数据超出光盘容量",
+    "en": "Data exceeds the disc capacity",
+    "zh-TW": "資料超過光碟容量",
+    "ja": "データがディスク容量を超過しています",
+    "tr": "Veri disk kapasitesini aşıyor",
+    "es": "Los datos superan la capacidad del disco",
+    "cs": "Data překračují kapacitu disku"
+  },
+  "Xaml.ShowDataRegionHint": {
+    "zh-CN": "标出数据文件可能占用的区域，便于把图片放在数据之外。",
+    "en": "Marks the area the data files may occupy, so pictures can be placed away from the data.",
+    "zh-TW": "標出資料檔可能佔用的區域，便於把圖片放在資料之外。",
+    "ja": "データファイルが占有し得る領域を表示し、写真をデータの外に配置できます。",
+    "tr": "Veri dosyalarının kaplayabileceği alanı işaretler, böylece fotoğrafları veriden uzak yerleştirebilirsiniz.",
+    "es": "Marca el área que pueden ocupar los archivos de datos, para colocar las imágenes fuera de los datos.",
+    "cs": "Označí zónu, kterou mohou zabírat soubory dat, aby se obrázky daly umístit mimo data."
+  },
   "Xaml.MoveLayerUp": {
     "zh-CN": "上移图层",
     "en": "Move layer up",

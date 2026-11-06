@@ -7,6 +7,7 @@
              xmlns:vm="clr-namespace:DiscImageStudio.ViewModels"
              SizeChanged="OnPageSizeChanged">
     <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <!-- Property panel for the selected layer: numeric mm/°/% fields plus rename.
              Two-column compact grid instead of the old fixed 94px WrapPanel cells. -->
         <DataTemplate DataType="{x:Type vm:DesignLayerViewModel}">
@@ -245,6 +246,18 @@
                                 <StackPanel>
                                     <TextBlock Text="{loc:Text Xaml.DiscFiles}" Style="{StaticResource PanelTitle}"
                                                Margin="0,0,0,12" />
+                                    <!-- The data exceeds the disc capacity: the layout planner
+                                         rejects it, so the canvas has no ring to draw. -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12"
+                                                Visibility="{Binding DataRegionOverflow, Converter={StaticResource BoolToVisibility}}">
+                                        <iconPacks:PackIconLucide Kind="TriangleAlert" Width="14" Height="14"
+                                                                  Foreground="{DynamicResource DangerBrush}"
+                                                                  VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding DataRegionOverflowText}"
+                                                   Foreground="{DynamicResource DangerBrush}"
+                                                   Margin="6,0,0,0" VerticalAlignment="Center"
+                                                   TextWrapping="Wrap" MaxWidth="260" />
+                                    </StackPanel>
                                     <controls:VisibilityGate IsOpen="{Binding IsCd}">
                                         <StackPanel>
                                             <controls:PathField Label="{loc:Text Xaml.Folder}" Compact="True"
@@ -298,6 +311,13 @@
                                             </controls:VisibilityGate>
                                         </StackPanel>
                                     </controls:VisibilityGate>
+                                    <!-- The canvas twin of the tone preview's yellow data tint: a
+                                         guide ring marking where the files land on the disc. -->
+                                    <CheckBox Style="{StaticResource CompactCheckBox}"
+                                              Margin="0,14,0,0"
+                                              Content="{Binding ShowDataRegionLabel}"
+                                              ToolTip="{Binding ShowDataRegionHint}"
+                                              IsChecked="{Binding ShowDataRegion}" />
                                 </StackPanel>
                             </Border>
                         </controls:VisibilityGate>
