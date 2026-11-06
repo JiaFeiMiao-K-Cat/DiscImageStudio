@@ -174,12 +174,9 @@ public sealed partial class MainWindow
         Number("内半径 (mm)", geometry.InnerRadiusMm, 0.1, 59.9, v => geometry = geometry with { InnerRadiusMm = v }, fields, 0.001);
         Number("外半径 (mm)", geometry.OuterRadiusMm, 0.2, 60, v => geometry = geometry with { OuterRadiusMm = v }, fields, 0.001);
         Number("扇区数", geometry.Sectors, 1, 12219392, v => geometry = geometry with { Sectors = (long)v }, fields, d.IsCd ? 1 : d.IsDvd ? 16 : 32);
-        if (d.IsDvd)
-        {
-            Number("轨距线性系数", geometry.PitchLinear, -10, 10, v => geometry = geometry with { PitchLinear = v }, fields, 0.00001);
-            Number("轨距二次系数", geometry.PitchQuadratic, -10, 10, v => geometry = geometry with { PitchQuadratic = v }, fields, 0.00001);
-            Number("轨距三次系数", geometry.PitchCubic, -10, 10, v => geometry = geometry with { PitchCubic = v }, fields, 0.00001);
-        }
+        Number("轨距线性系数", geometry.PitchLinear, -10, 10, v => geometry = geometry with { PitchLinear = v }, fields, 0.00001);
+        Number("轨距二次系数", geometry.PitchQuadratic, -10, 10, v => geometry = geometry with { PitchQuadratic = v }, fields, 0.00001);
+        Number("轨距三次系数", geometry.PitchCubic, -10, 10, v => geometry = geometry with { PitchCubic = v }, fields, 0.00001);
         fields.Children.Add(Row(Button("取消", dialog.Close), Button("保存", () =>
         {
             var changed = d with { Name = name.Text ?? d.Name, Geometry = geometry };
@@ -257,6 +254,9 @@ public sealed partial class MainWindow
             fields.Children.Add(Check("同时导出 CUE 文件", d.Outputs.WriteCue, v => Session.Update(Session.Document! with { Outputs = Session.Document!.Outputs with { WriteCue = v } })));
             fields.Children.Add(Check("延迟交织", d.Outputs.Interleave, v => Session.Update(Session.Document! with { Outputs = Session.Document!.Outputs with { Interleave = v } })));
         }
+        if (d.IsDvd)
+            fields.Children.Add(Check("DVD 读取兼容性（实验性）", d.Outputs.DvdReadCompatibility,
+                v => Session.Update(Session.Document! with { Outputs = Session.Document!.Outputs with { DvdReadCompatibility = v } })));
         fields.Children.Add(Text("输出使用 8192 px 合成图；影调在设计页调整。", 12));
         fields.Children.Add(Button("生成文件", async () =>
         {

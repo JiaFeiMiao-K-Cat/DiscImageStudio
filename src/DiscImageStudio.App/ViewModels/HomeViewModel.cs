@@ -105,6 +105,15 @@ public partial class HomeViewModel : ObservableObject
         ClearRecentsCommand.NotifyCanExecuteChanged();
     }
 
+    /// <summary>Rebuilds the cards after a language switch: template tiles and recent tiles
+    /// both cache composed text, so they are recreated instead of refreshed in place.</summary>
+    internal void Relocalize()
+    {
+        BuildTemplates();
+        Recents.Clear();
+        RefreshRecentProjects();
+    }
+
     private void NotifyCommands()
     {
         NewProjectCommand.NotifyCanExecuteChanged();
@@ -130,23 +139,26 @@ public partial class HomeViewModel : ObservableObject
     private void BuildTemplates()
     {
         Templates.Clear();
-        Templates.Add(HomeTemplateTile.Blank);
+        Templates.Add(HomeTemplateTile.CreateBlank());
         foreach (DvdDiscPreset preset in _state.DvdPresets.Where(value => !value.IsCustom).Take(PresetsPerFamily))
         {
             Templates.Add(CreateTemplate(
-                preset.Id, preset.DisplayName, OpticalDiscFamily.Dvd, PackIconLucideKind.Disc));
+                preset.Id, preset.DisplayName, OpticalDiscFamily.Dvd, PackIconLucideKind.Disc,
+                preset.Contributor));
         }
 
         foreach (CdDiscPreset preset in _state.CdPresets.Where(value => !value.IsCustom).Take(PresetsPerFamily))
         {
             Templates.Add(CreateTemplate(
-                preset.Id, preset.DisplayName, OpticalDiscFamily.CompactDisc, PackIconLucideKind.Disc3));
+                preset.Id, preset.DisplayName, OpticalDiscFamily.CompactDisc, PackIconLucideKind.Disc3,
+                preset.Contributor));
         }
 
         foreach (BluRayDiscPreset preset in _state.BluRayPresets.Where(value => !value.IsCustom).Take(PresetsPerFamily))
         {
             Templates.Add(CreateTemplate(
-                preset.Id, preset.DisplayName, OpticalDiscFamily.BluRay, PackIconLucideKind.DiscAlbum));
+                preset.Id, preset.DisplayName, OpticalDiscFamily.BluRay, PackIconLucideKind.DiscAlbum,
+                preset.Contributor));
         }
     }
 
@@ -154,7 +166,8 @@ public partial class HomeViewModel : ObservableObject
         string presetId,
         string displayName,
         OpticalDiscFamily family,
-        PackIconLucideKind icon)
+        PackIconLucideKind icon,
+        string? contributor)
     {
         string nature = family switch
         {
@@ -169,7 +182,8 @@ public partial class HomeViewModel : ObservableObject
             nature,
             icon,
             family,
-            IsBlank: false);
+            IsBlank: false,
+            Contributor: contributor);
     }
 
     private void State_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -214,7 +228,17 @@ public partial class HomeViewModel : ObservableObject
             return;
         }
 
-        await _shell.OpenProjectFromAsync(entry.ProjectPath);
+        // The tile carries the wait: the project header that normally shows progress is on the
+        // workspace shell, which is not on screen until the document has been applied.
+        tile.IsLoading = true;
+        try
+        {
+            await _shell.OpenProjectFromAsync(entry.ProjectPath);
+        }
+        finally
+        {
+            tile.IsLoading = false;
+        }
     }
 
     /// <summary>Right-click removal: drops one entry from the recent list without touching

@@ -87,7 +87,8 @@ public sealed class ProjectSession
         var g = d.Geometry;
         return new(d.IsCd ? CalibrationDiscKind.Cd : d.IsDvd ? CalibrationDiscKind.Dvd : CalibrationDiscKind.BluRay,
             g.InnerRadiusMm, g.OuterRadiusMm, g.Sectors, d.IsCd ? 1200 : d.IsDvd ? 133.3 : 74.5,
-            g.PitchLinear, g.PitchQuadratic, g.PitchCubic, d.BluRay?.InvertMapping ?? false);
+            g.PitchLinear, g.PitchQuadratic, g.PitchCubic, d.BluRay?.InvertMapping ?? false,
+            DvdReadCompatibility: d.Outputs.DvdReadCompatibility);
     }
 
     public void CleanCache()
@@ -142,10 +143,11 @@ public static class JobArguments
     public static List<string> Geometry(ProjectDocument document)
     {
         var g = document.Geometry;
-        return document.IsDvd
-            ? ["--total-sectors", N(g.Sectors), "--inner-radius-mm", N(g.InnerRadiusMm), "--outer-radius-mm", N(g.OuterRadiusMm),
-               "--pitch-linear", N(g.PitchLinear), "--pitch-quadratic", N(g.PitchQuadratic), "--pitch-cubic", N(g.PitchCubic)]
+        List<string> args = document.IsDvd
+            ? ["--total-sectors", N(g.Sectors), "--inner-radius-mm", N(g.InnerRadiusMm), "--outer-radius-mm", N(g.OuterRadiusMm)]
             : [document.IsCd ? "--sectors" : "--total-sectors", N(g.Sectors), "--r0", N(g.InnerRadiusMm), "--r1", N(g.OuterRadiusMm)];
+        args.AddRange(["--pitch-linear", N(g.PitchLinear), "--pitch-quadratic", N(g.PitchQuadratic), "--pitch-cubic", N(g.PitchCubic)]);
+        return args;
     }
 
     public static List<string> Tone(ProjectDocument document)
@@ -175,6 +177,7 @@ public static class JobArguments
         if (document.IsDvd)
         {
             args.AddRange(["--spiral-direction", "cw", "--algorithm", "dispersion", "--iterations-per-block", "1", "--fast-output", "true"]);
+            args.AddRange(["--read-compatibility", o.DvdReadCompatibility.ToString().ToLowerInvariant()]);
             if (string.IsNullOrWhiteSpace(o.DataDirectory)) args.AddRange(["--fill-sectors", N(document.Geometry.Sectors)]);
         }
         if (document.IsBluRay) args.AddRange(["--invert", (document.BluRay?.InvertMapping ?? false).ToString().ToLowerInvariant()]);
@@ -195,7 +198,8 @@ public static class JobArguments
         {
             args.AddRange(["--size", N(size)]);
             if (readback) args.AddRange(["--deinterleave", document.Outputs.Interleave.ToString().ToLowerInvariant(), "--byte-step", N(Math.Max(1, 2352 / samples))]);
-            else args.AddRange(["--actual-r0", N(measuredInner), "--actual-r1", N(measuredOuter), "--samples-per-sector", N(samples)]);
+            else args.AddRange(["--actual-r0", N(measuredInner), "--actual-r1", N(measuredOuter), "--samples-per-sector", N(samples),
+                "--actual-pitch-linear", N(g.PitchLinear), "--actual-pitch-quadratic", N(g.PitchQuadratic), "--actual-pitch-cubic", N(g.PitchCubic)]);
         }
         else
         {
@@ -205,7 +209,11 @@ public static class JobArguments
                 "--actual-pitch-linear", N(g.PitchLinear), "--actual-pitch-quadratic", N(g.PitchQuadratic), "--actual-pitch-cubic", N(g.PitchCubic),
                 "--lba", "0", "--fill-sectors", N(g.Sectors)]);
         }
-        if (!readback) args.AddRange(Tone(document));
+        if (!readback)
+        {
+            args.AddRange(Tone(document));
+            if (document.IsDvd) args.AddRange(["--read-compatibility", document.Outputs.DvdReadCompatibility.ToString().ToLowerInvariant()]);
+        }
         return args.ToArray();
     }
 }

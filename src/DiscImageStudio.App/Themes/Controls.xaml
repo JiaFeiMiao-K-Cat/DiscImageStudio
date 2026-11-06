@@ -364,6 +364,17 @@
         <Setter Property="Focusable" Value="False" />
     </Style>
 
+    <!-- Trailing action inside the project header: no chrome at rest so it keeps the
+         header surface, and the shared ghost hover lifts it one step when pointed at. -->
+    <Style x:Key="HeaderActionButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    </Style>
+
     <!-- Start-page tile: no chrome at rest, the whole card is the hit target, and hover
          lifts the surface the way a sidebar row does. -->
     <Style x:Key="TileButton" TargetType="Button">
@@ -457,15 +468,18 @@
                                      Stroke="{DynamicResource DividerBrush}" StrokeThickness="1" />
                         </Grid>
 
-                        <!-- The sleeve, on top: its surface hides the disc's left half. -->
-                        <Border x:Name="PART_Card" Grid.Column="0"
-                                Background="{DynamicResource Surface1Brush}"
-                                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
-                                CornerRadius="{StaticResource RadiusCard}" Padding="16,0,46,0">
-                            <Border.RenderTransform>
+                        <!-- The sleeve, on top: its surface hides the disc's left half. The
+                             wrapper exists so the loading trail can ride the same shape and
+                             the same hover offset as the sleeve itself. -->
+                        <Grid x:Name="PART_CardHost" Grid.Column="0">
+                            <Grid.RenderTransform>
                                 <TranslateTransform x:Name="PART_CardTranslate" />
-                            </Border.RenderTransform>
-                            <StackPanel VerticalAlignment="Center">
+                            </Grid.RenderTransform>
+                            <Border x:Name="PART_Card"
+                                    Background="{DynamicResource Surface1Brush}"
+                                    BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                                    CornerRadius="{StaticResource RadiusCard}" Padding="16,0,46,0">
+                                <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="{TemplateBinding Title}" Style="{StaticResource RowText}"
                                            FontWeight="Medium" />
                                 <!-- Star column, not a horizontal StackPanel: a bounded width is
@@ -518,12 +532,25 @@
                                         </Rectangle>
                                     </Grid>
                                 </Grid>
-                            </StackPanel>
-                        </Border>
+                                </StackPanel>
+                            </Border>
+                            <!-- Same shape as the save acknowledgement, but looping and neutral
+                                 gray: an open in progress is a wait, not a success, and this
+                                 tile is the only thing on screen — the project header that
+                                 normally carries the trail is not. -->
+                            <controls:ProjectSaveTrail x:Name="PART_LoadTrail"
+                                                       Stroke="{DynamicResource TextMutedBrush}"
+                                                       CornerRadius="12" Visibility="Collapsed" />
+                        </Grid>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4" />
+                        </Trigger>
+                        <!-- The shared open command is disabled while it runs, which would dim
+                             the very wait stroke that tells the user the click was taken. -->
+                        <Trigger Property="IsLoading" Value="True">
+                            <Setter Property="Opacity" Value="1" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1284,7 +1311,16 @@
                                                         Background="{DynamicResource Surface3Brush}" VerticalAlignment="Center"
                                                         Margin="10,0,0,0">
                                                     <TextBlock x:Name="StateChipText" Style="{StaticResource MicroText}"
-                                                               Text="{loc:Text Xaml.NotStarted}" />
+                                                               loc:LocalizedText.Key="Xaml.NotStarted">
+                                                        <TextBlock.Text>
+                                                            <MultiBinding Converter="{x:Static loc:LocalizedTextConverter.Instance}">
+                                                                <Binding Path="(loc:LocalizedText.Key)"
+                                                                         RelativeSource="{RelativeSource Self}" />
+                                                                <Binding Path="Revision"
+                                                                         Source="{x:Static loc:LocalizedTextSource.Instance}" />
+                                                            </MultiBinding>
+                                                        </TextBlock.Text>
+                                                    </TextBlock>
                                                 </Border>
                                                 <iconPacks:PackIconLucide Grid.Column="3" x:Name="HeaderChevron" Kind="ChevronDown"
                                                                           Width="16" Height="16" Margin="10,0,0,0" VerticalAlignment="Center"
@@ -1308,7 +1344,7 @@
                                                          Value="Active">
                                                 <Setter TargetName="StepDot" Property="Background" Value="{DynamicResource PrimaryBrush}" />
                                                 <Setter TargetName="StepNumberText" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                                                <Setter TargetName="StateChipText" Property="Text" Value="{loc:Text Xaml.InProgress}" />
+                                                <Setter TargetName="StateChipText" Property="loc:LocalizedText.Key" Value="Xaml.InProgress" />
                                                 <Setter TargetName="StateChipText" Property="Foreground" Value="{DynamicResource PrimaryHoverBrush}" />
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding State, RelativeSource={RelativeSource AncestorType={x:Type controls:StepCard}}}"
@@ -1316,7 +1352,7 @@
                                                 <Setter TargetName="StepDot" Property="Background" Value="{DynamicResource SuccessSoftBrush}" />
                                                 <Setter TargetName="StepNumberText" Property="Visibility" Value="Collapsed" />
                                                 <Setter TargetName="DoneCheck" Property="Visibility" Value="Visible" />
-                                                <Setter TargetName="StateChipText" Property="Text" Value="{loc:Text Xaml.Complete}" />
+                                                <Setter TargetName="StateChipText" Property="loc:LocalizedText.Key" Value="Xaml.Complete" />
                                                 <Setter TargetName="StateChipText" Property="Foreground" Value="{DynamicResource SuccessBrush}" />
                                             </DataTrigger>
                                         </ControlTemplate.Triggers>

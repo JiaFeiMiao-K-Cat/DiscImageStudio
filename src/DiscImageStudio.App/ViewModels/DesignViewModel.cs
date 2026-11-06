@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -61,6 +62,10 @@ public partial class DesignViewModel : ObservableObject
     /// <summary>The right rail's tone module: its preview projects the same composite this
     /// page renders through the engines' tone mapping.</summary>
     public ToneViewModel Tone { get; }
+
+    /// <summary>The design page itself builds its text from XAML; only the tone module caches
+    /// a status line.</summary>
+    internal void Relocalize() => Tone.Relocalize();
 
     /// <summary>Disc files are shared with export, preview and burn; they are not image layers.</summary>
     public DiscParametersState State => _state;
@@ -288,6 +293,34 @@ public partial class DesignViewModel : ObservableObject
         }
     }
 
+    /// <summary>Moves a layer to an insertion slot expressed in the list's pre-drag order. The
+    /// slot counts the gaps between rows (0 before the first row, Count after the last), so a
+    /// drop below the source lands one position earlier once that row itself leaves the
+    /// sequence — the same convention the up/down buttons use.</summary>
+    public void MoveLayer(DesignLayerViewModel layer, int slotIndex)
+    {
+        if (_shell.IsBusy)
+        {
+            return;
+        }
+
+        int from = Layers.IndexOf(layer);
+        if (from < 0)
+        {
+            return;
+        }
+
+        int target = slotIndex > from ? slotIndex - 1 : slotIndex;
+        target = Math.Clamp(target, 0, Layers.Count - 1);
+        if (target == from)
+        {
+            return;
+        }
+
+        Layers.Move(from, target);
+        SelectedLayer = layer;
+    }
+
     // ---- Geometry snapshot ----
 
     /// <summary>Re-reads the radii from State and refreshes the canvas mapping. Called by the
@@ -333,7 +366,49 @@ public partial class DesignViewModel : ObservableObject
 
     // ---- Project load / capture ----
 
-    public void LoadLayers(IReadOnlyList<ProjectLayer> layers)
+    /// <summary>Decodes a project's layer images off the UI thread, ahead of
+    /// <see cref="LoadLayers"/>. Each large photo costs about a tenth of a second to decode
+    /// plus its thumbnail; done inline, a two-dozen-layer project froze the window for seconds
+    /// while opening. Distinct paths decode once, in parallel. The result belongs to the
+    /// caller: keeping it off this view model means a superseded open cannot leak its images
+    /// into the next project.</summary>
+    public async Task<Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)>> PreloadLayerImagesAsync(
+        IReadOnlyList<ProjectLayer> layers)
+    {
+        string[] paths = layers
+            .Select(layer => layer.ImagePath)
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (paths.Length == 0)
+        {
+            return [];
+        }
+
+        return await Task.Run(() =>
+        {
+            Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)> map =
+                new(StringComparer.OrdinalIgnoreCase);
+            object gate = new();
+            Parallel.ForEach(
+                paths,
+                new ParallelOptions { MaxDegreeOfParallelism = Math.Min(4, Environment.ProcessorCount) },
+                path =>
+                {
+                    (BitmapSource? Image, BitmapSource? Thumbnail) entry =
+                        (DesignComposer.DecodeFrozenImage(path), DesignComposer.DecodeThumbnail(path));
+                    lock (gate)
+                    {
+                        map[path] = entry;
+                    }
+                });
+            return map;
+        });
+    }
+
+    public void LoadLayers(
+        IReadOnlyList<ProjectLayer> layers,
+        IReadOnlyDictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)>? preloadedImages = null)
     {
         _suppressLayerEvents = true;
         try
@@ -355,7 +430,15 @@ public partial class DesignViewModel : ObservableObject
                     RotationDeg = layer.RotationDeg,
                     Scale = layer.Scale,
                 };
-                if (viewModel.LoadImage(ContentOuterRadiusMm))
+                (BitmapSource? Image, BitmapSource? Thumbnail)? preloaded = null;
+                if (layer.ImagePath is { Length: > 0 } path
+                    && preloadedImages is not null
+                    && preloadedImages.TryGetValue(path, out (BitmapSource? Image, BitmapSource? Thumbnail) cached))
+                {
+                    preloaded = cached;
+                }
+
+                if (viewModel.LoadImage(ContentOuterRadiusMm, preloaded))
                 {
                     SubscribeLayer(viewModel);
                     Layers.Add(viewModel);
@@ -462,17 +545,15 @@ public partial class DesignViewModel : ObservableObject
         string? outputPath = null;
         if (items.Count > 0)
         {
-            Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-            outputPath = Path.Combine(
-                TempFiles.LivePreviewDirectory,
-                Family switch
-                {
-                    OpticalDiscFamily.Dvd => "design-composite-dvd.png",
-                    OpticalDiscFamily.BluRay => "design-composite-bd.png",
-                    _ => "design-composite-cd.png",
-                });
             try
             {
+                outputPath = TempFiles.GetCacheFilePath(
+                    Family switch
+                    {
+                        OpticalDiscFamily.Dvd => "design-composite-dvd.png",
+                        OpticalDiscFamily.BluRay => "design-composite-bd.png",
+                        _ => "design-composite-cd.png",
+                    });
                 await StaWorker.RunAsync(() =>
                 {
                     DesignComposer.Render(items, CanvasOuterRadiusMm, PreviewCompositeSize, outputPath);
@@ -481,7 +562,7 @@ public partial class DesignViewModel : ObservableObject
             }
             catch (Exception exception)
             {
-                _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 设计合成失败：{exception.Message}\n"));
+                _shell.AppendLog(JobDiagnostics.FormatLog(L.T("设计合成失败"), exception));
                 _shell.ShowToast(L.T("设计合成失败"), exception.Message, ToastKind.Error);
                 return;
             }
@@ -511,9 +592,7 @@ public partial class DesignViewModel : ObservableObject
         }
 
         List<DesignLayerRenderItem> items = BuildRenderItems();
-        Directory.CreateDirectory(TempFiles.LivePreviewDirectory);
-        string outputPath = Path.Combine(
-            TempFiles.LivePreviewDirectory,
+        string outputPath = TempFiles.GetCacheFilePath(
             Family switch
             {
                 OpticalDiscFamily.Dvd => "design-composite-dvd-export.png",
@@ -542,22 +621,21 @@ public partial class DesignViewModel : ObservableObject
             return null;
         }
 
-        List<DesignLayerRenderItem> items = BuildRenderItems();
-        string directory = TempFiles.LivePreviewDirectory;
-        Directory.CreateDirectory(directory);
-        string outputPath = Path.Combine(directory, "design-thumbnail.png");
-        await StaWorker.RunAsync(() =>
-        {
-            DesignComposer.Render(items, CanvasOuterRadiusMm, ProjectDocument.ThumbnailDecodeSize, outputPath);
-            return 0;
-        });
-
+        string? outputPath = null;
         try
         {
+            List<DesignLayerRenderItem> items = BuildRenderItems();
+            outputPath = TempFiles.GetCacheFilePath("design-thumbnail.png");
+            await StaWorker.RunAsync(() =>
+            {
+                DesignComposer.Render(items, CanvasOuterRadiusMm, ProjectDocument.ThumbnailDecodeSize, outputPath);
+                return 0;
+            });
             return Convert.ToBase64String(await File.ReadAllBytesAsync(outputPath));
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
+            _shell.AppendLog(JobDiagnostics.FormatLog($"生成可选工程缩略图：{outputPath}", exception, warning: true));
             return null;
         }
     }

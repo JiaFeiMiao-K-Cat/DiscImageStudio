@@ -21,12 +21,14 @@ public static class PreviewService
             // Sidecars restore artifact geometry without modifying the current design project.
             if (d.IsCd && CdDataImageMetadata.TryLoad(input) is { } cdData)
             {
-                g = new(cdData.Parameters.InnerRadiusMm, cdData.Parameters.OuterRadiusMm, cdData.Parameters.Sectors);
+                g = new(cdData.Parameters.InnerRadiusMm, cdData.Parameters.OuterRadiusMm, cdData.Parameters.Sectors,
+                    cdData.Parameters.PitchLinear, cdData.Parameters.PitchQuadratic, cdData.Parameters.PitchCubic);
                 start = cdData.DrawingStartLba; end = cdData.DrawingEndLbaExclusive; files = true;
             }
             else if (d.IsCd && CdTrackMetadata.TryLoad(input) is { } cdTrack)
             {
-                g = new(cdTrack.InnerRadiusMm, cdTrack.OuterRadiusMm, cdTrack.Sectors); end = checked((uint)g.Sectors);
+                g = new(cdTrack.InnerRadiusMm, cdTrack.OuterRadiusMm, cdTrack.Sectors,
+                    cdTrack.PitchLinear, cdTrack.PitchQuadratic, cdTrack.PitchCubic); end = checked((uint)g.Sectors);
                 d = d with { Outputs = d.Outputs with { Interleave = cdTrack.Interleaved } }; files = false;
             }
             else if (d.IsDvd && DvdImageMetadata.TryLoad(input) is { } dvd)
@@ -36,7 +38,7 @@ public static class PreviewService
             }
             else if (d.IsBluRay && BluRayIsoMetadata.TryLoad(input) is { } bd)
             {
-                g = new(bd.InnerRadiusMm, bd.OuterRadiusMm, bd.TotalSectors);
+                g = new(bd.InnerRadiusMm, bd.OuterRadiusMm, bd.TotalSectors, bd.PitchLinear, bd.PitchQuadratic, bd.PitchCubic);
                 start = bd.DrawingStartSector; end = bd.DrawingEndSectorExclusive; files = start != 0 || end != bd.TotalSectors;
             }
             else { files = false; }
@@ -51,7 +53,9 @@ public static class PreviewService
             if (d.IsCd)
             {
                 var layout = CdDataImageGenerator.PrepareLayout(d.Outputs.DataDirectory,
-                    new(g.InnerRadiusMm, g.OuterRadiusMm, g.Sectors), d.Outputs.VolumeLabel, d.Outputs.FilesAtOuterRing);
+                    new(g.InnerRadiusMm, g.OuterRadiusMm, g.Sectors,
+                        PitchLinear: g.PitchLinear, PitchQuadratic: g.PitchQuadratic, PitchCubic: g.PitchCubic),
+                    d.Outputs.VolumeLabel, d.Outputs.FilesAtOuterRing);
                 start = layout.DrawingStartLba; end = layout.DrawingEndLbaExclusive;
             }
             else if (d.IsDvd)
@@ -63,14 +67,16 @@ public static class PreviewService
             }
             else
             {
-                var layout = BluRayIsoGenerator.PrepareDrawing(new((uint)g.Sectors, 1, g.InnerRadiusMm, g.OuterRadiusMm),
+                var layout = BluRayIsoGenerator.PrepareDrawing(new((uint)g.Sectors, 1, g.InnerRadiusMm, g.OuterRadiusMm,
+                        PitchLinear: g.PitchLinear, PitchQuadratic: g.PitchQuadratic, PitchCubic: g.PitchCubic),
                     d.Outputs.DataDirectory, d.Outputs.VolumeLabel, filesAtOuterRing: d.Outputs.FilesAtOuterRing);
                 start = layout.DrawingStartSector; end = layout.DrawingEndSectorExclusive;
             }
         }
         if (d.IsBluRay)
         {
-            var generated = new BluRayDiscParameters((uint)g.Sectors, 1, g.InnerRadiusMm, g.OuterRadiusMm);
+            var generated = new BluRayDiscParameters((uint)g.Sectors, 1, g.InnerRadiusMm, g.OuterRadiusMm,
+                PitchLinear: g.PitchLinear, PitchQuadratic: g.PitchQuadratic, PitchCubic: g.PitchCubic);
             var measured = generated with { InnerRadiusMm = inner, OuterRadiusMm = outer };
             if (readback) BluRayPreviewRenderer.RenderReadback(input, output, measured, size, token, start, end);
             else BluRayPreviewRenderer.RenderCalibration(input, output, generated, measured, start, end, size, d.BluRay?.InvertMapping ?? false, token, d.Tone);
@@ -92,7 +98,8 @@ public static class PreviewService
             if (!result.Succeeded) throw new InvalidOperationException(result.Summary);
             if (files)
             {
-                if (d.IsCd) FileRegionPreviewOverlay.ApplyCd(output, new(inner, outer, g.Sectors), start, end, token);
+                if (d.IsCd) FileRegionPreviewOverlay.ApplyCd(output, new(inner, outer, g.Sectors,
+                    PitchLinear: g.PitchLinear, PitchQuadratic: g.PitchQuadratic, PitchCubic: g.PitchCubic), start, end, token);
                 else FileRegionPreviewOverlay.ApplyDvd(output, dvdActual, start, end, token);
             }
         }

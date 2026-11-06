@@ -6,20 +6,31 @@ internal static class CalibrationCubicPitchTests
     internal static void Run()
     {
         TestIndependentForwardGeometry();
-        TestCubicRecoveryAndPrediction();
+        foreach (var parameters in MediaParameters())
+        {
+            TestCubicRecoveryAndPrediction(parameters);
+            // Recalibration of a disc generated with an existing correction (#92)
+            // must recover absolute physical coefficients, not the residual correction.
+            TestCubicRecoveryAndPrediction(parameters with
+                { PitchLinear = .02, PitchQuadratic = -.03, PitchCubic = .025 });
+        }
         TestSupportGuardsAndFixedCoefficients();
         TestPersistenceAndValidation();
-        Console.WriteLine("calibration-cubic-pitch: independent exact geometry, cubic recovery, prediction, support guards and persistence passed");
+        Console.WriteLine("calibration-cubic-pitch: CD/DVD/BD independent geometry, initial/repeated cubic recovery, prediction, support guards and persistence passed");
     }
 
     private static CalibrationParameters Parameters(long sectors = 2297888)
         => new(CalibrationDiscKind.Dvd, 24, 58, sectors, 133.33);
 
+    private static IEnumerable<CalibrationParameters> MediaParameters()
+        => [Parameters(), new(CalibrationDiscKind.Cd, 24, 58, 359847, 1200),
+            new(CalibrationDiscKind.BluRay, 24, 58, 12219392, 74.5)];
+
     private static void TestIndependentForwardGeometry()
     {
-        foreach (long sectors in new long[] { 16, 2297888 })
+        foreach (var parameters in MediaParameters().Prepend(Parameters(16)))
         {
-            var generated = Parameters(sectors) with { PitchLinear = .15, PitchQuadratic = -.2, PitchCubic = .11 };
+            var generated = parameters with { PitchLinear = .15, PitchQuadratic = -.2, PitchCubic = .11 };
             var actual = generated with { InnerRadiusMm = 24.001, OuterRadiusMm = 57.999,
                 PitchLinear = .1501, PitchQuadratic = -.20014, PitchCubic = .11009 };
             var target = CalibrationTarget.Create(generated);
@@ -44,11 +55,11 @@ internal static class CalibrationCubicPitchTests
         }
     }
 
-    private static void TestCubicRecoveryAndPrediction()
+    private static void TestCubicRecoveryAndPrediction(CalibrationParameters generated)
     {
-        var generated = Parameters();
         var actual = generated with { InnerRadiusMm = 24.0012, OuterRadiusMm = 57.9993,
-            PitchLinear = .0002, PitchQuadratic = -.00026, PitchCubic = .00018 };
+            PitchLinear = generated.PitchLinear + .0002, PitchQuadratic = generated.PitchQuadratic - .00026,
+            PitchCubic = generated.PitchCubic + .00018 };
         var target = CalibrationTarget.Create(generated);
         const double rotation = .47;
         var referenceGenerated = new ReferenceGeometry(generated);
@@ -62,7 +73,9 @@ internal static class CalibrationCubicPitchTests
         CalibrationPoint[] points = Enumerable.Range(0, 65)
             .Select(i => PhysicalPoint(24.3 + 33.4 * i / 64.0)).ToArray();
         var fixedFit = CalibrationCrossFitter.Fit(target, [new(0, points)], new(FitDvdPitch: false));
-        var fit = CalibrationCrossFitter.Fit(target, [new(0, points)]);
+        var saved = new CalibrationSession(target, []);
+        var restored = CalibrationSessionJson.Deserialize(CalibrationSessionJson.Serialize(saved));
+        var fit = CalibrationCrossFitter.Fit(restored.Target, [new(0, points)]);
         Check(fit.Succeeded && fit.BestParameters is not null, "full cubic fit succeeds");
         Check(fit.RmsErrorMm < 2e-5 && fit.RmsErrorMm < fixedFit.RmsErrorMm / 100,
             "cubic physical model resolves curvature missing from constant pitch");
@@ -80,6 +93,13 @@ internal static class CalibrationCubicPitchTests
             Check(DistanceToPolyline(mapping(radius), outline) < .011, "cubic outline chord tolerance and complete phase");
         Check(fit.Warnings.Any(w => w.Contains("不表示参数唯一", StringComparison.Ordinal)),
             "a single observed curve does not claim unique parameter identification");
+        Check(restored.Target.Parameters == generated, "fitting keeps the disc generation parameters frozen");
+
+        var correctedTarget = CalibrationTarget.Create(actual);
+        var straight = Enumerable.Range(0, 33).Select(i => Polar(24.3 + 33.4 * i / 32, -Math.PI / 2 + rotation)).ToArray();
+        var correctedFit = CalibrationCrossFitter.Fit(correctedTarget, [new(0, straight)]);
+        Check(correctedFit.Succeeded && correctedFit.BestParameters == actual,
+            "an already straight corrected disc retains its absolute coefficients on the next pass");
     }
 
     private static void TestSupportGuardsAndFixedCoefficients()
@@ -122,7 +142,13 @@ internal static class CalibrationCubicPitchTests
         Check(restored.Target.Parameters == Parameters(), "older sessions default to constant pitch");
         Throws<ArgumentException>(() => (p with { PitchLinear = double.NaN }).Validate(), "nonfinite coefficients rejected");
         Throws<ArgumentException>(() => (p with { PitchLinear = -5, PitchQuadratic = 0, PitchCubic = 0 }).Validate(), "negative interior pitch rejected");
-        Throws<ArgumentException>(() => (p with { Kind = CalibrationDiscKind.Cd }).Validate(), "CD cannot silently accept DVD shape coefficients");
+        foreach (var medium in MediaParameters())
+        {
+            var profile = medium with { PitchLinear = p.PitchLinear, PitchQuadratic = p.PitchQuadratic, PitchCubic = p.PitchCubic };
+            profile.Validate();
+            var copy = CalibrationSessionJson.Deserialize(CalibrationSessionJson.Serialize(new(CalibrationTarget.Create(profile), [])));
+            Check(copy.Target.Parameters == profile, "all media preserve pitch coefficients in calibration records");
+        }
     }
 
     // Independent Simpson integration and bracket inversion, deliberately unrelated
@@ -134,6 +160,11 @@ internal static class CalibrationCubicPitchTests
         internal ReferenceGeometry(CalibrationParameters p)
         {
             _p = p;
+            if (UsesAreaFormula)
+            {
+                _b = (p.OuterRadiusMm * p.OuterRadiusMm - p.InnerRadiusMm * p.InnerRadiusMm) / (2 * p.TrackLengthMm);
+                return;
+            }
             double low = 1e-12, high = 100;
             for (int i = 0; i < 80; i++)
             {
@@ -149,7 +180,10 @@ internal static class CalibrationCubicPitchTests
         }
         private double Arc(double first, double last, double b)
             => Integrate(first, last, r => Math.Sqrt(1 + Math.Pow(r / (b * Shape(r)), 2)));
-        internal double ArcAtRadius(double r) => Arc(_p.InnerRadiusMm, r, _b);
+        private bool UsesAreaFormula => _p.Kind == CalibrationDiscKind.Cd
+            && _p.PitchLinear == 0 && _p.PitchQuadratic == 0 && _p.PitchCubic == 0;
+        internal double ArcAtRadius(double r) => UsesAreaFormula
+            ? (r * r - _p.InnerRadiusMm * _p.InnerRadiusMm) / (2 * _b) : Arc(_p.InnerRadiusMm, r, _b);
         internal double AngleAtRadius(double r) => Integrate(_p.InnerRadiusMm, r, r => 1 / (_b * Shape(r)));
         internal double RadiusAtArc(double arc)
         {

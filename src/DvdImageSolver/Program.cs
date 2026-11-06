@@ -47,6 +47,9 @@ internal static class Program
             return SolveMultipleBlocks(arguments, fillSectors);
         }
 
+        if (ReadBoolean(arguments, "read-compatibility", fallback: false))
+            throw new ArgumentException("--read-compatibility true requires --fast-output true and --algorithm dispersion.");
+
         string? outputPath = arguments.Has("output") ? arguments.Require("output") : null;
         string? isoOutputPath = arguments.Has("iso-output") ? arguments.Require("iso-output") : null;
         if (outputPath is null && isoOutputPath is null)
@@ -328,7 +331,7 @@ internal static class Program
         string isoPath = arguments.Require("iso");
         string outputPath = arguments.Require("output");
         (uint sidecarStartLba, uint sidecarFillSectors, uint sidecarTotalSectors) =
-            ReadSolveSummary(isoPath + ".json");
+            IsoReadbackRenderer.ReadSolveSummary(isoPath + ".json");
         long isoSectors = new FileInfo(isoPath).Length / DvdEccBlockEncoder.PayloadBytesPerSector;
         uint totalSectors;
         if (arguments.Has("total-sectors") || arguments.Has("total-blocks"))
@@ -381,35 +384,6 @@ internal static class Program
             + $"pitch={summary.TrackPitchMicrometres:F4} um, output={outputPath}");
         return 0;
     }
-
-    /// <summary>Reads the solve metadata sidecar so a generated ISO defaults to the
-    /// drawing range and disc size it was produced with; missing fields fall back to 0.</summary>
-    private static (uint StartLba, uint FillSectors, uint TotalSectors) ReadSolveSummary(
-        string sidecarPath)
-    {
-        if (!File.Exists(sidecarPath))
-        {
-            return (0, 0, 0);
-        }
-
-        try
-        {
-            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(sidecarPath));
-            return (
-                GetUIntProperty(document.RootElement, "startLba"),
-                GetUIntProperty(document.RootElement, "fillSectors"),
-                GetUIntProperty(document.RootElement, "totalSectors"));
-        }
-        catch (JsonException)
-        {
-            return (0, 0, 0);
-        }
-    }
-
-    private static uint GetUIntProperty(JsonElement element, string name)
-        => element.TryGetProperty(name, out JsonElement value) && value.TryGetUInt32(out uint result)
-            ? result
-            : 0u;
 
     private static int SolveMultipleBlocks(CliArguments arguments, uint fillSectors)
     {
@@ -464,6 +438,10 @@ internal static class Program
         {
             throw new ArgumentException("--fast-output true requires --algorithm dispersion.");
         }
+
+        bool readCompatibility = ReadBoolean(arguments, "read-compatibility", fallback: false);
+        if (readCompatibility && !fastOutput)
+            throw new ArgumentException("--read-compatibility true requires --fast-output true and --algorithm dispersion.");
 
         int iterationsPerBlock = arguments.Has("iterations-per-block")
             ? arguments.GetInt("iterations-per-block", 0)
@@ -577,7 +555,8 @@ internal static class Program
             arguments.GetInt("batch-candidates", 4),
             arguments.GetInt("search-lanes", 1),
             arguments.GetInt("fast-parallelism", 0),
-            PreserveExistingIso: hybridMode);
+            PreserveExistingIso: hybridMode,
+            ReadCompatibility: readCompatibility);
         int totalBlocks = checked((int)(fillSectors / DvdEccBlockEncoder.SectorCount));
         int progressEvery = Math.Max(1, totalBlocks / 100);
         if (fastOutput)
@@ -783,10 +762,14 @@ internal static class Program
             DispersionPaletteDescription() + ", "
             + "image sampled at every payload code-word center");
 
-        FastDispersionWriteResult result = FastDispersionImageWriter.Write(
+        if (options.ReadCompatibility)
+            Console.WriteLine("read compatibility=bridge-9b-v1 (experimental sector-local 0x92-to-0x9B bridges)");
+
+        FastDispersionWriteResult result = FastDvdImageFileWriter.WritePrepared(
             arguments.Require("image"),
             isoOutputPath,
             options,
+            hybridIso,
             progress =>
             {
                 if (progress.CompletedBlocks == 1
@@ -806,46 +789,6 @@ internal static class Program
                 }
             });
 
-        ImageMappingOptions imageMapping = options.ImageMapping;
-        var metadata = new
-        {
-            format = "dvd-nrzi-disc-fill-v2",
-            sourceImage = Path.GetFullPath(arguments.Require("image")),
-            isoOutput = Path.GetFullPath(isoOutputPath),
-            startLba = options.StartLba,
-            filesAtOuterRing = hybridIso?.FilesAtOuterRing ?? false,
-            fillSectors = options.FillSectors,
-            totalSectors = imageMapping.TotalSectors,
-            psnOffset = $"0x{options.PsnOffset:X}",
-            blockCount = result.CompletedBlocks,
-            algorithm = "dispersion",
-            fastOutput = true,
-            fastParallelism = options.FastParallelism == 0
-                ? Environment.ProcessorCount
-                : options.FastParallelism,
-            exactEccEfmReplay = false,
-            finalBoundary = (object?)null,
-            dispersionPool = DispersionPaletteMetadata(),
-            constraintStep = imageMapping.SampleEveryChannelBits,
-            constraintStepUsed = false,
-            totalScore = 0,
-            totalScoreMaximum = result.ControlledWords,
-            scoreMetric = "payload-transition-class-error",
-            normalizedScore = 0.0,
-            elapsedSeconds = result.Elapsed.TotalSeconds,
-            imageMapping,
-            pitchPolynomial = DescribePitchPolynomial(imageMapping),
-            iso = new
-            {
-                mode = hybridIso?.Mode ?? "raw-sector-image",
-                logicalSectorBytes = IsoImageWriter.LogicalSectorBytes,
-                imageSectors = result.IsoSectors,
-                sparseFile = result.SparseIso,
-                mountableFilesystem = hybridIso is not null,
-                hybrid = hybridIso,
-            },
-        };
-        WriteJson(isoOutputPath + ".json", metadata);
         double totalMebibytes = result.FilledSectors
             * (double)IsoImageWriter.LogicalSectorBytes
             / (1024 * 1024);
@@ -854,7 +797,10 @@ internal static class Program
             : totalMebibytes / result.Elapsed.TotalSeconds;
         Console.WriteLine(
             $"done: blocks={result.CompletedBlocks}, controlled={result.ControlledWords}, "
-            + "payload-transition-class-error=0, boundary=not replayed, "
+            + (options.ReadCompatibility
+                ? $"compatibility changes={result.CompatibilityChanges}, payload-transition-class-error=not evaluated, "
+                : "payload-transition-class-error=0, ")
+            + "boundary=not replayed, "
             + $"rate={finalRate:F2} MiB/s, elapsed={result.Elapsed.TotalSeconds:F1}s, "
             + $"output={isoOutputPath}");
         return 0;
@@ -965,21 +911,7 @@ internal static class Program
     }
 
     private static object DescribePitchPolynomial(ImageMappingOptions options)
-    {
-        double length = options.TotalSectors * (double)DvdEccBlockEncoder.ChannelBitsPerSector
-            * options.ChannelBitLengthNm * 1e-6;
-        double scale = DiscImageStudio.Core.DvdTrackGeometry.Create(options.InnerRadiusMm,
-            options.OuterRadiusMm, length, options.PitchLinear, options.PitchQuadratic, options.PitchCubic).TrackPitchMm * 1000;
-        return new
-        {
-            variable = "x=(radiusMm-innerRadiusMm)/(outerRadiusMm-innerRadiusMm)",
-            unit = "micrometres",
-            constant = scale,
-            linear = scale * options.PitchLinear,
-            quadratic = scale * options.PitchQuadratic,
-            cubic = scale * options.PitchCubic,
-        };
-    }
+        => FastDvdImageFileWriter.DescribePitchPolynomial(options);
 
     private static uint ReadTotalSectors(CliArguments arguments)
     {
@@ -1353,24 +1285,8 @@ internal static class Program
                 .Select(level => $"0x{DvdGrayscalePalette.GetScrambledByteForLevel(level):X2}"))
             + "; nominal luminance=0,255; threshold=128";
 
-    private static object DispersionPaletteMetadata() => new
-    {
-        domain = "scrambled-main-data-byte-at-efmplus-input",
-        blackByte = $"0x{DvdGrayscalePalette.BlackScrambledByte:X2}",
-        whiteByte = $"0x{DvdGrayscalePalette.WhiteScrambledByte:X2}",
-        blackTransitionsPerCodeword = 5,
-        whiteTransitionsPerCodeword = 2,
-        luminanceCalibration = "nominal-black-white-not-photometric-measurement",
-        rasterSampling = "nearest-for-opaque-binary-grayscale-otherwise-alpha-weighted-bilinear",
-        levels = Enumerable.Range(0, 2).Select(level => new
-        {
-            inputMinimum = Enumerable.Range(0, 256).First(value => BinaryGrayscale.GetLevelIndex((byte)value) == level),
-            inputMaximum = Enumerable.Range(0, 256).Last(value => BinaryGrayscale.GetLevelIndex((byte)value) == level),
-            previewLuminance = BinaryGrayscale.GetLuminance(level),
-            scrambledByte = $"0x{DvdGrayscalePalette.GetScrambledByteForLevel(level):X2}",
-            transitionsPerCodeword = level == 0 ? 5 : 2,
-        }).ToArray(),
-    };
+    private static object DispersionPaletteMetadata()
+        => FastDvdImageFileWriter.DispersionPaletteMetadata();
 
     private static object[] BinaryBytePairMetadata()
         => EfmPlusBinaryBytePairs.AtZeroDsv
@@ -1463,6 +1379,8 @@ internal static class Program
               --fast-output true|false Direct dispersion ISO output without ECC/EFM replay
                                         (default false; true in hybrid mode)
               --fast-parallelism 0..64 Fast-output workers; 0 selects processor count (default 0)
+              --read-compatibility true|false
+                                        Experimental 0x9B bridge for fast dispersion (default false)
               --iterations-per-block N  Full/state-control passes; dispersion ignores search (defaults 100/3/1)
               --iso-output FILE         Write a directly burnable 2048-byte/sector ISO image
               --iso-sectors N           Sector count for a new minimal ISO (image mode reuses total sectors)
@@ -1502,8 +1420,11 @@ internal static class Program
             black/white images use nearest-neighbor sampling to preserve their dither pattern.
             Other images retain alpha-weighted bilinear sampling. Q=0x66 and 0xB9 are not
             generated; old ISOs retain readback of 66 as black and B9 as nominal dark gray 85.
-            With --fast-output true, payload selection is unchanged but final ECC/EFM boundary and
-            DSV verification are skipped; the JSON finalBoundary is therefore null.
+            With --fast-output true, final ECC/EFM boundary and DSV verification are skipped;
+            the JSON finalBoundary is therefore null. --read-compatibility true optionally replaces
+            eligible 0x92 run starts with 0x9B, within each sector's owned drawing bytes. It may
+            improve readback on affected drives/media; it is experimental and defaults off.
+            Full/state-control output and exact scrambled-byte test patterns do not accept this option.
 
             Hybrid --data-dir mode builds a mountable ISO9660/Joliet filesystem. Files default to the inner ring;
             --file-position outer reserves the outer ring for files and draws between front metadata and files.

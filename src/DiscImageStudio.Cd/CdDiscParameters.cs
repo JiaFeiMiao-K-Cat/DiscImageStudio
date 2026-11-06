@@ -1,3 +1,7 @@
+using System.Runtime.CompilerServices;
+using DiscImageStudio.Core;
+using DiscImageStudio.Core.Calibration;
+
 namespace DiscImageStudio.Cd;
 
 public sealed record CdDiscParameters(
@@ -6,8 +10,21 @@ public sealed record CdDiscParameters(
     long Sectors,
     double LinearVelocityMmPerSecond = 1200.0,
     double StartAngleRadians = 0.0,
-    double ImageOuterRadiusMm = 57.5)
+    double ImageOuterRadiusMm = 57.5,
+    double PitchLinear = 0,
+    double PitchQuadratic = 0,
+    double PitchCubic = 0)
 {
+    // Cache by object identity: record copies made with `with` must get geometry
+    // for their new values, without cache fields affecting record equality.
+    private static readonly ConditionalWeakTable<CdDiscParameters, DvdTrackGeometry> Geometries = new();
+
+    internal DvdTrackGeometry? VariablePitchGeometry => PitchLinear == 0 && PitchQuadratic == 0 && PitchCubic == 0
+        ? null
+        : Geometries.GetValue(this, static p => DvdTrackGeometry.Create(
+            p.InnerRadiusMm, p.OuterRadiusMm, p.TotalTimeSeconds * p.LinearVelocityMmPerSecond,
+            p.PitchLinear, p.PitchQuadratic, p.PitchCubic));
+
     public const int BytesPerSector = 2352;
 
     /// <summary>ECMA-130 CLV scanning speed; the UI no longer exposes it as a parameter.</summary>
@@ -15,6 +32,17 @@ public sealed record CdDiscParameters(
 
     /// <summary>Radius on the source image canvas that maps to the disc outer edge.</summary>
     public const double StandardImageOuterRadiusMm = 57.5;
+
+    public static CdDiscParameters FromCalibration(CalibrationTarget target)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+        var p = target.Parameters;
+        if (p.Kind != CalibrationDiscKind.Cd)
+            throw new ArgumentException("Expected a CD calibration target.", nameof(target));
+        return new(p.InnerRadiusMm, p.OuterRadiusMm, p.Sectors, p.LinearDensity,
+            ImageOuterRadiusMm: p.OuterRadiusMm,
+            PitchLinear: p.PitchLinear, PitchQuadratic: p.PitchQuadratic, PitchCubic: p.PitchCubic);
+    }
 
     public long TotalBytes => checked(Sectors * BytesPerSector);
 
@@ -60,22 +88,38 @@ public sealed record CdDiscParameters(
         }
 
         _ = TotalBytes;
+        DvdTrackGeometry.ValidatePitchCoefficients(PitchLinear, PitchQuadratic, PitchCubic);
+        _ = VariablePitchGeometry;
     }
+
+    internal double ArcLengthFromByte(long globalByte) => globalByte <= 0 ? 0
+        : globalByte >= TotalBytes ? TotalTimeSeconds * LinearVelocityMmPerSecond
+        : Math.Clamp(globalByte * LinearVelocityMmPerSecond / (75.0 * BytesPerSector),
+            0, TotalTimeSeconds * LinearVelocityMmPerSecond);
 
     public double RadiusFromByte(long globalByte)
     {
+        if (VariablePitchGeometry is { } geometry)
+            return geometry.RadiusAtArcLengthFast(ArcLengthFromByte(globalByte));
         double fraction = Math.Clamp((double)globalByte / TotalBytes, 0.0, 1.0);
         return Math.Sqrt(
             (InnerRadiusMm * InnerRadiusMm) + (fraction * RadiusSquaredRange));
     }
 
     public double ThetaFromRadius(double radiusMm)
-        => StartAngleRadians
+        => VariablePitchGeometry is { } geometry
+            ? StartAngleRadians + geometry.AngleAtRadius(radiusMm)
+            : StartAngleRadians
             + ((2.0 * LinearVelocityMmPerSecond * TotalTimeSeconds / RadiusSquaredRange)
                 * (radiusMm - InnerRadiusMm));
 
     public (double RadiusMm, double ThetaRadians) PolarFromByte(long globalByte)
     {
+        if (VariablePitchGeometry is { } geometry)
+        {
+            var point = geometry.AtArcLengthFast(ArcLengthFromByte(globalByte));
+            return (point.Radius, StartAngleRadians + point.Angle);
+        }
         double radius = RadiusFromByte(globalByte);
         return (radius, ThetaFromRadius(radius));
     }

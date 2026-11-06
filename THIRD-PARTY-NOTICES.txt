@@ -18,6 +18,7 @@ Components
   HarfBuzzSharp 8.3.1.1 (MIT wrappers with upstream native third-party notices).
   Their license texts/notices are appended below. Avalonia.Headless is a test-only dependency.
 - CDImage (arduinocelentano): GPL-3.0-or-later; adapted CD-DA interleaver.
+- disc-probe (Ashley-QwQ and contributors): GPL-3.0; adapted experimental DVD bridge rule.
 - CommunityToolkit.Mvvm 8.4.0: MIT; upstream third-party notices retained.
 - MahApps.Metro.IconPacks.Core and .Lucide 6.2.1: MIT wrapper code.
 - Lucide 0.552.0 artwork: ISC; portions derived from Feather: MIT.
@@ -27,7 +28,7 @@ Components
   previews with StbImageWriteSharp 1.16.7 (StbImageWriteSharpTeam,
   https://github.com/StbSharp/StbImageWriteSharp, public domain). Both are
   C# ports of the stb libraries (https://github.com/nothings/stb).
-- Self-contained .NET / Windows Desktop runtime 10.0.11: MIT plus upstream
+- Self-contained .NET / Windows Desktop runtime 10.0.14: MIT plus upstream
   third-party licenses, reproduced below. Framework-dependent builds use the
   user's separately installed runtime instead.
 - HarmonyOS Sans SC Regular, Medium and Bold: Copyright 2021 Huawei Device
@@ -66,6 +67,22 @@ restored on 2026-10-25. Copyright (c) 2026 Disc Image Studio contributors.
 CDImage itself acknowledges [unDEFER] / CD PAINT as an earlier source for
 its converter and coordinate conversion work; that acknowledgement is
 preserved here. This attribution does not replace the GPL obligations.
+
+disc-probe source attribution
+----------------------------
+Project: disc-probe (https://github.com/Ashley-QwQ/disc-probe)
+Authors: Ashley-QwQ and disc-probe contributors.
+License: GNU General Public License version 3; the full text is in LICENSE.
+Upstream revision reviewed: 7574eca39e009f70c9b80a9a0ddb5bbe3d392173
+Source: https://github.com/Ashley-QwQ/disc-probe/blob/7574eca39e009f70c9b80a9a0ddb5bbe3d392173/tools/bridge_iso.py
+
+The optional DVD read-compatibility guard adapts the sector-local 64-byte
+window / first-0x92-to-0x9B rule into C#. Unlike the standalone ISO patcher,
+the writer only changes bytes explicitly owned by the drawing generator;
+filesystem data and alpha-excluded bytes are protected. The implementation
+is in src/DvdImageSolver/Solver/DvdReadCompatibilityGuard.cs. Adaptation and
+integration: Copyright (c) 2026 Disc Image Studio contributors. This is an
+experimental mitigation, not a guarantee of compatibility with every drive.
 
 Standards and reference material
 -------------------------------
@@ -1637,8 +1654,8 @@ https://github.com/SixLabors/ImageSharp/blob/f4f689ce67ecbcc35cebddba5aacb603e6d
 
 
 ===============================================================================
-.NET Runtime 10.0.11 - MIT License
-Source: https://raw.githubusercontent.com/dotnet/runtime/v10.0.11/LICENSE.TXT
+.NET Runtime 10.0.14 - MIT License
+Source: https://raw.githubusercontent.com/dotnet/runtime/v10.0.14/LICENSE.TXT
 ===============================================================================
 
 The MIT License (MIT)
@@ -1667,8 +1684,8 @@ SOFTWARE.
 
 
 ===============================================================================
-.NET Runtime 10.0.11 - Upstream third-party notices
-Source: https://raw.githubusercontent.com/dotnet/runtime/v10.0.11/THIRD-PARTY-NOTICES.TXT
+.NET Runtime 10.0.14 - Upstream third-party notices
+Source: https://raw.githubusercontent.com/dotnet/runtime/v10.0.14/THIRD-PARTY-NOTICES.TXT
 ===============================================================================
 
 .NET Runtime uses third-party libraries or other resources that may be
@@ -3091,8 +3108,8 @@ You are solely responsible for determining the appropriateness of using and dist
 
 
 ===============================================================================
-.NET Windows Desktop Runtime 10.0.11 - MIT License
-Source: https://raw.githubusercontent.com/dotnet/windowsdesktop/v10.0.11/LICENSE
+.NET Windows Desktop Runtime 10.0.14 - MIT License
+Source: https://raw.githubusercontent.com/dotnet/windowsdesktop/v10.0.14/LICENSE
 ===============================================================================
 
 The MIT License (MIT)
@@ -3121,8 +3138,8 @@ SOFTWARE.
 
 
 ===============================================================================
-.NET WPF 10.0.11 - Upstream third-party notices
-Source: https://raw.githubusercontent.com/dotnet/wpf/v10.0.11/THIRD-PARTY-NOTICES.TXT
+.NET WPF 10.0.14 - Upstream third-party notices
+Source: https://raw.githubusercontent.com/dotnet/wpf/v10.0.14/THIRD-PARTY-NOTICES.TXT
 ===============================================================================
 
 .NET Core uses third-party libraries or other resources that may be
@@ -3190,8 +3207,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 ===============================================================================
-.NET Windows Forms 10.0.11 - Upstream third-party notices
-Source: https://raw.githubusercontent.com/dotnet/winforms/v10.0.11/THIRD-PARTY-NOTICES.TXT
+.NET Windows Forms 10.0.14 - Upstream third-party notices
+Source: https://raw.githubusercontent.com/dotnet/winforms/v10.0.14/THIRD-PARTY-NOTICES.TXT
 ===============================================================================
 
 .NET Core uses third-party libraries or other resources that may be

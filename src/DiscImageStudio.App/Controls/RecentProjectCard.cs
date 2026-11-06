@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 
 namespace DiscImageStudio.Controls;
 
@@ -29,6 +30,10 @@ public class RecentProjectCard : Button
     public static readonly DependencyProperty ThumbnailSourceProperty = DependencyProperty.Register(
         nameof(ThumbnailSource), typeof(ImageSource), typeof(RecentProjectCard), new PropertyMetadata(null));
 
+    public static readonly DependencyProperty IsLoadingProperty = DependencyProperty.Register(
+        nameof(IsLoading), typeof(bool), typeof(RecentProjectCard),
+        new PropertyMetadata(false, static (sender, _) => ((RecentProjectCard)sender).ApplyLoadingState()));
+
     public string Title
     {
         get => (string)GetValue(TitleProperty);
@@ -53,12 +58,25 @@ public class RecentProjectCard : Button
         set => SetValue(ThumbnailSourceProperty, value);
     }
 
+    /// <summary>This project is being opened. The tile then runs the save trail in a loop: on
+    /// the start screen there is no project header to carry it, and the tile the user just
+    /// clicked is the only place the wait can be shown.</summary>
+    public bool IsLoading
+    {
+        get => (bool)GetValue(IsLoadingProperty);
+        set => SetValue(IsLoadingProperty, value);
+    }
+
     private const string CardTranslatePartName = "PART_CardTranslate";
     private const string DiscTranslatePartName = "PART_DiscTranslate";
     private const string DiscRotatePartName = "PART_DiscRotate";
     private const string LocationViewportPartName = "PART_LocationViewport";
     private const string LocationTextPartName = "PART_LocationText";
     private const string LocationTranslatePartName = "PART_LocationTranslate";
+    private const string LoadTrailPartName = "PART_LoadTrail";
+
+    // A fast open must not flash a half-drawn arc, so the wait only shows once it is real.
+    private static readonly TimeSpan LoadTrailDelay = TimeSpan.FromMilliseconds(120);
 
     // Hover offsets: the sleeve steps back 6px while the disc slides out 10px — a mini
     // echo of the full-size sleeve, kept inside the tile's own quarter column.
@@ -76,6 +94,8 @@ public class RecentProjectCard : Button
     private Grid? _locationViewport;
     private TextBlock? _locationText;
     private TranslateTransform? _locationTranslate;
+    private ProjectSaveTrail? _loadTrail;
+    private DispatcherTimer? _loadTrailDelay;
     private TimeSpan? _lastSpinTick;
 
     public RecentProjectCard()
@@ -85,6 +105,7 @@ public class RecentProjectCard : Button
             RecentProjectCard card = (RecentProjectCard)sender;
             card.StopSpin();
             card.StopLocationMarquee();
+            card.EndLoadTrail();
         };
     }
 
@@ -97,6 +118,55 @@ public class RecentProjectCard : Button
         _locationViewport = GetTemplateChild(LocationViewportPartName) as Grid;
         _locationText = GetTemplateChild(LocationTextPartName) as TextBlock;
         _locationTranslate = GetTemplateChild(LocationTranslatePartName) as TranslateTransform;
+        _loadTrail = GetTemplateChild(LoadTrailPartName) as ProjectSaveTrail;
+        ApplyLoadingState();
+    }
+
+    private void ApplyLoadingState()
+    {
+        if (IsLoading)
+        {
+            BeginLoadTrail();
+        }
+        else
+        {
+            EndLoadTrail();
+        }
+    }
+
+    private void BeginLoadTrail()
+    {
+        if (_loadTrail is null)
+        {
+            return;
+        }
+
+        _loadTrail.Visibility = Visibility.Visible;
+        if (_loadTrailDelay is null)
+        {
+            _loadTrailDelay = new DispatcherTimer { Interval = LoadTrailDelay };
+            _loadTrailDelay.Tick += OnLoadTrailDelayTick;
+        }
+
+        _loadTrailDelay.Stop();
+        _loadTrailDelay.Start();
+    }
+
+    private void OnLoadTrailDelayTick(object? sender, EventArgs e)
+    {
+        _loadTrailDelay?.Stop();
+        if (IsLoading)
+        {
+            _loadTrail?.Play(loop: true);
+        }
+    }
+
+    /// <summary>Ends the wait mid-flight: the lap in progress finishes and fades on its own
+    /// schedule, so a completed open never blinks the stroke away.</summary>
+    private void EndLoadTrail()
+    {
+        _loadTrailDelay?.Stop();
+        _loadTrail?.StopLoop();
     }
 
     protected override void OnMouseEnter(MouseEventArgs e)

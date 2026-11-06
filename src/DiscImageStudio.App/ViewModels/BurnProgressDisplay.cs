@@ -58,9 +58,11 @@ internal sealed class BurnProgressDisplay
                 && double.IsFinite(rate) && rate >= 0 ? rate : null;
             _finished = progress.Stage == "complete";
         }
-        else if (progress.Stage is "device" or "media" or "buffer" or "finalize")
+        else if (progress.Stage is "device" or "media" or "buffer" or "finalize" or "write-complete"
+            or "verify" or "flush" or "close-track" or "close-disc" or "release")
         {
-            // Preparing or closing the disc must not keep a rate from its writing phase.
+            // Device write completion can still be followed by verification and session cleanup.
+            // Only the lifecycle's complete stage above finishes this display.
             _bytesPerSecond = null;
         }
 

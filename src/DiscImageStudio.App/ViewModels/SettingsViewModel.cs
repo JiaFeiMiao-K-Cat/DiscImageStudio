@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Security;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -12,7 +13,7 @@ namespace DiscImageStudio.ViewModels;
 /// <summary>Backing state for SettingsWindow. The dialog works on a copy: nothing is written
 /// or applied until <see cref="TrySave"/> succeeds, so Cancel/Escape discards every edit.
 /// Cache usage and clearing always target the directory currently in effect, not the
-/// unsaved path in the field.</summary>
+/// unsaved path in the field. The About category is read-only statics, so saving skips it.</summary>
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly AppSettingsStore _store;
@@ -51,10 +52,13 @@ public partial class SettingsViewModel : ObservableObject
         LanguageIndex = normalized.Language switch
         {
             L.SystemLanguage => 0,
+            L.Chinese => 1,
             L.TraditionalChinese => 2,
             L.English => 3,
             L.Japanese => 4,
-            L.Chinese => 1,
+            L.Turkish => 5,
+            L.Spanish => 6,
+            L.Czech => 7,
             _ => 0,
         };
         ThemeIndex = normalized.Theme switch
@@ -74,6 +78,33 @@ public partial class SettingsViewModel : ObservableObject
 
     /// <summary>Cache folder used when the field is empty; same watermark purpose.</summary>
     public string DefaultCacheDirectoryPlaceholder { get; } = TempFiles.DefaultDirectory;
+
+    /// <summary>Read-only About-category content: version line and the embedded license
+    /// texts the standalone About dialog used to show.</summary>
+    public string VersionText { get; } = BuildVersionText();
+
+    public string RepositoryUrl { get; } = "https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio";
+
+    public string LicenseText { get; } = ReadLicense("GPL");
+
+    public string ThirdPartyNoticesText { get; } = ReadLicense("ThirdParty");
+
+    public string FontLicenseText { get; } = ReadLicense("HarmonyOS");
+
+    private static string ReadLicense(string name)
+    {
+        using Stream stream = typeof(SettingsViewModel).Assembly.GetManifestResourceStream($"DiscImageStudio.Licenses.{name}")
+            ?? throw new InvalidOperationException($"Missing embedded license: {name}");
+        using StreamReader reader = new(stream);
+        return reader.ReadToEnd();
+    }
+
+    private static string BuildVersionText()
+    {
+        Assembly assembly = Assembly.GetExecutingAssembly();
+        string? version = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        return L.F($"版本 {version?.Split('+')[0] ?? assembly.GetName().Version?.ToString(3) ?? "1.0.0"}");
+    }
 
     /// <summary>Folder picker, supplied by the window: dialog title plus a starting folder.</summary>
     public Func<string, string?, string?>? PickDirectory { get; set; }
@@ -118,10 +149,13 @@ public partial class SettingsViewModel : ObservableObject
             Language = LanguageIndex switch
             {
                 0 => L.SystemLanguage,
+                1 => L.Chinese,
                 2 => L.TraditionalChinese,
                 3 => L.English,
                 4 => L.Japanese,
-                1 => L.Chinese,
+                5 => L.Turkish,
+                6 => L.Spanish,
+                7 => L.Czech,
                 _ => L.SystemLanguage,
             },
             Theme = ThemeIndex switch
@@ -222,6 +256,24 @@ public partial class SettingsViewModel : ObservableObject
                                               or System.ComponentModel.Win32Exception)
         {
             ErrorMessage = L.T("无法打开应用数据目录：") + exception.Message;
+        }
+    }
+
+    [RelayCommand]
+    private void OpenRepository()
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = RepositoryUrl,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception exception) when (exception is System.ComponentModel.Win32Exception
+                                              or InvalidOperationException)
+        {
+            ErrorMessage = L.T("无法打开 GitHub：") + exception.Message;
         }
     }
 

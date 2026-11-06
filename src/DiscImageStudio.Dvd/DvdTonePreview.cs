@@ -15,14 +15,20 @@ public static class DvdTonePreview
         DvdStreamingOptions options,
         int previewSize,
         int samplesPerSector,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        uint drawingStartLba = 0,
+        uint? drawingEndLbaExclusive = null)
     {
         ArgumentNullException.ThrowIfNull(options);
         options.Validate();
+        uint drawingEnd = drawingEndLbaExclusive ?? options.TotalSectors;
+        if (drawingStartLba >= drawingEnd || drawingEnd > options.TotalSectors)
+            throw new ArgumentOutOfRangeException(nameof(drawingEndLbaExclusive),
+                "The drawing range must lie inside the disc.");
         CalibrationPreviewOptions preview = new(
             options.TotalSectors,
-            0,
-            options.TotalSectors,
+            drawingStartLba,
+            drawingEnd - drawingStartLba,
             options.InnerRadiusMm,
             options.OuterRadiusMm,
             options.InnerRadiusMm,

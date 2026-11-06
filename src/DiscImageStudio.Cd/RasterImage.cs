@@ -1,10 +1,19 @@
 using DiscImageStudio.ImageIO;
+using DiscImageStudio.Core.Calibration;
 
 namespace DiscImageStudio.Cd;
 
 internal sealed class RasterImage
 {
     private readonly byte[] _gray;
+    private static readonly Lazy<RasterImage> Reference = new(() =>
+        new RasterImage(CalibrationReferencePattern.ReadGrayPixels(), CalibrationReferencePattern.PixelSize));
+
+    private RasterImage(byte[] gray, int size)
+    {
+        Width = Height = size;
+        _gray = gray;
+    }
 
     private RasterImage(int width, int height, byte[] bgra)
     {
@@ -25,6 +34,8 @@ internal sealed class RasterImage
     internal int Width { get; }
 
     internal int Height { get; }
+
+    internal static RasterImage LoadCalibrationReference() => Reference.Value;
 
     internal static RasterImage Load(string path)
     {

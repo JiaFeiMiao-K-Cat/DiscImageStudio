@@ -6,9 +6,11 @@
 
 ```mermaid
 flowchart LR
-    GUI[Windows WPF GUI / CLI] --> Imaging[DiscImageStudio.Imaging]
-    Imaging --> Catalog[DiscModuleCatalog]
-    CLI[Linux / macOS CLI] --> Catalog
+    GUI[Windows WPF GUI] --> Imaging[DiscImageStudio.Imaging]
+    GUI --> CD[DiscImageStudio.Cd]
+    GUI --> DVD[DiscImageStudio.Dvd]
+    GUI --> BD[DiscImageStudio.BluRay]
+    CLI[Windows / Linux / macOS CLI] --> Catalog[DiscModuleCatalog]
     GUI --> Burning[DiscImageStudio.Burning]
     Burning --> IMAPI[Windows IMAPI2]
     Catalog --> Contract[IOpticalDiscModule]
@@ -21,7 +23,7 @@ flowchart LR
     BD --> Iso[DiscImageStudio.Iso / UDF 2.01]
 ```
 
-`DiscImageStudio.Cli` 和 Windows 桌面程序从同一份模块目录执行离线命令。`DiscImageStudio.ImageIO` 在 Windows 桌面目标使用 WIC，在通用 `net10.0` 目标使用 StbImageSharp 读图、StbImageWriteSharp 写 PNG。两个后端都向生成器提供相同顺序的 BGRA 像素。蓝光共用透明度合成和灰度转换代码，CD 和 DVD 也分别共用各自原有的采样算法。
+`DiscImageStudio.Cli` 和 Windows 桌面程序的命令行入口从同一份模块目录执行离线命令。GUI 导出直接构造 `CdImageRequest`、`DvdImageRequest` 或 `BluRayImageRequest` 并调用相应生成器，返回不含退出码的 `DiscImageResult`；DVD 预览直接调用类型化渲染器。内部调用通过进度对象和取消令牌协作，异常原样传至界面，命令行解析与控制台输出只在 CLI 适配边界发生。`DiscImageStudio.ImageIO` 在 Windows 桌面目标使用 WIC，在通用 `net10.0` 目标使用 StbImageSharp 读图、StbImageWriteSharp 写 PNG。两个后端都向生成器提供相同顺序的 BGRA 像素。蓝光共用透明度合成和灰度转换代码，CD 和 DVD 也分别共用各自原有的采样算法。
 
 ## Core 契约
 
@@ -32,7 +34,8 @@ flowchart LR
 - `DiscCommandDescriptor`：命令、能力和选项定义，可供未来动态生成界面。
 - `DiscJobRequest`：统一命令与参数载体。
 - `DiscJobProgress`：介质无关的进度、阶段、完成量和耗时。
-- `DiscJobResult`：退出码、摘要和输出路径。
+- `DiscJobResult`：CLI 命令适配结果（退出码、摘要和输出路径）。
+- `DiscImageResult`：内部文件生成结果（输出路径、摘要）；失败使用异常传播。
 - `DiscModuleCatalog`：命令路由、重复命令检查和模块执行。
 - `ToneProfile` / `ToneDither`：CD/DVD/BD 共用的影调模型（抖动强度、灰阶档位、亮度、sRGB 线性化）与确定性抖动相位。CD/DVD 在逻辑字节索引上抖动，因此 CD 延迟交织后仍可在预览中复现；BD 在源图分辨率一次性量化，生成、刻录与预览共用同一张二值栅格。
 
@@ -42,7 +45,7 @@ flowchart LR
 
 ## 工程模型与外壳
 
-`DiscImageStudio.Core.ProjectJsonStore` 持有 `.discproj`（UTF-8 JSON，schemaVersion 2）：工程名、盘型（CD/DVD/BD）、几何（CD r0/r1/扇区；DVD 加三次轨距系数；BD 要求 32 扇区对齐、单层容量与 ≤60 mm）、图层列表、输出配置、可选的 `tone` 影调节、可选的 `bluRay` 极性节、标定记录路径和保存时渲染的缩略图。`tone` 缺省表示旧版硬阈值；schemaVersion 1 的 CD/DVD 文件读取后自动按 2 写回。BD 的 `bluRay.invertMapping` 只存在于 BD 工程，CD/DVD 携带该节会被拒绝。读写都经过校验并使用临时文件原子替换，规则与预设 JSON 一致。图层按绝对路径引用图片，不收集资源。
+`DiscImageStudio.Core.ProjectJsonStore` 持有 `.discproj`（UTF-8 JSON，schemaVersion 2）：工程名、盘型（CD/DVD/BD）、几何（CD/DVD/BD 均保存内外半径、扇区数与三次轨距系数；BD 另要求 32 扇区对齐、单层容量与 ≤60 mm）、图层列表、输出配置、可选的 `tone` 影调节、可选的 `bluRay` 极性节、标定记录路径和保存时渲染的缩略图。`tone` 缺省表示旧版硬阈值；schemaVersion 1 的 CD/DVD 文件读取后自动按 2 写回。BD 的 `bluRay.invertMapping` 只存在于 BD 工程，CD/DVD 携带该节会被拒绝。读写都经过校验并使用临时文件原子替换，规则与预设 JSON 一致。图层按绝对路径引用图片，不收集资源。
 
 外壳是工作区模型：起始页（无侧边栏，提供新建/打开、模板卡片与最近工程）加上五个工程工作区——设计 / 预览 / 导出 / 刻录 / 标定（`Workspace` 枚举，侧边栏顺序即工作流顺序）。每个工作区都是同一个工程的一个视角，不是各自独立的一套流程：共享一个 `DiscParametersState`，打开工程时 `ProjectSession` 把文档内容填进它，保存时再捕获回文档；预览、导出、刻录、标定对 State 的绑定因此与工程生命周期完全解耦。脏标记只跟踪会写进工程文件的 State 属性。
 
@@ -74,7 +77,7 @@ flowchart LR
 
 主题切换是即时的：`Themes/Palette.Light.xaml` 覆盖 `Tokens.xaml` 的全部颜色与画刷键，`Services/ThemeResolver` 在合并字典的第 1 位插入或移除浅色层，窗口无需重建。因此视图对调色板键必须使用 `DynamicResource`（`StaticResource` 会把深色值固化在加载时刻，`ThemePaletteTests` 会拦截）；代码侧取色的控件（`SideNavItem`、`SegmentedControl`、`DiscDesignCanvas`、`CalibrationPhotoCanvas`、`JobDock`、`HelpHint`）订阅 `ThemeResolver.Changed` 并重新读取令牌。系统主题取 `HKCU\...\Themes\Personalize\AppsUseLightTheme`。
 
-应用设置由 `Services/AppSettingsStore` 持久化到 `%LOCALAPPDATA%\DiscImageStudio\settings.json`（camelCase、字符串枚举、临时文件原子替换）：主题、默认工程位置和缓存位置。缺失、损坏或 schemaVersion 高于当前版本的文件回落到默认值，手工改坏的路径在 `AppSettings.Normalize` 中被丢弃；设置从不写入 `.discproj`。默认工程位置只影响新建工程对话框的初始目录，不存在时回落到系统文档目录。`Services/TempFiles` 持有可配置的缓存目录（`LivePreviewDirectory`），设计合成图、缩略图与预览图都写到这里；切换只影响新任务，清空缓存按文件名白名单（`design-composite-*`、`design-tone-*`、`design-thumbnail.png`、`cd/dvd/bd-live-*` 及其 `.png.json` sidecar）删除，绝不删除目录、工程或导出文件。设置窗口在保存前只改副本，取消或 Esc 丢弃全部编辑。
+应用设置由 `Services/AppSettingsStore` 持久化到 `%LOCALAPPDATA%\DiscImageStudio\settings.json`（camelCase、字符串枚举、临时文件原子替换）：主题、默认工程位置和缓存位置。缺失、损坏或 schemaVersion 高于当前版本的文件回落到默认值，手工改坏的路径在 `AppSettings.Normalize` 中被丢弃；设置从不写入 `.discproj`。默认工程位置只影响新建工程对话框的初始目录，不存在时回落到系统文档目录。`Services/TempFiles` 持有可配置的缓存根目录（`LivePreviewDirectory`）；设计合成图、缩略图与预览图通过 `GetCacheFilePath` 写入根目录下独立的应用会话目录，避免多个实例或账户共用缓存位置时覆盖彼此的图片。切换缓存位置只影响新任务，已经解析的文件路径保持有效。缓存统计与清理兼容根目录内的旧缓存，并按文件名白名单（`design-composite-*`、`design-tone-*`、`design-thumbnail.png`、`cd/dvd/bd-live-*` 及其 `.png.json` sidecar）处理会话缓存；通过会话锁跳过其他仍在运行的实例，不遍历任意用户子目录，不删除工程或导出文件。设置窗口在保存前只改副本，取消或 Esc 丢弃全部编辑。
 
 ## 图片预处理层
 
@@ -90,7 +93,15 @@ DVD 混合文件夹模式采用两阶段顺序生成：第一阶段扫描目录�
 
 BD-R 复用同一刻录契约：`BluRayIsoGenerator` 在一个前向流里写入 UDF 2.01、图案区与盘尾备份元数据；外圈模式将完整文件分区移至尾部备份区前，图案始终保持 32 扇区对齐且位于分区之外。刻录页把该流直接喂给 MMC 顺序写入会话，不落盘完整 25 GB 镜像。BD 不提供备用区重映射；中断后盘片通常不可继续写入。
 
+CD、DVD 和 BD 共用 `BurnDeviceDiagnostics` 的写前环境、固件及物理盘片类型／空白状态日志。物理类型按 IMAPI 返回值记录（如 DVD-R、DVD+R DL、BD-R、BD-RE），不由工程预设或光驱名称推断；识别类型不代表新增对该类型的写入支持。可选字段读取失败只记 `unavailable`，不阻止刻录。
+
+DVD 的 `IDvdDataSession` 隔离现有 COM 调用，保留介质检查、缓冲保护、封盘设置、关闭校验、速度、事件订阅和写入顺序。诊断缓存 `MediaState`、`FreeSectors`、`RequiredSectors`、容量余量、请求／实际速度、设置及阶段耗时。BD 使用原有写前 `ReadMedia` 结果记录 profile、空白／格式化状态、轨道起点与容量、下一可写地址及有效性；另记录写入、刷新、关闭轨道、封盘和释放耗时。
+
+失败时在源流销毁与设备清理前保存 `Burn.DeviceContext`、对应介质的 `Burn.CdDaoContext`／`Burn.DvdContext`／`Burn.BluRayContext` 及 `Burn.ContentAtFailure`。上下文只使用已缓存的设备信息、现有事件和主机流计数，不再查询故障设备。生成量、源流读取量及主机队列量不等于实际落盘量；IMAPI 系统缓冲也不等于光驱物理缓存。CD／DVD 高层接口不暴露失败命令的 SCSI sense，日志明确标记不可用；BD MMC 异常已有的真实 sense 保持原样。CD 导入区事件节流与字段说明见 [CD 失败日志](CD_AUDIO_COMPATIBILITY.md#cd-dao-失败日志)。
+
 `ProjectOutputs.FilesAtOuterRing` 为可选字段，默认 `false`，DVD/BD 各自通过共享参数状态同步导出、预览与刻录。文件区在 GUI 预览中按绘图起止边界标黄，包含必要的文件系统保留区；该配色不进入生成器。已有成品依赖其 sidecar 的固定范围，不使用当前目录重新猜测布局。
+
+设计页影调预览统一为 512×512，CD/DVD/BD 都以透明度表示记录环之外和中心孔，控件直接显示完整位图。CD 单独将预览输出坐标的外半径设为记录外半径，源图采样仍使用原有 57.5 mm 比例。影调预览复用各介质的文件布局计划与 GUI 黄色覆盖层，包含内外圈文件及文件系统保留区；文件夹、卷标和位置变化会刷新。布局扫描与渲染在后台执行，每个影调模块同一时刻只运行一项，取消及版本检查阻止旧结果覆盖新参数，失败时清除过期图像。
 
 ## 模块边界
 
@@ -98,9 +109,13 @@ BD-R 复用同一刻录契约：`BluRayIsoGenerator` 在一个前向流里写入
 
 `DiscImageStudio.Cd` 拥有 CD 几何、图片采样、RAW 输出和延迟交织。它实现取消，并把字节进度转换成统一的 `DiscJobProgress`。
 
+图片和冻结的内置标定目标由 `CdBlockPipeline` 按 32 扇区分块，并行进行采样与影调计算；Mode 1 的绘图区使用同一管线。每批最多容纳两倍工作线程数的块，工作线程数不超过 16，缓冲空间不随盘容量增长。所有工作线程结束本批计算后，调用线程按原顺序写出并报告进度；音轨整段共用一个 CIRC 交织器，保留跨块延迟状态。任意外部采样回调和带游标的逻辑地址标定保持顺序执行。文件导出与直接刻录默认使用该管线，`useParallelSampling=false` 可选择原顺序实现进行字节对照。
+
 ### DVD
 
 `DiscImageStudio.Dvd` 是薄适配器。它只负责元数据、路由与结果归一化，然后调用隔离的 `DvdImageSolver`。DVD 引擎原参数和自检保持不变。
+
+快速 dispersion 生成器共用于指定图片、混合文件盘及直接刻录；固定参考图标定通过专用采样器保留原图缩放、双线性插值和环带裁切。生成器只在可证明灰度与透明度取整结果保持不变的区域内复用采样。区域界由像素边界、双线性导数和舍入余量决定，轨迹界包含恒定轨距 Newton 逆解误差或三次轨距插值误差；影调抖动和扇区扰码仍逐字节计算。边界附近与不支持的几何回退原计算，外部解析回调保持原调用语义。`UseSampleReuse=false` 可选择原路径进行输出对照。
 
 ### Blu-ray
 

@@ -1,0 +1,290 @@
+{
+  "半盘边界片段不能超过 64 段。": {
+    "zh-CN": "半盘边界片段不能超过 64 段。",
+    "en": "A half-disc target supports at most 64 boundary segments."
+  },
+  "边界片段编号无效或重复。": {
+    "zh-CN": "边界片段编号无效或重复。",
+    "en": "A boundary segment ID is invalid or duplicated."
+  },
+  "此记录不是半黑半白中标图，不能加入边界片段。": {
+    "zh-CN": "此记录不是半黑半白中标图，不能加入边界片段。",
+    "en": "This record is not a half-disc boundary calibration target and cannot contain boundary segments."
+  },
+  "边界片段的点数不能超过 4000。": {
+    "zh-CN": "边界片段的点数不能超过 4000。",
+    "en": "Boundary segments support at most 4,000 points in total."
+  },
+  "边界点坐标无效，请使用矫正后以盘心为原点的坐标。": {
+    "zh-CN": "边界点坐标无效，请使用矫正后以盘心为原点的坐标。",
+    "en": "Invalid boundary point coordinates. Use rectified coordinates with the disc center as the origin."
+  },
+  "边界拟合需要对应的中标图案记录。": {
+    "zh-CN": "边界拟合需要对应的中标图案记录。",
+    "en": "Boundary fitting requires the matching boundary calibration target record."
+  },
+  "分段中标的半径搜索范围不能超过 ±0.05 mm，请先完成 v13 粗标。": {
+    "zh-CN": "分段中标的半径搜索范围不能超过 ±0.05 mm，请先完成 v13 粗标。",
+    "en": "Segmented boundary fitting supports a radius search range of at most ±0.05 mm. Complete v13 coarse calibration first."
+  },
+  "边界片段需覆盖至少 55% 的绘图半径范围，请在更靠内、靠外的位置各补一段。": {
+    "zh-CN": "边界片段需覆盖至少 55% 的绘图半径范围，请在更靠内、靠外的位置各补一段。",
+    "en": "Boundary segments must cover at least 55% of the drawing radius range. Add segments closer to the inner and outer edges."
+  },
+  "片段集中在少数相近半径，请选至少 4 个不同半径位置的边界，避免重复描同一小段。": {
+    "zh-CN": "片段集中在少数相近半径，请选至少 4 个不同半径位置的边界，避免重复描同一小段。",
+    "en": "The segments are clustered at similar radii. Trace boundaries at four or more distinct radial positions instead of tracing the same short section repeatedly."
+  },
+  "多段边界覆盖的是相同的半径范围，请在至少 4 处互不重叠的半径位置选段。": {
+    "zh-CN": "多段边界覆盖的是相同的半径范围，请在至少 4 处互不重叠的半径位置选段。",
+    "en": "The boundary segments cover the same radius range. Choose segments at four or more non-overlapping radial positions."
+  },
+  "当前半径范围没有有效的盘面模型，请检查生成记录和照片轮廓。": {
+    "zh-CN": "当前半径范围没有有效的盘面模型，请检查生成记录和照片轮廓。",
+    "en": "No valid disc model exists within this radius range. Check the generation record and photographed outline."
+  },
+  "搜索边界超出有效盘面模型，请缩小中标半径搜索范围。": {
+    "zh-CN": "搜索边界超出有效盘面模型，请缩小中标半径搜索范围。",
+    "en": "The search bounds exceed the valid disc model. Narrow the radius search range for boundary calibration."
+  },
+  "当前范围的角度变化过大，无法可靠穷举绕圈候选，请缩小中标半径搜索范围。": {
+    "zh-CN": "当前范围的角度变化过大，无法可靠穷举绕圈候选，请缩小中标半径搜索范围。",
+    "en": "The angular variation is too large to enumerate winding candidates reliably. Narrow the radius search range for boundary calibration."
+  },
+  "当前范围包含过多绕圈候选，请缩小中标半径搜索范围后再算。": {
+    "zh-CN": "当前范围包含过多绕圈候选，请缩小中标半径搜索范围后再算。",
+    "en": "This range contains too many winding candidates. Narrow the radius search range for boundary calibration and calculate again."
+  },
+  "当前搜索范围有过多可行绕圈区间，尚未排除歧义，请缩小半径范围或补充较长的边界片段。": {
+    "zh-CN": "当前搜索范围有过多可行绕圈区间，尚未排除歧义，请缩小半径范围或补充较长的边界片段。",
+    "en": "Too many feasible winding intervals remain in this search range. Narrow the radius range or trace longer boundary segments to resolve the ambiguity."
+  },
+  "这些边界片段没有得到有效参数，请检查点是否位于黑白交界。": {
+    "zh-CN": "这些边界片段没有得到有效参数，请检查点是否位于黑白交界。",
+    "en": "These boundary segments did not produce valid parameters. Check that the points lie on the black-white boundary."
+  },
+  "最佳候选落在搜索边界，尚不能确认绕圈数，请复核粗标结果或适当调整搜索范围。": {
+    "zh-CN": "最佳候选落在搜索边界，尚不能确认绕圈数，请复核粗标结果或适当调整搜索范围。",
+    "en": "The best candidate lies on a search bound, leaving the winding count unresolved. Check the coarse calibration result or adjust the search range."
+  },
+  "边界片段与同一个盘面模型不一致，请检查误点、照片矫正和片段是否跨过了另一条边界。": {
+    "zh-CN": "边界片段与同一个盘面模型不一致，请检查误点、照片矫正和片段是否跨过了另一条边界。",
+    "en": "The boundary segments do not match a single disc model. Check for misplaced points, photo rectification errors, or segments crossing another boundary."
+  },
+  "仍有不同绕圈数的候选能解释这些片段，请在不同半径补一段更长的清楚边界后再算。": {
+    "zh-CN": "仍有不同绕圈数的候选能解释这些片段，请在不同半径补一段更长的清楚边界后再算。",
+    "en": "Candidates with different winding counts still fit these segments. Trace a longer, clear boundary at another radius and calculate again."
+  },
+  "边界连续可见时，沿同一条边界至少描 6 点并覆盖 55% 半径范围；也可描两段各覆盖 10% 半径范围的长边界，每段至少 6 点。只有短片段时需至少 4 段，每段至少 3 点。": {
+    "zh-CN": "边界连续可见时，沿同一条边界至少描 6 点并覆盖 55% 半径范围；也可描两段各覆盖 10% 半径范围的长边界，每段至少 6 点。只有短片段时需至少 4 段，每段至少 3 点。",
+    "en": "For a continuously visible boundary, trace at least 6 points along the same boundary covering 55% of the radius range. Alternatively, trace two long segments, each with at least 6 points covering 10% of the radius range. If only short segments are visible, trace at least 4 segments with at least 3 points each."
+  },
+  "每段至少需要 3 个不同位置的点，请沿同一小段边界分散点选。": {
+    "zh-CN": "每段至少需要 3 个不同位置的点，请沿同一小段边界分散点选。",
+    "en": "Each segment needs at least 3 distinct points. Spread the points along the same short boundary section."
+  },
+  "边界上存在接近半圈的点间空隙，请在看得清的同一段交界上补点，看不清连接时请新建片段。": {
+    "zh-CN": "边界上存在接近半圈的点间空隙，请在看得清的同一段交界上补点，看不清连接时请新建片段。",
+    "en": "Adjacent boundary points are nearly half a turn apart. Add points along the same visible section, or start a new segment if the connection is not visible."
+  },
+  "有片段太短，无法判断边界的局部走向，请把这一段的点拉开一些。": {
+    "zh-CN": "有片段太短，无法判断边界的局部走向，请把这一段的点拉开一些。",
+    "en": "A segment is too short to determine its local boundary direction. Spread its points farther apart."
+  },
+  "有相邻曲线点的转角接近半圈，绕圈判断可能不可靠；请补点后复核。": {
+    "zh-CN": "有相邻曲线点的转角接近半圈，绕圈判断可能不可靠；请补点后复核。",
+    "en": "Adjacent curve points are nearly half a turn apart. Add points and check the winding count again."
+  },
+  "边界中标请使用边界描点，不能把不相连的交界拼成十字线的连续曲线。": {
+    "zh-CN": "边界中标请使用边界描点，不能把不相连的交界拼成十字线的连续曲线。",
+    "en": "Use boundary segments for boundary calibration. Disconnected edges cannot be combined into a continuous cross-arm trace."
+  },
+  "十字线最多包含四条臂。": {
+    "zh-CN": "十字线最多包含四条臂。",
+    "en": "A cross has at most four arms."
+  },
+  "曲线编号无效或重复。": {
+    "zh-CN": "曲线编号无效或重复。",
+    "en": "A curve ID is invalid or duplicated."
+  },
+  "此标靶没有十字臂，请使用精标盘照片描线。": {
+    "zh-CN": "此标靶没有十字臂，请使用精标盘照片描线。",
+    "en": "This target has no cross arms. Trace curves on a fine calibration disc photo."
+  },
+  "曲线点数量超出限制。": {
+    "zh-CN": "曲线点数量超出限制。",
+    "en": "The number of curve points exceeds the limit."
+  },
+  "曲线点坐标无效，请使用矫正后以盘心为原点的坐标。": {
+    "zh-CN": "曲线点坐标无效，请使用矫正后以盘心为原点的坐标。",
+    "en": "Invalid curve point coordinates. Use rectified coordinates with the disc center as the origin."
+  },
+  "请沿同一条曲线从内到外至少标出 6 个点，覆盖靠内、中间和靠外的位置。": {
+    "zh-CN": "请沿同一条曲线从内到外至少标出 6 个点，覆盖靠内、中间和靠外的位置。",
+    "en": "Mark at least 6 points along the same curve from inside to outside, covering inner, middle, and outer positions."
+  },
+  "曲线覆盖范围太窄，无法稳定分离内外半径；请继续标出更靠内、外的曲线。": {
+    "zh-CN": "曲线覆盖范围太窄，无法稳定分离内外半径；请继续标出更靠内、外的曲线。",
+    "en": "The curve covers too narrow a range to distinguish the inner and outer radii reliably. Extend the trace farther inward and outward."
+  },
+  "搜索范围内没有能覆盖全部观测点的有效正半径曲线延拓，请检查照片尺度、盘心或参数范围。": {
+    "zh-CN": "搜索范围内没有能覆盖全部观测点的有效正半径曲线延拓，请检查照片尺度、盘心或参数范围。",
+    "en": "No valid positive-radius curve in the search range covers all observed points. Check the photo scale, disc center, and parameter range."
+  },
+  "部分描点在候选模型下超出原图案环带，已按连续曲线保留；请复核照片尺度、盘心及端点是否沿同一条可见曲线。": {
+    "zh-CN": "部分描点在候选模型下超出原图案环带，已按连续曲线保留；请复核照片尺度、盘心及端点是否沿同一条可见曲线。",
+    "en": "Some traced points fall outside the original pattern band in the candidate model and are retained as part of the continuous curve. Check the photo scale, disc center, and whether the endpoints follow the same visible curve."
+  },
+  "曲线覆盖的内外范围偏窄，参数可能互相补偿；请补充更靠内、外的点。": {
+    "zh-CN": "曲线覆盖的内外范围偏窄，参数可能互相补偿；请补充更靠内、外的点。",
+    "en": "The curve covers a narrow radial range, allowing parameters to compensate for each other. Add points farther inward and outward."
+  },
+  "曲线偏差较大，请检查照片矫正、点位和是否始终沿同一条线标点。": {
+    "zh-CN": "曲线偏差较大，请检查照片矫正、点位和是否始终沿同一条线标点。",
+    "en": "The curve deviation is large. Check photo rectification, point positions, and whether all points follow the same line."
+  },
+  "最佳结果靠近搜索边界，建议扩大搜索范围并补充曲线点复核。": {
+    "zh-CN": "最佳结果靠近搜索边界，建议扩大搜索范围并补充曲线点复核。",
+    "en": "The best result is near a search bound. Expand the search range and add curve points to check the fit."
+  },
+  "当前曲线对两个半径的约束较相似，暂不能仅凭低残差判断参数唯一；请扩大径向覆盖并检查点位精度。": {
+    "zh-CN": "当前曲线对两个半径的约束较相似，暂不能仅凭低残差判断参数唯一；请扩大径向覆盖并检查点位精度。",
+    "en": "This curve constrains the two radii similarly, so a low residual does not establish a unique fit. Extend the radial coverage and check point accuracy."
+  },
+  "存在形状接近的参数候选，请对照整条曲线后再应用。": {
+    "zh-CN": "存在形状接近的参数候选，请对照整条曲线后再应用。",
+    "en": "Several parameter candidates produce similar shapes. Compare the full curve before applying a candidate."
+  },
+  "宽范围只进行了有限多起点搜索，候选列表不代表穷尽所有可能参数。": {
+    "zh-CN": "宽范围只进行了有限多起点搜索，候选列表不代表穷尽所有可能参数。",
+    "en": "The wide range was searched from a limited number of starting points; the candidate list is not exhaustive."
+  },
+  "角度展开以相邻点之间没有遗漏整圈为前提；请对照完整曲线，在弯曲或绕行处补点后确认。": {
+    "zh-CN": "角度展开以相邻点之间没有遗漏整圈为前提；请对照完整曲线，在弯曲或绕行处补点后确认。",
+    "en": "Angle unwrapping assumes no full turn is skipped between adjacent points. Check the full curve and add points around bends and turns before confirming."
+  },
+  "曲线出现明显向内回退，请按内到外的顺序沿同一条线标点。": {
+    "zh-CN": "曲线出现明显向内回退，请按内到外的顺序沿同一条线标点。",
+    "en": "The curve doubles back inward. Mark points along the same line in order from inside to outside."
+  },
+  "相邻曲线点转角接近半圈，无法判断是否漏掉整圈；请在这两点之间沿实际曲线补点。": {
+    "zh-CN": "相邻曲线点转角接近半圈，无法判断是否漏掉整圈；请在这两点之间沿实际曲线补点。",
+    "en": "Adjacent curve points are nearly half a turn apart, so skipped full turns cannot be determined. Add points along the actual curve between them."
+  },
+  "曲线点较多，拟合使用均匀抽取的点；完整顺序仍用于角度展开。": {
+    "zh-CN": "曲线点较多，拟合使用均匀抽取的点；完整顺序仍用于角度展开。",
+    "en": "The fit uses an evenly spaced subset of the many curve points. Angle unwrapping still uses the complete sequence."
+  },
+  "三次轨距拟合需要至少 12 个不同半径的点且覆盖至少 60% 绘图区；本次保持轨距系数，只拟合内外半径。": {
+    "zh-CN": "三次轨距拟合需要至少 12 个不同半径的点且覆盖至少 60% 绘图区；本次保持轨距系数，只拟合内外半径。",
+    "en": "Cubic track-pitch fitting needs at least 12 points at distinct radii covering at least 60% of the drawing region. This fit keeps the pitch coefficients and fits only the inner and outer radii."
+  },
+  "三次轨距没有带来稳定改善，保留原轨距系数；可增加内、中、外圈点位后重试。": {
+    "zh-CN": "三次轨距没有带来稳定改善，保留原轨距系数；可增加内、中、外圈点位后重试。",
+    "en": "Cubic track-pitch fitting did not produce a stable improvement, so the original coefficients were retained. Add inner, middle, and outer points and try again."
+  },
+  "当前点位无法稳定区分三个轨距系数与内外半径，本次保留原轨距系数；请扩大径向覆盖并提高点位精度。": {
+    "zh-CN": "当前点位无法稳定区分三个轨距系数与内外半径，本次保留原轨距系数；请扩大径向覆盖并提高点位精度。",
+    "en": "These points cannot reliably distinguish the three pitch coefficients from the inner and outer radii. The original coefficients were retained; extend the radial coverage and improve point accuracy."
+  },
+  "已拟合三次轨距；三个形状系数与内外半径可能互相补偿，低残差不表示参数唯一，应用前请核对整条预测曲线。": {
+    "zh-CN": "已拟合三次轨距；三个形状系数与内外半径可能互相补偿，低残差不表示参数唯一，应用前请核对整条预测曲线。",
+    "en": "Cubic track pitch was fitted. Its three coefficients and the two radii can compensate for each other, so a low residual does not establish unique parameters. Check the full predicted curve before applying."
+  },
+  "轨距系数接近搜索边界，请复核点位，必要时扩大系数搜索范围。": {
+    "zh-CN": "轨距系数接近搜索边界，请复核点位，必要时扩大系数搜索范围。",
+    "en": "The pitch coefficients are near a search bound. Check the points and expand the coefficient search range if needed."
+  },
+  "搜索半径范围应在 0–5 mm 内，控制点容差应在 0–10 mm 内，轨距系数搜索范围应在 0–10 内。": {
+    "zh-CN": "搜索半径范围应在 0–5 mm 内，控制点容差应在 0–10 mm 内，轨距系数搜索范围应在 0–10 内。",
+    "en": "The radius search range must be within 0–5 mm, the control-point tolerance within 0–10 mm, and the pitch-coefficient search range within 0–10."
+  },
+  "至少确认 4 个用于拟合的角点，并选择分布在不同半径的控制块；验证组与未确认角点不参与拟合。": {
+    "zh-CN": "至少确认 4 个用于拟合的角点，并选择分布在不同半径的控制块；验证组与未确认角点不参与拟合。",
+    "en": "Confirm at least 4 fitting corners from control blocks at different radii. Validation groups and unconfirmed corners are excluded from fitting."
+  },
+  "控制点集中在相近半径，无法稳定区分内外半径；请补选靠内圈或外圈的角点。": {
+    "zh-CN": "控制点集中在相近半径，无法稳定区分内外半径；请补选靠内圈或外圈的角点。",
+    "en": "The control points are clustered at similar radii and cannot reliably distinguish the inner and outer radii. Add corners closer to the inner or outer edge."
+  },
+  "搜索范围内没有有效模型，请检查控制点对应关系或扩大搜索范围。": {
+    "zh-CN": "搜索范围内没有有效模型，请检查控制点对应关系或扩大搜索范围。",
+    "en": "No valid model was found in the search range. Check the control-point correspondences or expand the range."
+  },
+  "控制点覆盖的径向范围偏窄，建议补选更靠内、外的角点复核。": {
+    "zh-CN": "控制点覆盖的径向范围偏窄，建议补选更靠内、外的角点复核。",
+    "en": "The control points cover a narrow radial range. Add corners farther inward and outward to check the fit."
+  },
+  "控制点与预测图形偏差较大，请检查分组与弧片身份、控制点对应关系和显示尺度。": {
+    "zh-CN": "控制点与预测图形偏差较大，请检查分组与弧片身份、控制点对应关系和显示尺度。",
+    "en": "The control points differ substantially from the predicted pattern. Check group and arc identities, point correspondences, and display scale."
+  },
+  "最佳结果靠近搜索边界，建议扩大搜索范围并补充控制点复核。": {
+    "zh-CN": "最佳结果靠近搜索边界，建议扩大搜索范围并补充控制点复核。",
+    "en": "The best result is near a search bound. Expand the search range and add control points to check the fit."
+  },
+  "存在拟合程度接近的绕圈候选，暂不能唯一确定参数；请在预测差异明显的另一半径补选角点。": {
+    "zh-CN": "存在拟合程度接近的绕圈候选，暂不能唯一确定参数；请在预测差异明显的另一半径补选角点。",
+    "en": "Several winding candidates fit similarly, leaving the parameters ambiguous. Add corners at another radius where their predictions differ clearly."
+  },
+  "搜索范围包含过多绕圈组合，已进行有限多起点搜索；请缩小范围或增加分散的控制点后复核。": {
+    "zh-CN": "搜索范围包含过多绕圈组合，已进行有限多起点搜索；请缩小范围或增加分散的控制点后复核。",
+    "en": "The range contains too many winding combinations and was searched from a limited number of starting points. Narrow the range or add well-separated control points and check again."
+  },
+  "控制点数量超出限制。": {
+    "zh-CN": "控制点数量超出限制。",
+    "en": "The number of control points exceeds the limit."
+  },
+  "控制点坐标或权重无效。": {
+    "zh-CN": "控制点坐标或权重无效。",
+    "en": "Invalid control-point coordinates or weights."
+  },
+  "同一角点或共享角点不能重复录入。": {
+    "zh-CN": "同一角点或共享角点不能重复录入。",
+    "en": "The same corner or a shared corner cannot be entered more than once."
+  },
+  "已自动扩大搜索至 ±{0:0.###} mm。": {
+    "zh-CN": "已自动扩大搜索至 ±{0:0.###} mm。",
+    "en": "Search range automatically expanded to ±{0:0.###} mm."
+  },
+  "已标记 {0} 个偏离较大的点。": {
+    "zh-CN": "已标记 {0} 个偏离较大的点。",
+    "en": "Marked {0} points with large deviations."
+  },
+  "时钟标尺需要矫正后的正方形照片。": {
+    "zh-CN": "时钟标尺需要矫正后的正方形照片。",
+    "en": "The clock scale requires a rectified square photo."
+  },
+  "扇区校验需要矫正后的正方形照片。": {
+    "zh-CN": "扇区校验需要矫正后的正方形照片。",
+    "en": "Sector verification requires a rectified square photo."
+  },
+  "时钟尺预览是示意图。请从标定页生成 CD 音轨或直接刻录。": {
+    "zh-CN": "时钟尺预览是示意图。请从标定页生成 CD 音轨或直接刻录。",
+    "en": "The clock-scale preview is schematic. Generate a CD audio track or burn it directly from the calibration page."
+  },
+  "标定操作": {
+    "zh-CN": "标定操作",
+    "en": "Calibration operation"
+  },
+  "标定轮廓预览": {
+    "zh-CN": "标定轮廓预览",
+    "en": "Calibration contour preview"
+  },
+  "预测曲线需要有限、递增且大于零的观测半径区间。": {
+    "zh-CN": "预测曲线需要有限、递增且大于零的观测半径区间。",
+    "en": "Curve prediction requires a finite, increasing observed radius range above zero."
+  },
+  "曲线旋转或臂编号无效。": {
+    "zh-CN": "曲线旋转或臂编号无效。",
+    "en": "Invalid curve rotation or arm index."
+  },
+  "该观测半径在当前参数下没有有效的正半径曲线延拓，请检查照片尺度、盘心或参数范围。": {
+    "zh-CN": "该观测半径在当前参数下没有有效的正半径曲线延拓，请检查照片尺度、盘心或参数范围。",
+    "en": "The current parameters do not yield a valid positive-radius curve at this observed radius. Check the photo scale, disc center, and parameter range."
+  },
+  "完整曲线采样超出点数上限；请缩小预测范围或提高采样上限后再确认形状。": {
+    "zh-CN": "完整曲线采样超出点数上限；请缩小预测范围或提高采样上限后再确认形状。",
+    "en": "Full-curve sampling exceeds the point limit. Narrow the prediction range or raise the sampling limit before confirming the shape."
+  }
+}

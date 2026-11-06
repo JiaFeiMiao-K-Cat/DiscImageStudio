@@ -9,10 +9,14 @@ using Avalonia.VisualTree;
 using Avalonia.Automation;
 using Avalonia.Automation.Peers;
 using DiscImageStudio;
+using DiscImageStudio.BluRay;
+using DiscImageStudio.Cd;
 using DiscImageStudio.Core;
 using DiscImageStudio.Core.Calibration;
 using DiscImageStudio.Desktop;
+using DiscImageStudio.Dvd;
 using DiscImageStudio.ImageIO;
+using DiscImageStudio.Services;
 using SkiaSharp;
 
 string work = Path.Combine(Path.GetTempPath(), "disc-desktop-tests-" + Guid.NewGuid().ToString("N"));
@@ -50,12 +54,33 @@ try
     {
         long sectors = family == "cd" ? 2 : family == "dvd" ? 160 : 1024;
         session.Create(family, "Optical smoke", new(24.5, 56.8, sectors));
-        var doc = session.Document!;
+        var doc = session.Document! with { Outputs = session.Document!.Outputs with { DvdReadCompatibility = family == "dvd" } };
+        if (family == "bd") doc = doc with { Geometry = doc.Geometry with { PitchLinear = 0.02, PitchQuadratic = -0.01, PitchCubic = 0.003 } };
         string output = Path.Combine(work, family == "cd" ? "track.wav" : family + ".iso");
         string[] commandArgs = JobArguments.Generate(doc, input, output);
         var result = await ConsoleModuleRunner.Catalog.ExecuteAsync(new(commandArgs[0], commandArgs.Skip(1)));
         Check(result.Succeeded, family + " generation failed");
         Check(new FileInfo(output).Length == sectors * (family == "cd" ? 2352 : 2048) + (family == "cd" ? 44 : 0), family + " wrong output length");
+        if (family == "dvd")
+        {
+            Check(DvdImageMetadata.TryLoad(output) is { ReadCompatibility: true }, "DVD export lost the project's read compatibility setting");
+            session.Update(doc); session.Save(project); session.Open(project);
+            Check(session.Document!.Outputs.DvdReadCompatibility && session.CalibrationParameters().DvdReadCompatibility,
+                "DVD compatibility must survive project reopening and calibration capture");
+        }
+        if (family == "bd")
+        {
+            var metadata = BluRayIsoMetadata.TryLoad(output);
+            Check(metadata is { PitchLinear: 0.02, PitchQuadratic: -0.01, PitchCubic: 0.003 }, "BD export lost calibrated pitch coefficients");
+            string actualPreview = Path.Combine(work, "bd-pitched-actual.png");
+            string expectedPreview = Path.Combine(work, "bd-pitched-expected.png");
+            await PreviewService.Render(doc with { Geometry = new(24.5, 56.8, 1024) }, output, actualPreview, true, 24.5, 56.8, 256, 16);
+            var measured = new BluRayDiscParameters(1024, 1, 24.5, 56.8, PitchLinear: 0.02, PitchQuadratic: -0.01, PitchCubic: 0.003);
+            BluRayPreviewRenderer.RenderReadback(output, expectedPreview, measured, 256, default, metadata!.DrawingStartSector, metadata.DrawingEndSectorExclusive);
+            FileRegionPreviewOverlay.ApplyBluRay(expectedPreview, measured, metadata.DrawingStartSector, metadata.DrawingEndSectorExclusive, default);
+            Check(RasterCodec.LoadBgra32(actualPreview).Pixels.AsSpan().SequenceEqual(RasterCodec.LoadBgra32(expectedPreview).Pixels),
+                "BD readback ignored the artifact's calibrated pitch coefficients");
+        }
         if (family == "cd")
         {
             Check(File.ReadAllText(Path.ChangeExtension(output, ".cue")).Contains("FILE \"track.wav\" WAVE"), "Wrong WAV CUE");
@@ -80,6 +105,27 @@ try
             var p = await ConsoleModuleRunner.Catalog.ExecuteAsync(new(command[0], command.Skip(1)));
             Check(p.Succeeded && RasterCodec.LoadBgra32(preview).Width == 256, "DVD preview failed");
         }
+    }
+    // Imported variable-pitch CD geometry must survive export and both preview routes.
+    session.Create("cd", "Variable pitch", new(24.9, 57.9, 160, 0.02, -0.01, 0.003));
+    var pitched = session.Document!;
+    string pitchedTrack = Path.Combine(work, "pitched.wav");
+    var pitchedArgs = JobArguments.Generate(pitched, input, pitchedTrack);
+    var pitchedResult = await ConsoleModuleRunner.Catalog.ExecuteAsync(new(pitchedArgs[0], pitchedArgs.Skip(1)));
+    var pitchedMetadata = CdTrackMetadata.TryLoad(pitchedTrack);
+    Check(pitchedResult.Succeeded && pitchedMetadata is { PitchLinear: 0.02, PitchQuadratic: -0.01, PitchCubic: 0.003 },
+        "CD export lost calibrated pitch coefficients");
+    foreach (bool readback in new[] { false, true })
+    {
+        string actualPreview = Path.Combine(work, "pitch-actual-" + readback + ".png");
+        string expectedPreview = Path.Combine(work, "pitch-expected-" + readback + ".png");
+        var previewDocument = readback ? pitched with { Geometry = new(24.5, 56.8, 2) } : pitched;
+        await PreviewService.Render(previewDocument, readback ? pitchedTrack : input, actualPreview, readback, 24.9, 57.9, 256, 16);
+        var parameters = pitchedMetadata!.CreateParameters();
+        if (readback) CdTrackGenerator.PreviewTrack(pitchedTrack, expectedPreview, parameters, 256, 147, pitchedMetadata.Interleaved);
+        else CdTrackGenerator.PreviewWarp(input, expectedPreview, parameters, parameters, 256, 16, pitched.Tone ?? ToneProfile.LegacyBinary);
+        Check(RasterCodec.LoadBgra32(actualPreview).Pixels.AsSpan().SequenceEqual(RasterCodec.LoadBgra32(expectedPreview).Pixels),
+            "CD preview ignored calibrated pitch or artifact metadata: " + readback);
     }
     // Mixed discs must retain files and mark their extents identically in projection/readback.
     string data = Path.Combine(work, "随盘文件"); Directory.CreateDirectory(data);
@@ -307,6 +353,26 @@ try
     new ButtonAutomationPeer(more).Invoke(); Dispatcher.UIThread.RunJobs();
     Check(more.Flyout is MenuFlyout { IsOpen: true }, "More button did not expose Save As/project settings");
     more.Flyout!.Hide();
+    window.Session.Create("cd", "Calibration regression", new(24.9, 57.9, 160));
+    string calibrationTrack = Path.Combine(work, "calibration.wav");
+    Task calibrationTask = window.GenerateCalibration(calibrationTrack);
+    var calibrationDeadline = DateTime.UtcNow.AddSeconds(30);
+    while (!calibrationTask.IsCompleted && DateTime.UtcNow < calibrationDeadline)
+    {
+        Dispatcher.UIThread.RunJobs();
+        Thread.Sleep(10);
+    }
+    Check(calibrationTask.IsCompleted, "Calibration generation did not finish");
+    calibrationTask.GetAwaiter().GetResult();
+    var generatedTarget = CalibrationSessionJson.Load(calibrationTrack + ".calibration.json").Target;
+    Check(generatedTarget.Artwork == CalibrationArtwork.ReferenceCross,
+        "Calibration records must identify the reference artwork actually encoded by the desktop");
+    Check(CdTrackMetadata.TryLoad(calibrationTrack)?.ImageOuterRadiusMm == generatedTarget.Parameters.OuterRadiusMm,
+        "Calibration source scaling differs between the encoded track and the saved target");
+    string referenceTrack = Path.Combine(work, "reference.wav");
+    CdTrackGenerator.GeneratePattern(generatedTarget, referenceTrack, window.Session.Document!.Outputs.Interleave);
+    Check(File.ReadAllBytes(calibrationTrack).AsSpan().SequenceEqual(File.ReadAllBytes(referenceTrack)),
+        "Desktop calibration track differs from the saved target's core encoder output");
     Console.WriteLine($"Portable desktop: {checks} checks passed.");
     window.CloseForTest();
 }

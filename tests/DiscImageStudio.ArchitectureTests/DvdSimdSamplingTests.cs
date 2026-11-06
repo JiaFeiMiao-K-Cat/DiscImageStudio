@@ -502,7 +502,8 @@ internal static class DvdSimdSamplingTests
         => new(StartLba: startLba, FillSectors: 16, PsnOffset: 0x30000,
             IterationsPerBlock: 1, MutationBytes: 4, RandomSeed: 842,
             InitialTemperature: 64, FinalTemperature: .25, ZeroInitialPayload: false,
-            ImageMapping: Mapping(measured), Algorithm: SolverAlgorithm.Dispersion, FastParallelism: 1);
+            ImageMapping: Mapping(measured), Algorithm: SolverAlgorithm.Dispersion, FastParallelism: 1,
+            UseSampleReuse: false);
 
     private static ImageMappingOptions Mapping(bool measured)
         => new(TotalSectors, InnerRadiusMm, OuterRadiusMm, ChannelBitLengthNm: 133.3,

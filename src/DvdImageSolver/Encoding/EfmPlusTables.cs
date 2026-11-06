@@ -2,6 +2,7 @@ namespace DvdImageSolver.Encoding;
 
 internal static partial class EfmPlusTables
 {
+    // ECMA-267, 3rd edition, Table 4.
     // Indexed by [state group (1/2 or 3/4), primary/secondary, category].
     private static readonly uint[,,] SyncCodes =
     {
@@ -22,7 +23,7 @@ internal static partial class EfmPlusTables
             },
             {
                 0x92440011, 0x84040011, 0x90040011, 0x82040011,
-                0x88040011, 0x81040011, 0x90440011, 0x80840011,
+                0x88040011, 0x81040011, 0x80440011, 0x80840011,
             },
         },
     };

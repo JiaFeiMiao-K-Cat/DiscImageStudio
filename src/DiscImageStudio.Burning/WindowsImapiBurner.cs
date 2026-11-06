@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
@@ -7,7 +8,6 @@ namespace DiscImageStudio.Burning;
 public sealed class WindowsImapiBurner : IOpticalDiscBurner
 {
     private readonly OpticalBurnOperationGate _operationGate = new();
-    private const int CdRawSubcodeIsCooked = 2;
     private const int CdDaoFallbackSpeedSectorsPerSecond = 1200;
     // DAO avoids the two-sector TAO track overhead observed on the tested drive.
     // Keep only a very small physical overburn allowance for nearby measured presets.
@@ -25,6 +25,104 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         CancellationToken cancellationToken = default)
         => _operationGate.RunAsync(() => RunOnStaThread(() => EnumerateDevices(cancellationToken)),
             cancellationToken);
+
+    public Task<long> GetMediaSectorCountAsync(string deviceId, OpticalBurnMediaKind mediaKind,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+        _ = OpticalBurnMedia.GetSectorBytes(mediaKind);
+        return _operationGate.RunAsync(() => RunOnStaThread(() =>
+            ReadMediaSectorCount(deviceId, mediaKind, cancellationToken)), cancellationToken);
+    }
+
+    private static long ReadMediaSectorCount(string deviceId, OpticalBurnMediaKind mediaKind, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        dynamic? recorder = null;
+        dynamic? format = null;
+        try
+        {
+            recorder = CreateRecorder(deviceId);
+            format = CreateComObject("IMAPI2.MsftDiscFormat2Data");
+            format.Recorder = recorder;
+            format.ClientName = "Disc Image Studio";
+            ValidateRequestedMedia(mediaKind, recorder, format);
+            // These are media queries. PrepareMedia would enter a recording session.
+            long sectors;
+            if (mediaKind == OpticalBurnMediaKind.DvdData)
+            {
+                // Includes used sectors. Never use FreeSectorsOnMedia or a mounted volume's length.
+                sectors = ReadDvdSectorCount(Convert.ToInt32(format.CurrentPhysicalMediaType),
+                    Convert.ToInt64(format.TotalSectorsOnMedia));
+            }
+            else
+            {
+                var transport = new ImapiMmcCommandTransport((object)recorder);
+                sectors = OpticalBurnMedia.UsesCdDao(mediaKind)
+                    ? ReadCdAtipSectorCount(transport)
+                    : ReadBluRaySectorCount(transport);
+            }
+            token.ThrowIfCancellationRequested();
+            return sectors;
+        }
+        catch (COMException ex) when (ex.HResult == unchecked((int)0xC0AA0202))
+        {
+            throw new InvalidOperationException("所选光驱中没有盘片。", ex);
+        }
+        finally
+        {
+            if (format is not null) ReleaseComObject(format);
+            if (recorder is not null) ReleaseComObject(recorder);
+        }
+    }
+
+    internal static long ReadCdAtipSectorCount(IMmcCommandTransport transport)
+    {
+        // READ TOC/PMA/ATIP format 4. Unlike a session TOC, the pre-groove lead-out
+        // describes the recordable disc even if only part of it has been written.
+        const byte allocation = 64;
+        byte[] cdb = [0x43, 0x02, 0x04, 0, 0, 0, 0, 0, allocation, 0];
+        MmcCommandResult response = transport.Execute(cdb, allocation, 30);
+        if (response.HResult < 0 || response.HResult == BluRayMmcCommands.CommandHasSenseData)
+            throw new MmcCommandException(cdb[0], response);
+        byte[] data = response.Data;
+        if (data.Length < 15)
+            throw new IOException("光驱返回的 CD 预刻槽引出区信息不完整。");
+        int declared = BinaryPrimitives.ReadUInt16BigEndian(data) + 2;
+        if (declared < 15 || data.Length < Math.Min(allocation, declared))
+            throw new IOException("光驱返回的 CD 预刻槽引出区信息不完整。");
+        int minutes = data[12], seconds = data[13], frames = data[14];
+        // Binary MSF. LBA 0 starts at 00:02:00; the lead-out address is exclusive.
+        int count = ((minutes * 60 + seconds) * 75 + frames) - 150;
+        if (minutes >= 100 || seconds >= 60 || frames >= 75 || count <= 0)
+            throw new IOException("光驱返回的 CD 引出区地址无效。");
+        return count;
+    }
+
+    internal static long ReadBluRaySectorCount(IMmcCommandTransport transport)
+    {
+        var (blocks, status, spareClusters) = new BluRayMmcCommands(transport).ReadFormatCapacity();
+        // Type 1 counts data-zone blocks; spareClusters is the possible maximum.
+        // Type 2 counts user blocks; spareClusters is actually allocated space.
+        // Smaller drawing ranges can be authored, but the recorder requires the
+        // complete physical layout of the supported no-spare 25 GB single layer.
+        if (status is not (1 or 2))
+            throw new InvalidOperationException("光驱未报告当前 BD-R 的有效容量。");
+        if (status == 2 && spareClusters != 0)
+            throw new InvalidOperationException("BD-R 已分配备用区，逻辑容量不能用于无备用区标定。");
+        if (blocks != BluRaySingleLayerSectors)
+            throw new InvalidOperationException($"BD-R 报告 {blocks:N0} 扇区，当前标定仅支持 25 GB 单层无备用区的 12,219,392 扇区布局。");
+        return blocks;
+    }
+
+    internal static long ReadDvdSectorCount(int physicalMediaType, long totalSectorsOnMedia)
+    {
+        if (physicalMediaType is 0x8 or 0xB or 0xD)
+            throw new InvalidOperationException("双层 DVD 不适用于单层盘片标定。");
+        if (totalSectorsOnMedia <= 0)
+            throw new InvalidOperationException("光驱未报告有效的 DVD 总扇区数。");
+        return totalSectorsOnMedia;
+    }
 
     public Task<IReadOnlyList<OpticalWriteSpeed>> GetSupportedWriteSpeedsAsync(
         string deviceId,
@@ -162,8 +260,13 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         dynamic? format = null;
         OpticalBurnResult? result = null;
         Exception? burnFailure = null;
+        string? environmentDiagnostic = null;
+        string? recorderDiagnostic = null;
+        string? physicalMediaDiagnostic = null;
         try
         {
+            BurnDeviceDiagnostics.Report(ReportDiagnostic, () => environmentDiagnostic = BurnDeviceDiagnostics.DescribeEnvironment(request));
+            BurnDeviceDiagnostics.Report(ReportDiagnostic, () => recorderDiagnostic = BurnDeviceDiagnostics.DescribeRecorder((object)recorder));
             currentOperation = "创建刻录格式";
             format = OpticalBurnMedia.UsesCdDao(request.MediaKind)
                 ? CreateComObject("IMAPI2.MsftDiscFormat2RawCD")
@@ -171,6 +274,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             currentOperation = "连接刻录机";
             format.Recorder = recorder;
             format.ClientName = "Disc Image Studio";
+            BurnDeviceDiagnostics.Report(ReportDiagnostic, () => physicalMediaDiagnostic = BurnDeviceDiagnostics.DescribePhysicalMedia((object)format));
             currentOperation = "检查刻录机支持";
             if (!(bool)format.IsRecorderSupported(recorder))
             {
@@ -187,11 +291,14 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             if (request.WriteSpeed is null)
             {
                 currentOperation = "选择最低刻录速度";
+                IReadOnlyList<OpticalWriteSpeed> supportedSpeeds = ReadSupportedWriteSpeeds(format);
+                BurnDeviceDiagnostics.Report(ReportDiagnostic, () => "可选写入速度："
+                    + (supportedSpeeds.Count == 0 ? "none" : string.Join(" | ", supportedSpeeds.Select(BurnDeviceDiagnostics.DescribeSpeed))) + "。");
                 request = request with
                 {
                     WriteSpeed = ResolveWriteSpeed(
                         null,
-                        ReadSupportedWriteSpeeds(format)),
+                        supportedSpeeds),
                 };
                 progress?.Report(new OpticalBurnProgress(
                     "speed",
@@ -219,9 +326,23 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 "正在准备防断流缓冲区…",
                 0,
                 request.ContentLength));
-            content.WaitUntilPrebuffered(cancellationToken);
+            currentOperation = "预填充生成缓冲区";
+            try { content.WaitUntilPrebuffered(cancellationToken); }
+            catch (Exception exception)
+            {
+                // Dispose cancels the producer, so preserve its original state first.
+                try { exception.Data["Burn.ContentAtFailure"] = content.GetDiagnosticSummary(); } catch { }
+                throw;
+            }
+            BurnDeviceDiagnostics.Report(ReportDiagnostic, content.GetDiagnosticSummary);
             // Preparation may take time. Recheck the loaded medium before writing.
-            ValidateRequestedMedia(request.MediaKind, recorder, format);
+            currentOperation = "再次检查当前盘片兼容性";
+            try { ValidateRequestedMedia(request.MediaKind, recorder, format); }
+            catch (Exception exception)
+            {
+                try { exception.Data["Burn.ContentAtFailure"] = content.GetDiagnosticSummary(); } catch { }
+                throw;
+            }
 
             OpticalWriteSpeed? actualWriteSpeed;
             if (OpticalBurnMedia.UsesCdDao(request.MediaKind))
@@ -234,13 +355,11 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                     content,
                     request,
                     cancellationToken,
-                    operation =>
-                    {
-                        currentOperation = operation;
-                        if (operation == "关闭 CD 刻录会话")
-                            writeProgress.ReportStage("finalize", "正在关闭 CD 刻录会话…");
-                    },
-                    speed => ReportWriteSpeed(progress, speed, request));
+                    ReportOperation,
+                    speed => ReportWriteSpeed(progress, speed, request),
+                    CaptureFailure,
+                    message => cleanupWarnings.Add(message),
+                    ReportDiagnostic);
             }
             else if (request.MediaKind == OpticalBurnMediaKind.BluRayData)
             {
@@ -251,16 +370,14 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                     writeProgress.ReportAcceptedBytes,
                     reportCleanupWarning: message => cleanupWarnings.Add(message),
                     reportDiagnostics: message => progress?.Report(new OpticalBurnProgress(
-                        "diagnostic", message, 0, request.ContentLength)));
+                        "diagnostic", message, 0, request.ContentLength)),
+                    reportRecordedLba: writeProgress.ReportRecordedSectors);
                 actualWriteSpeed = BurnBluRay(session, content, request,
-                    cancellationToken, operation =>
-                    {
-                        currentOperation = operation;
-                        bool finalizing = operation.Contains("封盘", StringComparison.Ordinal);
-                        writeProgress.ReportStage(finalizing ? "finalize" : "media", operation);
-                    },
+                    cancellationToken, ReportOperation,
                     speed => ReportWriteSpeed(progress, speed, request),
-                    reportCleanupWarning: cleanupWarnings.Add);
+                    reportCleanupWarning: cleanupWarnings.Add,
+                    reportFailure: CaptureFailure,
+                    reportDiagnostic: ReportDiagnostic);
             }
             else
             {
@@ -268,12 +385,14 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 Action<OpticalWriteSpeed> reportDataWriteSpeed =
                     speed => ReportWriteSpeed(progress, speed, request);
                 actualWriteSpeed = BurnData(
-                    (object)format,
+                    new DynamicDvdDataSession((object)format, writeProgress.ReportDataUpdate),
                     content,
                     request,
                     cancellationToken,
                     reportDataWriteSpeed,
-                    writeProgress.ReportDataUpdate);
+                    ReportOperation,
+                    CaptureFailure,
+                    ReportDiagnostic);
             }
 
             stopwatch.Stop();
@@ -286,6 +405,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         }
         catch (COMException exception)
         {
+            CaptureFailure(exception);
             burnFailure = new InvalidOperationException(
                 $"Windows 刻录接口在“{currentOperation}”时返回错误 "
                 + $"0x{exception.HResult:X8}：{exception.Message}",
@@ -293,13 +413,22 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         }
         catch (Exception exception)
         {
+            CaptureFailure(exception);
             burnFailure = exception;
         }
         finally
         {
-            CompleteBurnCleanup(burnFailure, cleanupWarnings,
-                () => { if (format is not null) ReleaseComObject((object)format); },
-                () => ReleaseComObject((object)recorder));
+            try
+            {
+                CompleteBurnCleanup(burnFailure, cleanupWarnings,
+                    () => { if (format is not null) ReleaseComObject((object)format); },
+                    () => ReleaseComObject((object)recorder));
+            }
+            catch (Exception exception)
+            {
+                CaptureFailure(exception);
+                throw;
+            }
         }
 
         progress?.Report(new OpticalBurnProgress(
@@ -308,7 +437,51 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             request.ContentLength,
             request.ContentLength));
         return result!;
+
+        void ReportDiagnostic(string message)
+            => progress?.Report(new OpticalBurnProgress("diagnostic", message, 0, request.ContentLength));
+
+        void ReportOperation(string operation)
+        {
+            currentOperation = operation;
+            writeProgress.ReportStage(GetBurnOperationStage(operation), operation);
+        }
+
+        void CaptureFailure(Exception exception)
+        {
+            bool firstSnapshot = !exception.Data.Contains("Burn.ProgressAtFailure");
+            OpticalBurnDiagnostics.CaptureFailure(exception, currentOperation, writeProgress.GetDiagnosticSummary());
+            try
+            {
+                if (!exception.Data.Contains("Burn.DeviceContext"))
+                    exception.Data["Burn.DeviceContext"] = string.Join("\n", new[]
+                        { environmentDiagnostic, recorderDiagnostic, physicalMediaDiagnostic }.Where(value => value is not null));
+            }
+            catch { }
+            if (firstSnapshot)
+            {
+                try
+                {
+                    progress?.Report(new("diagnostic",
+                        $"已捕获刻录异常：Operation={exception.Data["Burn.Operation"]}；HRESULT=0x{exception.HResult:X8}；"
+                            + $"{exception.Data["Burn.ProgressAtFailure"]}", 0, request.ContentLength));
+                }
+                catch { }
+            }
+        }
     }
+
+    internal static string GetBurnOperationStage(string operation) => operation switch
+    {
+        "CD 原始写入调用已返回" or "DVD 写入调用已返回" or "BD-R 数据传输调用已返回" => "write-complete",
+        "刷新 BD-R 缓存（请等待完成）" => "flush",
+        "关闭 BD-R 轨道（请等待完成）" => "close-track",
+        "封闭 BD-R 盘片（请等待完成）" => "close-disc",
+        "关闭 CD 刻录会话" => "finalize",
+        "释放 BD-R 刻录机访问权" => "release",
+        _ when operation.Contains("校验", StringComparison.Ordinal) => "diagnostic",
+        _ => "media",
+    };
 
     // The burn exception is captured before entering this final cleanup boundary.
     // Every caller-owned COM object gets its release attempt before we propagate
@@ -342,7 +515,11 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             try { release(); }
             catch (Exception exception)
             {
+                OpticalBurnDiagnostics.CaptureFailure(exception, operation);
                 firstCleanupFailure ??= exception;
+                Exception owner = burnFailure ?? firstCleanupFailure;
+                if (!ReferenceEquals(owner, exception))
+                    owner.Data[$"Burn.Cleanup.{operation}"] = OpticalBurnDiagnostics.FormatException(exception);
                 cleanupWarnings.Add($"{operation}失败（HRESULT 0x{exception.HResult:X8}）：{exception.Message}");
             }
         }
@@ -355,7 +532,9 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         CancellationToken cancellationToken,
         Action<string>? reportOperation = null,
         Action<OpticalWriteSpeed>? reportWriteSpeed = null,
-        Action<string>? reportCleanupWarning = null)
+        Action<string>? reportCleanupWarning = null,
+        Action<Exception>? reportFailure = null,
+        Action<string>? reportDiagnostic = null)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(content);
@@ -365,44 +544,80 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
 
         bool acquired = false;
         bool writeStarted = false;
+        bool writeReturned = false;
         bool flushed = false;
         Exception? operationException = null;
+        string operation = "准备 BD-R 刻录";
+        Stopwatch burnTimer = Stopwatch.StartNew();
+        TimeSpan operationStarted = burnTimer.Elapsed;
+        string? requestDiagnostic = null;
+        string? mediaDiagnostic = null;
+        string? speedDiagnostic = null;
         try
         {
+            requestDiagnostic = "BD-R 请求：RequestedSpeed=" + BurnDeviceDiagnostics.DescribeSpeed(request.WriteSpeed)
+                + $"；ContentBytes={request.ContentLength}；SectorBytes=2048；TrackSectors={request.ContentLength / 2048}。";
+            Diagnose(() => requestDiagnostic);
+            Diagnose(content.GetDiagnosticSummary);
             cancellationToken.ThrowIfCancellationRequested();
-            reportOperation?.Invoke("锁定 BD-R 盘片");
+            SetOperation("锁定 BD-R 盘片");
             session.Acquire();
             acquired = true;
             cancellationToken.ThrowIfCancellationRequested();
-            reportOperation?.Invoke("检查未格式化 BD-R 的原始容量");
+            SetOperation("检查未格式化 BD-R 的原始容量");
             BluRaySequentialMediaInfo media = session.ReadMedia();
+            string profile = media.Profile switch
+            {
+                0x40 => "BD-ROM",
+                0x41 => "BD-R sequential",
+                0x42 => "BD-R random recording",
+                0x43 => "BD-RE",
+                _ => "Unknown",
+            };
+            // Use the required pre-write read; never probe the recorder again on failure.
+            mediaDiagnostic = $"BD-R 介质：Profile=0x{media.Profile:X4} ({profile})；DiscIsBlank={media.DiscIsBlank}；"
+                + $"FormatStatus={media.FormatStatus}；TrackIsBlank={media.TrackIsBlank}；"
+                + $"NextWritableAddressValid={media.NextWritableAddressValid}；TrackStartAddress={media.TrackStartAddress}；"
+                + $"NextWritableAddress={media.NextWritableAddress}；FreeBlocks={media.FreeBlocks}；"
+                + $"TrackSize={media.TrackSize}；MaximumBlocks={media.MaximumBlocks}；TrackNumber={media.TrackNumber}。";
+            Diagnose(() => mediaDiagnostic);
             ValidateBluRaySequentialMedia(request, media);
-            reportOperation?.Invoke("设置 BD-R 写入速度");
+            SetOperation("设置 BD-R 写入速度");
             OpticalWriteSpeed speed = session.ConfigureWrite(request.WriteSpeed);
+            speedDiagnostic = "BD-R 写入速度：Requested=" + BurnDeviceDiagnostics.DescribeSpeed(request.WriteSpeed)
+                + "；Actual=" + BurnDeviceDiagnostics.DescribeSpeed(speed) + "。";
+            Diagnose(() => speedDiagnostic);
             speed.Validate();
             reportWriteSpeed?.Invoke(speed);
             cancellationToken.ThrowIfCancellationRequested();
-            reportOperation?.Invoke($"无备用区顺序写入 BD-R：{request.ContentLength / 2048:N0} 扇区");
+            SetOperation("BD-R 刻后读回校验：未启用");
+            Diagnose(content.GetDiagnosticSummary);
+            SetOperation($"无备用区顺序写入 BD-R：{request.ContentLength / 2048:N0} 扇区");
             using (cancellationToken.Register(session.CancelWrite))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 writeStarted = true;
                 session.Write(content, checked((uint)(request.ContentLength / 2048)));
+                writeReturned = true;
             }
+            SetOperation("BD-R 数据传输调用已返回");
             cancellationToken.ThrowIfCancellationRequested();
 
             // Once finalization starts, finish flushing/closing before releasing
             // the drive. Cancelling an in-flight CLOSE command is not safe.
-            reportOperation?.Invoke("刷新 BD-R 缓存并封盘（请等待完成）");
+            SetOperation("刷新 BD-R 缓存（请等待完成）");
             session.Flush();
             flushed = true;
+            SetOperation("关闭 BD-R 轨道（请等待完成）");
             session.CloseTrack(media.TrackNumber);
+            SetOperation("封闭 BD-R 盘片（请等待完成）");
             session.CloseDisc();
             return speed;
         }
         catch (Exception exception)
         {
             operationException = exception;
+            RecordFailure(exception);
             if (cancellationToken.IsCancellationRequested && exception is not OperationCanceledException)
                 throw new OperationCanceledException("蓝光刻录已取消。", exception, cancellationToken);
             throw;
@@ -413,7 +628,9 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             {
                 if (operationException is null)
                 {
-                    session.Release();
+                    SetOperation("释放 BD-R 刻录机访问权");
+                    try { session.Release(); ReportOperationTiming("completed"); }
+                    catch (Exception exception) { RecordFailure(exception); throw; }
                 }
                 else
                 {
@@ -422,23 +639,83 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                     if (writeStarted && !flushed)
                     {
                         long flushStarted = Stopwatch.GetTimestamp();
-                        try { session.Flush(); }
+                        try
+                        {
+                            session.Flush();
+                            Diagnose(() => $"BD-R 失败后清理：Flush returned；ElapsedMs={Stopwatch.GetElapsedTime(flushStarted).TotalMilliseconds:F0}。");
+                        }
                         catch (Exception exception)
                         {
                             TimeSpan elapsed = Stopwatch.GetElapsedTime(flushStarted);
+                            Diagnose(() => $"BD-R 失败后清理：Flush failed；HRESULT=0x{exception.HResult:X8}；ElapsedMs={elapsed.TotalMilliseconds:F0}。");
                             try
                             {
+                                OpticalBurnDiagnostics.CaptureFailure(exception, "蓝光失败后刷新缓存（清理）");
+                                operationException.Data["Burn.CleanupFlushException"] = OpticalBurnDiagnostics.FormatException(exception);
                                 reportCleanupWarning?.Invoke($"蓝光失败后刷新缓存失败（HRESULT 0x{exception.HResult:X8}，"
                                     + $"耗时 {elapsed.TotalSeconds:F3} 秒）：{exception.Message}");
                             }
                             catch { /* Diagnostics must not replace the write failure or prevent release. */ }
                         }
                     }
-                    try { session.Release(); }
-                    catch { }
+                    long releaseStarted = Stopwatch.GetTimestamp();
+                    try
+                    {
+                        session.Release();
+                        Diagnose(() => $"BD-R 失败后清理：Release returned；ElapsedMs={Stopwatch.GetElapsedTime(releaseStarted).TotalMilliseconds:F0}。");
+                    }
+                    catch (Exception exception)
+                    {
+                        Diagnose(() => $"BD-R 失败后清理：Release failed；HRESULT=0x{exception.HResult:X8}；ElapsedMs={Stopwatch.GetElapsedTime(releaseStarted).TotalMilliseconds:F0}。");
+                        try
+                        {
+                            operationException.Data["Burn.CleanupReleaseException"] = OpticalBurnDiagnostics.FormatException(exception);
+                            reportCleanupWarning?.Invoke($"蓝光失败后释放设备失败（HRESULT 0x{exception.HResult:X8}）：{exception.Message}");
+                        }
+                        catch { }
+                    }
                 }
             }
         }
+
+        void SetOperation(string value)
+        {
+            ReportOperationTiming("returned");
+            operation = value;
+            operationStarted = burnTimer.Elapsed;
+            try { reportOperation?.Invoke(value); } catch { }
+        }
+
+        void RecordFailure(Exception exception)
+        {
+            // Capture before cleanup can drain the source, cancel generation or release the device.
+            try
+            {
+                if (!exception.Data.Contains("Burn.BluRayContext"))
+                {
+                    string timing = $"BD-R 失败：Operation={operation}；ElapsedMs={burnTimer.Elapsed.TotalMilliseconds:F0}；"
+                        + $"OperationElapsedMs={(burnTimer.Elapsed - operationStarted).TotalMilliseconds:F0}；"
+                        + $"WriteStarted={writeStarted}；WriteReturned={writeReturned}；FlushReturned={flushed}；"
+                        + $"CancellationRequested={cancellationToken.IsCancellationRequested}。";
+                    exception.Data["Burn.BluRayContext"] = string.Join("\n", new[]
+                        { timing, requestDiagnostic, mediaDiagnostic, speedDiagnostic }.Where(value => value is not null));
+                    exception.Data["Burn.ContentAtFailure"] = content.GetDiagnosticSummary();
+                    Diagnose(() => timing);
+                    Diagnose(() => (string)exception.Data["Burn.ContentAtFailure"]!);
+                }
+            }
+            catch { }
+            // MMC exceptions already carry real sense data; keep it unchanged.
+            ReportOperationTiming("failed");
+            OpticalBurnDiagnostics.CaptureFailure(exception, operation);
+            try { reportFailure?.Invoke(exception); } catch { }
+        }
+
+        void Diagnose(Func<string?> describe) => BurnDeviceDiagnostics.Report(reportDiagnostic, describe);
+
+        void ReportOperationTiming(string result)
+            => Diagnose(() => $"BD-R 阶段：Operation={operation}；Result={result}；"
+                + $"ElapsedMs={(burnTimer.Elapsed - operationStarted).TotalMilliseconds:F0}。");
     }
 
     internal static void ValidateBluRaySequentialMedia(
@@ -475,8 +752,10 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         OpticalBurnRequest request,
         CancellationToken cancellationToken,
         Action<string>? reportOperation = null,
-        Action<OpticalWriteSpeed>? reportWriteSpeed = null)
-        => BurnCdDao(format, imageSession, content, request, cancellationToken, reportOperation, reportWriteSpeed);
+        Action<OpticalWriteSpeed>? reportWriteSpeed = null,
+        Action<string>? reportDiagnostic = null)
+        => BurnCdDao(format, imageSession, content, request, cancellationToken, reportOperation, reportWriteSpeed,
+            reportDiagnostic: reportDiagnostic);
 
     internal static OpticalWriteSpeed BurnCdDao(
         ICdRawSession format,
@@ -485,42 +764,59 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         OpticalBurnRequest request,
         CancellationToken cancellationToken,
         Action<string>? reportOperation = null,
-        Action<OpticalWriteSpeed>? reportWriteSpeed = null)
+        Action<OpticalWriteSpeed>? reportWriteSpeed = null,
+        Action<Exception>? reportFailure = null,
+        Action<string>? reportCleanupWarning = null,
+        Action<string>? reportDiagnostic = null)
     {
         if (!OpticalBurnMedia.UsesCdDao(request.MediaKind))
             throw new ArgumentException("CD DAO requires an audio or CD data request.", nameof(request));
         string trackDescription = request.MediaKind == OpticalBurnMediaKind.CdData ? "数据轨" : "音轨";
         bool prepared = false;
         Exception? operationException = null;
+        string operation = "准备 CD 刻录";
+        Stopwatch daoTimer = Stopwatch.StartNew();
+        TimeSpan operationStarted = daoTimer.Elapsed;
+        string? layoutDiagnostic = null;
+        string? mediaDiagnostic = null;
+        string? blankDiagnostic = null;
+        string? sectorDiagnostic = null;
+        string? speedDiagnostic = null;
+        bool writeStarted = false;
+        bool writeReturned = false;
         try
         {
-            reportOperation?.Invoke("准备并锁定 CD 介质");
+            Diagnose(() => "CD DAO 请求：RequestedSpeed=" + BurnDeviceDiagnostics.DescribeSpeed(request.WriteSpeed)
+                + $"；ContentBytes={request.ContentLength}；SectorBytes={OpticalBurnMedia.GetSectorBytes(request.MediaKind)}。");
+            Diagnose(content.GetDiagnosticSummary);
+            SetOperation("准备并锁定 CD 介质");
             format.PrepareMedia();
             prepared = true;
-            reportOperation?.Invoke("检查 CD 是否为空白盘");
-            if (!format.MediaPhysicallyBlank)
+            SetOperation("检查 CD 是否为空白盘");
+            bool physicallyBlank = format.MediaPhysicallyBlank;
+            blankDiagnostic = $"CD DAO 空白状态：MediaPhysicallyBlank={physicallyBlank}（写入前检查）。";
+            Diagnose(() => blankDiagnostic);
+            if (!physicallyBlank)
             {
                 throw new InvalidOperationException("CD 不是空白盘，已取消刻录。");
             }
 
-            reportOperation?.Invoke("设置 CD DAO 扇区格式");
-            if (!format.SupportedSectorTypes.Contains(CdRawSubcodeIsCooked))
-            {
-                throw new InvalidOperationException(
-                    "所选光驱不支持 CD DAO 所需的 Cooked R-W 子通道格式。");
-            }
-
-            format.SetRequestedSectorType(CdRawSubcodeIsCooked);
+            SetOperation("设置 CD DAO 扇区格式");
+            IReadOnlyList<int> supportedSectorTypes = format.SupportedSectorTypes;
+            int sectorType = ResolveCdDaoSectorType(supportedSectorTypes);
+            sectorDiagnostic = DescribeCdDaoSectorType(sectorType, supportedSectorTypes);
+            Diagnose(() => sectorDiagnostic);
+            format.SetRequestedSectorType(sectorType);
             if (request.WriteSpeed is not null)
             {
-                reportOperation?.Invoke("设置 CD 刻录速度");
+                SetOperation("设置 CD 刻录速度");
                 format.SetWriteSpeed(
                     request.WriteSpeed.SectorsPerSecond,
                     request.WriteSpeed.RotationTypeIsPureCav);
             }
             else
             {
-                reportOperation?.Invoke("使用 CD DAO 保守回退速度");
+                SetOperation("使用 CD DAO 保守回退速度");
                 format.SetWriteSpeed(CdDaoFallbackSpeedSectorsPerSecond, false);
             }
 
@@ -529,12 +825,23 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 format.CurrentRotationTypeIsPureCav);
             actualWriteSpeed.Validate();
             reportWriteSpeed?.Invoke(actualWriteSpeed);
+            speedDiagnostic = "CD DAO 写入速度：Requested=" + BurnDeviceDiagnostics.DescribeSpeed(request.WriteSpeed)
+                + "；Actual=" + BurnDeviceDiagnostics.DescribeSpeed(actualWriteSpeed) + "。";
+            Diagnose(() => speedDiagnostic);
+            // Optional settings are cached now; do not query a failing recorder later.
+            try { mediaDiagnostic = format.GetDiagnosticSummary(); }
+            catch (Exception exception) { mediaDiagnostic = $"CD DAO 介质设置：unavailable (0x{exception.HResult:X8})。"; }
+            Diagnose(() => mediaDiagnostic);
 
-            reportOperation?.Invoke($"构造 CD DAO {trackDescription}");
-            IStream rawImage = imageSession.CreateImage(content);
+            SetOperation($"构造 CD DAO {trackDescription}");
+            IStream rawImage = imageSession.CreateImage(content, sectorType);
             long startOfLeadout = imageSession.StartOfLeadout;
             long lastPossibleStartOfLeadout = format.LastPossibleStartOfLeadout;
             long excessSectors = startOfLeadout - lastPossibleStartOfLeadout;
+            layoutDiagnostic = $"CD DAO 容量：TrackSectors={request.ContentLength / OpticalBurnMedia.GetSectorBytes(request.MediaKind)}；"
+                + $"StartOfLeadout={startOfLeadout}；LastPossibleStartOfLeadout={lastPossibleStartOfLeadout}；"
+                + $"LeadoutMarginSectors={-excessSectors}；OverburnAllowanceSectors={CdDaoOverburnAllowanceSectors}。";
+            Diagnose(() => layoutDiagnostic);
             if (excessSectors > CdDaoOverburnAllowanceSectors)
             {
                 throw new InvalidOperationException(
@@ -544,19 +851,25 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
 
             if (excessSectors > 0)
             {
-                reportOperation?.Invoke(
+                SetOperation(
                     $"使用 CD DAO 末端 overburn（超出 {excessSectors} 个 DAO 扇区）");
             }
 
             using CancellationTokenRegistration registration = cancellationToken.Register(
                 format.CancelWrite);
-            reportOperation?.Invoke($"写入 CD DAO {trackDescription}");
+            SetOperation("CD 刻后读回校验：未启用");
+            Diagnose(content.GetDiagnosticSummary);
+            SetOperation($"写入 CD DAO {trackDescription}");
+            writeStarted = true;
             format.WriteMedia(rawImage);
+            writeReturned = true;
+            SetOperation("CD 原始写入调用已返回");
             return actualWriteSpeed;
         }
         catch (Exception exception)
         {
             operationException = exception;
+            RecordFailure(exception);
             throw;
         }
         finally
@@ -565,82 +878,195 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             {
                 if (operationException is null)
                 {
-                    reportOperation?.Invoke("关闭 CD 刻录会话");
-                    format.ReleaseMedia();
+                    SetOperation("关闭 CD 刻录会话");
+                    try { format.ReleaseMedia(); ReportOperationTiming("completed"); }
+                    catch (Exception exception) { RecordFailure(exception); throw; }
                 }
                 else
                 {
-                    TryReleaseCdMedia(format);
+                    long releaseStarted = Stopwatch.GetTimestamp();
+                    try
+                    {
+                        format.ReleaseMedia();
+                        Diagnose(() => $"CD DAO 失败后清理：ReleaseMedia returned；ElapsedMs={Stopwatch.GetElapsedTime(releaseStarted).TotalMilliseconds:F0}。");
+                    }
+                    catch (Exception exception)
+                    {
+                        try
+                        {
+                            operationException.Data["Burn.CleanupReleaseException"] = OpticalBurnDiagnostics.FormatException(exception);
+                            reportCleanupWarning?.Invoke($"CD 失败后关闭会话失败（HRESULT 0x{exception.HResult:X8}）：{exception.Message}");
+                        }
+                        catch { /* Preserve the original write failure. */ }
+                    }
                 }
             }
         }
+
+        void SetOperation(string value)
+        {
+            ReportOperationTiming("returned");
+            operation = value;
+            operationStarted = daoTimer.Elapsed;
+            try { reportOperation?.Invoke(value); } catch { }
+        }
+
+        void RecordFailure(Exception exception)
+        {
+            // Cache before ReleaseMedia/Dispose, which can cancel the producer and change telemetry.
+            try
+            {
+                if (!exception.Data.Contains("Burn.CdDaoContext"))
+                {
+                    string timing = $"CD DAO 失败：Operation={operation}；ElapsedMs={daoTimer.Elapsed.TotalMilliseconds:F0}；"
+                        + $"OperationElapsedMs={(daoTimer.Elapsed - operationStarted).TotalMilliseconds:F0}；"
+                        + $"WriteStarted={writeStarted}；WriteReturned={writeReturned}；CancellationRequested={cancellationToken.IsCancellationRequested}。";
+                    exception.Data["Burn.CdDaoContext"] = string.Join("\n", new[]
+                        { timing, sectorDiagnostic, speedDiagnostic, mediaDiagnostic, blankDiagnostic, layoutDiagnostic }.Where(value => value is not null));
+                    exception.Data["Burn.ContentAtFailure"] = content.GetDiagnosticSummary();
+                    Diagnose(() => timing);
+                    Diagnose(() => (string)exception.Data["Burn.ContentAtFailure"]!);
+                    if (writeStarted && !writeReturned)
+                    {
+                        const string sense = "unavailable: IMAPI RawCD.WriteMedia does not expose the failing command's SCSI sense; no post-failure device query was made.";
+                        exception.Data["Burn.SenseStatus"] = sense;
+                        Diagnose(() => "CD DAO Sense：" + sense);
+                    }
+                }
+            }
+            catch { }
+            OpticalBurnDiagnostics.CaptureFailure(exception, operation);
+            try { reportFailure?.Invoke(exception); } catch { }
+        }
+
+        void Diagnose(Func<string?> describe) => BurnDeviceDiagnostics.Report(reportDiagnostic, describe);
+
+        void ReportOperationTiming(string result)
+            => Diagnose(() => $"CD DAO 阶段：Operation={operation}；Result={result}；"
+                + $"ElapsedMs={(daoTimer.Elapsed - operationStarted).TotalMilliseconds:F0}。");
     }
 
-    private static void TryReleaseCdMedia(ICdRawSession format)
-    {
-        try
-        {
-            format.ReleaseMedia();
-        }
-        catch
-        {
-            // Preserve the first failure. Some drives automatically unprepare the
-            // media after a write error, making ReleaseMedia fail with 0xC0AA0502.
-        }
-    }
-
-    private static OpticalWriteSpeed BurnData(
-        dynamic format,
+    internal static OpticalWriteSpeed BurnData(
+        IDvdDataSession session,
         GeneratedContentComStream content,
         OpticalBurnRequest request,
         CancellationToken cancellationToken,
         Action<OpticalWriteSpeed>? reportWriteSpeed = null,
-        Action<object>? reportWriteProgress = null)
+        Action<string>? reportOperation = null,
+        Action<Exception>? reportFailure = null,
+        Action<string>? reportDiagnostic = null)
     {
-        ValidateDataMedia(
-            request,
-            (int)format.CurrentMediaStatus,
-            (long)format.FreeSectorsOnMedia);
-
-        format.BufferUnderrunFreeDisabled = false;
-        format.ForceMediaToBeClosed = true;
-        format.ForceOverwrite = false;
-        if (request.WriteSpeed is not null)
-        {
-            format.SetWriteSpeed(
-                request.WriteSpeed.SectorsPerSecond,
-                request.WriteSpeed.RotationTypeIsPureCav);
-        }
-
-        OpticalWriteSpeed actualWriteSpeed = new(
-            Convert.ToInt32(format.CurrentWriteSpeed),
-            Convert.ToBoolean(format.CurrentRotationTypeIsPureCAV));
-        actualWriteSpeed.Validate();
-        reportWriteSpeed?.Invoke(actualWriteSpeed);
-        using CancellationTokenRegistration registration = cancellationToken.Register(() =>
-            TryCancel(format, cdAudio: false));
-        // DDiscFormat2DataEvents.Update supplies device-written LBAs, unlike
-        // reads from the generated source stream. Preserve the cancellation
-        // registration above and keep telemetry limited to the Write lifetime.
-        Guid events = new("2735413C-7F64-5B0F-8F00-5D77AFBE261E");
-        Action<object, object> update = (_, args) => reportWriteProgress?.Invoke(args);
-        bool subscribed = false;
+        string operation = "准备 DVD 刻录";
+        Stopwatch burnTimer = Stopwatch.StartNew();
+        TimeSpan operationStarted = burnTimer.Elapsed;
+        int? mediaState = null;
+        long? freeSectors = null;
+        long requiredSectors = request.ContentLength / 2048;
+        string requestDiagnostic = "DVD 请求：RequestedSpeed=" + BurnDeviceDiagnostics.DescribeSpeed(request.WriteSpeed)
+            + $"；ContentBytes={request.ContentLength}；SectorBytes=2048；RequiredSectors={requiredSectors}。";
+        string? settingsDiagnostic = null;
+        string? speedDiagnostic = null;
+        bool writeStarted = false;
+        bool writeReturned = false;
         try
         {
-            ComEventsHelper.Combine((object)format, events, 0x200, update);
-            subscribed = true;
-        }
-        catch (COMException) { /* Optional telemetry must not prevent writing. */ }
-        try { format.Write(content); }
-        finally
-        {
-            if (subscribed)
+            Diagnose(() => requestDiagnostic);
+            Diagnose(content.GetDiagnosticSummary);
+            SetOperation("检查 DVD 介质状态和容量");
+            mediaState = session.CurrentMediaStatus;
+            freeSectors = session.FreeSectorsOnMedia;
+            Diagnose(DescribeCapacity);
+            ValidateDataMedia(request, mediaState.Value, freeSectors.Value);
+
+            SetOperation("设置 DVD 缓冲保护和封盘选项");
+            session.ConfigureMedia();
+            SetOperation("设置 DVD 刻后校验为 NONE");
+            session.DisableVerification();
+            SetOperation("DVD 刻后校验：已关闭（NONE）");
+            if (request.WriteSpeed is not null)
             {
-                try { ComEventsHelper.Remove((object)format, events, 0x200, update); }
-                catch (COMException) { /* Preserve any write error. */ }
+                SetOperation("设置 DVD 刻录速度");
+                session.SetWriteSpeed(request.WriteSpeed);
             }
+
+            SetOperation("读取 DVD 实际刻录速度");
+            OpticalWriteSpeed actualWriteSpeed = session.CurrentWriteSpeed;
+            actualWriteSpeed.Validate();
+            speedDiagnostic = "DVD 写入速度：Requested=" + BurnDeviceDiagnostics.DescribeSpeed(request.WriteSpeed)
+                + "；Actual=" + BurnDeviceDiagnostics.DescribeSpeed(actualWriteSpeed) + "。";
+            Diagnose(() => speedDiagnostic);
+            reportWriteSpeed?.Invoke(actualWriteSpeed);
+            // Optional settings are read once before writing, never after an error.
+            try { settingsDiagnostic = session.GetDiagnosticSummary(); }
+            catch (Exception exception) { settingsDiagnostic = $"DVD 介质设置：unavailable (0x{exception.HResult:X8})。"; }
+            Diagnose(() => settingsDiagnostic);
+            using CancellationTokenRegistration registration = cancellationToken.Register(session.CancelWrite);
+            SetOperation("订阅 DVD 刻录进度事件");
+            Diagnose(content.GetDiagnosticSummary);
+            SetOperation("写入 DVD 数据（包含 Windows 内部收尾）");
+            writeStarted = true;
+            session.Write(content, RecordFailure);
+            writeReturned = true;
+            SetOperation("DVD 写入调用已返回");
+            Diagnose(() => $"DVD 写入结果：WriteStarted={writeStarted}；WriteReturned={writeReturned}；ElapsedMs={burnTimer.Elapsed.TotalMilliseconds:F0}。");
+            ReportOperationTiming("completed");
+            return actualWriteSpeed;
         }
-        return actualWriteSpeed;
+        catch (Exception exception)
+        {
+            RecordFailure(exception);
+            throw;
+        }
+
+        void RecordFailure(Exception exception)
+        {
+            // Called inside the adapter's Write catch, before unsubscribing events
+            // or waiting for cancellation callbacks. The outer catch handles setup.
+            if (exception.Data.Contains("Burn.DvdContext")) return;
+            OpticalBurnDiagnostics.CaptureFailure(exception, operation);
+            try
+            {
+                if (!exception.Data.Contains("Burn.DvdContext"))
+                {
+                    string timing = $"DVD 失败：Operation={operation}；ElapsedMs={burnTimer.Elapsed.TotalMilliseconds:F0}；"
+                        + $"OperationElapsedMs={(burnTimer.Elapsed - operationStarted).TotalMilliseconds:F0}；"
+                        + $"WriteStarted={writeStarted}；WriteReturned={writeReturned}；CancellationRequested={cancellationToken.IsCancellationRequested}。";
+                    exception.Data["Burn.DvdContext"] = string.Join("\n", new[]
+                        { timing, requestDiagnostic, DescribeCapacity(), settingsDiagnostic, speedDiagnostic }.Where(value => value is not null));
+                    if (!exception.Data.Contains("Burn.ContentAtFailure"))
+                        exception.Data["Burn.ContentAtFailure"] = content.GetDiagnosticSummary();
+                    Diagnose(() => timing);
+                    Diagnose(() => (string)exception.Data["Burn.ContentAtFailure"]!);
+                    if (writeStarted && !writeReturned)
+                    {
+                        const string sense = "unavailable: IMAPI IDiscFormat2Data.Write does not expose the failing command's SCSI sense; no post-failure device query was made.";
+                        exception.Data["Burn.SenseStatus"] = sense;
+                        Diagnose(() => "DVD Sense：" + sense);
+                    }
+                }
+            }
+            catch { }
+            try { reportFailure?.Invoke(exception); } catch { }
+        }
+
+        string DescribeCapacity()
+            => $"DVD 容量：MediaState={(mediaState is int state ? $"0x{state:X8}" : "unavailable")}；"
+                + $"FreeSectors={freeSectors?.ToString() ?? "unavailable"}；RequiredSectors={requiredSectors}；"
+                + $"MarginSectors={(freeSectors - requiredSectors)?.ToString() ?? "unavailable"}。";
+
+        void SetOperation(string value)
+        {
+            ReportOperationTiming("returned");
+            operation = value;
+            operationStarted = burnTimer.Elapsed;
+            try { reportOperation?.Invoke(value); } catch { }
+        }
+
+        void Diagnose(Func<string?> describe) => BurnDeviceDiagnostics.Report(reportDiagnostic, describe);
+
+        void ReportOperationTiming(string result)
+            => Diagnose(() => $"DVD 阶段：Operation={operation}；Result={result}；"
+                + $"ElapsedMs={(burnTimer.Elapsed - operationStarted).TotalMilliseconds:F0}。");
     }
 
     private static void ValidateRequestedMedia(
@@ -824,24 +1250,33 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             .FirstOrDefault();
     }
 
-    private static void TryCancel(dynamic format, bool cdAudio)
+    // Prefer raw P-W. IMAPI's image creator writes no R-W data, so cooked and raw images
+    // are byte-identical; only the subchannel layout announced to the recorder differs.
+    // Some recorders list cooked R-W yet reject its first lead-in WRITE: an HP BD-RE BU20N
+    // (firmware 0403) returned 5/64/00 for data block type 2, which IMAPI reports as
+    // 0xC0AA0301, while a direct SCSI Test Write with data block type 3 (raw P-W) accepted
+    // the first 3,000 lead-in sectors at 4x on the same disc. cdrecord also recommends
+    // raw96r over raw96p.
+    internal static int ResolveCdDaoSectorType(IReadOnlyCollection<int> supportedSectorTypes)
     {
-        try
-        {
-            if (cdAudio)
-            {
-                format.CancelAddTrack();
-            }
-            else
-            {
-                format.CancelWrite();
-            }
-        }
-        catch
-        {
-            // The operation may already be finishing; the producer token is also cancelled.
-        }
+        ArgumentNullException.ThrowIfNull(supportedSectorTypes);
+        if (supportedSectorTypes.Contains(CdRawSectorType.SubcodeIsRaw))
+            return CdRawSectorType.SubcodeIsRaw;
+        if (supportedSectorTypes.Contains(CdRawSectorType.SubcodeIsCooked))
+            return CdRawSectorType.SubcodeIsCooked;
+        throw new InvalidOperationException(
+            "所选光驱不支持 CD DAO 所需的 Raw P-W 或 Cooked R-W 子通道格式"
+            + $"（光驱报告：{FormatSectorTypes(supportedSectorTypes)}）。");
     }
+
+    internal static string DescribeCdDaoSectorType(int sectorType, IReadOnlyCollection<int> supportedSectorTypes)
+        => (sectorType == CdRawSectorType.SubcodeIsRaw
+                ? "CD DAO 子通道格式：Raw P-W（IMAPI 类型 3）"
+                : "CD DAO 子通道格式：Cooked R-W（IMAPI 类型 2）")
+            + $"；光驱报告支持：{FormatSectorTypes(supportedSectorTypes)}。";
+
+    private static string FormatSectorTypes(IReadOnlyCollection<int> sectorTypes)
+        => sectorTypes.Count == 0 ? "无" : string.Join(", ", sectorTypes);
 
     private static dynamic CreateRecorder(string id)
     {

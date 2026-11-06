@@ -12,7 +12,8 @@ internal static class CalibrationPhotoTests
         TestJointPerspective();
         TestInvalidContoursAndCancellation();
         TestPhotoPixelsAndLoading();
-        Console.WriteLine("calibration-photo: passed (joint concentric-circle perspective, invalid contours, pixels, cancellation)");
+        TestAdaptiveResolution();
+        Console.WriteLine("calibration-photo: passed (joint concentric-circle perspective, invalid contours, pixels, adaptive resolution, cancellation)");
     }
 
     private static void TestJointPerspective()
@@ -135,6 +136,9 @@ internal static class CalibrationPhotoTests
                 var encoder = new PngBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(image));
                 using (FileStream file = File.Create(path)) encoder.Save(file);
+                BitmapSource originalSize = CalibrationPhotoService.Load(path);
+                Require(originalSize.PixelWidth == image.PixelWidth && originalSize.PixelHeight == image.PixelHeight,
+                    "default loading preserves small photos without upscaling them");
                 BitmapSource loaded = CalibrationPhotoService.Load(path, 128);
                 Require(loaded.IsFrozen && Math.Max(loaded.PixelWidth, loaded.PixelHeight) == 128,
                     "photo loading bounds the long edge for both portrait and landscape images");
@@ -143,6 +147,26 @@ internal static class CalibrationPhotoTests
                 new FormatConvertedBitmap(loaded, PixelFormats.Bgra32, null, 0).CopyPixels(copied, loaded.PixelWidth * 4, 0);
                 Require(copied.Any(value => value != 0), "loaded photo remains usable after its file is closed and removed");
             }
+            string panoramaPath = Path.Combine(directory, "panorama.png");
+            var panoramaEncoder = new PngBitmapEncoder();
+            panoramaEncoder.Frames.Add(BitmapFrame.Create(Gradient(9000, 64)));
+            using (FileStream file = File.Create(panoramaPath)) panoramaEncoder.Save(file);
+            BitmapSource panorama = CalibrationPhotoService.Load(panoramaPath);
+            Require(panorama.PixelWidth == CalibrationPhotoLimits.MaxDimension
+                && Math.Abs(panorama.PixelHeight - 64.0 * panorama.PixelWidth / 9000) <= 1,
+                "photos beyond the long-edge limit are proportionally reduced rather than stretched or rejected");
+            string largeSquarePath = Path.Combine(directory, "large-square.png");
+            const int largeSquareSize = 6000;
+            var largeSquare = BitmapSource.Create(largeSquareSize, largeSquareSize, 96, 96,
+                PixelFormats.Gray8, null, new byte[largeSquareSize * largeSquareSize], largeSquareSize);
+            largeSquare.Freeze();
+            var squareEncoder = new PngBitmapEncoder();
+            squareEncoder.Frames.Add(BitmapFrame.Create(largeSquare));
+            using (FileStream file = File.Create(largeSquarePath)) squareEncoder.Save(file);
+            BitmapSource boundedSquare = CalibrationPhotoService.Load(largeSquarePath);
+            Require(boundedSquare.PixelWidth == 5792 && boundedSquare.PixelHeight == 5792
+                && CalibrationPhotoLimits.Contains(boundedSquare.PixelWidth, boundedSquare.PixelHeight),
+                "a photo below the long-edge limit but above the total pixel budget is proportionally reduced");
         }
         finally
         {
@@ -155,6 +179,52 @@ internal static class CalibrationPhotoTests
             cancellationToken: cancellation.Token), "rectification honors cancellation");
         Throws<OperationCanceledException>(() => CalibrationPhotoService.Load("not-opened.png",
             cancellationToken: cancellation.Token), "cancelled loading does not read a file");
+    }
+
+    private static void TestAdaptiveResolution()
+    {
+        // The camera records two pixels per millimetre. At this output scale the
+        // integer source-pixel positions line up exactly, including the 3 mm margin.
+        const int sourceSize = 512;
+        byte[] stripes = new byte[sourceSize * sourceSize];
+        for (int y = 0; y < sourceSize; y++)
+        for (int x = 0; x < sourceSize; x++) stripes[y * sourceSize + x] = (byte)((x & 1) * 255);
+        var source = BitmapSource.Create(sourceSize, sourceSize, 96, 96, PixelFormats.Gray8, null, stripes, sourceSize);
+        source.Freeze();
+        var camera = new CalibrationPhotoTransform([2, 0, 255.5, 0, 2, 255.5, 0, 0, 1]);
+        BitmapSource corrected = CalibrationPhotoService.Rectify(source, camera, 63);
+        Require(corrected.PixelWidth == 252 && corrected.PixelHeight == 252,
+            "automatic rectification preserves source pixels per millimetre and accounts for the canvas margin");
+        byte[] row = new byte[corrected.PixelWidth * 4];
+        corrected.CopyPixels(new System.Windows.Int32Rect(0, 126, corrected.PixelWidth, 1), row, row.Length, 0);
+        for (int x = 60; x < 190; x++)
+            Require(row[x * 4] == ((x & 1) * 255),
+                "native-resolution rectification preserves single-pixel stripes instead of averaging them away");
+
+        const double angle = 0.37;
+        double c = 2 * Math.Cos(angle), s = 2 * Math.Sin(angle);
+        var rotated = new CalibrationPhotoTransform([c, -s, 255.5, s, c, 255.5, 0, 0, 1]);
+        BitmapSource rotatedPhoto = CalibrationPhotoService.Rectify(source, rotated, 63);
+        Require(Math.Abs(rotatedPhoto.PixelWidth - corrected.PixelWidth) <= 1,
+            "in-plane rotation does not inflate the automatic output resolution");
+        BitmapSource smallDisc = CalibrationPhotoService.Rectify(source, camera, 43);
+        Require(smallDisc.PixelWidth == 172,
+            "8 cm discs retain the same pixel density with their own canvas margin");
+        var oblique = new CalibrationPhotoTransform([3, 0, 255.5, 0, 1, 255.5, 0, 0, 1]);
+        Require(CalibrationPhotoService.GetRectifiedPixelSize(oblique, 63) == 378,
+            "anisotropic projection keeps the better-sampled axis instead of averaging its detail away");
+        var perspective = new CalibrationPhotoTransform([2, 0, 0, 0, 2, 0, .006, 0, 1]);
+        // The close side at x=-63 has d(source X)/d(disc X)=2/(1-.006*63)^2.
+        int nearSideMinimum = (int)Math.Ceiling(126 * 2 / Math.Pow(1 - .006 * 63, 2));
+        Require(CalibrationPhotoService.GetRectifiedPixelSize(perspective, 63) >= nearSideMinimum,
+            "perspective output retains near-side detail rather than using only the centre's pixel density");
+        var magnified = new CalibrationPhotoTransform([500, 0, 255.5, 0, 500, 255.5, 0, 0, 1]);
+        int boundedSize = CalibrationPhotoService.GetRectifiedPixelSize(magnified, 63);
+        Require((long)boundedSize * boundedSize <= CalibrationPhotoLimits.MaxPixelCount
+            && (long)(boundedSize + 1) * (boundedSize + 1) > CalibrationPhotoLimits.MaxPixelCount,
+            "automatic rectification caps the square at the pixel budget before any large allocation");
+        Throws<ArgumentOutOfRangeException>(() => CalibrationPhotoService.Rectify(source, camera, 63, 8192),
+            "an explicitly requested square beyond the pixel budget is rejected before allocation");
     }
 
     private static BitmapSource Gradient(int width, int height)

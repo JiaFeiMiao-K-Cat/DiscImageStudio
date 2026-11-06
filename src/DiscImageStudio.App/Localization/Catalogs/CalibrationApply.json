@@ -1,0 +1,128 @@
+{
+  "CalibrationApply.Busy": {
+    "zh-CN": "请等待计算和预测预览完成。",
+    "zh-TW": "請等待計算和預測預覽完成。",
+    "en": "Wait for the calculation and predicted preview to finish.",
+    "ja": "計算と予測プレビューの完了を待ってください。",
+    "tr": "Hesaplamanın ve tahmin önizlemesinin tamamlanmasını bekleyin.",
+    "es": "Espere a que finalicen el cálculo y la vista previa de la predicción.",
+    "cs": "Počkejte na dokončení výpočtu a náhledu předpovědi."
+  },
+  "CalibrationApply.Stage": {
+    "zh-CN": "请进入当前标定图案的描点页面后计算参数。",
+    "zh-TW": "請進入目前校正圖案的描點頁面後計算參數。",
+    "en": "Open the tracing step for the current target, then solve its parameters.",
+    "ja": "現在のターゲットのトレース画面でパラメーターを計算してください。",
+    "tr": "Geçerli hedefin nokta işaretleme adımını açıp parametrelerini hesaplayın.",
+    "es": "Abra el paso de trazado del patrón actual y calcule sus parámetros.",
+    "cs": "Otevřete krok označování bodů aktuálního terče a vypočítejte jeho parametry."
+  },
+  "CalibrationApply.Rectify": {
+    "zh-CN": "请先完成并确认照片矫正，再描点计算参数。",
+    "zh-TW": "請先完成並確認照片校正，再描點計算參數。",
+    "en": "Complete and confirm photo rectification before tracing and solving.",
+    "ja": "写真の補正を完了して確認してから、点を指定して計算してください。",
+    "tr": "Noktaları işaretleyip hesaplamadan önce fotoğraf düzeltmesini tamamlayın ve onaylayın.",
+    "es": "Complete y confirme la rectificación de la foto antes de trazar y calcular.",
+    "cs": "Před označováním bodů a výpočtem dokončete a potvrďte narovnání fotografie."
+  },
+  "CalibrationApply.Solve": {
+    "zh-CN": "请完成描点后计算参数。打开记录或修改点位后需重新计算。",
+    "zh-TW": "請完成描點後計算參數。開啟記錄或修改點位後需重新計算。",
+    "en": "Finish tracing, then solve the parameters. Recalculate after opening a record or changing points.",
+    "ja": "点を指定してからパラメーターを計算してください。記録を開いた後や点を変更した後は再計算が必要です。",
+    "tr": "Noktaları işaretleyip parametreleri hesaplayın. Bir kayıt açtıktan veya noktaları değiştirdikten sonra yeniden hesaplayın.",
+    "es": "Complete el trazado y calcule los parámetros. Vuelva a calcular tras abrir un registro o modificar los puntos.",
+    "cs": "Dokončete označování bodů a vypočítejte parametry. Po otevření záznamu nebo změně bodů výpočet zopakujte."
+  },
+  "CalibrationApply.SelectCandidate": {
+    "zh-CN": "请先选择一个候选并查看预测轮廓。",
+    "zh-TW": "請先選擇一個候選並查看預測輪廓。",
+    "en": "Select a candidate and inspect its predicted outline.",
+    "ja": "候補を選び、予測輪郭を確認してください。",
+    "tr": "Bir aday seçip tahmini konturunu inceleyin.",
+    "es": "Seleccione un candidato y examine su contorno previsto.",
+    "cs": "Vyberte kandidáta a prohlédněte si jeho předpovězený obrys."
+  },
+  "CalibrationApply.StaleCandidate": {
+    "zh-CN": "这个候选不属于当前计算结果，请重新计算后选择候选。",
+    "zh-TW": "此候選不屬於目前計算結果，請重新計算後選擇候選。",
+    "en": "This candidate is not part of the current result. Solve again and select a candidate.",
+    "ja": "この候補は現在の計算結果に含まれていません。再計算して候補を選んでください。",
+    "tr": "Bu aday geçerli sonuca ait değil. Yeniden hesaplayıp bir aday seçin.",
+    "es": "Este candidato no pertenece al resultado actual. Vuelva a calcular y seleccione un candidato.",
+    "cs": "Tento kandidát nepatří k aktuálnímu výsledku. Zopakujte výpočet a vyberte kandidáta."
+  },
+  "CalibrationApply.ResidualWarning": {
+    "zh-CN": "点位偏差较大。请修正标红点后重算；若已确认预测与照片吻合，也可应用所选候选。",
+    "zh-TW": "點位偏差較大。請修正標紅點後重新計算；若已確認預測與照片吻合，也可套用所選候選。",
+    "en": "Point errors are high. Correct highlighted points and solve again, or confirm the match to the photo to apply this candidate.",
+    "ja": "点の誤差が大きくなっています。赤い点を修正して再計算するか、予測が写真と一致することを確認して候補を適用してください。",
+    "tr": "Nokta hataları yüksek. Vurgulanan noktaları düzeltip yeniden hesaplayın veya bu adayı uygulamak için fotoğrafla eşleşmeyi onaylayın.",
+    "es": "Los errores de los puntos son elevados. Corrija los puntos resaltados y recalcule, o confirme la coincidencia con la foto para aplicar este candidato.",
+    "cs": "Odchylky bodů jsou velké. Opravte zvýrazněné body a zopakujte výpočet, nebo potvrďte shodu s fotografií a použijte tohoto kandidáta."
+  },
+  "CalibrationApply.PreviewPending": {
+    "zh-CN": "请等待预测轮廓生成；若预览失败，请重新计算。",
+    "zh-TW": "請等待預測輪廓產生；若預覽失敗，請重新計算。",
+    "en": "Wait for the predicted outline. If the preview fails, solve again.",
+    "ja": "予測輪郭の表示を待ってください。プレビューに失敗した場合は再計算してください。",
+    "tr": "Tahmini konturun oluşmasını bekleyin. Önizleme başarısız olursa yeniden hesaplayın.",
+    "es": "Espere al contorno previsto. Si falla la vista previa, vuelva a calcular.",
+    "cs": "Počkejte na předpovězený obrys. Pokud náhled selže, zopakujte výpočet."
+  },
+  "CalibrationApply.Confirm": {
+    "zh-CN": "核对预测与照片，吻合后勾选「{0}」即可应用。",
+    "zh-TW": "核對預測與照片，吻合後勾選「{0}」即可套用。",
+    "en": "Compare the prediction with the photo. If they match, check “{0}” to apply.",
+    "ja": "予測と写真を照合し、一致したら「{0}」をオンにして適用してください。",
+    "tr": "Tahmini fotoğrafla karşılaştırın. Eşleşiyorlarsa uygulamak için “{0}” seçeneğini işaretleyin.",
+    "es": "Compare la predicción con la foto. Si coinciden, marque «{0}» para aplicar.",
+    "cs": "Porovnejte předpověď s fotografií. Pokud se shodují, zaškrtněte „{0}“ a použijte parametry."
+  },
+  "CalibrationApply.Ready": {
+    "zh-CN": "已确认预测与照片吻合，可以应用参数。",
+    "zh-TW": "已確認預測與照片吻合，可以套用參數。",
+    "en": "The prediction matches the photo. You can apply the parameters.",
+    "ja": "予測と写真の一致を確認済みです。パラメーターを適用できます。",
+    "tr": "Tahmin fotoğrafla eşleşiyor. Parametreleri uygulayabilirsiniz.",
+    "es": "La predicción coincide con la foto. Puede aplicar los parámetros.",
+    "cs": "Předpověď odpovídá fotografii. Parametry lze použít."
+  },
+  "CalibrationApply.ResidualSummary": {
+    "zh-CN": "候选 · 平均偏差 {0:0.###} mm · 最大 {1:0.###} mm",
+    "zh-TW": "候選 · 平均偏差 {0:0.###} mm · 最大 {1:0.###} mm",
+    "en": "Candidate · mean error {0:0.###} mm · maximum {1:0.###} mm",
+    "ja": "候補 · 平均誤差{0:0.###} mm · 最大{1:0.###} mm",
+    "tr": "Aday · ortalama hata {0:0.###} mm · en yüksek {1:0.###} mm",
+    "es": "Candidato · error medio {0:0.###} mm · máximo {1:0.###} mm",
+    "cs": "Kandidát · průměrná odchylka {0:0.###} mm · nejvyšší {1:0.###} mm"
+  },
+  "CalibrationApply.NoCandidate": {
+    "zh-CN": "没有有效候选。请按计算提示补充或修正点位后重算。",
+    "zh-TW": "沒有有效候選。請依計算提示補充或修正點位後重新計算。",
+    "en": "No valid candidate. Add or correct points as indicated, then solve again.",
+    "ja": "有効な候補がありません。計算結果の案内に従って点を追加・修正し、再計算してください。",
+    "tr": "Geçerli aday yok. Belirtilen şekilde nokta ekleyin veya noktaları düzeltip yeniden hesaplayın.",
+    "es": "No hay candidatos válidos. Añada o corrija los puntos indicados y vuelva a calcular.",
+    "cs": "Žádný platný kandidát. Doplňte nebo opravte body podle pokynů a zopakujte výpočet."
+  },
+  "CalibrationApply.AutomaticNotPassed": {
+    "zh-CN": "自动检查未通过。请核对下方原因；确认候选与照片吻合后仍可应用。",
+    "zh-TW": "自動檢查未通過。請核對下方原因；確認候選與照片吻合後仍可套用。",
+    "en": "Automatic checks did not pass. Review the reasons below; you can still apply a candidate after confirming its match to the photo.",
+    "ja": "自動チェックに合格しませんでした。以下の理由を確認し、候補と写真が一致していれば適用できます。",
+    "tr": "Otomatik kontroller geçilemedi. Aşağıdaki nedenleri inceleyin; fotoğrafla eşleşmesini onayladıktan sonra bir adayı yine de uygulayabilirsiniz.",
+    "es": "No se han superado las comprobaciones automáticas. Revise los motivos; puede aplicar un candidato tras confirmar su coincidencia con la foto.",
+    "cs": "Automatické kontroly neprošly. Zkontrolujte důvody níže; kandidáta lze přesto použít po potvrzení shody s fotografií."
+  },
+  "CalibrationApply.FailedWithCandidates": {
+    "zh-CN": "自动判定未通过，已保留全部 {0} 点及参数候选。核对实拍后可人工确认应用。\n{1}",
+    "zh-TW": "自動判定未通過，已保留全部 {0} 點及參數候選。核對實拍後可人工確認套用。\n{1}",
+    "en": "Automatic validation did not pass. All {0} points and parameter candidates are preserved. Candidates can be applied after confirming the photographed match.\n{1}",
+    "ja": "自動判定は不合格です。{0}点とパラメーター候補を保持しました。写真との一致を確認して手動で適用できます。\n{1}",
+    "tr": "Otomatik doğrulama geçilemedi. {0} noktanın tamamı ve parametre adayları korundu. Fotoğrafla eşleşme onaylandıktan sonra adaylar uygulanabilir.\n{1}",
+    "es": "No se ha superado la validación automática. Se conservan los {0} puntos y los candidatos de parámetros. Puede aplicarlos tras confirmar que coinciden con la foto.\n{1}",
+    "cs": "Automatické ověření neprošlo. Všech {0} bodů i kandidáti parametrů zůstali zachováni. Kandidáty lze použít po potvrzení shody s fotografií.\n{1}"
+  }
+}

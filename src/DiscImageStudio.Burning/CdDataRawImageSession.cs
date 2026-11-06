@@ -17,7 +17,9 @@ internal sealed class CdDataRawImageSession : ICdRawImageSession
 
     public long StartOfLeadout => _templateSession.StartOfLeadout;
 
-    public IStream CreateImage(IStream isoContent)
+    internal int ResultingImageType => _templateSession.ResultingImageType;
+
+    public IStream CreateImage(IStream isoContent, int sectorType)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(isoContent);
@@ -26,7 +28,8 @@ internal sealed class CdDataRawImageSession : ICdRawImageSession
         if (stat.cbSize < 300L * 2048 || stat.cbSize % 2048 != 0)
             throw new ArgumentException("CD DAO data tracks require at least 300 complete 2048-byte sectors.", nameof(isoContent));
         long sectors = stat.cbSize / 2048;
-        IStream template = _templateSession.CreateImage(new ZeroAudioStream(checked(sectors * 2352)));
+        // Only P and Q are patched below; R-W passes through, so either 96-byte layout works.
+        IStream template = _templateSession.CreateImage(new ZeroAudioStream(checked(sectors * 2352)), sectorType);
         if (_templateSession.StartOfLeadout != sectors)
             throw new InvalidOperationException("IMAPI changed the requested CD data track length.");
         _image = new CdDataRawImageStream(template, isoContent, sectors);
@@ -134,7 +137,7 @@ internal sealed class CdDataRawImageStream : IStream, IDisposable
         // addresses wrap to 00:00:00 at the start of the 150-sector pregap.
         long addressLba = lba < -150 ? lba + 100 * 60 * 75 : lba;
         CdMode1SectorEncoder.Encode(_payload, addressLba, _frame.AsSpan(0, 2352));
-        PatchDataSubchannel(_frame.AsSpan(2352, 96), program);
+        PatchDataSubchannel(_frame.AsSpan(2352, 96), lba, _sectors);
         _frameOffset = 0;
     }
 
@@ -157,13 +160,31 @@ internal sealed class CdDataRawImageStream : IStream, IDisposable
         }
     }
 
-    internal static void PatchDataSubchannel(Span<byte> subchannel, bool program)
+    internal static void PatchDataSubchannel(Span<byte> subchannel, long lba, long sectors)
     {
         if (subchannel.Length != 96) throw new ArgumentException("Expected a 96-byte subchannel block.");
         Span<byte> q = stackalloc byte[12];
         q.Clear();
         for (int bit = 0; bit < 96; bit++)
             q[bit / 8] |= (byte)(((subchannel[bit] >> 6) & 1) << (7 - bit % 8));
+
+        bool program = lba >= 0 && lba < sectors;
+        // ECMA-130 22.3.2 reserves Q mode 3 (ISRC) for audio. IMAPI emits it
+        // even without an ISRC, so data tracks need a complete mode 1 packet,
+        // not just different ADR bits on the audio metadata. Lead-in uses a
+        // separate TOC layout; retain it and the existing mode 1/2 packets.
+        if ((q[0] & 0x0F) == 3 && lba >= -150)
+        {
+            q.Clear();
+            q[0] = 1;
+            q[1] = lba < sectors ? (byte)1 : (byte)0xAA;
+            q[2] = lba < 0 ? (byte)0 : (byte)1;
+            // Match the native template's pregap countdown (150..1) so the
+            // inserted packets stay continuous with its untouched mode 1 Q.
+            long relative = lba < 0 ? -lba : program ? lba : lba - sectors;
+            WriteSubchannelTime(q.Slice(3, 3), relative);
+            WriteSubchannelTime(q.Slice(7, 3), lba + 150);
+        }
         q[0] = (byte)((q[0] & 0x0F) | 0x40); // Data, no pre-emphasis, no digital-copy flag.
         ushort crc = 0;
         for (int index = 0; index < 10; index++)
@@ -182,6 +203,17 @@ internal sealed class CdDataRawImageStream : IStream, IDisposable
             int mask = program ? 0x3F : 0xBF;
             subchannel[bit] = (byte)((subchannel[bit] & mask) | (((q[bit / 8] >> (7 - bit % 8)) & 1) << 6));
         }
+    }
+
+    private static void WriteSubchannelTime(Span<byte> destination, long frames)
+    {
+        // ReadFrame has already checked the two-digit MSF range while
+        // encoding the main-channel address.
+        int address = checked((int)frames);
+        destination[0] = ToBcd(address / (60 * 75));
+        destination[1] = ToBcd(address / 75 % 60);
+        destination[2] = ToBcd(address % 75);
+        static byte ToBcd(int value) => (byte)((value / 10 << 4) | value % 10);
     }
 
     public void Seek(long offset, int origin, IntPtr newPosition)

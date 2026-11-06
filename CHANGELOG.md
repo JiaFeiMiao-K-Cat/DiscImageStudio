@@ -4,17 +4,111 @@
 
 ### 中文
 
-- 优化 Mac 桌面视觉：统一矢量图标与光盘标志，简化工具栏、侧栏和任务栏，补全按钮悬停/按下反馈与明暗主题样式。
-- 新增实验性 macOS 桌面入口（Avalonia），提供工程与图层编辑、三种盘型的预览/导出、混合文件布局及照片标定，复用现有编码与标定算法。保留 Windows WPF 与 IMAPI 实现。
-- 新增 Mac CD/DVD 文件刻录入口（系统 DiscRecording）：检查空白介质和容量、无损 PCM 音轨转换与写前确认。尚未验证实盘；BD-R 刻录和即时流式写入仍不支持。
-- 新增 Intel/Apple Silicon `.app` 打包、桌面回归测试与原生窗口截图 CI。开发包仅本地签名，尚未公证。详细差异见 `docs/MACOS_DESKTOP.md`。
+- 新增实验性 macOS 桌面入口（Avalonia），复用工程、图层、CD/DVD/BD 预览与导出及照片标定算法，配套 Intel/Apple Silicon 自包含应用打包与截图 CI。
+- 优化 Mac 光盘标志、矢量图标和按钮；拖动、缩放和旋转即时刷新，影调控件可滚动到任务栏上方，标定照片支持拖动空白处平移。
+- Mac CD/DVD 文件刻录增加空白盘与容量检查、音频首轨 150 扇区容量预留和无损 WAV→AIFF 转换；底栏与日志显示系统实时百分比，封盘确认后显示完成。已在 Lenovo Slim_USB_Burner DD11 与 HONGQI CD-R 上完成 CD 音轨写入和抽样读回，用户确认可见图案；其他设备与 DVD 实盘效果待验证。详情见 `docs/MACOS_DESKTOP.md`。
+- 将详细刻录诊断扩展到 DVD 和 BD：共同记录构建环境、光驱固件、物理盘片类型及空白状态；DVD 记录容量、缓冲保护／封盘设置和阶段耗时，BD 记录 profile、格式化状态、轨道与可写地址及刷新／封盘／释放耗时。失败前缓存源流与设备上下文，保留 BD 底层真实 SCSI sense；DVD 高层接口未提供的 sense 明确记为不可用。
+- 补充 CD 音轨／数据盘 DAO 刻录诊断：记录构建版本、系统、光驱固件、实际盘片类型与写前空白状态、子通道及速度设置、容量余量、阶段耗时、生成与主机缓冲状态；导入区事件快照每两秒最多记录一次。失败上下文在清理前保存，不额外查询故障设备；明确标注 IMAPI 未提供失败命令的 SCSI sense。
+- 统一 CD、DVD、BD 的影调预览为 512×512：记录区外与中心孔使用透明遮罩，取消固定裁切，并按实际文件布局标黄文件及文件系统区域。CD 显示适配记录外半径，保留生成时的图片采样比例；修改文件夹、卷标和内外圈位置会自动刷新。
+- 修复 CD 数据盘 DAO 子码沿用音轨 ADR3/ISRC 包的问题：按扇区位置重建完整 ADR1 时间包并重算 CRC，覆盖预间隙、数据区与导出区；保留原有 TOC、ADR1/ADR2 和 P/R-W 处理。补充边界、两种子通道格式及音轨输出逐字节不变的回归。
+- 新增默认关闭的「DVD 读取兼容性（实验性）」选项，用局部 `9B` 保护字节缓解 #90 中连续绘图纹理可能引起的读回错误；ISO 导出、流式刻录和标定使用相同规则，文件内容和透明区域不参与改写。工程与标定记录保存该选项，旧记录保持关闭；效果和盘面纹理仍需实盘反馈。
+- 按 ECMA-267 修正 DVD EFMPlus 模型在状态 3/4 下的副 SY6 同步码，纠正精确编码及 DSV/边界回放；补充完整同步码标准向量和实际编码回归。
+- 修正 DVD 数据帧 EDC 计算中重复补 32 位零的问题，使校验字节及后续 ECC/调制回放符合标准；补充独立多项式长除法和完整数据帧向量检查。
 
 ### English
 
-- Refine the Mac desktop with original vector icons and disc branding, a compact toolbar/sidebar/job dock, and consistent button interaction states and light/dark theme styling.
-- Add an experimental Avalonia macOS desktop with projects/layers, CD/DVD/BD preview and export, hybrid file layouts and photo calibration using the existing optical modules and Core calibration model. Preserve Windows WPF and IMAPI.
-- Add a Mac CD/DVD artifact-recording entry point through system DiscRecording, with blank/capacity checks, lossless PCM conversion and write confirmation. Physical media remain unverified; BD-R recording and streaming writes are not supported.
-- Add Intel/Apple Silicon app packaging, portable regression tests and native-window screenshot CI. Development bundles are ad-hoc signed, not notarized. See `docs/MACOS_DESKTOP.md` for parity limits.
+- Add an experimental Avalonia macOS desktop using shared project, layer, CD/DVD/BD preview/export and photo-calibration algorithms, with self-contained Intel/Apple Silicon packaging and screenshot CI.
+- Refine Mac disc branding, vector icons and buttons. Layer dragging, scaling and rotation update immediately, tone controls scroll clear of the job dock, and dragging unmarked calibration-photo space pans the image.
+- Add Mac CD/DVD artifact recording with blank/capacity checks, a 150-sector first-track audio allowance and lossless WAV-to-AIFF conversion. The dock and log show live system percentages and confirm completion after closure. CD audio writing and sampled readback were exercised with a Lenovo Slim_USB_Burner DD11 and HONGQI CD-R, and the user confirmed visible artwork. Other recorders and DVD media require hardware validation. See `docs/MACOS_DESKTOP.md`.
+- Extended detailed burn diagnostics to DVD and BD, sharing build/runtime, recorder firmware, physical media type and blank-state reporting. DVD adds capacity, buffer/closure settings and phase timings; BD adds profile, format state, track/writable-address data and flush/close/release timings. Source and device context are cached before cleanup, preserving real BD command-level SCSI sense and explicitly marking sense unavailable through the high-level DVD API.
+- Added CD audio/data DAO diagnostics for the build, OS, recorder firmware, reported physical media type and pre-write blank state, sector/speed settings, capacity margin, phase timings and producer/host-buffer state. Lead-in event snapshots are throttled to at most one every two seconds. Failure context is retained before cleanup without querying the failing device; unavailable command-level SCSI sense is explicitly identified.
+- Unified CD, DVD and BD tone previews at 512×512, with transparent masks outside the recording area and inside the centre hole. Removed the fixed crop and highlighted file and filesystem regions from the actual layout plans. CD previews fit the recording radius while preserving the generator's source-image scale; folder, volume-label and inner/outer placement changes refresh automatically.
+- Fixed CD data-disc DAO subcode retaining audio ADR3/ISRC packets. Rebuild complete ADR1 timing packets and CRCs from the sector position in the pregap, program area and lead-out, while retaining existing TOC, ADR1/ADR2 and P/R-W handling. Added boundary, subchannel-format and byte-for-byte audio-output regression coverage.
+- Added an opt-in “DVD read compatibility (experimental)” option using local `9B` bridge bytes to mitigate readback errors associated with repeated drawing textures in #90. ISO export, streaming burns and calibration share the rule; file contents and alpha-excluded bytes are protected. Projects and calibration records retain the setting, with legacy records defaulting to off. Readability and visual effects still need physical-disc feedback.
+- Corrected the DVD EFMPlus model's secondary SY6 code for states 3/4 to match ECMA-267, fixing exact encoding and DSV/boundary replay. Added standard vectors for all sync codes and an encoded-output regression.
+- Fixed an extra 32 zero bits in the DVD data-frame EDC calculation, correcting the checksum and subsequent ECC/modulation replay. Added independent polynomial-division checks and complete data-frame vectors.
+
+## [1.4.2] - 2026-11-06
+
+### 中文
+
+- 界面词条缺译时先回退英文，再回退简体中文；标定、工程和预设弹窗沿用同一规则，可继续按词条补充其他界面语言。
+- 补齐照片矫正误差、标定记录版本、工程和预设校验弹窗的英文提示；动态数值与参数名不再妨碍翻译匹配，诊断日志保留原始异常。
+- 补齐标定拟合原因与状态提示的英文翻译，修复英文界面的侧栏和底部日志混入中文；精简刻录状态快照、校验和取消日志中的重复说明，保留诊断字段与实际状态。
+- 修复 CD 流式刻录（音轨与数据盘 DAO）在部分刻录机上首次写入导入区即失败、Windows 刻录接口返回 `0xC0AA0301` 的问题。刻录机报告支持时改用 Raw P-W 子通道（`IMAPI_FORMAT2_RAW_CD_SUBCODE_IS_RAW`，仍为 2448 字节扇区），否则保留 Cooked R-W。IMAPI 在两种格式下生成的镜像逐字节相同，盘面内容不变，只改变告知刻录机的子通道格式；刻录日志会记录实际采用的格式。该问题在 HP BD-RE BU20N（HL-DT-ST，固件 0403）上发现：v1.3.6 以 4× 刻录时返回 `0xC0AA0301`。独立 SCSI 工具的模拟刻录（Test Write）中，Cooked R-W（数据块类型 2）在 4× 与 16× 下第一个写入命令即被拒绝（5/64/00），Raw P-W（数据块类型 3）以 4× 接受了前 3,000 个导入区扇区，SAO 以 4× 正常写入。这些模拟未经过 IMAPI；修复版随后已在同一刻录机上通过 IMAPI 完成 CD-R 流式实盘刻录（用户实测）。
+- CD、DVD、蓝光的界面导出改为调用类型化内部生成接口；DVD 设计投影和读回预览直接调用渲染器，支持取消并保留原始异常。命令行参数、控制台输出和退出码留在 CLI 边界，现有命令保持兼容。
+- 导出、标定、设计合成与影调预览日志保留异常堆栈、内部异常及诊断上下文；失败导出不再更新读回输入，标定清理失败不再覆盖原始结果，容量读取失败不再显示为任务成功。
+- 设计页图层列表支持拖拽排序（整行快照随指针浮动、相邻行缓动让位、Esc 取消回弹）与右键删除；打开工程时图层图片与缩略图改为后台并行解码，界面不再因逐张解码而冻结；最近工程卡片在等待打开时沿圆角循环显示与保存确认同源的光迹。
+
+### English
+
+- Missing UI translations now fall back to English before Simplified Chinese. Calibration, project, and preset popups use the same rules and support translations in the other UI languages.
+- Added English popup messages for photo rectification errors, calibration record versions, and project and preset validation. Dynamic values and parameter names no longer prevent translation lookup; diagnostic logs retain the original exceptions.
+- Added English translations for calibration fit reasons and status messages, fixing Chinese text in the English sidebar and bottom log. Shortened repetitive explanations in burn snapshots, verification status, and cancellation logs while retaining diagnostic fields and actual states.
+- Fixed CD streaming burns (audio and data-disc DAO) failing with `0xC0AA0301` at the first lead-in write on some recorders. When the recorder reports support, the burner now uses raw P-W subchannel data (`IMAPI_FORMAT2_RAW_CD_SUBCODE_IS_RAW`, still 2448-byte sectors) and otherwise keeps cooked R-W. IMAPI produces byte-identical images in both layouts, so the disc content is unchanged and only the subchannel layout announced to the recorder differs; the burn log records the format in use. Found on an HP BD-RE BU20N (HL-DT-ST, firmware 0403): v1.3.6 failed at 4× with `0xC0AA0301`. In Test Write runs with a standalone SCSI tool, cooked R-W (data block type 2) was rejected at the first write command at 4× and 16× (5/64/00), raw P-W (data block type 3) accepted the first 3,000 lead-in sectors at 4×, and SAO wrote normally at 4×. Those runs did not go through IMAPI; the fixed build has since completed a real CD-R streaming burn through IMAPI on the same recorder (user test).
+- GUI CD, DVD, and Blu-ray exports now call typed internal generation APIs. DVD projection and readback previews call renderers directly, support cancellation, and preserve original exceptions. Argument parsing, console output, and exit codes remain at the CLI boundary; existing commands remain compatible.
+- Export, calibration, design composition, and tone preview logs retain exception stacks, inner causes, and diagnostic context. Failed exports no longer replace readback inputs; calibration cleanup errors preserve the original outcome, and capacity-read errors no longer complete successfully.
+- Design layers can be reordered by dragging (a row snapshot follows the pointer, neighbouring rows ease one slot aside, Escape cancels) and deleted from a single-item right-click menu. Layer image and thumbnail decodes now run off the UI thread before a project is applied, so opening a multi-layer project no longer freezes the window. Recent-project cards show a looping save-trail stroke while their project opens.
+
+## [1.4.1] - 2026-11-05
+
+### 中文
+
+- CD、DVD、蓝光刻录分别记录收尾、写入完成与校验状态，蓝光另区分刷新缓存、关闭轨道和封盘。日志保留最后设备状态、写入扇区来源及完整异常，便于区分写入失败与收尾失败；未执行的校验不会显示为成功。DVD 在写入前明确禁用刻后完整性校验并回读确认，设置失败时不开始写入。本轮诊断改动尚未经过实盘验证，不能据此认定 #90 的读回问题已解决。
+- 独立辅助标定与工程页面共用底部任务栏；流式刻录的阶段、写入量、速度、进度和日志统一在底栏查看，并可直接取消。任务运行中返回首页仍显示底栏，刻录完成后不再显示上次导出文件的结果按钮。
+- 标定照片在长边 8192 px、总像素 32 × 1024 × 1024 的限制内保留原始尺寸，超限时按比例缩小；矫正图按盘面像素密度自适应，最高 5792 × 5792。记录内嵌 PNG 保留工作分辨率，保存重开不再缩图；高位深照片统一为每通道 8 位 BGRA。高分辨率记录占用更多空间，旧版程序可能无法读取；旧记录丢失的细节需重新导入原照片。
+
+### English
+
+- CD, DVD, and Blu-ray recording now log finalization, write completion, and verification separately; Blu-ray also distinguishes cache flushing, track closing, and disc finalization. Logs retain the last device state, the source of sector progress, and complete exception details to distinguish writing failures from finalization failures. Verification that was not performed is never reported as successful. DVD recording explicitly disables post-burn integrity verification and confirms the setting before writing; a configuration failure prevents writing from starting. These diagnostic changes have not yet been validated with physical burns and do not establish that the readback problem in #90 is resolved.
+- Standalone calibration and project pages now share the bottom task dock. Streaming burn stages, written bytes, speed, progress, logs, and cancellation are available there, including while visiting Home during a task. Completed burns no longer show result buttons for an earlier exported file.
+- Calibration photos retain their original dimensions within limits of 8192 px on the long edge and 32 × 1024 × 1024 pixels, scaling proportionally when either limit is exceeded. Rectification adapts to the disc's pixel density, up to 5792 × 5792. Embedded PNGs preserve the working resolution across save and reopen; high-bit-depth photos use 8-bit-per-channel BGRA. Larger records require more storage and may not open in older versions; recovering detail lost in existing records requires importing the original photo again.
+
+## [1.4.0] - 2026-11-05
+
+### 中文
+
+- 修复流式刻录速度首次选择后可能无法再次切换的问题；普通刻录和独立标定刻录在重新读取盘片速度或切换界面语言后仍可正常改选。
+- 设计合成图、缩略图与预览缓存按应用会话隔离；多个实例共用缓存目录时不再覆盖彼此的图片，清理缓存时跳过其他仍在运行的会话。
+- CD、BD 固定参考图标定的导出与直接刻录接入图片采样加速，保持原输出字节、环带裁切和明暗极性；固定 sRGB 转换改为精确查表，减少逐字节重复计算。
+- CD 音轨、固定参考标定图案及 Mode 1 文件盘默认分块并行采样和影调计算，使用固定上限的缓冲区，并按原顺序交织、写出和报告进度。
+- DVD 指定图片和固定参考图标定在采样结果不变的区域内复用计算，覆盖导出、混合文件盘及直接刻录，保持原插值、透明度、影调和输出字节。
+- CD、DVD 和 BD 均可在精细标定中拟合三次轨距，系数随预设、工程、生成与预览完整保存和使用；零系数保留原有几何和输出。重复标定使用该盘生成时的完整参数，结果为可直接使用的绝对系数。
+- 辅助标定新增粗标定、边界标定和精细标定三个阶段，支持读取盘片容量、保存独立标定记录及专用刻录流程；可从首页或工程侧栏进入，已有工程时保留分组导航，并可返回原页面。
+- 标定流程支持现有界面语言；切换语言后，标定设置、阶段提示与刻录页面立即刷新，保留当前参数和测量进度。缺失或为空的译文回退到简体中文，可通过后续 PR 逐步补充。
+- 新增土耳其文、西班牙文和捷克文界面：在「设置 → 通用 → 语言」选择「Türkçe」「Español」或「Čeština」并保存后立即生效；土耳其文、西班牙文、捷克文系统也可跟随系统。译文保留格式参数、数值文化和简体中文回退规则。
+- 新增西班牙文、土耳其文、捷克文 README；全部 README 顶部语言切换加入 Türkçe、Español、Čeština。原始文档、署名及许可证保留不变。
+- 新增威宝 BD-R (64293) 内置预设，参数与 64099 相同，贡献者 bczhc。
+- 新增威宝 DVD+R AZO (43498) 内置预设，贡献者 Disappear9。
+- 新增铼德 DVD-R E时代系列内置预设，贡献者 bczhc。
+- 新增铼德 BD-R 12x 内置预设：内半径 23.98795 mm、外半径 58.02236 mm，贡献者 DeepAQ。
+- 新增铼德 DVD+R E时代系列内置预设。
+- 新建工程不再按模板自动填充工程名，输入框保持为空；填写名称后才能创建。
+- 侧栏工程头卡片右侧新增软盘保存按钮。
+- 缓存位置留空时，缓存改为放在 EXE 旁的 `DiscImageStudio-cache` 文件夹；该处不可写入时（例如安装在 Program Files 下）改用 `%LOCALAPPDATA%\DiscImageStudio\cache`，不再写入系统临时目录。自定义缓存位置照常可用。
+- 单文件 EXE 不再在启动时把全部内容解压到 `%TEMP%\.net`，解压量从约 475 MB 降到约 8 MB，只剩 WPF 原生 DLL 需要解压。
+
+### English
+
+- Fixed streaming burn speed selection becoming stuck after the first choice. Both project and standalone calibration recording retain working speed selection after refreshing disc speeds or changing the interface language.
+- Isolated design composites, thumbnails, and preview caches by application session so instances sharing a cache folder cannot overwrite each other's images. Cache cleanup skips other running sessions.
+- Accelerated sampling for CD and Blu-ray fixed-reference calibration exports and direct recording while preserving output bytes, annulus clipping, and polarity. Cached the exact sRGB transfer curve to avoid repeated per-byte calculations.
+- CD audio, fixed-reference calibration artwork, and Mode 1 drawing payloads now sample and apply tone in bounded parallel blocks while preserving interleaving, output order, and progress callbacks.
+- DVD image and fixed-reference calibration generation reuse samples within regions proven to retain the same result, across exports, hybrid images, and direct recording, preserving interpolation, alpha, tone, and output bytes.
+- Fine calibration now supports cubic track pitch for CD, DVD, and Blu-ray, with coefficients preserved across presets, projects, generation, and preview. Zero coefficients retain the existing geometry and output. Recalibration uses the complete geometry that generated the photographed disc and returns absolute coefficients ready to apply.
+- Added coarse, boundary, and fine calibration stages with disc-capacity reading, independent calibration records, and a dedicated recording workflow. Open calibration from Home or the project sidebar, retain grouped navigation while a project is open, and return to the originating page.
+- Calibration supports the available interface languages. Language changes immediately refresh calibration settings, stage guidance, and recording pages while preserving parameters and measurement progress. Missing or empty translations fall back to Simplified Chinese and can be added in follow-up PRs.
+- Added Turkish, Spanish, and Czech interfaces. Choose Türkçe, Español, or Čeština under Settings → General → Language, and save to apply immediately; Turkish, Spanish, and Czech system locales can also follow the system. Translations preserve format arguments, numeric culture, and the Simplified Chinese fallback.
+- Added Spanish, Turkish, and Czech READMEs; every README language switcher now includes Türkçe, Español, and Čeština. Original documents, attribution, and licenses are preserved.
+- Added a built-in Verbatim BD-R (64293) preset with the same parameters as 64099, contributed by bczhc.
+- Added a built-in Verbatim DVD+R AZO (43498) preset, contributed by Disappear9.
+- Added a built-in Ritek DVD-R E-Series preset, contributed by bczhc.
+- Added a built-in Ritek BD-R 12x preset with inner radius 23.98795 mm and outer radius 58.02236 mm, contributed by DeepAQ.
+- Added a built-in Ritek DVD+R E-Series preset.
+- New projects leave the project name empty instead of filling it from the selected template; the project can be created once a name is entered.
+- Added a floppy-disk Save button on the right of the sidebar project header.
+- When the cache location is left empty, the cache now lives in a `DiscImageStudio-cache` folder next to the EXE. If that folder is not writable (for example under Program Files), `%LOCALAPPDATA%\DiscImageStudio\cache` is used instead; the system temporary folder is no longer used. Custom cache locations work as before.
+- The single-file EXE no longer extracts its entire contents to `%TEMP%\.net` at startup. Extraction drops from about 475 MB to about 8 MB; only the WPF native DLLs still need to be extracted.
 
 ## [1.3.6] - 2026-11-02
 

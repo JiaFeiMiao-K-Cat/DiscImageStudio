@@ -27,20 +27,13 @@
                 Background="{DynamicResource Surface2Brush}"
                 BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
                 CornerRadius="{StaticResource RadiusPanel}" Padding="10">
-            <!-- The projection is a square PNG whose corners are the page background, so
-                 it is drawn through an ellipse brush: the disc becomes a medallion and the
-                 corners never show. The crop removes the last 0.6% of the image, where the
-                 white page margin sits just outside the recorded radius. -->
+            <!-- Each renderer supplies the recording-area alpha mask. Display the full
+                 bitmap so custom radii and file regions retain their physical bounds. -->
             <Grid x:Name="PreviewImageHost" Width="128" Height="128"
                   HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Ellipse x:Name="PreviewDisc">
-                    <Ellipse.Fill>
-                        <ImageBrush ImageSource="{Binding TonePreviewImage}"
-                                    Stretch="Uniform"
-                                    Viewbox="0.006,0.006,0.988,0.988" />
-                    </Ellipse.Fill>
-                    <Ellipse.Style>
-                        <Style TargetType="Ellipse">
+                <Image x:Name="PreviewDisc" Source="{Binding TonePreviewImage}" Stretch="Uniform">
+                    <Image.Style>
+                        <Style TargetType="Image">
                             <Setter Property="Visibility" Value="Collapsed" />
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding HasTonePreview}" Value="True">
@@ -48,8 +41,8 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </Ellipse.Style>
-                </Ellipse>
+                    </Image.Style>
+                </Image>
                 <Ellipse Fill="{DynamicResource Surface1Brush}">
                     <Ellipse.Style>
                         <Style TargetType="Ellipse">
@@ -80,6 +73,14 @@
         </Border>
 
         <StackPanel x:Name="ToneControls" Grid.Row="2" Grid.Column="0" Margin="0,14,0,0">
+            <controls:VisibilityGate IsOpen="{Binding HasFileRegionOverlay}" Margin="0,0,0,12">
+                <DockPanel>
+                    <Rectangle Width="12" Height="12" Fill="#FACC15" RadiusX="2" RadiusY="2"
+                               Margin="0,2,8,0" VerticalAlignment="Top" />
+                    <TextBlock Style="{StaticResource CompactHint}" Margin="0"
+                               Text="{loc:Text Xaml.YellowFileAreaIncludingFilesystem}" />
+                </DockPanel>
+            </controls:VisibilityGate>
             <Grid>
                 <TextBlock Style="{StaticResource FieldLabel}" Margin="0" Text="{loc:Text Xaml.Dithering}" />
                 <TextBlock Style="{StaticResource RowText}" HorizontalAlignment="Right"

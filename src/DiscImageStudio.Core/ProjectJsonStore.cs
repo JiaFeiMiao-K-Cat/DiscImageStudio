@@ -35,7 +35,8 @@ public sealed record ProjectOutputs(
     string DataDirectory,
     string VolumeLabel,
     bool Interleave,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool FilesAtOuterRing = false);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool FilesAtOuterRing = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool DvdReadCompatibility = false);
 
 /// <summary>Generation settings that exist only for BD-R: the 3T/6T mapping polarity.
 /// This is deliberately separate from <see cref="ToneProfile"/>: polarity selects which
@@ -155,7 +156,7 @@ public static class ProjectJsonStore
         string? directory = Path.GetDirectoryName(fullPath);
         if (string.IsNullOrEmpty(directory))
         {
-            throw new ArgumentException("工程路径必须包含目录。", nameof(path));
+            throw DiagnosticMessage.Argument($"工程路径必须包含目录。", nameof(path));
         }
 
         Directory.CreateDirectory(directory);
@@ -195,41 +196,40 @@ public static class ProjectJsonStore
         ArgumentNullException.ThrowIfNull(document);
         if (document.SchemaVersion is not (LegacySchemaVersion or CurrentSchemaVersion))
         {
-            throw new InvalidDataException(
+            throw DiagnosticMessage.InvalidData(
                 $"不支持 schemaVersion={document.SchemaVersion}；当前支持 {LegacySchemaVersion} 与 {CurrentSchemaVersion}。");
         }
 
         if (document.SchemaVersion == LegacySchemaVersion
             && (document.IsBluRay || document.BluRay is not null))
         {
-            throw new InvalidDataException("schemaVersion 1 只包含 CD/DVD 工程，不能声明蓝光字段。");
+            throw DiagnosticMessage.InvalidData($"schemaVersion 1 只包含 CD/DVD 工程，不能声明蓝光字段。");
         }
 
         if (!document.IsBluRay && document.BluRay is not null)
         {
-            throw new InvalidDataException("bluRay 设置只用于蓝光工程。");
+            throw DiagnosticMessage.InvalidData($"bluRay 设置只用于蓝光工程。");
         }
 
         if (string.IsNullOrWhiteSpace(document.Name))
         {
-            throw new InvalidDataException("工程名不能为空。");
+            throw DiagnosticMessage.InvalidData($"工程名不能为空。");
         }
 
         if (!IsKnownFamily(document.DiscFamily))
         {
-            throw new InvalidDataException(
-                $"discFamily '{document.DiscFamily}' 无效；仅支持 '{ProjectDocument.CdFamily}'、"
-                + $"'{ProjectDocument.DvdFamily}' 与 '{ProjectDocument.BluRayFamily}'。");
+            throw DiagnosticMessage.InvalidData(
+                $"discFamily '{document.DiscFamily}' 无效；仅支持 '{ProjectDocument.CdFamily}'、'{ProjectDocument.DvdFamily}' 与 '{ProjectDocument.BluRayFamily}'。");
         }
 
         if (document.Geometry is null)
         {
-            throw new InvalidDataException("geometry 不能为空。");
+            throw DiagnosticMessage.InvalidData($"geometry 不能为空。");
         }
 
         if (document.Outputs is null)
         {
-            throw new InvalidDataException("outputs 不能为空。");
+            throw DiagnosticMessage.InvalidData($"outputs 不能为空。");
         }
 
         ValidateExtensionData(document);
@@ -253,7 +253,7 @@ public static class ProjectJsonStore
         }
         catch (ArgumentOutOfRangeException exception)
         {
-            throw new InvalidDataException(exception.Message, exception);
+            throw DiagnosticMessage.InvalidData($"{DiagnosticMessage.Detail(exception)}", exception);
         }
     }
 
@@ -271,7 +271,7 @@ public static class ProjectJsonStore
             key => !string.Equals(key, ProjectDocument.LegacyImageProcessingKey, StringComparison.Ordinal));
         if (unknown is not null)
         {
-            throw new InvalidDataException($"无法识别的工程字段 '{unknown}'。");
+            throw DiagnosticMessage.InvalidData($"无法识别的工程字段 '{unknown}'。");
         }
     }
 
@@ -287,41 +287,37 @@ public static class ProjectJsonStore
         ValidatePositiveFinite(geometry.OuterRadiusMm, "outerRadiusMm");
         if (geometry.OuterRadiusMm <= geometry.InnerRadiusMm)
         {
-            throw new InvalidDataException("outerRadiusMm 必须大于 innerRadiusMm。");
+            throw DiagnosticMessage.InvalidData($"outerRadiusMm 必须大于 innerRadiusMm。");
         }
 
         if (geometry.Sectors <= 0)
         {
-            throw new InvalidDataException("sectors 必须大于 0。");
+            throw DiagnosticMessage.InvalidData($"sectors 必须大于 0。");
         }
 
         if (document.IsDvd && geometry.Sectors % 16 != 0)
         {
-            throw new InvalidDataException("DVD 的 sectors 必须是 16 的倍数。");
+            throw DiagnosticMessage.InvalidData($"DVD 的 sectors 必须是 16 的倍数。");
         }
 
         if (document.IsBluRay)
         {
             if (geometry.Sectors % ProjectDocument.BluRaySectorsPerCluster != 0)
             {
-                throw new InvalidDataException("蓝光的 sectors 必须是 32 的倍数。");
+                throw DiagnosticMessage.InvalidData($"蓝光的 sectors 必须是 32 的倍数。");
             }
 
             if (geometry.Sectors > ProjectDocument.BluRaySectorsPerLayer)
             {
-                throw new InvalidDataException(
+                throw DiagnosticMessage.InvalidData(
                     $"蓝光 sectors 不能超过单层容量 {ProjectDocument.BluRaySectorsPerLayer:N0}。");
             }
 
             if (geometry.OuterRadiusMm > 60)
             {
-                throw new InvalidDataException("蓝光外半径不能超过 60 mm。");
+                throw DiagnosticMessage.InvalidData($"蓝光外半径不能超过 60 mm。");
             }
 
-            if (geometry.PitchLinear != 0 || geometry.PitchQuadratic != 0 || geometry.PitchCubic != 0)
-            {
-                throw new InvalidDataException("蓝光使用恒定轨距，pitch 系数必须为 0。");
-            }
         }
 
         try
@@ -333,7 +329,7 @@ public static class ProjectJsonStore
         }
         catch (ArgumentException exception)
         {
-            throw new InvalidDataException($"轨距系数无效：{exception.Message}", exception);
+            throw DiagnosticMessage.InvalidData($"轨距系数无效：{DiagnosticMessage.Detail(exception)}", exception);
         }
     }
 
@@ -341,7 +337,7 @@ public static class ProjectJsonStore
     {
         if (document.Layers is null)
         {
-            throw new InvalidDataException("layers 不能为空。");
+            throw DiagnosticMessage.InvalidData($"layers 不能为空。");
         }
 
         HashSet<string> uniqueIds = new(StringComparer.Ordinal);
@@ -349,22 +345,22 @@ public static class ProjectJsonStore
         {
             if (layer is null)
             {
-                throw new InvalidDataException("图层不能是 null。");
+                throw DiagnosticMessage.InvalidData($"图层不能是 null。");
             }
 
             if (string.IsNullOrWhiteSpace(layer.Id) || !uniqueIds.Add(layer.Id))
             {
-                throw new InvalidDataException($"图层 id '{layer.Id}' 为空或重复。");
+                throw DiagnosticMessage.InvalidData($"图层 id '{layer.Id}' 为空或重复。");
             }
 
             if (string.IsNullOrWhiteSpace(layer.Name))
             {
-                throw new InvalidDataException($"图层 '{layer.Id}' 的 name 不能为空。");
+                throw DiagnosticMessage.InvalidData($"图层 '{layer.Id}' 的 name 不能为空。");
             }
 
             if (string.IsNullOrWhiteSpace(layer.ImagePath))
             {
-                throw new InvalidDataException($"图层 '{layer.Id}' 的 imagePath 不能为空。");
+                throw DiagnosticMessage.InvalidData($"图层 '{layer.Id}' 的 imagePath 不能为空。");
             }
 
             ValidateFinite(layer.TranslateXMm, $"图层 '{layer.Id}' 的 translateXMm");
@@ -372,7 +368,7 @@ public static class ProjectJsonStore
             ValidateFinite(layer.RotationDeg, $"图层 '{layer.Id}' 的 rotationDeg");
             if (!double.IsFinite(layer.Scale) || layer.Scale <= 0)
             {
-                throw new InvalidDataException($"图层 '{layer.Id}' 的 scale 必须是大于 0 的有限数值。");
+                throw DiagnosticMessage.InvalidData($"图层 '{layer.Id}' 的 scale 必须是大于 0 的有限数值。");
             }
         }
     }
@@ -382,7 +378,7 @@ public static class ProjectJsonStore
         ProjectOutputs outputs = document.Outputs;
         if (string.IsNullOrWhiteSpace(outputs.OutputPath))
         {
-            throw new InvalidDataException("outputs.outputPath 不能为空。");
+            throw DiagnosticMessage.InvalidData($"outputs.outputPath 不能为空。");
         }
     }
 
@@ -395,7 +391,7 @@ public static class ProjectJsonStore
 
         if (thumbnailBase64.Length == 0 || thumbnailBase64.Length > MaxThumbnailBase64Chars)
         {
-            throw new InvalidDataException("thumbnailPngBase64 长度超出允许范围。");
+            throw DiagnosticMessage.InvalidData($"thumbnailPngBase64 长度超出允许范围。");
         }
 
         try
@@ -404,7 +400,7 @@ public static class ProjectJsonStore
         }
         catch (FormatException exception)
         {
-            throw new InvalidDataException("thumbnailPngBase64 不是有效的 Base64。", exception);
+            throw DiagnosticMessage.InvalidData($"thumbnailPngBase64 不是有效的 Base64。", exception);
         }
     }
 
@@ -415,7 +411,7 @@ public static class ProjectJsonStore
             ProjectDocument? document = JsonSerializer.Deserialize<ProjectDocument>(stream, JsonOptions);
             if (document is null)
             {
-                throw new InvalidDataException($"{sourceName} 不能为空。");
+                throw DiagnosticMessage.InvalidData($"{sourceName} 不能为空。");
             }
 
             Validate(document);
@@ -426,8 +422,8 @@ public static class ProjectJsonStore
         }
         catch (JsonException exception)
         {
-            throw new InvalidDataException(
-                $"{sourceName} 格式有误（第 {exception.LineNumber + 1} 行，第 {exception.BytePositionInLine + 1} 列）：{exception.Message}",
+            throw DiagnosticMessage.InvalidData(
+                $"{sourceName} 格式有误（第 {exception.LineNumber + 1} 行，第 {exception.BytePositionInLine + 1} 列）：{DiagnosticMessage.Detail(exception)}",
                 exception);
         }
     }
@@ -436,15 +432,15 @@ public static class ProjectJsonStore
     {
         if (!double.IsFinite(value) || value <= 0)
         {
-            throw new InvalidDataException($"{fieldName} 必须是大于 0 的有限数值。");
+            throw DiagnosticMessage.InvalidData($"{fieldName} 必须是大于 0 的有限数值。");
         }
     }
 
-    private static void ValidateFinite(double value, string fieldName)
+    private static void ValidateFinite(double value, FormattableString fieldName)
     {
         if (!double.IsFinite(value))
         {
-            throw new InvalidDataException($"{fieldName} 必须是有限数值。");
+            throw DiagnosticMessage.InvalidData($"{fieldName} 必须是有限数值。");
         }
     }
 }

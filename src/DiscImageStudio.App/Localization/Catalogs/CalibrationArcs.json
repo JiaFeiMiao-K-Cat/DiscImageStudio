@@ -1,0 +1,182 @@
+{
+  "Arc.ThickTarget": {
+    "zh-CN": "短弧径向厚度从内到外为 {0:0.00}、{1:0.00}、{2:0.00} mm，每段占 {3:0}°。请测量至少两段完整短弧。",
+    "zh-TW": "短弧徑向厚度從內到外為 {0:0.00}、{1:0.00}、{2:0.00} mm，每段佔 {3:0}°。請測量至少兩段完整短弧。",
+    "en": "Radial thickness from inner to outer: {0:0.00}, {1:0.00}, {2:0.00} mm. Each arc spans {3:0}°. Measure at least two complete arcs.",
+    "ja": "円弧の径方向の厚さは内側から {0:0.00}、{1:0.00}、{2:0.00} mm、角度は各 {3:0}°。全体が見える円弧を2本以上測定してください。",
+    "tr": "İçten dışa yay kalınlıkları: {0:0.00}, {1:0.00}, {2:0.00} mm. Her yay {3:0}° kapsar. En az iki tam yayı ölçün.",
+    "es": "Grosor radial de dentro hacia fuera: {0:0.00}, {1:0.00}, {2:0.00} mm. Cada arco abarca {3:0}°. Mide al menos dos arcos completos.",
+    "cs": "Radiální tloušťka od vnitřního oblouku k vnějšímu: {0:0.00}, {1:0.00}, {2:0.00} mm. Každý oblouk zabírá {3:0}°. Změřte alespoň dva celé oblouky."
+  },
+  "Arc.Target": {
+    "zh-CN": "同一方向三段短弧，径向厚 0.20 mm，周向长 16 mm。需看清至少两段的两端。",
+    "zh-TW": "同一方向三段短弧，徑向厚 0.20 mm，周向長 16 mm。需看清至少兩段的兩端。",
+    "en": "Three arcs in one direction, 0.20 mm thick and 16 mm long. Both tips of at least two arcs must be visible.",
+    "ja": "同じ半径方向に円弧3本、厚さ0.20 mm、周方向の長さ16 mm。少なくとも2本の両端が見える必要があります。",
+    "tr": "Aynı doğrultuda, 0,20 mm kalınlığında ve 16 mm uzunluğunda üç yay. En az iki yayın her iki ucu da görünür olmalıdır.",
+    "es": "Tres arcos en la misma dirección, de 0,20 mm de grosor y 16 mm de longitud. Deben verse ambos extremos de al menos dos arcos.",
+    "cs": "Tři oblouky ve stejném směru, silné 0,20 mm a dlouhé 16 mm. Musí být vidět oba konce alespoň dvou oblouků."
+  },
+  "Arc.Inner": {
+    "zh-CN": "内侧弧",
+    "zh-TW": "內側弧",
+    "en": "Inner arc",
+    "ja": "内側の弧",
+    "tr": "İç yay",
+    "es": "Arco interior",
+    "cs": "Vnitřní oblouk"
+  },
+  "Arc.Middle": {
+    "zh-CN": "中间弧",
+    "zh-TW": "中間弧",
+    "en": "Middle arc",
+    "ja": "中央の弧",
+    "tr": "Orta yay",
+    "es": "Arco central",
+    "cs": "Prostřední oblouk"
+  },
+  "Arc.Outer": {
+    "zh-CN": "外侧弧",
+    "zh-TW": "外側弧",
+    "en": "Outer arc",
+    "ja": "外側の弧",
+    "tr": "Dış yay",
+    "es": "Arco exterior",
+    "cs": "Vnější oblouk"
+  },
+  "Arc.Unknown": {
+    "zh-CN": "看不清 / 无明显弯曲",
+    "zh-TW": "看不清 / 無明顯彎曲",
+    "en": "Unclear / no visible bend",
+    "ja": "不明・曲がりなし",
+    "tr": "Belirsiz / görünür bükülme yok",
+    "es": "No se distingue / sin curvatura visible",
+    "cs": "Nejasné / bez viditelného ohybu"
+  },
+  "Arc.CW": {
+    "zh-CN": "顺时针",
+    "zh-TW": "順時針",
+    "en": "Clockwise",
+    "ja": "時計回り",
+    "tr": "Saat yönünde",
+    "es": "Sentido horario",
+    "cs": "Po směru hodinových ručiček"
+  },
+  "Arc.CCW": {
+    "zh-CN": "逆时针",
+    "zh-TW": "逆時針",
+    "en": "Counterclockwise",
+    "ja": "反時計回り",
+    "tr": "Saat yönünün tersine",
+    "es": "Sentido antihorario",
+    "cs": "Proti směru hodinových ručiček"
+  },
+  "Arc.Segment": {
+    "zh-CN": "当前量取",
+    "zh-TW": "目前量取",
+    "en": "Arc to measure",
+    "ja": "測定する弧",
+    "tr": "Ölçülecek yay",
+    "es": "Arco que medir",
+    "cs": "Měřený oblouk"
+  },
+  "Arc.Direction": {
+    "zh-CN": "由内向外的弯向",
+    "zh-TW": "由內向外的彎向",
+    "en": "Bend from inner to outer edge",
+    "ja": "内側から外側への曲がり",
+    "tr": "İç kenardan dış kenara bükülme yönü",
+    "es": "Curvatura del borde interior al exterior",
+    "cs": "Ohyb od vnitřního okraje k vnějšímu"
+  },
+  "Arc.CanvasHint": {
+    "zh-CN": "沿同一条可见短弧依次点首端、弧上中点、末端。可滚轮放大。",
+    "zh-TW": "沿同一條可見短弧依次點首端、弧上中點、末端。可滾輪放大。",
+    "en": "Click one tip, a point along the visible arc, then its other tip. Scroll to zoom.",
+    "ja": "見えている弧の一端、弧上の点、他端を順にクリックします。ホイールで拡大できます。",
+    "tr": "Görünen yayın bir ucuna, üzerindeki bir noktaya ve diğer ucuna tıklayın. Yakınlaştırmak için tekerleği kullanın.",
+    "es": "Haz clic en un extremo, en un punto del arco visible y en el otro extremo. Usa la rueda para ampliar.",
+    "cs": "Klikněte na jeden konec, bod na viditelném oblouku a druhý konec. Kolečkem přiblížíte pohled."
+  },
+  "Arc.FineHint": {
+    "zh-CN": "这张盘用于量短弧。描十字线时，请用初始半径新建精细标定靶。",
+    "zh-TW": "這張盤用於量短弧。描十字線時，請用初始半徑建立精細標定靶。",
+    "en": "This disc is for measuring short arcs. Create a fine calibration target with the initial radii to trace a cross.",
+    "ja": "このディスクは短い円弧の測定用です。十字を測定するには初期半径から精密校正用ターゲットを作成してください。",
+    "tr": "Bu disk kısa yayları ölçmek içindir. Artıyı izlemek için başlangıç yarıçaplarıyla hassas kalibrasyon hedefi oluşturun.",
+    "es": "Este disco sirve para medir arcos cortos. Crea un patrón de calibración precisa con los radios iniciales para trazar la cruz.",
+    "cs": "Tento disk slouží k měření krátkých oblouků. Pro obtažení kříže vytvořte terč pro jemnou kalibraci s počátečními poloměry."
+  },
+  "Arc.Instructions": {
+    "zh-CN": "选中一段，沿墨迹量它在周向上展开的完整弧。中点决定量哪一侧，超过半圈也按实际路径标。至少需要两段，不完整的弧可跳过。",
+    "zh-TW": "選中一段，沿墨跡量它在周向上展開的完整弧。中點決定量哪一側，超過半圈也按實際路徑標。至少需要兩段，不完整的弧可跳過。",
+    "en": "Measure each mark’s full angular extent. The middle click picks the visible path, including arcs over half a turn. Measure at least two complete marks.",
+    "ja": "模様の周方向の全範囲を測ります。中間点で半周を超える弧も指定できます。全体が見える弧を2本以上測定してください。",
+    "tr": "Her işaretin tam açısal uzunluğunu ölçün. Ortadaki tıklama, yarım turu aşan yaylarda da görünen yolu seçer. En az iki tam işareti ölçün.",
+    "es": "Mide toda la extensión angular de cada marca. El punto intermedio selecciona el recorrido visible, incluso en arcos de más de media vuelta. Mide al menos dos marcas completas.",
+    "cs": "Změřte celý úhlový rozsah každé značky. Prostřední bod určuje viditelnou cestu i u oblouků delších než půl otáčky. Změřte alespoň dvě celé značky."
+  },
+  "Arc.Confirm": {
+    "zh-CN": "已看清两端和整段弧，未满一圈，途中没有折返",
+    "zh-TW": "已看清兩端和整段弧，未滿一圈，途中沒有折返",
+    "en": "Both tips and the whole arc are visible, with no reversal or full turn",
+    "ja": "両端と弧全体が見え、一周未満で途中の折り返しもない",
+    "tr": "Her iki uç ve yayın tamamı görünür; yön değişimi veya tam tur yok",
+    "es": "Se ven ambos extremos y todo el arco, sin inversión de sentido ni vuelta completa",
+    "cs": "Jsou vidět oba konce i celý oblouk, bez změny směru a celé otáčky"
+  },
+  "Arc.Distinct": {
+    "zh-CN": "请把中点放在两端之间的可见弧上，三点应有不同的方位角。",
+    "zh-TW": "請把中點放在兩端之間的可見弧上，三點應有不同的方位角。",
+    "en": "Use three distinct bearings with the middle click on the visible path between the tips.",
+    "ja": "両端とその間の弧上に、方位の異なる3点を指定してください。",
+    "tr": "Uçlar arasında görünen yolun üzerinde bir orta nokta seçin; üç noktanın yön açıları farklı olmalıdır.",
+    "es": "Marca tres puntos con ángulos distintos y sitúa el punto intermedio sobre el arco visible entre los extremos.",
+    "cs": "Zvolte tři různé směrové úhly; prostřední bod umístěte na viditelný oblouk mezi konci."
+  },
+  "Arc.PointCount": {
+    "zh-CN": "已标 {0}/3 点",
+    "zh-TW": "已標 {0}/3 點",
+    "en": "{0}/3 points marked",
+    "ja": "{0}/3点を指定済み",
+    "tr": "{0}/3 nokta işaretlendi",
+    "es": "{0}/3 puntos marcados",
+    "cs": "Označeno {0}/3 bodů"
+  },
+  "Arc.Span": {
+    "zh-CN": "角跨度 {0:0.0}°，按照片半径折算的周向弧长约 {1:0.00} mm。",
+    "zh-TW": "角跨度 {0:0.0}°，按相片半徑折算的周向弧長約 {1:0.00} mm。",
+    "en": "Angular extent {0:0.0}°, approximately {1:0.00} mm along the photographed circumference.",
+    "ja": "角度 {0:0.0}°、写真の半径から求めた周方向の長さは約 {1:0.00} mm。",
+    "tr": "Açısal uzunluk {0:0.0}°; fotoğraftaki çevre boyunca yaklaşık {1:0.00} mm.",
+    "es": "Extensión angular de {0:0.0}°, aproximadamente {1:0.00} mm a lo largo de la circunferencia fotografiada.",
+    "cs": "Úhlový rozsah {0:0.0}°, přibližně {1:0.00} mm po obvodu na fotografii."
+  },
+  "Arc.Count": {
+    "zh-CN": "已确认 {0}/3 段。优先量靠内与靠外的短弧。",
+    "zh-TW": "已確認 {0}/3 段。優先量靠內與靠外的短弧。",
+    "en": "{0}/3 arcs confirmed. Prefer marks near both ends of the recording band.",
+    "ja": "{0}/3本を確認済み。記録帯の内側と外側を優先してください。",
+    "tr": "{0}/3 yay doğrulandı. Kayıt alanının iç ve dış uçlarına yakın işaretleri tercih edin.",
+    "es": "{0}/3 arcos confirmados. Prioriza las marcas próximas a los extremos interior y exterior de la zona de grabación.",
+    "cs": "Potvrzeno {0}/3 oblouků. Upřednostněte značky u obou okrajů záznamového pásu."
+  },
+  "Arc.Solve": {
+    "zh-CN": "用完整短弧估算半径",
+    "zh-TW": "用完整短弧估算半徑",
+    "en": "Estimate radii from complete arcs",
+    "ja": "完全な弧から半径を推定",
+    "tr": "Tam yaylardan yarıçapları tahmin et",
+    "es": "Estimar radios a partir de arcos completos",
+    "cs": "Odhadnout poloměry z celých oblouků"
+  },
+  "Arc.Result": {
+    "zh-CN": "初始内半径约 {0:0.000} mm，外半径约 {1:0.000} mm。弧角拟合残差 RMS {2:0.00}°。端点模糊时，残差小也可能有半径偏差。",
+    "zh-TW": "初始內半徑約 {0:0.000} mm，外半徑約 {1:0.000} mm。弧角擬合殘差 RMS {2:0.00}°。端點模糊時，殘差小也可能有半徑偏差。",
+    "en": "Initial radii ≈ {0:0.000} / {1:0.000} mm. Angular RMS residual {2:0.00}°. Faded tips can bias the radii even with a small residual.",
+    "ja": "初期内半径は約{0:0.000} mm、外半径は約{1:0.000} mm。角度のRMS残差 {2:0.00}°。端が不鮮明だと、残差が小さくても半径に誤差が出ます。",
+    "tr": "Başlangıç yarıçapları ≈ {0:0.000} / {1:0.000} mm. Açısal RMS sapması {2:0.00}°. Soluk uçlar, sapma küçük olsa bile yarıçap tahminini etkileyebilir.",
+    "es": "Radios iniciales ≈ {0:0.000} / {1:0.000} mm. Residuo angular RMS: {2:0.00}°. Los extremos difusos pueden sesgar los radios aunque el residuo sea pequeño.",
+    "cs": "Počáteční poloměry ≈ {0:0.000} / {1:0.000} mm. Úhlová odchylka RMS {2:0.00}°. Nezřetelné konce mohou zkreslit poloměry i při malé odchylce."
+  }
+}

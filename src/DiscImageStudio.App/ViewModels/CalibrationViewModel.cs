@@ -1,4 +1,6 @@
 using DiscImageStudio.Localization;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Windows;
@@ -17,11 +19,16 @@ namespace DiscImageStudio.ViewModels;
 
 public partial class CalibrationViewModel : ObservableObject
 {
+    private static readonly Lazy<BluRayGray8Raster> BluRayReferenceRaster = new(() => new(
+        CalibrationReferencePattern.PixelSize, CalibrationReferencePattern.PixelSize,
+        CalibrationReferencePattern.ReadGrayPixels()));
     private readonly ShellViewModel _shell;
     private readonly DiscParametersState _state;
     private CalibrationTarget? _target;
     private CalibrationParameters? _searchCenter;
     private CalibrationFitResult? _fit;
+    private int _fitStatusPointCount;
+    private string? _fitStatusText;
     private CancellationTokenSource? _cancellation;
     private CancellationTokenSource? _previewCancellation;
     private bool _cdInterleave = true;
@@ -36,24 +43,97 @@ public partial class CalibrationViewModel : ObservableObject
     {
         _shell = shell;
         _state = state;
-        CreateTargetCommand = new RelayCommand(CreateTarget, () => !IsBusy);
+        CreateTargetCommand = new RelayCommand(CreateTarget, CanCreateTarget);
+        SaveAsPresetCommand = new RelayCommand(SaveAsPreset, () => !IsBusy);
         BrowseOutputCommand = new RelayCommand(BrowseOutput, () => !IsBusy);
-        ExportPngCommand = new AsyncRelayCommand(ExportPngAsync, CanUseTarget);
-        GenerateImageCommand = new AsyncRelayCommand(GenerateImageAsync, CanUseTarget);
-        StreamBurnCommand = new RelayCommand(PrepareStreamBurn, CanUseTarget);
+        ExportPngCommand = new AsyncRelayCommand(ExportPngAsync, CanUseStageTarget);
+        GenerateImageCommand = new AsyncRelayCommand(GenerateImageAsync, CanUseStageTarget);
+        StreamBurnCommand = new RelayCommand(PrepareStreamBurn, CanUseStageTarget);
         SaveSessionCommand = new RelayCommand(SaveSession, CanUseTarget);
         OpenSessionCommand = new AsyncRelayCommand(OpenSessionAsync, () => !IsBusy);
         SolveCommand = new AsyncRelayCommand(SolveAsync, CanSolveTrace);
         CancelCommand = new RelayCommand(() => _cancellation?.Cancel(), () => _cancellation is not null);
         ApplyParametersCommand = new RelayCommand(ApplyParameters, CanApplyParameters);
         InitializePhotoCommands();
+        InitializeRingCommands();
+        InitializeCapacityCommands();
+        RefreshCoarseSetup();
         shell.BusyChanged += () => { OnPropertyChanged(nameof(IsBusy)); RefreshCommands(); };
-        // The parameter read-out under 从当前参数建新标靶 follows the shared parameter store:
-        // presets, project edits and applied calibration results all re-render it.
-        state.PropertyChanged += (_, _) => OnPropertyChanged(nameof(CurrentParametersSummary));
+        // The target is a snapshot. Edits here change the setup for the next target.
+        state.PropertyChanged += (_, change) =>
+        {
+            OnPropertyChanged(nameof(CurrentParametersSummary));
+            OnPropertyChanged(nameof(SetupPitchLinear));
+            OnPropertyChanged(nameof(SetupPitchQuadratic));
+            OnPropertyChanged(nameof(SetupPitchCubic));
+            RefreshCoarseSetup();
+            if (change.PropertyName is nameof(state.CdSectors) or nameof(state.DvdTotalSectors) or nameof(state.BdTotalSectors))
+                CapacityStatus = string.Empty;
+        };
     }
 
     [ObservableProperty] private string _selectedDiscType = "CD";
+    public DiscParametersState Parameters => _state;
+    public string SetupPitchLinear
+    {
+        get => SelectedDiscType switch { "DVD" => _state.DvdPitchLinear, "BD" => _state.BdPitchLinear, _ => _state.CdPitchLinear };
+        set
+        {
+            if (SelectedDiscType == "DVD") _state.DvdPitchLinear = value;
+            else if (SelectedDiscType == "BD") _state.BdPitchLinear = value;
+            else _state.CdPitchLinear = value;
+        }
+    }
+
+    public string SetupPitchQuadratic
+    {
+        get => SelectedDiscType switch { "DVD" => _state.DvdPitchQuadratic, "BD" => _state.BdPitchQuadratic, _ => _state.CdPitchQuadratic };
+        set
+        {
+            if (SelectedDiscType == "DVD") _state.DvdPitchQuadratic = value;
+            else if (SelectedDiscType == "BD") _state.BdPitchQuadratic = value;
+            else _state.CdPitchQuadratic = value;
+        }
+    }
+
+    public string SetupPitchCubic
+    {
+        get => SelectedDiscType switch { "DVD" => _state.DvdPitchCubic, "BD" => _state.BdPitchCubic, _ => _state.CdPitchCubic };
+        set
+        {
+            if (SelectedDiscType == "DVD") _state.DvdPitchCubic = value;
+            else if (SelectedDiscType == "BD") _state.BdPitchCubic = value;
+            else _state.CdPitchCubic = value;
+        }
+    }
+
+    public IReadOnlyList<string> DiscTypeChoices { get; } = ["CD", "DVD", "BD"];
+    public bool IsCdSetup => SelectedDiscType == "CD";
+    public bool HasWideBandTarget => _target?.HasWideAddressBands == true;
+    private bool _supportsCoarseTarget;
+    public string CoarseSetupHint { get; private set; } = string.Empty;
+    private bool CanCreateTarget() => !IsBusy && (!IsCoarseMode || _supportsCoarseTarget);
+
+    private void RefreshCoarseSetup()
+    {
+        string hint;
+        try
+        {
+            _supportsCoarseTarget = CalibrationWideBandPattern.SupportsAngleSweep(ReadSetup());
+            hint = L.T(_supportsCoarseTarget ? "AngleBands.Setup" : "AngleBands.Unsupported");
+        }
+        catch (Exception ex) when (ex is FormatException or ArgumentException or OverflowException)
+        {
+            _supportsCoarseTarget = false;
+            hint = L.T("AngleBands.CheckSetup");
+        }
+        if (hint == CoarseSetupHint) return;
+        CoarseSetupHint = hint;
+        OnPropertyChanged(nameof(CoarseSetupHint));
+        CreateTargetCommand.NotifyCanExecuteChanged();
+    }
+    public bool IsDvdSetup => SelectedDiscType == "DVD";
+    public bool IsBluRaySetup => SelectedDiscType == "BD";
     [ObservableProperty] private BitmapSource? _targetImage;
     [ObservableProperty] private double _canvasOuterRadiusMm = 60;
     [ObservableProperty] private IReadOnlyList<CoarseCandidate> _coarseCandidates = [];
@@ -61,10 +141,16 @@ public partial class CalibrationViewModel : ObservableObject
     // The range is a search box for the two radius parameters, not a curve-shape choice.
     // Auto starts at the tight box and widens only when the optimum touches its edge, so
     // healthy discs are not silently clamped to a user-picked boundary.
-    public IReadOnlyList<CoarseSearchRange> CoarseSearchRangeChoices { get; } =
+    // The collection is per-view-model so a legacy session can contribute its own range as a
+    // listed item; a detached object would leave the ComboBox unselected, just like the
+    // pre-fix default did.
+    public ObservableCollection<CoarseSearchRange> CoarseSearchRangeChoices { get; } = new(CoarseSearchRanges);
+    // Default references the listed instance: the class uses reference equality, so a
+    // separate object would leave the ComboBox unselected until the user re-picks a range.
+    [ObservableProperty] private CoarseSearchRange _selectedCoarseSearchRange = CoarseSearchRanges[0];
+    private static readonly IReadOnlyList<CoarseSearchRange> CoarseSearchRanges =
         [new(L.T("自动（推荐）"), 0.02, Auto: true), new("±0.02 mm", 0.02),
          new("±0.1 mm", 0.1), new("±0.5 mm", 0.5)];
-    [ObservableProperty] private CoarseSearchRange _selectedCoarseSearchRange = new(L.T("自动（推荐）"), 0.02, Auto: true);
     public string SearchRangeHeader => SelectedCoarseSearchRange.Auto
         ? L.T("搜索范围（自动）")
         : L.F($"搜索范围（{SelectedCoarseSearchRange.Label}）");
@@ -76,21 +162,50 @@ public partial class CalibrationViewModel : ObservableObject
 
     public bool IsBluRayTarget => _target?.Parameters.Kind == CalibrationDiscKind.BluRay;
     [ObservableProperty] private string _outputPath = string.Empty;
-    // Page-bottom status is gone; the surviving consumers are the log page (RunAsync logs
-    // the result) and the toasts (errors). This field feeds the log only.
+    // The shared job dock displays running operations and their outcomes; errors also toast.
     private string _statusMessage = string.Empty;
 
-    /// <summary>Last operation message, kept for diagnostics (tests, future consumers);
-    /// the log page carries the same lines.</summary>
+    /// <summary>Last operation message, also reported in the shared task log.</summary>
     public string LastStatusMessage => _statusMessage;
     [ObservableProperty] private string _fitAssessment = L.T("全部有效点都会参与计算，结果需与实拍曲线核对。");
     public bool IsBusy => _shell.IsBusy;
     public CalibrationTarget? Target => _target;
     public bool CdInterleave => _cdInterleave;
+    public string TargetSummary => _target?.Parameters is { } p
+        ? L.Format("CalibrationSetup.Target", DiscTypeName(p.Kind), p.Sectors, p.InnerRadiusMm, p.OuterRadiusMm)
+            + Environment.NewLine + DescribeArtwork(_target)
+            + (p.Kind == CalibrationDiscKind.Dvd ? Environment.NewLine
+                + L.T(p.DvdReadCompatibility ? "DvdReadCompatibility.Enabled" : "DvdReadCompatibility.Disabled") : string.Empty)
+        : L.T("CalibrationSetup.NoTarget");
 
-    /// <summary>The generation geometry a new target is built from: the project's current
-    /// inner/outer radii and, for DVD, the cubic pitch term. Shown under the button so the
-    /// inputs stay visible without a disc-type selector.</summary>
+    private static string DescribeArtwork(CalibrationTarget target)
+    {
+        if (target.HasWavyBoundary) return L.T("WavyBoundary.Target");
+        if (target.HasHalfDisc) return L.T("HalfDisc.Target");
+        if (target.HasSingleRadialLine) return L.T("SingleLine.Target");
+        if (target.Artwork == CalibrationArtwork.ReferenceCross) return L.T("ReferenceCross.Target");
+        if (target.HasRadialArcDashes && target.SchemaVersion == 10)
+        {
+            var arcs = target.RadialArcDashes;
+            static double Thickness(CalibrationRadialArc arc) => arc.OuterRadiusMm - arc.InnerRadiusMm;
+            return L.Format("Arc.ThickTarget", Thickness(arcs[0]), Thickness(arcs[1]),
+                Thickness(arcs[2]), arcs[0].HalfAngleRadians * 360 / Math.PI);
+        }
+        return L.T(target.SchemaVersion == 6 ? "CalibrationArt.Legacy"
+            : target.HasAngleSweep ? "AngleBands.Target"
+            : target.HasWideAddressBands ? (target.SchemaVersion == 11 ? "WideBands.Target" : "BandEdges.Target")
+            : target.HasRadialArcDashes ? "Arc.Target" : target.HasClockRuler ? "Clock.Target"
+            : target.HasAngularReference ? "CalibrationArt.Swept" : "CalibrationArt.Plain");
+    }
+
+    private static string DiscTypeName(CalibrationDiscKind kind) => kind switch
+    {
+        CalibrationDiscKind.Dvd => "DVD",
+        CalibrationDiscKind.BluRay => "BD",
+        _ => "CD",
+    };
+
+    /// <summary>Geometry that will be recorded when a new calibration target is created.</summary>
     public string CurrentParametersSummary => SelectedDiscType switch
     {
         "DVD" => L.F($"内半径 {Trimmed(_state.DvdInnerRadius)} mm · 外半径 {Trimmed(_state.DvdOuterRadius)} mm · 三次项 {Trimmed(_state.DvdPitchCubic)}"),
@@ -101,6 +216,35 @@ public partial class CalibrationViewModel : ObservableObject
 
     private static string Trimmed(string value) =>
         string.IsNullOrWhiteSpace(value) ? "—" : value.Trim();
+
+    /// <summary>Re-reads the fit-side strings and the photo step after a language switch. The
+    /// search-range choices only need their labels refreshed, which keeps the ComboBox
+    /// selection and the fitted result intact.</summary>
+    internal void Relocalize()
+    {
+        foreach (CoarseSearchRange range in CoarseSearchRangeChoices)
+        {
+            range.RefreshLabel();
+        }
+
+        OnPropertyChanged(nameof(SearchRangeHeader));
+        OnPropertyChanged(nameof(CurrentParametersSummary));
+        OnPropertyChanged(nameof(TargetSummary));
+        RefreshCoarseSetup();
+        NotifyTraceStage();
+        RefreshApplyParametersState();
+        RelocalizeFitStatus();
+        RelocalizePhoto();
+        foreach (RingChoice choice in RingChoices) choice.RefreshLabel();
+        foreach (ArcBandChoice choice in ArcBandNames) choice.RefreshLabel();
+        foreach (ArcDirectionChoice choice in ArcDirections) choice.RefreshLabel();
+        NotifyRingResult();
+        OnPropertyChanged(nameof(RingPointSummary));
+        OnPropertyChanged(nameof(RestartBandRayLabel));
+        OnPropertyChanged(nameof(ClockReadSummary));
+        OnPropertyChanged(nameof(ArcMeasurementSummary));
+        OnPropertyChanged(nameof(ArcFitSummary));
+    }
 
     // ---- Step column: state chips and progressive disclosure ----
     // One step is active at a time and its card is the expanded one; finished steps collapse
@@ -139,6 +283,9 @@ public partial class CalibrationViewModel : ObservableObject
     [ObservableProperty] private bool _showPrediction = true;
 
     public RelayCommand CreateTargetCommand { get; }
+    public IRelayCommand ReturnFromCalibrationCommand => _shell.ReturnFromCalibrationCommand;
+    public RelayCommand SaveAsPresetCommand { get; }
+    internal Func<PresetSaveResult?>? ShowPresetSaveDialog { get; set; }
     public RelayCommand BrowseOutputCommand { get; }
     public IAsyncRelayCommand ExportPngCommand { get; }
     public IAsyncRelayCommand GenerateImageCommand { get; }
@@ -156,80 +303,127 @@ public partial class CalibrationViewModel : ObservableObject
             return;
         }
 
-        // The first target follows the project's disc family; the page switch can still be
-        // used afterwards to build a target for the other family on purpose.
-        SelectedDiscType = _shell.CurrentProject?.Family switch
-        {
-            OpticalDiscFamily.Dvd => "DVD",
-            OpticalDiscFamily.BluRay => "BD",
-            _ => "CD",
-        };
         CreateTarget();
     }
-    /// <summary>Opening another project invalidates a target built from the previous one;
-    /// the next visit to the calibration page builds a target from the new geometry.</summary>
-    internal void ClearTargetForProjectChange()
+
+    internal void OnWindowClosed() { _cancellation?.Cancel(); _previewCancellation?.Cancel(); SetTargetPreviewVisible(false); }
+    private bool CanUseTarget() => !IsBusy && _target is not null;
+    // Automatic fit checks explain uncertainty; the user's photographic confirmation
+    // is authoritative for applying a current candidate whose preview is ready.
+    private bool CanApplyParameters() => ApplyParametersBlockedReason() is null;
+    public string ApplyParametersHint => ApplyParametersBlockedReason() ?? L.T("CalibrationApply.Ready");
+
+    private string? ApplyParametersBlockedReason()
     {
-        _cancellation?.Cancel();
-        _previewCancellation?.Cancel();
-        _target = null;
-        _sessionPath = null;
-        OutputPath = string.Empty;
-        TargetImage = null;
-        ResetPhoto();
-        InvalidateFit();
-        OnPropertyChanged(nameof(Target));
-        OnPropertyChanged(nameof(IsDvdTarget));
-        OnPropertyChanged(nameof(IsBluRayTarget));
-        OnPropertyChanged(nameof(StepOneState));
-        OnPropertyChanged(nameof(StepTwoState));
-        OnPropertyChanged(nameof(StepThreeState));
-        RefreshCommands();
-        _shell.Burn?.OnCalibrationTargetChanged();
+        if (IsBusy) return L.T("CalibrationApply.Busy");
+        if (!IsLineFitStep) return L.T("CalibrationApply.Stage");
+        if (_photoTransform is null) return L.T("CalibrationApply.Rectify");
+        if (_fit is null) return L.T("CalibrationApply.Solve");
+        if (_fit.Candidates.Count == 0) return L.T("CalibrationApply.NoCandidate");
+        if (SelectedCoarseCandidate is not { } selected) return L.T("CalibrationApply.SelectCandidate");
+        if (!CoarseCandidates.Contains(selected)
+            || !_fit.Candidates.Any(c => c.Parameters == selected.Parameters && c.RotationRadians == selected.RotationRadians))
+            return L.T("CalibrationApply.StaleCandidate");
+        if (!_previewReady) return L.T("CalibrationApply.PreviewPending");
+        if (!ContourConfirmed) return L.Format("CalibrationApply.Confirm", TraceConfirmationLabel);
+        return null;
     }
 
-    internal void OnWindowClosed() { _cancellation?.Cancel(); _previewCancellation?.Cancel(); }
-    private bool CanUseTarget() => !IsBusy && _target is not null;
-    private bool CanApplyParameters() => !IsBusy && IsTraceStep && _photoTransform is not null && _fit?.Succeeded == true
-        && SelectedCoarseCandidate is { } selected && ContourConfirmed && _previewReady
-        && CandidateResidualAccepted(selected)
-        && CoarseCandidates.Contains(selected)
-        && _fit.Candidates.Any(c => c.Parameters == selected.Parameters && c.RotationRadians == selected.RotationRadians);
-    partial void OnContourConfirmedChanged(bool value) => ApplyParametersCommand?.NotifyCanExecuteChanged();
+    private void RefreshApplyParametersState()
+    {
+        OnPropertyChanged(nameof(ApplyParametersHint));
+        UpdateFitAssessment();
+        ApplyParametersCommand?.NotifyCanExecuteChanged();
+    }
+    private bool IsVerifiedBoundaryCandidate(CoarseCandidate candidate) => !HasBoundarySegments
+        || (_fit is { Succeeded: true } fit && candidate.Parameters == fit.BestParameters
+            && candidate.RotationRadians == fit.RotationRadians);
+    partial void OnContourConfirmedChanged(bool value) => RefreshApplyParametersState();
 
-    // A visible gap is not a number anyone can argue with: 0.35 mm mean is already a
-    // quarter of a millimetre away from the predicted curve at every point. The max bound
-    // catches a single grossly misplaced click even when the mean stays comfortable.
+    // Residual bounds supply an automatic warning, not a veto of manual confirmation.
     private static bool CandidateResidualAccepted(CoarseCandidate candidate) =>
-        double.IsFinite(candidate.RmsErrorMm) && double.IsFinite(candidate.MaxErrorMm)
-        && candidate.RmsErrorMm <= 0.35 && candidate.MaxErrorMm <= 0.8;
+        ResidualAccepted(candidate.RmsErrorMm, candidate.MaxErrorMm);
+
+    private static bool ResidualAccepted(double rms, double maximum) =>
+        double.IsFinite(rms) && double.IsFinite(maximum) && rms <= 0.35 && maximum <= 0.8;
 
     partial void OnSelectedDiscTypeChanged(string value)
     {
+        CapacityStatus = string.Empty;
         OnPropertyChanged(nameof(CurrentParametersSummary));
+        OnPropertyChanged(nameof(IsCdSetup));
+        RefreshCoarseSetup();
+        OnPropertyChanged(nameof(IsDvdSetup));
+        OnPropertyChanged(nameof(IsBluRaySetup));
+        OnPropertyChanged(nameof(SetupPitchLinear));
+        OnPropertyChanged(nameof(SetupPitchQuadratic));
+        OnPropertyChanged(nameof(SetupPitchCubic));
     }
 
     private void CreateTarget()
     {
         try
         {
-            CalibrationParameters p = SelectedDiscType switch
+            var parameters = ReadSetup();
+            var artwork = _stage switch
             {
-                "DVD" => new(CalibrationDiscKind.Dvd, Number(_state.DvdInnerRadius), Number(_state.DvdOuterRadius),
-                    ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, L.T("DVD 扇区数")),
-                    DvdStreamingOptions.StandardChannelBitLengthNm,
-                    ParameterParser.ParseDouble(_state.DvdPitchLinear, L.T("DVD 相对一次项")),
-                    ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("DVD 相对二次项")),
-                    ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("DVD 相对三次项"))),
-                "BD" => CreateBluRayParameters(),
-                _ => new(CalibrationDiscKind.Cd, Number(_state.CdInnerRadius), Number(_state.CdOuterRadius),
-                    ParameterParser.ParsePositiveLong(_state.CdSectors, L.T("CD 扇区数")),
-                    CdDiscParameters.StandardLinearVelocityMmPerSecond),
+                CalibrationStage.Coarse => CalibrationArtwork.AngleSweepBands,
+                CalibrationStage.SingleLine => CalibrationArtwork.WavyBoundary,
+                CalibrationStage.Fine => CalibrationArtwork.ReferenceCross,
+                _ => throw new InvalidOperationException(),
             };
-            ValidateOutputParameters(p);
-            InstallTarget(CalibrationTarget.Create(p), new(), _state.CdInterleave);
+            InstallTarget(CalibrationTarget.Create(parameters, artwork: artwork),
+                new(RadiusRangeMm: artwork == CalibrationArtwork.WavyBoundary ? .01 : .02,
+                    AutoRange: artwork == CalibrationArtwork.WavyBoundary ? false : null), _state.CdInterleave);
             _sessionPath = null;
             OutputPath = string.Empty;
+        }
+        catch (Exception ex) { Report(ex); }
+    }
+
+    private CalibrationParameters ReadSetup()
+    {
+        CalibrationParameters p = SelectedDiscType switch
+        {
+            "DVD" => new(CalibrationDiscKind.Dvd, Number(_state.DvdInnerRadius), Number(_state.DvdOuterRadius),
+                ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, L.T("DVD 扇区数")),
+                DvdStreamingOptions.StandardChannelBitLengthNm,
+                ParameterParser.ParseDouble(_state.DvdPitchLinear, L.T("DVD 相对一次项")),
+                ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("DVD 相对二次项")),
+                ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("DVD 相对三次项")),
+                DvdReadCompatibility: _state.DvdReadCompatibility),
+            "BD" => CreateBluRayParameters(),
+            "CD" => new(CalibrationDiscKind.Cd, Number(_state.CdInnerRadius), Number(_state.CdOuterRadius),
+                ParameterParser.ParsePositiveLong(_state.CdSectors, L.T("CD 扇区数")),
+                CdDiscParameters.StandardLinearVelocityMmPerSecond,
+                ParameterParser.ParseDouble(_state.CdPitchLinear, L.T("相对一次项")),
+                ParameterParser.ParseDouble(_state.CdPitchQuadratic, L.T("相对二次项")),
+                ParameterParser.ParseDouble(_state.CdPitchCubic, L.T("相对三次项"))),
+            _ => throw new ArgumentException(L.T("CalibrationSetup.ChooseFamily")),
+        };
+        ValidateOutputParameters(p);
+        return p;
+    }
+
+    private void SaveAsPreset()
+    {
+        try
+        {
+            var p = ReadSetup();
+            if (ShowPresetSaveDialog?.Invoke() is not { } result) return;
+            var family = p.Kind switch
+            {
+                CalibrationDiscKind.Cd => OpticalDiscFamily.CompactDisc,
+                CalibrationDiscKind.Dvd => OpticalDiscFamily.Dvd,
+                _ => OpticalDiscFamily.BluRay,
+            };
+            string name = _state.AddUserPreset(family, result.Name, p.InnerRadiusMm, p.OuterRadiusMm,
+                p.Sectors, p.PitchLinear, p.PitchQuadratic, p.PitchCubic, p.BluRayInvertMapping);
+            // The catalog is shared. Only the list in project dialogs is refreshed.
+            _shell.State.UsePresetCatalog(_state);
+            _statusMessage = L.F($"已保存为预设：{name}");
+            _shell.AppendLog(_statusMessage + "\n");
+            _shell.ShowToast(L.T("Xaml.SaveAsPreset"), name, ToastKind.Success);
         }
         catch (Exception ex) { Report(ex); }
     }
@@ -246,7 +440,10 @@ public partial class CalibrationViewModel : ObservableObject
 
         uint totalSectors = checked((uint)sectors);
         BluRayDiscParameters disc = new(
-            totalSectors, 1, Number(_state.BdInnerRadius), Number(_state.BdOuterRadius));
+            totalSectors, 1, Number(_state.BdInnerRadius), Number(_state.BdOuterRadius),
+            PitchLinear: ParameterParser.ParseDouble(_state.BdPitchLinear, L.T("相对一次项")),
+            PitchQuadratic: ParameterParser.ParseDouble(_state.BdPitchQuadratic, L.T("相对二次项")),
+            PitchCubic: ParameterParser.ParseDouble(_state.BdPitchCubic, L.T("相对三次项")));
         disc.Validate();
         return new CalibrationParameters(
             CalibrationDiscKind.BluRay,
@@ -254,6 +451,7 @@ public partial class CalibrationViewModel : ObservableObject
             disc.OuterRadiusMm,
             disc.TotalSectors,
             BluRayDiscParameters.ChannelBitLengthNm,
+            disc.PitchLinear, disc.PitchQuadratic, disc.PitchCubic,
             BluRayInvertMapping: _state.BdInvertMapping,
             DrawingStartSector: 0,
             DrawingEndSectorExclusive: disc.TotalSectors);
@@ -265,32 +463,36 @@ public partial class CalibrationViewModel : ObservableObject
         try
         {
             _previewCancellation?.Cancel();
-            ResetPhoto();
             _target = target;
+            ResetPhoto();
             _cdInterleave = interleave;
             _searchCenter = options?.SearchCenter ?? target.Parameters;
-            _loadedFitOptions = options ?? new();
+            OnPropertyChanged(nameof(FineInitialSummary));
+            _loadedFitOptions = options ?? new(RadiusRangeMm: target.HasBoundaryPattern ? .01 : .02);
             FitDvdPitch = _loadedFitOptions.FitDvdPitch;
-            double savedRange = options?.RadiusRangeMm ?? 0.02;
+            double savedRange = options?.RadiusRangeMm ?? (target.HasBoundaryPattern ? .01 : .02);
             // Sessions saved before the auto mode carry no flag (null) and default to auto;
             // a session that explicitly saved a manual box keeps that box.
             bool autoRange = options?.AutoRange ?? true;
-            SelectedCoarseSearchRange = autoRange
-                ? CoarseSearchRangeChoices[0]
-                : CoarseSearchRangeChoices.FirstOrDefault(r => !r.Auto && r.RadiusRangeMm == savedRange)
-                    ?? new($"{savedRange:0.###} mm", savedRange);
-            SelectedDiscType = target.Parameters.Kind switch
-            {
-                CalibrationDiscKind.Dvd => "DVD",
-                CalibrationDiscKind.BluRay => "BD",
-                _ => "CD",
-            };
+            SelectedCoarseSearchRange = target.HasBoundaryPattern
+                ? BoundarySearchRangeChoices.FirstOrDefault(range => range.RadiusRangeMm == savedRange)
+                    ?? BoundarySearchRangeChoices[1]
+                : ResolveSearchRange(savedRange, autoRange);
+            SelectedDiscType = DiscTypeName(target.Parameters.Kind);
             // The 60 mm canvas is a disc-preview background; the target itself maps its
             // reference pixels using the saved generation outer radius.
             CanvasOuterRadiusMm = Math.Max(CalibrationReferencePattern.CanvasRadiusMm, target.Parameters.OuterRadiusMm);
-            TargetImage = CalibrationPatternRenderer.Render(target, CanvasOuterRadiusMm, 900);
+            InstallTargetPreview(target);
             InvalidateFit();
             OnPropertyChanged(nameof(Target));
+            OnPropertyChanged(nameof(TargetSummary));
+            OnPropertyChanged(nameof(HasClockTarget));
+            OnPropertyChanged(nameof(HasWideBandTarget));
+            OnPropertyChanged(nameof(HasRadialArcTarget));
+            OnPropertyChanged(nameof(IsRadialArcStep));
+            OnPropertyChanged(nameof(IsClockStep));
+            OnPropertyChanged(nameof(IsRingStep));
+            NotifyTraceStage();
             OnPropertyChanged(nameof(IsDvdTarget));
             OnPropertyChanged(nameof(IsBluRayTarget));
             OnPropertyChanged(nameof(StepOneState));
@@ -299,9 +501,38 @@ public partial class CalibrationViewModel : ObservableObject
             StepOneExpanded = false;
             StepTwoExpanded = true;
             RefreshCommands();
-            _shell.Burn?.OnCalibrationTargetChanged();
+            _shell.CalibrationBurn?.OnCalibrationTargetChanged();
         }
         finally { _installing = false; }
+    }
+
+    /// <summary>A session can carry a manual box that the current choices do not list. The
+    /// entry is added to this view model's collection so the selector shows the saved value;
+    /// the previous session's custom entry is replaced instead of accumulating.</summary>
+    private CoarseSearchRange ResolveSearchRange(double savedRange, bool autoRange)
+    {
+        // The custom entry belongs to the session that contributed it; any other install
+        // (including an auto one) replaces it instead of adding a second entry.
+        while (CoarseSearchRangeChoices.Count > CoarseSearchRanges.Count)
+        {
+            CoarseSearchRangeChoices.RemoveAt(CoarseSearchRangeChoices.Count - 1);
+        }
+
+        if (autoRange)
+        {
+            return CoarseSearchRangeChoices[0];
+        }
+
+        CoarseSearchRange? listed = CoarseSearchRangeChoices
+            .FirstOrDefault(range => !range.Auto && range.RadiusRangeMm == savedRange);
+        if (listed is not null)
+        {
+            return listed;
+        }
+
+        CoarseSearchRange custom = new($"{savedRange:0.###} mm", savedRange);
+        CoarseSearchRangeChoices.Add(custom);
+        return custom;
     }
 
     private void InvalidateFit()
@@ -309,6 +540,7 @@ public partial class CalibrationViewModel : ObservableObject
         _inputRevision++;
         if (_isSolving) _cancellation?.Cancel();
         _fit = null;
+        _fitStatusText = null;
         ContourConfirmed = false;
         _previewCancellation?.Cancel();
         _previewReady = false;
@@ -317,17 +549,16 @@ public partial class CalibrationViewModel : ObservableObject
         CoarseCandidates = [];
         SelectedCoarseCandidate = null;
         _fitRangeExpanded = false;
-        FitAssessment = L.T("全部有效点都会参与计算，结果需与实拍曲线核对。");
-        ApplyParametersCommand.NotifyCanExecuteChanged();
+        RefreshApplyParametersState();
     }
 
-    private CalibrationFitOptions FitOptions() => _loadedFitOptions with
+    private CalibrationFitOptions FitOptions(bool useRingSeed = true) => _loadedFitOptions with
     {
-        SearchCenter = _searchCenter,
+        SearchCenter = useRingSeed ? _acceptedRingSeed ?? _searchCenter : _searchCenter,
         RadiusRangeMm = SelectedCoarseSearchRange.RadiusRangeMm,
-        FitDvdPitch = FitDvdPitch,
+        FitDvdPitch = FitDvdPitch && _target?.HasSingleRadialLine != true && !HasBoundarySegments,
         AdaptiveRobustScale = true,
-        AutoRange = SelectedCoarseSearchRange.Auto,
+        AutoRange = !HasBoundarySegments && SelectedCoarseSearchRange.Auto,
     };
 
     partial void OnFitDvdPitchChanged(bool value)
@@ -335,26 +566,31 @@ public partial class CalibrationViewModel : ObservableObject
         if (!_installing) InvalidateFit();
     }
     private CalibrationSession Session() => new(_target ?? throw new InvalidOperationException(L.T("请先创建图案。")),
-        [], FitOptions(), _cdInterleave, PhotoSession());
+        [], FitOptions(useRingSeed: false), _cdInterleave, PhotoSession());
 
     private async Task SolveAsync()
     {
-        if (_target is not { } target) return;
+        if (!IsLineFitStep || _target is not { } target) return;
         InvalidateFit();
         long revision = _inputRevision;
         var traces = CrossTraces();
+        var segments = HasBoundarySegments ? BoundarySegments() : [];
         var options = FitOptions();
-        int pointCount = traces.Sum(trace => trace.Points.Count);
+        int pointCount = HasBoundarySegments ? segments.Sum(segment => segment.Points.Count) : traces.Sum(trace => trace.Points.Count);
         await RunAsync(L.F($"正在用全部 {pointCount} 个曲线点计算参数…"), async token =>
         {
             _isSolving = true;
-            FitAttempt attempt = await Task.Run(() => FitWithAutoRange(
-                target, traces, options, SelectedCoarseSearchRange.Auto, token), token);
+            FitAttempt attempt = await Task.Run(() => target.HasBoundaryPattern
+                ? new FitAttempt(CalibrationBoundaryFitter.Fit(target, segments, options, token), options.RadiusRangeMm, false)
+                : FitWithAutoRange(target, traces, options, SelectedCoarseSearchRange.Auto, token), token);
             CalibrationFitResult result = attempt.Result;
             _fitRangeMm = attempt.RangeMm;
             _fitRangeExpanded = attempt.Expanded;
             var candidates = result.Candidates.Select((c, index) =>
-                new CoarseCandidate(L.F($"候选 {index + 1} · 偏差 {c.RmsErrorMm:0.###} mm"), c.Parameters,
+                new CoarseCandidate(target.HasBoundaryPattern && (!result.Succeeded || c.Parameters != result.BestParameters
+                    || c.RotationRadians != result.RotationRadians)
+                    ? L.Format("HalfDisc.ComparisonCandidate", index + 1, c.RmsErrorMm)
+                    : L.F($"候选 {index + 1} · 偏差 {c.RmsErrorMm:0.###} mm"), c.Parameters,
                     c.RotationRadians, c.RmsErrorMm, c.MaxErrorMm, c.OutlierCount)).ToArray();
             token.ThrowIfCancellationRequested();
             if (revision != _inputRevision || !ReferenceEquals(target, _target)) throw new OperationCanceledException();
@@ -368,13 +604,38 @@ public partial class CalibrationViewModel : ObservableObject
             await ShowCandidateAsync(SelectedCoarseCandidate);
             token.ThrowIfCancellationRequested();
             UpdateFitAssessment();
-            if (!result.Succeeded)
-                _statusMessage = L.F($"计算未通过，已保留全部 {pointCount} 点。\n{string.Join("\n", result.Warnings)}");
-            else if (SelectedCoarseCandidate is { } selected && !CandidateResidualAccepted(selected))
-                _statusMessage = L.F($"候选与实拍点偏差较大，暂不能应用；全部 {pointCount} 点已保留。请修正标红点或补充曲线点。");
-            else if (_previewReady)
-                _statusMessage = L.F($"已用全部 {pointCount} 点生成参数候选{(attempt.Expanded ? L.F($"，搜索范围自动扩大至 ±{attempt.RangeMm:0.###} mm") : string.Empty)}。请核对橙色预测是否沿青色实拍点连续贴合，再决定是否应用。");
+            _fitStatusPointCount = pointCount;
+            if (FormatFitStatus() is { } status)
+                _statusMessage = _fitStatusText = status;
         });
+    }
+
+    private string? FormatFitStatus()
+    {
+        if (_fit is not { } result) return null;
+        if (!result.Succeeded)
+        {
+            string reasons = string.Join("\n", result.Warnings.Select(L.T));
+            return result.Candidates.Count > 0
+                ? L.Format("CalibrationApply.FailedWithCandidates", _fitStatusPointCount, reasons)
+                : L.F($"计算未通过，已保留全部 {_fitStatusPointCount} 点。\n{reasons}");
+        }
+        if (SelectedCoarseCandidate is { } selected && !CandidateResidualAccepted(selected))
+            return L.T("CalibrationApply.ResidualWarning");
+        return _previewReady
+            ? L.F($"已用全部 {_fitStatusPointCount} 点生成参数候选{(_fitRangeExpanded ? L.F($"，搜索范围自动扩大至 ±{_fitRangeMm:0.###} mm") : string.Empty)}。请核对橙色预测是否沿青色实拍点连续贴合，再决定是否应用。")
+            : null;
+    }
+
+    private void RelocalizeFitStatus()
+    {
+        // Recompose from the raw fit reasons without touching the fit or rewriting
+        // historical logs. A newer operation owns the dock once its text changes.
+        if (_fitStatusText is not { } previous || _statusMessage != previous
+            || FormatFitStatus() is not { } status) return;
+        _statusMessage = _fitStatusText = status;
+        OnPropertyChanged(nameof(LastStatusMessage));
+        if (!IsBusy && _shell.JobStatusText == previous) _shell.JobStatusText = status;
     }
 
     /// <summary>
@@ -432,37 +693,66 @@ public partial class CalibrationViewModel : ObservableObject
     {
         if (_fit is null)
         {
-            FitAssessment = L.T("全部有效点都会参与计算，结果需与实拍曲线核对。");
+            FitAssessment = ApplyParametersHint;
             return;
         }
-        if (!_fit.Succeeded)
+        var lines = new List<string>();
+        if (SelectedCoarseCandidate is { } candidate)
         {
-            FitAssessment = _fit.Warnings.FirstOrDefault() ?? L.T("计算未通过，全部点已保留。");
-            return;
+            lines.Add(L.Format("CalibrationApply.ResidualSummary", candidate.RmsErrorMm, candidate.MaxErrorMm));
+            if (_fit.Succeeded && !IsVerifiedBoundaryCandidate(candidate)) lines.Add(L.T("HalfDisc.ComparisonOnly"));
+            if (!CandidateResidualAccepted(candidate)) lines.Add(L.T("CalibrationApply.ResidualWarning"));
         }
-        if (SelectedCoarseCandidate is not { } candidate)
-        {
-            FitAssessment = L.T("没有可应用的候选。");
-            return;
-        }
-
-        bool accepted = CandidateResidualAccepted(candidate);
-        string range = _fitRangeExpanded
-            ? L.F($"\n已自动扩大搜索至 ±{_fitRangeMm:0.###} mm。")
-            : string.Empty;
-        if (_fit.BoundaryLimited)
-            range += L.T("\n最优靠近搜索边界，请补充曲线点或检查点位。");
-        string outliers = OutlierTracePointIndices.Count > 0
-            ? L.F($"\n已标记 {OutlierTracePointIndices.Count} 个偏离较大的点。")
-            : string.Empty;
-        FitAssessment = accepted
-            ? L.F($"候选 · 平均偏差 {candidate.RmsErrorMm:0.###} mm · 最大 {candidate.MaxErrorMm:0.###} mm，待核对{range}{outliers}")
-            : L.F($"未通过 · 平均偏差 {candidate.RmsErrorMm:0.###} mm · 最大 {candidate.MaxErrorMm:0.###} mm，不能应用{range}{outliers}");
+        if (!_fit.Succeeded) lines.Add(L.T("CalibrationApply.AutomaticNotPassed"));
+        lines.AddRange(_fit.Warnings.Select(warning => L.T(warning)));
+        if (_fitRangeExpanded) lines.Add(L.F($"已自动扩大搜索至 ±{_fitRangeMm:0.###} mm。"));
+        if (OutlierTracePointIndices.Count > 0)
+            lines.Add(L.F($"已标记 {OutlierTracePointIndices.Count} 个偏离较大的点。"));
+        lines.Add(ApplyParametersHint);
+        FitAssessment = string.Join(Environment.NewLine, lines.Distinct());
     }
 
     private void ApplyParameters()
     {
         if (!CanApplyParameters() || SelectedCoarseCandidate?.Parameters is not { } p) return;
+        WriteSetupParameters(p);
+        string ri = p.InnerRadiusMm.ToString("G17", CultureInfo.InvariantCulture);
+        string ro = p.OuterRadiusMm.ToString("G17", CultureInfo.InvariantCulture);
+        _statusMessage = L.Format("CalibrationSetup.FitApplied", ri, ro);
+        _shell.AppendLog(_statusMessage + "\n");
+    }
+
+    private void WriteSetupParameters(CalibrationParameters p)
+    {
+        WriteSetupRadii(p);
+        switch (p.Kind)
+        {
+            case CalibrationDiscKind.Cd:
+                _state.CdSectors = p.Sectors.ToString(CultureInfo.InvariantCulture);
+                _state.CdPitchLinear = _state.CdActualPitchLinear = p.PitchLinear.ToString("G17", CultureInfo.InvariantCulture);
+                _state.CdPitchQuadratic = _state.CdActualPitchQuadratic = p.PitchQuadratic.ToString("G17", CultureInfo.InvariantCulture);
+                _state.CdPitchCubic = _state.CdActualPitchCubic = p.PitchCubic.ToString("G17", CultureInfo.InvariantCulture);
+                break;
+            case CalibrationDiscKind.BluRay:
+                _state.BdTotalSectors = p.Sectors.ToString(CultureInfo.InvariantCulture);
+                _state.BdPitchLinear = _state.BdActualPitchLinear = p.PitchLinear.ToString("G17", CultureInfo.InvariantCulture);
+                _state.BdPitchQuadratic = _state.BdActualPitchQuadratic = p.PitchQuadratic.ToString("G17", CultureInfo.InvariantCulture);
+                _state.BdPitchCubic = _state.BdActualPitchCubic = p.PitchCubic.ToString("G17", CultureInfo.InvariantCulture);
+                _state.BdInvertMapping = p.BluRayInvertMapping;
+                break;
+            default:
+                _state.DvdPitchLinear = _state.DvdActualPitchLinear = p.PitchLinear.ToString("G17", CultureInfo.InvariantCulture);
+                _state.DvdPitchQuadratic = _state.DvdActualPitchQuadratic = p.PitchQuadratic.ToString("G17", CultureInfo.InvariantCulture);
+                _state.DvdPitchCubic = _state.DvdActualPitchCubic = p.PitchCubic.ToString("G17", CultureInfo.InvariantCulture);
+                _state.DvdTotalSectors = p.Sectors.ToString(CultureInfo.InvariantCulture);
+                _state.DvdReadCompatibility = p.DvdReadCompatibility;
+                break;
+        }
+    }
+
+    private void WriteSetupRadii(CalibrationParameters p)
+    {
+        SelectedDiscType = DiscTypeName(p.Kind);
         string ri = p.InnerRadiusMm.ToString("G17", CultureInfo.InvariantCulture);
         string ro = p.OuterRadiusMm.ToString("G17", CultureInfo.InvariantCulture);
         switch (p.Kind)
@@ -470,42 +760,24 @@ public partial class CalibrationViewModel : ObservableObject
             case CalibrationDiscKind.Cd:
                 _state.CdInnerRadius = ri; _state.CdOuterRadius = ro;
                 _state.CdActualInnerRadius = ri; _state.CdActualOuterRadius = ro;
-                _state.CdSectors = p.Sectors.ToString(CultureInfo.InvariantCulture);
                 break;
             case CalibrationDiscKind.BluRay:
                 _state.BdInnerRadius = ri; _state.BdOuterRadius = ro;
                 _state.BdActualInnerRadius = ri; _state.BdActualOuterRadius = ro;
-                _state.BdTotalSectors = p.Sectors.ToString(CultureInfo.InvariantCulture);
-                _state.BdInvertMapping = p.BluRayInvertMapping;
                 break;
             default:
                 _state.DvdInnerRadius = ri; _state.DvdOuterRadius = ro;
                 _state.DvdActualInnerRadius = ri; _state.DvdActualOuterRadius = ro;
-                _state.DvdPitchLinear = _state.DvdActualPitchLinear = p.PitchLinear.ToString("G17", CultureInfo.InvariantCulture);
-                _state.DvdPitchQuadratic = _state.DvdActualPitchQuadratic = p.PitchQuadratic.ToString("G17", CultureInfo.InvariantCulture);
-                _state.DvdPitchCubic = _state.DvdActualPitchCubic = p.PitchCubic.ToString("G17", CultureInfo.InvariantCulture);
-                _state.DvdTotalSectors = p.Sectors.ToString(CultureInfo.InvariantCulture);
                 break;
         }
-
-        string family = p.Kind switch
-        {
-            CalibrationDiscKind.Cd => "CD",
-            CalibrationDiscKind.BluRay => "BD",
-            _ => "DVD",
-        };
-        _statusMessage = L.F($"已应用到 {family} 参数。原标定盘记录仍保留，可继续补点核对。");
-        _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 标定 {Target?.Id}: {_statusMessage} 内半径={ri}, 外半径={ro}\n"));
-        _shell.NotifyCalibrationParametersApplied();
     }
 
     partial void OnSelectedCoarseCandidateChanged(CoarseCandidate? value)
     {
         ContourConfirmed = false;
         _previewReady = false;
-        UpdateFitAssessment();
         if (!_installing) _ = ShowCandidateAsync(value);
-        ApplyParametersCommand?.NotifyCanExecuteChanged();
+        RefreshApplyParametersState();
     }
 
     partial void OnSelectedCoarseSearchRangeChanged(CoarseSearchRange value)
@@ -520,7 +792,7 @@ public partial class CalibrationViewModel : ObservableObject
         _previewReady = false;
         CrossPredictionContours = [];
         OutlierTracePointIndices = [];
-        ApplyParametersCommand.NotifyCanExecuteChanged();
+        RefreshApplyParametersState();
         if (candidate is null || _target is not { } target) return;
         var traceSnapshot = TracePoints;
         double[] observedRadii = traceSnapshot.Select(point => Math.Sqrt(point.XMm * point.XMm + point.YMm * point.YMm)).ToArray();
@@ -535,20 +807,22 @@ public partial class CalibrationViewModel : ObservableObject
             var preview = await Task.Run(() =>
             {
                 cancellation.Token.ThrowIfCancellationRequested();
-                var prediction = CalibrationCrossPrediction.GetOutline(target, candidate.Parameters,
-                    minimumObservedRadius, maximumObservedRadius, candidate.RotationRadians, cancellationToken: cancellation.Token);
+                var predictions = Enumerable.Range(0, target.HasBoundaryPattern ? 2 : 1)
+                    .Select(arm => CalibrationCrossPrediction.GetOutline(target, candidate.Parameters,
+                        minimumObservedRadius, maximumObservedRadius, candidate.RotationRadians, armIndex: arm,
+                        cancellationToken: cancellation.Token)).ToArray();
                 // The predicted curve is the reference; a point beyond a small multiple of
                 // the mean residual is visibly off it, not measurement noise.
                 double threshold = Math.Max(0.2, candidate.RmsErrorMm * 2.5);
                 int[] outliers = traceSnapshot
-                    .Where(point => DistanceToPolyline(point, prediction) > threshold)
+                    .Where(point => predictions.Min(prediction => DistanceToPolyline(point, prediction)) > threshold)
                     .Select(point => point.Index).OrderBy(index => index).ToArray();
-                return (Contour: prediction.Select(point => new Point(point.X, point.Y)).ToArray(), Outliers: outliers);
+                return (Contours: predictions.Select(prediction => prediction.Select(point => new Point(point.X, point.Y)).ToArray()).ToArray(), Outliers: outliers);
             }, cancellation.Token);
             cancellation.Token.ThrowIfCancellationRequested();
             if (revision != _inputRevision || !ReferenceEquals(_target, target)
                 || !ReferenceEquals(SelectedCoarseCandidate, candidate)) return;
-            CrossPredictionContours = [preview.Contour];
+            CrossPredictionContours = preview.Contours;
             OutlierTracePointIndices = preview.Outliers;
             _previewReady = true;
             UpdateFitAssessment();
@@ -560,13 +834,13 @@ public partial class CalibrationViewModel : ObservableObject
             {
                 CrossPredictionContours = [];
                 ContourConfirmed = false;
-                Report(ex);
+                Report(ex, L.T("标定轮廓预览"));
             }
         }
         finally
         {
             if (ReferenceEquals(_previewCancellation, cancellation)) _previewCancellation = null;
-            ApplyParametersCommand.NotifyCanExecuteChanged();
+            RefreshApplyParametersState();
         }
     }
 
@@ -598,22 +872,34 @@ public partial class CalibrationViewModel : ObservableObject
 
     private async Task ExportPngAsync()
     {
-        if (_target is not { } target) return;
-        string? path = _shell.Dialogs?.PickSave(L.T("PNG 图案|*.png"), ".png", $"calibration-{target.Id[..8]}.png");
-        if (path is null) return;
+        if (!CanUseStageTarget() || _target is not { } target) return;
+        bool schematic = target.HasClockRuler || target.HasWideAddressBands;
+        string suffix = schematic ? "-preview.png" : ".png";
+        string? path = _shell.Dialogs?.PickSave(L.T("PNG 图案|*.png"), ".png", $"calibration-{target.Id[..8]}{suffix}");
+        if (path is null || !ReferenceEquals(target, _target)) return;
+        var session = Session();
         await RunAsync(L.T("正在导出图案…"), async token =>
         {
-            BitmapSource image = await Task.Run(() => CalibrationPatternRenderer.RenderEncodingImage(target, token), token);
-            CalibrationPatternRenderer.SavePng(image, path);
-            CalibrationSessionJson.Save(Path.ChangeExtension(path, ".calibration.json"), Session());
-            _shell.RegisterOutput(path);
-            _statusMessage = L.T("PNG 与标定记录已导出。刻录请使用本页的生成或流式刻录按钮，以保持坐标比例。");
+            double canvas = CanvasOuterRadiusMm;
+            int size = target.HasAngleSweep ? CalibrationPatternRenderer.HighResolutionSize : CalibrationReferencePattern.PixelSize;
+            var cached = schematic && TargetImage?.PixelWidth == size ? TargetImage : null;
+            await Task.Run(() =>
+            {
+                BitmapSource image = cached ?? (schematic
+                    ? CalibrationPatternRenderer.Render(target, canvas, size, cancellationToken: token)
+                    : CalibrationPatternRenderer.RenderEncodingImage(target, token));
+                token.ThrowIfCancellationRequested();
+                CalibrationPatternRenderer.SavePng(image, path);
+                CalibrationSessionJson.Save(Path.ChangeExtension(path, ".calibration.json"), session);
+            }, token);
+            _statusMessage = L.T(target.HasWideAddressBands ? "WideBands.PreviewSaved" : target.HasClockRuler ? "Clock.PreviewSaved"
+                : "PNG 与标定记录已导出。刻录请使用本页的生成或流式刻录按钮，以保持坐标比例。");
         });
     }
 
     private async Task GenerateImageAsync()
     {
-        if (_target is not { } target) return;
+        if (!CanUseStageTarget() || _target is not { } target) return;
         if (string.IsNullOrWhiteSpace(OutputPath)) BrowseOutput();
         if (string.IsNullOrWhiteSpace(OutputPath)) return;
         string path;
@@ -640,7 +926,7 @@ public partial class CalibrationViewModel : ObservableObject
                 {
                     if (target.Parameters.Kind == CalibrationDiscKind.Cd)
                     {
-                        CdTrackGenerator.GeneratePattern(target.Sample, stagedPath, CdParameters(target), session.CdInterleave,
+                        CdTrackGenerator.GeneratePattern(target, stagedPath, session.CdInterleave,
                             cancellationToken: token);
                     }
                     else if (target.Parameters.Kind == CalibrationDiscKind.BluRay)
@@ -656,8 +942,7 @@ public partial class CalibrationViewModel : ObservableObject
                     }
                     else
                     {
-                        using FileStream output = new(stagedPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-                        DvdStreamingGenerator.GeneratePattern(target.Sample, output, DvdOptions(target), cancellationToken: token);
+                        DvdImageGenerator.GenerateCalibration(target, stagedPath, DvdOptions(target), token);
                     }
                     token.ThrowIfCancellationRequested();
                     CalibrationSessionJson.Save(Path.ChangeExtension(stagedPath, ".calibration.json"), session);
@@ -665,10 +950,13 @@ public partial class CalibrationViewModel : ObservableObject
                 token.ThrowIfCancellationRequested();
                 CalibrationOutputPublisher.Publish(staging, directory);
                 _sessionPath = Path.ChangeExtension(path, ".calibration.json");
-                _shell.RegisterOutput(path);
                 _statusMessage = L.T("标定文件与同名标定记录已生成。刻录后打开记录、导入照片，即可矫正和描线。");
             }
-            finally { Directory.Delete(staging, recursive: true); }
+            finally
+            {
+                JobDiagnostics.TryCleanup(() => Directory.Delete(staging, recursive: true),
+                    _shell.AppendLog, $"清理标定临时目录：{staging}");
+            }
         });
     }
 
@@ -683,7 +971,8 @@ public partial class CalibrationViewModel : ObservableObject
             checked((uint)parameters.Sectors),
             1,
             parameters.InnerRadiusMm,
-            parameters.OuterRadiusMm);
+            parameters.OuterRadiusMm,
+            PitchLinear: parameters.PitchLinear, PitchQuadratic: parameters.PitchQuadratic, PitchCubic: parameters.PitchCubic);
         disc.Validate();
         return disc;
     }
@@ -698,9 +987,22 @@ public partial class CalibrationViewModel : ObservableObject
         uint end = target.Parameters.DrawingEndSectorExclusive == 0
             ? disc.TotalSectors
             : checked((uint)target.Parameters.DrawingEndSectorExclusive);
+        if (target.HasWideAddressBands)
+            return new BluRayPatternRangeMapping(disc, start, end,
+                target.WideBandSectorRanges, target.Parameters.BluRayInvertMapping,
+                target.HasAngleSweep ? new CalibrationAngleSweepSampler(target).Switches : null);
+        // Version 14 uses the original PNG orientation (image Y down, track Y up).
+        // Keep older targets and analytic artwork on their saved sampler contract.
+        if (target.SchemaVersion == 14 && target.Artwork == CalibrationArtwork.ReferenceCross)
+            return new BluRayPatternRangeMapping(disc, BluRayReferenceRaster.Value, start, end,
+                target.Parameters.BluRayInvertMapping,
+                Math.Max(0, target.DrawingInnerRadiusMm * target.DrawingInnerRadiusMm - 1e-10),
+                target.DrawingOuterRadiusMm * target.DrawingOuterRadiusMm + 1e-10);
         return new BluRayPatternRangeMapping(
             disc,
-            target.Sample,
+            // BD track coordinates use Y up; the calibration canvas and original PNG
+            // use Y down. Existing snapshots retain the sampler they were burned with.
+            target.SchemaVersion >= 14 ? (x, y) => target.Sample(x, -y) : target.Sample,
             start,
             end,
             target.Parameters.BluRayInvertMapping,
@@ -722,7 +1024,6 @@ public partial class CalibrationViewModel : ObservableObject
     {
         CalibrationSessionJson.Save(path, Session());
         _sessionPath = path;
-        _shell.RegisterOutput(path);
     }
 
     private async Task OpenSessionAsync()
@@ -734,12 +1035,10 @@ public partial class CalibrationViewModel : ObservableObject
 
     private void PrepareStreamBurn()
     {
-        if (_target is null) return;
+        if (!CanUseStageTarget() || _target is null) return;
         if (!EnsureSessionSavedForBurn()) return;
-        // Burn family follows the material: selecting the calibration source is all the burn
-        // workspace needs; navigation there refreshes the summary and device list itself.
-        _shell.Burn.UseCalibrationPattern = true;
-        _shell.NavigateTo(Workspace.Burn);
+        // The standalone recorder takes its material from this frozen target.
+        _shell.NavigateTo(Workspace.CalibrationBurn);
     }
 
     internal bool EnsureSessionSavedForBurn()
@@ -756,36 +1055,51 @@ public partial class CalibrationViewModel : ObservableObject
         catch (Exception ex) { Report(ex); return false; }
     }
 
-    internal static CdDiscParameters CdParameters(CalibrationTarget target) => new(target.Parameters.InnerRadiusMm,
-        target.Parameters.OuterRadiusMm, target.Parameters.Sectors, target.Parameters.LinearDensity, 0,
-        target.Parameters.OuterRadiusMm);
     internal static DvdStreamingOptions DvdOptions(CalibrationTarget target) => new(checked((uint)target.Parameters.Sectors),
         target.Parameters.InnerRadiusMm, target.Parameters.OuterRadiusMm, target.Parameters.LinearDensity, 0,
         PitchLinear: target.Parameters.PitchLinear, PitchQuadratic: target.Parameters.PitchQuadratic,
-        PitchCubic: target.Parameters.PitchCubic);
+        PitchCubic: target.Parameters.PitchCubic,
+        ReadCompatibility: target.Parameters.DvdReadCompatibility);
     private static void ValidateOutputParameters(CalibrationParameters p)
     {
         p.Validate();
-        if (p.Kind == CalibrationDiscKind.Dvd)
+        if (p.Kind == CalibrationDiscKind.BluRay)
+            BluRayParameters(p);
+        else if (p.Kind == CalibrationDiscKind.Dvd)
             new DvdStreamingOptions(checked((uint)p.Sectors), p.InnerRadiusMm, p.OuterRadiusMm, p.LinearDensity, 0,
                 PitchLinear: p.PitchLinear, PitchQuadratic: p.PitchQuadratic, PitchCubic: p.PitchCubic).Validate();
-        else new CdDiscParameters(p.InnerRadiusMm, p.OuterRadiusMm, p.Sectors, p.LinearDensity).Validate();
+        else new CdDiscParameters(p.InnerRadiusMm, p.OuterRadiusMm, p.Sectors, p.LinearDensity,
+            PitchLinear: p.PitchLinear, PitchQuadratic: p.PitchQuadratic, PitchCubic: p.PitchCubic).Validate();
     }
 
     private async Task RunAsync(string message, Func<CancellationToken, Task> action)
     {
         if (IsBusy) return;
         _cancellation = new();
-        _shell.SetBusy(true);
+        _fitStatusText = null;
         _statusMessage = message;
+        _shell.BeginDockJob(L.T("Xaml.Calibration"), determinate: false);
+        _shell.ReportDockJob(message, 0);
+        _shell.SetBusy(true);
         _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 标定：{message}\n"));
-        try { await action(_cancellation.Token); }
+        try
+        {
+            await action(_cancellation.Token);
+            // Calibration owns its files and records; completing a task must not register
+            // one as the drawing project's output or relabel an earlier project artifact.
+            _shell.CompleteDockJob(_statusMessage);
+        }
         catch (OperationCanceledException)
         {
             if (_isSolving) InvalidateFit();
             _statusMessage = L.T("操作已取消。");
+            _shell.AbortDockJob(_statusMessage, expandLog: false);
         }
-        catch (Exception ex) { Report(ex); }
+        catch (Exception ex)
+        {
+            Report(ex, message);
+            _shell.AbortDockJob(_statusMessage, expandLog: true);
+        }
         finally
         {
             _isSolving = false;
@@ -795,24 +1109,51 @@ public partial class CalibrationViewModel : ObservableObject
         }
     }
 
-    private void Report(Exception ex)
+    private void Report(Exception ex, string? context = null)
     {
-        _statusMessage = ex.Message;
-        _shell.ShowToast(L.T("标定操作未完成"), ex.Message, ToastKind.Error);
+        _statusMessage = L.Error(ex);
+        _shell.AppendLog(JobDiagnostics.FormatLog(context ?? L.T("标定操作"), ex));
+        _shell.ShowToast(L.T("标定操作未完成"), _statusMessage, ToastKind.Error);
     }
 
     private void RefreshCommands()
     {
         CreateTargetCommand.NotifyCanExecuteChanged(); BrowseOutputCommand.NotifyCanExecuteChanged();
+        SaveAsPresetCommand.NotifyCanExecuteChanged();
+        RefreshCapacityCommands();
         ExportPngCommand.NotifyCanExecuteChanged(); GenerateImageCommand.NotifyCanExecuteChanged();
         StreamBurnCommand.NotifyCanExecuteChanged(); SaveSessionCommand.NotifyCanExecuteChanged();
         OpenSessionCommand.NotifyCanExecuteChanged(); SolveCommand.NotifyCanExecuteChanged();
-        CancelCommand.NotifyCanExecuteChanged(); ApplyParametersCommand.NotifyCanExecuteChanged();
+        CancelCommand.NotifyCanExecuteChanged(); RefreshApplyParametersState();
         RefreshPhotoCommands();
+        RefreshRingCommands();
     }
 
     public sealed record CoarseCandidate(string Label, CalibrationParameters Parameters,
         double RotationRadians, double RmsErrorMm, double MaxErrorMm = 0, int OutlierCount = 0);
-    public sealed record CoarseSearchRange(string Label, double RadiusRangeMm, bool Auto = false);
+    /// <summary>One search box for the two radius parameters. The automatic entry is the only
+    /// localized label; it is computed so a language switch can refresh it in place.</summary>
+    public sealed class CoarseSearchRange : INotifyPropertyChanged
+    {
+        private readonly string _label;
+
+        public CoarseSearchRange(string label, double radiusRangeMm, bool Auto = false)
+        {
+            _label = label;
+            RadiusRangeMm = radiusRangeMm;
+            this.Auto = Auto;
+        }
+
+        public string Label => Auto ? L.T("自动（推荐）") : _label;
+
+        public double RadiusRangeMm { get; }
+
+        public bool Auto { get; }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        internal void RefreshLabel()
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Label)));
+    }
     private sealed record FitAttempt(CalibrationFitResult Result, double RangeMm, bool Expanded);
 }

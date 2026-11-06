@@ -8,23 +8,6 @@ internal static class UnifiedCommandRunner
 {
     private static DiscModuleCatalog Modules => ConsoleModuleRunner.Catalog;
 
-    internal static bool SupportsCancellation(string command)
-        => Modules.Resolve(command).Descriptor.SupportsCancellation;
-
-    /// <summary>The GUI job path: same modules and arguments as the CLI, but progress and
-    /// cancellation flow through the caller instead of Console.CancelKeyPress.</summary>
-    internal static DiscJobResult RunJob(string[] arguments,
-        IProgress<DiscJobProgress>? progress, CancellationToken cancellationToken)
-    {
-        if (arguments.Length == 0)
-        {
-            throw new ArgumentException("Missing command.");
-        }
-
-        DiscJobRequest request = new(arguments[0], arguments.Skip(1));
-        return Modules.ExecuteAsync(request, progress, cancellationToken).GetAwaiter().GetResult();
-    }
-
     internal static int Run(string[] arguments)
     {
         try
@@ -45,11 +28,11 @@ internal static class UnifiedCommandRunner
                 ReadOnlySpan<string> snapshotArguments = arguments.AsSpan(1);
                 string? tabValue = FindOption(snapshotArguments, "tab");
                 int workspaceIndex = tabValue is null ? 0 : int.Parse(tabValue);
-                if (workspaceIndex < 0 || workspaceIndex > (int)Workspace.Calibration)
+                if (workspaceIndex < 0 || workspaceIndex > (int)Workspace.CalibrationBurn)
                 {
                     throw new ArgumentOutOfRangeException(
                         nameof(arguments),
-                        "Tabs: 0 home, 1 design, 2 preview, 3 export, 4 burn, 5 calibration.");
+                        "Tabs: 0 home, 1 design, 2 preview, 3 export, 4 burn, 5 calibration, 6 calibration burn.");
                 }
 
                 bool settingsDialog = HasOption(snapshotArguments, "settings-dialog");
@@ -66,7 +49,6 @@ internal static class UnifiedCommandRunner
                     FindOption(snapshotArguments, "calibration-view"),
                     FindOption(snapshotArguments, "project"),
                     FindOption(snapshotArguments, "project-dialog"),
-                    HasOption(snapshotArguments, "about-dialog"),
                     HasOption(snapshotArguments, "preset-dialog"),
                     HasOption(snapshotArguments, "dock"),
                     FindOption(snapshotArguments, "burn-source"),
@@ -132,16 +114,16 @@ internal static class UnifiedCommandRunner
               ui-snapshot --output SCREENSHOT.png [--tab N] [--width 1366] [--height 768]
                           [--project FILE.discproj] [--live-input IMAGE --live-disc cd|dvd]
                           [--dock] [--burn-source project|calibration]
-                          [--about-dialog] [--preset-dialog] [--settings-dialog]
-                          [--language zh-CN|zh-TW|en|ja|system]
-                          [--settings-view general|storage] [--theme dark|light|system]
+                          [--preset-dialog] [--settings-dialog]
+                          [--language zh-CN|zh-TW|en|ja|tr|es|cs|system]
+                          [--settings-view general|storage|about] [--theme dark|light|system]
                           [--expand] [--scroll N] [--home-hover]
-                          [--burn-progress write|buffer|finalize]
+                          [--burn-progress write|buffer|finalize|write-complete|verify|flush|close-track|close-disc|release]
                           [--project-update] [--project-save] [--tone-preview]
               burn-devices
               burn-build-info
 
-            Tabs: 0 home, 1 design, 2 preview, 3 export, 4 burn, 5 calibration.
+            Tabs: 0 home, 1 design, 2 preview, 3 export, 4 burn, 5 calibration, 6 calibration burn.
             --dock expands the job dock (progress + run log) for the snapshot; --burn-source
             picks what the burn workspace shows as the material to write (calibration also
             creates the calibration target); --scroll N scrolls the page down N pixels so the

@@ -9,7 +9,11 @@ public sealed record CdDiscPreset(
     double OuterRadiusMm,
     string? DisplayNameResourceKey = null,
     string? DescriptionResourceKey = null,
-    bool IsCustom = false)
+    bool IsCustom = false,
+    string? Contributor = null,
+    double PitchLinear = 0,
+    double PitchQuadratic = 0,
+    double PitchCubic = 0)
 {
     public static CdDiscPreset Manual { get; } = new(
         "__manual__",

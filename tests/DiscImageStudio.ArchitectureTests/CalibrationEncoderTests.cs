@@ -27,8 +27,11 @@ internal static class CalibrationEncoderTests
             WritePng(quadrantPath, QuadrantPixel);
             TestCd(directory, blackPath, quadrantPath);
             TestDvd(directory, blackPath, quadrantPath);
-            TestCircleAndCrossTargets(directory);
+            DvdCalibrationBandEncodingTests.Run();
+            CalibrationAngleSweepEncodingTests.Run();
+            TestCurrentTargets(directory);
             TestExactReferenceImage(directory);
+            CalibrationHighResolutionTargetTests.Run(directory);
             TestCancellation();
         }
         finally
@@ -43,6 +46,11 @@ internal static class CalibrationEncoderTests
 
         Console.WriteLine("calibration-encoders: passed (exact reference pixels, circle and cross targets, file/stream parity, cancellation)");
     }
+
+    // These baselines describe the stored v6 target_slim.png record, even when
+    // Create() starts stamping a different set of engraving rules.
+    private static CalibrationTarget LegacyTarget(CalibrationParameters parameters) =>
+        new(6, Guid.NewGuid().ToString("N"), parameters, new CalibrationPatternOptions(), []);
 
     private static void TestExactReferenceImage(string directory)
     {
@@ -73,7 +81,7 @@ internal static class CalibrationEncoderTests
             CalibrationParameters parameters = new(kind, 23.9968875, 57.9779875,
                 kind == CalibrationDiscKind.Cd ? 8 : kind == CalibrationDiscKind.BluRay ? 64 : 16,
                 kind == CalibrationDiscKind.Cd ? 1200 : kind == CalibrationDiscKind.BluRay ? 74.5 : 133.33);
-            CalibrationTarget target = CalibrationTarget.Create(parameters);
+            CalibrationTarget target = LegacyTarget(parameters);
             double centre = kind == CalibrationDiscKind.Cd ? 1200 : 1199.5;
             BitmapSource exported = (BitmapSource)export.Invoke(null, [target, CancellationToken.None])!;
             byte[] actual = new byte[gray.Length];
@@ -114,15 +122,40 @@ internal static class CalibrationEncoderTests
                 Require(previewPixels[y * previewSize + x] == expectedPreview,
                     "the physical preview uses its medium's encoded levels without an extra canvas scale");
             }
-            CalibrationTarget smaller = CalibrationTarget.Create(parameters with { OuterRadiusMm = 50 });
+            CalibrationTarget smaller = LegacyTarget(parameters with { OuterRadiusMm = 50 });
             Require(Math.Abs(smaller.RingRadiiMm[4] / target.RingRadiiMm[4] - 50 / parameters.OuterRadiusMm) < 1e-12
                 && Math.Abs(smaller.RingThicknessMm / target.RingThicknessMm - 50 / parameters.OuterRadiusMm) < 1e-12,
                 "outer radius scales both circle positions and stroke width");
-            CalibrationTarget innerOnly = CalibrationTarget.Create(parameters with { InnerRadiusMm = 30 });
+            CalibrationTarget innerOnly = LegacyTarget(parameters with { InnerRadiusMm = 30 });
             Require(innerOnly.RingRadiiMm.SequenceEqual(target.RingRadiiMm), "changing only the inner radius crops without scaling");
             Require(target.Sample(0, -29) == 0 && innerOnly.Sample(0, -29) == 255, "the captured inner boundary removes the cross inside it");
             Require(target.Sample(0, -(parameters.OuterRadiusMm + 0.001)) == 255,
                 "the captured outer boundary removes the cross outside it");
+
+            // Exercise all three image-coordinate conventions on the current sampler as well.
+            // On BD the usable ring excludes a reserved cluster inside the full geometry.
+            var current = CalibrationTarget.Create(kind == CalibrationDiscKind.BluRay
+                ? parameters with { DrawingStartSector = 32, DrawingEndSectorExclusive = 64 }
+                : parameters);
+            var currentImage = (BitmapSource)export.Invoke(null, [current, CancellationToken.None])!;
+            byte[] currentPixels = new byte[currentImage.PixelWidth * currentImage.PixelHeight];
+            currentImage.CopyPixels(currentPixels, currentImage.PixelWidth, 0);
+            Require(currentImage.PixelWidth == 2400 && currentImage.PixelHeight == 2400,
+                "new target export has the ordinary encoder's native resolution");
+            int inkSamples = 0;
+            double scale = parameters.OuterRadiusMm / (kind == CalibrationDiscKind.Dvd ? 1199.5 : 1200.0);
+            for (int y = 7; y < currentImage.PixelHeight; y += 19)
+            for (int x = 3; x < currentImage.PixelWidth; x += 17)
+            {
+                double xm = (x - centre) * scale, ym = (y - centre) * scale;
+                double radius = Math.Sqrt(xm * xm + ym * ym);
+                byte expected = radius < current.DrawingInnerRadiusMm || radius > current.DrawingOuterRadiusMm
+                    ? (byte)255 : current.Sample(xm, ym);
+                Require(currentPixels[y * currentImage.PixelWidth + x] == expected,
+                    "new target PNG uses the current artwork, pixel convention and recorded drawing range");
+                if (expected == 0) inkSamples++;
+            }
+            Require(inkSamples > 100, "the exported recording band contains ink");
         }
         TestReferenceMatchesOrdinaryImageEncoding(originalPath);
     }
@@ -132,21 +165,25 @@ internal static class CalibrationEncoderTests
         // These baselines load the PNG through the pre-existing image APIs, not through
         // ReferencePattern or a callback that repeats the implementation under test.
         CalibrationParameters cdParameters = new(CalibrationDiscKind.Cd, 23.9968875, 57.9779875, 32, 1200);
-        CalibrationTarget cdTarget = CalibrationTarget.Create(cdParameters);
+        CalibrationTarget cdTarget = LegacyTarget(cdParameters);
         CdDiscParameters cd = new(cdParameters.InnerRadiusMm, cdParameters.OuterRadiusMm, cdParameters.Sectors,
             cdParameters.LinearDensity, 0, cdParameters.OuterRadiusMm);
         foreach (bool interleave in new[] { false, true })
         {
-            using MemoryStream ordinary = new(), calibration = new();
+            using MemoryStream ordinary = new(), calibration = new(), fine = new();
             CdTrackGenerator.GenerateToStream(originalPath, ordinary, cd, interleave, audioByteOrder: CdAudioByteOrder.LittleEndian);
             CdTrackGenerator.GeneratePatternToStream(cdTarget.Sample, calibration, cd, interleave, audioByteOrder: CdAudioByteOrder.LittleEndian);
+            var fineTarget = CalibrationTarget.Create(cdParameters, artwork: CalibrationArtwork.ReferenceCross);
+            CdTrackGenerator.GeneratePatternToStream(fineTarget, fine, interleave, audioByteOrder: CdAudioByteOrder.LittleEndian);
             Require(ordinary.ToArray().SequenceEqual(calibration.ToArray()),
                 "the actual reference CD bytes match the ordinary PNG encoder including its nearest-pixel and centre conventions");
+            Require(ordinary.ToArray().SequenceEqual(fine.ToArray()), "the new CD fine target engraves the original PNG");
         }
 
         const uint sectors = 2_297_888;
         CalibrationParameters dvdParameters = new(CalibrationDiscKind.Dvd, 23.9968875, 57.9779875, sectors, 133.33);
-        CalibrationTarget dvdTarget = CalibrationTarget.Create(dvdParameters);
+        CalibrationTarget dvdTarget = LegacyTarget(dvdParameters);
+        CalibrationTarget fineDvd = CalibrationTarget.Create(dvdParameters, artwork: CalibrationArtwork.ReferenceCross);
         var mapping = new ImageMappingOptions(sectors, dvdParameters.InnerRadiusMm, dvdParameters.OuterRadiusMm,
             dvdParameters.LinearDensity, 0, true, 128, 1);
         var blocks = new HashSet<uint> { 0, sectors - 16 };
@@ -174,13 +211,16 @@ internal static class CalibrationEncoderTests
             }, calibration, options);
             Require(ordinary.ToArray().SequenceEqual(calibration.ToArray()),
                 $"the 43533 reference DVD block at LBA {startLba} matches the ordinary PNG encoder byte for byte");
+            using var fine = new MemoryStream();
+            FastDispersionImageWriter.WritePatternStream(fineDvd.Sample, fine, options);
+            Require(ordinary.ToArray().SequenceEqual(fine.ToArray()), $"new DVD fine target engraves the original PNG at LBA {startLba}");
         }
         Require(firstSample - dvdParameters.InnerRadiusMm < 0.00001 && dvdParameters.OuterRadiusMm - lastSample < 0.00001,
             "actual first and last payload sampling approaches both captured annulus boundaries");
         Console.WriteLine($"calibration-reference-mapping: ordinary PNG parity; 43533 payload radii {firstSample:F10}..{lastSample:F10} mm");
     }
 
-    private static void TestCircleAndCrossTargets(string directory)
+    private static void TestCurrentTargets(string directory)
     {
         foreach (CalibrationDiscKind kind in new[] { CalibrationDiscKind.Cd, CalibrationDiscKind.Dvd })
         {
@@ -188,23 +228,27 @@ internal static class CalibrationEncoderTests
                 ? new(kind, 24.5, 56.8, 8, 1200)
                 : new(kind, 24.5, 56.8, 16, 133.3);
             CalibrationTarget target = CalibrationTarget.Create(parameters);
-            Require(target.SchemaVersion == 6 && target.Cells.Count == 0 && target.ControlPoints.Count == 8,
-                "new targets contain only radial arm controls and unlabelled concentric guides");
+            Require(target.SchemaVersion == 7 && target.VisibleRings.Count == 8,
+                "new records identify the combined coarse and fine engraving");
             foreach (double radius in target.RingRadiiMm.Where(radius => radius >= parameters.InnerRadiusMm && radius <= parameters.OuterRadiusMm))
             {
                 foreach (double angle in new[] { -2.7, -0.6, 0.8, 2.8 })
                     Require(target.Sample(radius * Math.Cos(angle), radius * Math.Sin(angle)) == 0,
                         "concentric guides have no angular gaps");
             }
-            double between = (target.RingRadiiMm[3] + target.RingRadiiMm[4]) / 2;
-            Require(target.Sample(between, 0) == 0 && target.Sample(0, -between) == 0,
-                "continuous cross arms connect the guide circles");
-            Require(target.Sample(between / Math.Sqrt(2), between / Math.Sqrt(2)) == 255,
-                "space between circles and cross arms remains white");
+            double between = (target.VisibleRings[0].RadiusMm + target.VisibleRings[1].RadiusMm) / 2;
+            int dark = Enumerable.Range(0, 360).Count(i =>
+            {
+                double angle = i * Math.PI / 180;
+                return target.Sample(between * Math.Cos(angle), between * Math.Sin(angle)) == 0;
+            });
+            Require(dark is > 50 and < 250, "a gap between full rings retains a broad light/dark angular reference");
+            Require(target.Sample(0, 0) == 255 && target.Sample(target.DrawingOuterRadiusMm + .01, 0) == 255,
+                "new target excludes both the hole and the region beyond the recording");
 
             string json = CalibrationSessionJson.Serialize(new(target, []));
             CalibrationTarget restored = CalibrationSessionJson.Deserialize(json).Target;
-            Require(restored.SchemaVersion == 6 && restored.Id == target.Id && restored.RingRadiiMm.SequenceEqual(target.RingRadiiMm),
+            Require(restored.SchemaVersion == 7 && restored.Id == target.Id && restored.VisibleRings.SequenceEqual(target.VisibleRings),
                 "saving and reopening retains the complete circle and cross snapshot");
             JsonNode previousVersion = JsonNode.Parse(json)!;
             previousVersion["target"]!["schemaVersion"] = 5;

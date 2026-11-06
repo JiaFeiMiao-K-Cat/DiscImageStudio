@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using DiscImageStudio.Core;
 using DiscImageStudio.Core.Calibration;
 using DiscImageStudio.ImageIO;
+using System.Globalization;
 using SkiaSharp;
 
 namespace DiscImageStudio.Desktop;
@@ -116,7 +117,8 @@ public sealed partial class MainWindow
             if (c.RmsErrorMm > 0.35 || c.MaxErrorMm > 0.8) throw new InvalidOperationException("偏差过大，请修正照片轮廓或曲线点后重新拟合。");
             var p = c.Parameters; var d = Session.Document!;
             Session.Update(d with { Geometry = new(p.InnerRadiusMm, p.OuterRadiusMm, p.Sectors, p.PitchLinear, p.PitchQuadratic, p.PitchCubic),
-                BluRay = d.IsBluRay ? new(p.BluRayInvertMapping) : null });
+                BluRay = d.IsBluRay ? new(p.BluRayInvertMapping) : null,
+                Outputs = d.Outputs with { DvdReadCompatibility = p.DvdReadCompatibility } });
             _status.Text = "参数已更新；已有标定记录保持原生成参数。";
         }));
         SetMode();
@@ -155,13 +157,20 @@ public sealed partial class MainWindow
         var d = Session.Document!;
         string? output = await PickSave("生成标定盘", d.IsCd ? "calibration.wav" : "calibration.iso", d.IsCd ? "*.wav" : "*.iso");
         if (output is null) return;
+        await GenerateCalibration(output);
+    }
+    internal async Task GenerateCalibration(string output)
+    {
+        var d = Session.Document!;
         var parameters = Session.CalibrationParameters();
-        var target = CalibrationTarget.Create(parameters);
+        var target = CalibrationTarget.Create(parameters, artwork: CalibrationArtwork.ReferenceCross);
         var source = Session.CachePath("calibration-target.png");
         byte[] gray = CalibrationReferencePattern.ReadGrayPixels();
         double inner2 = target.DrawingInnerRadiusMm * target.DrawingInnerRadiusMm;
         double outer2 = target.DrawingOuterRadiusMm * target.DrawingOuterRadiusMm;
-        for (int y = 0; y < 2400; y++) for (int x = 0; x < 2400; x++)
+        // CD samples only its full recorded annulus. Clipping rounded source pixels here
+        // would erase in-range samples near the edge and diverge from the frozen target.
+        if (!d.IsCd) for (int y = 0; y < 2400; y++) for (int x = 0; x < 2400; x++)
         {
             var p = CalibrationReferencePattern.PixelToDisc(x, y, parameters.OuterRadiusMm, parameters.Kind);
             double r2 = p.X * p.X + p.Y * p.Y;
@@ -171,7 +180,9 @@ public sealed partial class MainWindow
         var document = d with { Tone = ToneProfile.LegacyBinary, Outputs = d.Outputs with { DataDirectory = "", WriteCue = true } };
         await RunWork("正在生成标定盘…", !d.IsDvd, async token =>
         {
-            await Execute(JobArguments.Generate(document, source, output), token);
+            var args = JobArguments.Generate(document, source, output).ToList();
+            if (d.IsCd) args.AddRange(["--outer", parameters.OuterRadiusMm.ToString("R", CultureInfo.InvariantCulture)]);
+            await Execute(args.ToArray(), token);
             ResetCalibration(); _target = target; _calibrationInterleave = d.Outputs.Interleave;
             string record = output + ".calibration.json";
             CalibrationSessionJson.Save(record, new(target, [], CdInterleave: _calibrationInterleave));

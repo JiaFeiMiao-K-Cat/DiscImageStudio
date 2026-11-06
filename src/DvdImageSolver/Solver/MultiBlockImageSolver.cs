@@ -23,7 +23,9 @@ public sealed record MultiBlockSolveOptions(
     int BatchCandidates = 4,
     int SearchLanes = 1,
     int FastParallelism = 0,
-    bool PreserveExistingIso = false)
+    bool PreserveExistingIso = false,
+    bool UseSampleReuse = true,
+    bool ReadCompatibility = false)
 {
     /// <summary>Use four-double raster sampling in fast output when supported; false retains the scalar reference path.</summary>
     public bool UseSimdSampling { get; init; } = true;
@@ -219,6 +221,9 @@ internal static class MultiBlockImageSolver
 
     private static void Validate(MultiBlockSolveOptions options)
     {
+        if (options.ReadCompatibility)
+            throw new ArgumentException("Read compatibility requires fast dispersion output.", nameof(options));
+
         if (options.FillSectors < DvdEccBlockEncoder.SectorCount
             || options.FillSectors % DvdEccBlockEncoder.SectorCount != 0)
         {
