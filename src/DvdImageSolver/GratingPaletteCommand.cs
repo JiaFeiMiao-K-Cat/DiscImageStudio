@@ -98,7 +98,8 @@ internal static class GratingPaletteCommand
         private readonly int _rows;
         private readonly double _origin;
         private readonly double _cell;
-        private readonly byte[] _values;
+        private readonly byte[] _coverage;
+        private readonly byte[] _motif;
 
         internal CellPlan(RasterImage image, double inner, double outer, double cellMm)
         {
@@ -106,7 +107,8 @@ internal static class GratingPaletteCommand
             _origin = -outer;
             _cols = (int)Math.Ceiling((2 * outer) / cellMm);
             _rows = _cols;
-            _values = new byte[checked(_cols * _rows)];
+            _coverage = new byte[checked(_cols * _rows)];
+            _motif = new byte[checked(_cols * _rows)];
             for (int row = 0; row < _rows; row++)
             {
                 double y = _origin + ((row + 0.5) * cellMm);
@@ -135,10 +137,10 @@ internal static class GratingPaletteCommand
                     int paletteIndex = wedge == 0
                         ? PaletteForHue(hue)
                         : wedge == 1 ? AccentForHue(hue, saturation) : -1;
-                    bool on = Bayer(col, row) < luminance;
-                    // 0 = black (A5), 1 = white (92), 2..6 = B/G/C/D/E.
-                    byte cell = on ? (paletteIndex < 0 ? (byte)1 : (byte)(paletteIndex + 1)) : (byte)0;
-                    _values[(row * _cols) + col] = cell;
+                    int index = (row * _cols) + col;
+                    _coverage[index] = (byte)Math.Clamp((int)Math.Round(luminance * 255), 0, 255);
+                    // 1 = white (92), 2..6 = B/G/C/D/E. Black A5 is the off state.
+                    _motif[index] = paletteIndex < 0 ? (byte)1 : (byte)(paletteIndex + 1);
                 }
             }
         }
@@ -150,8 +152,14 @@ internal static class GratingPaletteCommand
             // and RasterImage.SampleDisc use mathematical y-up.
             int row = (int)Math.Floor(((-sample.Ymm) - _origin) / _cell);
             if (col < 0 || col >= _cols || row < 0 || row >= _rows) return 0;
-            byte value = _values[(row * _cols) + col];
-            if (value == 0) return 0xA5;       // black motif
+            int index = (row * _cols) + col;
+            byte coverage = _coverage[index];
+            if (coverage == 0) return 0xA5;
+            // Dither at payload-word resolution (~2.1 µm), much finer than the
+            // 68 µm colour cell. The cell still determines hue and mean brightness.
+            double threshold = WordDither(sample.GlobalCodewordIndex);
+            if (threshold >= coverage / 255.0) return 0xA5;  // black motif
+            byte value = _motif[index];
             if (value == 1) return 0x92;       // white motif
             byte[] motifs = DvdGratingPalette.Motifs[value - 1];
             return motifs[(int)(sample.GlobalCodewordIndex % (ulong)motifs.Length)];
@@ -182,20 +190,13 @@ internal static class GratingPaletteCommand
             };
         }
 
-        private static double Bayer(int x, int y)
+        private static double WordDither(ulong index)
         {
-            int[,] matrix =
-            {
-                { 0, 32, 8, 40, 2, 34, 10, 42 },
-                { 48, 16, 56, 24, 50, 18, 58, 26 },
-                { 12, 44, 4, 36, 14, 46, 6, 38 },
-                { 60, 28, 52, 20, 62, 30, 54, 22 },
-                { 3, 35, 11, 43, 1, 33, 9, 41 },
-                { 51, 19, 59, 27, 49, 17, 57, 25 },
-                { 15, 47, 7, 39, 13, 45, 5, 37 },
-                { 63, 31, 55, 23, 61, 29, 53, 21 },
-            };
-            return (matrix[y & 7, x & 7] + 0.5) / 64.0;
+            ulong value = index * 0x9E3779B97F4A7C15UL;
+            value ^= value >> 29;
+            value *= 0xBF58476D1CE4E5B9UL;
+            value ^= value >> 32;
+            return (value & 0xFFFFFF) / 16777216.0;
         }
     }
 }
