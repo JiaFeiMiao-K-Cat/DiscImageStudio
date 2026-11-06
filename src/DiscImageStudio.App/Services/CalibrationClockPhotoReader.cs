@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using DiscImageStudio.Core;
 using DiscImageStudio.Core.Calibration;
 
 namespace DiscImageStudio.Services;
@@ -16,7 +17,8 @@ internal static class CalibrationClockPhotoReader
 
     internal static Func<double, double, Vector3> CreateSampler(BitmapSource rectified, double canvasRadiusMm)
     {
-        if (rectified.PixelWidth != rectified.PixelHeight) throw new ArgumentException("时钟标尺需要矫正后的正方形照片。", nameof(rectified));
+        if (rectified.PixelWidth != rectified.PixelHeight)
+            throw DiagnosticMessage.Argument($"时钟标尺需要矫正后的正方形照片。", nameof(rectified));
         var source = rectified.Format == PixelFormats.Bgra32 ? rectified
             : new FormatConvertedBitmap(rectified, PixelFormats.Bgra32, null, 0);
         int size = source.PixelWidth;

@@ -324,7 +324,7 @@ public partial class DiscParametersState : ObservableObject
                 FallbackLanguage: "zh-CN",
                 BluRayPresets: []);
             ApplyPresetDocuments(MergePresets(builtIn, emptyUser));
-            return L.F($"用户预设 JSON 无法加载，已继续使用程序内置参数。\n\n{exception.Message}\n\n文件位置：\n{_discPresetJsonPath}");
+            return L.F($"用户预设 JSON 无法加载，已继续使用程序内置参数。\n\n{L.Error(exception)}\n\n文件位置：\n{_discPresetJsonPath}");
         }
     }
 

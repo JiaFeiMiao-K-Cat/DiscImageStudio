@@ -1,0 +1,210 @@
+{
+  "工程路径必须包含目录。": {
+    "zh-CN": "工程路径必须包含目录。",
+    "en": "The project path must include a directory."
+  },
+  "不支持 schemaVersion={0}；当前支持 {1} 与 {2}。": {
+    "zh-CN": "不支持 schemaVersion={0}；当前支持 {1} 与 {2}。",
+    "en": "Unsupported schemaVersion={0}; supported versions are {1} and {2}."
+  },
+  "schemaVersion 1 只包含 CD/DVD 工程，不能声明蓝光字段。": {
+    "zh-CN": "schemaVersion 1 只包含 CD/DVD 工程，不能声明蓝光字段。",
+    "en": "schemaVersion 1 supports only CD/DVD projects and cannot include Blu-ray fields."
+  },
+  "bluRay 设置只用于蓝光工程。": {
+    "zh-CN": "bluRay 设置只用于蓝光工程。",
+    "en": "bluRay settings are only valid for Blu-ray projects."
+  },
+  "工程名不能为空。": {
+    "zh-CN": "工程名不能为空。",
+    "en": "The project name cannot be empty."
+  },
+  "discFamily '{0}' 无效；仅支持 '{1}'、'{2}' 与 '{3}'。": {
+    "zh-CN": "discFamily '{0}' 无效；仅支持 '{1}'、'{2}' 与 '{3}'。",
+    "en": "Invalid discFamily '{0}'; only '{1}', '{2}' and '{3}' are supported."
+  },
+  "geometry 不能为空。": {
+    "zh-CN": "geometry 不能为空。",
+    "en": "geometry cannot be null."
+  },
+  "outputs 不能为空。": {
+    "zh-CN": "outputs 不能为空。",
+    "en": "outputs cannot be null."
+  },
+  "无法识别的工程字段 '{0}'。": {
+    "zh-CN": "无法识别的工程字段 '{0}'。",
+    "en": "Unrecognized project field '{0}'."
+  },
+  "outerRadiusMm 必须大于 innerRadiusMm。": {
+    "zh-CN": "outerRadiusMm 必须大于 innerRadiusMm。",
+    "en": "outerRadiusMm must be greater than innerRadiusMm."
+  },
+  "sectors 必须大于 0。": {
+    "zh-CN": "sectors 必须大于 0。",
+    "en": "sectors must be greater than 0."
+  },
+  "DVD 的 sectors 必须是 16 的倍数。": {
+    "zh-CN": "DVD 的 sectors 必须是 16 的倍数。",
+    "en": "DVD sectors must be a multiple of 16."
+  },
+  "蓝光的 sectors 必须是 32 的倍数。": {
+    "zh-CN": "蓝光的 sectors 必须是 32 的倍数。",
+    "en": "Blu-ray sectors must be a multiple of 32."
+  },
+  "蓝光 sectors 不能超过单层容量 {0:N0}。": {
+    "zh-CN": "蓝光 sectors 不能超过单层容量 {0:N0}。",
+    "en": "Blu-ray sectors cannot exceed the single-layer capacity of {0:N0}."
+  },
+  "轨距系数无效：{0}": {
+    "zh-CN": "轨距系数无效：{0}",
+    "en": "Invalid pitch coefficients: {0}"
+  },
+  "layers 不能为空。": {
+    "zh-CN": "layers 不能为空。",
+    "en": "layers cannot be null."
+  },
+  "图层不能是 null。": {
+    "zh-CN": "图层不能是 null。",
+    "en": "A layer cannot be null."
+  },
+  "图层 id '{0}' 为空或重复。": {
+    "zh-CN": "图层 id '{0}' 为空或重复。",
+    "en": "Layer id '{0}' is empty or duplicated."
+  },
+  "图层 '{0}' 的 name 不能为空。": {
+    "zh-CN": "图层 '{0}' 的 name 不能为空。",
+    "en": "Layer '{0}' name cannot be empty."
+  },
+  "图层 '{0}' 的 imagePath 不能为空。": {
+    "zh-CN": "图层 '{0}' 的 imagePath 不能为空。",
+    "en": "Layer '{0}' imagePath cannot be empty."
+  },
+  "图层 '{0}' 的 translateXMm": {
+    "zh-CN": "图层 '{0}' 的 translateXMm",
+    "en": "Layer '{0}' translateXMm"
+  },
+  "图层 '{0}' 的 translateYMm": {
+    "zh-CN": "图层 '{0}' 的 translateYMm",
+    "en": "Layer '{0}' translateYMm"
+  },
+  "图层 '{0}' 的 rotationDeg": {
+    "zh-CN": "图层 '{0}' 的 rotationDeg",
+    "en": "Layer '{0}' rotationDeg"
+  },
+  "图层 '{0}' 的 scale 必须是大于 0 的有限数值。": {
+    "zh-CN": "图层 '{0}' 的 scale 必须是大于 0 的有限数值。",
+    "en": "Layer '{0}' scale must be a finite number greater than 0."
+  },
+  "outputs.outputPath 不能为空。": {
+    "zh-CN": "outputs.outputPath 不能为空。",
+    "en": "outputs.outputPath cannot be empty."
+  },
+  "thumbnailPngBase64 长度超出允许范围。": {
+    "zh-CN": "thumbnailPngBase64 长度超出允许范围。",
+    "en": "thumbnailPngBase64 length is outside the allowed range."
+  },
+  "thumbnailPngBase64 不是有效的 Base64。": {
+    "zh-CN": "thumbnailPngBase64 不是有效的 Base64。",
+    "en": "thumbnailPngBase64 is not valid Base64."
+  },
+  "{0} 不能为空。": {
+    "zh-CN": "{0} 不能为空。",
+    "en": "{0} cannot be empty."
+  },
+  "{0} 格式有误（第 {1} 行，第 {2} 列）：{3}": {
+    "zh-CN": "{0} 格式有误（第 {1} 行，第 {2} 列）：{3}",
+    "en": "Invalid format in {0} (line {1}, column {2}): {3}"
+  },
+  "{0} 必须是大于 0 的有限数值。": {
+    "zh-CN": "{0} 必须是大于 0 的有限数值。",
+    "en": "{0} must be a finite number greater than 0."
+  },
+  "{0} 必须是有限数值。": {
+    "zh-CN": "{0} 必须是有限数值。",
+    "en": "{0} must be a finite number."
+  },
+  "程序缺少内置盘片预设资源。": {
+    "zh-CN": "程序缺少内置盘片预设资源。",
+    "en": "The built-in disc preset resource is missing from the application."
+  },
+  "内置盘片预设": {
+    "zh-CN": "内置盘片预设",
+    "en": "Built-in disc presets"
+  },
+  "预设 JSON 路径必须包含目录。": {
+    "zh-CN": "预设 JSON 路径必须包含目录。",
+    "en": "The preset JSON path must include a directory."
+  },
+  "不支持 schemaVersion={0}；当前支持 {1}、{2} 与 {3}。请把顶层 schemaVersion 改为受支持的值，或删除该文件让程序重新生成分层配置模板。": {
+    "zh-CN": "不支持 schemaVersion={0}；当前支持 {1}、{2} 与 {3}。请把顶层 schemaVersion 改为受支持的值，或删除该文件让程序重新生成分层配置模板。",
+    "en": "Unsupported schemaVersion={0}; supported versions are {1}, {2} and {3}. Change the top-level schemaVersion to a supported value, or delete this file so the application can regenerate the layered configuration template."
+  },
+  "schemaVersion 4 必须包含 bluRayPresets 列表。": {
+    "zh-CN": "schemaVersion 4 必须包含 bluRayPresets 列表。",
+    "en": "schemaVersion 4 must include a bluRayPresets list."
+  },
+  "cdPresets 不能为空。": {
+    "zh-CN": "cdPresets 不能为空。",
+    "en": "cdPresets cannot be null."
+  },
+  "dvdPresets 不能为空。": {
+    "zh-CN": "dvdPresets 不能为空。",
+    "en": "dvdPresets cannot be null."
+  },
+  "CD 预设不能是 null。": {
+    "zh-CN": "CD 预设不能是 null。",
+    "en": "A CD preset cannot be null."
+  },
+  "DVD 预设不能是 null。": {
+    "zh-CN": "DVD 预设不能是 null。",
+    "en": "A DVD preset cannot be null."
+  },
+  "蓝光预设不能是 null。": {
+    "zh-CN": "蓝光预设不能是 null。",
+    "en": "A Blu-ray preset cannot be null."
+  },
+  "{0} 预设 id '{1}' 重复。": {
+    "zh-CN": "{0} 预设 id '{1}' 重复。",
+    "en": "Duplicate {0} preset id '{1}'."
+  },
+  "{0} 预设 id '__manual__' 由界面的未保存状态保留，请换一个 id。": {
+    "zh-CN": "{0} 预设 id '__manual__' 由界面的未保存状态保留，请换一个 id。",
+    "en": "The {0} preset id '__manual__' is reserved for unsaved settings in the UI. Choose another id."
+  },
+  "预设 '{0}' 的轨距系数无效：{1}": {
+    "zh-CN": "预设 '{0}' 的轨距系数无效：{1}",
+    "en": "Preset '{0}' has invalid pitch coefficients: {1}"
+  },
+  "预设 '{0}' 的 {1} {2}。": {
+    "zh-CN": "预设 '{0}' 的 {1} {2}。",
+    "en": "Preset '{0}' {1} {2}."
+  },
+  "必须大于 0": {
+    "zh-CN": "必须大于 0",
+    "en": "must be greater than 0"
+  },
+  "必须是 16 的倍数": {
+    "zh-CN": "必须是 16 的倍数",
+    "en": "must be a multiple of 16"
+  },
+  "必须是 32 的倍数且不超过 {0:N0}": {
+    "zh-CN": "必须是 32 的倍数且不超过 {0:N0}",
+    "en": "must be a multiple of 32 and no greater than {0:N0}"
+  },
+  "不能超过 60": {
+    "zh-CN": "不能超过 60",
+    "en": "must not exceed 60"
+  },
+  "不能为空": {
+    "zh-CN": "不能为空",
+    "en": "cannot be empty"
+  },
+  "必须大于 innerRadiusMm": {
+    "zh-CN": "必须大于 innerRadiusMm",
+    "en": "must be greater than innerRadiusMm"
+  },
+  "必须是大于 0 的有限数值": {
+    "zh-CN": "必须是大于 0 的有限数值",
+    "en": "must be a finite number greater than 0"
+  }
+}

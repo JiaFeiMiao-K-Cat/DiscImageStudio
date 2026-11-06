@@ -249,10 +249,11 @@ public partial class ToneViewModel : ObservableObject
             return;
         }
 
-        string outputPath = TempFiles.GetCacheFilePath($"design-tone-{revision}.png");
+        string? outputPath = null;
         bool keepOutput = false;
         try
         {
+            outputPath = TempFiles.GetCacheFilePath($"design-tone-{revision}.png");
             await Task.Delay(180, cancellationToken);
 
             int samplesPerSector;
@@ -364,6 +365,7 @@ public partial class ToneViewModel : ObservableObject
                 _tonePreviewRendering = false;
                 _tonePreviewError = exception.Message;
                 TonePreviewStatus = ComposeTonePreviewStatus();
+                _shell.AppendLog(JobDiagnostics.FormatLog($"影调预览：{sourcePath}", exception));
             }
         }
         finally

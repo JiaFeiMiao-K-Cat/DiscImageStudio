@@ -18,6 +18,7 @@ internal static class BurnProgressDisplayTests
             TestUnknownInvalidAndZeroRates();
             TestStageChangesAndTelemetryExpiry();
             TestDiagnosticLogging();
+            TestWriteCompletionLeavesFinalizationVisible();
             TestCompletionAndStop();
             TestLateCallbacksAfterCompletionAndStop();
         }
@@ -102,7 +103,8 @@ internal static class BurnProgressDisplayTests
     {
         double seconds = 0;
         BurnProgressDisplay display = new(OpticalBurnMediaKind.BluRayData, 4 * GiB, () => TimeSpan.FromSeconds(seconds));
-        foreach (string stage in new[] { "device", "media", "buffer", "finalize" })
+        foreach (string stage in new[] { "device", "media", "buffer", "finalize", "write-complete",
+            "verify", "flush", "close-track", "close-disc", "release" })
         {
             display.Apply(new("write", "device write", GiB, 4 * GiB, 9_000_000));
             Require(display.BytesPerSecond == 9_000_000, "fixture establishes a measured BD rate");
@@ -177,6 +179,32 @@ internal static class BurnProgressDisplayTests
         completed.Stop();
         Require(completed.WrittenBytes == 4 * GiB && completed.Percent == 100,
             "subsequent cleanup does not erase the completed count");
+    }
+
+    private static void TestWriteCompletionLeavesFinalizationVisible()
+    {
+        BurnProgressDisplay display = new(OpticalBurnMediaKind.DvdData, GiB, () => TimeSpan.Zero);
+        display.Apply(new("write", "last confirmed write", 768 * MiB, GiB, 5_540_000));
+        Require(display.Apply(new("write-complete", "IMAPI write completed", GiB, GiB)) == "IMAPI write completed",
+            "device write completion is logged without finishing the burn lifecycle");
+        Require(display.WrittenBytes == 768 * MiB && display.BytesPerSecond is null,
+            "device write completion preserves confirmed counts and clears its rate");
+
+        foreach (string stage in new[] { "finalize", "verify", "flush", "close-track", "close-disc", "release" })
+        {
+            string message = "pending " + stage;
+            Require(display.Apply(new(stage, message, GiB, GiB)) == message,
+                stage + " remains visible after the device reports write completion");
+            Require(display.Apply(new("diagnostic", "details for " + stage, 0, GiB)) == "details for " + stage,
+                stage + " diagnostics remain visible until the full lifecycle completes");
+            Require(display.Percent == 75 && display.BytesPerSecond is null,
+                stage + " neither invents remaining writes nor restores a write rate");
+        }
+
+        Require(display.Apply(new("complete", "all sessions released", GiB, GiB)) == "all sessions released"
+            && display.Percent == 100, "only full lifecycle completion fills the total and ends the display");
+        Require(display.Apply(new("diagnostic", "late diagnostic", 0, GiB)) is null,
+            "diagnostics after the completed lifecycle remain rejected");
     }
 
     private static void TestLateCallbacksAfterCompletionAndStop()

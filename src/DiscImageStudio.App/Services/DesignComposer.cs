@@ -27,6 +27,9 @@ internal static class DesignComposer
     /// downscaled once at load, which stays invisible at the 8192 export size.</summary>
     internal const int MaxDecodeWidth = 4096;
 
+    /// <summary>Width of the decode used for the layer panel's thumbnails.</summary>
+    internal const int ThumbnailDecodeWidth = 96;
+
     public static void Render(
         IReadOnlyList<DesignLayerRenderItem> layers,
         double canvasOuterRadiusMm,
@@ -99,6 +102,30 @@ internal static class DesignComposer
                                               or OutOfMemoryException
                                               or ArgumentException)
         {
+            return null;
+        }
+    }
+
+    /// <summary>Small decode for the layer panel's list row. Kept next to the full decode so
+    /// both can run on the same background thread while a project is opening.</summary>
+    public static BitmapSource? DecodeThumbnail(string path)
+    {
+        try
+        {
+            using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            BitmapImage bitmap = new();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.DecodePixelWidth = ThumbnailDecodeWidth;
+            bitmap.StreamSource = stream;
+            bitmap.EndInit();
+            bitmap.Freeze();
+            return bitmap;
+        }
+        catch (Exception)
+        {
+            // Thumbnails are cosmetic; this replaces the layer view model's old catch-all, so
+            // a damaged file or an exotic codec must not fail the whole project open.
             return null;
         }
     }

@@ -8,6 +8,7 @@ public sealed class CdDiscModule : IOpticalDiscModule
 {
     public const string ModuleId = "cd-da";
 
+
     private static readonly IReadOnlyList<DiscOptionDefinition> GeometryOptions =
     [
         new("r0", "Inner radius", DiscOptionValueType.Decimal, DefaultValue: "24.5", Unit: "mm"),

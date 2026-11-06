@@ -7,6 +7,8 @@ namespace DiscImageStudio.BluRay;
 
 public sealed class BluRayDiscModule : IOpticalDiscModule
 {
+    public const string ModuleId = "bluray-data";
+
     private readonly Func<string, CancellationToken, BluRayGray8Raster>? _imageLoader;
 
     public BluRayDiscModule(Func<string, CancellationToken, BluRayGray8Raster>? imageLoader = null)

@@ -48,7 +48,7 @@ public sealed record CalibrationSession(
 /// <summary>Selection in three-point mode and up to two clicks on an unfinished inner edge.</summary>
 public sealed record CalibrationRingArcDraft(int RingIndex, IReadOnlyList<CalibrationPoint> Points);
 
-/// <summary>The resized source photo is embedded so a saved calibration can be reopened on its own.</summary>
+/// <summary>The bounded source photo is embedded at its working resolution so a saved calibration can be reopened on its own.</summary>
 public sealed record CalibrationPhotoSession(string ImagePngBase64,
     IReadOnlyList<CalibrationPoint> OuterBoundary, IReadOnlyList<CalibrationPoint> HoleBoundary,
     double PhysicalOuterRadiusMm, bool RectificationConfirmed,
@@ -64,7 +64,7 @@ public sealed record CalibrationPhotoSession(string ImagePngBase64,
 {
     public void Validate()
     {
-        if (string.IsNullOrWhiteSpace(ImagePngBase64) || ImagePngBase64.Length > 14_000_000)
+        if (string.IsNullOrWhiteSpace(ImagePngBase64) || ImagePngBase64.Length > CalibrationPhotoLimits.MaxEncodedPhotoLength)
             throw new ArgumentException("标定照片为空或过大，请重新导入照片。");
         if (PhysicalOuterRadiusMm is not (40 or 60))
             throw new ArgumentException("请选择 12 cm 或 8 cm 光盘。");
@@ -100,7 +100,8 @@ public sealed record CalibrationPhotoSession(string ImagePngBase64,
     private static void ValidateBoundary(IReadOnlyList<CalibrationPoint> points)
     {
         if (points is null || points.Count is < 5 or > 128 || points.Any(p => p is null
-            || !double.IsFinite(p.X) || !double.IsFinite(p.Y) || p.X < 0 || p.Y < 0 || p.X > 2000 || p.Y > 2000))
+            || !double.IsFinite(p.X) || !double.IsFinite(p.Y) || p.X < 0 || p.Y < 0
+            || p.X >= CalibrationPhotoLimits.MaxDimension || p.Y >= CalibrationPhotoLimits.MaxDimension))
             throw new ArgumentException("照片轮廓控制点无效。");
     }
 }
@@ -119,13 +120,15 @@ public static class CalibrationSessionJson
     {
         ArgumentNullException.ThrowIfNull(session);
         session.Validate();
-        return JsonSerializer.Serialize(session, JsonOptions);
+        string json = JsonSerializer.Serialize(session, JsonOptions);
+        if (json.Length > CalibrationPhotoLimits.MaxSessionLength) throw new ArgumentException("标定会话文件过大。");
+        return json;
     }
 
     public static CalibrationSession Deserialize(string json)
     {
         ArgumentNullException.ThrowIfNull(json);
-        if (json.Length > 16_000_000) throw new ArgumentException("标定会话文件过大。");
+        if (json.Length > CalibrationPhotoLimits.MaxSessionLength) throw new ArgumentException("标定会话文件过大。");
         CalibrationSession session = JsonSerializer.Deserialize<CalibrationSession>(json, JsonOptions)
             ?? throw new ArgumentException("标定会话为空。");
         session.Validate();
@@ -153,7 +156,7 @@ public static class CalibrationSessionJson
     public static CalibrationSession Load(string path)
     {
         var info = new FileInfo(path);
-        if (info.Length > 16_000_000) throw new ArgumentException("标定会话文件过大。");
+        if (info.Length > CalibrationPhotoLimits.MaxSessionLength) throw new ArgumentException("标定会话文件过大。");
         return Deserialize(File.ReadAllText(path));
     }
 }

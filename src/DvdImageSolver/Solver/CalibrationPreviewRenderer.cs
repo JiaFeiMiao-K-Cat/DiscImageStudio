@@ -74,6 +74,7 @@ public static class CalibrationPreviewRenderer
         CalibrationPreviewOptions options,
         CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         Validate(options);
         string sourceFullPath = Path.GetFullPath(imagePath);
         string outputFullPath = Path.GetFullPath(outputPath);
@@ -127,7 +128,8 @@ public static class CalibrationPreviewRenderer
         double firstGlobalChannelBit = options.StartLba
             * (double)DvdEccBlockEncoder.ChannelBitsPerSector;
         int workerCount = Environment.ProcessorCount;
-        Parallel.For(0, workerCount, worker =>
+        ParallelOptions parallelOptions = new() { CancellationToken = cancellationToken };
+        Parallel.For(0, workerCount, parallelOptions, worker =>
         {
             for (long sampleIndex = worker, iteration = 0;
                  sampleIndex < totalSamples;
@@ -181,7 +183,7 @@ public static class CalibrationPreviewRenderer
         });
 
         cancellationToken.ThrowIfCancellationRequested();
-        Parallel.For(0, size, pixelY =>
+        Parallel.For(0, size, parallelOptions, pixelY =>
         {
             double yMm = (centre - pixelY) * millimetresPerPixel;
             int rowOffset = pixelY * stride;
@@ -210,6 +212,7 @@ public static class CalibrationPreviewRenderer
             }
         });
 
+        cancellationToken.ThrowIfCancellationRequested();
         WritePng(outputFullPath, size, pixels);
         return new CalibrationPreviewSummary(
             sourceFullPath,

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
+using DiscImageStudio.Core;
 
 namespace DiscImageStudio.Localization;
 
@@ -96,6 +97,8 @@ public static class L
         if (!Catalog.TryGetValue(key, out Dictionary<string, string>? translations)) return key;
         if (translations.TryGetValue(CurrentLanguage, out string? translated)
             && !string.IsNullOrWhiteSpace(translated)) return translated;
+        if (translations.TryGetValue(English, out string? english)
+            && !string.IsNullOrWhiteSpace(english)) return english;
         return translations.TryGetValue(Chinese, out string? fallback)
             && !string.IsNullOrWhiteSpace(fallback) ? fallback : key;
     }
@@ -105,6 +108,25 @@ public static class L
         ArgumentNullException.ThrowIfNull(text);
         return Format(text.Format, text.GetArguments());
     }
+
+    /// <summary>Translates a known diagnostic before inserting values. Unmarked
+    /// exceptions retain the existing exact-key lookup and original fallback.</summary>
+    public static string Error(Exception exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        return DiagnosticMessage.Template(exception) is { } template
+            ? Diagnostic(template)
+            : T(exception.Message);
+    }
+
+    private static string Diagnostic(FormattableString template)
+        => Format(template.Format, template.GetArguments()
+            .Select(value => value switch
+            {
+                FormattableString nested => Diagnostic(nested),
+                DiagnosticMessage.ExceptionDetail detail => Error(detail.Exception),
+                _ => value,
+            }).ToArray());
 
     public static string Format(string key, params object?[] arguments) =>
         string.Format(CultureInfo.CurrentCulture, T(key), arguments);

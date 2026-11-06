@@ -21,6 +21,7 @@ internal static class CalibrationPhotoViewModelTests
         try
         {
             TestWorkflow(directory); TestObservedRadiusDomain(directory); TestRingWorkflow(directory);
+            TestHighResolutionSession(directory);
             TestClockWorkflow(directory); TestArcWorkflow(directory); TestWideBands(directory);
             TestDataDiscWideBands(directory, "DVD", 40);
             TestDataDiscWideBands(directory, "BD", 60);
@@ -168,6 +169,96 @@ internal static class CalibrationPhotoViewModelTests
     }
 
     private static double Radius(CalibrationTracePoint p) => p.XMm * p.XMm + p.YMm * p.YMm;
+
+    private static void TestHighResolutionSession(string directory)
+    {
+        const int width = 4096, height = 3072;
+        byte[] pixels = new byte[width * height];
+        // Sensor-like noise keeps the lossless image large enough to exercise the
+        // former 14M Base64 / 16M JSON limits, rather than only the dimension limits.
+        new Random(7391).NextBytes(pixels);
+        for (int y = height / 2 - 4; y <= height / 2 + 4; y++)
+        for (int x = 0; x < width; x++) pixels[y * width + x] = (byte)(((x / 2) & 1) * 255);
+        var bitmap = BitmapSource.Create(width, height, 96, 96, PixelFormats.Gray8, null, pixels, width);
+        bitmap.Freeze();
+        string photoPath = Path.Combine(directory, "high-resolution.png");
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using (var stream = File.Create(photoPath)) encoder.Save(stream);
+
+        var model = CreateModel(new DiscParametersState());
+        var reopened = CreateModel(new DiscParametersState());
+        try
+        {
+            model.SelectFineModeCommand.Execute(null);
+            model.CreateTargetCommand.Execute(null);
+            Await(model, "ImportPhotoFromAsync", photoPath);
+            Require(model.PhotoImage?.PixelWidth == width && model.PhotoImage.PixelHeight == height,
+                "a 12 megapixel photograph reaches the GUI without the former 1600 px resize: " + model.LastStatusMessage);
+            var camera = new CalibrationPhotoTransform([23, 0, width / 2.0, 0, 23, height / 2.0, 0, 0, 1]);
+            foreach (var boundary in model.PhotoBoundaryPoints.ToArray())
+            {
+                double radius = boundary.Boundary == CalibrationPhotoBoundaryKind.OuterEdge ? 60 : 7.5;
+                double angle = -Math.PI / 2 + boundary.Index * Math.PI / 4;
+                var point = camera.DiscToSource(new(radius * Math.Cos(angle), radius * Math.Sin(angle)));
+                model.BoundaryEditedCommand.Execute(new(boundary.Boundary, boundary.Index, point.X, point.Y));
+            }
+            Require(model.PhotoBoundaryPoints.Any(point => point.X > 3000 || point.Y > 2000),
+                "full-resolution source coordinates survive editing beyond the old session limit");
+            model.RectifyPhotoCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+            Require(model.IsRectificationReady && model.RectifiedPhoto is { PixelWidth: > 2700 },
+                "rectification uses the photographed disc's pixel density instead of a fixed 1400 px output: " + model.LastStatusMessage);
+            model.ConfirmRectificationCommand.Execute(null);
+            model.TraceEditedCommand.Execute(new(0, -1, 12.25, -30.5));
+            model.TraceEditedCommand.Execute(new(0, -1, 15.75, -45.125));
+            var boundaryPoints = model.PhotoBoundaryPoints.ToArray();
+            var traces = model.TracePoints.ToArray();
+            Require(traces.Length == 2, "fine measurement coordinates can be entered on the high-resolution corrected photo");
+            int correctedSize = model.RectifiedPhoto!.PixelWidth;
+            byte[] correctedRow = ReadMiddleRow(model.RectifiedPhoto);
+            Require(correctedRow.Max() - correctedRow.Where((_, i) => i % 4 != 3).Min() > 200,
+                "fine black and white photograph detail remains visible after rectification");
+
+            string sessionPath = Path.Combine(directory, "high-resolution.calibration.json");
+            model.SaveSessionTo(sessionPath);
+            Require(File.Exists(sessionPath), "the full-resolution photo and coordinates can be saved: " + model.LastStatusMessage);
+            Require(Field<string>(model, "_photoPng").Length > 14_000_000 && new FileInfo(sessionPath).Length > 16_000_000,
+                "the portable high-resolution fixture exceeds both former encoded-photo and session-file limits");
+            if (Environment.GetEnvironmentVariable("DISC_CALIBRATION_FIXTURES") is { Length: > 0 } fixtureDirectory)
+            {
+                Directory.CreateDirectory(fixtureDirectory);
+                File.Copy(sessionPath, Path.Combine(fixtureDirectory, "calibration-photo-high-resolution.calibration.json"), overwrite: true);
+            }
+            File.Delete(photoPath);
+            Await(reopened, "LoadSessionFromAsync", sessionPath);
+            Require(reopened.PhotoImage?.PixelWidth == width && reopened.PhotoImage.PixelHeight == height
+                && reopened.RectifiedPhoto?.PixelWidth == correctedSize && reopened.IsTraceStep,
+                "portable sessions reopen both image resolutions without the original photo: " + reopened.LastStatusMessage);
+            Require(reopened.PhotoBoundaryPoints.SequenceEqual(boundaryPoints)
+                && reopened.TracePoints.SequenceEqual(traces),
+                "saving and reopening preserve pixel-space boundaries and millimetre-space measurements");
+            Require(ReadMiddleRow(reopened.RectifiedPhoto!).SequenceEqual(correctedRow),
+                "reopening repeats the same full-resolution resampling without an extra lossy resize");
+            byte[] sourceRow = ReadMiddleRow(reopened.PhotoImage!);
+            for (int x = 128; x < 256; x++)
+                Require(sourceRow[x * 4] == pixels[(height / 2) * width + x],
+                    "the embedded photograph retains the original narrow stripe pixels");
+        }
+        finally
+        {
+            Invoke(model, "OnWindowClosed");
+            Invoke(reopened, "OnWindowClosed");
+        }
+    }
+
+    private static byte[] ReadMiddleRow(BitmapSource bitmap)
+    {
+        BitmapSource source = bitmap.Format == PixelFormats.Bgra32 ? bitmap
+            : new FormatConvertedBitmap(bitmap, PixelFormats.Bgra32, null, 0);
+        byte[] pixels = new byte[source.PixelWidth * 4];
+        source.CopyPixels(new System.Windows.Int32Rect(0, source.PixelHeight / 2, source.PixelWidth, 1), pixels, pixels.Length, 0);
+        return pixels;
+    }
 
     private static void TestClockWorkflow(string directory)
     {

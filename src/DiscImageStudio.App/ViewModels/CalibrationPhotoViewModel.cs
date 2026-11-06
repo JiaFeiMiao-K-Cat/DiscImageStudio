@@ -6,6 +6,7 @@ using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DiscImageStudio.Controls;
+using DiscImageStudio.Core;
 using DiscImageStudio.Core.Calibration;
 using DiscImageStudio.Services;
 
@@ -190,7 +191,7 @@ public partial class CalibrationViewModel
         {
             var result = await Task.Run(() =>
             {
-                var image = CalibrationPhotoService.Load(path, 1600, token);
+                var image = CalibrationPhotoService.Load(path, cancellationToken: token);
                 var contours = CalibrationPhotoService.SuggestContours(image, 8, token);
                 return (Image: image, Contours: contours, Png: EncodePhoto(image));
             }, token);
@@ -234,8 +235,8 @@ public partial class CalibrationViewModel
         await RunAsync(L.T("正在根据实体边缘矫正照片…"), async token =>
         {
             var fit = await Task.Run(() => CalibrationPhotoRectifier.Fit(outer, hole, radius, 7.5, token), token);
-            if (!fit.Succeeded || fit.Transform is null) throw new ArgumentException(fit.Message);
-            var corrected = await Task.Run(() => CalibrationPhotoService.Rectify(image, fit.Transform, canvasRadius, 1400, token), token);
+            if (!fit.Succeeded || fit.Transform is null) throw PhotoFitError(fit);
+            var corrected = await Task.Run(() => CalibrationPhotoService.Rectify(image, fit.Transform, canvasRadius, cancellationToken: token), token);
             token.ThrowIfCancellationRequested();
             if (revision != _photoRevision || !ReferenceEquals(image, PhotoImage)) throw new OperationCanceledException();
             _photoTransform = fit.Transform;
@@ -249,6 +250,11 @@ public partial class CalibrationViewModel
             RefreshPhotoCommands();
         });
     }
+
+    private static ArgumentException PhotoFitError(CalibrationPhotoFitResult fit)
+        => fit.MessageTemplate is { } template
+            ? DiagnosticMessage.Argument(template)
+            : new ArgumentException(fit.Message);
 
     private static Point[][] BoundaryContours(CalibrationPhotoTransform transform, double radius) =>
         new[] { radius, 7.5 }.Select(r => Enumerable.Range(0, 181).Select(i =>
@@ -353,15 +359,22 @@ public partial class CalibrationViewModel
         encoder.Frames.Add(BitmapFrame.Create(source));
         using MemoryStream stream = new();
         encoder.Save(stream);
-        return Convert.ToBase64String(stream.ToArray());
+        int length = checked((int)stream.Length);
+        if (4L * ((length + 2L) / 3) > CalibrationPhotoLimits.MaxEncodedPhotoLength)
+            throw new ArgumentException(L.T("标定照片为空或过大，请重新导入照片。"));
+        return Convert.ToBase64String(stream.GetBuffer(), 0, length);
     }
 
     private static BitmapSource DecodePhoto(string png)
     {
         using MemoryStream stream = new(Convert.FromBase64String(png));
-        var frame = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad).Frames[0];
-        if (frame.PixelWidth is < 32 or > 2000 || frame.PixelHeight is < 32 or > 2000)
+        // Inspect dimensions before requesting decoded pixels from a saved record.
+        var header = BitmapDecoder.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.OnDemand).Frames[0];
+        if (!CalibrationPhotoLimits.Contains(header.PixelWidth, header.PixelHeight)
+            || header.PixelWidth < 32 || header.PixelHeight < 32)
             throw new ArgumentException(L.T("标定记录中的照片尺寸无效，请重新导入。"));
+        stream.Position = 0;
+        var frame = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad).Frames[0];
         frame.Freeze();
         return frame;
     }
@@ -385,8 +398,8 @@ public partial class CalibrationViewModel
                     if (photo.RectificationConfirmed)
                     {
                         fit = CalibrationPhotoRectifier.Fit(photo.OuterBoundary, photo.HoleBoundary, photo.PhysicalOuterRadiusMm, 7.5, token);
-                        if (!fit.Succeeded || fit.Transform is null) throw new ArgumentException(fit.Message);
-                        rectified = CalibrationPhotoService.Rectify(image, fit.Transform, photo.PhysicalOuterRadiusMm + 3, 1400, token);
+                        if (!fit.Succeeded || fit.Transform is null) throw PhotoFitError(fit);
+                        rectified = CalibrationPhotoService.Rectify(image, fit.Transform, photo.PhysicalOuterRadiusMm + 3, cancellationToken: token);
                         if (photo.UseRingSeed)
                         {
                             ringFit = CalibrationRingFitter.Fit(session.Target, photo.RingObservations ?? [], token);

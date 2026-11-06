@@ -6,9 +6,11 @@
 
 ```mermaid
 flowchart LR
-    GUI[Windows WPF GUI / CLI] --> Imaging[DiscImageStudio.Imaging]
-    Imaging --> Catalog[DiscModuleCatalog]
-    CLI[Linux / macOS CLI] --> Catalog
+    GUI[Windows WPF GUI] --> Imaging[DiscImageStudio.Imaging]
+    GUI --> CD[DiscImageStudio.Cd]
+    GUI --> DVD[DiscImageStudio.Dvd]
+    GUI --> BD[DiscImageStudio.BluRay]
+    CLI[Windows / Linux / macOS CLI] --> Catalog[DiscModuleCatalog]
     GUI --> Burning[DiscImageStudio.Burning]
     Burning --> IMAPI[Windows IMAPI2]
     Catalog --> Contract[IOpticalDiscModule]
@@ -32,7 +34,8 @@ flowchart LR
 - `DiscCommandDescriptor`：命令、能力和选项定义，经 CLI 的 `catalog --json` 供 macOS SwiftUI 客户端动态生成界面。
 - `DiscJobRequest`：统一命令与参数载体。
 - `DiscJobProgress`：介质无关的进度、阶段、完成量和耗时。
-- `DiscJobResult`：退出码、摘要和输出路径。
+- `DiscJobResult`：CLI 命令适配结果（退出码、摘要和输出路径）。
+- `DiscImageResult`：内部文件生成结果（输出路径、摘要）；失败使用异常传播。
 - `DiscModuleCatalog`：命令路由、重复命令检查和模块执行。
 - `ToneProfile` / `ToneDither`：CD/DVD/BD 共用的影调模型（抖动强度、灰阶档位、亮度、sRGB 线性化）与确定性抖动相位。CD/DVD 在逻辑字节索引上抖动，因此 CD 延迟交织后仍可在预览中复现；BD 在源图分辨率一次性量化，生成、刻录与预览共用同一张二值栅格。
 

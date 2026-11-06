@@ -102,18 +102,6 @@
                         <Button Style="{StaticResource SecondaryButton}" Content="{loc:Text Xaml.CancelBurn}"
                                 Command="{Binding CancelBurnCommand}" />
                     </StackPanel>
-                    <TextBlock Text="{Binding BurnStatusText}" Style="{StaticResource CompactHint}"
-                               Margin="0,12,0,0" />
-                    <controls:VisibilityGate IsOpen="{Binding HasCalibrationBurnLog}">
-                        <StackPanel Margin="0,8,0,0">
-                            <ProgressBar Style="{StaticResource CompactProgressBar}" Minimum="0" Maximum="100"
-                                         Value="{Binding BurnProgressValue, Mode=OneWay}" />
-                            <Expander Header="{loc:Text Standalone.RecordingLog}" Margin="0,8,0,0">
-                                <TextBox Text="{Binding CalibrationBurnLog, Mode=OneWay}" IsReadOnly="True"
-                                         TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" MaxHeight="160" />
-                            </Expander>
-                        </StackPanel>
-                    </controls:VisibilityGate>
                 </StackPanel>
             </Border>
         </StackPanel>

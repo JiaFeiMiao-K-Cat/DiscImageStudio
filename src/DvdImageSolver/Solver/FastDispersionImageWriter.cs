@@ -31,7 +31,7 @@ public sealed record FastDvdStreamSummary(
     long ControlledWords,
     TimeSpan Elapsed);
 
-internal sealed record FastDispersionWriteResult(
+public sealed record FastDispersionWriteResult(
     int CompletedBlocks,
     uint FilledSectors,
     long ControlledWords,
@@ -39,7 +39,7 @@ internal sealed record FastDispersionWriteResult(
     bool SparseIso,
     uint IsoSectors);
 
-internal sealed record FastDispersionProgress(
+public sealed record FastDispersionProgress(
     int CompletedBlocks,
     int TotalBlocks,
     uint BlockLba,
@@ -54,8 +54,10 @@ public static class FastDispersionImageWriter
         string imagePath,
         string isoOutputPath,
         MultiBlockSolveOptions options,
-        Action<FastDispersionProgress>? progress)
+        Action<FastDispersionProgress>? progress,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         Validate(options);
         RasterImage image = RasterImage.Load(imagePath);
         PayloadImageSampler sampler = new(image, options.ImageMapping);
@@ -75,11 +77,13 @@ public static class FastDispersionImageWriter
         ParallelOptions parallelOptions = new()
         {
             MaxDegreeOfParallelism = parallelism,
+            CancellationToken = cancellationToken,
         };
         int batchCapacity = Math.Min(totalBlocks, Math.Max(1, checked(parallelism * 2)));
         GeneratedBlock[] generated = CreateBatchBuffers(batchCapacity);
         for (int batchStart = 0; batchStart < totalBlocks; batchStart += batchCapacity)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             int batchCount = Math.Min(batchCapacity, totalBlocks - batchStart);
             Parallel.For(0, batchCount, parallelOptions, batchOffset =>
             {
@@ -90,6 +94,7 @@ public static class FastDispersionImageWriter
 
             for (int batchOffset = 0; batchOffset < batchCount; batchOffset++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 GeneratedBlock block = generated[batchOffset];
                 iso.WriteBlock(block.Lba, block.Payloads);
                 controlledWords += block.ControlledWords;
@@ -103,6 +108,7 @@ public static class FastDispersionImageWriter
             }
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         bool sparseIso = iso.SparseFile;
         iso.Dispose();
         stopwatch.Stop();
@@ -451,7 +457,7 @@ public static class FastDispersionImageWriter
         return centers;
     }
 
-    private static void Validate(MultiBlockSolveOptions options)
+    internal static void Validate(MultiBlockSolveOptions options)
     {
         if (options.Algorithm != SolverAlgorithm.Dispersion)
         {

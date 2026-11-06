@@ -23,6 +23,7 @@ internal static class BluRaySequentialBurnTests
         TestFailuresReleaseRecorder();
         TestCancellation();
         TestMmcReadFixtures();
+        TestRecordedLbaDiagnostics();
         TestMmcFinalizationAndErrors();
         TestUnavailableSenseDiagnostics();
         Console.WriteLine("blu-ray-sequential-burn: passed (12,219,392-sector metadata; 2 MiB UDF stream; no device access or full-disc ISO)");
@@ -107,8 +108,12 @@ internal static class BluRaySequentialBurnTests
             stream.WaitUntilPrebuffered(CancellationToken.None);
             using FakeSession session = new();
             List<OpticalWriteSpeed> reportedSpeeds = [];
+            List<string> reportedOperations = [];
             OpticalWriteSpeed actual = WindowsImapiBurner.BurnBluRay(session, stream, request,
-                CancellationToken.None, reportWriteSpeed: reportedSpeeds.Add);
+                CancellationToken.None, reportOperation: reportedOperations.Add, reportWriteSpeed: reportedSpeeds.Add);
+            Require(reportedOperations.TakeLast(5).Select(WindowsImapiBurner.GetBurnOperationStage)
+                .SequenceEqual(new[] { "write-complete", "flush", "close-track", "close-disc", "release" }),
+                "BD transfer completion, cache flush, track close, disc close and release have distinct stages");
             Require(session.Operations.SequenceEqual(new[]
                 { "acquire", "read-media", "configure", "write", "flush", "close-track:1", "close-disc", "release" }),
                 "writing is followed by flush, track close, disc close and release, without a format step");
@@ -143,8 +148,27 @@ internal static class BluRaySequentialBurnTests
             stream.WaitUntilPrebuffered(CancellationToken.None);
             IOException expected = new("Injected " + failingOperation + " failure.");
             using FakeSession session = new() { FailOperation = failingOperation, Failure = expected };
+            string[]? operationsAtFailure = null;
             IOException actual = Throws<IOException>(() => WindowsImapiBurner.BurnBluRay(
-                session, stream, request, CancellationToken.None), failingOperation + " failure");
+                session, stream, request, CancellationToken.None, reportFailure: error =>
+                {
+                    Require(ReferenceEquals(error, expected), "failure observer receives the original exception");
+                    operationsAtFailure = session.Operations.ToArray();
+                }), failingOperation + " failure");
+            Require(operationsAtFailure is not null && operationsAtFailure[^1] == failingOperation,
+                "failure snapshot occurs before recovery flush and release");
+            string expectedOperation = failingOperation switch
+            {
+                "read-media" => "检查未格式化 BD-R 的原始容量",
+                "configure" => "设置 BD-R 写入速度",
+                "write" => $"无备用区顺序写入 BD-R：{request.ContentLength / 2048:N0} 扇区",
+                "flush" => "刷新 BD-R 缓存（请等待完成）",
+                "close-track:1" => "关闭 BD-R 轨道（请等待完成）",
+                "close-disc" => "封闭 BD-R 盘片（请等待完成）",
+                _ => throw new InvalidOperationException(),
+            };
+            Require(Equals(actual.Data["Burn.Operation"], expectedOperation),
+                "cleanup cannot overwrite the exact failed BD operation");
             Require(ReferenceEquals(actual, expected), "the original device failure is preserved");
             Require(session.Operations[0] == "acquire" && session.Operations[^1] == "release"
                 && session.Operations.Count(x => x == "release") == 1,
@@ -179,6 +203,35 @@ internal static class BluRaySequentialBurnTests
         IOException cleanup = Throws<IOException>(() => WindowsImapiBurner.BurnBluRay(releaseFailure,
             rejectedStream, rejectedRequest, CancellationToken.None), "release failure after a completed write");
         Require(ReferenceEquals(cleanup, releaseFailure.ReleaseFailure), "a release error after success is still reported");
+        Require(Equals(cleanup.Data["Burn.Operation"], "释放 BD-R 刻录机访问权"),
+            "a release failure is not mislabeled as sealing the disc");
+        using FakeSession brokenObserver = new();
+        using GeneratedContentComStream observerStream = NewStream(rejectedRequest);
+        observerStream.WaitUntilPrebuffered(CancellationToken.None);
+        WindowsImapiBurner.BurnBluRay(brokenObserver, observerStream, rejectedRequest, CancellationToken.None,
+            reportOperation: _ => throw new InvalidOperationException("broken progress observer"));
+        Require(brokenObserver.Operations[^1] == "release", "a diagnostic observer cannot prevent device release");
+    }
+
+    private static void TestRecordedLbaDiagnostics()
+    {
+        foreach (bool valid in new[] { false, true })
+        {
+            byte[][] fixtures = MediaFixtures();
+            fixtures[3][7] = valid ? (byte)3 : (byte)1;
+            BinaryPrimitives.WriteUInt32BigEndian(fixtures[3].AsSpan(28, 4), 123);
+            FakeMmcTransport transport = MediaTransport(fixtures);
+            List<(int Start, int Last)> snapshots = [];
+            new BluRayMmcCommands(transport, (start, last) => snapshots.Add((start, last))).ReadMedia();
+            Require(snapshots.Count == (valid ? 1 : 0) && (!valid || snapshots[0] == (0, 123)),
+                "last recorded LBA is consumed only when the device marks LRA valid");
+            Require(transport.Remaining == 0 && transport.Commands.Count == 4,
+                "recorded-LBA telemetry reuses existing responses without additional device I/O");
+        }
+        byte[][] throwingFixture = MediaFixtures();
+        throwingFixture[3][7] |= 2;
+        new BluRayMmcCommands(MediaTransport(throwingFixture), (_, _) => throw new IOException("observer"))
+            .ReadMedia();
     }
 
     private static void TestCancellation()

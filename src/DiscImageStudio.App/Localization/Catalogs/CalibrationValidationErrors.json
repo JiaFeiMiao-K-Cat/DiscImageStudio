@@ -1,0 +1,214 @@
+{
+  "短圆弧量取记录无效。": {
+    "zh-CN": "短圆弧量取记录无效。",
+    "en": "The short-arc measurement record is invalid."
+  },
+  "该进度没有有效的正半径轨迹。": {
+    "zh-CN": "该进度没有有效的正半径轨迹。",
+    "en": "There is no valid positive-radius path at this progress value."
+  },
+  "照片变换不可逆。": {
+    "zh-CN": "照片变换不可逆。",
+    "en": "The photo transform cannot be inverted."
+  },
+  "照片坐标必须为有限数值。": {
+    "zh-CN": "照片坐标必须为有限数值。",
+    "en": "Photo coordinates must be finite numbers."
+  },
+  "该位置接近照片投影地平线，无法矫正。": {
+    "zh-CN": "该位置接近照片投影地平线，无法矫正。",
+    "en": "This point is too close to the photo's projective horizon to rectify."
+  },
+  "照片变换产生了无效坐标。": {
+    "zh-CN": "照片变换产生了无效坐标。",
+    "en": "The photo transform produced invalid coordinates."
+  },
+  "照片变换退化，无法恢复盘面坐标。": {
+    "zh-CN": "照片变换退化，无法恢复盘面坐标。",
+    "en": "The photo transform is degenerate and cannot recover disc coordinates."
+  },
+  "请分别输入实体外缘和实体内缘轮廓。": {
+    "zh-CN": "请分别输入实体外缘和实体内缘轮廓。",
+    "en": "Mark the physical outer rim and center-hole edge separately."
+  },
+  "盘片与内缘的实体尺寸无效。常规盘为直径 120 mm、孔径 15 mm。": {
+    "zh-CN": "盘片与内缘的实体尺寸无效。常规盘为直径 120 mm、孔径 15 mm。",
+    "en": "The physical disc or center-hole dimensions are invalid. A standard disc is 120 mm in diameter with a 15 mm center hole."
+  },
+  "外缘和内缘各需要至少 5 个分散的点，且每条轮廓不超过 256 个点。": {
+    "zh-CN": "外缘和内缘各需要至少 5 个分散的点，且每条轮廓不超过 256 个点。",
+    "en": "Mark at least five well-spaced points on each edge, with no more than 256 points per outline."
+  },
+  "轮廓中存在无效坐标。": {
+    "zh-CN": "轮廓中存在无效坐标。",
+    "en": "The outline contains invalid coordinates."
+  },
+  "照片中的盘片过小，无法稳定矫正。": {
+    "zh-CN": "照片中的盘片过小，无法稳定矫正。",
+    "en": "The disc is too small in the photo for reliable rectification."
+  },
+  "轮廓点重复或接近一条直线，请沿外缘和内缘分别分散布点。": {
+    "zh-CN": "轮廓点重复或接近一条直线，请沿外缘和内缘分别分散布点。",
+    "en": "The outline points overlap or are nearly collinear. Spread them around both the outer rim and center-hole edge."
+  },
+  "外缘轮廓无法形成稳定椭圆，请核对实体外缘上的点。": {
+    "zh-CN": "外缘轮廓无法形成稳定椭圆，请核对实体外缘上的点。",
+    "en": "The outer outline does not form a stable ellipse. Check the points on the physical outer rim."
+  },
+  "内缘轮廓与外缘位置不符，请确认选中的是贯通的实体内缘，而非盘面的印刷圆环。": {
+    "zh-CN": "内缘轮廓与外缘位置不符，请确认选中的是贯通的实体内缘，而非盘面的印刷圆环。",
+    "en": "The inner outline does not align with the outer rim. Mark the edge of the center hole, not a printed ring on the disc."
+  },
+  "两条轮廓不能得到有效的联合投影，请检查布点。": {
+    "zh-CN": "两条轮廓不能得到有效的联合投影，请检查布点。",
+    "en": "The two outlines do not produce a valid joint projection. Check the marked points."
+  },
+  "拍摄角度或轮廓对应关系导致投影退化，请换角度拍摄或重新布点。": {
+    "zh-CN": "拍摄角度或轮廓对应关系导致投影退化，请换角度拍摄或重新布点。",
+    "en": "The camera angle or outline correspondence produces a degenerate projection. Retake the photo from another angle or adjust the points."
+  },
+  "轮廓点集中在局部，请在两条完整圆周的不同方向补点。": {
+    "zh-CN": "轮廓点集中在局部，请在两条完整圆周的不同方向补点。",
+    "en": "The outline points are clustered in one area. Add points around the full circumference of both edges."
+  },
+  "标定图案 PNG 与固定参考文件不一致。": {
+    "zh-CN": "标定图案 PNG 与固定参考文件不一致。",
+    "en": "The calibration pattern PNG does not match the fixed reference file."
+  },
+  "标定图案像素与固定参考文件不一致。": {
+    "zh-CN": "标定图案像素与固定参考文件不一致。",
+    "en": "The calibration pattern pixels do not match the fixed reference file."
+  },
+  "缺少内置标定参考图案资源。": {
+    "zh-CN": "缺少内置标定参考图案资源。",
+    "en": "The built-in calibration reference pattern is missing."
+  },
+  "时标读数的优先方向无效。": {
+    "zh-CN": "时标读数的优先方向无效。",
+    "en": "The preferred direction for reading the clock ruler is invalid."
+  },
+  "边界描点只能用于对应的边界中标记录，不能与十字线或单线的中线描点混用。": {
+    "zh-CN": "边界描点只能用于对应的边界中标记录，不能与十字线或单线的中线描点混用。",
+    "en": "Boundary points require the matching boundary-calibration record and cannot be combined with centerline points from cross or single-line targets."
+  },
+  "请选择 12 cm 或 8 cm 光盘。": {
+    "zh-CN": "请选择 12 cm 或 8 cm 光盘。",
+    "en": "Choose a 12 cm or 8 cm disc."
+  },
+  "十字线记录无效。": {
+    "zh-CN": "十字线记录无效。",
+    "en": "The cross-trace record is invalid."
+  },
+  "尚未确认照片矫正，不能保存描线点。": {
+    "zh-CN": "尚未确认照片矫正，不能保存描线点。",
+    "en": "Confirm photo rectification before saving trace points."
+  },
+  "分段描边记录需要已确认的矫正照片，所有点须位于盘面上。": {
+    "zh-CN": "分段描边记录需要已确认的矫正照片，所有点须位于盘面上。",
+    "en": "Segmented boundary traces require confirmed photo rectification, with every point on the disc."
+  },
+  "照片轮廓控制点无效。": {
+    "zh-CN": "照片轮廓控制点无效。",
+    "en": "The photo outline control points are invalid."
+  },
+  "标定会话文件过大。": {
+    "zh-CN": "标定会话文件过大。",
+    "en": "The calibration record file is too large."
+  },
+  "标定会话为空。": {
+    "zh-CN": "标定会话为空。",
+    "en": "The calibration record is empty."
+  },
+  "标定参数无效：请检查盘片类型、内外半径、扇区数和线速度／位长。": {
+    "zh-CN": "标定参数无效：请检查盘片类型、内外半径、扇区数和线速度／位长。",
+    "en": "Invalid calibration parameters. Check the disc type, inner and outer radii, sector count, and linear speed or channel bit length."
+  },
+  "标定图案的可绘制扇区范围无效。": {
+    "zh-CN": "标定图案的可绘制扇区范围无效。",
+    "en": "The calibration pattern's drawable sector range is invalid."
+  },
+  "蓝光标定需要完整的 32 扇区簇、74.5 nm 位长和不超过 60 mm 的外半径。": {
+    "zh-CN": "蓝光标定需要完整的 32 扇区簇、74.5 nm 位长和不超过 60 mm 的外半径。",
+    "en": "Blu-ray calibration requires complete 32-sector clusters, a 74.5 nm channel bit length, and an outer radius no greater than 60 mm."
+  },
+  "标定记录中的兼容图案选项无效，请重新创建标定图案。": {
+    "zh-CN": "标定记录中的兼容图案选项无效，请重新创建标定图案。",
+    "en": "The compatibility pattern option in this calibration record is invalid. Create a new calibration pattern."
+  },
+  "此标靶未刻录宽角度参考标记。": {
+    "zh-CN": "此标靶未刻录宽角度参考标记。",
+    "en": "This target has no wide-angle reference marks."
+  },
+  "控制块或控制点编号无效。": {
+    "zh-CN": "控制块或控制点编号无效。",
+    "en": "The control block or control point index is invalid."
+  },
+  "控制块编号无效。": {
+    "zh-CN": "控制块编号无效。",
+    "en": "The control block index is invalid."
+  },
+  "标定图案类型与记录版本不匹配。": {
+    "zh-CN": "标定图案类型与记录版本不匹配。",
+    "en": "The calibration pattern type does not match the record version."
+  },
+  "标定图案 ID 无效。": {
+    "zh-CN": "标定图案 ID 无效。",
+    "en": "The calibration pattern ID is invalid."
+  },
+  "时钟尺粗标靶需要 70–85 分钟、1200 mm/s 的标准 12 cm CD。": {
+    "zh-CN": "时钟尺粗标靶需要 70–85 分钟、1200 mm/s 的标准 12 cm CD。",
+    "en": "The coarse clock-ruler target requires a standard 12 cm CD with 70–85 minutes of capacity and a linear speed of 1200 mm/s."
+  },
+  "圆弧粗标靶需要 70–85 分钟、1200 mm/s 的标准 12 cm CD。": {
+    "zh-CN": "圆弧粗标靶需要 70–85 分钟、1200 mm/s 的标准 12 cm CD。",
+    "en": "The coarse arc target requires a standard 12 cm CD with 70–85 minutes of capacity and a linear speed of 1200 mm/s."
+  },
+  "标定图案控制块数量无效。": {
+    "zh-CN": "标定图案控制块数量无效。",
+    "en": "The number of control blocks in the calibration pattern is invalid."
+  },
+  "标定图案含重复控制块 ID。": {
+    "zh-CN": "标定图案含重复控制块 ID。",
+    "en": "The calibration pattern contains duplicate control block IDs."
+  },
+  "标定图案与生成参数或图案规则不一致。": {
+    "zh-CN": "标定图案与生成参数或图案规则不一致。",
+    "en": "The calibration pattern does not match its generation parameters or pattern rules."
+  },
+  "控制块或角点编号无效。": {
+    "zh-CN": "控制块或角点编号无效。",
+    "en": "The control block or corner index is invalid."
+  },
+  "标定组编号无效。": {
+    "zh-CN": "标定组编号无效。",
+    "en": "The calibration group index is invalid."
+  },
+  "时钟尺按 CD 逻辑字节生成，不能用平面图像采样编码。": {
+    "zh-CN": "时钟尺按 CD 逻辑字节生成，不能用平面图像采样编码。",
+    "en": "The clock ruler is generated from CD logical bytes and cannot be encoded by sampling a flat image."
+  },
+  "旋转必须是有限数值。": {
+    "zh-CN": "旋转必须是有限数值。",
+    "en": "Rotation must be a finite number."
+  },
+  "角点坐标必须是有限数值。": {
+    "zh-CN": "角点坐标必须是有限数值。",
+    "en": "Corner coordinates must be finite numbers."
+  },
+  "源控制点不在生成时的绘图环带内。": {
+    "zh-CN": "源控制点不在生成时的绘图环带内。",
+    "en": "A source control point is outside the drawing annulus used to generate the pattern."
+  },
+  "轮廓在当前轨距参数下没有有效映射。": {
+    "zh-CN": "轮廓在当前轨距参数下没有有效映射。",
+    "en": "The outline has no valid mapping with the current track-pitch parameters."
+  },
+  "候选绕行过多，完整轮廓采样超出上限；请缩小搜索范围或提高采样上限后再确认形状。": {
+    "zh-CN": "候选绕行过多，完整轮廓采样超出上限；请缩小搜索范围或提高采样上限后再确认形状。",
+    "en": "The candidate has too many turns to sample the full outline within the limit. Narrow the search range or raise the sampling limit before checking its shape."
+  },
+  "标定固定盘片类型、扇区数和线速度／位长，可拟合内外半径、三次轨距与整体旋转。": {
+    "zh-CN": "标定固定盘片类型、扇区数和线速度／位长，可拟合内外半径、三次轨距与整体旋转。",
+    "en": "Calibration keeps the disc type, sector count, and linear speed or channel bit length fixed. It can fit the inner and outer radii, cubic track pitch, and overall rotation."
+  }
+}
