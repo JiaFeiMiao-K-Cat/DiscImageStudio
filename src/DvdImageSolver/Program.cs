@@ -25,6 +25,8 @@ internal static class Program
                 "encode" => Encode(CliArguments.Parse(args.AsSpan(1))),
                 "calibrate" => Calibrate(CliArguments.Parse(args.AsSpan(1))),
                 "simulate" => Simulate(CliArguments.Parse(args.AsSpan(1))),
+                "preview-grating" => PreviewGrating(CliArguments.Parse(args.AsSpan(1))),
+                "grating" => GratingPaletteCommand.Run(CliArguments.Parse(args.AsSpan(1))),
                 "selftest" => RunSelfTests(),
                 _ => throw new ArgumentException($"Unknown command '{args[0]}'."),
             };
@@ -373,12 +375,104 @@ internal static class Program
             arguments.GetDouble("pitch-linear", 0),
             arguments.GetDouble("pitch-quadratic", 0),
             arguments.GetDouble("pitch-cubic", 0));
+        bool grating = arguments.Has("grating")
+            ? ReadBoolean(arguments, "grating", fallback: false)
+            : LooksLikeGrating(isoPath, startLba, fillSectors, options.PsnOffset);
+        if (grating)
+        {
+            GratingReadbackOptions gratingOptions = new(
+                totalSectors, startLba, fillSectors, options.PsnOffset,
+                options.InnerRadiusMm, options.OuterRadiusMm,
+                options.ChannelBitLengthNm, options.Clockwise,
+                options.PreviewSize, options.SamplesPerSector,
+                options.PitchLinear, options.PitchQuadratic, options.PitchCubic);
+            GratingReadbackSummary gratingSummary =
+                GratingReadbackRenderer.Render(isoPath, outputPath, gratingOptions);
+            WriteJson(outputPath + ".json", gratingSummary);
+            Console.WriteLine(
+                $"grating readback: {gratingSummary.PreviewSize}x{gratingSummary.PreviewSize}, "
+                + $"coloured={gratingSummary.ColouredSamples}, off={gratingSummary.OffSamples}, "
+                + $"output={outputPath}");
+            return 0;
+        }
+
         IsoReadbackSummary summary = IsoReadbackRenderer.Render(isoPath, outputPath, options);
         WriteJson(outputPath + ".json", summary);
         Console.WriteLine(
             $"readback: {summary.PreviewSize}x{summary.PreviewSize}, "
             + $"classified={summary.ClassifiedSamples}/{summary.TotalSamples}, "
             + $"pitch={summary.TrackPitchMicrometres:F4} um, output={outputPath}");
+        return 0;
+    }
+
+    /// <summary>Sniffs a few ECC blocks for motif bytes that are not part of the
+    /// monochrome A5/66/92/B9 palette. A forced --grating bypasses the sniff.</summary>
+    private static bool LooksLikeGrating(string isoPath, uint startLba, uint fillSectors, uint psnOffset)
+    {
+        if (fillSectors < DvdEccBlockEncoder.SectorCount) return false;
+        long sectors = new FileInfo(isoPath).Length / DvdEccBlockEncoder.PayloadBytesPerSector;
+        if ((ulong)startLba + fillSectors > (ulong)sectors) fillSectors = 0;
+        if (fillSectors == 0) return false;
+        int blocks = (int)Math.Min(512, fillSectors / DvdEccBlockEncoder.SectorCount);
+        int stride = Math.Max(1, blocks / 32);
+        HashSet<byte> special = [0x09, 0x88, 0xA4, 0x71, 0x43, 0x80, 0x69, 0xB2, 0xD1, 0xCB, 0x3E, 0xC0, 0xCD, 0xE6];
+        int hits = 0;
+        byte[] block = new byte[DvdEccBlockEncoder.PayloadBytesPerBlock];
+        using FileStream iso = new(isoPath, FileMode.Open, FileAccess.Read, FileShare.Read,
+            bufferSize: block.Length, FileOptions.SequentialScan);
+        for (int b = 0; b < blocks; b += stride)
+        {
+            uint lba = startLba + checked((uint)b * DvdEccBlockEncoder.SectorCount);
+            iso.Seek((long)lba * DvdEccBlockEncoder.PayloadBytesPerSector, SeekOrigin.Begin);
+            iso.ReadExactly(block);
+            for (int sector = 0; sector < DvdEccBlockEncoder.SectorCount; sector++)
+            {
+                ReadOnlySpan<byte> mask = DvdDataFrameBuilder.PayloadScramblerMask(
+                    lba + psnOffset + (uint)sector);
+                for (int i = 0; i < DvdEccBlockEncoder.PayloadBytesPerSector; i += 64)
+                {
+                    byte q = (byte)(block[sector * DvdEccBlockEncoder.PayloadBytesPerSector + i] ^ mask[i]);
+                    if (special.Contains(q)) hits++;
+                    if (hits >= 8) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static int PreviewGrating(CliArguments arguments)
+    {
+        string isoPath = arguments.Require("iso");
+        string outputPath = arguments.Require("output");
+        (uint sidecarStartLba, uint sidecarFillSectors, uint sidecarTotalSectors) =
+            ReadSolveSummary(isoPath + ".json");
+        long isoSectors = new FileInfo(isoPath).Length / DvdEccBlockEncoder.PayloadBytesPerSector;
+        uint totalSectors = arguments.Has("total-sectors") || arguments.Has("total-blocks")
+            ? ReadTotalSectors(arguments)
+            : sidecarTotalSectors != 0 ? sidecarTotalSectors : checked((uint)isoSectors);
+        uint startLba = arguments.GetUInt("lba", sidecarStartLba);
+        uint fillSectors = arguments.Has("fill-sectors")
+            ? arguments.GetUInt("fill-sectors", 0)
+            : sidecarFillSectors != 0 ? sidecarFillSectors
+            : checked((uint)Math.Min(isoSectors, totalSectors) - startLba);
+        GratingReadbackOptions options = new(
+            totalSectors, startLba, fillSectors,
+            arguments.GetUInt("psn-offset", 0x30000),
+            RequireDouble(arguments, "inner-radius-mm"),
+            RequireDouble(arguments, "outer-radius-mm"),
+            arguments.GetDouble("channel-bit-nm", 133.3),
+            ReadClockwise(arguments),
+            arguments.GetInt("preview-size", 1024),
+            arguments.GetInt("samples-per-sector", 32),
+            arguments.GetDouble("pitch-linear", 0),
+            arguments.GetDouble("pitch-quadratic", 0),
+            arguments.GetDouble("pitch-cubic", 0));
+        GratingReadbackSummary summary = GratingReadbackRenderer.Render(isoPath, outputPath, options);
+        WriteJson(outputPath + ".json", summary);
+        Console.WriteLine(
+            $"grating readback: {summary.PreviewSize}x{summary.PreviewSize}, "
+            + $"coloured={summary.ColouredSamples}, off={summary.OffSamples}, "
+            + $"output={outputPath}");
         return 0;
     }
 
