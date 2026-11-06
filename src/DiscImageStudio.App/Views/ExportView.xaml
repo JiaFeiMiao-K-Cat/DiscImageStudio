@@ -81,6 +81,7 @@
                                                 Command="{Binding BrowseOutputCommand}" />
                             <TextBlock Style="{StaticResource FieldLabel}" Margin="0,14,0,6" Text="{loc:Text Xaml.VolumeLabel}" />
                             <TextBox Text="{Binding State.DvdVolumeLabel, UpdateSourceTrigger=PropertyChanged}" MaxLength="32" />
+                            <controls:DvdReadCompatibilityToggle IsChecked="{Binding State.DvdReadCompatibility}" Margin="0,14,0,0" />
                         </StackPanel>
                     </controls:VisibilityGate>
 

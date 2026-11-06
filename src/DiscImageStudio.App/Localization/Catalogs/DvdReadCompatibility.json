@@ -1,0 +1,22 @@
+{
+  "DvdReadCompatibility.Label": {
+    "zh-CN": "DVD读取兼容性（实验性）",
+    "en": "DVD read compatibility (experimental)"
+  },
+  "DvdReadCompatibility.Hint": {
+    "zh-CN": "可改善部分驱动器的读回，可能轻微改变纹理。",
+    "en": "May improve read-back on some drives and slightly change the texture."
+  },
+  "DvdReadCompatibility.FrozenHint": {
+    "zh-CN": "使用标靶记录中的选项；如需更改，请创建新标靶。",
+    "en": "Uses the option saved with this target. Create a new target to change it."
+  },
+  "DvdReadCompatibility.Enabled": {
+    "zh-CN": "DVD读取兼容性：已启用（实验性）",
+    "en": "DVD read compatibility: enabled (experimental)"
+  },
+  "DvdReadCompatibility.Disabled": {
+    "zh-CN": "DVD读取兼容性：关闭",
+    "en": "DVD read compatibility: off"
+  }
+}

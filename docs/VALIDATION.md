@@ -4,6 +4,35 @@
 
 ## 本地验证
 
+2026-11-06，CD 数据盘 ADR3 修复：Release solution 构建通过（0 警告、0 错误），完整架构回归及 DVD 引擎 selftest 通过。新增回归用旧实现复现 ADR3 转换失败，修复后通过；包含独立 CRC 多项式除法、9 个计时/CRC 固定向量、预间隙/数据区/lead-out 边界及 BCD 进位与上限、TOC/ADR1/ADR2 保留和 P/R-W 隔离。Raw P-W 与 Cooked R-W 均完成真实离线 IMAPI 全镜像扫描；音轨整张镜像与独立原生 COM 参考逐字节一致，PCM 字节和音轨 ADR3 保持。原有前向流、部分读取、主通道和内外圈 ISO 回读测试通过。此次只改变数据 DAO 的 ADR3 转换，未改动音轨生成/刻录路径或 GUI；DVD selftest 覆盖项不变。未创建刻录设备，未执行实盘读回。修复边界见 [数据轨 ADR3 修复记录](PHYSICAL_MODEL_AUDIT.md#2026-11-06-cd-数据轨-adr3-修复)，日志在 `artifacts/cd-subcode-fix/`。
+
+最后调整部分读取测试，使其也能接受原生模板在该位置安排 ADR2；随后最终 solution 重建仍为零警告、零错误，三个 CD 子码/RAW 镜像测试再次通过。完整回归日志为 `architecture.log`，最终构建及定向复核为 `build-final.log`、`final-cd-check.log`，均在上述日志目录内。
+
+English: the Release solution build completed with zero warnings/errors; the complete architecture suite and DVD selftest passed. The new regression detects the old data ADR3 behavior. Boundary vectors, an independent CRC oracle and complete native IMAPI images cover the repair in both subchannel formats. Audio remains byte-identical to a direct native reference, including its ADR3 metadata and PCM. After making the partial-read expectation tolerate native ADR2 scheduling, the final solution build and all three CD subcode/RAW image test groups passed again. No optical device was accessed.
+
+2026-11-06，CD 后续风险审计（先于上述修复）：当时只新增独立模型/离线 IMAPI 探针及文档，未改生产代码、未操作光驱，未重跑 solution 构建。23 组真实生成器样本的 CIRC 逆变换及 6,003 个抽样校验码字通过；完整 EFM/同步/合并位检查、126 组对齐与同分选择对照、386 个周期样本及 16 个扩长样本未发现持续 DSV 累积。第二实现独立检查两个完整通道输出的 14,636,496T 和 26,656 个合并位决策。实际子码检查另确认 Mode 1 DAO 保留了音轨 ADR3/ISRC，虽然 CRC 和出现频率均通过，数据轨语义不符合标准；后续修复和验证已记在上方。合法 ADR1 参考子码的 8 组 Mode 1 重跑没有改变持续偏置结论。范围、数据和修复建议见 [CD 完整链路审计](PHYSICAL_MODEL_AUDIT.md#2026-11-06-cd-后续完整编码链与数据轨子码)，材料在 `artifacts/issue90-cd-full/`。
+
+2026-11-06，#90 读取兼容性实验：最终 Release solution 构建通过（0 警告、0 错误），完整架构回归、Windows DVD 引擎 selftest 与通用 CLI selftest 全部通过。新增回归对照独立逐字节 oracle，覆盖 57/58 个纹理字节阈值、前后 64-byte 窗口、扇区末端、已有保护字节、幂等性及逐字节归属；核对默认关闭输出、标量/SIMD/采样复用/并行一致性、精确 Q API 拒绝、ISO/CLI/流式字节一致、内外圈文件保护、版本化 sidecar 与读回预览、冻结的标定参数及旧记录默认关闭。四张中英文离屏截图已目视检查，标定窄栏的新开关完整换行。测试不访问光驱；完整读回和光学对比度需实盘验证。日志在 `artifacts/issue90-build.log`、`issue90-architecture.log`、`issue90-dvd-selftest.log`、`issue90-portable-selftest.log`，截图在 `artifacts/issue90-compat-ui/`。
+
+生成侧测速使用 Intel Core i5-1340P、Windows x64、.NET 10.0.14 Release，自动并行 16 workers，关闭 tiered compilation 以减少短任务 JIT 波动；每项预热后输出 128 MiB 到 `Stream.Null`，开关交替，三轮取最低值（十进制 MB/s）。完整单层几何 2,297,888 sectors 的中段 65,536 sectors，三次轨距系数 `(0.18, -0.12, 0.06)`。这是生成吞吐，不包含存储或设备写入。
+
+| 场景 | 保护关闭 MB/s | 保护开启 MB/s |
+| --- | ---: | ---: |
+| 黑白图片 | 294.31 | 232.30 |
+| 彩色与透明度图片 | 122.82 | 116.25 |
+| 解析标定图案 | 103.02 | 99.54 |
+| 按扇区生成环带 | 5162.64 | 1589.95 |
+
+程序按 DVD 1× = 1,385,000 B/s 换算，24× 需要 33.24 MB/s；上述开启保护的最低值为需求的 2.99 倍。限制为 8 workers 的另三轮测试最低为 72.89 MB/s（2.19 倍）。16-worker 开启保护时记录的最大 32 KiB 输出块间隔为 16.78 ms；现有默认队列 64 MiB、预缓冲 32 MiB，在 24× 下预缓冲对应约 1.01 s。这些数据不保证任意 CPU、图片或后台负载下的供数能力。复现程序与原始分轮结果在 `artifacts/issue90-compat-perf/`；实际缓冲管道的节流检查另记如下。
+
+实际流式管道另使用 `GeneratedContentComStream` 默认 64/32 MiB 队列，默认 tiered compilation 和自动并行，对 1025² 彩色透明图片及带文件的混合镜像分别做 24×（33.24 MB/s）和 32×（44.32 MB/s）节流读取。四轮每轮完整生成 131,072 扇区/256 MiB，使用该小容量的完整几何（不是 DVD-5 全盘几何）；未访问光驱。四轮均无生产期间空队列读取、无观察到的供数饥饿、无超过块读取预算的调用；预缓冲 0.425–0.476 s，最大块读取耗时 0.168–1.526 ms，生产期间最小缓冲约 31.5–32 MiB。末尾正常排空单独统计，不当作供数不足。实际消费约 33.23–33.24 / 44.24–44.28 MB/s，生产总时长包含队列背压，不能拿它当纯计算上限。结果在 `artifacts/issue90-compat-perf/pipeline/results.json`，表明这些本机场景可支撑 24×，并通过 32× 供数压力检查；不代表设备支持 32× 或实盘刻录、读回已验证。
+
+English: the opt-in DVD bridge has independent boundary/ownership tests and integration coverage for output parity, protected files, sidecar interpretation and frozen calibration settings. On this i5-1340P, the slowest protected producer fixture measured 99.54 MB/s with 16 workers and 72.89 MB/s with 8 workers, versus 33.24 MB/s for DVD 24×. These are warmed Release `Stream.Null` measurements. Four additional 256 MiB tests through the real host queue, consuming at 24× and 32×, showed no active empty-queue reads or read-budget overruns. The queue tests use a complete small-capacity geometry, without an optical device; they do not establish hardware 32× support or physical readback reliability. CD/BD adjustment-bit findings and limitations are documented in [the physical-model audit](PHYSICAL_MODEL_AUDIT.md).
+
+2026-11-06：对照 ECMA-267/359 修正 DVD EFMPlus 状态 3/4 的副 SY6（`0x80440011`），以及 EDC 重复补 32 位零的问题。两项新增回归均先在旧实现复现失败；修正后完整 SYNC 标准向量、实际副 SY6 输出、前缀 DSV、EDC 独立长除法和三种完整数据帧向量通过。Release solution 构建通过（0 警告、0 错误），完整架构回归、Windows DVD 引擎 selftest 和通用 `net10.0` CLI selftest 全部通过。逐表提取、独立 RS/扰码/交织及 9,728 个同步帧解码的审计范围见 [DVD 编码标准复核](DVD_ENGINE.md#编码标准复核2026-11-06)。未执行实盘刻录；#90 的读盘兼容性及 DVD+RW 介质模型尚需单独处理。
+
+正确 EDC 改变了后续调制状态，原 state-control 稀疏交替目标测试在 8 宽候选搜索下得到 987/1936 个错误，未满足既有小于 50% 的质量要求。独立逐位重编码确认评分一致；仅将测试的 BeamWidth 提高为 16 后得到 877/1936，保持原始输入、随机种子、3 轮迭代、重试参数及全部质量/边界断言。生产求解器参数未改动。
+
 2026-11-06：词条回退顺序调整为当前语言 → 英文 → 简体中文 → 原始键，通过 Release solution 构建（0 警告、0 错误）和完整架构回归。验证译文缺失／空白、当前语言优先及格式参数；真实西语标定失败界面保留西语标题，缺译的动态原因在弹窗和底栏回退英文，离屏截图已核对。测试临时补入西语照片及预设词条，确认新增诊断可按语言扩展、重排参数和翻译嵌套说明，测试结束后恢复资源。
 
 2026-11-06：照片矫正及工程、预设校验弹窗的英文补译通过 Release solution 构建（0 警告、0 错误）、完整架构回归和 DVD 引擎 selftest。新增回归触发真实的内外缘不吻合失败，验证直接矫正及恢复已确认照片时的英文弹窗、底栏和误差数值；覆盖英文界面下小数点／小数逗号格式、动态标定版本、参数名后缀、嵌套预设要求、用户文件名与 ID 保留，以及未知外部异常的原文回退。英文失败弹窗离屏截图已核对。
@@ -127,7 +156,7 @@ dotnet run --project src/DiscImageStudio.App --configuration Release --no-build 
 - CD/DVD/BD 三次轨距：独立数值积分的正反向几何、从恒定与非零生成系数开始的重复拟合、已校正直线保留系数、预设/工程/会话往返，以及粗标定只更新半径而保留精细轨距。对应 [#78](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues/78) 和 [#92](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues/92) 的软件回归，未替代实盘验证。
 - CD/DVD：黑白映射、抖动、sRGB 伽马、文件与流式一致性、SIMD 与标量采样一致性。
 - CD 文件模式：ISO9660/Joliet 中文文件独立读取、内外圈位置及工程保存、文件区预览、原始扇区几何、文件与前向流输出一致。
-- CD 数据 DAO：Mode 1 EDC 与全部 P/Q 校验方程、主通道字节序、导入区及预间隙地址、数据轨 Q 标识与 CRC、前向 Seek 和短读、内外圈 ISO 完整还原；保留铼德预设 359,845 扇区，并使用模拟刻录机验证与音轨共用的容量限制和子通道格式选择（优先 Raw P-W、回退 Cooked R-W、拒绝仅 PQ）。原生 IMAPI 测试只构造内存镜像，不创建刻录设备；两种 2448 字节模板均参与校验。
+- CD 数据 DAO：Mode 1 EDC 与全部 P/Q 校验方程、主通道字节序、导入区及预间隙地址、数据轨 Q 标识与 CRC、ADR3 完整替换为 ADR1、全部区域时间/出现频率和 P/R-W 保留、独立原生音轨镜像逐字节不变、前向 Seek 和短读、内外圈 ISO 完整还原；保留铼德预设 359,845 扇区，并使用模拟刻录机验证与音轨共用的容量限制和子通道格式选择（优先 Raw P-W、回退 Cooked R-W、拒绝仅 PQ）。原生 IMAPI 测试只构造内存镜像，不创建刻录设备；两种 2448 字节模板均参与校验。
 - BD：17PP/EDC/Reed-Solomon、3T/6T 映射与极性、绘图范围清零、UDF 2.01、大于 4 GiB 文件、sidecar 往返与无效边界拒绝。
 - DVD/BD 文件位置：默认内圈兼容、外圈 ISO9660/Joliet 与 UDF 目录独立解析、中文文件内容、完整盘面坐标、不可 Seek 流与文件输出一致、容量及取消保护，以及工程中的位置选项往返。
 - 三态模型：工程 schema 2 往返与 schema 1 升级、预设 schema 4 与旧 schema 合并、`ProjectSession` 的 BD apply/capture。

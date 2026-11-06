@@ -1,0 +1,268 @@
+using System.IO;
+using System.Reflection;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using DvdImageSolver.Solver;
+
+internal static class DvdReadCompatibilityGuardTests
+{
+    private delegate int ApplySector(Span<byte> payload, ReadOnlySpan<byte> mask, ReadOnlySpan<byte> ownership);
+    private static readonly ApplySector Apply = typeof(FastDispersionImageWriter).Assembly
+        .GetType("DvdImageSolver.Solver.DvdReadCompatibilityGuard", throwOnError: true)!
+        .GetMethod("ApplySector", BindingFlags.Static | BindingFlags.NonPublic)!
+        .CreateDelegate<ApplySector>();
+
+    internal static void Run()
+    {
+        CheckBoundaries();
+        CheckIndependentOracle();
+        CheckPatternWriters();
+        CheckRasterPaths();
+        Console.WriteLine("dvd-read-compatibility-guard: passed (independent sector oracle, windows, ownership, idempotence, default-off bytes, exact-Q rejection and scalar/SIMD/reuse/parallel parity)");
+    }
+
+    private static void CheckBoundaries()
+    {
+        byte[] allOwned = Enumerable.Repeat((byte)1, 2048).ToArray();
+        byte[] q = Enumerable.Repeat((byte)0x92, 2048).ToArray();
+        CheckCase(q, allOwned, [0], "sector begins with a long white run");
+        Array.Fill(q, (byte)0xA5);
+        q[2046] = q[2047] = 0x92;
+        CheckCase(q, allOwned, [2046], "backward window covers the last two bytes");
+        q[2046] = 0xA5;
+        CheckCase(q, allOwned, [], "isolated white byte at sector end");
+
+        foreach (int paletteCount in new[] { 57, 58 })
+        {
+            q = new byte[2048];
+            Array.Fill(q, (byte)0xA5, 0, paletteCount);
+            q[0] = q[1] = 0x92;
+            CheckCase(q, allOwned, paletteCount == 58 ? [0] : [], "forward 58-of-64 threshold");
+
+            q = new byte[2048];
+            Array.Fill(q, (byte)0xA5, 0, paletteCount - 1);
+            q[63] = q[64] = 0x92;
+            CheckCase(q, allOwned, paletteCount == 58 ? [63] : [], "backward window includes start and excludes its successor");
+        }
+
+        foreach (byte preceding in new byte[] { 0x75, 0x9B, 0xA5 })
+        {
+            q = Enumerable.Repeat((byte)0xA5, 2048).ToArray();
+            q[99] = preceding;
+            q[100] = q[101] = 0x92;
+            CheckCase(q, allOwned, preceding == 0xA5 ? [100] : [], "existing bridge suppresses repeat edits");
+        }
+
+        q = Enumerable.Repeat((byte)0xA5, 2048).ToArray();
+        q[100] = q[101] = 0x92;
+        byte[] ownership = (byte[])allOwned.Clone();
+        ownership[100] = 0;
+        CheckCase(q, ownership, [], "unowned run head stays untouched even when its successor is owned");
+        Array.Clear(ownership);
+        ownership[100] = 1;
+        CheckCase(q, ownership, [100], "only the modified byte needs ownership");
+
+        // The second candidate qualifies at exactly 58 palette bytes. A guard
+        // that counts the first replacement would incorrectly reject it.
+        q = new byte[2048];
+        Array.Fill(q, (byte)0xA5, 0, 64);
+        Array.Clear(q, 3, 6);
+        q[0] = q[1] = q[63] = q[64] = 0x92;
+        CheckCase(q, allOwned, [0, 63], "all window decisions use original Q");
+
+        Throws<ArgumentException>(() => Apply(new byte[2047], new byte[2048], new byte[2048]));
+        Throws<ArgumentException>(() => Apply(new byte[2048], new byte[2047], new byte[2048]));
+        Throws<ArgumentException>(() => Apply(new byte[2048], new byte[2048], new byte[2047]));
+    }
+
+    private static void CheckCase(byte[] q, byte[] ownership, int[] expectedIndices, string name)
+    {
+        byte[] mask = IndependentMask(0x30070);
+        byte[] original = Xor(q, mask);
+        byte[] actual = (byte[])original.Clone();
+        int changed = Apply(actual, mask, ownership);
+        int[] observedIndices = Enumerable.Range(0, 2048).Where(i => actual[i] != original[i]).ToArray();
+        Require(changed == expectedIndices.Length && observedIndices.SequenceEqual(expectedIndices), name);
+        foreach (int index in observedIndices)
+            Require(ownership[index] != 0 && (actual[index] ^ mask[index]) == 0x9B, name + ": only owned run heads become 9B");
+        byte[] once = (byte[])actual.Clone();
+        Require(Apply(actual, mask, ownership) == 0 && actual.AsSpan().SequenceEqual(once), name + ": idempotent");
+    }
+
+    private static void CheckIndependentOracle()
+    {
+        Random random = new(90);
+        long changes = 0;
+        for (int trial = 0; trial < 96; trial++)
+        {
+            byte[] q = new byte[2048], ownership = new byte[2048];
+            for (int index = 0; index < q.Length; index++)
+            {
+                int value = random.Next(100);
+                q[index] = value < 48 ? (byte)0x92 : value < 94 ? (byte)0xA5 : (byte)random.Next(256);
+                ownership[index] = random.Next(4) == 0 ? (byte)0 : (byte)1;
+            }
+            byte[] mask = IndependentMask(0x30000 + (uint)trial * 16);
+            byte[] actual = Xor(q, mask);
+            byte[] expected = (byte[])actual.Clone();
+            int expectedCount = Oracle(expected, mask, ownership);
+            int observed = Apply(actual, mask, ownership);
+            Require(expectedCount == observed && actual.AsSpan().SequenceEqual(expected), "independent scalar sector oracle");
+            Require(Apply(actual, mask, ownership) == 0, "random dense sectors are idempotent");
+            changes += observed;
+        }
+        Require(changes > 1000, "oracle fixtures exercise many qualifying runs and windows");
+    }
+
+    private static int Oracle(byte[] payload, byte[] mask, byte[] ownership)
+    {
+        byte[] q = Xor(payload, mask);
+        int changes = 0;
+        for (int index = 0; index + 1 < q.Length; index++)
+        {
+            if (q[index] != 0x92 || q[index + 1] != 0x92 || ownership[index] == 0
+                || (index > 0 && q[index - 1] is 0x92 or 0x75 or 0x9B)) continue;
+            bool qualifies = false;
+            foreach (int begin in new[] { index, index - 63 })
+            {
+                if (begin < 0 || begin + 64 > q.Length) continue;
+                int palette = 0;
+                for (int offset = 0; offset < 64; offset++)
+                    if (q[begin + offset] is 0x92 or 0xA5) palette++;
+                if (palette >= 58) qualifies = true;
+            }
+            if (!qualifies) continue;
+            payload[index] = (byte)(mask[index] ^ 0x9B);
+            changes++;
+        }
+        return changes;
+    }
+
+    private static void CheckPatternWriters()
+    {
+        var options = Options();
+        using MemoryStream defaultOutput = new(), explicitOff = new(), enabled = new();
+        var original = FastDispersionImageWriter.WriteSectorPatternStream(_ => 255, defaultOutput, options);
+        FastDispersionImageWriter.WriteSectorPatternStream(_ => 255, explicitOff, options with { ReadCompatibility = false });
+        var guarded = FastDispersionImageWriter.WriteSectorPatternStream(_ => 255, enabled, options with { ReadCompatibility = true, FastParallelism = 2 });
+        byte[] off = defaultOutput.ToArray(), on = enabled.ToArray();
+        Require(!options.ReadCompatibility && original.CompatibilityChanges == 0 && off.AsSpan().SequenceEqual(explicitOff.ToArray()),
+            "default and explicit off preserve identical bytes");
+        Require(guarded.CompatibilityChanges == options.FillSectors, "one bridge per all-white sector, including adjacent sectors");
+        for (int sector = 0; sector < options.FillSectors; sector++)
+        {
+            byte[] mask = IndependentMask(options.StartLba + options.PsnOffset + (uint)sector);
+            for (int index = 0; index < 2048; index++)
+            {
+                Require((off[sector * 2048 + index] ^ mask[index]) == 0x92, "off keeps every requested white byte");
+                Require((on[sector * 2048 + index] ^ mask[index]) == (index == 0 ? 0x9B : 0x92), "bridge starts over at every sector");
+            }
+        }
+
+        using MemoryStream analytic = new(), codeword = new();
+        var analyticSummary = FastDispersionImageWriter.WritePatternStream((_, _) => 255, analytic, options with { ReadCompatibility = true });
+        var codewordSummary = FastDispersionImageWriter.WriteCodewordPatternStream(_ => 255, codeword, options with { ReadCompatibility = true });
+        Require(on.AsSpan().SequenceEqual(analytic.ToArray()) && on.AsSpan().SequenceEqual(codeword.ToArray())
+            && analyticSummary.CompatibilityChanges == guarded.CompatibilityChanges && codewordSummary.CompatibilityChanges == guarded.CompatibilityChanges,
+            "sector, analytic and gray codeword patterns share the same guard");
+        using MemoryStream exact = new();
+        int calls = 0;
+        Throws<ArgumentException>(() => FastDispersionImageWriter.WriteScrambledCodewordPatternStream(
+            _ => { calls++; return 0x92; }, exact, options with { ReadCompatibility = true }));
+        Require(exact.Length == 0 && calls == 0, "exact-Q rejection precedes sampling and output");
+        foreach (SolverAlgorithm algorithm in new[] { SolverAlgorithm.Full, SolverAlgorithm.StateControl })
+            Throws<ArgumentException>(() => FastDispersionImageWriter.WritePatternStream((_, _) => 255, exact,
+                options with { ReadCompatibility = true, Algorithm = algorithm }));
+    }
+
+    private static void CheckRasterPaths()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "dvd-guard-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            string opaque = WriteImage(directory, "opaque", (_, _) => 255);
+            string translucent = WriteImage(directory, "alpha", (x, y) => ((x / 8 + y / 7) % 3) switch { 0 => 0, 1 => 127, _ => 255 });
+            string excluded = WriteImage(directory, "excluded", (_, _) => 127);
+            foreach (string path in new[] { opaque, translucent, excluded })
+            foreach (bool zeroInitial in new[] { false, true })
+            {
+                var options = Options() with { ZeroInitialPayload = zeroInitial, ReadCompatibility = true };
+                using MemoryStream scalar = new(), optimized = new(), off = new();
+                var expected = FastDispersionImageWriter.WriteStream(path, scalar, options with { UseSampleReuse = false, UseSimdSampling = false });
+                var actual = FastDispersionImageWriter.WriteStream(path, optimized, options with { FastParallelism = 2 });
+                var unchanged = FastDispersionImageWriter.WriteStream(path, off, options with { ReadCompatibility = false });
+                Require(scalar.ToArray().AsSpan().SequenceEqual(optimized.ToArray())
+                    && expected.CompatibilityChanges == actual.CompatibilityChanges && expected.ControlledWords == actual.ControlledWords,
+                    "scalar/SIMD/reuse/parallel output and ownership agree across reused batch slots");
+                Require(actual.ControlledWords == unchanged.ControlledWords && actual.BytesWritten == unchanged.BytesWritten,
+                    "compatibility changes neither ownership nor output size");
+                if (path == excluded)
+                    Require(actual.ControlledWords == 0 && actual.CompatibilityChanges == 0 && off.ToArray().AsSpan().SequenceEqual(optimized.ToArray()),
+                        "alpha below threshold preserves all initial payload bytes");
+                else
+                    Require(actual.CompatibilityChanges > 0, "opaque and partial-alpha fixtures actually exercise bridges");
+            }
+        }
+        finally
+        {
+            foreach (string file in Directory.EnumerateFiles(directory)) File.Delete(file);
+            Directory.Delete(directory);
+        }
+    }
+
+    private static MultiBlockSolveOptions Options()
+        => new(810_000, 80, 0x30030, 1, 4, 842, 64, .25, false,
+            new(2_297_888, 24, 58, 133.3, 37, true, 128, 128, PitchLinear: .18, PitchQuadratic: -.12, PitchCubic: .06),
+            Algorithm: SolverAlgorithm.Dispersion, FastParallelism: 1);
+
+    private static string WriteImage(string directory, string name, Func<int, int, byte> alpha)
+    {
+        const int size = 65;
+        byte[] pixels = new byte[size * size * 4];
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            int index = (y * size + x) * 4;
+            byte gray = ((x / 11 + y / 9) & 1) == 0 ? (byte)0 : (byte)255;
+            pixels[index] = pixels[index + 1] = pixels[index + 2] = gray;
+            pixels[index + 3] = alpha(x, y);
+        }
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(BitmapSource.Create(size, size, 96, 96, PixelFormats.Bgra32, null, pixels, size * 4)));
+        string path = Path.Combine(directory, name + ".png");
+        using var output = File.Create(path);
+        encoder.Save(output);
+        return path;
+    }
+
+    private static byte[] IndependentMask(uint psn)
+    {
+        ushort[] seeds = [0x0001, 0x5500, 0x0002, 0x2A00, 0x0004, 0x5400, 0x0008, 0x2800,
+            0x0010, 0x5000, 0x0020, 0x2001, 0x0040, 0x4002, 0x0080, 0x0005];
+        int state = seeds[(psn >> 4) & 15];
+        byte[] mask = new byte[2048];
+        for (int index = 0; index < mask.Length; index++)
+        {
+            mask[index] = (byte)state;
+            for (int bit = 0; bit < 8; bit++)
+                state = ((state << 1) | (((state >> 14) ^ (state >> 10)) & 1)) & 0x7FFF;
+        }
+        return mask;
+    }
+
+    private static byte[] Xor(byte[] values, byte[] mask)
+        => values.Select((value, index) => (byte)(value ^ mask[index])).ToArray();
+
+    private static void Throws<T>(Action action) where T : Exception
+    {
+        try { action(); }
+        catch (T) { return; }
+        throw new InvalidOperationException("Expected " + typeof(T).Name);
+    }
+
+    private static void Require(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+    }
+}

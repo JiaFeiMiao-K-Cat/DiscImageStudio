@@ -23,7 +23,8 @@ public sealed record CalibrationParameters(
     long Sectors, double LinearDensity,
     double PitchLinear = 0, double PitchQuadratic = 0, double PitchCubic = 0,
     bool BluRayInvertMapping = false, long DrawingStartSector = 0, DateTimeOffset? BluRayIsoTimestamp = null,
-    long DrawingEndSectorExclusive = 0)
+    long DrawingEndSectorExclusive = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool DvdReadCompatibility = false)
 {
     public const int DvdChannelBitsPerSector = 38_688;
     public const int BluRaySectorsPerCluster = 32;

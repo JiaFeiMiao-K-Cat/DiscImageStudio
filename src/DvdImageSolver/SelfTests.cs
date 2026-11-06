@@ -12,7 +12,9 @@ internal static class SelfTests
     internal static void Run()
     {
         TestTables();
+        TestSy6Encoding();
         TestDataFrame();
+        TestEdc();
         TestEcc();
         TestPhysicalEncoding();
         TestCodewordStateControl();
@@ -32,6 +34,85 @@ internal static class SelfTests
         Equal((ushort)0x4120, EfmPlusTables.LookupMain(0, 2).Word, "main[0,state2]");
         Equal((ushort)0x4212, EfmPlusTables.LookupMain(255, 4).Word, "main[255,state4]");
         Equal((ushort)0x0480, EfmPlusTables.Substitution(0, 1).Word, "substitution[0,state1]");
+
+        // ECMA-267, 3rd edition, Table 4: SY0..SY7, independent of the runtime table.
+        (uint Primary12, uint Secondary12, uint Primary34, uint Secondary34)[] syncVectors =
+        [
+            (0x12440011, 0x12040011, 0x92040011, 0x92440011),
+            (0x04040011, 0x04440011, 0x84440011, 0x84040011),
+            (0x10040011, 0x10440011, 0x90440011, 0x90040011),
+            (0x08040011, 0x08440011, 0x82440011, 0x82040011),
+            (0x20040011, 0x20440011, 0x88440011, 0x88040011),
+            (0x22440011, 0x22040011, 0x89040011, 0x81040011),
+            (0x24840011, 0x20840011, 0x90840011, 0x80440011),
+            (0x24440011, 0x24040011, 0x88840011, 0x80840011),
+        ];
+        for (int category = 0; category < syncVectors.Length; category++)
+        {
+            var vector = syncVectors[category];
+            for (byte state = 1; state <= 4; state++)
+            {
+                Equal(state <= 2 ? vector.Primary12 : vector.Primary34,
+                    EfmPlusTables.Sync(state, category, primary: true),
+                    $"ECMA-267 primary SY{category}, state {state}");
+                Equal(state <= 2 ? vector.Secondary12 : vector.Secondary34,
+                    EfmPlusTables.Sync(state, category, primary: false),
+                    $"ECMA-267 secondary SY{category}, state {state}");
+            }
+        }
+    }
+
+    private static void TestSy6Encoding()
+    {
+        byte[] frame = new byte[EfmPlusEncoder.BytesPerSyncFrame];
+        Array.Fill(frame, (byte)0x92);
+        sbyte[] desired = new sbyte[frame.Length];
+        Array.Fill(desired, (sbyte)-1);
+        byte[] physical = new byte[EfmPlusEncoder.BitsPerSyncFrame];
+
+        for (byte state = 3; state <= 4; state++)
+        {
+            bool sawSecondary = false;
+            foreach (bool isLand in new[] { false, true })
+            {
+                foreach (int dsv in new[] { -64, 0, 64 })
+                {
+                    ModulationBoundary input = new(state, dsv, isLand);
+                    ModulationBoundary output = new EfmPlusEncoder().EncodeSyncFrame(
+                        frame, 6, input, physical);
+
+                    uint sync = 0;
+                    bool previousLevel = input.IsLand;
+                    for (int bit = 0; bit < 32; bit++)
+                    {
+                        bool currentLevel = physical[bit] != 0;
+                        sync = (sync << 1) | (currentLevel != previousLevel ? 1u : 0u);
+                        previousLevel = currentLevel;
+                    }
+
+                    True(sync is 0x90840011 or 0x80440011,
+                        $"encoded ECMA-267 SY6, state {state}, DSV {dsv}, land {isLand}");
+                    sawSecondary |= sync == 0x80440011;
+                    Equal(output, new EfmPlusWordScorer().ScoreSyncFrame(
+                        frame, 6, input, desired).Boundary, "SY6 word scorer boundary");
+
+                    // Check the secondary prefix against the standard bits, not the shared table.
+                    EfmStreamPrefix secondary = EfmPlusPrefixState.Initialize(input, 6).Stream2;
+                    int expectedDsv = input.Dsv;
+                    bool expectedLand = input.IsLand;
+                    for (int bit = 31; bit >= 0; bit--)
+                    {
+                        if (((0x80440011u >> bit) & 1) != 0)
+                            expectedLand = !expectedLand;
+                        expectedDsv += expectedLand ? 1 : -1;
+                    }
+                    Equal((byte)1, secondary.State, "secondary SY6 next state");
+                    Equal(expectedDsv, secondary.Dsv, "secondary SY6 prefix DSV");
+                    Equal(expectedLand, secondary.IsLand, "secondary SY6 prefix level");
+                }
+            }
+            True(sawSecondary, $"encoder selects secondary SY6 in state {state}");
+        }
     }
 
     private static void TestDataFrame()
@@ -48,6 +129,41 @@ internal static class SelfTests
         True(!scrambled.AsSpan(12, 2048).SequenceEqual(frame.AsSpan(12, 2048)), "scrambler must change zero payload");
         DvdDataFrameBuilder.ScrambleMainData(scrambled, 0x030000);
         SequenceEqual(frame, scrambled, "scrambler XOR round trip");
+    }
+
+    private static void TestEdc()
+    {
+        // ECMA-267 16.4: remainder of the input polynomial multiplied by x^32.
+        Equal(0x80000011u, DvdDataFrameBuilder.ComputeEdc([0x01]), "EDC x^32 remainder");
+        Equal(0x80000F0Fu, DvdDataFrameBuilder.ComputeEdc([0x80]), "EDC MSB-first order");
+        Equal(0xDE5E214Eu, DvdDataFrameBuilder.ComputeEdc([0x12, 0x34, 0x56, 0x78]),
+            "EDC multi-byte vector");
+
+        uint[] expectedEdcs = [0x02AEBAF1, 0xB219C5AE, 0x086E4847];
+        for (int pattern = 0; pattern < expectedEdcs.Length; pattern++)
+        {
+            byte[] payload = new byte[DvdDataFrameBuilder.PayloadBytes];
+            for (int index = 0; index < payload.Length; index++)
+                payload[index] = pattern switch { 1 => (byte)index, 2 => (byte)0xFF, _ => (byte)0 };
+
+            byte[] frame = DvdDataFrameBuilder.BuildDataFrame(payload, 0x030000);
+            Equal(expectedEdcs[pattern], BinaryPrimitives.ReadUInt32BigEndian(frame.AsSpan(2060)),
+                $"EDC complete frame vector {pattern}");
+            Equal(0u, PolynomialRemainder(frame), $"EDC full-frame polynomial remainder {pattern}");
+            True(DvdDataFrameBuilder.HasValidEdc(frame), $"EDC valid frame {pattern}");
+            frame[12] ^= 1;
+            True(!DvdDataFrameBuilder.HasValidEdc(frame), $"EDC rejects changed payload {pattern}");
+        }
+
+        // Literal long division, independent of the production feedback-register algorithm.
+        static uint PolynomialRemainder(ReadOnlySpan<byte> frame)
+        {
+            BigInteger polynomial = new(frame, isUnsigned: true, isBigEndian: true);
+            BigInteger generator = new(0x180000011UL);
+            while (polynomial.GetBitLength() > 32)
+                polynomial ^= generator << checked((int)(polynomial.GetBitLength() - 33));
+            return (uint)polynomial;
+        }
     }
 
     private static void TestEcc()
@@ -625,7 +741,8 @@ internal static class SelfTests
             FinalTemperature: 0.25,
             Algorithm: SolverAlgorithm.StateControl,
             BridgeBytes: 2,
-            BeamWidth: 8,
+            // Preserve the quality threshold for sparse alternating targets after ECC propagation.
+            BeamWidth: 16,
             RetryBeamWidth: 0,
             RetryFrameFraction: 0,
             BatchFrames: 8,

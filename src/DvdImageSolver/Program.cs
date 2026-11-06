@@ -47,6 +47,9 @@ internal static class Program
             return SolveMultipleBlocks(arguments, fillSectors);
         }
 
+        if (ReadBoolean(arguments, "read-compatibility", fallback: false))
+            throw new ArgumentException("--read-compatibility true requires --fast-output true and --algorithm dispersion.");
+
         string? outputPath = arguments.Has("output") ? arguments.Require("output") : null;
         string? isoOutputPath = arguments.Has("iso-output") ? arguments.Require("iso-output") : null;
         if (outputPath is null && isoOutputPath is null)
@@ -436,6 +439,10 @@ internal static class Program
             throw new ArgumentException("--fast-output true requires --algorithm dispersion.");
         }
 
+        bool readCompatibility = ReadBoolean(arguments, "read-compatibility", fallback: false);
+        if (readCompatibility && !fastOutput)
+            throw new ArgumentException("--read-compatibility true requires --fast-output true and --algorithm dispersion.");
+
         int iterationsPerBlock = arguments.Has("iterations-per-block")
             ? arguments.GetInt("iterations-per-block", 0)
             : arguments.GetInt(
@@ -548,7 +555,8 @@ internal static class Program
             arguments.GetInt("batch-candidates", 4),
             arguments.GetInt("search-lanes", 1),
             arguments.GetInt("fast-parallelism", 0),
-            PreserveExistingIso: hybridMode);
+            PreserveExistingIso: hybridMode,
+            ReadCompatibility: readCompatibility);
         int totalBlocks = checked((int)(fillSectors / DvdEccBlockEncoder.SectorCount));
         int progressEvery = Math.Max(1, totalBlocks / 100);
         if (fastOutput)
@@ -754,6 +762,9 @@ internal static class Program
             DispersionPaletteDescription() + ", "
             + "image sampled at every payload code-word center");
 
+        if (options.ReadCompatibility)
+            Console.WriteLine("read compatibility=bridge-9b-v1 (experimental sector-local 0x92-to-0x9B bridges)");
+
         FastDispersionWriteResult result = FastDvdImageFileWriter.WritePrepared(
             arguments.Require("image"),
             isoOutputPath,
@@ -786,7 +797,10 @@ internal static class Program
             : totalMebibytes / result.Elapsed.TotalSeconds;
         Console.WriteLine(
             $"done: blocks={result.CompletedBlocks}, controlled={result.ControlledWords}, "
-            + "payload-transition-class-error=0, boundary=not replayed, "
+            + (options.ReadCompatibility
+                ? $"compatibility changes={result.CompatibilityChanges}, payload-transition-class-error=not evaluated, "
+                : "payload-transition-class-error=0, ")
+            + "boundary=not replayed, "
             + $"rate={finalRate:F2} MiB/s, elapsed={result.Elapsed.TotalSeconds:F1}s, "
             + $"output={isoOutputPath}");
         return 0;
@@ -1365,6 +1379,8 @@ internal static class Program
               --fast-output true|false Direct dispersion ISO output without ECC/EFM replay
                                         (default false; true in hybrid mode)
               --fast-parallelism 0..64 Fast-output workers; 0 selects processor count (default 0)
+              --read-compatibility true|false
+                                        Experimental 0x9B bridge for fast dispersion (default false)
               --iterations-per-block N  Full/state-control passes; dispersion ignores search (defaults 100/3/1)
               --iso-output FILE         Write a directly burnable 2048-byte/sector ISO image
               --iso-sectors N           Sector count for a new minimal ISO (image mode reuses total sectors)
@@ -1404,8 +1420,11 @@ internal static class Program
             black/white images use nearest-neighbor sampling to preserve their dither pattern.
             Other images retain alpha-weighted bilinear sampling. Q=0x66 and 0xB9 are not
             generated; old ISOs retain readback of 66 as black and B9 as nominal dark gray 85.
-            With --fast-output true, payload selection is unchanged but final ECC/EFM boundary and
-            DSV verification are skipped; the JSON finalBoundary is therefore null.
+            With --fast-output true, final ECC/EFM boundary and DSV verification are skipped;
+            the JSON finalBoundary is therefore null. --read-compatibility true optionally replaces
+            eligible 0x92 run starts with 0x9B, within each sector's owned drawing bytes. It may
+            improve readback on affected drives/media; it is experimental and defaults off.
+            Full/state-control output and exact scrambled-byte test patterns do not accept this option.
 
             Hybrid --data-dir mode builds a mountable ISO9660/Joliet filesystem. Files default to the inner ring;
             --file-position outer reserves the outer ring for files and draws between front metadata and files.

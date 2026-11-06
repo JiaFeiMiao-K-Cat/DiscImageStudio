@@ -32,6 +32,15 @@
                                        Margin="0,6,0,0" />
                         </StackPanel>
                     </Border>
+                    <controls:VisibilityGate IsOpen="{Binding IsDvdBurn}" Margin="0,14,0,0">
+                        <StackPanel>
+                            <controls:DvdReadCompatibilityToggle IsChecked="{Binding DvdReadCompatibility}"
+                                                                IsEditable="{Binding CanEditDvdReadCompatibility}" />
+                            <controls:VisibilityGate IsOpen="{Binding UseCalibrationPattern}">
+                                <TextBlock Text="{loc:Text DvdReadCompatibility.FrozenHint}" Style="{StaticResource HintText}" Margin="0,6,0,0" />
+                            </controls:VisibilityGate>
+                        </StackPanel>
+                    </controls:VisibilityGate>
                 </StackPanel>
             </controls:SectionCard>
 

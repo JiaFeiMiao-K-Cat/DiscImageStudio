@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### 中文
+
+- 修复 CD 数据盘 DAO 子码沿用音轨 ADR3/ISRC 包的问题：按扇区位置重建完整 ADR1 时间包并重算 CRC，覆盖预间隙、数据区与导出区；保留原有 TOC、ADR1/ADR2 和 P/R-W 处理。补充边界、两种子通道格式及音轨输出逐字节不变的回归。
+- 新增默认关闭的「DVD 读取兼容性（实验性）」选项，用局部 `9B` 保护字节缓解 #90 中连续绘图纹理可能引起的读回错误；ISO 导出、流式刻录和标定使用相同规则，文件内容和透明区域不参与改写。工程与标定记录保存该选项，旧记录保持关闭；效果和盘面纹理仍需实盘反馈。
+- 按 ECMA-267 修正 DVD EFMPlus 模型在状态 3/4 下的副 SY6 同步码，纠正精确编码及 DSV/边界回放；补充完整同步码标准向量和实际编码回归。
+- 修正 DVD 数据帧 EDC 计算中重复补 32 位零的问题，使校验字节及后续 ECC/调制回放符合标准；补充独立多项式长除法和完整数据帧向量检查。
+
+### English
+
+- Fixed CD data-disc DAO subcode retaining audio ADR3/ISRC packets. Rebuild complete ADR1 timing packets and CRCs from the sector position in the pregap, program area and lead-out, while retaining existing TOC, ADR1/ADR2 and P/R-W handling. Added boundary, subchannel-format and byte-for-byte audio-output regression coverage.
+- Added an opt-in “DVD read compatibility (experimental)” option using local `9B` bridge bytes to mitigate readback errors associated with repeated drawing textures in #90. ISO export, streaming burns and calibration share the rule; file contents and alpha-excluded bytes are protected. Projects and calibration records retain the setting, with legacy records defaulting to off. Readability and visual effects still need physical-disc feedback.
+- Corrected the DVD EFMPlus model's secondary SY6 code for states 3/4 to match ECMA-267, fixing exact encoding and DSV/boundary replay. Added standard vectors for all sync codes and an encoded-output regression.
+- Fixed an extra 32 zero bits in the DVD data-frame EDC calculation, correcting the checksum and subsequent ECC/modulation replay. Added independent polynomial-division checks and complete data-frame vectors.
+
 ## [1.4.2] - 2026-11-06
 
 ### 中文

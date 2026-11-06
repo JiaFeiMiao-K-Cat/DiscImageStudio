@@ -96,6 +96,7 @@ public partial class BurnViewModel : ObservableObject
         {
             InvalidateConfirmation();
             OnPropertyChanged(nameof(IsSetupEnabled));
+            OnPropertyChanged(nameof(CanEditDvdReadCompatibility));
             RefreshDevicesCommand.NotifyCanExecuteChanged();
             RefreshSpeedsCommand.NotifyCanExecuteChanged();
             StartBurnCommand.NotifyCanExecuteChanged();
@@ -113,6 +114,11 @@ public partial class BurnViewModel : ObservableObject
         };
         _state.PropertyChanged += (_, args) =>
         {
+            if (args.PropertyName == nameof(DiscParametersState.DvdReadCompatibility) && !UseCalibrationPattern)
+            {
+                OnPropertyChanged(nameof(DvdReadCompatibility));
+                UpdateSourceSummary();
+            }
             if (args.PropertyName == nameof(DiscParametersState.CdDataDirectory)
                 && !UseCalibrationPattern
                 && _shell.CurrentProject?.Family == OpticalDiscFamily.CompactDisc)
@@ -143,6 +149,20 @@ public partial class BurnViewModel : ObservableObject
     /// <summary>Exposed for the view's two-way bindings to the shared parameters, so the page
     /// can bind this view model directly like every other workspace page.</summary>
     public DiscParametersState State => _state;
+
+    // Calibration burns replay the saved target, regardless of changes to the next-target setup.
+    public bool DvdReadCompatibility
+    {
+        get => UseCalibrationPattern
+            ? _shell.Calibration.Target?.Parameters.DvdReadCompatibility ?? false
+            : _state.DvdReadCompatibility;
+        set
+        {
+            if (!UseCalibrationPattern) _state.DvdReadCompatibility = value;
+        }
+    }
+
+    public bool CanEditDvdReadCompatibility => !UseCalibrationPattern && IsSetupEnabled;
 
     /// <summary>Workspace navigation for the page's cross-workspace links.</summary>
     public IRelayCommand<Workspace> NavigateCommand => _shell.NavigateCommand;
@@ -211,6 +231,7 @@ public partial class BurnViewModel : ObservableObject
     private void OnFamilyInputsChanged()
     {
         OnPropertyChanged(nameof(IsDvdBurn));
+        OnPropertyChanged(nameof(DvdReadCompatibility));
         OnPropertyChanged(nameof(IsBluRayBurn));
         OnPropertyChanged(nameof(FamilyLabel));
         InvalidateConfirmation();
@@ -264,7 +285,7 @@ public partial class BurnViewModel : ObservableObject
             identity = string.Join("\u001f", "dvd", _design.CompositeRevision, _state.DvdTotalSectors,
                 _state.DvdInnerRadius, _state.DvdOuterRadius,
                 _state.DvdPitchLinear, _state.DvdPitchQuadratic, _state.DvdPitchCubic,
-                _state.DvdDataDirectory, _state.DvdVolumeLabel, _state.DvdFilesAtOuterRing,
+                _state.DvdDataDirectory, _state.DvdVolumeLabel, _state.DvdFilesAtOuterRing, _state.DvdReadCompatibility,
                 _state.ToneDitherStrength, _state.ToneBrightness, _state.ToneSrgbLinearization);
         }
         else if (IsBluRayBurn)
@@ -501,6 +522,7 @@ public partial class BurnViewModel : ObservableObject
         bool ownsBusyState = false;
         _isPreparingBurn = true;
         OnPropertyChanged(nameof(IsSetupEnabled));
+        OnPropertyChanged(nameof(CanEditDvdReadCompatibility));
         UpdateActionState();
         try
         {
@@ -730,6 +752,7 @@ public partial class BurnViewModel : ObservableObject
             }
 
             OnPropertyChanged(nameof(IsSetupEnabled));
+            OnPropertyChanged(nameof(CanEditDvdReadCompatibility));
             UpdateActionState();
         }
     }
@@ -852,7 +875,8 @@ public partial class BurnViewModel : ObservableObject
             PitchLinear: ParameterParser.ParseDouble(_state.DvdPitchLinear, L.T("DVD 轨距一次项")),
             PitchQuadratic: ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("DVD 轨距二次项")),
             PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("DVD 轨距三次项")),
-            Tone: _state.DvdTone);
+            Tone: _state.DvdTone,
+            ReadCompatibility: _state.DvdReadCompatibility);
         options.Validate();
         return options;
     }

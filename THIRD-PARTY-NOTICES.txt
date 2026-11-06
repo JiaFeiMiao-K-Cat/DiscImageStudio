@@ -14,6 +14,7 @@ When updating dependencies or the bundled runtime, update these notices too.
 Components
 ----------
 - CDImage (arduinocelentano): GPL-3.0-or-later; adapted CD-DA interleaver.
+- disc-probe (Ashley-QwQ and contributors): GPL-3.0; adapted experimental DVD bridge rule.
 - CommunityToolkit.Mvvm 8.4.0: MIT; upstream third-party notices retained.
 - MahApps.Metro.IconPacks.Core and .Lucide 6.2.1: MIT wrapper code.
 - Lucide 0.552.0 artwork: ISC; portions derived from Feather: MIT.
@@ -62,6 +63,22 @@ restored on 2026-10-25. Copyright (c) 2026 Disc Image Studio contributors.
 CDImage itself acknowledges [unDEFER] / CD PAINT as an earlier source for
 its converter and coordinate conversion work; that acknowledgement is
 preserved here. This attribution does not replace the GPL obligations.
+
+disc-probe source attribution
+----------------------------
+Project: disc-probe (https://github.com/Ashley-QwQ/disc-probe)
+Authors: Ashley-QwQ and disc-probe contributors.
+License: GNU General Public License version 3; the full text is in LICENSE.
+Upstream revision reviewed: 7574eca39e009f70c9b80a9a0ddb5bbe3d392173
+Source: https://github.com/Ashley-QwQ/disc-probe/blob/7574eca39e009f70c9b80a9a0ddb5bbe3d392173/tools/bridge_iso.py
+
+The optional DVD read-compatibility guard adapts the sector-local 64-byte
+window / first-0x92-to-0x9B rule into C#. Unlike the standalone ISO patcher,
+the writer only changes bytes explicitly owned by the drawing generator;
+filesystem data and alpha-excluded bytes are protected. The implementation
+is in src/DvdImageSolver/Solver/DvdReadCompatibilityGuard.cs. Adaptation and
+integration: Copyright (c) 2026 Disc Image Studio contributors. This is an
+experimental mitigation, not a guarantee of compatibility with every drive.
 
 Standards and reference material
 -------------------------------

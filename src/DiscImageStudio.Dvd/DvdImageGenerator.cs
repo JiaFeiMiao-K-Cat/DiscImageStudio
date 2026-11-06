@@ -1,4 +1,6 @@
 using DiscImageStudio.Core;
+using DiscImageStudio.Core.Calibration;
+using System.Text.Json;
 using DvdImageSolver.Solver;
 
 namespace DiscImageStudio.Dvd;
@@ -15,6 +17,43 @@ public sealed record DvdImageRequest(
 /// CLI argument parsing and exit-code handling are deliberately outside this API.</summary>
 public static class DvdImageGenerator
 {
+    /// <summary>Writes a frozen calibration target and the metadata needed to interpret
+    /// its drawing bytes. The caller can stage these files together with its calibration record.</summary>
+    public static DvdStreamingSummary GenerateCalibration(CalibrationTarget target, string outputPath,
+        DvdStreamingOptions options, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentException.ThrowIfNullOrWhiteSpace(outputPath);
+        cancellationToken.ThrowIfCancellationRequested();
+        options.Validate();
+        if (target.Parameters.Kind != CalibrationDiscKind.Dvd || target.Parameters.Sectors != options.TotalSectors)
+            throw new ArgumentException("Calibration target and output must describe the same DVD sector capacity.", nameof(target));
+        options = options with { ReadCompatibility = target.Parameters.DvdReadCompatibility };
+        string path = Path.GetFullPath(outputPath);
+        DvdStreamingSummary summary;
+        using (FileStream output = new(path, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            summary = DvdStreamingGenerator.GeneratePattern(target, output, options, cancellationToken: cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        var metadata = new
+        {
+            format = "dvd-calibration-payload-v1",
+            sourceImage = "calibration",
+            startLba = 0,
+            fillSectors = options.TotalSectors,
+            totalSectors = options.TotalSectors,
+            readCompatibility = options.ReadCompatibility ? "bridge-9b-v1" : "off",
+            compatibilityChanges = summary.CompatibilityChanges,
+            imageMapping = DvdStreamingGenerator.CreateSolveOptions(options, 0, options.TotalSectors).ImageMapping,
+        };
+        File.WriteAllText(path + ".json", JsonSerializer.Serialize(metadata, new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        }));
+        return summary;
+    }
+
     public static DiscImageResult Generate(DvdImageRequest request,
         IProgress<DiscJobProgress>? progress = null, CancellationToken cancellationToken = default)
     {

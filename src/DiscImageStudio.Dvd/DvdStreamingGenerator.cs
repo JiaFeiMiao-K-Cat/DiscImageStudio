@@ -21,7 +21,8 @@ public sealed record DvdStreamingOptions(
     double PitchQuadratic = 0,
     double PitchCubic = 0,
     ToneProfile? Tone = null,
-    bool UseSampleReuse = true)
+    bool UseSampleReuse = true,
+    bool ReadCompatibility = false)
 {
     /// <summary>Physical channel-bit length of the DVD scheme; the UI no longer exposes it.</summary>
     public const double StandardChannelBitLengthNm = 133.3;
@@ -103,7 +104,8 @@ public sealed record DvdStreamingSummary(
     uint Sectors,
     long BytesWritten,
     long ControlledWords,
-    TimeSpan Elapsed);
+    TimeSpan Elapsed,
+    long CompatibilityChanges = 0);
 
 public sealed class DvdHybridStreamingPlan
 {
@@ -203,7 +205,8 @@ public static class DvdStreamingGenerator
             summary.SectorsWritten,
             summary.BytesWritten,
             summary.ControlledWords,
-            summary.Elapsed);
+            summary.Elapsed,
+            summary.CompatibilityChanges);
     }
 
     /// <summary>
@@ -230,6 +233,9 @@ public static class DvdStreamingGenerator
         ArgumentNullException.ThrowIfNull(options);
         if (target.Parameters.Kind != CalibrationDiscKind.Dvd || target.Parameters.Sectors != options.TotalSectors)
             throw new ArgumentException("Calibration target and output must describe the same DVD sector capacity.", nameof(target));
+        // A calibration target describes the bytes that were generated/burned.
+        // Later changes to the project output checkbox must not change that target.
+        options = options with { ReadCompatibility = target.Parameters.DvdReadCompatibility };
         if (target.UsesReferencePattern)
         {
             ArgumentNullException.ThrowIfNull(output);
@@ -240,7 +246,7 @@ public static class DvdStreamingGenerator
                 value => progress?.Invoke(new DvdStreamingProgress(value.BytesWritten, value.TotalBytes,
                     value.CompletedBlocks, value.TotalBlocks, value.Elapsed)), cancellationToken);
             return new DvdStreamingSummary("calibration", summary.SectorsWritten, summary.BytesWritten,
-                summary.ControlledWords, summary.Elapsed);
+                summary.ControlledWords, summary.Elapsed, summary.CompatibilityChanges);
         }
         if (!target.HasWideAddressBands)
             return GeneratePattern(target.Sample, output, options, progress, cancellationToken);
@@ -281,7 +287,8 @@ public static class DvdStreamingGenerator
             summary.SectorsWritten,
             summary.BytesWritten,
             summary.ControlledWords,
-            summary.Elapsed);
+            summary.Elapsed,
+            summary.CompatibilityChanges);
     }
 
     public static DvdStreamingSummary GenerateHybrid(
@@ -348,7 +355,8 @@ public static class DvdStreamingGenerator
             options.TotalSectors,
             options.ContentLength,
             drawing.ControlledWords,
-            stopwatch.Elapsed);
+            stopwatch.Elapsed,
+            drawing.CompatibilityChanges);
     }
 
     internal static MultiBlockSolveOptions CreateSolveOptions(
@@ -383,7 +391,8 @@ public static class DvdStreamingGenerator
             imageMapping,
             Algorithm: SolverAlgorithm.Dispersion,
             FastParallelism: options.FastParallelism,
-            UseSampleReuse: options.UseSampleReuse);
+            UseSampleReuse: options.UseSampleReuse,
+            ReadCompatibility: options.ReadCompatibility);
     }
 
     private static uint AlignToEccBlock(uint lba, uint psnOffset)
