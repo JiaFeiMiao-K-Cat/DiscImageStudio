@@ -157,11 +157,10 @@ public static class GratingPaletteCommand
                         : 60 * (((red - green) / delta) + 4);
                     if (hue < 0) hue += 360;
                     double saturation = max > 1e-9 ? delta / max : 0;
-                    double theta = ((Math.Atan2(y, x) * 180 / Math.PI) + 90 + 360) % 360;
-                    int wedge = (int)(theta / 120) % 3;
-                    int paletteIndex = wedge == 0
-                        ? PaletteForHue(hue)
-                        : wedge == 1 ? AccentForHue(hue, saturation) : -1;
+                    // One seamless colour mapping over the whole disc. The old
+                    // three 120° sectors were only an A/B comparison layout and
+                    // produced visibly hard boundaries; never use them for output.
+                    int paletteIndex = saturation < 0.16 ? -1 : PaletteForHue(hue);
                     int index = (row * _cols) + col;
                     _coverage[index] = (byte)Math.Clamp((int)Math.Round(luminance * 255), 0, 255);
                     // 1 = white (92), 2..6 = B/G/C/D/E. Black A5 is the off state.
@@ -202,18 +201,6 @@ public static class GratingPaletteCommand
             >= 195 and < 330 => 5, // E blue (violet approximated)
             _ => 3,
         };
-
-        private static int AccentForHue(double hue, double saturation)
-        {
-            if (saturation < 0.22) return 1;
-            return hue switch
-            {
-                >= 20 and < 55 => 2,
-                >= 55 and < 150 => 1,
-                >= 195 and < 260 => 5,
-                _ => 1,
-            };
-        }
 
         private static double WordDither(ulong index)
         {
