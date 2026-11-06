@@ -39,11 +39,13 @@ Disc Image Studio は、1 枚の画像を CD、DVD、片面一層 BD-R ディス
 
 ![エクスポート：ライトテーマと出力イメージ](docs/images/ui-export.png)
 
+![macOS GUI：ホーム・デザイン・エクスポート](docs/images/macos-home.png)
+
 ---
 
 ## クイックスタート
 
-Windows では `win-x64.exe` で終わるファイルをダウンロードして実行します。Linux または macOS では、CPU に合った**実験的な CLI** のアーカイブを展開し、`./disc-image-studio --help` を実行してください。いずれも .NET ランタイムを同梱しています。[GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+Windows では `win-x64.exe` で終わるファイルをダウンロードして実行します。Linux または macOS では、CPU に合った**実験的な CLI** のアーカイブを展開し、`./disc-image-studio --help` を実行してください。いずれも .NET ランタイムを同梱しています。macOS には実験的なネイティブ SwiftUI GUI もあり、ソースからビルドできます。詳しくは [macOS GUI](docs/MACOS_GUI.md) をご覧ください。[GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 ### 1. プロジェクトを新規作成
 
@@ -110,6 +112,21 @@ dotnet run --project src/DvdImageSolver --configuration Release -- selftest
 dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Release
 ```
 
+### macOS GUI（実験的）
+
+macOS には、同じ CLI とディスク生成アルゴリズムを再利用するネイティブ SwiftUI GUI もあります。画面構成は Windows デスクトップ版と同じで、ホーム（テンプレート／最近のプロジェクト）、デザイン（レイヤーとトーン）、プレビュー（設計投影／製品読み戻し）、書き出し（CD 音声トラック／データディスク、DVD/BD ISO）、書き込み（システムの drutil〈ファイルモード、CD/DVD のみ〉またはストリーミングヘルパー〈CD/DVD は DiscRecording、BD は IOKit MMC のシーケンシャル書き込み〉）、校正（ターゲット、写真補正、逆算、適用の補助校正ウィザード）を順にたどります。プロジェクトファイル `.discproj` は Windows と相互互換で、エンコードはすべて CLI が実行し、ログと進捗をそのまま表示します。この流れは Windows と同じで、issue #49 の「2 枚法」（半白黒の粗調整ディスク → 内蔵ターゲットの微調整ディスク）にも対応します。macOS の UI は簡体字中国語と英語に対応し、BD-R 4× 25GB と DVD/BD の同梱ファイルは実機で検証済みです。証明書と公証の secrets を設定した CI は、署名・公証済みの App と DMG を生成します。
+
+```sh
+# 1. 自己完結型 CLI を発行（.NET 10 SDK が必要）
+macos/scripts/build-cli.sh --rid osx-arm64
+
+# 2. .app を組み立て（前の手順の CLI を同梱）
+macos/scripts/build-app.sh
+open macos/build/DiscImageStudio.app
+```
+
+ビルドの前提、パッケージング、トラブルシューティングは [macOS GUI](docs/MACOS_GUI.md) をご覧ください。
+
 バージョン規則、CI による EXE 生成、Release ドラフトの確認、MSIX パッケージングと署名の手順については[リリースガイド](docs/RELEASING.md)をご覧ください。
 
 ## コマンドライン
@@ -141,12 +158,13 @@ CLI は PNG、JPEG、BMP、GIF を読み込み、アニメーション画像に�
 | `bd-generate` | 完全な BD-R ISO を生成し、`<iso>.json` サイドカーを書き出します |
 | `bd-info` / `bd-probe` / `bd-encode` | BD パラメーター、生ペイロードのプローブ、または単一 ECC クラスターの診断情報をエクスポートします |
 
-各コマンドの全パラメーターは、対応するドキュメントをご覧ください。
+各コマンドの全パラメーターは、対応するドキュメントをご覧ください。`disc-image-studio catalog --json` は機械可読なコマンドカタログ（モジュール、コマンド、パラメーター型、既定値、選択肢、機能フラグ）を出力し、GUI の自己診断、スナップショット回帰、トラブルシューティングに使われます。`catalog` に `--json` を付けない場合は人間が読める概要を出力します。
 
 ## ソース構成
 
 ```text
 src/DiscImageStudio.Cli/     Linux / macOS 用のオフライン CLI
+macos/                       macOS の SwiftUI GUI、ビルドとパッケージングのスクリプト
 src/DiscImageStudio.ImageIO/  WIC とクロスプラットフォームの画像コーデック
 src/DiscImageStudio.Core/    メディア非依存のモジュール契約、プロジェクト/プリセットモデル、ジョブとコマンドカタログ
 src/DiscImageStudio.Imaging/ CD/DVD/BD 共通の画像前処理とディザリング補助
@@ -175,6 +193,7 @@ docs/                        アーキテクチャ、エンジン、プリセッ
 | [DISC_PRESETS.md](docs/DISC_PRESETS.md) | 編集可能なディスクプリセットの階層型 JSON 形式とマージ規則 |
 | [CALIBRATION.md](docs/CALIBRATION.md) | 写真補正（ディスク実物の最外縁と中心穴の縁を枠で指定）、曲線キャリブレーションと DVD の 3 次トラックピッチフィッティング |
 | [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md) | CD / DVD 生成物理モデルの再検証 |
+| [MACOS_GUI.md](docs/MACOS_GUI.md) | macOS SwiftUI GUI のワークフロー、ビルド、パッケージング、CLI 探索規則 |
 | [VALIDATION.md](docs/VALIDATION.md) | 各回のビルド、回帰テスト、実ディスクテストのローカル検証記録 |
 | [RELEASING.md](docs/RELEASING.md) | GitHub Release、MSIX パッケージング、署名テストとストア申請の手順 |
 | [CHANGELOG.md](CHANGELOG.md) | バージョンごとの変更履歴 |

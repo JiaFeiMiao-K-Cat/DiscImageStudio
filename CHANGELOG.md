@@ -2,6 +2,39 @@
 
 ## Unreleased
 
+### 中文
+
+- **实验性功能：macOS 原生 SwiftUI 图形界面。** `macos/` 新增 SwiftUI 客户端（SwiftPM），界面形态与 Windows 桌面版一致：主页（模板／最近工程）、设计（图层画布／属性／影调／随盘文件）、预览（设计投影／成品读回）、导出（CD 音轨或数据盘、DVD/BD ISO）、刻录（`drutil` 文件模式与 DiscRecording 流式模式）、标定（完整辅助标定向导）与设置／关于。工程文件 `.discproj` 与 Windows 双向兼容，所有编码仍由 `disc-image-studio` 子进程完成，参数构造与 Windows 的 `ExportViewModel`／`LivePreviewViewModel` 对齐。
+- CLI 新增 `catalog [--json]`、`presets --json`、`bd-preview`、`bd-preview-readback`：分别输出机器可读的命令目录与盘片预设、渲染蓝光设计投影与成品读回图；GUI 与 CLI 共享同一份命令与预设描述。
+- **实验性功能：macOS 辅助标定升级为完整流程。** 标定页提供生成标靶、照片双椭圆矫正、沿曲线/分界描点反推、按阈值应用参数的三步向导，判定阈值与 Windows 一致（平均 ≤0.35 mm、最大 ≤0.8 mm）；额外支持 issue #49 的「两张法」（半黑白粗调盘 → 内置靶标精调盘）。标定会话是工程 `calibration/<id>.calibration.json`（schema 6，Windows 双向兼容），照片、轮廓、描线与确认状态都写在该文件里，是唯一事实来源；工程通过 `calibrationSessionPath` 恢复，重开时解码会话、重建矫正图并自动重算候选（候选不另存），记录列表直接扫描 `*.calibration.json`。粗调需要人工描点，不内置密集环相位自动提取。
+- CLI 新增标定命令组：`calibration-target`、`calibration-photo`、`calibration-fit`、`calibration-coarse-target`、`calibration-coarse-fit`、`calibration-session-write`、`calibration-session-read`，覆盖图案生成、照片矫正、拟合候选与会话读写，供 GUI 与脚本复用。
+- 新增 `macos/scripts/` 构建与打包脚本（CLI 自包含发布、`.app` 组装、zip 分发）、`docs/MACOS_GUI.md` 与 `macos-gui` CI 工作流。
+- 四份 README 补充 macOS 图形界面的入口、工作流形态、构建方式与文档索引。
+- macOS BD 流式写入改为原始 MMC：助手通过 IOKit `SCSITaskDeviceInterface` 直接发 `SET CD SPEED`、`WRITE(10)`、`SYNCHRONIZE CACHE`、`CLOSE TRACK/SESSION`，绕开 DiscRecording 的 BD 路径；已在 MATSHITA UJ260AF + 25GB BD-R 上以 4× 完整写入并验证图案（约 31 分钟（含收尾））。文件模式 drutil 仍只覆盖 CD/DVD。
+- macOS 构建支持 Developer ID 签名与 Apple 公证：`build-app.sh --sign-identity` 对 CLI/助手/应用分别签名（hardened runtime + timestamp），`notarize.sh` 完成 notarytool 提交、stapling 与 Gatekeeper 验证；CI 在配置证书与公证 secrets 后自动产出签名并公证的 zip，未配置时保持 ad-hoc。
+- macOS 打包新增拖动安装 DMG：`package-app.sh` 生成 zip + DMG（含 `/Applications` 快捷方式），DMG 用 Developer ID 签名；CI 对 `.app` 与 `.dmg` 分别公证并 stapling，上传物同时包含 zip、DMG 与校验和。
+- macOS 刻录页新增流式「生成并刻录」：CD 音频、DVD 数据（含随盘文件的混合 ISO）与 BD 数据盘可直接从当前工程生成并写入，CLI `--output -` / `solve --iso-output -` 与 `disc-burn-stream` 管道直连，带进度、日志与取消。
+- macOS 流式刻录日志改为 POSIX `read` 逐块读取，不再按 8 KB 批量刷新；增加速度选择（1×/2×/4×/8×/自动，默认 2×）和“成功后弹盘/失败保留”策略。
+- 限制流式进度输出频率（helper 每个百分点、CLI 每秒/每 1%），避免 stderr 管道和 GUI 被每块日志拖慢；BD 文件模式改为明确提示使用流式模式。
+- 流式默认关闭写后校验（可勾选「写入后校验」）；修复 DVD 校验读错误把已可读的盘报成失败。
+- macOS GUI 支持简体中文与英文界面：文案放入 `macos/Localization/{en,zh-Hans}.lproj`，跟随系统语言；动态字符串改用 `L("格式 %@", …)`，`build-app.sh` 把 `.lproj` 打包进 `Contents/Resources`。
+- macOS 预设导入/保存：主页「导入预设…」合并 schema 4 JSON 到用户 `disc-presets.json`；标定页「保存为预设…」把应用后的实测几何写成模板；新增 CLI `presets-import`。
+
+### English
+
+- **Experimental feature: a native SwiftUI GUI for macOS.** A new SwiftUI client under `macos/` (SwiftPM) follows the same workflow as the Windows desktop app: home (templates and recent projects), design (layer canvas, properties, tone, disc-bundled files), preview (design projection and artifact read-back), export (CD audio tracks or data discs, DVD/BD ISOs), burn (`drutil` file mode and DiscRecording streaming), calibration (the full assisted calibration wizard), and settings/about. Project files are `.discproj`, interoperable with Windows; all encoding still runs through the `disc-image-studio` child process, with arguments aligned to the Windows `ExportViewModel` / `LivePreviewViewModel`.
+- The CLI gains `catalog [--json]`, `presets --json`, `bd-preview`, and `bd-preview-readback`: a machine-readable command catalog and disc preset list, plus Blu-ray design-projection and artifact read-back renders. The GUI and the CLI share one command and preset description.
+- **Experimental feature: full assisted calibration on macOS.** The calibration page walks through target generation, two-ellipse photo rectification, tracing and parameter fitting, and applying the calibrated geometry, with the same thresholds as Windows (mean ≤0.35 mm, max ≤0.8 mm). It also implements the issue #49 two-disc approach — a half-black/half-white coarse disc followed by a fine disc generated from the built-in target. Calibration sessions are per-project `calibration/<id>.calibration.json` files (schema 6, Windows-compatible) that hold the photo, outline, traces, and confirmation state as the single source of truth; the project's `calibrationSessionPath` restores them, reopening decodes the session, rebuilds the rectified image, and recomputes candidates without storing them, and the record list is just a scan of `*.calibration.json`. Coarse calibration still requires manual tracing; automatic dense-ring phase extraction is not included.
+- The CLI gains a calibration command group: `calibration-target`, `calibration-photo`, `calibration-fit`, `calibration-coarse-target`, `calibration-coarse-fit`, `calibration-session-write`, and `calibration-session-read`, covering pattern generation, photo rectification, fit candidates, and session read/write for both the GUI and scripts.
+- Added the `macos/scripts/` build and packaging scripts (self-contained CLI publish, `.app` assembly, zip distribution), `docs/MACOS_GUI.md`, and a `macos-gui` CI workflow.
+- All four READMEs now describe the macOS GUI's workflow, its build steps, and the new documentation.
+- BD-R streaming on macOS now uses raw MMC instead of DiscRecording: the helper sends `SET CD SPEED`, `WRITE(10)`, `SYNCHRONIZE CACHE`, and `CLOSE TRACK/SESSION` through IOKit `SCSITaskDeviceInterface`. A full 25 GB BD-R was written at 4× on a MATSHITA UJ260AF and the pattern was verified (about 31 minutes including finalization). File mode (drutil) still covers CD/DVD only.
+- macOS builds now support Developer ID signing and Apple notarization: `build-app.sh --sign-identity` signs the CLI, burn helper, and app separately with hardened runtime and timestamps, and `notarize.sh` runs notarytool, staples the ticket, and checks Gatekeeper. With certificate and notarization secrets configured, CI produces a signed and notarized zip; without them it stays ad-hoc.
+- macOS packaging now produces a drag-to-install DMG alongside the zip: `package-app.sh` builds both (the DMG contains an `/Applications` shortcut) and signs the DMG with Developer ID; CI notarizes and staples the `.app` and `.dmg` separately and uploads the zip, DMG, and checksums.
+- The macOS burn page now supports streaming "generate and burn": CD audio, DVD data (including hybrid ISOs with bundled files), and BD data discs are generated from the current project and written directly through `--output -` / `solve --iso-output -` and `disc-burn-stream`, with progress, logs, and cancellation.
+- Streaming burns skip post-write verification by default (opt-in via “Verify after writing”); DVD progress falls back to the CLI `block X/Y` lines when the helper emits no `percent:`, while BD keeps helper progress so the fast generator cannot jump to 99%.
+- The macOS GUI now supports Simplified Chinese and English UI: strings live in `macos/Localization/{en,zh-Hans}.lproj` and follow the system language; runtime strings use `L("format %@", …)`, and `build-app.sh` bundles the `.lproj` folders into `Contents/Resources`.
+- Preset import/save on macOS: Home "Import presets…" merges a schema 4 JSON into the user `disc-presets.json`; the calibration page can save the applied measured geometry as a template; adds the CLI `presets-import` command.
 ## [1.4.2] - 2026-11-06
 
 ### 中文

@@ -126,6 +126,42 @@ public sealed class CdDiscModule : IOpticalDiscModule
         IProgress<DiscJobProgress>? progress,
         CancellationToken cancellationToken)
     {
+        string output = options.Require("output");
+        string dataDirectory = options.GetString("data-dir", string.Empty).Trim();
+        if (output == "-")
+        {
+            if (dataDirectory.Length > 0)
+            {
+                throw new ArgumentException(
+                    "cd-generate --output - streams raw CD-DA audio and cannot be combined with --data-dir.");
+            }
+
+            // The process owns standard output; flush it but never dispose it.
+            Stream standardOutput = Console.OpenStandardOutput();
+            CdGenerationSummary streamed = CdTrackGenerator.GenerateToStream(
+                options.Require("input"),
+                standardOutput,
+                ReadParameters(options),
+                options.GetBoolean("interleave", true),
+                value => progress?.Report(new DiscJobProgress(
+                    ModuleId,
+                    "generate",
+                    $"CD progress {value.Fraction:P1}",
+                    value.Fraction,
+                    value.CompletedBytes,
+                    value.TotalBytes,
+                    value.Elapsed)),
+                cancellationToken,
+                outputDescription: "stdout",
+                audioByteOrder: CdAudioByteOrder.BigEndian,
+                tone: ReadTone(options));
+            standardOutput.Flush();
+            return new DiscJobResult(ModuleId, request.Command, 0,
+                $"CD track complete: {streamed.Sectors} sectors, {streamed.BytesWritten} bytes, "
+                + $"interleave={streamed.Interleaved}, elapsed={streamed.Elapsed.TotalSeconds:F1}s, output=stdout",
+                "-");
+        }
+
         CdImageRequest image = new(
             options.Require("input"),
             options.Require("output"),

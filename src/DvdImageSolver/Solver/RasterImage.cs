@@ -40,14 +40,26 @@ internal sealed class RasterImage
         return new RasterImage(width, height, pixels);
     }
 
+    /// <summary>Nearest-pixel BGRA sample in disc coordinates, for cell-level palette
+    /// decisions. The normal monochrome path keeps using <see cref="SampleDisc"/>.</summary>
+    internal (byte Blue, byte Green, byte Red, byte Alpha) SampleDiscColor(
+        double xMm, double yMm, double outerRadiusMm)
+    {
+        double scale = (Math.Min(Width, Height) - 1) / (2.0 * outerRadiusMm);
+        int x = (int)Math.Floor(((Width - 1) / 2.0) + (xMm * scale) + 0.5);
+        int y = (int)Math.Floor(((Height - 1) / 2.0) - (yMm * scale) + 0.5);
+        if (x < 0 || y < 0 || x >= Width || y >= Height) return default;
+        int offset = ((y * Width) + x) * 4;
+        return (_bgra[offset], _bgra[offset + 1], _bgra[offset + 2], _bgra[offset + 3]);
+    }
+
     internal PixelSample SampleDisc(
         double xMm, double yMm, double outerRadiusMm, bool preserveDiscreteGrayscale = false)
     {
         double scale = (Math.Min(Width, Height) - 1) / (2.0 * outerRadiusMm);
         double pixelX = ((Width - 1) / 2.0) + (xMm * scale);
         double pixelY = ((Height - 1) / 2.0) - (yMm * scale);
-        if (pixelX < 0 || pixelY < 0 || pixelX > Width - 1 || pixelY > Height - 1)
-        {
+        if (pixelX < 0 || pixelY < 0 || pixelX > Width - 1 || pixelY > Height - 1)        {
             return default;
         }
 

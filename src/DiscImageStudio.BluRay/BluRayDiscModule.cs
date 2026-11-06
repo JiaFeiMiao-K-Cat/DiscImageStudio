@@ -83,6 +83,7 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
             if (!options.ContainsKey(option.Name)) throw new ArgumentException($"Missing --{option.Name}.");
         string? output = options.GetValueOrDefault("output");
         if (output is not null) ArgumentException.ThrowIfNullOrWhiteSpace(output);
+        bool streamToStandardOutput = output == "-";
 
         if (command.Name == "bd-encode")
         {
@@ -169,6 +170,43 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
             tone.Validate("tone");
             if (levels != ToneProfile.TwoLevels)
                 throw new ArgumentException("bd-generate accepts only --tone-levels 2.");
+            if (streamToStandardOutput)
+            {
+                BluRayIsoPlan streamPlan = BluRayIsoGenerator.PrepareDrawing(disc,
+                    options.GetValueOrDefault("data-dir"),
+                    options.GetValueOrDefault("volume-label", "BD_IMAGE"), filesAtOuterRing: filesAtOuterRing);
+                if (_imageLoader is null)
+                {
+                    return new(Descriptor.Id, command.Name, 2,
+                        "BD picture generation requires an image loader. Run bd-generate through the application or provide a BluRayGray8Raster loader.");
+                }
+                BluRayGray8Raster raster = _imageLoader(options["input"], token);
+                raster = BluRayToneMapping.Apply(raster, tone, token);
+                BluRayImagePayloadMapping streamMapping = new(disc, raster, new BluRayRunLengthMapping(invert));
+                TimeSpan nextReport = TimeSpan.Zero;
+                InlineProgress<BluRayStreamingProgress> streamReport = new(value =>
+                {
+                    if (value.Elapsed < nextReport && value.CompletedBytes != value.TotalBytes) return;
+                    nextReport = value.Elapsed + TimeSpan.FromMilliseconds(250);
+                    progress?.Report(new DiscJobProgress(ModuleId, "iso",
+                        $"BD {value.CompletedBytes}/{value.TotalBytes} bytes", value.Fraction,
+                        value.CompletedBytes, value.TotalBytes, value.Elapsed));
+                });
+                Stream standardOutput = Console.OpenStandardOutput();
+                BluRayStreamingSummary streamSummary = BluRayIsoGenerator.GenerateToStream(
+                    standardOutput, streamPlan, streamMapping, streamReport, token);
+                standardOutput.Flush();
+                string streamInterpretation = invert
+                    ? "dark-to-6T / light-to-3T run-count bias"
+                    : "dark-to-3T / light-to-6T run-count bias";
+                return new(Descriptor.Id, command.Name, 0,
+                    $"BD {(streamPlan.HasFileSystem ? "UDF 2.01" : "full-area drawing, no filesystem")}: "
+                    + $"{streamSummary.BytesWritten} bytes, {disc.TotalSectors} sectors; {streamPlan.FileCount} "
+                    + $"{(streamPlan.FilesAtOuterRing ? "outer" : "inner")} files; drawing sectors "
+                    + $"{streamPlan.DrawingStartSector}..{streamPlan.DrawingEndSectorExclusive - 1}; "
+                    + $"{streamInterpretation}. Output streamed to stdout.", "-");
+            }
+
             BluRayImageRequest image = new(options["input"], output!, disc, tone, invert,
                 options.GetValueOrDefault("data-dir"), options.GetValueOrDefault("volume-label", "BD_IMAGE"),
                 filesAtOuterRing);

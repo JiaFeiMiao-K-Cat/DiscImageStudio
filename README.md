@@ -39,11 +39,13 @@ Disc Image Studio 可将一张图片转换成符合 CD、DVD 与单层 BD-R 光�
 
 ![导出页：浅色主题与输出镜像](docs/images/ui-export.png)
 
+![macOS 图形界面：主页、设计与导出](docs/images/macos-home.png)
+
 ---
 
 ## 快速开始
 
-Windows 下载 `win-x64.exe` 后可直接运行。Linux 或 macOS 请下载与 CPU 匹配的**实验性 CLI** 压缩包，解压后运行 `./disc-image-studio --help`。这些发布包均自带 .NET 运行时。 [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+Windows 下载 `win-x64.exe` 后可直接运行。Linux 或 macOS 请下载与 CPU 匹配的**实验性 CLI** 压缩包，解压后运行 `./disc-image-studio --help`。这些发布包均自带 .NET 运行时。macOS 另有实验性的原生 SwiftUI 图形界面，可从源码一键构建，见 [macOS 图形界面](docs/MACOS_GUI.md)。 [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 ### 1. 新建工程
 
@@ -110,6 +112,21 @@ dotnet run --project src/DvdImageSolver --configuration Release -- selftest
 dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Release
 ```
 
+### macOS 图形界面（实验性）
+
+macOS 上还有一个原生 SwiftUI 图形界面，复用同一份 CLI 与同一套盘面生成算法，界面形态与 Windows 桌面版一致：主页从模板或最近工程开始，设计页编辑图层与影调，预览页做设计投影或成品读回，导出页生成 CD 音轨／数据盘或 DVD/BD ISO，刻录页通过系统 `drutil`（文件模式，仅 CD/DVD）或流式助手（CD/DVD 用 DiscRecording，BD 用 IOKit MMC 顺序写入）写盘，标定页完成辅助标定向导（标靶、照片矫正、反推、应用）。工程文件 `.discproj` 与 Windows 双向兼容；所有编码仍由 CLI 完成，运行时逐行转发日志与进度。该流程与 Windows 相同，并额外支持 issue #49 的「两张法」（半黑白粗调盘 → 内置靶标精调盘）。macOS 界面支持简体中文与英文；BD-R 4× 25GB 与 DVD/BD 随盘文件已实机验证；配置证书与公证 secrets 的 CI 会生成签名并公证的 App 与 DMG。
+
+```sh
+# 1. 发布自包含 CLI（需要 .NET 10 SDK）
+macos/scripts/build-cli.sh --rid osx-arm64
+
+# 2. 组装 .app（自动打包上一步的 CLI）
+macos/scripts/build-app.sh
+open macos/build/DiscImageStudio.app
+```
+
+构建前置、打包分发与故障排查见 [macOS 图形界面](docs/MACOS_GUI.md)。
+
 版本规则、CI 生成 EXE、Release 草稿检查、MSIX 打包与签名流程见[发布指南](docs/RELEASING.md)。
 
 ## 命令行
@@ -141,12 +158,13 @@ CLI 可读取 PNG、JPEG、BMP 和 GIF，使用动画图片的第一帧。下面
 | `bd-generate` | 生成完整 BD-R ISO，并写出 `<iso>.json` sidecar |
 | `bd-info` / `bd-probe` / `bd-encode` | 导出 BD 参数、原始负载探针或单个 ECC 簇诊断 |
 
-各命令的完整参数见对应文档。
+各命令的完整参数见对应文档。`disc-image-studio catalog --json` 输出机器可读的命令目录（模块、命令、参数类型、默认值、可选值与能力标志），用于 GUI 自检、快照回归与排障；`catalog` 不带 `--json` 时输出人类可读摘要。
 
 ## 源码结构
 
 ```text
 src/DiscImageStudio.Cli/     Linux 和 macOS 离线命令行入口
+macos/                       macOS SwiftUI 图形界面、构建与打包脚本
 src/DiscImageStudio.ImageIO/ WIC 和跨平台图像编解码
 src/DiscImageStudio.Core/    介质无关的模块契约、工程/预设模型、任务与命令目录
 src/DiscImageStudio.Imaging/ CD/DVD/BD 共用的图片预处理与抖动辅助
@@ -176,6 +194,7 @@ docs/                        架构、引擎、预设、发布等文档
 | [CALIBRATION.md](docs/CALIBRATION.md) | 照片矫正、三阶段取点示例、三次轨距拟合与再次精标 |
 | [CALIBRATION_TUTORIAL.md](docs/CALIBRATION_TUTORIAL.md) | Verbatim AZO DVD-R 实操教程：三个阶段的真实记录、取点图与精标后效果 |
 | [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md) | CD / DVD 生成物理模型复核 |
+| [MACOS_GUI.md](docs/MACOS_GUI.md) | macOS SwiftUI 图形界面的工程式工作流、构建、打包分发与命令行发现规则 |
 | [VALIDATION.md](docs/VALIDATION.md) | 各轮构建、回归与实盘测试的本地验证记录 |
 | [RELEASING.md](docs/RELEASING.md) | GitHub Release、MSIX 打包、签名测试与商店提交流程 |
 | [CHANGELOG.md](CHANGELOG.md) | 版本变更记录 |

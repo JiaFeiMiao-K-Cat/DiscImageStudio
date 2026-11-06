@@ -25,6 +25,8 @@ internal static class Program
                 "encode" => Encode(CliArguments.Parse(args.AsSpan(1))),
                 "calibrate" => Calibrate(CliArguments.Parse(args.AsSpan(1))),
                 "simulate" => Simulate(CliArguments.Parse(args.AsSpan(1))),
+                "preview-grating" => PreviewGrating(CliArguments.Parse(args.AsSpan(1))),
+                "grating" => GratingPaletteCommand.Run(CliArguments.Parse(args.AsSpan(1))),
                 "selftest" => RunSelfTests(),
                 _ => throw new ArgumentException($"Unknown command '{args[0]}'."),
             };
@@ -373,6 +375,28 @@ internal static class Program
             arguments.GetDouble("pitch-linear", 0),
             arguments.GetDouble("pitch-quadratic", 0),
             arguments.GetDouble("pitch-cubic", 0));
+        bool looksGrating = LooksLikeGrating(isoPath, startLba, fillSectors, options.PsnOffset);
+        bool grating = arguments.Has("grating")
+            ? ReadBoolean(arguments, "grating", fallback: false)
+            : looksGrating;
+        if (grating)
+        {
+            GratingReadbackOptions gratingOptions = new(
+                totalSectors, startLba, fillSectors, options.PsnOffset,
+                options.InnerRadiusMm, options.OuterRadiusMm,
+                options.ChannelBitLengthNm, options.Clockwise,
+                options.PreviewSize, options.SamplesPerSector,
+                options.PitchLinear, options.PitchQuadratic, options.PitchCubic);
+            GratingReadbackSummary gratingSummary =
+                GratingReadbackRenderer.Render(isoPath, outputPath, gratingOptions);
+            WriteJson(outputPath + ".json", gratingSummary);
+            Console.WriteLine(
+                $"grating readback: {gratingSummary.PreviewSize}x{gratingSummary.PreviewSize}, "
+                + $"coloured={gratingSummary.ColouredSamples}, off={gratingSummary.OffSamples}, "
+                + $"output={outputPath}");
+            return 0;
+        }
+
         IsoReadbackSummary summary = IsoReadbackRenderer.Render(isoPath, outputPath, options);
         WriteJson(outputPath + ".json", summary);
         Console.WriteLine(
@@ -381,6 +405,106 @@ internal static class Program
             + $"pitch={summary.TrackPitchMicrometres:F4} um, output={outputPath}");
         return 0;
     }
+
+    /// <summary>Sniffs a few ECC blocks for motif bytes that are not part of the
+    /// monochrome A5/66/92/B9 palette. A forced --grating bypasses the sniff.</summary>
+    private static bool LooksLikeGrating(string isoPath, uint startLba, uint fillSectors, uint psnOffset)
+    {
+        if (fillSectors < DvdEccBlockEncoder.SectorCount) return false;
+        long sectors = new FileInfo(isoPath).Length / DvdEccBlockEncoder.PayloadBytesPerSector;
+        if ((ulong)startLba + fillSectors > (ulong)sectors) fillSectors = 0;
+        if (fillSectors == 0) return false;
+        int blocks = (int)Math.Min(512, fillSectors / DvdEccBlockEncoder.SectorCount);
+        int stride = Math.Max(1, blocks / 32);
+        HashSet<byte> special = [0x09, 0x88, 0xA4, 0x71, 0x43, 0x80, 0x69, 0xB2, 0xD1, 0xCB, 0x3E, 0xC0, 0xCD, 0xE6];
+        int hits = 0;
+        byte[] block = new byte[DvdEccBlockEncoder.PayloadBytesPerBlock];
+        using FileStream iso = new(isoPath, FileMode.Open, FileAccess.Read, FileShare.Read,
+            bufferSize: block.Length, FileOptions.SequentialScan);
+        for (int b = 0; b < blocks; b += stride)
+        {
+            uint lba = startLba + checked((uint)b * DvdEccBlockEncoder.SectorCount);
+            iso.Seek((long)lba * DvdEccBlockEncoder.PayloadBytesPerSector, SeekOrigin.Begin);
+            iso.ReadExactly(block);
+            for (int sector = 0; sector < DvdEccBlockEncoder.SectorCount; sector++)
+            {
+                ReadOnlySpan<byte> mask = DvdDataFrameBuilder.PayloadScramblerMask(
+                    lba + psnOffset + (uint)sector);
+                for (int i = 0; i < DvdEccBlockEncoder.PayloadBytesPerSector; i += 64)
+                {
+                    byte q = (byte)(block[sector * DvdEccBlockEncoder.PayloadBytesPerSector + i] ^ mask[i]);
+                    if (special.Contains(q)) hits++;
+                    if (hits >= 8) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static int PreviewGrating(CliArguments arguments)
+    {
+        string isoPath = arguments.Require("iso");
+        string outputPath = arguments.Require("output");
+        (uint sidecarStartLba, uint sidecarFillSectors, uint sidecarTotalSectors) =
+            ReadSolveSummary(isoPath + ".json");
+        long isoSectors = new FileInfo(isoPath).Length / DvdEccBlockEncoder.PayloadBytesPerSector;
+        uint totalSectors = arguments.Has("total-sectors") || arguments.Has("total-blocks")
+            ? ReadTotalSectors(arguments)
+            : sidecarTotalSectors != 0 ? sidecarTotalSectors : checked((uint)isoSectors);
+        uint startLba = arguments.GetUInt("lba", sidecarStartLba);
+        uint fillSectors = arguments.Has("fill-sectors")
+            ? arguments.GetUInt("fill-sectors", 0)
+            : sidecarFillSectors != 0 ? sidecarFillSectors
+            : checked((uint)Math.Min(isoSectors, totalSectors) - startLba);
+        GratingReadbackOptions options = new(
+            totalSectors, startLba, fillSectors,
+            arguments.GetUInt("psn-offset", 0x30000),
+            RequireDouble(arguments, "inner-radius-mm"),
+            RequireDouble(arguments, "outer-radius-mm"),
+            arguments.GetDouble("channel-bit-nm", 133.3),
+            ReadClockwise(arguments),
+            arguments.GetInt("preview-size", 1024),
+            arguments.GetInt("samples-per-sector", 32),
+            arguments.GetDouble("pitch-linear", 0),
+            arguments.GetDouble("pitch-quadratic", 0),
+            arguments.GetDouble("pitch-cubic", 0));
+        GratingReadbackSummary summary = GratingReadbackRenderer.Render(isoPath, outputPath, options);
+        WriteJson(outputPath + ".json", summary);
+        Console.WriteLine(
+            $"grating readback: {summary.PreviewSize}x{summary.PreviewSize}, "
+            + $"coloured={summary.ColouredSamples}, off={summary.OffSamples}, "
+            + $"output={outputPath}");
+        return 0;
+    }
+
+    /// <summary>Reads the solve metadata sidecar so a generated ISO defaults to the
+    /// drawing range and disc size it was produced with; missing fields fall back to 0.</summary>
+    private static (uint StartLba, uint FillSectors, uint TotalSectors) ReadSolveSummary(
+        string sidecarPath)
+    {
+        if (!File.Exists(sidecarPath))
+        {
+            return (0, 0, 0);
+        }
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(sidecarPath));
+            return (
+                GetUIntProperty(document.RootElement, "startLba"),
+                GetUIntProperty(document.RootElement, "fillSectors"),
+                GetUIntProperty(document.RootElement, "totalSectors"));
+        }
+        catch (JsonException)
+        {
+            return (0, 0, 0);
+        }
+    }
+
+    private static uint GetUIntProperty(JsonElement element, string name)
+        => element.TryGetProperty(name, out JsonElement value) && value.TryGetUInt32(out uint result)
+            ? result
+            : 0u;
 
     private static int SolveMultipleBlocks(CliArguments arguments, uint fillSectors)
     {
@@ -392,6 +516,12 @@ internal static class Program
         }
 
         string isoOutputPath = arguments.Require("iso-output");
+        bool streamOutput = isoOutputPath == "-";
+        if (streamOutput)
+        {
+            // The raw ISO/stream is written to stdout; every diagnostic must go to stderr.
+            Console.SetOut(Console.Error);
+        }
         string[] unsupported =
         [
             "output",
@@ -431,6 +561,10 @@ internal static class Program
             arguments,
             hybridMode ? "dispersion" : "full");
         bool fastOutput = ReadBoolean(arguments, "fast-output", fallback: hybridMode);
+        if (streamOutput && !fastOutput)
+        {
+            throw new ArgumentException("--iso-output - requires --fast-output true.");
+        }
         if (fastOutput && algorithm != SolverAlgorithm.Dispersion)
         {
             throw new ArgumentException("--fast-output true requires --algorithm dispersion.");
@@ -504,11 +638,14 @@ internal static class Program
                     "The filesystem leaves no complete ECC Block for drawing in the selected file layout.");
             }
 
-            hybridIso = HybridIsoImageWriter.Create(isoLayout, isoOutputPath);
+            if (!streamOutput)
+            {
+                hybridIso = HybridIsoImageWriter.Create(isoLayout, isoOutputPath);
+            }
 
             Console.WriteLine(
-                $"hybrid ISO: files={hybridIso.FileCount}, directories={hybridIso.DirectoryCount}, "
-                + $"data={hybridIso.FileBytes} bytes, filesystem end LBA={hybridIso.DataEndLbaExclusive}, "
+                $"hybrid ISO: files={isoLayout.FileCount}, directories={isoLayout.DirectoryCount}, "
+                + $"data={isoLayout.FileBytes} bytes, filesystem end LBA={isoLayout.DataEndLbaExclusive}, "
                 + $"files={(filesAtOuterRing ? "outer" : "inner")}, drawing LBA {lba}..{lba + fillSectors - 1}");
             if (!fastOutput)
             {
@@ -548,7 +685,7 @@ internal static class Program
             arguments.GetInt("batch-candidates", 4),
             arguments.GetInt("search-lanes", 1),
             arguments.GetInt("fast-parallelism", 0),
-            PreserveExistingIso: hybridMode);
+            PreserveExistingIso: hybridMode && !streamOutput);
         int totalBlocks = checked((int)(fillSectors / DvdEccBlockEncoder.SectorCount));
         int progressEvery = Math.Max(1, totalBlocks / 100);
         if (fastOutput)
@@ -737,6 +874,18 @@ internal static class Program
         return outer;
     }
 
+    private static void WriteZeros(Stream output, long count)
+    {
+        if (count <= 0) return;
+        byte[] buffer = new byte[256 * 1024];
+        while (count > 0)
+        {
+            int chunk = (int)Math.Min(buffer.Length, count);
+            output.Write(buffer, 0, chunk);
+            count -= chunk;
+        }
+    }
+
     private static int WriteFastDispersionImage(
         CliArguments arguments,
         string isoOutputPath,
@@ -744,6 +893,84 @@ internal static class Program
         int progressEvery,
         HybridIsoWriteSummary? hybridIso)
     {
+        if (isoOutputPath == "-")
+        {
+            bool hybrid = arguments.Has("data-dir");
+            if (!hybrid && options.StartLba != 0)
+            {
+                throw new ArgumentException("--iso-output - requires --lba 0 so the stream starts at sector 0.");
+            }
+
+            using Stream stdout = Console.OpenStandardOutput();
+            HybridIsoImageWriter.LayoutPlan? layout = null;
+            bool filesAtOuterRing = false;
+            if (hybrid)
+            {
+                filesAtOuterRing = ReadFilesAtOuterRing(arguments);
+                layout = HybridIsoImageWriter.Plan(
+                    arguments.Require("data-dir"),
+                    options.ImageMapping.TotalSectors,
+                    arguments.Get("volume-label", "DVD_IMAGE"),
+                    filesAtOuterRing);
+                if (filesAtOuterRing)
+                {
+                    HybridIsoImageWriter.WriteOuterRingPrefix(layout, stdout, options.StartLba);
+                }
+                else
+                {
+                    HybridIsoImageWriter.WriteSequentialPrefix(layout, stdout, options.StartLba);
+                }
+            }
+
+            FastDvdStreamSummary summary = FastDispersionImageWriter.WriteStream(
+                arguments.Require("image"),
+                stdout,
+                options,
+                progress =>
+                {
+                    if (progress.CompletedBlocks == 1
+                        || progress.CompletedBlocks == progress.TotalBlocks
+                        || progress.CompletedBlocks % progressEvery == 0)
+                    {
+                        double mebibytes = progress.BytesWritten / (1024.0 * 1024.0);
+                        double rate = progress.Elapsed.TotalSeconds <= 0
+                            ? 0
+                            : mebibytes / progress.Elapsed.TotalSeconds;
+                        Console.Error.WriteLine(
+                            $"block {progress.CompletedBlocks}/{progress.TotalBlocks}, "
+                            + $"LBA={progress.BlockLba}, bytes={progress.BytesWritten}, "
+                            + $"rate={rate:F2} MiB/s, elapsed={progress.Elapsed.TotalSeconds:F1}s");
+                    }
+                },
+                CancellationToken.None);
+
+            if (layout is not null)
+            {
+                uint drawingEndLba = checked(options.StartLba + options.FillSectors);
+                if (filesAtOuterRing)
+                {
+                    HybridIsoImageWriter.WriteOuterRingSuffix(layout, stdout, drawingEndLba);
+                }
+                else
+                {
+                    long written = (long)drawingEndLba * IsoImageWriter.LogicalSectorBytes;
+                    long total = (long)options.ImageMapping.TotalSectors * IsoImageWriter.LogicalSectorBytes;
+                    WriteZeros(stdout, total - written);
+                }
+            }
+
+            stdout.Flush();
+            double streamMebibytes = summary.BytesWritten / (1024.0 * 1024.0);
+            double streamRate = summary.Elapsed.TotalSeconds <= 0
+                ? 0
+                : streamMebibytes / summary.Elapsed.TotalSeconds;
+            Console.Error.WriteLine(
+                $"done: blocks={summary.CompletedBlocks}, sectors={summary.SectorsWritten}, "
+                + $"bytes={summary.BytesWritten}, controlled={summary.ControlledWords}, "
+                + $"rate={streamRate:F2} MiB/s, elapsed={summary.Elapsed.TotalSeconds:F1}s, output=stdout");
+            return 0;
+        }
+
         Console.WriteLine(
             $"fast raw ISO fill: LBA {options.StartLba}.."
             + $"{checked(options.StartLba + options.FillSectors - 1)}, "
