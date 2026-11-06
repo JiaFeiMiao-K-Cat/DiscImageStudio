@@ -50,7 +50,7 @@ static NSString *gLastState = nil;
 static double gLastPercent = -1.0;
 
 static BOOL PercentIsNew(double percent) {
-    return gLastPercent < 0.0 || fabs(percent - gLastPercent) >= 0.1;
+    return gLastPercent < 0.0 || fabs(percent - gLastPercent) >= 1.0;
 }
 
 static void EmitPercent(double percent) {
@@ -187,7 +187,7 @@ static NSString *BurnFailureMessage(NSDictionary *status) {
     }
     NSNumber *percent = StatusValue(status, kDRStatusPercentCompleteKey);
     if ([percent isKindOfClass:[NSNumber class]]) {
-        EmitPercent(percent.doubleValue);
+        EmitPercent(percent.doubleValue * 100.0);
     }
 }
 
