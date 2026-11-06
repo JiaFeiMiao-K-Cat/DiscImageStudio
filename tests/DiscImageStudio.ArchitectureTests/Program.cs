@@ -81,6 +81,12 @@ GeneratedContentProgressTests.Run();
 OpticalWriteProgressTests.Run();
 OpticalBurnDiagnosticsTests.Run();
 CdBurnPhaseDiagnosticsTests.Run();
+DeviceDiagnosticsTests.Run();
+CdDaoDetailedDiagnosticsTests.Run();
+DvdDetailedDiagnosticsTests.Run();
+BluRayDetailedDiagnosticsTests.Run();
+CdProgressTelemetryTests.Run();
+BurnStreamDiagnosticsTests.Run();
 BurnProgressDisplayTests.Run();
 OpticalBurnOperationGateTests.Run();
 MediaSectorCountTests.Run();
@@ -105,9 +111,12 @@ CdParallelDataTests.Run();
 CdDataBurnTests.Run();
 CdDataDaoWorkflowTests.Run();
 CdMode1SectorTests.Run();
+CdDataSubchannelPatchTests.Run();
 CdDataRawImageTests.Run();
+CdDataSubchannelModeTests.Run();
 CdRawImageByteOrderTests.Run();
 CdBinaryTests.Run();
+CdPreviewMaskTests.Run();
 CdSimdSamplingTests.Run();
 CdCubicPitchTests.Run();
 FourLevelPreviewTests.Run();
@@ -116,7 +125,11 @@ ThreeLevelDitherTests.Run();
 BinaryDitherTests.Run();
 GammaDitherTests.Run();
 DvdScrambledPatternTests.Run();
+DvdReadCompatibilityGuardTests.Run();
+DvdReadCompatibilityIntegrationTests.Run();
+DvdReadCompatibilityUiTests.Run();
 ToneTests.Run();
+TonePreviewTests.Run();
 SaveTrailTests.Run();
 DvdCubicPipelineTests.Run();
 DvdFilePlacementTests.Run();
@@ -1101,8 +1114,7 @@ static void TestCdRawDaoSectorTypeSelection()
             session.Calls.Count(call => call == nameof(ICdRawSession.SupportedSectorTypes)),
             "CD DAO reads the supported sector types once");
         True(
-            diagnostics.Count == 1
-                && diagnostics[0] == WindowsImapiBurner.DescribeCdDaoSectorType(expected, reported),
+            diagnostics.Count(message => message == WindowsImapiBurner.DescribeCdDaoSectorType(expected, reported)) == 1,
             "CD DAO logs the chosen subchannel format once");
         True(session.Calls.Contains(nameof(ICdRawSession.WriteMedia)), "CD DAO writes with a usable sector type");
     }

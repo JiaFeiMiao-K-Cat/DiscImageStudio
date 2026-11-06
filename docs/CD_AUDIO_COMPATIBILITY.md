@@ -13,6 +13,10 @@ ISO 长度为 `扇区数 × 2048`，按 CD-ROM Mode 1 数据盘刻录。程序�
 
 CD 数据盘即时刻录与音轨共用 DAO 会话和 lead-out 边界检查，保留 ATIP 标定的扇区数及完整文件布局。程序将 ISO 负载编码为 Mode 1 原始扇区，并设置数据轨标识；使用铼德医疗水蓝盘预设时仍写出 359,845 个数据扇区，不按 TAO 接口较小的可用容量缩短图案或文件。DAO 沿用音轨模式最多 3 扇区的受限 overburn 检查，超限会在写入前报错。
 
+数据 DAO 转换还会把 IMAPI 音轨模板中的 ADR3/ISRC 子码重建为 ADR1 位置包，填写轨号、索引、相对/绝对 MSF 和 CRC；覆盖预间隙、数据区与 lead-out。已有 TOC、ADR1/ADR2、P/R-W 处理及数据主通道保持原行为。预间隙沿用实测 IMAPI 的 150→1 倒计时，使新包与相邻原生时间包连续。该转换仅用于数据盘；音轨继续使用原生模板及其 ADR3 元数据，普通 ISO 文件不携带这些子码。详细标准边界见 [CD 子码修复记录](PHYSICAL_MODEL_AUDIT.md#2026-11-06-cd-数据轨-adr3-修复)。
+
+English: the data-only DAO adapter replaces audio ADR3/ISRC with complete ADR1 position packets and CRCs. It preserves existing metadata and P/R-W handling, and matches the native IMAPI pregap countdown. Audio keeps its native subcode, including ADR3; exported ISO files do not contain this subcode.
+
 数据轨使用 IMAPI 小端主通道约定：在标准 Mode 1 扇区上补齐 EDC、P/Q 纠错码并扰码，保持同步头 `00 FF…FF 00` 的字节顺序。CD-ROM 物理编码的相邻字节交换与转为小端的交换相抵消；这一点也与 cdrdao 的 [RAW 编码和设备字节序转换](https://github.com/cdrdao/cdrdao/blob/master/dao/dao.cc) 相符。文件内外圈的 ISO 布局和绘图物理坐标映射不随该传输约定改变。
 
 设计投影、影调小预览和带有效 `.iso.json` 布局信息的成品读回以黄色标出文件区（含文件系统）。同名元数据记录几何、影调和文件位置；移动 ISO 时建议同时移动它。预览显示绘图负载的映射，实盘效果仍需刻录验证。
@@ -108,6 +112,20 @@ DiscImageStudio.exe cd-generate --input picture.png --output cd-track.wav `
 
 因为它只读源图片、不扫描整条音轨，改半径或几何后的刷新成本是图片的尺寸而不是音轨的尺寸（80 分钟盘约 845 MB），适合在标定预览里试参数、再用读回模拟确认最终盘面。
 
+## CD DAO 失败日志
+
+针对 #182 中 Raw P-W 已生效、仍在导入区失败的情况，详细日志记录以下信息：
+
+- 构建版本（包含可用的提交信息）、系统／运行时、光驱厂商、型号和固件。
+- 光驱报告的物理盘片类型（例如 `CD-R (2)`、`CD-RW (3)`）及写入前的空白状态；这不是盘片品牌识别。类型 `1` 显示 `CD-ROM/CD-R/CD-RW (unspecified) (1)`，因为 IMAPI 此值未进一步区分这些盘片。
+- 请求／实际速度、Pure CAV 标志、支持／请求的子通道类型、防断流保护设置，以及音轨长度、lead-out 边界和剩余扇区。
+- 各阶段耗时；生成端、主机队列和读取端的瞬时计数、生成状态及等待标志。主机快照是并发近似值，已读取字节不表示已写入光盘。
+- 导入区的事件快照（事件到达时每两秒最多一次）、最近读取／写入 LBA、IMAPI 系统缓冲区字节数、事件计数和距最近事件的时间。IMAPI 系统缓冲区不是光驱硬件缓存；没有 Update 事件时不会另起线程轮询设备。
+
+设备可选字段在写入前读取，不支持的字段显示 `unavailable`。失败时先保存现有事件、生成和计时状态，再释放介质；日志回调故障不替换原始刻录异常。导入区负 LBA 不计入载荷进度，进度条为 0% 不能证明盘片未被写入。
+
+`IDiscFormat2RawCD.WriteMedia` 的高层异常没有暴露失败命令的 `Sense Key / ASC / ASCQ`，日志会明确标注不可用。此改动不在失败后追加 `REQUEST SENSE`、不执行试刻或重试，也不将当前错误映射为未经证实的介质／固件故障。需要命令级定因时，应另行采集原始失败命令及其返回的 sense。
+
 ## 验证与边界
 
 - RAW 与 WAV：对非对称图案，交织开启与关闭两种情况下，WAV 的 data 区均严格等于旧 RAW 逐 16 位交换后的字节序列；长度保持不变。
@@ -116,6 +134,7 @@ DiscImageStudio.exe cd-generate --input picture.png --output cd-track.wav `
 - 读回一致性：同一源图分别生成交织与不交织的音轨，`--deinterleave true` 读回交织音轨与按文件顺序读回不交织音轨的结果，除延迟线尾部一个扇区内的像素外逐像素相同（900 px、非对称测试图下差异仅落在尾部投影内，变异测试把帧延迟改动 24 字节即报 245 处不一致）。
 - 标定投影一致性：同一源图先按生成几何 `(24.5, 56.8)` 生成音轨，再把 `cd-preview-warp` 的投影（实测=生成、实测=`24.3/56.6`）与 `cd-preview-track` 用对应几何读回的结果逐像素比较，阈值化后完全一致（900 px）；实测半径缩小时投影的重心半径随之减小，因此两套几何不会串位。
 - Windows 内存实验：向现有 `MsftRawCDImageCreator` 输入 300 个非对称音频扇区，在 Cooked R-W 与 Raw P-W 两种结果类型下分别扫描完整的 2448 字节 RAW 结果扇区，全部音频字节原样保留；另一项回归确认两种类型的完整镜像逐字节相同，R-W 子通道为空。生成器不会替调用者交换字节。测试不创建刻录设备、不写入光盘。
+- 数据轨子码回归：两种格式均扫描 512 个数据扇区及完整 lead-in、预间隙、lead-out，核对 ADR3 替换、BCD 时间、CRC 和 ADR1 出现频率。音轨完整 DAO 镜像与独立原生 IMAPI 参考逐字节一致，音轨 ADR3 和非对称 PCM 保留；另有固定向量覆盖区域边界和 `99:59:74`。这些检查验证子码转换与音轨隔离，未进行此次修复的实盘读回。
 - 2026-09-12 用户在本次修复后完成实盘试验，反馈已无重影。这是用户提供的实体盘结果；流式、cdrecord、ImgBurn 三个入口的逐项实测细节未单独记录。
 
 微软 `WriteMedia` 文档没有说明它内部的字节交换实现；上述结论没有把内存实验等同于观察到设备传输时的交换。[Microsoft WriteMedia 文档](https://learn.microsoft.com/en-us/windows/win32/api/imapi2/nf-imapi2-idiscformat2rawcd-writemedia)

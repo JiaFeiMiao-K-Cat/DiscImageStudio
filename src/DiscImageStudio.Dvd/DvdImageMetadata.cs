@@ -20,7 +20,8 @@ public sealed record DvdImageMetadata(
     bool FilesAtOuterRing = false,
     uint DrawingStartLba = 0,
     uint DrawingEndLbaExclusive = 0,
-    bool HasFileSystem = false)
+    bool HasFileSystem = false,
+    bool ReadCompatibility = false)
 {
     /// <summary>Reads the sidecar of an ISO, or null when it is absent or unreadable.</summary>
     public static DvdImageMetadata? TryLoad(string isoPath)
@@ -60,10 +61,12 @@ public sealed record DvdImageMetadata(
                 && iso.TryGetProperty("mountableFilesystem", out JsonElement mountable)
                 && mountable.ValueKind == JsonValueKind.True;
             DvdTrackGeometry.ValidatePitchCoefficients(linear, quadratic, cubic);
+            bool readCompatibility = document.RootElement.TryGetProperty("readCompatibility", out JsonElement mode)
+                && mode.ValueKind == JsonValueKind.String && mode.GetString() == "bridge-9b-v1";
             return totalSectors > 0 && double.IsFinite(innerRadius) && double.IsFinite(outerRadius)
                 && innerRadius > 0 && outerRadius > innerRadius
                 ? new DvdImageMetadata(totalSectors, innerRadius, outerRadius, linear, quadratic, cubic,
-                    filesAtOuterRing, drawingStart, drawingStart + drawingSectors, hasFileSystem)
+                    filesAtOuterRing, drawingStart, drawingStart + drawingSectors, hasFileSystem, readCompatibility)
                 : null;
         }
         catch (Exception exception) when (exception is JsonException or IOException or ArgumentException)

@@ -183,7 +183,12 @@ internal static class OpticalWriteProgressTests
         missing.CurrentAction = "invalid";
         missing.StartLba = null;
         reporter.ReportDataUpdate(missing);
-        Require(updates[^1].Stage == "finalize" && reporter.GetDiagnosticSummary() == summary,
+        string afterMissing = reporter.GetDiagnosticSummary();
+        Require(updates[^1].Stage == "finalize"
+            && afterMissing.Contains("StartLba=10", StringComparison.Ordinal)
+            && afterMissing.Contains("LastWrittenLba=30", StringComparison.Ordinal)
+            && afterMissing.Contains("CurrentAction=5", StringComparison.Ordinal)
+            && afterMissing.Contains("UpdateEventCount=3", StringComparison.Ordinal),
             "invalid or missing properties cannot clear raw evidence or downgrade the known phase");
     }
 

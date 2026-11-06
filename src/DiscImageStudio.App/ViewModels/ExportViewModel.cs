@@ -248,7 +248,8 @@ public partial class ExportViewModel : ObservableObject
             PitchLinear: ParameterParser.ParseDouble(_state.DvdPitchLinear, L.T("相对一次项")),
             PitchQuadratic: ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("相对二次项")),
             PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("相对三次项")),
-            Tone: _state.DvdTone);
+            Tone: _state.DvdTone,
+            ReadCompatibility: _state.DvdReadCompatibility);
         DvdImageRequest request = new(compositePath, output, options, _state.DvdDataDirectory.Trim(),
             string.IsNullOrWhiteSpace(_state.DvdVolumeLabel) ? "DISC_IMAGE" : _state.DvdVolumeLabel.Trim(),
             !string.IsNullOrWhiteSpace(_state.DvdDataDirectory) && _state.DvdFilesAtOuterRing);

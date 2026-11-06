@@ -237,7 +237,7 @@ public static class CdDataImageGenerator
         if (plan is not null) Validate(generated, plan);
         tone = tone.Normalized();
         CdImageSampler sampler = new(RasterImage.Load(Path.GetFullPath(imagePath)), generated);
-        DataPreview preview = new(outputSize);
+        DataPreview preview = new(outputSize, actual);
         long start = plan?.DrawingStartLba ?? 0;
         long end = plan?.DrawingEndLbaExclusive ?? generated.Sectors;
         int step = Math.Max(1, BytesPerSector / samplesPerSector);
@@ -268,7 +268,7 @@ public static class CdDataImageGenerator
         long end = metadata?.DrawingEndLbaExclusive ?? actual.Sectors;
         input.Position = start * BytesPerSector;
         byte[] sector = new byte[BytesPerSector];
-        DataPreview preview = new(outputSize);
+        DataPreview preview = new(outputSize, actual);
         for (long lba = start; lba < end; lba++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -290,7 +290,7 @@ public static class CdDataImageGenerator
         if (interval <= 0) throw new ArgumentOutOfRangeException(nameof(interval));
     }
 
-    private sealed class DataPreview(int size)
+    private sealed class DataPreview(int size, CdDiscParameters actual)
     {
         private readonly long[] _sum = new long[checked(size * size)];
         private readonly int[] _count = new int[checked(size * size)];
@@ -313,6 +313,7 @@ public static class CdDataImageGenerator
                 byte gray = (byte)((_sum[index] + _count[index] / 2) / _count[index]);
                 pixels[index * 4] = pixels[index * 4 + 1] = pixels[index * 4 + 2] = gray;
             }
+            CdPreviewMask.Apply(pixels, size, actual);
             string fullPath = Path.GetFullPath(path);
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
             RasterCodec.SavePng(fullPath, size, size, pixels, grayscale: false);

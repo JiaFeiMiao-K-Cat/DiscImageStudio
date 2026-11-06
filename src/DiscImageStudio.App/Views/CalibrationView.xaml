@@ -353,6 +353,9 @@
                                     <Expander Header="{loc:Text CalibrationMedia.Encoding}" Margin="0,4,0,10">
                                         <StackPanel Margin="0,6,0,0">
                                             <controls:VisibilityGate IsOpen="{Binding IsCdSetup}"><CheckBox IsChecked="{Binding Parameters.CdInterleave, Mode=TwoWay}" Content="{loc:Text CalibrationMedia.CdInterleave}" Style="{StaticResource CompactCheckBox}" /></controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding IsDvdSetup}" Margin="0,0,0,10">
+                                                <controls:DvdReadCompatibilityToggle IsChecked="{Binding Parameters.DvdReadCompatibility}" />
+                                            </controls:VisibilityGate>
                                             <controls:VisibilityGate IsOpen="True">
                                                 <StackPanel>
                                                     <TextBlock Text="{loc:Text Xaml.LinearTerm}" Style="{StaticResource FieldLabel}" />

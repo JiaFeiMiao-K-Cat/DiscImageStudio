@@ -50,7 +50,7 @@ internal static class CdDataRawImageTests
         {
             byte[] actual = Read(image, RawBytes, fragmented: true);
             byte[] expected = Read(reference, RawBytes);
-            VerifySubchannel(actual, expected, program: false);
+            VerifySubchannel(actual, expected, index - ProgramStart);
             byte[] q = DecodeQ(actual);
             if ((q[0] & 15) == 1) tocPoints.Add(q[2]);
             VerifyMainHeader(actual, 427350 + index);
@@ -60,10 +60,10 @@ internal static class CdDataRawImageTests
         image.Seek((long)(ProgramStart - 151) * RawBytes, 0, IntPtr.Zero);
         reference.Seek((long)(ProgramStart - 151) * RawBytes, 0, IntPtr.Zero);
         byte[] finalLeadin = Read(image, RawBytes, fragmented: true);
-        VerifySubchannel(finalLeadin, Read(reference, RawBytes), program: false);
+        VerifySubchannel(finalLeadin, Read(reference, RawBytes), -151);
         VerifyMainHeader(finalLeadin, 449849); // 99:59:74.
         byte[] firstPregap = Read(image, RawBytes, fragmented: true);
-        VerifySubchannel(firstPregap, Read(reference, RawBytes), program: false);
+        VerifySubchannel(firstPregap, Read(reference, RawBytes), -150);
         VerifyMainHeader(firstPregap, -150); // 00:00:00 follows the address wrap.
 
         // A partial forward seek ends within the final pregap subchannel.
@@ -71,7 +71,30 @@ internal static class CdDataRawImageTests
         Require(source.BytesRead == 0, "lead-in/pregap forward seek does not consume program data");
         reference.Seek((long)(ProgramStart - 1) * RawBytes, 0, IntPtr.Zero);
         byte[] pregap = Read(reference, RawBytes);
-        CdDataRawImageStream.PatchDataSubchannel(pregap.AsSpan(2352), program: false);
+        byte[] finalPregapQ = DecodeQ(pregap);
+        if ((finalPregapQ[0] & 15) == 3)
+        {
+            // Captured LBA -1 timing, with data CONTROL and independent CRC.
+            finalPregapQ = Convert.FromHexString("41010000000100000174AEF0");
+        }
+        else
+        {
+            // A native template may schedule ADR2 here instead of ADR1.
+            // Preserve that packet and calculate its expected CRC bitwise.
+            finalPregapQ[0] = (byte)((finalPregapQ[0] & 15) | 0x40);
+            int crc = 0;
+            foreach (byte value in finalPregapQ.AsSpan(0, 10))
+                for (int bit = 7; bit >= 0; bit--)
+                {
+                    int carry = ((crc >> 15) ^ (value >> bit)) & 1;
+                    crc = ((crc << 1) & 0xFFFF) ^ (carry != 0 ? 0x1021 : 0);
+                }
+            finalPregapQ[10] = (byte)~(crc >> 8);
+            finalPregapQ[11] = (byte)~crc;
+        }
+        for (int bit = 0; bit < 96; bit++)
+            pregap[2352 + bit] = (byte)((pregap[2352 + bit] & 0xBF)
+                | (((finalPregapQ[bit / 8] >> (7 - bit % 8)) & 1) << 6));
         Require(Read(image, 17, fragmented: true).AsSpan().SequenceEqual(pregap.AsSpan(RawBytes - 17)),
             "partial pregap read reaches the program boundary exactly");
 
@@ -80,7 +103,7 @@ internal static class CdDataRawImageTests
         {
             byte[] actual = Read(image, RawBytes, fragmented: true);
             byte[] expected = Read(reference, RawBytes);
-            VerifySubchannel(actual, expected, program: true);
+            VerifySubchannel(actual, expected, lba);
             VerifyMainHeader(actual, lba);
             CdMode1SectorEncoder.Encode(iso.AsSpan(lba * 2048, 2048), lba, expectedMain);
             Require(actual.AsSpan(0, 2352).SequenceEqual(expectedMain), $"all Mode 1 bytes survive at LBA {lba}");
@@ -89,7 +112,7 @@ internal static class CdDataRawImageTests
         Require(source.SeekCalls == 0 && source.BytesRead == iso.Length, "ISO is read once, forward-only, with no trimming");
         byte[] leadout = Read(image, RawBytes, fragmented: true);
         byte[] expectedLeadout = Read(reference, RawBytes);
-        VerifySubchannel(leadout, expectedLeadout, program: false);
+        VerifySubchannel(leadout, expectedLeadout, Sectors);
         VerifyMainHeader(leadout, Sectors);
         Require(DecodeQ(leadout)[1] == 0xAA, "lead-out begins immediately after the last ISO sector");
         CdMode1SectorEncoder.Encode(new byte[2048], Sectors, expectedMain);
@@ -230,12 +253,18 @@ internal static class CdDataRawImageTests
         finally { Directory.Delete(directory, recursive: true); }
     }
 
-    private static void VerifySubchannel(byte[] actual, byte[] template, bool program)
+    private static void VerifySubchannel(byte[] actual, byte[] template, long lba)
     {
+        bool program = lba >= 0 && lba < Sectors;
         byte[] q = DecodeQ(actual);
         byte[] expected = DecodeQ(template);
-        Require((q[0] & 0xF0) == 0x40 && (q[0] & 15) == (expected[0] & 15), "data control preserves Q ADR");
-        Require(q.AsSpan(1, 9).SequenceEqual(expected.AsSpan(1, 9)), "Q track/index/timestamps and TOC addresses are unchanged");
+        if ((expected[0] & 15) == 3 && lba >= -150)
+            CdDataSubchannelPatchTests.VerifyPosition(q, lba, Sectors);
+        else
+        {
+            Require((q[0] & 0xF0) == 0x40 && (q[0] & 15) == (expected[0] & 15), "data control preserves valid Q ADR");
+            Require(q.AsSpan(1, 9).SequenceEqual(expected.AsSpan(1, 9)), "valid Q metadata/timestamps and TOC addresses are unchanged");
+        }
         // A valid Q record including its complemented CRC has this CCITT residue.
         int residue = 0;
         foreach (byte value in q)

@@ -67,6 +67,7 @@ public static class IsoReadbackRenderer
         cancellationToken.ThrowIfCancellationRequested();
         Validate(options);
         string isoFullPath = Path.GetFullPath(isoPath);
+        bool readCompatibility = ReadCompatibilityEnabled(isoFullPath);
         long isoSectors = new FileInfo(isoFullPath).Length / DvdEccBlockEncoder.PayloadBytesPerSector;
         if ((ulong)options.StartLba + options.FillSectors > (ulong)isoSectors)
         {
@@ -143,7 +144,13 @@ public static class IsoReadbackRenderer
                         }
 
                         byte scrambled = (byte)(payload[byteIndex] ^ mask[byteIndex]);
-                        if (!DvdGrayscalePalette.TryGetLuminance(scrambled, out byte level))
+                        // The bridge replaces a white texture byte, so show its intended
+                        // tone only for a sidecar identifying that algorithm. This is
+                        // an artwork preview, not an optical reflectance simulation.
+                        byte level;
+                        if (readCompatibility && scrambled == 0x9B)
+                            level = 255;
+                        else if (!DvdGrayscalePalette.TryGetLuminance(scrambled, out level))
                         {
                             continue;
                         }
@@ -213,7 +220,7 @@ public static class IsoReadbackRenderer
             samplesPerSector,
             totalSamples,
             classifiedSamples,
-            "payload-scramble-classify-splat",
+            readCompatibility ? "payload-scramble-classify-splat-bridge-9b-v1" : "payload-scramble-classify-splat",
             options.PitchLinear,
             options.PitchQuadratic,
             options.PitchCubic);
@@ -240,6 +247,23 @@ public static class IsoReadbackRenderer
             return (GetUInt(root, "startLba"), GetUInt(root, "fillSectors"), GetUInt(root, "totalSectors"));
         }
         catch (JsonException) { return (0, 0, 0); }
+    }
+
+    /// <summary>Only a known, explicitly recorded bridge version changes preview classification.</summary>
+    public static bool ReadCompatibilityEnabled(string isoPath)
+    {
+        string sidecarPath = isoPath + ".json";
+        if (!File.Exists(sidecarPath)) return false;
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(sidecarPath));
+            JsonElement root = document.RootElement;
+            return root.ValueKind == JsonValueKind.Object
+                && root.TryGetProperty("readCompatibility", out JsonElement mode)
+                && mode.ValueKind == JsonValueKind.String
+                && mode.GetString() == "bridge-9b-v1";
+        }
+        catch (JsonException) { return false; }
     }
 
     private static uint GetUInt(JsonElement element, string name)

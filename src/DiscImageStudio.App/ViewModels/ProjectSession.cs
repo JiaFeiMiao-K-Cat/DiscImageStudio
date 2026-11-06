@@ -29,6 +29,7 @@ internal static class ProjectSession
         state.ToneLevels = tone.Levels;
         state.ToneBrightness = tone.Brightness;
         state.ToneSrgbLinearization = tone.SrgbLinearization;
+        state.DvdReadCompatibility = document.IsDvd && outputs.DvdReadCompatibility;
 
         switch (document.Family)
         {
@@ -133,7 +134,8 @@ internal static class ProjectSession
                     state.DvdDataDirectory,
                     state.DvdVolumeLabel,
                     Interleave: false,
-                    FilesAtOuterRing: state.DvdFilesAtOuterRing);
+                    FilesAtOuterRing: state.DvdFilesAtOuterRing,
+                    DvdReadCompatibility: state.DvdReadCompatibility);
             case OpticalDiscFamily.BluRay:
                 return new ProjectOutputs(
                     RequireOutput(state.BdOutputPath, L.T("蓝光 ISO 输出位置")),

@@ -26,6 +26,9 @@ internal interface ICdRawSession
     void CancelWrite();
 
     void ReleaseMedia();
+
+    // Read only while prepared and before writing. Fakes need not provide telemetry.
+    string? GetDiagnosticSummary() => null;
 }
 
 // IMAPI_FORMAT2_RAW_CD_DATA_SECTOR_TYPE (imapi2.h). Both values use 2448-byte sectors:
@@ -116,6 +119,8 @@ internal sealed class DynamicCdRawSession(object format, Action<object>? reportW
     public void CancelWrite() => _format.CancelWrite();
 
     public void ReleaseMedia() => _format.ReleaseMedia();
+
+    public string GetDiagnosticSummary() => BurnDeviceDiagnostics.DescribePreparedMedia((object)_format);
 }
 
 internal sealed class DynamicCdRawImageSession : ICdRawImageSession

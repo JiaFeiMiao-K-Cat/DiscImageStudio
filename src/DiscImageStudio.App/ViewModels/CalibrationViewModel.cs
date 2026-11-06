@@ -174,6 +174,8 @@ public partial class CalibrationViewModel : ObservableObject
     public string TargetSummary => _target?.Parameters is { } p
         ? L.Format("CalibrationSetup.Target", DiscTypeName(p.Kind), p.Sectors, p.InnerRadiusMm, p.OuterRadiusMm)
             + Environment.NewLine + DescribeArtwork(_target)
+            + (p.Kind == CalibrationDiscKind.Dvd ? Environment.NewLine
+                + L.T(p.DvdReadCompatibility ? "DvdReadCompatibility.Enabled" : "DvdReadCompatibility.Disabled") : string.Empty)
         : L.T("CalibrationSetup.NoTarget");
 
     private static string DescribeArtwork(CalibrationTarget target)
@@ -388,7 +390,8 @@ public partial class CalibrationViewModel : ObservableObject
                 DvdStreamingOptions.StandardChannelBitLengthNm,
                 ParameterParser.ParseDouble(_state.DvdPitchLinear, L.T("DVD 相对一次项")),
                 ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("DVD 相对二次项")),
-                ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("DVD 相对三次项"))),
+                ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("DVD 相对三次项")),
+                DvdReadCompatibility: _state.DvdReadCompatibility),
             "BD" => CreateBluRayParameters(),
             "CD" => new(CalibrationDiscKind.Cd, Number(_state.CdInnerRadius), Number(_state.CdOuterRadius),
                 ParameterParser.ParsePositiveLong(_state.CdSectors, L.T("CD 扇区数")),
@@ -742,6 +745,7 @@ public partial class CalibrationViewModel : ObservableObject
                 _state.DvdPitchQuadratic = _state.DvdActualPitchQuadratic = p.PitchQuadratic.ToString("G17", CultureInfo.InvariantCulture);
                 _state.DvdPitchCubic = _state.DvdActualPitchCubic = p.PitchCubic.ToString("G17", CultureInfo.InvariantCulture);
                 _state.DvdTotalSectors = p.Sectors.ToString(CultureInfo.InvariantCulture);
+                _state.DvdReadCompatibility = p.DvdReadCompatibility;
                 break;
         }
     }
@@ -938,8 +942,7 @@ public partial class CalibrationViewModel : ObservableObject
                     }
                     else
                     {
-                        using FileStream output = new(stagedPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-                        DvdStreamingGenerator.GeneratePattern(target, output, DvdOptions(target), cancellationToken: token);
+                        DvdImageGenerator.GenerateCalibration(target, stagedPath, DvdOptions(target), token);
                     }
                     token.ThrowIfCancellationRequested();
                     CalibrationSessionJson.Save(Path.ChangeExtension(stagedPath, ".calibration.json"), session);
@@ -1055,7 +1058,8 @@ public partial class CalibrationViewModel : ObservableObject
     internal static DvdStreamingOptions DvdOptions(CalibrationTarget target) => new(checked((uint)target.Parameters.Sectors),
         target.Parameters.InnerRadiusMm, target.Parameters.OuterRadiusMm, target.Parameters.LinearDensity, 0,
         PitchLinear: target.Parameters.PitchLinear, PitchQuadratic: target.Parameters.PitchQuadratic,
-        PitchCubic: target.Parameters.PitchCubic);
+        PitchCubic: target.Parameters.PitchCubic,
+        ReadCompatibility: target.Parameters.DvdReadCompatibility);
     private static void ValidateOutputParameters(CalibrationParameters p)
     {
         p.Validate();
