@@ -4,6 +4,7 @@
 
 ### 中文
 
+- 统一 CD、DVD、BD 的影调预览为 512×512：记录区外与中心孔使用透明遮罩，取消固定裁切，并按实际文件布局标黄文件及文件系统区域。CD 显示适配记录外半径，保留生成时的图片采样比例；修改文件夹、卷标和内外圈位置会自动刷新。
 - 修复 CD 数据盘 DAO 子码沿用音轨 ADR3/ISRC 包的问题：按扇区位置重建完整 ADR1 时间包并重算 CRC，覆盖预间隙、数据区与导出区；保留原有 TOC、ADR1/ADR2 和 P/R-W 处理。补充边界、两种子通道格式及音轨输出逐字节不变的回归。
 - 新增默认关闭的「DVD 读取兼容性（实验性）」选项，用局部 `9B` 保护字节缓解 #90 中连续绘图纹理可能引起的读回错误；ISO 导出、流式刻录和标定使用相同规则，文件内容和透明区域不参与改写。工程与标定记录保存该选项，旧记录保持关闭；效果和盘面纹理仍需实盘反馈。
 - 按 ECMA-267 修正 DVD EFMPlus 模型在状态 3/4 下的副 SY6 同步码，纠正精确编码及 DSV/边界回放；补充完整同步码标准向量和实际编码回归。
@@ -11,6 +12,7 @@
 
 ### English
 
+- Unified CD, DVD and BD tone previews at 512×512, with transparent masks outside the recording area and inside the centre hole. Removed the fixed crop and highlighted file and filesystem regions from the actual layout plans. CD previews fit the recording radius while preserving the generator's source-image scale; folder, volume-label and inner/outer placement changes refresh automatically.
 - Fixed CD data-disc DAO subcode retaining audio ADR3/ISRC packets. Rebuild complete ADR1 timing packets and CRCs from the sector position in the pregap, program area and lead-out, while retaining existing TOC, ADR1/ADR2 and P/R-W handling. Added boundary, subchannel-format and byte-for-byte audio-output regression coverage.
 - Added an opt-in “DVD read compatibility (experimental)” option using local `9B` bridge bytes to mitigate readback errors associated with repeated drawing textures in #90. ISO export, streaming burns and calibration share the rule; file contents and alpha-excluded bytes are protected. Projects and calibration records retain the setting, with legacy records defaulting to off. Readability and visual effects still need physical-disc feedback.
 - Corrected the DVD EFMPlus model's secondary SY6 code for states 3/4 to match ECMA-267, fixing exact encoding and DSV/boundary replay. Added standard vectors for all sync codes and an encoded-output regression.

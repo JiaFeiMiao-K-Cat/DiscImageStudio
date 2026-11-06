@@ -42,7 +42,7 @@ internal static class CdBinaryTests
             string preview = Path.Combine(directory, $"legacy-{encoded:X2}.png");
             File.WriteAllBytes(track, Enumerable.Repeat(encoded, checked((int)parameters.TotalBytes)).ToArray());
             CdTrackGenerator.PreviewTrack(track, preview, parameters, 128, 1, deinterleave: false);
-            VerifyPreviewLevel(ReadPixels(preview), luminance, $"legacy 0x{encoded:X2} readback");
+            VerifyPreviewLevel(ReadPixels(preview), parameters, luminance, $"legacy 0x{encoded:X2} readback");
         }
     }
 
@@ -88,7 +88,7 @@ internal static class CdBinaryTests
             CdTrackGenerator.PreviewTrack(wavePath, wavePreview, parameters, 128, 1, interleave);
             byte[] readback = ReadPixels(rawPreview);
             Require(readback.SequenceEqual(ReadPixels(wavePreview)), $"{name} RAW and WAV previews agree");
-            VerifyPreviewLevel(readback, display, $"{name} readback");
+            VerifyPreviewLevel(readback, parameters, display, $"{name} readback");
 
             if (!interleave)
             {
@@ -101,16 +101,24 @@ internal static class CdBinaryTests
         }
     }
 
-    private static void VerifyPreviewLevel(byte[] pixels, byte expected, string name)
+    private static void VerifyPreviewLevel(byte[] pixels, CdDiscParameters parameters, byte expected, string name)
     {
+        const int size = 128;
         int painted = 0;
         for (int offset = 0; offset < pixels.Length; offset += 4)
         {
             byte value = pixels[offset];
             Require(value == expected || value == 255, $"{name} uses display luminance {expected}");
-            Require(value == pixels[offset + 1] && value == pixels[offset + 2] && pixels[offset + 3] == 255,
-                $"{name} remains opaque grayscale");
-            if (value == expected)
+            Require(value == pixels[offset + 1] && value == pixels[offset + 2],
+                $"{name} remains grayscale");
+            int pixel = offset / 4;
+            double x = (pixel % size - size / 2.0) * parameters.ImageOuterRadiusMm / (size / 2.0);
+            double y = (pixel / size - size / 2.0) * parameters.ImageOuterRadiusMm / (size / 2.0);
+            double radius = Math.Sqrt(x * x + y * y);
+            bool recorded = radius >= parameters.InnerRadiusMm && radius < parameters.OuterRadiusMm;
+            Require(pixels[offset + 3] == (recorded ? 255 : 0),
+                $"{name} is opaque only in the recorded annulus");
+            if (recorded && value == expected)
             {
                 painted++;
             }

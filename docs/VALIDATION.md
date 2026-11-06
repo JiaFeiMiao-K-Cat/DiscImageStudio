@@ -4,6 +4,12 @@
 
 ## 本地验证
 
+2026-11-06 影调预览统一：Release solution 构建为零警告、零错误，完整 ArchitectureTests 和 DVD 引擎 selftest 通过；离屏检查三盘型无文件、内圈文件、外圈文件及 CD 自定义半径宽版面板。日志位于 `artifacts/tone-preview/`，截图位于 `artifacts/tone-preview-ui/screenshots/`。此次仅改变预览呈现，未改动音轨、数据盘或流式刻录的输出字节。
+
+影调预览回归：`TonePreviewTests` 通过真实设计合成与状态刷新链检查 CD/DVD/BD 的 512×512 输出、透明中孔和记录区外遮罩、实际内外圈文件布局、切换文件夹/几何后的刷新、连续更新淘汰旧结果，以及错误/关闭工程时清除旧图；原图与合成图哈希保持不变。`CdPreviewMaskTests` 对比音轨和数据盘的源图投影与成品回读，检查稀疏采样下环内仍为不透明白色，并用 59.5 mm 外半径确认显示适配不改变 57.5 mm 的源图采样比例。`CdBinaryTests` 同时验证灰阶和几何透明度。
+
+English: tone-preview regression covers all three media at 512×512, recording-area alpha masks, exact file/filesystem ranges, automatic updates, stale-result removal and unchanged source/composite hashes. CD tests compare projection with audio/data readback, retain opaque unsampled pixels inside the ring and verify that fitting a 59.5 mm output radius preserves the 57.5 mm source-image mapping. Offscreen narrow and wide tone-panel snapshots are available in `artifacts/tone-preview-ui/screenshots/`.
+
 2026-11-06，CD 数据盘 ADR3 修复：Release solution 构建通过（0 警告、0 错误），完整架构回归及 DVD 引擎 selftest 通过。新增回归用旧实现复现 ADR3 转换失败，修复后通过；包含独立 CRC 多项式除法、9 个计时/CRC 固定向量、预间隙/数据区/lead-out 边界及 BCD 进位与上限、TOC/ADR1/ADR2 保留和 P/R-W 隔离。Raw P-W 与 Cooked R-W 均完成真实离线 IMAPI 全镜像扫描；音轨整张镜像与独立原生 COM 参考逐字节一致，PCM 字节和音轨 ADR3 保持。原有前向流、部分读取、主通道和内外圈 ISO 回读测试通过。此次只改变数据 DAO 的 ADR3 转换，未改动音轨生成/刻录路径或 GUI；DVD selftest 覆盖项不变。未创建刻录设备，未执行实盘读回。修复边界见 [数据轨 ADR3 修复记录](PHYSICAL_MODEL_AUDIT.md#2026-11-06-cd-数据轨-adr3-修复)，日志在 `artifacts/cd-subcode-fix/`。
 
 最后调整部分读取测试，使其也能接受原生模板在该位置安排 ADR2；随后最终 solution 重建仍为零警告、零错误，三个 CD 子码/RAW 镜像测试再次通过。完整回归日志为 `architecture.log`，最终构建及定向复核为 `build-final.log`、`final-cd-check.log`，均在上述日志目录内。

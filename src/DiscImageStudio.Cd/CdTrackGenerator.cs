@@ -508,7 +508,7 @@ public static class CdTrackGenerator
         tone = tone.Normalized();
         RasterImage source = RasterImage.Load(Path.GetFullPath(imagePath));
         CdImageSampler sampler = new(source, generated);
-        GrayPreview preview = new(outputSize);
+        GrayPreview preview = new(outputSize, actual);
         long step = Math.Max(1, CdDiscParameters.BytesPerSector / samplesPerSector);
         long totalBytes = generated.TotalBytes;
         long sampleNumber = 0;
@@ -575,7 +575,7 @@ public static class CdTrackGenerator
             throw new ArgumentOutOfRangeException(nameof(byteStep), "Byte step must be positive.");
         }
 
-        GrayPreview preview = new(outputSize);
+        GrayPreview preview = new(outputSize, actual);
         using FileStream input = new(
             Path.GetFullPath(trackPath),
             FileMode.Open,
@@ -749,7 +749,7 @@ public static class CdTrackGenerator
     }
 
     /// <summary>Source projections and track readback average every sample that lands in one pixel.</summary>
-    private sealed class GrayPreview(int size)
+    private sealed class GrayPreview(int size, CdDiscParameters actual)
     {
         private readonly int[] _levelSums = new int[checked(size * size)];
         private readonly int[] _sampleCounts = new int[checked(size * size)];
@@ -785,6 +785,7 @@ public static class CdTrackGenerator
                 pixels[offset + 2] = level;
             }
 
+            CdPreviewMask.Apply(pixels, size, actual);
             return pixels;
         }
     }

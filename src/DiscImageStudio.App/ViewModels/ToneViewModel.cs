@@ -20,14 +20,14 @@ namespace DiscImageStudio.ViewModels;
 /// second copy.</summary>
 public partial class ToneViewModel : ObservableObject
 {
-    private const int TonePreviewSize = 420;
-    private const int TonePreviewBluRaySize = 512;
+    private const int TonePreviewSize = 512;
     private const int TonePreviewSamplesPerSector = 32;
     private const int TonePreviewDvdSamplesPerSector = 8;
 
     private readonly ShellViewModel _shell;
     private readonly DiscParametersState _state;
     private readonly DesignViewModel _design;
+    private readonly SemaphoreSlim _tonePreviewGate = new(1, 1);
 
     private CancellationTokenSource? _tonePreviewCancellation;
     private int _tonePreviewRevision;
@@ -71,6 +71,9 @@ public partial class ToneViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _hasTonePreview;
+
+    [ObservableProperty]
+    private bool _hasFileRegionOverlay;
 
     [ObservableProperty]
     private string _tonePreviewStatus = L.T("导入图片后自动生成预览。");
@@ -150,6 +153,9 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.BdPitchQuadratic)
             or nameof(DiscParametersState.BdPitchCubic)
             or nameof(DiscParametersState.BdTotalSectors)
+            or nameof(DiscParametersState.BdDataDirectory)
+            or nameof(DiscParametersState.BdVolumeLabel)
+            or nameof(DiscParametersState.BdFilesAtOuterRing)
             or nameof(DiscParametersState.CdInnerRadius)
             or nameof(DiscParametersState.CdOuterRadius)
             or nameof(DiscParametersState.CdPitchLinear)
@@ -164,7 +170,10 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.DvdTotalSectors)
             or nameof(DiscParametersState.DvdPitchLinear)
             or nameof(DiscParametersState.DvdPitchQuadratic)
-            or nameof(DiscParametersState.DvdPitchCubic))
+            or nameof(DiscParametersState.DvdPitchCubic)
+            or nameof(DiscParametersState.DvdDataDirectory)
+            or nameof(DiscParametersState.DvdVolumeLabel)
+            or nameof(DiscParametersState.DvdFilesAtOuterRing))
         {
             ScheduleTonePreview();
         }
@@ -236,6 +245,7 @@ public partial class ToneViewModel : ObservableObject
 
     private void BeginTonePreview()
     {
+        _tonePreviewReady = false;
         _tonePreviewRendering = true;
         _tonePreviewError = null;
         TonePreviewStatus = ComposeTonePreviewStatus();
@@ -251,55 +261,97 @@ public partial class ToneViewModel : ObservableObject
 
         string? outputPath = null;
         bool keepOutput = false;
+        bool enteredGate = false;
         try
         {
             outputPath = TempFiles.GetCacheFilePath($"design-tone-{revision}.png");
             await Task.Delay(180, cancellationToken);
+            // Layout planners scan synchronously. Let a cancelled scan finish before
+            // starting the latest request instead of accumulating background workers.
+            await _tonePreviewGate.WaitAsync(cancellationToken);
+            enteredGate = true;
+            cancellationToken.ThrowIfCancellationRequested();
 
             int samplesPerSector;
+            bool hasFileRegionOverlay;
             if (IsBluRay)
             {
                 BluRayDiscParameters parameters = ReadBluRayPreviewParameters();
                 bool invert = _state.BdInvertMapping;
                 ToneProfile tone = _state.BluRayTone;
+                string dataDirectory = _state.BdDataDirectory.Trim();
+                string volumeLabel = _state.BdVolumeLabel.Trim();
+                bool filesAtOuterRing = dataDirectory.Length > 0 && _state.BdFilesAtOuterRing;
+                hasFileRegionOverlay = dataDirectory.Length > 0;
                 samplesPerSector = 0;
                 await StaWorker.RunAsync(() =>
                 {
-                    BluRayPreviewRenderer.RenderProjection(
+                    cancellationToken.ThrowIfCancellationRequested();
+                    BluRayIsoPlan plan = BluRayIsoGenerator.PrepareDrawing(parameters,
+                        dataDirectory.Length == 0 ? null : dataDirectory,
+                        volumeLabel.Length == 0 ? "BD_IMAGE" : volumeLabel,
+                        filesAtOuterRing: filesAtOuterRing);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    BluRayPreviewRenderer.RenderCalibration(
                         sourcePath,
                         outputPath,
                         parameters,
-                        TonePreviewBluRaySize,
+                        parameters,
+                        plan.DrawingStartSector,
+                        plan.DrawingEndSectorExclusive,
+                        TonePreviewSize,
                         invert,
-                        tone,
-                        cancellationToken);
+                        cancellationToken,
+                        tone);
+                    if (plan.HasFileSystem)
+                        FileRegionPreviewOverlay.ApplyBluRay(outputPath, parameters,
+                            plan.DrawingStartSector, plan.DrawingEndSectorExclusive, cancellationToken);
                     return 0;
                 });
             }
             else if (IsDvd)
             {
                 DvdStreamingOptions options = ReadDvdPreviewOptions();
+                string dataDirectory = _state.DvdDataDirectory.Trim();
+                string volumeLabel = _state.DvdVolumeLabel.Trim();
+                bool filesAtOuterRing = _state.DvdFilesAtOuterRing;
+                hasFileRegionOverlay = dataDirectory.Length > 0;
                 samplesPerSector = TonePreviewDvdSamplesPerSector;
                 await StaWorker.RunAsync(() =>
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    DvdHybridStreamingPlan? plan = dataDirectory.Length > 0
+                        ? DvdStreamingGenerator.PrepareHybrid(dataDirectory, options,
+                            volumeLabel.Length == 0 ? "DISC_IMAGE" : volumeLabel, filesAtOuterRing)
+                        : null;
+                    cancellationToken.ThrowIfCancellationRequested();
                     DvdTonePreview.Render(
                         sourcePath,
                         outputPath,
                         options,
                         TonePreviewSize,
                         samplesPerSector,
-                        cancellationToken);
+                        cancellationToken,
+                        drawingStartLba: plan?.DrawingStartLba ?? 0,
+                        drawingEndLbaExclusive: plan?.DrawingEndLbaExclusive);
+                    if (plan is not null)
+                        FileRegionPreviewOverlay.ApplyDvd(outputPath, options,
+                            plan.DrawingStartLba, plan.DrawingEndLbaExclusive, cancellationToken);
                     return 0;
                 });
             }
             else
             {
                 CdDiscParameters parameters = ReadCdPreviewParameters();
+                // Fit the output to the recording radius without changing the source
+                // image's physical scale used by the CD generator.
+                CdDiscParameters display = parameters with { ImageOuterRadiusMm = parameters.OuterRadiusMm };
                 ToneProfile tone = _state.Tone;
                 samplesPerSector = TonePreviewSamplesPerSector;
                 string dataDirectory = _state.CdDataDirectory.Trim();
                 string volumeLabel = _state.CdVolumeLabel.Trim();
                 bool filesAtOuterRing = _state.CdFilesAtOuterRing;
+                hasFileRegionOverlay = dataDirectory.Length > 0;
                 await StaWorker.RunAsync(() =>
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -309,14 +361,14 @@ public partial class ToneViewModel : ObservableObject
                     cancellationToken.ThrowIfCancellationRequested();
                     if (plan is not null)
                     {
-                        CdDataImageGenerator.PreviewWarp(sourcePath, outputPath, parameters, parameters,
+                        CdDataImageGenerator.PreviewWarp(sourcePath, outputPath, parameters, display,
                             TonePreviewSize, samplesPerSector, tone, plan, cancellationToken);
-                        FileRegionPreviewOverlay.ApplyCd(outputPath, parameters,
+                        FileRegionPreviewOverlay.ApplyCd(outputPath, display,
                             plan.DrawingStartLba, plan.DrawingEndLbaExclusive, cancellationToken);
                     }
                     else
                     {
-                        CdTrackGenerator.PreviewWarp(sourcePath, outputPath, parameters, parameters,
+                        CdTrackGenerator.PreviewWarp(sourcePath, outputPath, parameters, display,
                             TonePreviewSize, samplesPerSector, tone, cancellationToken);
                     }
                     return 0;
@@ -348,6 +400,7 @@ public partial class ToneViewModel : ObservableObject
             keepOutput = true;
             TonePreviewImage = bitmap;
             HasTonePreview = true;
+            HasFileRegionOverlay = hasFileRegionOverlay;
             _tonePreviewRendering = false;
             _tonePreviewError = null;
             _tonePreviewReady = true;
@@ -364,12 +417,20 @@ public partial class ToneViewModel : ObservableObject
             {
                 _tonePreviewRendering = false;
                 _tonePreviewError = exception.Message;
+                TonePreviewImage = null;
+                HasTonePreview = false;
+                HasFileRegionOverlay = false;
+                _tonePreviewReady = false;
+                TempFiles.TryDeleteTemporaryFile(_lastTonePreviewPath);
+                _lastTonePreviewPath = null;
                 TonePreviewStatus = ComposeTonePreviewStatus();
                 _shell.AppendLog(JobDiagnostics.FormatLog($"影调预览：{sourcePath}", exception));
             }
         }
         finally
         {
+            if (enteredGate)
+                _tonePreviewGate.Release();
             if (!keepOutput)
             {
                 TempFiles.TryDeleteTemporaryFile(outputPath);
@@ -389,6 +450,7 @@ public partial class ToneViewModel : ObservableObject
         _tonePreviewRevision++;
         TonePreviewImage = null;
         HasTonePreview = false;
+        HasFileRegionOverlay = false;
         _tonePreviewReady = false;
         _tonePreviewRendering = false;
         _tonePreviewError = null;

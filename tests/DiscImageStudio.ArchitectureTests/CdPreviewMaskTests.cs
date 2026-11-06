@@ -1,0 +1,150 @@
+using System.IO;
+using DiscImageStudio.Cd;
+using DiscImageStudio.Core;
+using DiscImageStudio.ImageIO;
+
+internal static class CdPreviewMaskTests
+{
+    internal static void Run()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), $"disc-cd-preview-mask-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            string source = Path.Combine(directory, "source.png");
+            WriteSource(source);
+            CdDiscParameters generated = new(24.5, 59.5, 128);
+            CdDiscParameters fitted = generated with { ImageOuterRadiusMm = generated.OuterRadiusMm };
+            TestAudio(directory, source, generated, fitted);
+            TestData(directory, source, generated, fitted);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+        Console.WriteLine("cd-preview-mask: passed (audio/data source and readback, transparent hole/exterior, opaque unsampled ring, fit-outer without changing source mapping)");
+    }
+
+    private static void TestAudio(string directory, string source,
+        CdDiscParameters generated, CdDiscParameters fitted)
+    {
+        string track = Path.Combine(directory, "audio.raw");
+        CdTrackGenerator.Generate(source, track, generated, interleave: false);
+        foreach ((int size, int samples, CdDiscParameters actual) in new[]
+        {
+            (512, CdDiscParameters.BytesPerSector, fitted),
+            // Deliberately different readback geometry proves the mask follows actual,
+            // while sparse samples leave visible white pixels inside the annulus.
+            (128, 1, fitted with { InnerRadiusMm = 30, OuterRadiusMm = 54 }),
+        })
+        {
+            string warp = Path.Combine(directory, $"audio-warp-{size}.png");
+            string readback = Path.Combine(directory, $"audio-readback-{size}.png");
+            CdTrackGenerator.PreviewWarp(source, warp, generated, actual, size, samples);
+            CdTrackGenerator.PreviewTrack(track, readback, actual, size,
+                CdDiscParameters.BytesPerSector / samples, deinterleave: false);
+            BgraRaster projected = RasterCodec.LoadBgra32(warp);
+            BgraRaster decoded = RasterCodec.LoadBgra32(readback);
+            int opaqueWhite = VerifyMask(projected, size, actual, $"audio {size}");
+            Require(projected.Pixels.SequenceEqual(decoded.Pixels), $"audio {size} source/readback parity");
+            if (samples == 1)
+                Require(opaqueWhite > generated.Sectors, "unsampled audio pixels inside the annulus stay opaque white");
+            if (size == 512)
+            {
+                VerifyOuterRingVisible(projected, actual);
+                string wrongMapping = Path.Combine(directory, "audio-wrong-source-mapping.png");
+                CdTrackGenerator.PreviewWarp(source, wrongMapping, fitted, fitted, size, samples);
+                Require(!projected.Pixels.SequenceEqual(RasterCodec.LoadBgra32(wrongMapping).Pixels),
+                    "audio fixture detects accidentally changing the source canvas radius");
+            }
+        }
+        Require(generated.ImageOuterRadiusMm == CdDiscParameters.StandardImageOuterRadiusMm,
+            "fit-outer retains the generated source mapping");
+    }
+
+    private static void TestData(string directory, string source,
+        CdDiscParameters generated, CdDiscParameters actual)
+    {
+        string files = Path.Combine(directory, "files");
+        Directory.CreateDirectory(files);
+        File.WriteAllBytes(Path.Combine(files, "sample.bin"), Enumerable.Range(0, 7000).Select(i => (byte)i).ToArray());
+        foreach (bool outerFiles in new[] { false, true })
+        {
+            CdDataLayoutPlan plan = CdDataImageGenerator.PrepareLayout(files, generated, filesAtOuterRing: outerFiles);
+            string iso = Path.Combine(directory, $"data-{outerFiles}.iso");
+            string warp = Path.Combine(directory, $"data-warp-{outerFiles}.png");
+            string readback = Path.Combine(directory, $"data-readback-{outerFiles}.png");
+            // Match the scalar source preview exactly, independently of SIMD rounding.
+            CdDataImageGenerator.Generate(source, iso, generated, plan, useSimdSampling: false);
+            CdDataImageGenerator.PreviewWarp(source, warp, generated, actual, 512,
+                CdDataImageGenerator.BytesPerSector, ToneProfile.LegacyBinary, plan);
+            CdDataImageGenerator.PreviewTrack(iso, readback, actual, 512, 1);
+            BgraRaster projected = RasterCodec.LoadBgra32(warp);
+            BgraRaster decoded = RasterCodec.LoadBgra32(readback);
+            VerifyMask(projected, 512, actual, $"data outer files {outerFiles}");
+            Require(projected.Pixels.SequenceEqual(decoded.Pixels),
+                $"data outer files {outerFiles} source/readback parity with ISO sidecar ranges");
+        }
+    }
+
+    private static int VerifyMask(BgraRaster image, int size, CdDiscParameters actual, string name)
+    {
+        Require(image.Width == size && image.Height == size, $"{name} output dimensions");
+        int opaqueWhite = 0, opaqueDark = 0, transparent = 0;
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            double radius = Radius(x, y, size, actual.ImageOuterRadiusMm);
+            bool recorded = radius >= actual.InnerRadiusMm && radius < actual.OuterRadiusMm;
+            int offset = (y * size + x) * 4;
+            Require(image.Pixels[offset + 3] == (recorded ? 255 : 0), $"{name} alpha at ({x}, {y})");
+            if (!recorded) transparent++;
+            else if (image.Pixels[offset] == 255) opaqueWhite++;
+            else opaqueDark++;
+        }
+        Require(transparent > 0 && opaqueWhite > 0 && opaqueDark > 0,
+            $"{name} contains transparent exterior/hole, opaque white gaps and sampled drawing");
+        return opaqueWhite;
+    }
+
+    private static void VerifyOuterRingVisible(BgraRaster image, CdDiscParameters actual)
+    {
+        int outerSamples = 0;
+        for (int y = 0; y < image.Height; y++)
+        for (int x = 0; x < image.Width; x++)
+        {
+            double radius = Radius(x, y, image.Width, actual.ImageOuterRadiusMm);
+            int offset = (y * image.Width + x) * 4;
+            if (radius > CdDiscParameters.StandardImageOuterRadiusMm && radius < actual.OuterRadiusMm
+                && image.Pixels[offset + 3] == 255 && image.Pixels[offset] < 255)
+                outerSamples++;
+        }
+        Require(outerSamples > 0, "fit-outer shows actual drawing beyond the 57.5 mm source canvas radius");
+    }
+
+    private static double Radius(int x, int y, int size, double canvasRadius)
+    {
+        double dx = x - size / 2.0, dy = y - size / 2.0;
+        return Math.Sqrt(dx * dx + dy * dy) * canvasRadius / (size / 2.0);
+    }
+
+    private static void WriteSource(string path)
+    {
+        const int size = 128;
+        byte[] pixels = new byte[size * size * 4];
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            int offset = (y * size + x) * 4;
+            byte gray = (byte)(((x / 7 + y / 11) & 1) == 0 ? 0 : 255);
+            pixels[offset] = pixels[offset + 1] = pixels[offset + 2] = gray;
+            pixels[offset + 3] = 255;
+        }
+        RasterCodec.SavePng(path, size, size, pixels, grayscale: false);
+    }
+
+    private static void Require(bool condition, string name)
+    {
+        if (!condition) throw new InvalidOperationException($"CD preview mask: {name}.");
+    }
+}
