@@ -134,10 +134,11 @@ internal static class GratingPaletteCommand
                     int wedge = (int)(theta / 120) % 3;
                     int paletteIndex = wedge == 0
                         ? PaletteForHue(hue)
-                        : wedge == 1 ? AccentForHue(hue, saturation) : 1;
+                        : wedge == 1 ? AccentForHue(hue, saturation) : -1;
                     bool on = Bayer(col, row) < luminance;
-                    if (!on) continue;
-                    _values[(row * _cols) + col] = (byte)(paletteIndex + 1);
+                    // 0 = black (A5), 1 = white (92), 2..6 = B/G/C/D/E.
+                    byte cell = on ? (paletteIndex < 0 ? (byte)1 : (byte)(paletteIndex + 1)) : (byte)0;
+                    _values[(row * _cols) + col] = cell;
                 }
             }
         }
@@ -148,7 +149,8 @@ internal static class GratingPaletteCommand
             int row = (int)Math.Floor((sample.Ymm - _origin) / _cell);
             if (col < 0 || col >= _cols || row < 0 || row >= _rows) return 0;
             byte value = _values[(row * _cols) + col];
-            if (value == 0) return 0;
+            if (value == 0) return 0xA5;       // black motif
+            if (value == 1) return 0x92;       // white motif
             byte[] motifs = DvdGratingPalette.Motifs[value - 1];
             return motifs[(int)(sample.GlobalCodewordIndex % (ulong)motifs.Length)];
         }
@@ -158,12 +160,11 @@ internal static class GratingPaletteCommand
 
         private static int PaletteForHue(double hue) => hue switch
         {
-            >= 260 and < 330 => 0,
-            >= 330 or < 20 => 6,
-            >= 20 and < 55 => 2,
-            >= 55 and < 150 => 1,
-            >= 150 and < 195 => 4,
-            >= 195 and < 260 => 5,
+            >= 330 or < 20 => 3,   // C red
+            >= 20 and < 55 => 2,   // G yellow
+            >= 55 and < 150 => 1,  // B green
+            >= 150 and < 195 => 4, // D teal
+            >= 195 and < 330 => 5, // E blue (violet approximated)
             _ => 3,
         };
 
