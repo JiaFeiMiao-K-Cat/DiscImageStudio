@@ -303,9 +303,9 @@ public class DiscDesignCanvas : FrameworkElement
             DrawLayer(drawingContext, _design.Layers[index]);
         }
 
-        if (_design.ShowDataRegion && _design.DataRegion is { } dataRegion)
+        if (_design.ShowDataRegion && _design.DataRegions is { } dataRegions)
         {
-            DrawDataRegion(drawingContext, center, dataRegion);
+            DrawDataRegions(drawingContext, center, dataRegions);
         }
 
         DrawDimMask(drawingContext, center, outerRadius, innerRadius);
@@ -376,22 +376,26 @@ public class DiscDesignCanvas : FrameworkElement
 
     /// <summary>The data-occupied zone as a yellow ring, the canvas twin of the tone
     /// mini-preview's tint (#FACC15): painted over the layers on purpose, so a picture that
-    /// slides onto the files is visibly covered by the guide. Faint fill, stroked edges.</summary>
-    private void DrawDataRegion(DrawingContext context, Point center, DesignViewModel.DataRegionMm region)
+    /// slides onto the files is visibly covered by the guide. Faint monochrome fill, no
+    /// border. Every occupied annulus from the real layout plan is drawn independently,
+    /// e.g. outer-ring files plus the inner filesystem metadata.</summary>
+    private void DrawDataRegions(DrawingContext context, Point center, IReadOnlyList<DesignViewModel.DataRegionMm> regions)
     {
-        double outer = ScreenLength(region.OuterRadiusMm);
-        double inner = ScreenLength(region.InnerRadiusMm);
-        if (outer <= 0 || inner < 0)
+        var brush = new SolidColorBrush(Color.FromArgb(0x1F, 0xFA, 0xCC, 0x15));
+        foreach (DesignViewModel.DataRegionMm region in regions)
         {
-            return;
-        }
+            double outer = ScreenLength(region.OuterRadiusMm);
+            double inner = ScreenLength(region.InnerRadiusMm);
+            if (outer <= 0 || inner < 0)
+            {
+                continue;
+            }
 
-        PathGeometry ring = new() { FillRule = FillRule.EvenOdd };
-        ring.Figures.Add(DiscRenderCore.CircleFigure(center, outer));
-        ring.Figures.Add(DiscRenderCore.CircleFigure(center, inner));
-        // Monochrome, borderless: same yellow as the tone preview file regions, kept light
-        // so the pictures underneath stay readable.
-        context.DrawGeometry(new SolidColorBrush(Color.FromArgb(0x1F, 0xFA, 0xCC, 0x15)), null, ring);
+            PathGeometry ring = new() { FillRule = FillRule.EvenOdd };
+            ring.Figures.Add(DiscRenderCore.CircleFigure(center, outer));
+            ring.Figures.Add(DiscRenderCore.CircleFigure(center, inner));
+            context.DrawGeometry(brush, null, ring);
+        }
     }
 
     /// <summary>Everything outside the content ring is dimmed with one EvenOdd path: the

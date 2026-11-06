@@ -54,7 +54,10 @@ public static class UdfImageWriter
         public DateTimeOffset Timestamp { get; }
         internal List<Node> Nodes { get; }
         internal uint ReserveVdsLba => VolumeSectors - 256;
-        internal uint PartitionStartLba { get; }
+
+        /// <summary>First LBA of the file partition (metadata plus data), at the chosen
+        /// ring: the designer's data-region guide maps it to the inner guide radius.</summary>
+        public uint PartitionStartLba { get; }
         internal uint PartitionSectors => DataEndLbaExclusive - PartitionStartLba;
     }
 

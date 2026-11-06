@@ -162,6 +162,7 @@ CalibrationBoundaryWorkflowTests.Run();
 CalibrationFitLocalizationTests.Run();
 PopupLocalizationTests.Run();
 AppSettingsTests.Run();
+FilesystemMetadataBudgetTests.Run();
 LocalizationTests.Run();
 ThemePaletteTests.Run();
 TempFilesCacheTests.Run();
