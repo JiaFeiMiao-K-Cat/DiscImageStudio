@@ -16,6 +16,7 @@ using DiscImageStudio.Core.Calibration;
 using DiscImageStudio.Desktop;
 using DiscImageStudio.Dvd;
 using DiscImageStudio.ImageIO;
+using DiscImageStudio.Localization;
 using DiscImageStudio.Services;
 using SkiaSharp;
 
@@ -306,16 +307,19 @@ try
     var progressBar = window.GetVisualDescendants().OfType<ProgressBar>().Single();
     var log = window.GetVisualDescendants().OfType<TextBox>().Single(box => box.IsReadOnly);
     bool ShowsBurnStatus(string status) => window.GetVisualDescendants().OfType<TextBlock>().Any(block => block.Text == status);
+    string writingStatus = $"{L.T("正在写入盘片")} · 38%";
+    string closingStatus = $"{L.T("正在封盘")} · 99%";
+    string completeStatus = $"{L.T("刻录完成")} · 100%";
     await window.RunBurnWork(report =>
     {
         report(new(MacBurnStage.Writing, 38));
-        Check(!progressBar.IsIndeterminate && progressBar.Value == 38 && ShowsBurnStatus("正在写入盘片 · 38%")
-            && log.Text!.Contains("正在写入盘片 · 38%"), "Burn percent must reach both the status bar and the log");
+        Check(!progressBar.IsIndeterminate && progressBar.Value == 38 && ShowsBurnStatus(writingStatus)
+            && log.Text!.Contains(writingStatus), "Burn percent must reach both the status bar and the log");
         report(new(MacBurnStage.Closing, 100));
-        Check(progressBar.Value == 99 && ShowsBurnStatus("正在封盘 · 99%"), "Burn must not show 100% before completion");
+        Check(progressBar.Value == 99 && ShowsBurnStatus(closingStatus), "Burn must not show 100% before completion");
         return Task.CompletedTask;
     });
-    Check(progressBar.Value == 100 && ShowsBurnStatus("刻录完成 · 100%") && log.Text!.Contains("刻录完成 · 100%"),
+    Check(progressBar.Value == 100 && ShowsBurnStatus(completeStatus) && log.Text!.Contains(completeStatus),
         "A successful burn must report 100% in both places");
 
     window.Navigate("标定");
