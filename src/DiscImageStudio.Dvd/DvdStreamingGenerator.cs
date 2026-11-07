@@ -7,6 +7,8 @@ using DvdImageSolver.Solver;
 
 namespace DiscImageStudio.Dvd;
 
+public enum DvdDataFileSystem { Cdfs, Udf250 }
+
 public sealed record DvdStreamingOptions(
     uint TotalSectors,
     double InnerRadiusMm,
@@ -25,7 +27,8 @@ public sealed record DvdStreamingOptions(
     bool ReadCompatibility = false,
     uint? UsableSectors = null,
     double? SourceImageOuterRadiusMm = null,
-    string ReadCompatibilityMode = DvdReadCompatibilityModes.Current)
+     string ReadCompatibilityMode = DvdReadCompatibilityModes.Current,
+     DvdDataFileSystem FileSystem = DvdDataFileSystem.Cdfs)
 {
     /// <summary>Physical channel-bit length of the DVD scheme; the UI no longer exposes it.</summary>
     public const double StandardChannelBitLengthNm = 133.3;
@@ -147,6 +150,7 @@ public sealed class DvdHybridStreamingPlan
     public uint DrawingEndLbaExclusive { get; }
 
     public bool FilesAtOuterRing => IsoLayout.FilesAtOuterRing;
+    public string FileSystem => IsoLayout.FileSystem;
 
     public uint DrawingSectors => checked(DrawingEndLbaExclusive - DrawingStartLba);
 
@@ -170,14 +174,18 @@ public static class DvdStreamingGenerator
         ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
         ArgumentNullException.ThrowIfNull(options);
         options.Validate();
+        if (options.FileSystem == DvdDataFileSystem.Udf250 && string.IsNullOrWhiteSpace(dataDirectory))
+            throw new ArgumentException("UDF 2.50 requires a hybrid --data-dir.", nameof(dataDirectory));
         HybridIsoImageWriter.LayoutPlan isoLayout = HybridIsoImageWriter.Plan(
             dataDirectory,
             options.OutputSectors,
             volumeLabel,
-            filesAtOuterRing);
+            filesAtOuterRing, options.FileSystem == DvdDataFileSystem.Udf250 ? "udf250" : "cdfs");
         uint drawingStartLba = AlignToEccBlock(filesAtOuterRing
             ? isoLayout.MetadataEndLbaExclusive : isoLayout.DataEndLbaExclusive, PsnOffset);
-        uint drawingEndLba = filesAtOuterRing ? isoLayout.FileDataStartLba / 16 * 16 : options.OutputSectors;
+        uint drawingEndLba = filesAtOuterRing
+            ? isoLayout.FileDataStartLba / 16 * 16
+            : isoLayout.DrawingEndLbaExclusive;
         if (drawingEndLba < drawingStartLba || drawingEndLba - drawingStartLba < DvdEccBlockEncoder.SectorCount)
         {
             throw new ArgumentException(
@@ -367,6 +375,10 @@ public static class DvdStreamingGenerator
             HybridIsoImageWriter.WriteOuterRingSuffix(plan.IsoLayout, output, plan.DrawingEndLbaExclusive, cancellationToken);
             progress?.Invoke(new DvdStreamingProgress(options.ContentLength, options.ContentLength,
                 totalBlocks, totalBlocks, stopwatch.Elapsed));
+        }
+        else
+        {
+            HybridIsoImageWriter.WriteSuffixAfterDrawing(plan.IsoLayout, output, cancellationToken);
         }
         stopwatch.Stop();
         return new DvdStreamingSummary(

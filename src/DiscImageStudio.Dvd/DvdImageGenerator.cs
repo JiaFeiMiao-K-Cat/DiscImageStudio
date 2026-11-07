@@ -11,7 +11,10 @@ public sealed record DvdImageRequest(
     DvdStreamingOptions Options,
     string? DataDirectory = null,
     string VolumeLabel = "DISC_IMAGE",
-    bool FilesAtOuterRing = false);
+    bool FilesAtOuterRing = false)
+{
+    public DvdDataFileSystem FileSystem => Options.FileSystem;
+}
 
 /// <summary>Generates the normal drawing ISO and its compatible solve sidecar.
 /// CLI argument parsing and exit-code handling are deliberately outside this API.</summary>
@@ -68,6 +71,8 @@ public static class DvdImageGenerator
         ArgumentNullException.ThrowIfNull(request.Options);
         request.Options.Validate();
         bool hybrid = !string.IsNullOrWhiteSpace(request.DataDirectory);
+        if (request.Options.FileSystem == DvdDataFileSystem.Udf250 && !hybrid)
+            throw new ArgumentException("UDF 2.50 is only valid for a hybrid data directory.", nameof(request.DataDirectory));
         if (!hybrid && request.FilesAtOuterRing)
             throw new ArgumentException("Outer-ring file placement requires a data directory.", nameof(request));
         string outputPath = Path.GetFullPath(request.OutputPath);

@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:loc="clr-namespace:DiscImageStudio.Localization"
              xmlns:controls="clr-namespace:DiscImageStudio.Controls"
+             xmlns:dvd="clr-namespace:DiscImageStudio.Dvd;assembly=DiscImageStudio.Dvd"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:vm="clr-namespace:DiscImageStudio.ViewModels"
              SizeChanged="OnPageSizeChanged">
@@ -266,15 +267,24 @@
                                     </controls:VisibilityGate>
                                     <controls:VisibilityGate IsOpen="{Binding IsDvd}">
                                         <StackPanel>
-                                            <controls:PathField Label="{loc:Text Xaml.FolderOptional}" Compact="True"
-                                                                Text="{Binding State.DvdDataDirectory}"
+                                             <controls:PathField Label="{loc:Text Xaml.FolderOptional}" Compact="True"
+                                                                 Text="{Binding State.DvdDataDirectory}"
                                                                 ToolTip="{Binding State.DvdDataDirectory}"
-                                                                ButtonLabel="{loc:Text Xaml.Browse3}"
-                                                                Command="{Binding BrowseDataCommand}" />
-                                            <controls:VisibilityGate IsOpen="{Binding State.HasDvdFiles}">
-                                                <StackPanel Margin="0,14,0,0">
-                                                    <TextBlock Style="{StaticResource FieldLabel}"
-                                                               Text="{loc:Text Xaml.FilePlacement}" Margin="0,0,0,6" />
+                                                                 ButtonLabel="{loc:Text Xaml.Browse3}"
+                                                                 Command="{Binding BrowseDataCommand}" />
+                                             <controls:VisibilityGate IsOpen="{Binding State.HasDvdFiles}">
+                                                 <StackPanel Margin="0,14,0,0">
+                                                     <TextBlock Style="{StaticResource FieldLabel}"
+                                                                Text="{loc:Text Xaml.DvdFileSystem}" Margin="0,0,0,6" />
+                                                     <ComboBox Style="{StaticResource CompactComboBox}"
+                                                               SelectedValue="{Binding State.DvdFileSystem, Mode=TwoWay}"
+                                                               SelectedValuePath="Tag"
+                                                               AutomationProperties.Name="{loc:Text Xaml.DvdFileSystem}">
+                                                         <ComboBoxItem Tag="{x:Static dvd:DvdDataFileSystem.Cdfs}" Content="{loc:Text DvdFileSystem.Cdfs}" />
+                                                         <ComboBoxItem Tag="{x:Static dvd:DvdDataFileSystem.Udf250}" Content="{loc:Text DvdFileSystem.Udf250}" />
+                                                     </ComboBox>
+                                                     <TextBlock Style="{StaticResource FieldLabel}"
+                                                                Text="{loc:Text Xaml.FilePlacement}" Margin="0,0,0,6" />
                                                     <controls:SegmentedControl LabelA="{loc:Text Xaml.InnerRing}" LabelB="{loc:Text Xaml.OuterRing}"
                                                                                IsSecondSelected="{Binding State.DvdFilesAtOuterRing}" />
                                                 </StackPanel>

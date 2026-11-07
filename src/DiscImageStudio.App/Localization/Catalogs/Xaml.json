@@ -1781,6 +1781,10 @@
     "es": "Ubicación de archivos",
     "cs": "Umístění souborů"
   },
+  "Xaml.DvdFileSystem": {
+    "zh-CN": "文件系统",
+    "en": "File system"
+  },
   "Xaml.InnerRing": {
     "zh-CN": "内圈",
     "en": "Inner ring",

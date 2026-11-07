@@ -132,8 +132,8 @@ internal static class UdfFilesystemTests
             Require(main.Keys.Order().SequenceEqual(reserve.Keys.Order()), "main and reserve sequence descriptor sets match");
             foreach ((ushort type, byte[] descriptor) in main)
                 Require(descriptor.AsSpan(16).SequenceEqual(reserve[type].AsSpan(16)), "reserve sequence preserves complete volume descriptor bodies");
-            Require(main.ContainsKey(1) && main.ContainsKey(5) && main.ContainsKey(6) && main.ContainsKey(8),
-                "both sequences include PVD, partition, logical volume and terminator descriptors");
+            Require(main.ContainsKey(1) && main.ContainsKey(4) && main.ContainsKey(5) && main.ContainsKey(6) && main.ContainsKey(8),
+                "both sequences include PVD, implementation, partition, logical volume and terminator descriptors");
 
             ReadOnlySpan<byte> pvd = main[1];
             Require(U16(pvd, 56) == 1 && U16(pvd, 58) == 1, "single-volume sequence numbers");
@@ -154,7 +154,12 @@ internal static class UdfFilesystemTests
             ReadOnlySpan<byte> logical = main[6];
             CheckCharacterSet(logical.Slice(20, 64));
             Require(U32(logical, 212) == SectorSize, "logical block size equals payload sector size");
-            CheckDomain(logical.Slice(216, 32));
+            ushort udfRevision = CheckDomain(logical.Slice(216, 32));
+            Require(udfRevision is 0x0201 or 0x0250, "supported UDF revision");
+            ReadOnlySpan<byte> implementation = main[4];
+            CheckTag(implementation, 4, mainStart + 1);
+            Require(Encoding.ASCII.GetString(implementation.Slice(21, 23)).TrimEnd('\0') == "*UDF LV Info"
+                && U16(implementation, 44) == udfRevision, "implementation identifier carries the selected UDF revision");
             Require(U32(logical, 264) == 6 && U32(logical, 268) == 1
                 && logical[440] == 1 && logical[441] == 6 && U16(logical, 442) == 1
                 && U16(logical, 444) == _partitionNumber, "one physical type-1 partition map");
@@ -177,12 +182,15 @@ internal static class UdfFilesystemTests
             CheckTag(PartitionBlock(fileSetBlock + 1), 8, fileSetBlock + 1);
             CheckCharacterSet(fileSet.Slice(48, 64));
             Require(DecodeDString(fileSet.Slice(112, 128)) == logicalName, "file set belongs to the selected logical volume");
-            CheckDomain(fileSet.Slice(416, 32));
+            Require(CheckDomain(fileSet.Slice(416, 32)) == udfRevision,
+                "file set domain revision matches the logical volume");
             uint root = ReadLongAllocation(fileSet.Slice(400, 16), out uint rootLength);
             Require(rootLength == SectorSize, "root ICB covers one logical block");
             ReadEntry(root, "", expectedDirectory: true);
             Require(U32(integrity, 120) == _files.Count && U32(integrity, 124) == _visited.Count - _files.Count,
                 "integrity implementation data matches the traversed file and directory counts");
+            Require(U16(integrity, 128) == udfRevision && U16(integrity, 130) == udfRevision
+                && U16(integrity, 132) == udfRevision, "integrity revisions match the selected UDF revision");
             return _files;
         }
 
@@ -195,7 +203,7 @@ internal static class UdfFilesystemTests
             {
                 ReadOnlySpan<byte> data = Block(start + index);
                 ushort type = U16(data, 0);
-                Require(type is >= 1 and <= 8 && type != 2, "volume descriptor sequence contains only volume descriptor types");
+                Require(type is >= 1 and <= 8, "volume descriptor sequence contains only volume descriptor types");
                 CheckTag(data, type, start + index);
                 Require(descriptors.TryAdd(type, data.ToArray()), "one prevailing descriptor of each emitted type");
                 if (type == 8) return descriptors;
@@ -296,9 +304,13 @@ internal static class UdfFilesystemTests
     private static void CheckCharacterSet(ReadOnlySpan<byte> data) => Require(data[0] == 0
         && Encoding.ASCII.GetString(data[1..]).TrimEnd('\0') == "OSTA Compressed Unicode", "OSTA CS0 character set declaration");
 
-    private static void CheckDomain(ReadOnlySpan<byte> data) => Require(data[0] == 0
+    private static ushort CheckDomain(ReadOnlySpan<byte> data)
+    {
+        Require(data[0] == 0
         && Encoding.ASCII.GetString(data.Slice(1, 23)).TrimEnd('\0') == "*OSTA UDF Compliant"
-        && U16(data, 24) == 0x0201, "OSTA UDF 2.01 domain identifier");
+        && U16(data, 24) is 0x0201 or 0x0250, "OSTA UDF domain identifier");
+        return U16(data, 24);
+    }
 
     private static string DecodeDString(ReadOnlySpan<byte> data)
     {

@@ -1,0 +1,10 @@
+{
+  "DvdFileSystem.Cdfs": {
+    "zh-CN": "CDFS（ISO9660/Joliet）",
+    "en": "CDFS (ISO9660/Joliet)"
+  },
+  "DvdFileSystem.Udf250": {
+    "zh-CN": "UDF 2.50（BD5/BDMV）",
+    "en": "UDF 2.50 (BD5/BDMV)"
+  }
+}

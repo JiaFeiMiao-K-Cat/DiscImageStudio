@@ -5,12 +5,13 @@ using System.Text;
 namespace DiscImageStudio.Iso;
 
 /// <summary>
-/// Plans a closed, read-only UDF 2.01 volume and writes it without seeking. The physical
+/// Plans a closed, read-only UDF 2.01 or 2.50 volume and writes it without seeking. The physical
 /// partition contains only the files and may be placed at either end; the drawing area is reserved volume space
-/// outside that partition. ECMA-167 (3rd edition), ECMA TR/112-4 (UDF 2.01).
+/// outside that partition. ECMA-167 (3rd edition), ECMA TR/112-4.
 /// </summary>
 public static class UdfImageWriter
 {
+    public enum Revision : ushort { V2_01 = 0x0201, V2_50 = 0x0250 }
     public const int LogicalSectorBytes = 2048;
     public const uint MinimumVolumeSectors = 640;
     private const uint MainVdsLba = 32;
@@ -24,7 +25,7 @@ public static class UdfImageWriter
     {
         internal LayoutPlan(string sourceDirectory, uint volumeSectors, string volumeLabel,
             DateTimeOffset timestamp, List<Node> nodes, uint partitionStart, uint dataEnd,
-            uint drawingStart, uint drawingEnd, bool filesAtOuterRing)
+            uint drawingStart, uint drawingEnd, bool filesAtOuterRing, Revision revision)
         {
             SourceDirectory = sourceDirectory;
             VolumeSectors = volumeSectors;
@@ -36,6 +37,7 @@ public static class UdfImageWriter
             DrawingStartLba = drawingStart;
             DrawingEndLbaExclusive = drawingEnd;
             FilesAtOuterRing = filesAtOuterRing;
+            UdfRevision = revision;
             FileCount = nodes.Count(node => !node.IsDirectory);
             DirectoryCount = nodes.Count - FileCount;
             FileBytes = nodes.Where(node => !node.IsDirectory).Sum(node => node.DataLength);
@@ -50,20 +52,25 @@ public static class UdfImageWriter
         public uint DrawingStartLba { get; }
         public uint DrawingEndLbaExclusive { get; }
         public bool FilesAtOuterRing { get; }
+        public Revision UdfRevision { get; }
         public string VolumeLabel { get; }
         public DateTimeOffset Timestamp { get; }
         internal List<Node> Nodes { get; }
         internal uint ReserveVdsLba => VolumeSectors - 256;
         internal uint PartitionStartLba { get; }
+        public uint PartitionStart { get { return PartitionStartLba; } }
         internal uint PartitionSectors => DataEndLbaExclusive - PartitionStartLba;
     }
 
     public static LayoutPlan Plan(string? sourceDirectory, uint volumeSectors, string volumeLabel,
-        DateTimeOffset? timestamp = null, bool filesAtOuterRing = false)
+        DateTimeOffset? timestamp = null, bool filesAtOuterRing = false,
+        Revision revision = Revision.V2_01)
     {
         if (volumeSectors < MinimumVolumeSectors || volumeSectors % 32 != 0)
             throw new ArgumentOutOfRangeException(nameof(volumeSectors),
                 $"UDF drawing volumes need at least {MinimumVolumeSectors} sectors and a multiple of 32 sectors.");
+        if (revision is not Revision.V2_01 and not Revision.V2_50)
+            throw new ArgumentOutOfRangeException(nameof(revision), "Only UDF revisions 2.01 and 2.50 are supported.");
         ArgumentNullException.ThrowIfNull(volumeLabel);
         DateTimeOffset recorded = timestamp ?? DateTimeOffset.UtcNow;
         string sourcePath = sourceDirectory is null ? string.Empty : Path.GetFullPath(sourceDirectory);
@@ -155,7 +162,7 @@ public static class UdfImageWriter
         // All descriptors use precisely the same logical volume identifier.
         label = FitDstring(label, 128);
         return new LayoutPlan(sourcePath, volumeSectors, label, recorded, nodes, partitionStart,
-            cursor, drawingStart, drawingEnd, filesAtOuterRing);
+            cursor, drawingStart, drawingEnd, filesAtOuterRing, revision);
     }
 
     public static void WriteSequentialPrefix(LayoutPlan plan, Stream output, uint endLbaExclusive,
@@ -279,7 +286,7 @@ public static class UdfImageWriter
     {
         byte[] data = new byte[LogicalSectorBytes];
         U32(data, 16, 2);
-        Entity(data.AsSpan(20, 32), "*UDF LV Info", udfRevision: true);
+         Entity(data.AsSpan(20, 32), "*UDF LV Info", udfRevision: true, revision: plan.UdfRevision);
         Charspec(data.AsSpan(52, 64));
         Dstring(data.AsSpan(116, 128), plan.VolumeLabel);
         Entity(data.AsSpan(352, 32), ImplementationId);
@@ -308,7 +315,7 @@ public static class UdfImageWriter
         Charspec(data.AsSpan(20, 64));
         Dstring(data.AsSpan(84, 128), plan.VolumeLabel);
         U32(data, 212, LogicalSectorBytes);
-        Entity(data.AsSpan(216, 32), "*OSTA UDF Compliant", domain: true);
+         Entity(data.AsSpan(216, 32), "*OSTA UDF Compliant", domain: true, revision: plan.UdfRevision);
         LongAd(data.AsSpan(248, 16), LogicalSectorBytes * 2, 0);
         U32(data, 264, 6);
         U32(data, 268, 1);
@@ -333,9 +340,9 @@ public static class UdfImageWriter
         Entity(data.AsSpan(88, 32), ImplementationId);
         U32(data, 120, checked((uint)plan.FileCount));
         U32(data, 124, checked((uint)plan.DirectoryCount));
-        U16(data, 128, 0x0201);
-        U16(data, 130, 0x0201);
-        U16(data, 132, 0x0201);
+         U16(data, 128, (ushort)plan.UdfRevision);
+         U16(data, 130, (ushort)plan.UdfRevision);
+         U16(data, 132, (ushort)plan.UdfRevision);
         SetTag(data, 9, IntegrityLba, 134);
         return data;
     }
@@ -362,7 +369,7 @@ public static class UdfImageWriter
         Charspec(data.AsSpan(240, 64));
         Dstring(data.AsSpan(304, 32), FitDstring(plan.VolumeLabel, 32));
         LongAd(data.AsSpan(400, 16), LogicalSectorBytes, plan.Nodes[0].EntryLba - plan.PartitionStartLba);
-        Entity(data.AsSpan(416, 32), "*OSTA UDF Compliant", domain: true);
+         Entity(data.AsSpan(416, 32), "*OSTA UDF Compliant", domain: true, revision: plan.UdfRevision);
         SetTag(data, 256, 0, 512);
         return data;
     }
@@ -437,7 +444,7 @@ public static class UdfImageWriter
     private static byte[] EncodeIdentifier(string text)
     {
         if (text.Any(IsUnsupportedCharacter))
-            throw new ArgumentException($"UDF 2.01 filenames must use CS0 Unicode BMP characters without byte-order marks: {text}");
+            throw new ArgumentException($"UDF filenames must use CS0 Unicode BMP characters without byte-order marks: {text}");
         bool narrow = text.All(character => character <= byte.MaxValue);
         int length = checked(1 + text.Length * (narrow ? 1 : 2));
         if (length > byte.MaxValue)
@@ -480,11 +487,12 @@ public static class UdfImageWriter
     private static void Charspec(Span<byte> field)
         => Encoding.ASCII.GetBytes("OSTA Compressed Unicode", field[1..]);
 
-    private static void Entity(Span<byte> field, string id, bool domain = false, bool udfRevision = false)
+    private static void Entity(Span<byte> field, string id, bool domain = false, bool udfRevision = false,
+        Revision revision = Revision.V2_01)
     {
         Encoding.ASCII.GetBytes(id, field.Slice(1, 23));
         if (domain || udfRevision)
-            BinaryPrimitives.WriteUInt16LittleEndian(field.Slice(24, 2), 0x0201);
+            BinaryPrimitives.WriteUInt16LittleEndian(field.Slice(24, 2), (ushort)revision);
         if (domain)
             field[26] = 1; // Permanently closed volume; hard write protected.
     }

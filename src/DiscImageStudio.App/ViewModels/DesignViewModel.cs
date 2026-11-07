@@ -349,9 +349,10 @@ public partial class DesignViewModel : ObservableObject
                     checked((uint)ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, "Total sectors")),
                     ContentInnerRadiusMm, ContentOuterRadiusMm,
                     PitchLinear: ParameterParser.ParseDouble(_state.DvdPitchLinear, "Pitch"),
-                    PitchQuadratic: ParameterParser.ParseDouble(_state.DvdPitchQuadratic, "Pitch"),
-                    PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, "Pitch"),
-                    UsableSectors: checked((uint)usable)).OutputOuterRadiusMm,
+                     PitchQuadratic: ParameterParser.ParseDouble(_state.DvdPitchQuadratic, "Pitch"),
+                     PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, "Pitch"),
+                     UsableSectors: checked((uint)usable),
+                     FileSystem: _state.DvdFileSystem).OutputOuterRadiusMm,
                 OpticalDiscFamily.BluRay => new BluRayDiscParameters(
                     checked((uint)ParameterParser.ParsePositiveLong(_state.BdTotalSectors, "Total sectors")), 1,
                     ContentInnerRadiusMm, ContentOuterRadiusMm,

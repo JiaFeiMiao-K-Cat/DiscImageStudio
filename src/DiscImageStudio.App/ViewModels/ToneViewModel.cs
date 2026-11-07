@@ -521,7 +521,8 @@ public partial class ToneViewModel : ObservableObject
             PitchQuadratic: ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("DVD 轨距二次项")),
             PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("DVD 轨距三次项")),
             UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.Dvd)),
-            Tone: _state.DvdTone);
+            Tone: _state.DvdTone,
+            FileSystem: _state.DvdFileSystem);
         options.Validate();
         return options;
     }

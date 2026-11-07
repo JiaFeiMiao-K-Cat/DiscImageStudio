@@ -876,6 +876,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.DvdOutputPath),
         nameof(DiscParametersState.DvdDataDirectory),
         nameof(DiscParametersState.DvdFilesAtOuterRing),
+        nameof(DiscParametersState.DvdFileSystem),
         nameof(DiscParametersState.DvdReadCompatibility),
         nameof(DiscParametersState.DvdVolumeLabel),
         nameof(DiscParametersState.BdInnerRadius),
@@ -916,6 +917,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.CdOutputHint),
         nameof(DiscParametersState.DvdPitchSummary),
         nameof(DiscParametersState.DvdActualPitchSummary),
+        nameof(DiscParametersState.DvdFileSystemLabel),
     ];
 
     private void State_PropertyChanged(object? sender, PropertyChangedEventArgs e)
