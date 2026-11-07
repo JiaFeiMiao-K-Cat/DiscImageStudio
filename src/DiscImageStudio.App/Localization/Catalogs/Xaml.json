@@ -1727,6 +1727,15 @@
     "es": "Carpeta",
     "cs": "Složka"
   },
+  "Xaml.Browse3": {
+    "zh-CN": "选文件夹…",
+    "en": "Browse…",
+    "zh-TW": "選資料夾…",
+    "ja": "フォルダーを選択…",
+    "tr": "Klasör seç…",
+    "es": "Examinar…",
+    "cs": "Procházet…"
+  },
   "Xaml.FilePlacement": {
     "zh-CN": "文件位置",
     "en": "File placement",
