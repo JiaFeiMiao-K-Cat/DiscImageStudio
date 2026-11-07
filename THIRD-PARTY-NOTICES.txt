@@ -72,8 +72,9 @@ License: GNU General Public License version 3; the full text is in LICENSE.
 Upstream revision reviewed: 7574eca39e009f70c9b80a9a0ddb5bbe3d392173
 Source: https://github.com/Ashley-QwQ/disc-probe/blob/7574eca39e009f70c9b80a9a0ddb5bbe3d392173/tools/bridge_iso.py
 
-The optional DVD read-compatibility guard adapts the sector-local 64-byte
-window / first-0x92-to-0x9B rule into C#. Unlike the standalone ISO patcher,
+The DVD read-compatibility guard's legacy bridge-9b-v1 replay path adapts
+the sector-local 64-byte window / first-0x92-to-0x9B rule into C#. New output
+uses the periodic-9b-16-v1 recipe. Unlike the standalone ISO patcher,
 the writer only changes bytes explicitly owned by the drawing generator;
 filesystem data and alpha-excluded bytes are protected. The implementation
 is in src/DvdImageSolver/Solver/DvdReadCompatibilityGuard.cs. Adaptation and
