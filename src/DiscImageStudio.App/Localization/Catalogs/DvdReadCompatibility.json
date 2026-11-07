@@ -4,12 +4,12 @@
     "en": "DVD read compatibility (experimental)"
   },
   "DvdReadCompatibility.Hint": {
-    "zh-CN": "可改善部分驱动器的读回，可能轻微改变纹理。",
-    "en": "May improve read-back on some drives and slightly change the texture."
+    "zh-CN": "可改善部分光驱的读回；盘面纹理和对比度可能变化。",
+    "en": "May improve readback on some drives. Texture and contrast may change."
   },
   "DvdReadCompatibility.FrozenHint": {
-    "zh-CN": "使用标靶记录中的选项；如需更改，请创建新标靶。",
-    "en": "Uses the option saved with this target. Create a new target to change it."
+    "zh-CN": "使用标靶记录中的设置和保护规则；如需更改，请创建新标靶。",
+    "en": "Uses the settings and protection rule saved with this target. Create a new target to change them."
   },
   "DvdReadCompatibility.Enabled": {
     "zh-CN": "DVD读取兼容性：已启用（实验性）",

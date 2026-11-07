@@ -23,7 +23,8 @@ public sealed record DvdImageMetadata(
     bool HasFileSystem = false,
     bool ReadCompatibility = false,
     uint? UsableSectors = null,
-    double? SourceImageOuterRadiusMm = null)
+    double? SourceImageOuterRadiusMm = null,
+    string? ReadCompatibilityMode = null)
 {
     public uint OutputSectors => UsableSectors ?? TotalSectors;
 
@@ -80,12 +81,15 @@ public sealed record DvdImageMetadata(
                 && iso.TryGetProperty("mountableFilesystem", out JsonElement mountable)
                 && mountable.ValueKind == JsonValueKind.True;
             DvdTrackGeometry.ValidatePitchCoefficients(linear, quadratic, cubic);
-            bool readCompatibility = document.RootElement.TryGetProperty("readCompatibility", out JsonElement mode)
-                && mode.ValueKind == JsonValueKind.String && mode.GetString() == "bridge-9b-v1";
+            string? readCompatibilityMode = document.RootElement.TryGetProperty("readCompatibility", out JsonElement mode)
+                && mode.ValueKind == JsonValueKind.String && DvdReadCompatibilityModes.IsSupported(mode.GetString())
+                ? mode.GetString() : null;
+            bool readCompatibility = readCompatibilityMode is not null;
             return totalSectors > 0 && double.IsFinite(innerRadius) && double.IsFinite(outerRadius)
                 && innerRadius > 0 && outerRadius > innerRadius
                 ? new DvdImageMetadata(totalSectors, innerRadius, outerRadius, linear, quadratic, cubic,
-                    filesAtOuterRing, drawingStart, drawingStart + drawingSectors, hasFileSystem, readCompatibility, usableSectors, sourceImageOuterRadiusMm)
+                    filesAtOuterRing, drawingStart, drawingStart + drawingSectors, hasFileSystem, readCompatibility,
+                    usableSectors, sourceImageOuterRadiusMm, readCompatibilityMode)
                 : null;
         }
         catch (Exception exception) when (exception is JsonException or IOException or ArgumentException)

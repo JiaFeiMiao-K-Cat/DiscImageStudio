@@ -1108,7 +1108,8 @@ public partial class CalibrationViewModel : ObservableObject
         PitchLinear: target.Parameters.PitchLinear, PitchQuadratic: target.Parameters.PitchQuadratic,
         PitchCubic: target.Parameters.PitchCubic,
         ReadCompatibility: target.Parameters.DvdReadCompatibility,
-        UsableSectors: target.Parameters.UsableSectors is { } usable ? checked((uint)usable) : null);
+        UsableSectors: target.Parameters.UsableSectors is { } usable ? checked((uint)usable) : null,
+        ReadCompatibilityMode: target.EffectiveDvdReadCompatibilityMode);
     private static void ValidateOutputParameters(CalibrationParameters p)
     {
         p.Validate();

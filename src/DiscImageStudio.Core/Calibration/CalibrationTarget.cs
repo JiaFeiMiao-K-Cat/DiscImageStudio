@@ -198,12 +198,14 @@ public sealed class CalibrationTarget
 
     [JsonConstructor]
     public CalibrationTarget(int schemaVersion, string id, CalibrationParameters parameters,
-        CalibrationPatternOptions options, IReadOnlyList<CalibrationCell> cells, CalibrationArtwork artwork = default)
+        CalibrationPatternOptions options, IReadOnlyList<CalibrationCell> cells, CalibrationArtwork artwork = default,
+        string? dvdReadCompatibilityMode = null)
     {
         SchemaVersion = schemaVersion;
         Artwork = artwork;
         Id = id;
         Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
+        DvdReadCompatibilityMode = dvdReadCompatibilityMode;
         Options = options ?? throw new ArgumentNullException(nameof(options));
         Cells = Array.AsReadOnly(cells?.ToArray() ?? throw new ArgumentNullException(nameof(cells)));
         Validate();
@@ -282,6 +284,15 @@ public sealed class CalibrationTarget
     public CalibrationArtwork Artwork { get; }
     public string Id { get; }
     public CalibrationParameters Parameters { get; }
+    /// <summary>Frozen output recipe. Missing on old targets, whose enabled option used the legacy bridge.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? DvdReadCompatibilityMode { get; }
+
+    [JsonIgnore]
+    public string EffectiveDvdReadCompatibilityMode => Parameters.Kind == CalibrationDiscKind.Dvd
+        && Parameters.DvdReadCompatibility
+            ? DvdReadCompatibilityMode ?? DvdReadCompatibilityModes.LegacyBridge
+            : DvdReadCompatibilityModes.Off;
     public CalibrationPatternOptions Options { get; }
     public IReadOnlyList<CalibrationCell> Cells { get; }
 
@@ -438,7 +449,9 @@ public sealed class CalibrationTarget
                 .UnitRange(parameters.Sectors).EndExclusive)
             throw new ArgumentException("CD 粗标的可用扇区数不足以包含最外侧固定地址边界及其后的留白。请增加可用扇区数，或使用边界标定。");
         return new(version, Guid.NewGuid().ToString("N"), parameters, options,
-            BuildCells(parameters), artwork);
+            BuildCells(parameters), artwork,
+            parameters.Kind == CalibrationDiscKind.Dvd && parameters.DvdReadCompatibility
+                ? DvdReadCompatibilityModes.Current : null);
     }
 
     public void Validate()
@@ -456,6 +469,8 @@ public sealed class CalibrationTarget
             throw new ArgumentException("标定图案类型与记录版本不匹配。");
         if (!Guid.TryParseExact(Id, "N", out _)) throw new ArgumentException("标定图案 ID 无效。");
         Parameters.Validate();
+        if (DvdReadCompatibilityMode is not null && !DvdReadCompatibilityModes.IsSupported(DvdReadCompatibilityMode))
+            throw new ArgumentException("Unsupported DVD read compatibility recipe in the calibration target.");
         if (HasClockRuler && !CalibrationClockRulerPattern.Supports(Parameters))
             throw new ArgumentException("时钟尺粗标靶需要 70–85 分钟、1200 mm/s 的标准 12 cm CD。");
         if (HasRadialArcDashes && !CalibrationRadialArcPattern.Supports(Parameters))

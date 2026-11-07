@@ -8,7 +8,7 @@ using DiscImageStudio.Dvd;
 
 internal static class DvdSampleReuseBenchmark
 {
-    internal static void Run()
+    internal static void Run(bool readCompatibility = false)
     {
         string directory = Path.Combine(Path.GetTempPath(), "dvd-sampling-benchmark-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
@@ -19,6 +19,7 @@ internal static class DvdSampleReuseBenchmark
             WriteImage(binary, colour: false);
             WriteImage(colour, colour: true);
             Console.WriteLine($"dvd-sampling environment: {RuntimeInformation.FrameworkDescription}; {RuntimeInformation.ProcessArchitecture}; logical CPUs={Environment.ProcessorCount}");
+            Console.WriteLine($"dvd-sampling read compatibility: {readCompatibility}");
             Console.WriteLine("dvd-sampling fixture: full 2297888-sector geometry, 24-58mm, 133.3nm, angle=0, legacy binary, default parallelism; cubic=0.00012/-0.00008/0.00004; image=4096x4096, reference=original 2400x2400; first 64 MiB, complete generator-call timing includes decoding/initialization/first and last batch work; one warmup then median 3; no disk output");
             foreach (string route in new[] { "reference", "binary", "colour-alpha" })
             foreach (bool cubic in new[] { false, true })
@@ -26,10 +27,12 @@ internal static class DvdSampleReuseBenchmark
             {
                 double a = cubic ? .00012 : 0, b = cubic ? -.00008 : 0, c = cubic ? .00004 : 0;
                 CalibrationTarget target = CalibrationTarget.Create(
-                    new(CalibrationDiscKind.Dvd, 24, 58, 2297888, 133.3, a, b, c),
+                    new(CalibrationDiscKind.Dvd, 24, 58, 2297888, 133.3, a, b, c,
+                        DvdReadCompatibility: readCompatibility),
                     artwork: CalibrationArtwork.ReferenceCross);
                 DvdStreamingOptions options = new(2297888, 24, 58,
-                    PitchLinear: a, PitchQuadratic: b, PitchCubic: c, UseSampleReuse: reuse);
+                    PitchLinear: a, PitchQuadratic: b, PitchCubic: c, UseSampleReuse: reuse,
+                    ReadCompatibility: readCompatibility);
                 double[] samples = new double[3];
                 for (int round = -1; round < samples.Length; round++)
                 {

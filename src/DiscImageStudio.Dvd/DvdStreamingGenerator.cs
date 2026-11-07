@@ -24,7 +24,8 @@ public sealed record DvdStreamingOptions(
     bool UseSampleReuse = true,
     bool ReadCompatibility = false,
     uint? UsableSectors = null,
-    double? SourceImageOuterRadiusMm = null)
+    double? SourceImageOuterRadiusMm = null,
+    string ReadCompatibilityMode = DvdReadCompatibilityModes.Current)
 {
     /// <summary>Physical channel-bit length of the DVD scheme; the UI no longer exposes it.</summary>
     public const double StandardChannelBitLengthNm = 133.3;
@@ -41,6 +42,8 @@ public sealed record DvdStreamingOptions(
 
     public void Validate()
     {
+        if (ReadCompatibility && !DvdReadCompatibilityModes.IsSupported(ReadCompatibilityMode))
+            throw new ArgumentException("Unsupported DVD read compatibility recipe.", nameof(ReadCompatibilityMode));
         DvdTrackGeometry.ValidatePitchCoefficients(PitchLinear, PitchQuadratic, PitchCubic);
         if (Tone is { } tone)
         {
@@ -247,7 +250,11 @@ public static class DvdStreamingGenerator
             throw new ArgumentException("Calibration target and output must describe the same DVD sector capacity.", nameof(target));
         // A calibration target describes the bytes that were generated/burned.
         // Later changes to the project output checkbox must not change that target.
-        options = options with { ReadCompatibility = target.Parameters.DvdReadCompatibility };
+        options = options with
+        {
+            ReadCompatibility = target.Parameters.DvdReadCompatibility,
+            ReadCompatibilityMode = target.EffectiveDvdReadCompatibilityMode,
+        };
         if (target.UsesReferencePattern)
         {
             ArgumentNullException.ThrowIfNull(output);
@@ -407,7 +414,8 @@ public static class DvdStreamingGenerator
             Algorithm: SolverAlgorithm.Dispersion,
             FastParallelism: options.FastParallelism,
             UseSampleReuse: options.UseSampleReuse,
-            ReadCompatibility: options.ReadCompatibility);
+            ReadCompatibility: options.ReadCompatibility,
+            ReadCompatibilityMode: options.ReadCompatibilityMode);
     }
 
     private static uint AlignToEccBlock(uint lba, uint psnOffset)

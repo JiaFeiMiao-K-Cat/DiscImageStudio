@@ -27,6 +27,14 @@ if (args is ["--test-parameter-persistence"])
     return;
 }
 
+if (args is ["--test-dvd-read-compatibility"])
+{
+    DvdReadCompatibilityGuardTests.Run();
+    DvdReadCompatibilityIntegrationTests.Run();
+    DvdReadCompatibilityUiTests.Run();
+    return;
+}
+
 if (args is ["--test-capacity-ui"])
 {
     DvdReadCompatibilityUiTests.Run();
@@ -71,6 +79,11 @@ if (args is ["--benchmark-bd-pitch"])
 if (args is ["--benchmark-dvd-sampling"])
 {
     DvdSampleReuseBenchmark.Run();
+    return;
+}
+if (args is ["--benchmark-dvd-read-compatibility"])
+{
+    DvdSampleReuseBenchmark.Run(readCompatibility: true);
     return;
 }
 

@@ -26,10 +26,14 @@ public static class DvdImageGenerator
         ArgumentNullException.ThrowIfNull(options);
         ArgumentException.ThrowIfNullOrWhiteSpace(outputPath);
         cancellationToken.ThrowIfCancellationRequested();
-        options.Validate();
         if (target.Parameters.Kind != CalibrationDiscKind.Dvd || target.Parameters.Sectors != options.TotalSectors)
             throw new ArgumentException("Calibration target and output must describe the same DVD sector capacity.", nameof(target));
-        options = options with { ReadCompatibility = target.Parameters.DvdReadCompatibility };
+        options = options with
+        {
+            ReadCompatibility = target.Parameters.DvdReadCompatibility,
+            ReadCompatibilityMode = target.EffectiveDvdReadCompatibilityMode,
+        };
+        options.Validate();
         string path = Path.GetFullPath(outputPath);
         DvdStreamingSummary summary;
         using (FileStream output = new(path, FileMode.CreateNew, FileAccess.Write, FileShare.None))
@@ -42,7 +46,7 @@ public static class DvdImageGenerator
             startLba = 0,
             fillSectors = options.OutputSectors,
             totalSectors = options.TotalSectors,
-            readCompatibility = options.ReadCompatibility ? "bridge-9b-v1" : "off",
+            readCompatibility = options.ReadCompatibility ? options.ReadCompatibilityMode : DvdReadCompatibilityModes.Off,
             compatibilityChanges = summary.CompatibilityChanges,
             imageMapping = DvdStreamingGenerator.CreateSolveOptions(options, 0, options.OutputSectors).ImageMapping,
         };
