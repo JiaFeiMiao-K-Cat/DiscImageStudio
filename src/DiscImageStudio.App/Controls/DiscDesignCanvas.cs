@@ -314,6 +314,12 @@ public class DiscDesignCanvas : FrameworkElement
         {
             DrawEmptyHint(drawingContext, center);
         }
+
+        // Last, so no artwork or selection adorner can hide the guide.
+        if (_design.DataRegions is { } dataRegions)
+        {
+            DrawDataRegions(drawingContext, center, dataRegions);
+        }
     }
 
     private void DrawLayer(DrawingContext context, DesignLayerViewModel layer)
@@ -366,6 +372,29 @@ public class DiscDesignCanvas : FrameworkElement
                 .Select(corner => ScreenFromMm(corner.X, corner.Y))
                 .ToArray();
             context.DrawGeometry(null, placeholderPen, PolygonGeometry(corners));
+        }
+    }
+
+    /// <summary>The data-occupied zone as a theme-blue ring (DiscDataRegionBrush), painted
+    /// after every layer and adorner so the guide can never disappear under artwork.
+    /// Translucent fill, no border. Every occupied annulus from the real layout plan is
+    /// drawn independently, e.g. outer-ring files plus the inner filesystem metadata.</summary>
+    private void DrawDataRegions(DrawingContext context, Point center, IReadOnlyList<DesignViewModel.DataRegionMm> regions)
+    {
+        Brush brush = DiscTheme.DataRegion;
+        foreach (DesignViewModel.DataRegionMm region in regions)
+        {
+            double outer = ScreenLength(region.OuterRadiusMm);
+            double inner = ScreenLength(region.InnerRadiusMm);
+            if (outer <= 0 || inner < 0)
+            {
+                continue;
+            }
+
+            PathGeometry ring = new() { FillRule = FillRule.EvenOdd };
+            ring.Figures.Add(DiscRenderCore.CircleFigure(center, outer));
+            ring.Figures.Add(DiscRenderCore.CircleFigure(center, inner));
+            context.DrawGeometry(brush, null, ring);
         }
     }
 

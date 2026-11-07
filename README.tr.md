@@ -67,7 +67,7 @@ Akışla doğrudan diske yazma deneyseldir. Yalnızca gözden çıkarabileceğin
 - **DVD Desteği**: Standart her türlü DVD'yi destekler. ISO imajları dışa aktarılır.
 - **Blu-ray Desteği**: Yalnızca çizim modu ve UDF 2.01 dosya yerleşimi ile her türlü tek katmanlı 25 GB BD-R'yi destekler. Bkz. [Blu-ray Desteği Ekleme](docs/ADDING_BLURAY.md).
 - **Disk Üzerinde Dosya Barındırma**: CD, DVD ve Blu-ray için doğrudan Tasarım sayfasından bir klasör seçip dosyalarını diskin iç veya dış halkasına yerleştirebilir ya da bu seçenekleri Dışa Aktarma sayfasından ayarlayabilirsiniz. Bu ayarlar projeyle birlikte kaydedilir.
-- **Dosya Bölgesi Önizlemesi**: Hibrit disk tasarım projeksiyonları ve ürün geri okumaları, dosya sistemi dahil olmak üzere dosya alanını sarı renkle vurgular.
+- **Dosya Bölgesi Önizlemesi**: Hibrit disk tasarım projeksiyonları ve ürün geri okumaları, dosya sistemi dahil olmak üzere dosya alanını mavi renkle vurgular.
 - **Medya Gri Tonlama Şemaları**: CD ve DVD'nin her ikisi de iki siyah-beyaz seviyesi kullanır: CD için `0D / AA` ve DVD karıştırılmış (scrambled) alanında `A5 / 92`. Bkz. [Fiziksel Model Denetimi](docs/PHYSICAL_MODEL_AUDIT.md).
 - **Gri Tonlama Sarsıntı (Dithering) Aracı**: Bağımsız bir yardımcı program, bir kaynak görseli iki seviyeli `0/255` siyah-beyaz PNG'ye dönüştürebilir. Görselleri açmayı, sürükleyip bırakmayı, yan yana önizlemeyi ve kayıpsız PNG dışa aktarımını destekler. Bkz. [Kullanım ve Derleme Talimatları](tools/FourLevelDither/README.md).
 - **Disk Önayarları**: Yerleşik disk parametreleri çeşitli CD, DVD ve BD markalarını kapsar. Ayrıca kendi kalibre edilmiş verilerinizle katkıda bulunabilirsiniz; bkz. [Disk Önayarı Yönetimi](docs/DISC_PRESETS.md).

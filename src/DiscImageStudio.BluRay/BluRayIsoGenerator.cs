@@ -63,6 +63,11 @@ public sealed class BluRayIsoPlan
     public double DrawingStartRadiusMm { get; }
     public uint DrawingEndSectorExclusive { get; }
     public double DrawingEndRadiusMm { get; }
+
+    /// <summary>First sector of the UDF partition (metadata plus file data) and the end of
+    /// its data area. The partition moves as a whole, so the design guide marks their span.</summary>
+    public uint PartitionStartSector => _filesystem?.PartitionStartLba ?? 0;
+    public uint DataEndSectorExclusive => _filesystem?.DataEndLbaExclusive ?? DrawingEndSectorExclusive;
 }
 
 /// <summary>Writes a UDF filesystem at the selected end, image payload in the remaining

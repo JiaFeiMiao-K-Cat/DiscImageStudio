@@ -149,6 +149,9 @@
     <SolidColorBrush x:Key="DiscGuideBrush" Color="#55A1A1AA" />
     <SolidColorBrush x:Key="DiscMaskBrush" Color="#88000000" />
     <SolidColorBrush x:Key="DiscSelectionBrush" Color="{StaticResource PrimaryColor}" />
+    <!-- File-occupancy guide: more opaque than PrimarySoftBrush so the ring stays legible
+         over bright artwork, while the pictures underneath remain readable. -->
+    <SolidColorBrush x:Key="DiscDataRegionBrush" Color="#663385FF" />
     <SolidColorBrush x:Key="CalibrationPhotoBackdropBrush" Color="#13151A" />
     <SolidColorBrush x:Key="CalibrationCaptionBrush" Color="#DC13151A" />
     <!-- Calibration annotation colors, drawn over arbitrary photos: the azure/amber pair
