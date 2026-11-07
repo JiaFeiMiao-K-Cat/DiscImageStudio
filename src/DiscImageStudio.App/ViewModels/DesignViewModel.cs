@@ -237,10 +237,21 @@ public partial class DesignViewModel : ObservableObject
             return;
         }
 
+        ImportImages(picked);
+    }
+
+    /// <summary>Imports files from either the picker or an external file drop.</summary>
+    public void ImportImages(IEnumerable<string> paths)
+    {
+        if (_shell.IsBusy)
+        {
+            return;
+        }
+
         // Fit rule uses the content ring captured now; edits to geometry do not re-fit.
         DesignLayerViewModel? firstAdded = null;
         List<string> failed = [];
-        foreach (string path in picked)
+        foreach (string path in paths)
         {
             DesignLayerViewModel layer = new()
             {

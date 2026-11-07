@@ -4,6 +4,10 @@
 
 ## 本地验证
 
+图片拖拽导入：`dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Release -- --test-image-drop` 覆盖设计页拖入多图、大小写扩展名、混合文件／目录过滤、损坏图片提示、子控件事件路由、仅移动来源拒绝和任务忙碌保护，并复核已有图层排序。设置 `DISC_IMAGE_STUDIO_UI_SNAPSHOTS` 可输出 `design-image-drop.png` 离屏截图。手工验收：从资源管理器将单张或多张 PNG／JPEG／BMP／TIFF／GIF 拖到设计页画布或图层区，确认复制光标、图层添加和等比例适配；拖入非图片或在任务执行期间拖入应显示禁止光标。
+
+2026-11-08，使用 .NET SDK 10.0.100 完成拖拽导入验证：Release solution 构建零警告、零错误，`--test-image-drop`、DVD `selftest` 和完整 ArchitectureTests 全部通过。构建／测试日志位于 `tmp/image-drop-*.log`，离屏截图 `artifacts/image-drop/design-image-drop.png` 已检查。拖放事件由 WPF 回归程序构造；Windows x64 自包含测试版通过打包自检及界面启动检查，用户已确认实际拖拽导入测试成功。
+
 2026-11-07，#184 参数保存流程：CD／DVD／BD 切换预设时同步高级预览的半径和三项轨距系数；工程设置保存预设成功后立即应用并按新 ID 选中，取消后保留该次保存，后续未确认输入不应用。覆盖同名条目、新建工程隔离、命名取消、保存失败、仅改名保留手工实测值和 BD 极性。
 
 标定记录回归覆盖已确认但尚未应用／应用后的拟合保存重开、所选候选与预测恢复、原 Target 冻结、旧记录兼容、取消确认／更改点位后的失效、无效目标和候选校验，以及加载期间切换候选和取消加载不会误恢复确认。原有照片流程测试同步验证新的恢复行为。

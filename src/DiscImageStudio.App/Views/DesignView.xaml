@@ -5,7 +5,10 @@
              xmlns:controls="clr-namespace:DiscImageStudio.Controls"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:vm="clr-namespace:DiscImageStudio.ViewModels"
-             SizeChanged="OnPageSizeChanged">
+             SizeChanged="OnPageSizeChanged"
+             Background="Transparent" AllowDrop="True"
+             PreviewDragEnter="OnImageDragOver" PreviewDragOver="OnImageDragOver"
+             PreviewDrop="OnImageDrop">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <!-- Property panel for the selected layer: numeric mm/°/% fields plus rename.

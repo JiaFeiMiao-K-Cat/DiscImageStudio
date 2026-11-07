@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -85,6 +86,46 @@ public partial class DesignView : UserControl
                 e.Handled = true;
                 break;
         }
+    }
+
+    // Handle external files before child text fields can consume a file drop as text.
+    // Layer reordering uses mouse capture rather than WPF file drag-and-drop.
+    private void OnImageDragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = CanImportDrop(e) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void OnImageDrop(object sender, DragEventArgs e)
+    {
+        e.Effects = DragDropEffects.None;
+        e.Handled = true;
+        if (!CanImportDrop(e))
+        {
+            return;
+        }
+
+        _viewModel.ImportImages(GetDroppedImages(e.Data));
+        e.Effects = DragDropEffects.Copy;
+    }
+
+    private bool CanImportDrop(DragEventArgs e) =>
+        _viewModel.ImportImagesCommand.CanExecute(null)
+        && (e.AllowedEffects & DragDropEffects.Copy) != 0
+        && GetDroppedImages(e.Data).Length > 0;
+
+    private static string[] GetDroppedImages(IDataObject data)
+    {
+        if (!data.GetDataPresent(DataFormats.FileDrop)
+            || data.GetData(DataFormats.FileDrop) is not string[] paths)
+        {
+            return [];
+        }
+
+        // Match the image picker's formats; directories and unrelated files are ignored.
+        return paths.Where(path => File.Exists(path)
+            && Path.GetExtension(path).ToLowerInvariant() is
+                ".png" or ".jpg" or ".jpeg" or ".bmp" or ".tif" or ".tiff" or ".gif").ToArray();
     }
 
     // ---- Layer list drag-reorder ----
