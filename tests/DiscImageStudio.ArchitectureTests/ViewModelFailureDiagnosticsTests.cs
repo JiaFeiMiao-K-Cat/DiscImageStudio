@@ -137,6 +137,8 @@ internal static class ViewModelFailureDiagnosticsTests
         public Task<IReadOnlyList<OpticalBurnDevice>> GetDevicesAsync(CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<OpticalBurnDevice>>([new("fake-recorder", "Fake recorder", [])]);
         public Task<long> GetMediaSectorCountAsync(string deviceId, OpticalBurnMediaKind mediaKind, CancellationToken cancellationToken = default) => Read();
+        public async Task<OpticalMediaCapacity> GetMediaCapacityAsync(string deviceId, OpticalBurnMediaKind mediaKind,
+            CancellationToken cancellationToken = default) => new(await Read(), 2297280);
         public Task<IReadOnlyList<OpticalWriteSpeed>> GetSupportedWriteSpeedsAsync(string deviceId, OpticalBurnMediaKind mediaKind,
             CancellationToken cancellationToken = default) => throw new InvalidOperationException("Test must not query burn speeds.");
         public Task<OpticalBurnResult> BurnAsync(OpticalBurnRequest request, IProgress<OpticalBurnProgress>? progress = null,

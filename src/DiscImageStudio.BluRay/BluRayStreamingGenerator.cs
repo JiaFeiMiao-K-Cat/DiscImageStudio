@@ -37,7 +37,7 @@ public sealed record BluRayStreamingOptions(BluRayDiscParameters Disc, uint Star
         ArgumentNullException.ThrowIfNull(Disc);
         Disc.Validate();
         if (StartSector % 32 != 0 || SectorCount == 0 || SectorCount % 32 != 0
-            || StartSector >= Disc.TotalSectors || SectorCount > Disc.TotalSectors - StartSector)
+            || StartSector >= Disc.OutputSectors || SectorCount > Disc.OutputSectors - StartSector)
             throw new ArgumentOutOfRangeException(nameof(SectorCount), "BD range must be inside the disc, start on a 32-sector boundary, and contain a positive multiple of 32 sectors.");
     }
 }

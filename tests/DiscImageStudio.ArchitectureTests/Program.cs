@@ -10,6 +10,57 @@ using System.Runtime.InteropServices.ComTypes;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
+if (args is ["--test-parameter-persistence"])
+{
+    PresetApplicationTests.Run();
+    ProjectDialogPresetTests.Run();
+    CalibrationConfirmedFitTests.Run();
+    AppCubicMediaTests.Run();
+    UsableSectorPersistenceTests.Run();
+    CalibrationStandaloneTests.Run();
+    CalibrationPhotoViewModelTests.Run();
+    CalibrationThreeStageTests.Run();
+    CalibrationBoundaryWorkflowTests.Run();
+    CalibrationFitLocalizationTests.Run();
+    PopupLocalizationTests.Run();
+    RelocalizationTests.Run();
+    return;
+}
+
+if (args is ["--test-dvd-read-compatibility"])
+{
+    DvdReadCompatibilityGuardTests.Run();
+    DvdReadCompatibilityIntegrationTests.Run();
+    DvdReadCompatibilityUiTests.Run();
+    return;
+}
+
+if (args is ["--test-capacity-ui"])
+{
+    DvdReadCompatibilityUiTests.Run();
+    TonePreviewTests.Run();
+    AppCubicMediaTests.Run();
+    CalibrationBurnSourceTests.Run();
+    BurnJobDockTests.Run();
+    ImageJobWorkflowTests.Run();
+    ViewModelFailureDiagnosticsTests.Run();
+    LocalizationTests.Run();
+    RelocalizationTests.Run();
+    BurnWriteSpeedSelectionTests.Run();
+    return;
+}
+
+if (args is ["--test-usable-sectors"])
+{
+    UsableSectorGenerationTests.Run();
+    BluRayCubicPreviewTests.RunUsableCapacity();
+    UsableSectorPersistenceTests.Run();
+    StreamBurnCapacityTests.Run();
+    MediaSectorCountTests.Run();
+    CalibrationMediaReadTests.Run();
+    return;
+}
+
 if (args is ["--benchmark-cd-pitch"])
 {
     CdCubicPitchTests.Benchmark();
@@ -28,6 +79,11 @@ if (args is ["--benchmark-bd-pitch"])
 if (args is ["--benchmark-dvd-sampling"])
 {
     DvdSampleReuseBenchmark.Run();
+    return;
+}
+if (args is ["--benchmark-dvd-read-compatibility"])
+{
+    DvdSampleReuseBenchmark.Run(readCompatibility: true);
     return;
 }
 
@@ -95,10 +151,15 @@ BluRayFlushDiagnosticsTests.Run();
 BluRaySequentialWriterTests.Run();
 BluRaySessionCleanupTests.Run();
 RunStreamingGenerationTests();
+UsableSectorGenerationTests.Run();
+UsableSectorPersistenceTests.Run();
+StreamBurnCapacityTests.Run();
 TestDiscPresets();
 TestDiscPresetJson();
 UserPresetDeleteTests.Run();
 ProjectDialogPresetTests.Run();
+PresetApplicationTests.Run();
+CalibrationConfirmedFitTests.Run();
 ProjectStoreTests.Run();
 ProjectSessionTests.Run();
 FilePlacementProjectTests.Run();
@@ -386,7 +447,7 @@ static void TestDiscPresets()
     True(!ritekBd12x.InvertMapping, "Ritek BD-R 12x preserves the recorded normal polarity");
     True(ritekBd12x.Contributor == "DeepAQ", "Ritek BD-R 12x contributor is recorded");
     BluRayDiscPreset cliRitek12x = BluRayDiscPreset.Find(ritekBd12x.Id);
-    Equal(new BluRayDiscParameters(ritekBd12x.TotalSectors, 1, ritekBd12x.InnerRadiusMm, ritekBd12x.OuterRadiusMm),
+    Equal(new BluRayDiscParameters(ritekBd12x.TotalSectors, 1, ritekBd12x.InnerRadiusMm, ritekBd12x.OuterRadiusMm, UsableSectors: ritekBd12x.UsableSectors),
         cliRitek12x.CreateParameters(), "GUI JSON and CLI Ritek BD-R 12x geometry agree exactly");
     Equal(ritekBd12x.InvertMapping, cliRitek12x.InvertMapping, "GUI JSON and CLI Ritek BD-R 12x polarity agree");
     True(cliRitek12x.Contributor == "DeepAQ", "CLI Ritek BD-R 12x keeps the contributor");
@@ -403,7 +464,7 @@ static void TestDiscPresets()
     Equal(57.987960341783236, verbatimBd.OuterRadiusMm, "Verbatim BD-R 64099 saved outer radius");
     True(!verbatimBd.InvertMapping, "Verbatim BD-R 64099 preserves the recorded normal polarity");
     BluRayDiscPreset cliVerbatim = BluRayDiscPreset.Find(verbatimBd.Id);
-    Equal(new BluRayDiscParameters(verbatimBd.TotalSectors, 1, verbatimBd.InnerRadiusMm, verbatimBd.OuterRadiusMm),
+    Equal(new BluRayDiscParameters(verbatimBd.TotalSectors, 1, verbatimBd.InnerRadiusMm, verbatimBd.OuterRadiusMm, UsableSectors: verbatimBd.UsableSectors),
         cliVerbatim.CreateParameters(), "GUI JSON and CLI Verbatim BD-R 64099 geometry agree exactly");
     Equal(verbatimBd.InvertMapping, cliVerbatim.InvertMapping, "GUI JSON and CLI Verbatim polarity agree");
     BluRayDiscPresetDefinition verbatimBd64293 = builtIn.BluRayPresets!.Single(
@@ -415,7 +476,7 @@ static void TestDiscPresets()
     True(!verbatimBd64293.InvertMapping, "Verbatim BD-R 64293 preserves the recorded normal polarity");
     True(verbatimBd64293.Contributor == "bczhc", "Verbatim BD-R 64293 contributor is recorded");
     BluRayDiscPreset cliVerbatim64293 = BluRayDiscPreset.Find(verbatimBd64293.Id);
-    Equal(new BluRayDiscParameters(verbatimBd64293.TotalSectors, 1, verbatimBd64293.InnerRadiusMm, verbatimBd64293.OuterRadiusMm),
+    Equal(new BluRayDiscParameters(verbatimBd64293.TotalSectors, 1, verbatimBd64293.InnerRadiusMm, verbatimBd64293.OuterRadiusMm, UsableSectors: verbatimBd64293.UsableSectors),
         cliVerbatim64293.CreateParameters(), "GUI JSON and CLI Verbatim BD-R 64293 geometry agree exactly");
     Equal(verbatimBd64293.InvertMapping, cliVerbatim64293.InvertMapping, "GUI JSON and CLI Verbatim BD-R 64293 polarity agree");
 }
@@ -959,52 +1020,26 @@ static void TestCdRawDaoCallOrder()
         fallbackSpeedSession.LastRequestedWriteSpeed,
         "CD Raw DAO uses conservative fallback when no speed descriptor is available");
 
-    RecordingCdRawSession boundedOverburnSession = new()
+    foreach (int excess in new[] { 1, 3, 4 })
     {
-        LastLeadoutSector = 1,
-    };
-    using RecordingCdRawImageSession boundedOverburnImage = new(
-        boundedOverburnSession.Calls)
-    {
-        ImageStartOfLeadout = 4,
-    };
-    WindowsImapiBurner.BurnCdAudio(
-        boundedOverburnSession,
-        boundedOverburnImage,
-        content,
-        request,
-        CancellationToken.None);
-    True(
-        boundedOverburnSession.Calls.Contains(nameof(ICdRawSession.WriteMedia)),
-        "CD Raw DAO permits the bounded overburn case");
-
-    RecordingCdRawSession excessiveOverburnSession = new()
-    {
-        LastLeadoutSector = 1,
-    };
-    using RecordingCdRawImageSession excessiveOverburnImage = new(
-        excessiveOverburnSession.Calls)
-    {
-        ImageStartOfLeadout = 5,
-    };
-    try
-    {
-        WindowsImapiBurner.BurnCdAudio(
-            excessiveOverburnSession,
-            excessiveOverburnImage,
-            content,
-            request,
-            CancellationToken.None);
-        throw new InvalidOperationException("CD overburn limit: expected InvalidOperationException.");
-    }
-    catch (InvalidOperationException exception)
-    {
-        True(
-            exception.Message.Contains("超出盘片边界 4 个扇区", StringComparison.Ordinal),
-            "CD DAO capacity error reports exact lead-out excess");
-        True(
-            !excessiveOverburnSession.Calls.Contains(nameof(ICdRawSession.WriteMedia)),
-            "CD Raw DAO rejects overburn beyond its bounded allowance");
+        RecordingCdRawSession overburnSession = new() { LastLeadoutSector = 1 };
+        using RecordingCdRawImageSession overburnImage = new(overburnSession.Calls)
+        {
+            ImageStartOfLeadout = 1 + excess,
+        };
+        try
+        {
+            WindowsImapiBurner.BurnCdAudio(overburnSession, overburnImage, content, request, CancellationToken.None);
+            throw new InvalidOperationException("CD DAO boundary: expected InvalidOperationException.");
+        }
+        catch (InvalidOperationException exception)
+        {
+            True(exception.Message.Contains($"超出盘片边界 {excess} 个扇区", StringComparison.Ordinal),
+                "CD DAO capacity error reports exact lead-out excess");
+            True(!overburnSession.Calls.Contains(nameof(ICdRawSession.WriteMedia))
+                && overburnSession.Calls[^1] == nameof(ICdRawSession.ReleaseMedia),
+                "CD Raw DAO rejects any excess and releases the medium");
+        }
     }
 
     RecordingCdRawSession failingSession = new()

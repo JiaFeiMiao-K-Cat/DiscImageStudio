@@ -12,7 +12,8 @@ public sealed class CdDiscModule : IOpticalDiscModule
     [
         new("r0", "Inner radius", DiscOptionValueType.Decimal, DefaultValue: "24.5", Unit: "mm"),
         new("r1", "Outer radius", DiscOptionValueType.Decimal, DefaultValue: "56.8", Unit: "mm"),
-        new("sectors", "Program sectors", DiscOptionValueType.Integer, DefaultValue: "359849"),
+        new("sectors", "Geometry sectors", DiscOptionValueType.Integer, DefaultValue: "359849"),
+        new("usable-sectors", "Output sectors within the geometry", DiscOptionValueType.Integer),
         new("velocity", "Linear velocity", DiscOptionValueType.Decimal, DefaultValue: "1200", Unit: "mm/s"),
         new("theta0", "Start angle", DiscOptionValueType.Decimal, DefaultValue: "0", Unit: "degrees"),
         new("outer", "Image outer radius", DiscOptionValueType.Decimal, DefaultValue: "57.5", Unit: "mm"),
@@ -224,7 +225,10 @@ public sealed class CdDiscModule : IOpticalDiscModule
             options.GetDouble("outer", fallback?.ImageOuterRadiusMm ?? CdDiscParameters.StandardImageOuterRadiusMm),
             options.GetDouble("pitch-linear", fallback?.PitchLinear ?? 0),
             options.GetDouble("pitch-quadratic", fallback?.PitchQuadratic ?? 0),
-            options.GetDouble("pitch-cubic", fallback?.PitchCubic ?? 0));
+            options.GetDouble("pitch-cubic", fallback?.PitchCubic ?? 0),
+            options.Contains("usable-sectors") ? options.GetLong("usable-sectors", 0)
+                : options.Contains("sectors") ? null : fallback?.UsableSectors,
+            options.Contains("sectors") || options.Contains("usable-sectors") ? null : fallback?.SourceImageOuterRadiusMm);
     }
 
     private static bool ReadFilePosition(CdCommandOptions options)
@@ -304,6 +308,8 @@ public sealed class CdDiscModule : IOpticalDiscModule
 
             return new CdCommandOptions(values);
         }
+
+        internal bool Contains(string key) => _values.ContainsKey(key);
 
         internal string Require(string key)
             => _values.TryGetValue(key, out string? value)

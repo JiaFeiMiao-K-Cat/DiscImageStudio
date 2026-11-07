@@ -2,23 +2,29 @@
 
 ## Unreleased
 
+## [1.5.0] - 2026-11-07
+
 ### 中文
 
+- 工程切换盘片预设时同步高级预览的实测半径和三项轨距系数；在工程设置中保存预设后立即应用并选中新条目，后续取消窗口不撤销该次保存。标定记录可保存已确认的拟合结果，重开后恢复所选候选及设置，同时保留照片对应的原刻录参数。
+- 分离盘片几何总扇区数与可用扇区数，补齐内置预设；旧预设缺字段时 CD 预留 2 扇区、DVD 保守预留 608 扇区，显式可用值不重复扣减。设计、预览和导出使用可用区域，流式刻录在布局前按实际可写容量限制输出并保持 DVD 16／BD 32 扇区对齐；标定读盘同时保留几何与可写容量，混合镜像按输出长度安排文件及尾部元数据。移除 CD 隐式允许超出 DAO 边界 3 扇区的容差，写前严格遵守设备报告的 lead-out 上限。新建 CD 粗标会检查最外侧固定测量边界是否完整可写；BD 预览缓存有效外半径，避免缩小容量时逐像素重复解算几何。
 - 将详细刻录诊断扩展到 DVD 和 BD：共同记录构建环境、光驱固件、物理盘片类型及空白状态；DVD 记录容量、缓冲保护／封盘设置和阶段耗时，BD 记录 profile、格式化状态、轨道与可写地址及刷新／封盘／释放耗时。失败前缓存源流与设备上下文，保留 BD 底层真实 SCSI sense；DVD 高层接口未提供的 sense 明确记为不可用。
 - 补充 CD 音轨／数据盘 DAO 刻录诊断：记录构建版本、系统、光驱固件、实际盘片类型与写前空白状态、子通道及速度设置、容量余量、阶段耗时、生成与主机缓冲状态；导入区事件快照每两秒最多记录一次。失败上下文在清理前保存，不额外查询故障设备；明确标注 IMAPI 未提供失败命令的 SCSI sense。
 - 统一 CD、DVD、BD 的影调预览为 512×512：记录区外与中心孔使用透明遮罩，取消固定裁切，并按实际文件布局标黄文件及文件系统区域。CD 显示适配记录外半径，保留生成时的图片采样比例；修改文件夹、卷标和内外圈位置会自动刷新。
 - 修复 CD 数据盘 DAO 子码沿用音轨 ADR3/ISRC 包的问题：按扇区位置重建完整 ADR1 时间包并重算 CRC，覆盖预间隙、数据区与导出区；保留原有 TOC、ADR1/ADR2 和 P/R-W 处理。补充边界、两种子通道格式及音轨输出逐字节不变的回归。
-- 新增默认关闭的「DVD 读取兼容性（实验性）」选项，用局部 `9B` 保护字节缓解 #90 中连续绘图纹理可能引起的读回错误；ISO 导出、流式刻录和标定使用相同规则，文件内容和透明区域不参与改写。工程与标定记录保存该选项，旧记录保持关闭；效果和盘面纹理仍需实盘反馈。
+- 新增默认关闭的「DVD 读取兼容性（实验性）」选项；根据 #90 的全盘读回反馈，当前配方改为 `periodic-9b-16-v1`：每扇区固定每 16 字节将归属于绘图的非 `A5/9B` 扰码字节改为 `9B`，纯白扇区改变 128 字节，不叠加旧段首规则。文件、透明区域及绘图范围外保持不变；旧 sidecar 继续可读，已有标靶保留原配方，新标靶使用新规则。盘面纹理和对比度可能变化，仍需更多光驱与盘片反馈；CD／BD 不变。
 - 按 ECMA-267 修正 DVD EFMPlus 模型在状态 3/4 下的副 SY6 同步码，纠正精确编码及 DSV/边界回放；补充完整同步码标准向量和实际编码回归。
 - 修正 DVD 数据帧 EDC 计算中重复补 32 位零的问题，使校验字节及后续 ECC/调制回放符合标准；补充独立多项式长除法和完整数据帧向量检查。
 
 ### English
 
+- Synchronize advanced preview radii and cubic pitch coefficients when applying a project preset. Saving a preset in project settings immediately applies and selects it, even if the dialog is later cancelled. Calibration records retain confirmed fitting results and restore the selected candidate and setup while preserving the photographed disc's original generation parameters.
+- Separate geometry sector counts from usable capacity and populate built-in presets. Legacy presets without a usable value reserve 2 CD sectors or a conservative 608 DVD sectors; explicit limits are never reduced twice. Artwork, previews and exports follow the usable region. Streaming burns constrain layouts to the current writable capacity, aligned to 16 DVD sectors or 32 BD sectors. Calibration reads retain both counts, and filesystem layouts keep files and trailing metadata within the output length. Remove the implicit 3-sector CD DAO overburn allowance so the final check strictly enforces the reported lead-out limit. Reject new CD coarse targets whose outer fixed measurement edge cannot fit, and cache the usable radius during BD previews to avoid solving geometry for every pixel.
 - Extended detailed burn diagnostics to DVD and BD, sharing build/runtime, recorder firmware, physical media type and blank-state reporting. DVD adds capacity, buffer/closure settings and phase timings; BD adds profile, format state, track/writable-address data and flush/close/release timings. Source and device context are cached before cleanup, preserving real BD command-level SCSI sense and explicitly marking sense unavailable through the high-level DVD API.
-- Added CD audio/data DAO diagnostics for the build, OS, recorder firmware, reported physical media type and pre-write blank state, sector/speed settings, capacity margin, phase timings and producer/host-buffer state. Lead-in event snapshots are throttled to at most one every two seconds. Failure context is retained before cleanup without querying the failing device; unavailable command-level SCSI sense is explicitly identified.
+- Added CD audio/data DAO diagnostics for the build, OS, recorder firmware, reported physical media type and pre-write blank state, subchannel and speed settings, capacity margin, phase timings and producer/host-buffer state. Lead-in event snapshots are throttled to at most one every two seconds. Failure context is retained before cleanup without querying the failing device; unavailable command-level SCSI sense is explicitly identified.
 - Unified CD, DVD and BD tone previews at 512×512, with transparent masks outside the recording area and inside the centre hole. Removed the fixed crop and highlighted file and filesystem regions from the actual layout plans. CD previews fit the recording radius while preserving the generator's source-image scale; folder, volume-label and inner/outer placement changes refresh automatically.
 - Fixed CD data-disc DAO subcode retaining audio ADR3/ISRC packets. Rebuild complete ADR1 timing packets and CRCs from the sector position in the pregap, program area and lead-out, while retaining existing TOC, ADR1/ADR2 and P/R-W handling. Added boundary, subchannel-format and byte-for-byte audio-output regression coverage.
-- Added an opt-in “DVD read compatibility (experimental)” option using local `9B` bridge bytes to mitigate readback errors associated with repeated drawing textures in #90. ISO export, streaming burns and calibration share the rule; file contents and alpha-excluded bytes are protected. Projects and calibration records retain the setting, with legacy records defaulting to off. Readability and visual effects still need physical-disc feedback.
+- Added the opt-in “DVD read compatibility (experimental)” option. Following the full-disc readback feedback in #90, the current `periodic-9b-16-v1` recipe replaces owned scrambled drawing bytes other than `A5/9B` with `9B` at fixed 16-byte intervals: 128 changes per entirely white sector, without the old run-start rule. Files, alpha-excluded bytes and bytes outside the drawing range are preserved. Legacy sidecars remain readable; existing calibration targets retain their original recipe and new targets use the new rule. Texture and contrast may change, and more drive/media feedback is needed. CD/BD are unchanged.
 - Corrected the DVD EFMPlus model's secondary SY6 code for states 3/4 to match ECMA-267, fixing exact encoding and DSV/boundary replay. Added standard vectors for all sync codes and an encoded-output regression.
 - Fixed an extra 32 zero bits in the DVD data-frame EDC calculation, correcting the checksum and subsequent ECC/modulation replay. Added independent polynomial-division checks and complete data-frame vectors.
 

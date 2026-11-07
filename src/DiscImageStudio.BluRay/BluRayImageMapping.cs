@@ -139,11 +139,11 @@ public sealed class BluRayImagePayloadMapping : IBluRayBatchPayloadMapping
     private readonly double _maximumRadius;
 
     public BluRayImagePayloadMapping(BluRayDiscParameters disc, BluRayGray8Raster raster,
-        IBluRayLuminanceMapping mapping)
-        : this(disc, CreateRasterSampler(disc, raster), mapping, allowParallelSampling: true)
+        IBluRayLuminanceMapping mapping, double? imageOuterRadiusMm = null)
+        : this(disc, CreateRasterSampler(disc, raster, imageOuterRadiusMm), mapping, allowParallelSampling: true)
     {
         _raster = raster;
-        _rasterScale = Math.Max(raster.Width, raster.Height) / (2 * disc.OuterRadiusMm);
+        _rasterScale = Math.Max(raster.Width, raster.Height) / (2 * (imageOuterRadiusMm ?? disc.OutputOuterRadiusMm));
     }
 
     // A saved calibration image can clip the raster to a narrower recording
@@ -151,7 +151,7 @@ public sealed class BluRayImagePayloadMapping : IBluRayBatchPayloadMapping
     // caller's tolerance; reuse must stop before either radial boundary.
     internal BluRayImagePayloadMapping(BluRayDiscParameters disc, BluRayGray8Raster raster,
         IBluRayLuminanceMapping mapping, double minimumRadiusSquared, double maximumRadiusSquared)
-        : this(disc, raster, mapping)
+        : this(disc, raster, mapping, disc.OuterRadiusMm)
     {
         if (!double.IsFinite(minimumRadiusSquared) || minimumRadiusSquared < 0
             || !double.IsFinite(maximumRadiusSquared) || maximumRadiusSquared <= minimumRadiusSquared)
@@ -264,11 +264,14 @@ public sealed class BluRayImagePayloadMapping : IBluRayBatchPayloadMapping
         _supportsParallelGeneration = allowParallelSampling && mapping is BluRayRunLengthMapping;
     }
 
-    private static Func<double, double, byte> CreateRasterSampler(BluRayDiscParameters disc, BluRayGray8Raster raster)
+    private static Func<double, double, byte> CreateRasterSampler(BluRayDiscParameters disc, BluRayGray8Raster raster, double? imageOuterRadiusMm)
     {
         ArgumentNullException.ThrowIfNull(disc);
         ArgumentNullException.ThrowIfNull(raster);
-        return (x, y) => raster.SampleDiscPoint(x, y, disc.OuterRadiusMm);
+        double outerRadiusMm = imageOuterRadiusMm ?? disc.OutputOuterRadiusMm;
+        if (!double.IsFinite(outerRadiusMm) || outerRadiusMm <= 0)
+            throw new ArgumentOutOfRangeException(nameof(imageOuterRadiusMm));
+        return (x, y) => raster.SampleDiscPoint(x, y, outerRadiusMm);
     }
 
     public BluRayPayloadBytePosition GetPosition(uint sector, int byteOffset)

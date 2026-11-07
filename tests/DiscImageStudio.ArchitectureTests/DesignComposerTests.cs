@@ -3,7 +3,10 @@ using System.Runtime.ExceptionServices;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using DiscImageStudio.Core;
 using DiscImageStudio.Services;
+using DiscImageStudio.ViewModels;
 
 internal static class DesignComposerTests
 {
@@ -74,11 +77,81 @@ internal static class DesignComposerTests
             // The source layer is alpha 200; premultiplied output keeps that alpha inside
             // the rotated footprint.
             Require(Sample(rotatedBitmap!, 256, 216).A > 150, "rotation keeps the covered centre");
+            VerifyUsableCapacityRoundtrip(directory, layerPath);
         }
         finally
         {
             try { Directory.Delete(directory, recursive: true); } catch (IOException) { }
         }
+    }
+
+    private static void VerifyUsableCapacityRoundtrip(string directory, string widePath)
+    {
+        string tallPath = Path.Combine(directory, "tall-layer.png");
+        WritePng(tallPath, 60, 100, (x, y) => Color.FromArgb(180, (byte)(x * 3), (byte)(y * 2), 220));
+        ShellViewModel shell = new(Dispatcher.CurrentDispatcher);
+        try
+        {
+            foreach (OpticalDiscFamily family in new[]
+                { OpticalDiscFamily.CompactDisc, OpticalDiscFamily.Dvd, OpticalDiscFamily.BluRay })
+            {
+                DiscParametersState state = shell.State;
+                state.CdInnerRadius = state.DvdInnerRadius = state.BdInnerRadius = "24.5";
+                state.CdOuterRadius = state.DvdOuterRadius = state.BdOuterRadius = "59.5";
+                state.CdSectors = state.DvdTotalSectors = state.BdTotalSectors = "256";
+                state.CdUsableSectors = state.DvdUsableSectors = state.BdUsableSectors = "256";
+                DesignViewModel design = shell.Design;
+                design.SetDiscFamily(family);
+                design.LoadLayers([
+                    new ProjectLayer("wide", "Wide", widePath, true, -2.5, 1.25, 19, .625),
+                    new ProjectLayer("tall", "Tall", tallPath, true, 5.5, -3.75, -11, .375),
+                ]);
+                var dimensions = design.Layers.ToDictionary(layer => layer.Name,
+                    layer => (Width: layer.BaseWidthMm * layer.Scale, Height: layer.BaseHeightMm * layer.Scale));
+                double originalCanvas = design.ContentOuterRadiusMm;
+                switch (family)
+                {
+                    case OpticalDiscFamily.Dvd: state.DvdUsableSectors = "128"; break;
+                    case OpticalDiscFamily.BluRay: state.BdUsableSectors = "128"; break;
+                    default: state.CdUsableSectors = "128"; break;
+                }
+                design.RefreshGeometry();
+                Require(design.ContentOuterRadiusMm < originalCanvas, family + " usable count shrinks the canvas");
+                byte[] expected = RenderLayers(design, Path.Combine(directory, family + "-before.png"));
+                IReadOnlyList<ProjectLayer> saved = design.CaptureLayers();
+                double[] scales = saved.Select(layer => layer.Scale).ToArray();
+                for (int round = 0; round < 3; round++)
+                {
+                    design.LoadLayers(saved);
+                    foreach (DesignLayerViewModel layer in design.Layers)
+                    {
+                        var original = dimensions[layer.Name];
+                        Require(Math.Abs(layer.BaseWidthMm * layer.Scale - original.Width) < 1e-9
+                            && Math.Abs(layer.BaseHeightMm * layer.Scale - original.Height) < 1e-9,
+                            family + " reload preserves the layer's physical dimensions");
+                    }
+                    byte[] actual = RenderLayers(design, Path.Combine(directory, family + "-after.png"));
+                    Require(expected.SequenceEqual(actual), family + " reload preserves every composite pixel");
+                    saved = design.CaptureLayers();
+                    Require(scales.SequenceEqual(saved.Select(layer => layer.Scale)),
+                        family + " repeated save/load does not accumulate scale changes");
+                }
+                design.ClearLayers();
+            }
+        }
+        finally { shell.LivePreview.OnWindowClosed(); }
+    }
+
+    private static byte[] RenderLayers(DesignViewModel design, string path)
+    {
+        DesignComposer.Render(design.Layers.Select(layer => new DesignLayerRenderItem(
+            layer.Image!, layer.BaseWidthMm, layer.BaseHeightMm, layer.TranslateXMm,
+            layer.TranslateYMm, layer.RotationDeg, layer.Scale)).ToArray(),
+            design.CanvasOuterRadiusMm, 512, path);
+        BitmapSource bitmap = Decode(path)!;
+        byte[] pixels = new byte[512 * 512 * 4];
+        bitmap.CopyPixels(pixels, 512 * 4, 0);
+        return pixels;
     }
 
     private static BitmapSource? Decode(string path)

@@ -84,7 +84,8 @@ internal static class BluRayCubicPitchTests
             Require(Math.Abs(geometry.AtSector(disc.TotalSectors / 2.0).RadiusMm
                 - constant.AtSector(disc.TotalSectors / 2.0).RadiusMm) > .01, "cubic correction changes physical positions");
             var preset = new BluRayDiscPreset("cubic", "Cubic", 1, disc);
-            Require(preset.CreateParameters() == disc, "preset preserves the complete calibrated geometry");
+            Require(preset.CreateParameters() == (disc with { UsableSectors = disc.TotalSectors }),
+                "preset preserves calibrated geometry and resolves the full usable capacity");
         }
         foreach (double invalid in new[] { -2d, double.NaN, double.PositiveInfinity })
         {

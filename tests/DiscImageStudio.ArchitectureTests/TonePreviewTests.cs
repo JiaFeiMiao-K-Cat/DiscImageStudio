@@ -48,7 +48,7 @@ internal static class TonePreviewTests
                 string familyName = family == OpticalDiscFamily.CompactDisc ? "cd" : family == OpticalDiscFamily.Dvd ? "dvd" : "bd";
                 var document = new ProjectDocument(ProjectJsonStore.CurrentSchemaVersion, "Tone preview " + familyName,
                     family == OpticalDiscFamily.CompactDisc ? ProjectDocument.CdFamily : family == OpticalDiscFamily.Dvd ? ProjectDocument.DvdFamily : ProjectDocument.BluRayFamily,
-                    new(24, 58, Sectors), [new("layer", "Asymmetric grayscale", source, true, 0, 0, 0, 1)],
+                    new(24, 58, Sectors, UsableSectors: Sectors), [new("layer", "Asymmetric grayscale", source, true, 0, 0, 0, 1)],
                     new(Path.Combine(directory, familyName + ".iso"), false, "", "TONE_TEST", false),
                     null, null, DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch, ToneProfile.LegacyBinary);
                 typeof(ShellViewModel).GetProperty(nameof(ShellViewModel.CurrentProject))!.SetValue(shell, document);
@@ -77,6 +77,8 @@ internal static class TonePreviewTests
                 await Refresh(tone, () => SetFolder(shell.State, family, secondFolder), familyName + " replacement folder");
                 CheckImage(tone.TonePreviewImage!, family, 24, 58,
                     DrawingRange(family, secondFolder, true, 24, 58), familyName + " larger files");
+                Require(SHA256.HashData(File.ReadAllBytes(composite)).AsSpan().SequenceEqual(originalComposite),
+                    familyName + ": file overlays never change the composite");
                 await Refresh(tone, () => SetGeometry(shell.State, family, "30", "54"), familyName + " geometry change");
                 CheckImage(tone.TonePreviewImage!, family, 30, 54,
                     DrawingRange(family, secondFolder, true, 30, 54), familyName + " changed geometry");
@@ -91,9 +93,8 @@ internal static class TonePreviewTests
                 CheckImage(tone.TonePreviewImage!, family, 30, 54,
                     DrawingRange(family, secondFolder, false, 30, 54), familyName + " latest request");
 
-                Require(SHA256.HashData(File.ReadAllBytes(source)).AsSpan().SequenceEqual(originalSource)
-                    && SHA256.HashData(File.ReadAllBytes(composite)).AsSpan().SequenceEqual(originalComposite),
-                    familyName + ": overlay never changes the source layer or the export composite");
+                Require(SHA256.HashData(File.ReadAllBytes(source)).AsSpan().SequenceEqual(originalSource),
+                    familyName + ": geometry and overlays never change the source layer");
                 SetFolder(shell.State, family, Path.Combine(directory, "missing-folder"));
                 await Until(() => !tone.HasTonePreview && tone.TonePreviewImage is null && !tone.IsTonePreviewReady,
                     tone, familyName + " layout error removes stale pixels");

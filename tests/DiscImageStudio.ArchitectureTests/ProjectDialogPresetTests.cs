@@ -51,9 +51,13 @@ internal static class ProjectDialogPresetTests
         var saved = DiscPresetJsonStore.Load(presetPath).BluRayPresets!
             .Single(preset => preset.DisplayName == "另存的预设");
         Require(saved.InvertMapping == !originalPolarity, "saved preset keeps the switched BD polarity");
+        Require(state.BdInvertMapping == saved.InvertMapping && state.BdTotalSectors == "2048",
+            "saving the preset immediately applies it to the open project");
         dialog.ConfirmCommand.Execute(null);
         Require(dialog.Result?.BluRayInvertMapping == saved.InvertMapping,
             "confirming the project and saving its preset use the same polarity");
+        Require(dialog.Result?.SynchronizePreview == true,
+            "confirming a selected preset synchronizes even identical preview geometry");
     }
 
     private static void TestDeletingRecentAcrossFamilies(string directory)

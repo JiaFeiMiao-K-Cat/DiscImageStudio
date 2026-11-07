@@ -55,7 +55,7 @@ public sealed class BluRayImageGenerator
             ? "dark-to-6T / light-to-3T run-count bias"
             : "dark-to-3T / light-to-6T run-count bias";
         return new DiscImageResult(Path.GetFullPath(request.OutputPath),
-            $"BD {(plan.HasFileSystem ? "UDF 2.01" : "full-area drawing, no filesystem")}: {summary.BytesWritten} bytes, {request.Parameters.TotalSectors} sectors; {plan.FileCount} {(plan.FilesAtOuterRing ? "outer" : "inner")} files; drawing sectors {plan.DrawingStartSector}..{plan.DrawingEndSectorExclusive - 1}; {interpretation}.");
+            $"BD {(plan.HasFileSystem ? "UDF 2.01" : "full-area drawing, no filesystem")}: {summary.BytesWritten} bytes, {request.Parameters.OutputSectors} sectors; {plan.FileCount} {(plan.FilesAtOuterRing ? "outer" : "inner")} files; drawing sectors {plan.DrawingStartSector}..{plan.DrawingEndSectorExclusive - 1}; {interpretation}.");
     }
 
     internal static BluRayIsoPlan Prepare(BluRayImageRequest request)

@@ -1,4 +1,5 @@
 using DiscImageStudio.ImageIO;
+using DiscImageStudio.Core;
 using System.Text.Json;
 using DvdImageSolver.Encoding;
 
@@ -24,7 +25,8 @@ public sealed record IsoReadbackOptions(
     int SamplesPerSector,
     double PitchLinear = 0,
     double PitchQuadratic = 0,
-    double PitchCubic = 0);
+    double PitchCubic = 0,
+    double? PreviewOuterRadiusMm = null);
 
 public sealed record IsoReadbackSummary(
     string SourceIso,
@@ -67,7 +69,8 @@ public static class IsoReadbackRenderer
         cancellationToken.ThrowIfCancellationRequested();
         Validate(options);
         string isoFullPath = Path.GetFullPath(isoPath);
-        bool readCompatibility = ReadCompatibilityEnabled(isoFullPath);
+        string? readCompatibilityMode = ReadCompatibilityMode(isoFullPath);
+        bool readCompatibility = readCompatibilityMode is not null;
         long isoSectors = new FileInfo(isoFullPath).Length / DvdEccBlockEncoder.PayloadBytesPerSector;
         if ((ulong)options.StartLba + options.FillSectors > (ulong)isoSectors)
         {
@@ -144,7 +147,7 @@ public static class IsoReadbackRenderer
                         }
 
                         byte scrambled = (byte)(payload[byteIndex] ^ mask[byteIndex]);
-                        // The bridge replaces a white texture byte, so show its intended
+                        // Compatibility guards replace white texture bytes, so show their intended
                         // tone only for a sidecar identifying that algorithm. This is
                         // an artwork preview, not an optical reflectance simulation.
                         byte level;
@@ -168,7 +171,7 @@ public static class IsoReadbackRenderer
                         double arcLengthMm = globalBit * bitLengthMm;
                         (double radiusMm, double trackAngle) = spiral.AtArcLengthFast(arcLengthMm);
                         double polarAngle = direction * trackAngle;
-                        double pixelRadius = centre * radiusMm / options.OuterRadiusMm;
+                        double pixelRadius = centre * radiusMm / (options.PreviewOuterRadiusMm ?? options.OuterRadiusMm);
                         int pixelX = (int)Math.Round(centre + (pixelRadius * Math.Cos(polarAngle)));
                         int pixelY = (int)Math.Round(centre - (pixelRadius * Math.Sin(polarAngle)));
                         if ((uint)pixelX >= (uint)size || (uint)pixelY >= (uint)size)
@@ -220,7 +223,7 @@ public static class IsoReadbackRenderer
             samplesPerSector,
             totalSamples,
             classifiedSamples,
-            readCompatibility ? "payload-scramble-classify-splat-bridge-9b-v1" : "payload-scramble-classify-splat",
+            readCompatibility ? $"payload-scramble-classify-splat-{readCompatibilityMode}" : "payload-scramble-classify-splat",
             options.PitchLinear,
             options.PitchQuadratic,
             options.PitchCubic);
@@ -249,11 +252,15 @@ public static class IsoReadbackRenderer
         catch (JsonException) { return (0, 0, 0); }
     }
 
-    /// <summary>Only a known, explicitly recorded bridge version changes preview classification.</summary>
+    /// <summary>Only a known, explicitly recorded protection version changes preview classification.</summary>
     public static bool ReadCompatibilityEnabled(string isoPath)
+        => ReadCompatibilityMode(isoPath) is not null;
+
+    /// <summary>Returns the recorded protection version, or null for absent or unknown modes.</summary>
+    public static string? ReadCompatibilityMode(string isoPath)
     {
         string sidecarPath = isoPath + ".json";
-        if (!File.Exists(sidecarPath)) return false;
+        if (!File.Exists(sidecarPath)) return null;
         try
         {
             using JsonDocument document = JsonDocument.Parse(File.ReadAllText(sidecarPath));
@@ -261,9 +268,10 @@ public static class IsoReadbackRenderer
             return root.ValueKind == JsonValueKind.Object
                 && root.TryGetProperty("readCompatibility", out JsonElement mode)
                 && mode.ValueKind == JsonValueKind.String
-                && mode.GetString() == "bridge-9b-v1";
+                && DvdReadCompatibilityModes.IsSupported(mode.GetString())
+                ? mode.GetString() : null;
         }
-        catch (JsonException) { return false; }
+        catch (JsonException) { return null; }
     }
 
     private static uint GetUInt(JsonElement element, string name)

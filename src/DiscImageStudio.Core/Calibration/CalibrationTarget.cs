@@ -24,12 +24,20 @@ public sealed record CalibrationParameters(
     double PitchLinear = 0, double PitchQuadratic = 0, double PitchCubic = 0,
     bool BluRayInvertMapping = false, long DrawingStartSector = 0, DateTimeOffset? BluRayIsoTimestamp = null,
     long DrawingEndSectorExclusive = 0,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool DvdReadCompatibility = false)
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool DvdReadCompatibility = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? UsableSectors = null)
 {
     public const int DvdChannelBitsPerSector = 38_688;
     public const int BluRaySectorsPerCluster = 32;
     public const int BluRayChannelBitsPerRecordingUnit = 962_136;
     public const double BluRayChannelBitLengthNm = 74.5;
+
+    [JsonIgnore]
+    public long OutputSectors => UsableSectors ?? Sectors;
+
+    [JsonIgnore]
+    public long EffectiveDrawingEndSectorExclusive => DrawingEndSectorExclusive == 0
+        ? OutputSectors : DrawingEndSectorExclusive;
 
     [JsonIgnore]
     public double TrackLengthMm => Kind switch
@@ -46,8 +54,8 @@ public sealed record CalibrationParameters(
         : new CalibrationGeometry(this).AtProgress(DrawingStartSector / (double)Sectors).Radius;
 
     [JsonIgnore]
-    public double DrawingOuterRadiusMm => DrawingEndSectorExclusive == 0 ? OuterRadiusMm
-        : new CalibrationGeometry(this).AtProgress(DrawingEndSectorExclusive / (double)Sectors).Radius;
+    public double DrawingOuterRadiusMm => EffectiveDrawingEndSectorExclusive == Sectors ? OuterRadiusMm
+        : new CalibrationGeometry(this).AtProgress(EffectiveDrawingEndSectorExclusive / (double)Sectors).Radius;
 
     public void Validate()
     {
@@ -60,8 +68,12 @@ public sealed record CalibrationParameters(
             || !double.IsFinite(2 * TrackLengthMm / (OuterRadiusMm * OuterRadiusMm - InnerRadiusMm * InnerRadiusMm)))
             throw new ArgumentException("标定参数无效：请检查盘片类型、内外半径、扇区数和线速度／位长。");
         DvdTrackGeometry.ValidatePitchCoefficients(PitchLinear, PitchQuadratic, PitchCubic);
-        if (DrawingStartSector < 0 || DrawingStartSector >= Sectors
-            || DrawingEndSectorExclusive < 0 || DrawingEndSectorExclusive > Sectors
+        int alignment = Kind == CalibrationDiscKind.Dvd ? 16 : Kind == CalibrationDiscKind.BluRay ? 32 : 1;
+        if (OutputSectors <= 0 || OutputSectors > Sectors
+            || (UsableSectors is not null && OutputSectors % alignment != 0))
+            throw new ArgumentException("标定的可用扇区数必须为正数、不超过总扇区数，并符合介质写入对齐要求。");
+        if (DrawingStartSector < 0 || DrawingStartSector >= OutputSectors
+            || DrawingEndSectorExclusive < 0 || DrawingEndSectorExclusive > OutputSectors
             || (DrawingEndSectorExclusive != 0 && DrawingEndSectorExclusive <= DrawingStartSector)
             || (Kind != CalibrationDiscKind.BluRay && (DrawingStartSector != 0 || DrawingEndSectorExclusive != 0
                 || BluRayInvertMapping || BluRayIsoTimestamp is not null)))
@@ -186,12 +198,14 @@ public sealed class CalibrationTarget
 
     [JsonConstructor]
     public CalibrationTarget(int schemaVersion, string id, CalibrationParameters parameters,
-        CalibrationPatternOptions options, IReadOnlyList<CalibrationCell> cells, CalibrationArtwork artwork = default)
+        CalibrationPatternOptions options, IReadOnlyList<CalibrationCell> cells, CalibrationArtwork artwork = default,
+        string? dvdReadCompatibilityMode = null)
     {
         SchemaVersion = schemaVersion;
         Artwork = artwork;
         Id = id;
         Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
+        DvdReadCompatibilityMode = dvdReadCompatibilityMode;
         Options = options ?? throw new ArgumentNullException(nameof(options));
         Cells = Array.AsReadOnly(cells?.ToArray() ?? throw new ArgumentNullException(nameof(cells)));
         Validate();
@@ -221,6 +235,10 @@ public sealed class CalibrationTarget
         {
             VisibleRings = HasWideAddressBands ? CalibrationWideBandPattern.AddressRings(this, _generatedGeometry)
                 : CalibrationClockRulerPattern.AddressRings(_generatedGeometry);
+            if (HasClockRuler && Parameters.OutputSectors < Parameters.Sectors)
+                VisibleRings = Array.AsReadOnly(VisibleRings.Where(ring =>
+                    ring.RadiusMm - ring.WidthMm / 2 >= DrawingInnerRadiusMm
+                    && ring.RadiusMm + ring.WidthMm / 2 <= DrawingOuterRadiusMm).ToArray());
             RingRadiiMm = Array.AsReadOnly(VisibleRings.Select(r => r.RadiusMm).ToArray());
         }
         else
@@ -266,6 +284,15 @@ public sealed class CalibrationTarget
     public CalibrationArtwork Artwork { get; }
     public string Id { get; }
     public CalibrationParameters Parameters { get; }
+    /// <summary>Frozen output recipe. Missing on old targets, whose enabled option used the legacy bridge.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? DvdReadCompatibilityMode { get; }
+
+    [JsonIgnore]
+    public string EffectiveDvdReadCompatibilityMode => Parameters.Kind == CalibrationDiscKind.Dvd
+        && Parameters.DvdReadCompatibility
+            ? DvdReadCompatibilityMode ?? DvdReadCompatibilityModes.LegacyBridge
+            : DvdReadCompatibilityModes.Off;
     public CalibrationPatternOptions Options { get; }
     public IReadOnlyList<CalibrationCell> Cells { get; }
 
@@ -414,8 +441,17 @@ public sealed class CalibrationTarget
             CalibrationArtwork.WavyBoundary => 16,
             _ => 7,
         };
+        // CD coarse bands keep their frozen full-track byte addresses. A new
+        // target needs the last edge and at least one complete light sector after
+        // it; loading an existing target must retain its original address map.
+        if (parameters.Kind == CalibrationDiscKind.Cd && version is 12 or 13
+            && parameters.OutputSectors <= CalibrationWideBandPattern.ForVersion(version)[^1]
+                .UnitRange(parameters.Sectors).EndExclusive)
+            throw new ArgumentException("CD 粗标的可用扇区数不足以包含最外侧固定地址边界及其后的留白。请增加可用扇区数，或使用边界标定。");
         return new(version, Guid.NewGuid().ToString("N"), parameters, options,
-            BuildCells(parameters), artwork);
+            BuildCells(parameters), artwork,
+            parameters.Kind == CalibrationDiscKind.Dvd && parameters.DvdReadCompatibility
+                ? DvdReadCompatibilityModes.Current : null);
     }
 
     public void Validate()
@@ -433,6 +469,8 @@ public sealed class CalibrationTarget
             throw new ArgumentException("标定图案类型与记录版本不匹配。");
         if (!Guid.TryParseExact(Id, "N", out _)) throw new ArgumentException("标定图案 ID 无效。");
         Parameters.Validate();
+        if (DvdReadCompatibilityMode is not null && !DvdReadCompatibilityModes.IsSupported(DvdReadCompatibilityMode))
+            throw new ArgumentException("Unsupported DVD read compatibility recipe in the calibration target.");
         if (HasClockRuler && !CalibrationClockRulerPattern.Supports(Parameters))
             throw new ArgumentException("时钟尺粗标靶需要 70–85 分钟、1200 mm/s 的标准 12 cm CD。");
         if (HasRadialArcDashes && !CalibrationRadialArcPattern.Supports(Parameters))
@@ -707,6 +745,7 @@ public sealed class CalibrationTarget
     {
         actual.Validate();
         if (actual.Kind != Parameters.Kind || actual.Sectors != Parameters.Sectors
+            || actual.OutputSectors != Parameters.OutputSectors
             || actual.LinearDensity != Parameters.LinearDensity
             || actual.BluRayInvertMapping != Parameters.BluRayInvertMapping
             || actual.DrawingStartSector != Parameters.DrawingStartSector

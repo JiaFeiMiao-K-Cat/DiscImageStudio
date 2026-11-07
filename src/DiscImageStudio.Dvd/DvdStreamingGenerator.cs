@@ -22,16 +22,28 @@ public sealed record DvdStreamingOptions(
     double PitchCubic = 0,
     ToneProfile? Tone = null,
     bool UseSampleReuse = true,
-    bool ReadCompatibility = false)
+    bool ReadCompatibility = false,
+    uint? UsableSectors = null,
+    double? SourceImageOuterRadiusMm = null,
+    string ReadCompatibilityMode = DvdReadCompatibilityModes.Current)
 {
     /// <summary>Physical channel-bit length of the DVD scheme; the UI no longer exposes it.</summary>
     public const double StandardChannelBitLengthNm = 133.3;
 
+    public uint OutputSectors => UsableSectors ?? TotalSectors;
     public long ContentLength => checked(
-        (long)TotalSectors * DvdEccBlockEncoder.PayloadBytesPerSector);
+        (long)OutputSectors * DvdEccBlockEncoder.PayloadBytesPerSector);
+    public double SamplingImageOuterRadiusMm => SourceImageOuterRadiusMm ?? OutputOuterRadiusMm;
+    public double OutputOuterRadiusMm => OutputSectors == TotalSectors ? OuterRadiusMm
+        : DvdTrackGeometry.Create(InnerRadiusMm, OuterRadiusMm,
+            TotalSectors * (double)DvdEccBlockEncoder.ChannelBitsPerSector * ChannelBitLengthNm * 1e-6,
+            PitchLinear, PitchQuadratic, PitchCubic).RadiusAtArcLength(
+                OutputSectors * (double)DvdEccBlockEncoder.ChannelBitsPerSector * ChannelBitLengthNm * 1e-6);
 
     public void Validate()
     {
+        if (ReadCompatibility && !DvdReadCompatibilityModes.IsSupported(ReadCompatibilityMode))
+            throw new ArgumentException("Unsupported DVD read compatibility recipe.", nameof(ReadCompatibilityMode));
         DvdTrackGeometry.ValidatePitchCoefficients(PitchLinear, PitchQuadratic, PitchCubic);
         if (Tone is { } tone)
         {
@@ -43,7 +55,8 @@ public sealed record DvdStreamingOptions(
                     "DVD dispersion uses two textures; tone levels must be 2.");
             }
         }
-        if (TotalSectors == 0 || TotalSectors % DvdEccBlockEncoder.SectorCount != 0)
+        if (TotalSectors == 0 || OutputSectors == 0 || OutputSectors > TotalSectors
+            || OutputSectors % DvdEccBlockEncoder.SectorCount != 0)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(TotalSectors),
@@ -79,6 +92,8 @@ public sealed record DvdStreamingOptions(
                 "DVD streaming parallelism must be automatic (0) or 1..64.");
         }
 
+        if (SourceImageOuterRadiusMm is { } sourceRadius && (!double.IsFinite(sourceRadius) || sourceRadius <= 0))
+            throw new ArgumentOutOfRangeException(nameof(SourceImageOuterRadiusMm), "Source image radius must be positive and finite.");
         _ = ContentLength;
         // Resolve the complete curve before a hybrid stream writes its filesystem
         // prefix. Positive coefficients alone do not guarantee numerical resolution.
@@ -157,12 +172,12 @@ public static class DvdStreamingGenerator
         options.Validate();
         HybridIsoImageWriter.LayoutPlan isoLayout = HybridIsoImageWriter.Plan(
             dataDirectory,
-            options.TotalSectors,
+            options.OutputSectors,
             volumeLabel,
             filesAtOuterRing);
         uint drawingStartLba = AlignToEccBlock(filesAtOuterRing
             ? isoLayout.MetadataEndLbaExclusive : isoLayout.DataEndLbaExclusive, PsnOffset);
-        uint drawingEndLba = filesAtOuterRing ? isoLayout.FileDataStartLba / 16 * 16 : options.TotalSectors;
+        uint drawingEndLba = filesAtOuterRing ? isoLayout.FileDataStartLba / 16 * 16 : options.OutputSectors;
         if (drawingEndLba < drawingStartLba || drawingEndLba - drawingStartLba < DvdEccBlockEncoder.SectorCount)
         {
             throw new ArgumentException(
@@ -188,7 +203,7 @@ public static class DvdStreamingGenerator
         MultiBlockSolveOptions solveOptions = CreateSolveOptions(
             options,
             startLba: 0,
-            fillSectors: options.TotalSectors);
+            fillSectors: options.OutputSectors);
         FastDvdStreamSummary summary = FastDispersionImageWriter.WriteStream(
             sourceFullPath,
             output,
@@ -235,12 +250,16 @@ public static class DvdStreamingGenerator
             throw new ArgumentException("Calibration target and output must describe the same DVD sector capacity.", nameof(target));
         // A calibration target describes the bytes that were generated/burned.
         // Later changes to the project output checkbox must not change that target.
-        options = options with { ReadCompatibility = target.Parameters.DvdReadCompatibility };
+        options = options with
+        {
+            ReadCompatibility = target.Parameters.DvdReadCompatibility,
+            ReadCompatibilityMode = target.EffectiveDvdReadCompatibilityMode,
+        };
         if (target.UsesReferencePattern)
         {
             ArgumentNullException.ThrowIfNull(output);
             options.Validate();
-            MultiBlockSolveOptions solveOptions = CreateSolveOptions(options, 0, options.TotalSectors);
+            MultiBlockSolveOptions solveOptions = CreateSolveOptions(options, 0, options.OutputSectors);
             FastDvdStreamSummary summary = FastDispersionImageWriter.WriteCalibrationReferenceStream(
                 target, output, solveOptions,
                 value => progress?.Invoke(new DvdStreamingProgress(value.BytesWritten, value.TotalBytes,
@@ -276,7 +295,7 @@ public static class DvdStreamingGenerator
         MultiBlockSolveOptions solveOptions = CreateSolveOptions(
             options,
             startLba: 0,
-            fillSectors: options.TotalSectors);
+            fillSectors: options.OutputSectors);
         void Report(FastDvdStreamProgress value) => progress?.Invoke(new DvdStreamingProgress(
             value.BytesWritten, value.TotalBytes, value.CompletedBlocks, value.TotalBlocks, value.Elapsed));
         FastDvdStreamSummary summary = sectorLuminance is null
@@ -304,7 +323,7 @@ public static class DvdStreamingGenerator
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(plan);
         options.Validate();
-        if (plan.TotalSectors != options.TotalSectors)
+        if (plan.TotalSectors != options.OutputSectors)
         {
             throw new ArgumentException(
                 "Hybrid layout and DVD streaming options describe different disc sizes.",
@@ -319,7 +338,7 @@ public static class DvdStreamingGenerator
             HybridIsoImageWriter.WriteSequentialPrefix(plan.IsoLayout, output, plan.DrawingStartLba, cancellationToken);
         long prefixBytes = checked(
             (long)plan.DrawingStartLba * DvdEccBlockEncoder.PayloadBytesPerSector);
-        int totalBlocks = checked((int)(options.TotalSectors / DvdEccBlockEncoder.SectorCount));
+        int totalBlocks = checked((int)(options.OutputSectors / DvdEccBlockEncoder.SectorCount));
         progress?.Invoke(new DvdStreamingProgress(
             prefixBytes,
             options.ContentLength,
@@ -352,7 +371,7 @@ public static class DvdStreamingGenerator
         stopwatch.Stop();
         return new DvdStreamingSummary(
             sourceFullPath,
-            options.TotalSectors,
+            options.OutputSectors,
             options.ContentLength,
             drawing.ControlledWords,
             stopwatch.Elapsed,
@@ -377,7 +396,10 @@ public static class DvdStreamingGenerator
             PitchLinear: options.PitchLinear,
             PitchQuadratic: options.PitchQuadratic,
             PitchCubic: options.PitchCubic,
-            Tone: options.Tone);
+            Tone: options.Tone,
+            UsableSectors: options.UsableSectors,
+            ImageOuterRadiusMm: options.SourceImageOuterRadiusMm
+                ?? (options.UsableSectors.HasValue ? options.OutputOuterRadiusMm : null));
         return new MultiBlockSolveOptions(
             startLba,
             fillSectors,
@@ -392,7 +414,8 @@ public static class DvdStreamingGenerator
             Algorithm: SolverAlgorithm.Dispersion,
             FastParallelism: options.FastParallelism,
             UseSampleReuse: options.UseSampleReuse,
-            ReadCompatibility: options.ReadCompatibility);
+            ReadCompatibility: options.ReadCompatibility,
+            ReadCompatibilityMode: options.ReadCompatibilityMode);
     }
 
     private static uint AlignToEccBlock(uint lba, uint psnOffset)

@@ -495,7 +495,8 @@ public partial class ShellViewModel : ObservableObject
                 result.Sectors,
                 result.PitchLinear,
                 result.PitchQuadratic,
-                result.PitchCubic),
+                result.PitchCubic,
+                UsableSectors: result.UsableSectors),
             [],
             new ProjectOutputs(
                 Path.Combine(
@@ -645,6 +646,11 @@ public partial class ShellViewModel : ObservableObject
             return;
         }
 
+        ProjectGeometry geometry = new(result.InnerRadiusMm, result.OuterRadiusMm, result.Sectors,
+            result.PitchLinear, result.PitchQuadratic, result.PitchCubic,
+            DiscParametersState.ResolveUsableSectors(CurrentProject!.Family, result.Sectors, result.UsableSectors));
+        bool synchronizePreview = result.SynchronizePreview
+            || geometry != ProjectSession.CaptureGeometry(CurrentProject!, State);
         _isApplyingProject = true;
         try
         {
@@ -656,6 +662,7 @@ public partial class ShellViewModel : ObservableObject
                     State.DvdInnerRadius = ProjectSession.Format(result.InnerRadiusMm);
                     State.DvdOuterRadius = ProjectSession.Format(result.OuterRadiusMm);
                     State.DvdTotalSectors = result.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    State.DvdUsableSectors = result.UsableSectors?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
                     State.DvdPitchLinear = ProjectSession.Format(result.PitchLinear);
                     State.DvdPitchQuadratic = ProjectSession.Format(result.PitchQuadratic);
                     State.DvdPitchCubic = ProjectSession.Format(result.PitchCubic);
@@ -664,20 +671,24 @@ public partial class ShellViewModel : ObservableObject
                     State.BdInnerRadius = ProjectSession.Format(result.InnerRadiusMm);
                     State.BdOuterRadius = ProjectSession.Format(result.OuterRadiusMm);
                     State.BdTotalSectors = result.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    State.BdUsableSectors = result.UsableSectors?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
                     State.BdPitchLinear = ProjectSession.Format(result.PitchLinear);
                     State.BdPitchQuadratic = ProjectSession.Format(result.PitchQuadratic);
                     State.BdPitchCubic = ProjectSession.Format(result.PitchCubic);
+                    State.BdInvertMapping = result.BluRayInvertMapping;
                     break;
                 default:
                     State.CdInnerRadius = ProjectSession.Format(result.InnerRadiusMm);
                     State.CdOuterRadius = ProjectSession.Format(result.OuterRadiusMm);
                     State.CdSectors = result.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    State.CdUsableSectors = result.UsableSectors?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
                     State.CdPitchLinear = ProjectSession.Format(result.PitchLinear);
                     State.CdPitchQuadratic = ProjectSession.Format(result.PitchQuadratic);
                     State.CdPitchCubic = ProjectSession.Format(result.PitchCubic);
                     break;
             }
 
+            if (synchronizePreview) State.SynchronizePreviewGeometry(CurrentProject.Family);
             CurrentProject = CurrentProject with { Name = result.Name };
         }
         finally
@@ -846,6 +857,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.CdPitchQuadratic),
         nameof(DiscParametersState.CdPitchCubic),
         nameof(DiscParametersState.CdSectors),
+        nameof(DiscParametersState.CdUsableSectors),
         nameof(DiscParametersState.CdImagePath),
         nameof(DiscParametersState.CdOutputPath),
         nameof(DiscParametersState.CdWriteCue),
@@ -856,6 +868,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.DvdInnerRadius),
         nameof(DiscParametersState.DvdOuterRadius),
         nameof(DiscParametersState.DvdTotalSectors),
+        nameof(DiscParametersState.DvdUsableSectors),
         nameof(DiscParametersState.DvdPitchLinear),
         nameof(DiscParametersState.DvdPitchQuadratic),
         nameof(DiscParametersState.DvdPitchCubic),
@@ -871,6 +884,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.BdPitchQuadratic),
         nameof(DiscParametersState.BdPitchCubic),
         nameof(DiscParametersState.BdTotalSectors),
+        nameof(DiscParametersState.BdUsableSectors),
         nameof(DiscParametersState.BdImagePath),
         nameof(DiscParametersState.BdOutputPath),
         nameof(DiscParametersState.BdDataDirectory),
@@ -930,7 +944,13 @@ public partial class ShellViewModel : ObservableObject
             or nameof(DiscParametersState.DvdInnerRadius)
             or nameof(DiscParametersState.DvdOuterRadius)
             or nameof(DiscParametersState.BdInnerRadius)
-            or nameof(DiscParametersState.BdOuterRadius))
+            or nameof(DiscParametersState.BdOuterRadius)
+            or nameof(DiscParametersState.CdSectors) or nameof(DiscParametersState.CdUsableSectors)
+            or nameof(DiscParametersState.DvdTotalSectors) or nameof(DiscParametersState.DvdUsableSectors)
+            or nameof(DiscParametersState.BdTotalSectors) or nameof(DiscParametersState.BdUsableSectors)
+            or nameof(DiscParametersState.CdPitchLinear) or nameof(DiscParametersState.CdPitchQuadratic) or nameof(DiscParametersState.CdPitchCubic)
+            or nameof(DiscParametersState.DvdPitchLinear) or nameof(DiscParametersState.DvdPitchQuadratic) or nameof(DiscParametersState.DvdPitchCubic)
+            or nameof(DiscParametersState.BdPitchLinear) or nameof(DiscParametersState.BdPitchQuadratic) or nameof(DiscParametersState.BdPitchCubic))
         {
             Design?.RefreshGeometry();
         }

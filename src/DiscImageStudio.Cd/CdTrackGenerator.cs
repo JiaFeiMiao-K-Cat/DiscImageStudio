@@ -99,7 +99,9 @@ public static class CdTrackGenerator
                 effectiveTone.SrgbLinearization,
                 parameters.PitchLinear,
                 parameters.PitchQuadratic,
-                parameters.PitchCubic));
+                parameters.PitchCubic,
+                parameters.UsableSectors,
+                parameters.SourceImageOuterRadiusMm));
         return wave && writeCue
             ? summary with { CueSheetPath = CdWaveFile.WriteCue(outputFullPath) }
             : summary;
@@ -213,9 +215,10 @@ public static class CdTrackGenerator
     public static CdGenerationSummary GeneratePatternToStream(CalibrationTarget target, Stream output, bool interleave,
         Action<CdProgress>? progress = null, CancellationToken cancellationToken = default,
         string outputDescription = "direct-burn-stream", CdAudioByteOrder audioByteOrder = CdAudioByteOrder.BigEndian,
-        bool useParallelSampling = true)
+        bool useParallelSampling = true, long? usableSectors = null)
     {
         var parameters = CdDiscParameters.FromCalibration(target);
+        if (usableSectors.HasValue) parameters = parameters with { UsableSectors = usableSectors };
         ArgumentNullException.ThrowIfNull(output);
         if (!output.CanWrite)
             throw new ArgumentException("CD output stream must be writable.", nameof(output));
@@ -232,8 +235,8 @@ public static class CdTrackGenerator
                 cancellationToken, outputDescription, audioByteOrder, ToneProfile.LegacyBinary,
                 sampler.SupportsSimd ? sampler.SampleFour : null, useParallelSampling);
         }
-        Func<long, byte> sample = target.HasWideAddressBands ? WideBandSampler(target, parameters.TotalBytes)
-            : new CdClockRulerSampler(parameters.TotalBytes).SampleGray;
+        Func<long, byte> sample = target.HasWideAddressBands ? WideBandSampler(target, parameters.GeometryBytes)
+            : new CdClockRulerSampler(parameters.GeometryBytes).SampleGray;
         return GenerateSamplesToStream(sample, "calibration", output, parameters, interleave, progress,
             cancellationToken, outputDescription, audioByteOrder, ToneProfile.LegacyBinary);
     }
@@ -373,7 +376,7 @@ public static class CdTrackGenerator
         return new CdGenerationSummary(
             summarySource,
             outputDescription,
-            parameters.Sectors,
+            parameters.OutputSectors,
             totalBytes,
             interleave,
             stopwatch.Elapsed);
@@ -458,13 +461,13 @@ public static class CdTrackGenerator
             }
         }
 
-        CdBlockPipeline.Run(parameters.Sectors, CdDiscParameters.BytesPerSector, Fill, Consume, cancellationToken);
+        CdBlockPipeline.Run(parameters.OutputSectors, CdDiscParameters.BytesPerSector, Fill, Consume, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         cddaInterleaver?.Flush(output);
         output.Flush();
         stopwatch.Stop();
         progress?.Invoke(new CdProgress(totalBytes, totalBytes, stopwatch.Elapsed));
-        return new(summarySource, outputDescription, parameters.Sectors, totalBytes, interleave, stopwatch.Elapsed);
+        return new(summarySource, outputDescription, parameters.OutputSectors, totalBytes, interleave, stopwatch.Elapsed);
     }
 
     /// <summary>
@@ -744,7 +747,7 @@ public static class CdTrackGenerator
         CdDiscParameters parameters,
         long globalByte)
     {
-        (double pixelX, double pixelY) = parameters.ImagePointFromByte(globalByte, source.Width);
+        (double pixelX, double pixelY) = parameters.SourceImagePointFromByte(globalByte, source.Width);
         return source.GrayAt(pixelX, pixelY);
     }
 

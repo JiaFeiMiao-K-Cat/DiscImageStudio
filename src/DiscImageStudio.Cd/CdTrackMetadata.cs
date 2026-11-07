@@ -25,7 +25,9 @@ public sealed record CdTrackMetadata(
     bool ToneSrgbLinearization = false,
     double PitchLinear = 0,
     double PitchQuadratic = 0,
-    double PitchCubic = 0)
+    double PitchCubic = 0,
+    long? UsableSectors = null,
+    double? SourceImageOuterRadiusMm = null)
 {
     internal const string FormatName = "cd-da-track-v1";
 
@@ -36,7 +38,7 @@ public sealed record CdTrackMetadata(
     public CdDiscParameters CreateParameters() => new(
         InnerRadiusMm, OuterRadiusMm, Sectors, LinearVelocityMmPerSecond,
         StartAngleDegrees * Math.PI / 180.0, ImageOuterRadiusMm,
-        PitchLinear, PitchQuadratic, PitchCubic);
+        PitchLinear, PitchQuadratic, PitchCubic, UsableSectors, SourceImageOuterRadiusMm);
 
     /// <summary>Reads the sidecar of a track, or null when it is absent or unreadable.</summary>
     public static CdTrackMetadata? TryLoad(string trackPath)

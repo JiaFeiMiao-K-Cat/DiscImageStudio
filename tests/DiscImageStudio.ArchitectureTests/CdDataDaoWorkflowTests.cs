@@ -21,7 +21,7 @@ internal static class CdDataDaoWorkflowTests
         using GeneratedContentComStream content = new(2048, (output, _) => output.Write(new byte[2048]),
             null, CancellationToken.None);
         content.WaitUntilPrebuffered(CancellationToken.None);
-        foreach (long remaining in new[] { sectors, sectors - 2, sectors - 3 })
+        foreach (long remaining in new[] { sectors, sectors + 2, sectors + 3 })
         {
             RecordingCdRawSession session = new() { LastLeadoutSector = remaining };
             using RecordingCdRawImageSession image = new(session.Calls) { ImageStartOfLeadout = sectors };
@@ -48,18 +48,21 @@ internal static class CdDataDaoWorkflowTests
             && rawImage.ImageSectorType == CdRawSectorType.SubcodeIsRaw
             && rawCapable.Calls[^1] == "ReleaseMedia",
             "data DAO requests raw P-W and builds the matching template when the recorder lists it");
-        RecordingCdRawSession tooSmall = new() { LastLeadoutSector = sectors - 4 };
-        using RecordingCdRawImageSession tooLarge = new(tooSmall.Calls) { ImageStartOfLeadout = sectors };
-        try
+        foreach (int excess in new[] { 1, 2, 3, 4 })
         {
-            WindowsImapiBurner.BurnCdDao(tooSmall, tooLarge, content, request, CancellationToken.None);
-            throw new InvalidOperationException("Expected excessive overburn to be rejected.");
-        }
-        catch (InvalidOperationException exception)
-        {
-            Require(exception.Message.Contains("超出盘片边界 4 个扇区")
-                && !tooSmall.Calls.Contains("WriteMedia") && tooSmall.Calls[^1] == "ReleaseMedia",
-                "data DAO retains the existing strict three-sector overburn bound and cleanup");
+            RecordingCdRawSession tooSmall = new() { LastLeadoutSector = sectors - excess };
+            using RecordingCdRawImageSession tooLarge = new(tooSmall.Calls) { ImageStartOfLeadout = sectors };
+            try
+            {
+                WindowsImapiBurner.BurnCdDao(tooSmall, tooLarge, content, request, CancellationToken.None);
+                throw new InvalidOperationException("Expected any excess over the DAO boundary to be rejected.");
+            }
+            catch (InvalidOperationException exception)
+            {
+                Require(exception.Message.Contains($"超出盘片边界 {excess} 个扇区")
+                    && !tooSmall.Calls.Contains("WriteMedia") && tooSmall.Calls[^1] == "ReleaseMedia",
+                    "data DAO refuses even a one-sector excess and releases the prepared medium");
+            }
         }
         Console.WriteLine("cd-data-dao-workflow: passed (Ritek 359845 sectors, shared audio DAO capacity/cleanup, unchanged ISO length, raw P-W preferred over cooked R-W; mock recorder only)");
     }

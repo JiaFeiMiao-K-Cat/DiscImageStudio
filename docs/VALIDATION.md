@@ -4,6 +4,53 @@
 
 ## 本地验证
 
+2026-11-07，#184 参数保存流程：CD／DVD／BD 切换预设时同步高级预览的半径和三项轨距系数；工程设置保存预设成功后立即应用并按新 ID 选中，取消后保留该次保存，后续未确认输入不应用。覆盖同名条目、新建工程隔离、命名取消、保存失败、仅改名保留手工实测值和 BD 极性。
+
+标定记录回归覆盖已确认但尚未应用／应用后的拟合保存重开、所选候选与预测恢复、原 Target 冻结、旧记录兼容、取消确认／更改点位后的失效、无效目标和候选校验，以及加载期间切换候选和取消加载不会误恢复确认。原有照片流程测试同步验证新的恢复行为。
+
+Release solution 构建通过（0 警告、0 错误）；`--test-parameter-persistence`、DVD `selftest` 和完整 ArchitectureTests 均通过，完整输出为 `architecture-selftest: all checks passed`，日志位于 `artifacts/parameter-persistence/architecture-tests.log`。测试进程的 `TEMP`／`TMP` 指向仓库 `tmp`，避免沙箱限制默认临时目录的原子重命名。工程设置离屏截图 `artifacts/parameter-persistence/project-settings.png` 已检查。
+
+2026-11-07，#90 周期保护规则更新为 `periodic-9b-16-v1`：每个 2048-byte 扇区只检查偏移 `0, 16, …, 2032`，将 owned 且原始 Q 不是 `A5/9B` 的字节改为 `9B`；完全归属于绘图的纯白扇区计 128 次，已有 `9B` 不计变化。该配方不叠加旧段首 bridge。默认仍关闭，CD／BD 不变；旧 `bridge-9b-v1` sidecar 保持读取兼容，已启用但没有配方字段的旧标靶继续复现 bridge，新建标靶保存周期配方。
+
+本次核对范围：独立逐字节 oracle、偏移 0／16／2032 与非周期位置、全白 128 次／全黑 0 次、已有 `9B` 与其他非 `A5` 值、幂等性、文件／透明／未归属／绘图范围外不改写；分块及标量／SIMD／采样复用／并行确定性；默认关闭输出、精确 Q API 拒绝、ISO／CLI／流式一致性、内外圈文件保护、新旧 sidecar 预览分类、标靶开关与配方冻结及旧记录恢复。
+
+Release solution 构建通过（`--no-restore -m:1 -nr:false -p:UseSharedCompilation=false`，0 警告、0 错误）；`--test-dvd-read-compatibility` 的规则、集成和 UI 回归、DVD 引擎 selftest 以及完整 ArchitectureTests 均通过，完整回归最终输出 `architecture-selftest: all checks passed`。首次默认并行构建退出 1 且未给出诊断，随后单 worker 构建成功；沙箱内专项测试遇到 `File.Move` 的 `UnauthorizedAccessException`，获准在沙箱外重跑后通过，未发现对应代码断言失败。以上检查均未访问光驱。完整回归结束后单独运行新版测速，退出码为 0，结果如下；下方 2026-11-06 的结果和实际队列检查仍仅属于旧 bridge。
+
+新版生成侧测速：Windows X64、.NET 10.0.14、16 个逻辑 CPU，自动并行；完整 DVD-5 几何 2,297,888 sectors、24–58 mm、133.3 nm、起始角 0、旧式二值影调，每次生成前 64 MiB。使用 4096×4096 黑白／彩色透明度图片及原始 2400×2400 标定参考图，恒定轨距与三次系数 `(0.00012, -0.00008, 0.00004)`，分别关闭／开启采样复用，共 12 个场景。**所有场景均开启新保护，表中的开关仅指采样复用。** 每项预热一次后三轮取中位数，计时包含完整生成调用的解码、初始化、首批和尾批工作，不写磁盘、不访问光驱。
+
+| 场景 / Fixture | 轨距 / Pitch | 复用关闭 / Reuse off MiB/s | 复用开启 / Reuse on MiB/s |
+| --- | --- | ---: | ---: |
+| 标定参考图 / Reference | 恒定 / Constant | 49.49 | 190.36 |
+| 标定参考图 / Reference | 三次 / Cubic | 69.26 | 187.06 |
+| 黑白图片 / Binary | 恒定 / Constant | 60.07 | 143.27 |
+| 黑白图片 / Binary | 三次 / Cubic | 90.83 | 146.72 |
+| 彩色透明度 / Colour-alpha | 恒定 / Constant | 45.18 | 45.88 |
+| 彩色透明度 / Colour-alpha | 三次 / Cubic | 57.51 | 55.15 |
+
+全部场景的最低中位数为 45.18 MiB/s，默认开启采样复用时为 45.88 MiB/s；所有单次测量中的最低值为 41.68 MiB/s。DVD 24× 需要 33.24 MB/s，即约 31.7001 MiB/s。这些本机场景的生成吞吐达到 24× 需求，但本次没有测量实际缓冲队列、设备写入或实盘读回，不能据此保证任意机器与负载下均无供数中断；旧版队列测试也不能替代新版测试。原始分轮数据在 `artifacts/issue90-periodic-guard/benchmark.log`。
+
+复现新版测速（先完成 Release 构建）：
+
+```powershell
+dotnet tests/DiscImageStudio.ArchitectureTests/bin/Release/net10.0-windows/DiscImageStudio.ArchitectureTests.dll --benchmark-dvd-read-compatibility
+```
+
+外部硬件证据为 [#90 comment-6693099737](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues/90#issuecomment-6693099737)：报告者称原镜像起始即报 medium error，经 [every16 脚本](https://github.com/bczhc/dvd-tools/blob/master/src/bin/dvd-guard-every16.rs) 或另一种段首处理后可全盘读回。该反馈支持此测试环境中的可读性改善，不是本程序新实现的实盘测试，也未证明所有介质、驱动器或盘面光学对比度相同。纹理和对比度可能变化，仍需同图对照。
+
+English: the new `periodic-9b-16-v1` recipe checks fixed offsets 0, 16, …, 2032 and changes only owned bytes whose original scrambled Q is neither `A5` nor `9B`; an entirely owned white sector has 128 changes. It does not add the legacy run-start bridge. Regression covers an independent byte oracle, ownership/range protection, repeatability across chunks and execution modes, output parity, sidecar interpretation and frozen legacy/new calibration recipes. The single-worker Release solution build completed with zero warnings/errors; the focused guard/integration/UI tests, DVD selftest and complete architecture suite passed. An initial parallel build exited without diagnostics, and a sandbox `File.Move` permission failure was resolved by an approved test run outside the sandbox.
+
+The new benchmark ran separately after the complete suite and exited successfully. Its 12 cases all enable the periodic guard; off/on in the table means sample reuse. On X64 .NET 10.0.14 with 16 logical CPUs, each complete call generates the first 64 MiB of full DVD-5 geometry and includes decoding, initialization and the final batch. Fixtures use 4096² binary/colour-alpha images and the original 2400² reference, constant/cubic pitch, one warm-up and median-of-three measurement. The lowest case median was 45.18 MiB/s, or 45.88 MiB/s with default reuse enabled; the lowest individual run was 41.68 MiB/s, against 31.7001 MiB/s for DVD 24×. These local producer fixtures exceed the 24× throughput requirement; no disk output, real queue, recorder or physical readback was measured. The old bridge's queue results below are historical, not evidence for the new recipe. The linked external-script report describes full-disc readback in the reporter's setup, not universal media support or a hardware validation of this implementation. The option remains experimental and off by default; texture and contrast may change, and CD/BD are unchanged.
+
+2026-11-07，#183 提交前复查：修正 BD 缩小可用容量后，预览逐像素重复构造几何的问题，改为在渲染入口缓存有效外半径；新建 CD 固定地址粗标要求完整包含最外侧测量边界及后续浅色留白，旧冻结记录保持原样。新增回归用外圈标记识别 CD／DVD 错用几何尺度导致的裁边，验证 BD 普通图片流式缩短后与完整输出前缀逐字节一致；另检查三次轨距 BD 的外缘像素、两种预览路径一致、常轨距／三次轨距短 ISO 读回，以及 CD 粗标容量的不足、临界值、正常值和旧记录恢复。最终 Release 构建零警告、零错误，容量专项、DVD selftest 和完整 ArchitectureTests 全部通过。日志为 `artifacts/usable-sectors/build-review.log`、`focused-review.log`、`dvd-selftest-review.log` 和 `architecture-review.log`。未执行实盘刻录。
+
+English: the pre-commit review added cached BD preview radii and qualification of new CD coarse targets against their fixed outer boundary. Outer-ring fixtures detect incorrect CD/DVD image scaling; BD stream-prefix, reduced-capacity preview/readback and CD calibration boundary regressions passed. The final Release build, focused capacity checks, DVD selftest and complete architecture suite passed; no physical disc was used.
+
+2026-11-07，可用扇区与几何容量分离（#183）：最终 Release solution 构建通过（`--no-restore -m:1 -nr:false`，0 警告、0 错误），DVD 引擎 selftest、完整 ArchitectureTests 和容量／界面专项回归全部通过。新增检查覆盖内置预设可用数、旧预设缺省预留、显式值不重复扣减、工程／预设／标定记录往返、非对齐的 DVD 几何总数保留，以及 CD／DVD／BD 的输出长度与写入对齐。生成回归验证原始几何不变、画面按可用范围映射、文件系统在最终容量内完整布局、sidecar 恢复；设计图层在可用容量改变后保存／重开保持实际尺寸与合成像素。流式回归对照完整标定输出前缀，确认设备容量缩小时只截尾且不改保存的标定参数。设备替身覆盖 DVD 直接使用 Free、CD 单次预留与严格 DAO lead-out 边界、BD 原有完整布局限制，以及标定读取分别填入总数和可用数。
+
+新建／编辑工程与标定页离屏截图已目视检查，中英文几何总数／可用数可完整显示；本地化回归同时通过。日志和截图位于 `artifacts/usable-sectors/`，完整回归日志为 `architecture-final.log`；测试 `TEMP`／`TMP` 指向该目录的 `temp` 子目录。沙箱内文件原子替换受限，最终完整回归在不受该限制的执行环境复跑通过。未访问刻录设备、未执行实盘刻录；此次调整容量、图像坐标范围与布局，不改 ECC／EFM 等编码算法，DVD selftest 覆盖项不变。
+
+English: the final Release solution build completed with zero warnings/errors; DVD selftest, the complete architecture suite, and focused capacity/UI checks passed. Regression covers explicit usable counts without double deductions, legacy preset defaults, geometry preservation, aligned output, device capacity limits, image scaling, complete file layouts, metadata persistence, and stable saved layers. Truncated calibration streams match the full output prefix. Project/calibration offscreen screenshots were inspected. No optical device or physical burn was used; encoding algorithms and the DVD selftest scope are unchanged.
+
 2026-11-07，DVD／BD 详细诊断补齐：最终 Release solution 构建通过（`--no-restore -m:1 -nr:false`，0 警告、0 错误），DVD 引擎 selftest 和完整 ArchitectureTests 全部通过。新增回归覆盖所有 IMAPI 物理盘片类型、可选字段独立失败、DVD 设备操作顺序／容量／速度／校验失败阻断，以及在事件退订、取消注册注销和源流销毁前保存原始写入异常与快照；用阻塞的取消回调确认失败记录不会被清理延迟。BD 回归覆盖完整介质与轨道上下文、真实 MMC sense 保留、写入／刷新／关闭／释放失败及取消，检查未增加设备查询或改变清理顺序。CD 既有诊断与流式缓冲回归同时通过。未创建刻录设备、未执行实盘刻录；无 GUI 布局或编码链改动，selftest 覆盖项不变。日志位于 `artifacts/burn-diagnostics/`，测试 `TEMP`／`TMP` 使用该目录的 `temp` 子目录。
 
 English: the final Release solution build completed with zero warnings/errors; DVD selftest and the complete architecture suite passed. New checks cover shared physical media identification, DVD operation order and failure snapshots before event/cancellation cleanup, and BD cached media/track context, original MMC sense, finalization failures and cancellation. Existing CD and stream diagnostics also passed. No recorder or physical disc was used; the change adds diagnostics without changing encoded output or media support.
@@ -26,9 +73,9 @@ English: the Release solution build completed with zero warnings/errors; the com
 
 2026-11-06，CD 后续风险审计（先于上述修复）：当时只新增独立模型/离线 IMAPI 探针及文档，未改生产代码、未操作光驱，未重跑 solution 构建。23 组真实生成器样本的 CIRC 逆变换及 6,003 个抽样校验码字通过；完整 EFM/同步/合并位检查、126 组对齐与同分选择对照、386 个周期样本及 16 个扩长样本未发现持续 DSV 累积。第二实现独立检查两个完整通道输出的 14,636,496T 和 26,656 个合并位决策。实际子码检查另确认 Mode 1 DAO 保留了音轨 ADR3/ISRC，虽然 CRC 和出现频率均通过，数据轨语义不符合标准；后续修复和验证已记在上方。合法 ADR1 参考子码的 8 组 Mode 1 重跑没有改变持续偏置结论。范围、数据和修复建议见 [CD 完整链路审计](PHYSICAL_MODEL_AUDIT.md#2026-11-06-cd-后续完整编码链与数据轨子码)，材料在 `artifacts/issue90-cd-full/`。
 
-2026-11-06，#90 读取兼容性实验：最终 Release solution 构建通过（0 警告、0 错误），完整架构回归、Windows DVD 引擎 selftest 与通用 CLI selftest 全部通过。新增回归对照独立逐字节 oracle，覆盖 57/58 个纹理字节阈值、前后 64-byte 窗口、扇区末端、已有保护字节、幂等性及逐字节归属；核对默认关闭输出、标量/SIMD/采样复用/并行一致性、精确 Q API 拒绝、ISO/CLI/流式字节一致、内外圈文件保护、版本化 sidecar 与读回预览、冻结的标定参数及旧记录默认关闭。四张中英文离屏截图已目视检查，标定窄栏的新开关完整换行。测试不访问光驱；完整读回和光学对比度需实盘验证。日志在 `artifacts/issue90-build.log`、`issue90-architecture.log`、`issue90-dvd-selftest.log`、`issue90-portable-selftest.log`，截图在 `artifacts/issue90-compat-ui/`。
+2026-11-06，#90 旧 `bridge-9b-v1` 读取兼容性实验（历史结果）：最终 Release solution 构建通过（0 警告、0 错误），完整架构回归、Windows DVD 引擎 selftest 与通用 CLI selftest 全部通过。新增回归对照独立逐字节 oracle，覆盖 57/58 个纹理字节阈值、前后 64-byte 窗口、扇区末端、已有保护字节、幂等性及逐字节归属；核对默认关闭输出、标量/SIMD/采样复用/并行一致性、精确 Q API 拒绝、ISO/CLI/流式字节一致、内外圈文件保护、版本化 sidecar 与读回预览、冻结的标定参数及旧记录默认关闭。四张中英文离屏截图已目视检查，标定窄栏的新开关完整换行。测试不访问光驱；完整读回和光学对比度需实盘验证。日志在 `artifacts/issue90-build.log`、`issue90-architecture.log`、`issue90-dvd-selftest.log`、`issue90-portable-selftest.log`，截图在 `artifacts/issue90-compat-ui/`。
 
-生成侧测速使用 Intel Core i5-1340P、Windows x64、.NET 10.0.14 Release，自动并行 16 workers，关闭 tiered compilation 以减少短任务 JIT 波动；每项预热后输出 128 MiB 到 `Stream.Null`，开关交替，三轮取最低值（十进制 MB/s）。完整单层几何 2,297,888 sectors 的中段 65,536 sectors，三次轨距系数 `(0.18, -0.12, 0.06)`。这是生成吞吐，不包含存储或设备写入。
+以下旧 `bridge-9b-v1` 生成侧测速使用 Intel Core i5-1340P、Windows x64、.NET 10.0.14 Release，自动并行 16 workers，关闭 tiered compilation 以减少短任务 JIT 波动；每项预热后输出 128 MiB 到 `Stream.Null`，开关交替，三轮取最低值（十进制 MB/s）。完整单层几何 2,297,888 sectors 的中段 65,536 sectors，三次轨距系数 `(0.18, -0.12, 0.06)`。这是生成吞吐，不包含存储或设备写入。
 
 | 场景 | 保护关闭 MB/s | 保护开启 MB/s |
 | --- | ---: | ---: |
@@ -41,7 +88,7 @@ English: the Release solution build completed with zero warnings/errors; the com
 
 实际流式管道另使用 `GeneratedContentComStream` 默认 64/32 MiB 队列，默认 tiered compilation 和自动并行，对 1025² 彩色透明图片及带文件的混合镜像分别做 24×（33.24 MB/s）和 32×（44.32 MB/s）节流读取。四轮每轮完整生成 131,072 扇区/256 MiB，使用该小容量的完整几何（不是 DVD-5 全盘几何）；未访问光驱。四轮均无生产期间空队列读取、无观察到的供数饥饿、无超过块读取预算的调用；预缓冲 0.425–0.476 s，最大块读取耗时 0.168–1.526 ms，生产期间最小缓冲约 31.5–32 MiB。末尾正常排空单独统计，不当作供数不足。实际消费约 33.23–33.24 / 44.24–44.28 MB/s，生产总时长包含队列背压，不能拿它当纯计算上限。结果在 `artifacts/issue90-compat-perf/pipeline/results.json`，表明这些本机场景可支撑 24×，并通过 32× 供数压力检查；不代表设备支持 32× 或实盘刻录、读回已验证。
 
-English: the opt-in DVD bridge has independent boundary/ownership tests and integration coverage for output parity, protected files, sidecar interpretation and frozen calibration settings. On this i5-1340P, the slowest protected producer fixture measured 99.54 MB/s with 16 workers and 72.89 MB/s with 8 workers, versus 33.24 MB/s for DVD 24×. These are warmed Release `Stream.Null` measurements. Four additional 256 MiB tests through the real host queue, consuming at 24× and 32×, showed no active empty-queue reads or read-budget overruns. The queue tests use a complete small-capacity geometry, without an optical device; they do not establish hardware 32× support or physical readback reliability. CD/BD adjustment-bit findings and limitations are documented in [the physical-model audit](PHYSICAL_MODEL_AUDIT.md).
+English: these historical `bridge-9b-v1` results cover independent boundary/ownership tests and integration for output parity, protected files, sidecar interpretation and frozen calibration settings. On this i5-1340P, the slowest protected producer fixture measured 99.54 MB/s with 16 workers and 72.89 MB/s with 8 workers, versus 33.24 MB/s for DVD 24×. These are warmed Release `Stream.Null` measurements. Four additional 256 MiB tests through the real host queue, consuming at 24× and 32×, showed no active empty-queue reads or read-budget overruns. The queue tests use a complete small-capacity geometry, without an optical device; they do not establish hardware 32× support or physical readback reliability, and they are not measurements of the newer periodic recipe. CD/BD adjustment-bit findings and limitations are documented in [the physical-model audit](PHYSICAL_MODEL_AUDIT.md).
 
 2026-11-06：对照 ECMA-267/359 修正 DVD EFMPlus 状态 3/4 的副 SY6（`0x80440011`），以及 EDC 重复补 32 位零的问题。两项新增回归均先在旧实现复现失败；修正后完整 SYNC 标准向量、实际副 SY6 输出、前缀 DSV、EDC 独立长除法和三种完整数据帧向量通过。Release solution 构建通过（0 警告、0 错误），完整架构回归、Windows DVD 引擎 selftest 和通用 `net10.0` CLI selftest 全部通过。逐表提取、独立 RS/扰码/交织及 9,728 个同步帧解码的审计范围见 [DVD 编码标准复核](DVD_ENGINE.md#编码标准复核2026-11-06)。未执行实盘刻录；#90 的读盘兼容性及 DVD+RW 介质模型尚需单独处理。
 

@@ -35,15 +35,15 @@ internal static class BluRayModuleTests
         disc.Validate();
         Equal(5, BluRayDiscPreset.BuiltIn.Count, "generic and calibrated single-layer presets");
         True(BluRayDiscPreset.BuiltIn.All(preset => preset.LayerCount == 1), "all builtins retain single-layer support");
-        Equal(new BluRayDiscParameters(), BluRayDiscPreset.BuiltIn[0].CreateParameters(), "generic geometry remains the first builtin");
+        Equal(new BluRayDiscParameters(UsableSectors: BluRayDiscParameters.SectorsPerLayer), BluRayDiscPreset.BuiltIn[0].CreateParameters(), "generic geometry remains the first builtin");
         BluRayDiscPreset ritek = BluRayDiscPreset.Find(RitekPresetId);
         Equal("铼德 BD-R 10x", ritek.DisplayName, "Ritek calibrated builtin name");
-        Equal(new BluRayDiscParameters(12_219_392, 1, RitekInnerRadiusMm, RitekOuterRadiusMm, 0),
+        Equal(new BluRayDiscParameters(12_219_392, 1, RitekInnerRadiusMm, RitekOuterRadiusMm, 0, UsableSectors: 12_219_392),
             ritek.CreateParameters(), "Ritek geometry preserves the source JSON values exactly");
         True(!ritek.InvertMapping && !ritek.IsCustom && !ritek.IsUserPreset, "Ritek is a normal-polarity builtin");
         BluRayDiscPreset verbatim = BluRayDiscPreset.Find(VerbatimPresetId);
         Equal("Verbatim BD-R (64099)", verbatim.DisplayName, "Verbatim calibrated builtin name");
-        Equal(new BluRayDiscParameters(12_219_392, 1, VerbatimInnerRadiusMm, VerbatimOuterRadiusMm, 0),
+        Equal(new BluRayDiscParameters(12_219_392, 1, VerbatimInnerRadiusMm, VerbatimOuterRadiusMm, 0, UsableSectors: 12_219_392),
             verbatim.CreateParameters(), "Verbatim geometry preserves the saved user parameters exactly");
         True(!verbatim.InvertMapping && !verbatim.IsCustom && !verbatim.IsUserPreset,
             "Verbatim is a normal-polarity builtin");
@@ -56,11 +56,14 @@ internal static class BluRayModuleTests
         True(verbatim64293.Contributor == "bczhc", "Verbatim BD-R 64293 contributor is recorded");
         BluRayDiscPreset ritek12x = BluRayDiscPreset.Find(Ritek12xPresetId);
         Equal("铼德 BD-R 12x", ritek12x.DisplayName, "Ritek BD-R 12x calibrated builtin name");
-        Equal(new BluRayDiscParameters(12_219_392, 1, Ritek12xInnerRadiusMm, Ritek12xOuterRadiusMm, 0),
+        Equal(new BluRayDiscParameters(12_219_392, 1, Ritek12xInnerRadiusMm, Ritek12xOuterRadiusMm, 0, UsableSectors: 12_219_392),
             ritek12x.CreateParameters(), "Ritek BD-R 12x geometry preserves the source values exactly");
         True(!ritek12x.InvertMapping && !ritek12x.IsCustom && !ritek12x.IsUserPreset,
             "Ritek BD-R 12x is a normal-polarity builtin");
         True(ritek12x.Contributor == "DeepAQ", "Ritek BD-R 12x contributor is recorded");
+        BluRayDiscParameters explicitGeometry = new(2048, UsableSectors: 1024);
+        BluRayDiscPreset explicitPreset = new("bounded", "Bounded", 1, explicitGeometry);
+        Equal(explicitGeometry, explicitPreset.CreateParameters(), "explicit usable capacity is inherited without another deduction");
         Equal(25_025_314_816L, disc.ContentLength, "nominal BD-R byte capacity");
         Equal(0x100000U, disc.GetPhysicalSectorNumber(0), "first physical sector");
         Equal(0xCA73FFU, disc.GetPhysicalSectorNumber(disc.TotalSectors - 1), "last physical sector");
@@ -168,6 +171,7 @@ internal static class BluRayModuleTests
             Equal(RitekInnerRadiusMm, parameters.GetProperty("InnerRadiusMm").GetDouble(), "CLI default inner radius follows selected preset");
             Equal(RitekOuterRadiusMm, parameters.GetProperty("OuterRadiusMm").GetDouble(), "CLI default outer radius follows selected preset");
             Equal(12_219_392U, parameters.GetProperty("TotalSectors").GetUInt32(), "CLI calibrated full capacity");
+            Equal(12_219_392U, parameters.GetProperty("UsableSectors").GetUInt32(), "CLI inherits resolved preset usable capacity");
             Equal(0d, parameters.GetProperty("StartAngleDegrees").GetDouble(), "CLI calibrated zero angle");
             True(!info.RootElement.GetProperty("luminanceMapping").GetProperty("invert").GetBoolean(), "CLI calibrated normal polarity");
         }
@@ -178,6 +182,7 @@ internal static class BluRayModuleTests
             Equal(25.123456789, parameters.GetProperty("InnerRadiusMm").GetDouble(), "explicit inner radius overrides the calibrated preset");
             Equal(RitekOuterRadiusMm, parameters.GetProperty("OuterRadiusMm").GetDouble(), "omitted outer radius keeps the calibrated preset default");
             Equal(1024U, parameters.GetProperty("TotalSectors").GetUInt32(), "explicit capacity overrides the calibrated preset");
+            Equal(1024U, parameters.GetProperty("OutputSectors").GetUInt32(), "custom geometry does not inherit the larger preset output limit");
             True(info.RootElement.GetProperty("luminanceMapping").GetProperty("invert").GetBoolean(), "explicit polarity overrides the calibrated preset");
         }
         using (JsonDocument info = JsonDocument.Parse(Run(module, "bd-info").Summary!))

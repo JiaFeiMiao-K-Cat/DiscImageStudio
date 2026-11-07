@@ -21,8 +21,13 @@ public sealed record DvdImageMetadata(
     uint DrawingStartLba = 0,
     uint DrawingEndLbaExclusive = 0,
     bool HasFileSystem = false,
-    bool ReadCompatibility = false)
+    bool ReadCompatibility = false,
+    uint? UsableSectors = null,
+    double? SourceImageOuterRadiusMm = null,
+    string? ReadCompatibilityMode = null)
 {
+    public uint OutputSectors => UsableSectors ?? TotalSectors;
+
     /// <summary>Reads the sidecar of an ISO, or null when it is absent or unreadable.</summary>
     public static DvdImageMetadata? TryLoad(string isoPath)
     {
@@ -43,6 +48,21 @@ public sealed record DvdImageMetadata(
             }
 
             uint totalSectors = GetUInt32(mapping, "totalSectors");
+            uint? usableSectors = null;
+            if (mapping.TryGetProperty("usableSectors", out JsonElement usable) && usable.ValueKind != JsonValueKind.Null)
+            {
+                if (usable.ValueKind != JsonValueKind.Number || !usable.TryGetUInt32(out uint available)) return null;
+                usableSectors = available;
+            }
+            if (usableSectors.HasValue && (usableSectors.Value == 0 || usableSectors.Value > totalSectors
+                || usableSectors.Value % 16 != 0)) return null;
+            double? sourceImageOuterRadiusMm = null;
+            if (mapping.TryGetProperty("imageOuterRadiusMm", out JsonElement sourceRadius) && sourceRadius.ValueKind != JsonValueKind.Null)
+            {
+                if (sourceRadius.ValueKind != JsonValueKind.Number || !sourceRadius.TryGetDouble(out double radius)
+                    || !double.IsFinite(radius) || radius <= 0) return null;
+                sourceImageOuterRadiusMm = radius;
+            }
             double innerRadius = GetDouble(mapping, "innerRadiusMm");
             double outerRadius = GetDouble(mapping, "outerRadiusMm");
             double linear = GetPitchCoefficient(mapping, "pitchLinear");
@@ -52,7 +72,7 @@ public sealed record DvdImageMetadata(
                 || !TryGetOptionalUInt32(document.RootElement, "fillSectors",
                     totalSectors - Math.Min(totalSectors, drawingStart), out uint drawingSectors))
                 return null;
-            if ((ulong)drawingStart + drawingSectors > totalSectors || drawingSectors == 0)
+            if ((ulong)drawingStart + drawingSectors > (usableSectors ?? totalSectors) || drawingSectors == 0)
                 return null;
             bool filesAtOuterRing = document.RootElement.TryGetProperty("filesAtOuterRing", out JsonElement position)
                 && position.ValueKind == JsonValueKind.True;
@@ -61,12 +81,15 @@ public sealed record DvdImageMetadata(
                 && iso.TryGetProperty("mountableFilesystem", out JsonElement mountable)
                 && mountable.ValueKind == JsonValueKind.True;
             DvdTrackGeometry.ValidatePitchCoefficients(linear, quadratic, cubic);
-            bool readCompatibility = document.RootElement.TryGetProperty("readCompatibility", out JsonElement mode)
-                && mode.ValueKind == JsonValueKind.String && mode.GetString() == "bridge-9b-v1";
+            string? readCompatibilityMode = document.RootElement.TryGetProperty("readCompatibility", out JsonElement mode)
+                && mode.ValueKind == JsonValueKind.String && DvdReadCompatibilityModes.IsSupported(mode.GetString())
+                ? mode.GetString() : null;
+            bool readCompatibility = readCompatibilityMode is not null;
             return totalSectors > 0 && double.IsFinite(innerRadius) && double.IsFinite(outerRadius)
                 && innerRadius > 0 && outerRadius > innerRadius
                 ? new DvdImageMetadata(totalSectors, innerRadius, outerRadius, linear, quadratic, cubic,
-                    filesAtOuterRing, drawingStart, drawingStart + drawingSectors, hasFileSystem, readCompatibility)
+                    filesAtOuterRing, drawingStart, drawingStart + drawingSectors, hasFileSystem, readCompatibility,
+                    usableSectors, sourceImageOuterRadiusMm, readCompatibilityMode)
                 : null;
         }
         catch (Exception exception) when (exception is JsonException or IOException or ArgumentException)

@@ -46,7 +46,7 @@ public static class FastDvdImageFileWriter
             blockCount = result.CompletedBlocks,
             algorithm = "dispersion",
             fastOutput = true,
-            readCompatibility = options.ReadCompatibility ? DvdReadCompatibilityGuard.ModeName : "off",
+            readCompatibility = options.ReadCompatibility ? options.ReadCompatibilityMode : DvdReadCompatibilityModes.Off,
             compatibilityChanges = result.CompatibilityChanges,
             fastParallelism = options.FastParallelism == 0 ? Environment.ProcessorCount : options.FastParallelism,
             exactEccEfmReplay = false,

@@ -24,7 +24,9 @@ public sealed record CalibrationPreviewOptions(
     double ActualPitchLinear = 0,
     double ActualPitchQuadratic = 0,
     double ActualPitchCubic = 0,
-    ToneProfile? Tone = null);
+    ToneProfile? Tone = null,
+    double? SourceImageOuterRadiusMm = null,
+    double? PreviewOuterRadiusMm = null);
 
 public sealed record CalibrationPreviewSummary(
     string SourceImage,
@@ -104,7 +106,8 @@ public static class CalibrationPreviewRenderer
         int[] weightedLevelSums = new int[checked(size * size)];
         int[] alphaSums = new int[checked(size * size)];
         double centre = (size - 1) / 2.0;
-        double millimetresPerPixel = (2 * options.ActualOuterRadiusMm) / (size - 1);
+        double previewOuterRadius = options.PreviewOuterRadiusMm ?? options.ActualOuterRadiusMm;
+        double millimetresPerPixel = (2 * previewOuterRadius) / (size - 1);
         double direction = options.Clockwise ? -1.0 : 1.0;
         const double fullTurn = 2 * Math.PI;
         double visibleStartMm = options.StartLba
@@ -148,7 +151,7 @@ public static class CalibrationPreviewRenderer
                 PixelSample sample = source.SampleDisc(
                     generatedRadiusMm * Math.Cos(generatedPolarAngle),
                     generatedRadiusMm * Math.Sin(generatedPolarAngle),
-                    generated.OuterRadiusMm,
+                    options.SourceImageOuterRadiusMm ?? generated.OuterRadiusMm,
                     preserveDiscreteGrayscale: true);
                 if (sample.Alpha < options.AlphaThreshold)
                 {
@@ -157,7 +160,7 @@ public static class CalibrationPreviewRenderer
 
                 (double actualRadiusMm, double actualTrackAngle) = actual.AtArcLengthFast(arcLengthMm);
                 double actualPolarAngle = direction * actualTrackAngle;
-                double pixelRadius = centre * actualRadiusMm / actual.OuterRadiusMm;
+                double pixelRadius = centre * actualRadiusMm / previewOuterRadius;
                 int pixelX = (int)Math.Round(
                     centre + (pixelRadius * Math.Cos(actualPolarAngle)));
                 int pixelY = (int)Math.Round(

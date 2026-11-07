@@ -2,6 +2,7 @@ using System.IO;
 using DiscImageStudio.Cd;
 using DiscImageStudio.Core;
 using DiscImageStudio.ImageIO;
+using DiscImageStudio.Services;
 
 internal static class CdPreviewMaskTests
 {
@@ -17,6 +18,7 @@ internal static class CdPreviewMaskTests
             CdDiscParameters fitted = generated with { ImageOuterRadiusMm = generated.OuterRadiusMm };
             TestAudio(directory, source, generated, fitted);
             TestData(directory, source, generated, fitted);
+            TestLimitedOutput(directory, source);
         }
         finally
         {
@@ -87,15 +89,52 @@ internal static class CdPreviewMaskTests
         }
     }
 
-    private static int VerifyMask(BgraRaster image, int size, CdDiscParameters actual, string name)
+    private static void TestLimitedOutput(string directory, string source)
+    {
+        // Half of this track ends at exactly 45.5 mm. Source sampling deliberately
+        // retains a different canvas, as a burn truncated to device capacity does.
+        CdDiscParameters parameters = new(24.5, 59.5, 128,
+            UsableSectors: 64, SourceImageOuterRadiusMm: 61);
+        string track = Path.Combine(directory, "limited.raw");
+        string warp = Path.Combine(directory, "limited-warp.png");
+        string readback = Path.Combine(directory, "limited-readback.png");
+        CdTrackGenerator.Generate(source, track, parameters, interleave: false);
+        CdTrackGenerator.PreviewWarp(source, warp, parameters, parameters, 256, 32);
+        CdTrackGenerator.PreviewTrack(track, readback, parameters, 256,
+            CdDiscParameters.BytesPerSector / 32, deinterleave: false);
+        BgraRaster projected = RasterCodec.LoadBgra32(warp);
+        Require(projected.Pixels.SequenceEqual(RasterCodec.LoadBgra32(readback).Pixels),
+            "limited audio projection and readback use the same display canvas");
+        VerifyMask(projected, 256, parameters, "limited audio", canvasRadius: 45.5, outputOuter: 45.5);
+
+        FileRegionPreviewOverlay.ApplyCd(warp, parameters, 16, 48);
+        BgraRaster overlay = RasterCodec.LoadBgra32(warp);
+        double drawingInnerSquared = 24.5 * 24.5 + (59.5 * 59.5 - 24.5 * 24.5) / 8;
+        double drawingOuterSquared = 24.5 * 24.5 + (59.5 * 59.5 - 24.5 * 24.5) * 3 / 8;
+        for (int y = 0; y < 256; y++)
+        for (int x = 0; x < 256; x++)
+        {
+            double radius = Radius(x, y, 256, 45.5);
+            double squared = radius * radius;
+            bool expectedYellow = radius >= 24.5 && radius < 45.5
+                && (squared < drawingInnerSquared || squared >= drawingOuterSquared);
+            int offset = (y * 256 + x) * 4;
+            bool yellow = overlay.Pixels[offset] == 21 && overlay.Pixels[offset + 1] == 204
+                && overlay.Pixels[offset + 2] == 250 && overlay.Pixels[offset + 3] == 255;
+            Require(yellow == expectedYellow, $"limited file overlay at ({x}, {y})");
+        }
+    }
+
+    private static int VerifyMask(BgraRaster image, int size, CdDiscParameters actual, string name,
+        double? canvasRadius = null, double? outputOuter = null)
     {
         Require(image.Width == size && image.Height == size, $"{name} output dimensions");
         int opaqueWhite = 0, opaqueDark = 0, transparent = 0;
         for (int y = 0; y < size; y++)
         for (int x = 0; x < size; x++)
         {
-            double radius = Radius(x, y, size, actual.ImageOuterRadiusMm);
-            bool recorded = radius >= actual.InnerRadiusMm && radius < actual.OuterRadiusMm;
+            double radius = Radius(x, y, size, canvasRadius ?? actual.ImageOuterRadiusMm);
+            bool recorded = radius >= actual.InnerRadiusMm && radius < (outputOuter ?? actual.OuterRadiusMm);
             int offset = (y * size + x) * 4;
             Require(image.Pixels[offset + 3] == (recorded ? 255 : 0), $"{name} alpha at ({x}, {y})");
             if (!recorded) transparent++;

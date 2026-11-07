@@ -246,9 +246,9 @@ internal static class ProjectStoreTests
         {
             Geometry = document.Geometry with { InnerRadiusMm = 60, OuterRadiusMm = 58 },
         });
-        ThrowsInvalidData("non-multiple DVD sectors", static document => document with
+        ThrowsInvalidData("non-multiple DVD usable sectors", static document => document with
         {
-            Geometry = document.Geometry with { Sectors = 2_295_103 },
+            Geometry = document.Geometry with { UsableSectors = 2_295_103 },
         });
         ThrowsInvalidData("zero sectors", static document => document with
         {

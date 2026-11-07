@@ -13,8 +13,15 @@ public sealed record DvdDiscPreset(
     double PitchLinear = 0,
     double PitchQuadratic = 0,
     double PitchCubic = 0,
-    string? Contributor = null)
+    string? Contributor = null,
+    uint? UsableSectors = null)
 {
+    public uint ResolvedUsableSectors => ResolveUsableSectors(TotalSectors, UsableSectors);
+
+    // A conservative fallback for legacy presets, not a deduction from device-reported free space.
+    public static uint ResolveUsableSectors(uint totalSectors, uint? usableSectors = null)
+        => usableSectors ?? (totalSectors > 608 ? (totalSectors - 608) / 16 * 16 : 0);
+
     public static DvdDiscPreset Manual { get; } = new(
         "__manual__",
         "自定义参数（未保存）",

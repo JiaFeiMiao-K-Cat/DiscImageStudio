@@ -29,7 +29,9 @@ public sealed record ProjectDialogResult(
     double PitchQuadratic,
     double PitchCubic,
     string SavePath,
-    bool BluRayInvertMapping = false);
+    bool BluRayInvertMapping = false,
+    long? UsableSectors = null,
+    bool SynchronizePreview = false);
 
 /// <summary>The name the user gave a preset in the save dialog. Null (from the handler)
 /// means the user cancelled.</summary>
@@ -211,6 +213,9 @@ public partial class ProjectDialogViewModel : ObservableObject
     private string _sectorsText = string.Empty;
 
     [ObservableProperty]
+    private string _usableSectorsText = string.Empty;
+
+    [ObservableProperty]
     private string _pitchLinearText = "0";
 
     [ObservableProperty]
@@ -260,7 +265,7 @@ public partial class ProjectDialogViewModel : ObservableObject
     public RelayCommand BrowseSavePathCommand { get; }
 
     /// <summary>Edit mode only: writes the fields' current geometry into the user preset
-    /// catalog, so a tuned project's parameters can seed future projects.</summary>
+    /// catalog and applies them to the open project after a successful save.</summary>
     public RelayCommand SaveAsPresetCommand { get; }
 
     /// <summary>Removes a user preset from the catalog; the context menu only offers it on
@@ -516,6 +521,7 @@ public partial class ProjectDialogViewModel : ObservableObject
                     InnerRadiusText = "24.0";
                     OuterRadiusText = "58.0";
                     SectorsText = "2295104";
+                    UsableSectorsText = "2295104";
                     PitchLinearText = "0";
                     PitchQuadraticText = "0";
                     PitchCubicText = "0";
@@ -524,6 +530,7 @@ public partial class ProjectDialogViewModel : ObservableObject
                     InnerRadiusText = "24.0";
                     OuterRadiusText = "58.0";
                     SectorsText = "12219392";
+                    UsableSectorsText = "12219392";
                     PitchLinearText = "0";
                     PitchQuadraticText = "0";
                     PitchCubicText = "0";
@@ -533,6 +540,7 @@ public partial class ProjectDialogViewModel : ObservableObject
                     InnerRadiusText = "24.5";
                     OuterRadiusText = "56.8";
                     SectorsText = "359849";
+                    UsableSectorsText = "359847";
                     PitchLinearText = "0";
                     PitchQuadraticText = "0";
                     PitchCubicText = "0";
@@ -548,6 +556,7 @@ public partial class ProjectDialogViewModel : ObservableObject
                 InnerRadiusText = preset.InnerRadiusMm.ToString("R", CultureInfo.InvariantCulture);
                 OuterRadiusText = preset.OuterRadiusMm.ToString("R", CultureInfo.InvariantCulture);
                 SectorsText = preset.TotalSectors.ToString(CultureInfo.InvariantCulture);
+                UsableSectorsText = preset.ResolvedUsableSectors.ToString(CultureInfo.InvariantCulture);
                 PitchLinearText = preset.PitchLinear.ToString("R", CultureInfo.InvariantCulture);
                 PitchQuadraticText = preset.PitchQuadratic.ToString("R", CultureInfo.InvariantCulture);
                 PitchCubicText = preset.PitchCubic.ToString("R", CultureInfo.InvariantCulture);
@@ -563,6 +572,7 @@ public partial class ProjectDialogViewModel : ObservableObject
                 InnerRadiusText = geometry.InnerRadiusMm.ToString("R", CultureInfo.InvariantCulture);
                 OuterRadiusText = geometry.OuterRadiusMm.ToString("R", CultureInfo.InvariantCulture);
                 SectorsText = geometry.TotalSectors.ToString(CultureInfo.InvariantCulture);
+                UsableSectorsText = preset.ResolvedUsableSectors.ToString(CultureInfo.InvariantCulture);
                 PitchLinearText = geometry.PitchLinear.ToString("R", CultureInfo.InvariantCulture);
                 PitchQuadraticText = geometry.PitchQuadratic.ToString("R", CultureInfo.InvariantCulture);
                 PitchCubicText = geometry.PitchCubic.ToString("R", CultureInfo.InvariantCulture);
@@ -578,6 +588,7 @@ public partial class ProjectDialogViewModel : ObservableObject
                 InnerRadiusText = preset.InnerRadiusMm.ToString("R", CultureInfo.InvariantCulture);
                 OuterRadiusText = preset.OuterRadiusMm.ToString("R", CultureInfo.InvariantCulture);
                 SectorsText = preset.Sectors.ToString(CultureInfo.InvariantCulture);
+                UsableSectorsText = preset.ResolvedUsableSectors.ToString(CultureInfo.InvariantCulture);
                 PitchLinearText = preset.PitchLinear.ToString("R", CultureInfo.InvariantCulture);
                 PitchQuadraticText = preset.PitchQuadratic.ToString("R", CultureInfo.InvariantCulture);
                 PitchCubicText = preset.PitchCubic.ToString("R", CultureInfo.InvariantCulture);
@@ -650,7 +661,9 @@ public partial class ProjectDialogViewModel : ObservableObject
             pitchQuadratic,
             pitchCubic,
             savePath,
-            BluRayInvertMapping: Family == OpticalDiscFamily.BluRay && _templateInvertMapping);
+            BluRayInvertMapping: Family == OpticalDiscFamily.BluRay && _templateInvertMapping,
+            UsableSectors: DiscParametersState.ParseUsableSectors(Family, sectors, UsableSectorsText),
+            SynchronizePreview: _appliedTemplate is not null);
     }
 
     /// <summary>Shared by confirming the dialog and saving a preset: the geometry fields with
@@ -664,11 +677,6 @@ public partial class ProjectDialogViewModel : ObservableObject
         if (sectors <= 0)
         {
             throw new ArgumentException(L.T("扇区数必须是正整数。"));
-        }
-
-        if (IsDvd && sectors % 16 != 0)
-        {
-            throw new ArgumentException(L.T("DVD 的扇区数必须是 16 的倍数。"));
         }
 
         if (IsBluRay)
@@ -699,6 +707,7 @@ public partial class ProjectDialogViewModel : ObservableObject
         double pitchQuadratic = ParseNumber(PitchQuadraticText, L.T("相对二次项"));
         double pitchCubic = ParseNumber(PitchCubicText, L.T("相对三次项"));
         DvdTrackGeometry.ValidatePitchCoefficients(pitchLinear, pitchQuadratic, pitchCubic);
+        _ = DiscParametersState.ParseUsableSectors(Family, sectors, UsableSectorsText);
 
         return (inner, outer, sectors, pitchLinear, pitchQuadratic, pitchCubic);
     }
@@ -726,7 +735,9 @@ public partial class ProjectDialogViewModel : ObservableObject
                 pitchLinear,
                 pitchQuadratic,
                 pitchCubic,
-                invertMapping: Family == OpticalDiscFamily.BluRay && _templateInvertMapping);
+                invertMapping: Family == OpticalDiscFamily.BluRay && _templateInvertMapping,
+                usableSectors: DiscParametersState.ParseUsableSectors(Family, sectors, UsableSectorsText),
+                applyPreset: _editMode);
             ErrorMessage = string.Empty;
             SavedPresetMessage = L.F($"已保存为预设：{displayName}");
             if (_editMode)
@@ -747,17 +758,17 @@ public partial class ProjectDialogViewModel : ObservableObject
     }
 
     /// <summary>Rebuilds the catalog after a save so the new preset appears in the list it was
-    /// saved from. The rebuild replaces the tile instances, so the highlight and the applied
-    /// preset follow their ids instead of their old references.</summary>
+    /// saved from. The newly applied preset is highlighted by ID, including when another
+    /// preset has the same display name.</summary>
     private void RefreshTemplatesAfterSave()
     {
-        string? appliedId = _appliedTemplate?.PresetId;
-        BuildTemplates();
-        if (_appliedTemplate is null)
+        string appliedId = Family switch
         {
-            return;
-        }
-
+            OpticalDiscFamily.Dvd => _state.SelectedDvdPreset.Id,
+            OpticalDiscFamily.BluRay => _state.SelectedBluRayPreset.Id,
+            _ => _state.SelectedCdPreset.Id,
+        };
+        BuildTemplates();
         ProjectTemplateTile? refreshed = AllTemplates.FirstOrDefault(
             t => t.Family == Family && t.PresetId == appliedId);
         _suppressPresetConfirm = true;

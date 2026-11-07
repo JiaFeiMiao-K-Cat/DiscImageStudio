@@ -334,16 +334,22 @@
                                             <controls:VisibilityGate IsOpen="{Binding IsBluRaySetup}"><TextBox Text="{Binding Parameters.BdOuterRadius, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.OuterRadiusMm}" /></controls:VisibilityGate>
                                         </Grid>
                                     </Grid>
-                                    <TextBlock Text="{loc:Text Xaml.Sectors}" Style="{StaticResource FieldLabel}" />
+                                    <TextBlock Text="{loc:Text Xaml.GeometryTotalSectors}" Style="{StaticResource FieldLabel}" />
                                     <Grid Margin="0,0,0,4">
                                         <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                         <Grid>
-                                            <controls:VisibilityGate IsOpen="{Binding IsCdSetup}"><TextBox Text="{Binding Parameters.CdSectors, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.Sectors}" /></controls:VisibilityGate>
-                                            <controls:VisibilityGate IsOpen="{Binding IsDvdSetup}"><TextBox Text="{Binding Parameters.DvdTotalSectors, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.Sectors}" /></controls:VisibilityGate>
-                                            <controls:VisibilityGate IsOpen="{Binding IsBluRaySetup}"><TextBox Text="{Binding Parameters.BdTotalSectors, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.Sectors}" /></controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding IsCdSetup}"><TextBox Text="{Binding Parameters.CdSectors, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.GeometryTotalSectors}" /></controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding IsDvdSetup}"><TextBox Text="{Binding Parameters.DvdTotalSectors, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.GeometryTotalSectors}" /></controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding IsBluRaySetup}"><TextBox Text="{Binding Parameters.BdTotalSectors, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.GeometryTotalSectors}" /></controls:VisibilityGate>
                                         </Grid>
                                         <Button Grid.Column="1" Command="{Binding ReadDiscSectorsCommand}" Style="{StaticResource CompactButton}" Margin="6,0,0,0"
                                                 Content="{loc:Text CalibrationMedia.ReadButton}" ToolTip="{loc:Text CalibrationMedia.ReadHint}" />
+                                    </Grid>
+                                    <TextBlock Text="{loc:Text Xaml.UsableSectors}" Style="{StaticResource FieldLabel}" />
+                                    <Grid Margin="0,0,0,4" ToolTip="{loc:Text Xaml.UsableSectorsHint}">
+                                        <controls:VisibilityGate IsOpen="{Binding IsCdSetup}"><TextBox Text="{Binding Parameters.CdUsableSectors, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.UsableSectors}" /></controls:VisibilityGate>
+                                        <controls:VisibilityGate IsOpen="{Binding IsDvdSetup}"><TextBox Text="{Binding Parameters.DvdUsableSectors, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.UsableSectors}" /></controls:VisibilityGate>
+                                        <controls:VisibilityGate IsOpen="{Binding IsBluRaySetup}"><TextBox Text="{Binding Parameters.BdUsableSectors, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{loc:Text Xaml.UsableSectors}" /></controls:VisibilityGate>
                                     </Grid>
                                     <controls:VisibilityGate IsOpen="{Binding HasRecorderChoice}">
                                         <ComboBox ItemsSource="{Binding CapacityRecorders}" SelectedItem="{Binding SelectedCapacityRecorder, Mode=TwoWay}"

@@ -763,7 +763,7 @@ internal static class Program
             + "image sampled at every payload code-word center");
 
         if (options.ReadCompatibility)
-            Console.WriteLine("read compatibility=bridge-9b-v1 (experimental sector-local 0x92-to-0x9B bridges)");
+            Console.WriteLine($"read compatibility={options.ReadCompatibilityMode} (experimental drawing-byte protection)");
 
         FastDispersionWriteResult result = FastDvdImageFileWriter.WritePrepared(
             arguments.Require("image"),
@@ -1380,7 +1380,7 @@ internal static class Program
                                         (default false; true in hybrid mode)
               --fast-parallelism 0..64 Fast-output workers; 0 selects processor count (default 0)
               --read-compatibility true|false
-                                        Experimental 0x9B bridge for fast dispersion (default false)
+                                        Experimental periodic 0x9B protection for fast dispersion (default false)
               --iterations-per-block N  Full/state-control passes; dispersion ignores search (defaults 100/3/1)
               --iso-output FILE         Write a directly burnable 2048-byte/sector ISO image
               --iso-sectors N           Sector count for a new minimal ISO (image mode reuses total sectors)
@@ -1422,7 +1422,7 @@ internal static class Program
             generated; old ISOs retain readback of 66 as black and B9 as nominal dark gray 85.
             With --fast-output true, final ECC/EFM boundary and DSV verification are skipped;
             the JSON finalBoundary is therefore null. --read-compatibility true optionally replaces
-            eligible 0x92 run starts with 0x9B, within each sector's owned drawing bytes. It may
+            eligible white drawing bytes with 0x9B at a 16-byte interval to interrupt long 0x92 runs. It may
             improve readback on affected drives/media; it is experimental and defaults off.
             Full/state-control output and exact scrambled-byte test patterns do not accept this option.
 

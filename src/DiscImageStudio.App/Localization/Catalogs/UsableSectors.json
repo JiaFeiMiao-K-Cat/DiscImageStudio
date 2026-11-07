@@ -1,0 +1,38 @@
+{
+  "Xaml.GeometryTotalSectors": {
+    "zh-CN": "几何总扇区数",
+    "en": "Geometry sectors"
+  },
+  "Xaml.UsableSectors": {
+    "zh-CN": "可用扇区数",
+    "en": "Usable sectors"
+  },
+  "Xaml.UsableSectorsHint": {
+    "zh-CN": "限制输出长度，不改变总扇区数对应的盘面几何。留空时使用盘型默认预留。",
+    "en": "Limits output length without changing the geometry represented by the total sector count. Leave empty to use the media family's default reserve."
+  },
+  "可用扇区数": {
+    "zh-CN": "可用扇区数",
+    "en": "Usable sectors"
+  },
+  "可用扇区数必须大于 0、不超过总扇区数，且是 {0} 的倍数。": {
+    "zh-CN": "可用扇区数必须大于 0、不超过总扇区数，且是 {0} 的倍数。",
+    "en": "Usable sectors must be positive, not exceed total sectors, and be a multiple of {0}."
+  },
+  "usableSectors 必须大于 0、不超过 sectors，且是 {0} 的倍数。": {
+    "zh-CN": "usableSectors 必须大于 0、不超过 sectors，且是 {0} 的倍数。",
+    "en": "usableSectors must be positive, not exceed sectors, and be a multiple of {0}."
+  },
+  "必须大于 0、不超过总扇区数，且是 {0} 的倍数": {
+    "zh-CN": "必须大于 0、不超过总扇区数，且是 {0} 的倍数",
+    "en": "must be positive, not exceed total sectors, and be a multiple of {0}"
+  },
+  "标定的可用扇区数必须为正数、不超过总扇区数，并符合介质写入对齐要求。": {
+    "zh-CN": "标定的可用扇区数必须为正数、不超过总扇区数，并符合介质写入对齐要求。",
+    "en": "Calibration usable sectors must be positive, not exceed total sectors, and satisfy the media write alignment."
+  },
+  "CD 粗标的可用扇区数不足以包含最外侧固定地址边界及其后的留白。请增加可用扇区数，或使用边界标定。": {
+    "zh-CN": "CD 粗标的可用扇区数不足以包含最外侧固定地址边界及其后的留白。请增加可用扇区数，或使用边界标定。",
+    "en": "The usable CD capacity does not cover the outermost fixed-address calibration edge and the light area after it. Increase usable sectors or use boundary calibration."
+  }
+}

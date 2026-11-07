@@ -149,6 +149,7 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.BdInvertMapping)
             or nameof(DiscParametersState.BdInnerRadius)
             or nameof(DiscParametersState.BdOuterRadius)
+            or nameof(DiscParametersState.BdUsableSectors)
             or nameof(DiscParametersState.BdPitchLinear)
             or nameof(DiscParametersState.BdPitchQuadratic)
             or nameof(DiscParametersState.BdPitchCubic)
@@ -158,6 +159,7 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.BdFilesAtOuterRing)
             or nameof(DiscParametersState.CdInnerRadius)
             or nameof(DiscParametersState.CdOuterRadius)
+            or nameof(DiscParametersState.CdUsableSectors)
             or nameof(DiscParametersState.CdPitchLinear)
             or nameof(DiscParametersState.CdPitchQuadratic)
             or nameof(DiscParametersState.CdPitchCubic)
@@ -167,6 +169,7 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.CdFilesAtOuterRing)
             or nameof(DiscParametersState.DvdInnerRadius)
             or nameof(DiscParametersState.DvdOuterRadius)
+            or nameof(DiscParametersState.DvdUsableSectors)
             or nameof(DiscParametersState.DvdTotalSectors)
             or nameof(DiscParametersState.DvdPitchLinear)
             or nameof(DiscParametersState.DvdPitchQuadratic)
@@ -345,7 +348,7 @@ public partial class ToneViewModel : ObservableObject
                 CdDiscParameters parameters = ReadCdPreviewParameters();
                 // Fit the output to the recording radius without changing the source
                 // image's physical scale used by the CD generator.
-                CdDiscParameters display = parameters with { ImageOuterRadiusMm = parameters.OuterRadiusMm };
+                CdDiscParameters display = parameters with { ImageOuterRadiusMm = parameters.OutputOuterRadiusMm };
                 ToneProfile tone = _state.Tone;
                 samplesPerSector = TonePreviewSamplesPerSector;
                 string dataDirectory = _state.CdDataDirectory.Trim();
@@ -482,7 +485,8 @@ public partial class ToneViewModel : ObservableObject
             ParameterParser.ParsePositiveDouble(_state.BdOuterRadius, L.T("蓝光外半径")),
             PitchLinear: ParameterParser.ParseDouble(_state.BdPitchLinear, L.T("相对一次项")),
             PitchQuadratic: ParameterParser.ParseDouble(_state.BdPitchQuadratic, L.T("相对二次项")),
-            PitchCubic: ParameterParser.ParseDouble(_state.BdPitchCubic, L.T("相对三次项")));
+            PitchCubic: ParameterParser.ParseDouble(_state.BdPitchCubic, L.T("相对三次项")),
+            UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.BluRay)));
         parameters.Validate();
         return parameters;
     }
@@ -495,7 +499,8 @@ public partial class ToneViewModel : ObservableObject
             ParameterParser.ParsePositiveLong(_state.CdSectors, L.T("扇区数")),
             PitchLinear: ParameterParser.ParseDouble(_state.CdPitchLinear, L.T("相对一次项")),
             PitchQuadratic: ParameterParser.ParseDouble(_state.CdPitchQuadratic, L.T("相对二次项")),
-            PitchCubic: ParameterParser.ParseDouble(_state.CdPitchCubic, L.T("相对三次项")));
+            PitchCubic: ParameterParser.ParseDouble(_state.CdPitchCubic, L.T("相对三次项")),
+            UsableSectors: _state.GetUsableSectors(OpticalDiscFamily.CompactDisc));
         parameters.Validate();
         return parameters;
     }
@@ -515,6 +520,7 @@ public partial class ToneViewModel : ObservableObject
             PitchLinear: ParameterParser.ParseDouble(_state.DvdPitchLinear, L.T("DVD 轨距一次项")),
             PitchQuadratic: ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("DVD 轨距二次项")),
             PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("DVD 轨距三次项")),
+            UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.Dvd)),
             Tone: _state.DvdTone);
         options.Validate();
         return options;

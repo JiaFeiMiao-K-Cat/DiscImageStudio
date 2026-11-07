@@ -11,6 +11,45 @@ internal static class CalibrationAngleSweepArtworkTests
         var mini = new CalibrationParameters(CalibrationDiscKind.Dvd, 24, 38, 714544, 133.3);
         Require(!CalibrationWideBandPattern.SupportsAngleSweep(mini) && CalibrationWideBandPattern.Supports(mini),
             "narrow bands keep the measurable six-edge target");
+        CheckCdUsableBoundary();
+    }
+
+    private static void CheckCdUsableBoundary()
+    {
+        var p = new CalibrationParameters(CalibrationDiscKind.Cd, 24.5, 56.8, 359849, 1200);
+        // The last fixed CD band ends at 95.5% of the geometry, independent of
+        // the output limit. One whole light sector must follow its rounded edge.
+        long finalEdgeSector = (p.Sectors * 955 + 999) / 1000;
+        foreach (var artwork in new[] { CalibrationArtwork.WideAddressBands, CalibrationArtwork.AngleSweepBands })
+        {
+            var full = CalibrationTarget.Create(p, artwork: artwork);
+            foreach (long usable in new[] { 287872L, finalEdgeSector })
+            {
+                try
+                {
+                    CalibrationTarget.Create(p with { UsableSectors = usable }, artwork: artwork);
+                    throw new InvalidOperationException("Incomplete fixed CD bands were accepted.");
+                }
+                catch (ArgumentException) { }
+            }
+
+            foreach (long usable in new[] { finalEdgeSector + 1, p.Sectors - 2 })
+            {
+                var limited = CalibrationTarget.Create(p with { UsableSectors = usable }, artwork: artwork);
+                Require(limited.VisibleRings.SequenceEqual(full.VisibleRings)
+                    && limited.VisibleRings.All(r => r.RadiusMm + r.WidthMm / 2 < limited.DrawingOuterRadiusMm),
+                    "sufficient output preserves every fixed CD edge without rescaling");
+            }
+
+            // Deserialization bypasses new-target qualification so saved artwork
+            // remains reproducible, including a previously saved truncated output.
+            var frozen = new CalibrationTarget(full.SchemaVersion, full.Id,
+                p with { UsableSectors = 287872 }, full.Options, full.Cells, artwork);
+            var restored = CalibrationSessionJson.Deserialize(CalibrationSessionJson.Serialize(new(frozen, []))).Target;
+            Require(restored.Parameters.UsableSectors == 287872
+                && restored.VisibleRings.SequenceEqual(full.VisibleRings),
+                "frozen CD records retain their original limits and full-track addresses");
+        }
     }
 
     private static void Check(CalibrationParameters p)

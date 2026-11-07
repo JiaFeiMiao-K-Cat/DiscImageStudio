@@ -33,7 +33,7 @@ internal static class DvdReadCompatibilityUiTests
 
     private static ProjectDocument Project(string path, string family = ProjectDocument.DvdFamily)
         => new(ProjectJsonStore.CurrentSchemaVersion, "DVD compatibility", family,
-            new(24, 58, 16), [], new(path, false, "", "TEST", false), null, null,
+            new(24, 58, 16, UsableSectors: 16), [], new(path, false, "", "TEST", false), null, null,
             DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch);
 
     private static void CheckProjectPersistence(string directory)
@@ -115,6 +115,7 @@ internal static class DvdReadCompatibilityUiTests
             calibration.SelectedDiscType = "DVD";
             calibration.SelectFineModeCommand.Execute(null);
             calibration.Parameters.DvdTotalSectors = "16";
+            calibration.Parameters.DvdUsableSectors = "16";
             calibration.Parameters.DvdInnerRadius = "24";
             calibration.Parameters.DvdOuterRadius = "58";
             calibration.Parameters.DvdPitchLinear = calibration.Parameters.DvdPitchQuadratic = calibration.Parameters.DvdPitchCubic = "0";
@@ -137,7 +138,9 @@ internal static class DvdReadCompatibilityUiTests
             UiLayoutSnapshot.Save(calibrationPage, "dvd-read-compatibility-calibration-en");
             calibration.CreateTargetCommand.Execute(null);
             var target = calibration.Target ?? throw new InvalidOperationException(calibration.LastStatusMessage);
-            Require(target.Parameters.DvdReadCompatibility && CalibrationViewModel.DvdOptions(target).ReadCompatibility,
+            Require(target.Parameters.DvdReadCompatibility && CalibrationViewModel.DvdOptions(target).ReadCompatibility
+                && target.DvdReadCompatibilityMode == DvdReadCompatibilityModes.Current
+                && CalibrationViewModel.DvdOptions(target).ReadCompatibilityMode == DvdReadCompatibilityModes.Current,
                 "creating a target freezes the selected generation mode");
             string sessionPath = Path.Combine(directory, "target.calibration.json");
             calibration.SaveSessionTo(sessionPath);
@@ -162,7 +165,8 @@ internal static class DvdReadCompatibilityUiTests
                 && DvdImageMetadata.TryLoad(calibration.OutputPath)?.ReadCompatibility == true,
                 "actual calibration export publishes the frozen mode, read-back sidecar and matching payload");
             await calibration.LoadSessionFromAsync(sessionPath);
-            Require(calibration.Parameters.DvdReadCompatibility && calibration.Target!.Parameters.DvdReadCompatibility,
+            Require(calibration.Parameters.DvdReadCompatibility && calibration.Target!.Parameters.DvdReadCompatibility
+                && calibration.Target.DvdReadCompatibilityMode == DvdReadCompatibilityModes.Current,
                 "loading a calibration record restores the frozen option and setup");
 
             var calibrationBurn = new BurnView(shell.CalibrationBurn);
@@ -173,6 +177,13 @@ internal static class DvdReadCompatibilityUiTests
             UiLayoutSnapshot.Save(calibrationBurn, "dvd-read-compatibility-calibration-burn-en");
 
             var legacy = JsonNode.Parse(File.ReadAllText(sessionPath))!.AsObject();
+            legacy["target"]!.AsObject().Remove("dvdReadCompatibilityMode");
+            File.WriteAllText(sessionPath, legacy.ToJsonString());
+            await calibration.LoadSessionFromAsync(sessionPath);
+            Require(calibration.Target!.Parameters.DvdReadCompatibility
+                && calibration.Target.DvdReadCompatibilityMode is null
+                && CalibrationViewModel.DvdOptions(calibration.Target).ReadCompatibilityMode == DvdReadCompatibilityModes.LegacyBridge,
+                "loading an enabled old target retains the original bridge recipe");
             legacy["target"]!["parameters"]!.AsObject().Remove("dvdReadCompatibility");
             // The saved fit search centre is optional and also follows the legacy default.
             legacy["fitOptions"]?["searchCenter"]?.AsObject().Remove("dvdReadCompatibility");

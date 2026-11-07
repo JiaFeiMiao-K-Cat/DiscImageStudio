@@ -262,6 +262,7 @@ public partial class LivePreviewViewModel : ObservableObject
             CdDiscParameters parameters = dataMetadata.Parameters;
             ToneProfile dataTone = dataMetadata.Tone.Normalized();
             _state.CdSectors = parameters.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            _state.CdUsableSectors = parameters.OutputSectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
             _state.CdInnerRadius = FormatNumber(parameters.InnerRadiusMm);
             _state.CdOuterRadius = FormatNumber(parameters.OuterRadiusMm);
             _state.CdPitchLinear = FormatNumber(parameters.PitchLinear);
@@ -290,7 +291,8 @@ public partial class LivePreviewViewModel : ObservableObject
             metadata.ToneLevels,
             metadata.ToneBrightness,
             metadata.ToneSrgbLinearization).Normalized();
-        if (state.CdSectors.Trim() == sectors
+        if (state.CdUsableSectors.Trim() == (metadata.UsableSectors ?? metadata.Sectors).ToString(System.Globalization.CultureInfo.InvariantCulture)
+            && state.CdSectors.Trim() == sectors
             && state.CdInnerRadius.Trim() == innerRadius
             && state.CdOuterRadius.Trim() == outerRadius
             && state.CdPitchLinear.Trim() == FormatNumber(metadata.PitchLinear)
@@ -306,6 +308,7 @@ public partial class LivePreviewViewModel : ObservableObject
         }
 
         state.CdSectors = sectors;
+        state.CdUsableSectors = (metadata.UsableSectors ?? metadata.Sectors).ToString(System.Globalization.CultureInfo.InvariantCulture);
         state.CdInnerRadius = innerRadius;
         state.CdOuterRadius = outerRadius;
         state.CdPitchLinear = FormatNumber(metadata.PitchLinear);
@@ -342,7 +345,8 @@ public partial class LivePreviewViewModel : ObservableObject
             System.Globalization.CultureInfo.InvariantCulture);
         string innerRadius = FormatNumber(metadata.InnerRadiusMm);
         string outerRadius = FormatNumber(metadata.OuterRadiusMm);
-        if (state.DvdTotalSectors.Trim() == totalSectors
+        if (state.DvdUsableSectors.Trim() == (metadata.UsableSectors ?? metadata.TotalSectors).ToString(System.Globalization.CultureInfo.InvariantCulture)
+            && state.DvdTotalSectors.Trim() == totalSectors
             && state.DvdInnerRadius.Trim() == innerRadius
             && state.DvdOuterRadius.Trim() == outerRadius
             && state.DvdPitchLinear.Trim() == FormatNumber(metadata.PitchLinear)
@@ -354,6 +358,7 @@ public partial class LivePreviewViewModel : ObservableObject
         }
 
         state.DvdTotalSectors = totalSectors;
+        state.DvdUsableSectors = (metadata.UsableSectors ?? metadata.TotalSectors).ToString(System.Globalization.CultureInfo.InvariantCulture);
         state.DvdInnerRadius = innerRadius;
         state.DvdOuterRadius = outerRadius;
         state.DvdPitchLinear = FormatNumber(metadata.PitchLinear);
@@ -392,6 +397,7 @@ public partial class LivePreviewViewModel : ObservableObject
         string innerRadius = FormatNumber(metadata.InnerRadiusMm);
         string outerRadius = FormatNumber(metadata.OuterRadiusMm);
         state.BdTotalSectors = sectors;
+        state.BdUsableSectors = (metadata.UsableSectors ?? metadata.TotalSectors).ToString(System.Globalization.CultureInfo.InvariantCulture);
         state.BdInnerRadius = innerRadius;
         state.BdOuterRadius = outerRadius;
         state.BdPitchLinear = FormatNumber(metadata.PitchLinear);
@@ -1216,12 +1222,13 @@ public partial class LivePreviewViewModel : ObservableObject
             ParameterParser.ParsePositiveDouble(calibration ? _state.DvdActualOuterRadius : _state.DvdOuterRadius, L.T("外半径")),
             PitchLinear: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchLinear : _state.DvdPitchLinear, L.T("相对一次项")),
             PitchQuadratic: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchQuadratic : _state.DvdPitchQuadratic, L.T("相对二次项")),
-            PitchCubic: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchCubic : _state.DvdPitchCubic, L.T("相对三次项")));
+            PitchCubic: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchCubic : _state.DvdPitchCubic, L.T("相对三次项")),
+            UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.Dvd)));
         options.Validate();
         return options;
     }
 
-    private static BluRayDiscParameters ReadBluRayDisc(
+    private BluRayDiscParameters ReadBluRayDisc(
         string sectorsText, string innerText, string outerText,
         string pitchLinear, string pitchQuadratic, string pitchCubic)
     {
@@ -1238,7 +1245,8 @@ public partial class LivePreviewViewModel : ObservableObject
             ParameterParser.ParsePositiveDouble(outerText, L.T("蓝光外半径")),
             PitchLinear: ParameterParser.ParseDouble(pitchLinear, L.T("相对一次项")),
             PitchQuadratic: ParameterParser.ParseDouble(pitchQuadratic, L.T("相对二次项")),
-            PitchCubic: ParameterParser.ParseDouble(pitchCubic, L.T("相对三次项")));
+            PitchCubic: ParameterParser.ParseDouble(pitchCubic, L.T("相对三次项")),
+            UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.BluRay)));
         disc.Validate();
         return disc;
     }
@@ -1292,7 +1300,22 @@ public partial class LivePreviewViewModel : ObservableObject
                 sectors,
                 PitchLinear: ParameterParser.ParseDouble(_state.CdPitchLinear, L.T("相对一次项")),
                 PitchQuadratic: ParameterParser.ParseDouble(_state.CdPitchQuadratic, L.T("相对二次项")),
-                PitchCubic: ParameterParser.ParseDouble(_state.CdPitchCubic, L.T("相对三次项")));
+                PitchCubic: ParameterParser.ParseDouble(_state.CdPitchCubic, L.T("相对三次项")),
+                UsableSectors: _state.GetUsableSectors(OpticalDiscFamily.CompactDisc));
+            if (!Path.GetExtension(trackPath).Equals(".iso", StringComparison.OrdinalIgnoreCase)
+                && CdTrackMetadata.TryLoad(trackPath) is { } metadata)
+            {
+                // A legacy sidecar's absent limit also records its original preview
+                // canvas convention. Keep that distinction after State adopts its count.
+                parameters = parameters with
+                {
+                    LinearVelocityMmPerSecond = metadata.LinearVelocityMmPerSecond,
+                    StartAngleRadians = metadata.StartAngleDegrees * Math.PI / 180.0,
+                    ImageOuterRadiusMm = metadata.ImageOuterRadiusMm,
+                    UsableSectors = metadata.UsableSectors,
+                    SourceImageOuterRadiusMm = metadata.SourceImageOuterRadiusMm,
+                };
+            }
             parameters.Validate();
 
             int configuredSize = ParameterParser.ParsePositiveInt(_state.CdPreviewSize, L.T("预览尺寸"));
@@ -1303,7 +1326,7 @@ public partial class LivePreviewViewModel : ObservableObject
             message = string.Empty;
             return true;
         }
-        catch (Exception exception) when (exception is FormatException or OverflowException or ArgumentOutOfRangeException)
+        catch (Exception exception) when (exception is FormatException or OverflowException or ArgumentException)
         {
             message = exception.Message;
             return false;
@@ -1351,14 +1374,16 @@ public partial class LivePreviewViewModel : ObservableObject
                 sectors,
                 PitchLinear: ParameterParser.ParseDouble(_state.CdPitchLinear, L.T("相对一次项")),
                 PitchQuadratic: ParameterParser.ParseDouble(_state.CdPitchQuadratic, L.T("相对二次项")),
-                PitchCubic: ParameterParser.ParseDouble(_state.CdPitchCubic, L.T("相对三次项")));
+                PitchCubic: ParameterParser.ParseDouble(_state.CdPitchCubic, L.T("相对三次项")),
+                UsableSectors: _state.GetUsableSectors(OpticalDiscFamily.CompactDisc));
             actual = new CdDiscParameters(
                 ParameterParser.ParsePositiveDouble(_state.CdActualInnerRadius, L.T("实测内半径")),
                 ParameterParser.ParsePositiveDouble(_state.CdActualOuterRadius, L.T("实测外半径")),
                 sectors,
                 PitchLinear: ParameterParser.ParseDouble(_state.CdActualPitchLinear, L.T("相对一次项")),
                 PitchQuadratic: ParameterParser.ParseDouble(_state.CdActualPitchQuadratic, L.T("相对二次项")),
-                PitchCubic: ParameterParser.ParseDouble(_state.CdActualPitchCubic, L.T("相对三次项")));
+                PitchCubic: ParameterParser.ParseDouble(_state.CdActualPitchCubic, L.T("相对三次项")),
+                UsableSectors: _state.GetUsableSectors(OpticalDiscFamily.CompactDisc));
             generated.Validate();
             actual.Validate();
 
@@ -1370,7 +1395,7 @@ public partial class LivePreviewViewModel : ObservableObject
             message = string.Empty;
             return true;
         }
-        catch (Exception exception) when (exception is FormatException or OverflowException or ArgumentOutOfRangeException)
+        catch (Exception exception) when (exception is FormatException or OverflowException or ArgumentException)
         {
             message = exception.Message;
             return false;
@@ -1421,16 +1446,17 @@ public partial class LivePreviewViewModel : ObservableObject
                 16);
 
             options = new IsoReadbackOptions(
-                checked((uint)totalSectorsValue), 0, checked((uint)totalSectorsValue), 0x30000,
+                checked((uint)totalSectorsValue), 0, checked((uint)_state.GetUsableSectors(OpticalDiscFamily.Dvd)), 0x30000,
                 innerRadius, outerRadius, DvdStreamingOptions.StandardChannelBitLengthNm, true,
                 outputSize, samplesPerSector,
                 ParameterParser.ParseDouble(_state.DvdPitchLinear, L.T("相对一次项")),
                 ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("相对二次项")),
-                ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("相对三次项")));
+                ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("相对三次项")),
+                PreviewOuterRadiusMm: ReadDvdPreviewGeometry(false).OutputOuterRadiusMm);
             message = string.Empty;
             return true;
         }
-        catch (Exception exception) when (exception is FormatException or OverflowException or ArgumentOutOfRangeException)
+        catch (Exception exception) when (exception is FormatException or OverflowException or ArgumentException)
         {
             message = exception.Message;
             return false;
@@ -1492,7 +1518,7 @@ public partial class LivePreviewViewModel : ObservableObject
 
             ToneProfile tone = _state.DvdTone;
             uint drawingStart = 0;
-            uint drawingSectors = checked((uint)totalSectorsValue);
+            uint drawingSectors = checked((uint)_state.GetUsableSectors(OpticalDiscFamily.Dvd));
             string dataDirectory = _state.DvdDataDirectory.Trim();
             if (dataDirectory.Length > 0)
             {
@@ -1512,7 +1538,9 @@ public partial class LivePreviewViewModel : ObservableObject
                 ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("相对三次项")),
                 ParameterParser.ParseDouble(_state.DvdActualPitchLinear, L.T("相对一次项")),
                 ParameterParser.ParseDouble(_state.DvdActualPitchQuadratic, L.T("相对二次项")),
-                ParameterParser.ParseDouble(_state.DvdActualPitchCubic, L.T("相对三次项")), tone);
+                ParameterParser.ParseDouble(_state.DvdActualPitchCubic, L.T("相对三次项")), tone,
+                SourceImageOuterRadiusMm: ReadDvdPreviewGeometry(false).OutputOuterRadiusMm,
+                PreviewOuterRadiusMm: ReadDvdPreviewGeometry(true).OutputOuterRadiusMm);
             message = string.Empty;
             return true;
         }

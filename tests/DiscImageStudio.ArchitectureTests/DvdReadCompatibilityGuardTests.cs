@@ -11,110 +11,133 @@ internal static class DvdReadCompatibilityGuardTests
         .GetType("DvdImageSolver.Solver.DvdReadCompatibilityGuard", throwOnError: true)!
         .GetMethod("ApplySector", BindingFlags.Static | BindingFlags.NonPublic)!
         .CreateDelegate<ApplySector>();
+    private static readonly ApplySector ApplyLegacy = typeof(FastDispersionImageWriter).Assembly
+        .GetType("DvdImageSolver.Solver.DvdReadCompatibilityGuard", throwOnError: true)!
+        .GetMethod("ApplyLegacySector", BindingFlags.Static | BindingFlags.NonPublic)!
+        .CreateDelegate<ApplySector>();
 
     internal static void Run()
     {
         CheckBoundaries();
         CheckIndependentOracle();
+        CheckLegacyReplay();
         CheckPatternWriters();
         CheckRasterPaths();
-        Console.WriteLine("dvd-read-compatibility-guard: passed (independent sector oracle, windows, ownership, idempotence, default-off bytes, exact-Q rejection and scalar/SIMD/reuse/parallel parity)");
+        Console.WriteLine("dvd-read-compatibility-guard: passed (independent every-16 and frozen legacy oracles, fixed phase, non-A5 values, ownership, idempotence, default-off bytes, exact-Q rejection and scalar/SIMD/reuse/parallel parity)");
     }
 
     private static void CheckBoundaries()
     {
+        Type guard = typeof(FastDispersionImageWriter).Assembly
+            .GetType("DvdImageSolver.Solver.DvdReadCompatibilityGuard", throwOnError: true)!;
+        Require((string)guard.GetField("ModeName", BindingFlags.Static | BindingFlags.NonPublic)!
+            .GetRawConstantValue()! == "periodic-9b-16-v1", "mode identifies the periodic rule");
+
         byte[] allOwned = Enumerable.Repeat((byte)1, 2048).ToArray();
         byte[] q = Enumerable.Repeat((byte)0x92, 2048).ToArray();
-        CheckCase(q, allOwned, [0], "sector begins with a long white run");
+        CheckCase(q, allOwned, Enumerable.Range(0, 128).Select(i => i * 16).ToArray(),
+            "pure white changes exactly 128 fixed offsets including 0 and 2032");
         Array.Fill(q, (byte)0xA5);
-        q[2046] = q[2047] = 0x92;
-        CheckCase(q, allOwned, [2046], "backward window covers the last two bytes");
-        q[2046] = 0xA5;
-        CheckCase(q, allOwned, [], "isolated white byte at sector end");
+        CheckCase(q, allOwned, [], "A5 remains unchanged at every offset");
+        q[16] = q[2032] = q[2047] = 0x92;
+        CheckCase(q, allOwned, [16, 2032], "isolated white bytes need no run or window; last off-grid byte stays unchanged");
 
-        foreach (int paletteCount in new[] { 57, 58 })
-        {
-            q = new byte[2048];
-            Array.Fill(q, (byte)0xA5, 0, paletteCount);
-            q[0] = q[1] = 0x92;
-            CheckCase(q, allOwned, paletteCount == 58 ? [0] : [], "forward 58-of-64 threshold");
-
-            q = new byte[2048];
-            Array.Fill(q, (byte)0xA5, 0, paletteCount - 1);
-            q[63] = q[64] = 0x92;
-            CheckCase(q, allOwned, paletteCount == 58 ? [63] : [], "backward window includes start and excludes its successor");
-        }
+        Array.Fill(q, (byte)0xA5);
+        Array.Fill(q, (byte)0x92, 3, 67);
+        CheckCase(q, allOwned, [16, 32, 48, 64], "an unaligned white section keeps the global phase, not its run start");
 
         foreach (byte preceding in new byte[] { 0x75, 0x9B, 0xA5 })
         {
             q = Enumerable.Repeat((byte)0xA5, 2048).ToArray();
-            q[99] = preceding;
-            q[100] = q[101] = 0x92;
-            CheckCase(q, allOwned, preceding == 0xA5 ? [100] : [], "existing bridge suppresses repeat edits");
+            q[15] = preceding;
+            q[16] = 0x92;
+            CheckCase(q, allOwned, [16], "previous bridge or A5 does not suppress a periodic edit");
         }
 
         q = Enumerable.Repeat((byte)0xA5, 2048).ToArray();
-        q[100] = q[101] = 0x92;
-        byte[] ownership = (byte[])allOwned.Clone();
-        ownership[100] = 0;
-        CheckCase(q, ownership, [], "unowned run head stays untouched even when its successor is owned");
-        Array.Clear(ownership);
-        ownership[100] = 1;
-        CheckCase(q, ownership, [100], "only the modified byte needs ownership");
+        q[0] = q[1] = 0x00;
+        q[16] = 0x10;
+        q[32] = 0x75;
+        q[48] = 0x9B;
+        q[80] = 0xFF;
+        CheckCase(q, allOwned, [0, 16, 32, 80],
+            "every owned non-A5 value qualifies on-grid; existing 9B is not counted or rewritten");
 
-        // The second candidate qualifies at exactly 58 palette bytes. A guard
-        // that counts the first replacement would incorrectly reject it.
-        q = new byte[2048];
-        Array.Fill(q, (byte)0xA5, 0, 64);
-        Array.Clear(q, 3, 6);
-        q[0] = q[1] = q[63] = q[64] = 0x92;
-        CheckCase(q, allOwned, [0, 63], "all window decisions use original Q");
+        Array.Fill(q, (byte)0x92);
+        byte[] ownership = new byte[2048];
+        CheckCase(q, ownership, [], "unowned file bytes remain unchanged even when their Q matches white");
+        ownership[1] = 1;
+        ownership[16] = 2;
+        ownership[32] = 255;
+        CheckCase(q, ownership, [16, 32], "any nonzero ownership qualifies only at fixed offsets");
 
         Throws<ArgumentException>(() => Apply(new byte[2047], new byte[2048], new byte[2048]));
         Throws<ArgumentException>(() => Apply(new byte[2048], new byte[2047], new byte[2048]));
         Throws<ArgumentException>(() => Apply(new byte[2048], new byte[2048], new byte[2047]));
     }
 
-    private static void CheckCase(byte[] q, byte[] ownership, int[] expectedIndices, string name)
+    private static void CheckCase(byte[] q, byte[] ownership, int[] expectedIndices, string name, bool legacy = false)
     {
+        ApplySector apply = legacy ? ApplyLegacy : Apply;
         byte[] mask = IndependentMask(0x30070);
         byte[] original = Xor(q, mask);
         byte[] actual = (byte[])original.Clone();
-        int changed = Apply(actual, mask, ownership);
+        int changed = apply(actual, mask, ownership);
         int[] observedIndices = Enumerable.Range(0, 2048).Where(i => actual[i] != original[i]).ToArray();
         Require(changed == expectedIndices.Length && observedIndices.SequenceEqual(expectedIndices), name);
         foreach (int index in observedIndices)
-            Require(ownership[index] != 0 && (actual[index] ^ mask[index]) == 0x9B, name + ": only owned run heads become 9B");
+            Require(ownership[index] != 0 && (legacy || index % 16 == 0) && (actual[index] ^ mask[index]) == 0x9B,
+                name + ": only eligible owned bytes become 9B");
         byte[] once = (byte[])actual.Clone();
-        Require(Apply(actual, mask, ownership) == 0 && actual.AsSpan().SequenceEqual(once), name + ": idempotent");
+        Require(apply(actual, mask, ownership) == 0 && actual.AsSpan().SequenceEqual(once), name + ": idempotent");
     }
 
-    private static void CheckIndependentOracle()
+    private static void CheckLegacyReplay()
     {
-        Random random = new(90);
-        long changes = 0;
-        for (int trial = 0; trial < 96; trial++)
+        byte[] owned = Enumerable.Repeat((byte)1, 2048).ToArray();
+        byte[] q = Enumerable.Repeat((byte)0x92, 2048).ToArray();
+        CheckCase(q, owned, [0], "frozen legacy white sector keeps one run-start bridge", legacy: true);
+        Array.Fill(q, (byte)0xA5);
+        q[2046] = q[2047] = 0x92;
+        CheckCase(q, owned, [2046], "frozen legacy backward window covers the last run", legacy: true);
+        q[2046] = 0xA5;
+        CheckCase(q, owned, [], "frozen legacy does not change isolated white", legacy: true);
+        foreach (int paletteCount in new[] { 57, 58 })
         {
-            byte[] q = new byte[2048], ownership = new byte[2048];
+            q = new byte[2048];
+            Array.Fill(q, (byte)0xA5, 0, paletteCount);
+            q[0] = q[1] = 0x92;
+            CheckCase(q, owned, paletteCount == 58 ? [0] : [], "frozen legacy 58-of-64 threshold", legacy: true);
+        }
+        q = new byte[2048];
+        Array.Fill(q, (byte)0xA5, 0, 64);
+        Array.Clear(q, 3, 6);
+        q[0] = q[1] = q[63] = q[64] = 0x92;
+        CheckCase(q, owned, [0, 63], "frozen legacy windows use original Q", legacy: true);
+
+        Random random = new(190);
+        int totalChanges = 0;
+        for (int trial = 0; trial < 32; trial++)
+        {
             for (int index = 0; index < q.Length; index++)
             {
                 int value = random.Next(100);
                 q[index] = value < 48 ? (byte)0x92 : value < 94 ? (byte)0xA5 : (byte)random.Next(256);
-                ownership[index] = random.Next(4) == 0 ? (byte)0 : (byte)1;
+                owned[index] = random.Next(4) == 0 ? (byte)0 : (byte)1;
             }
             byte[] mask = IndependentMask(0x30000 + (uint)trial * 16);
-            byte[] actual = Xor(q, mask);
-            byte[] expected = (byte[])actual.Clone();
-            int expectedCount = Oracle(expected, mask, ownership);
-            int observed = Apply(actual, mask, ownership);
-            Require(expectedCount == observed && actual.AsSpan().SequenceEqual(expected), "independent scalar sector oracle");
-            Require(Apply(actual, mask, ownership) == 0, "random dense sectors are idempotent");
-            changes += observed;
+            byte[] actual = Xor(q, mask), expected = (byte[])actual.Clone();
+            int expectedChanges = LegacyOracle(expected, mask, owned);
+            int changes = ApplyLegacy(actual, mask, owned);
+            Require(changes == expectedChanges && actual.AsSpan().SequenceEqual(expected),
+                "frozen legacy independently matches the original bridge oracle");
+            Require(ApplyLegacy(actual, mask, owned) == 0, "frozen legacy remains idempotent");
+            totalChanges += changes;
         }
-        Require(changes > 1000, "oracle fixtures exercise many qualifying runs and windows");
+        Require(totalChanges > 100, "legacy oracle fixtures exercise qualifying runs");
     }
 
-    private static int Oracle(byte[] payload, byte[] mask, byte[] ownership)
+    private static int LegacyOracle(byte[] payload, byte[] mask, byte[] ownership)
     {
         byte[] q = Xor(payload, mask);
         int changes = 0;
@@ -138,6 +161,44 @@ internal static class DvdReadCompatibilityGuardTests
         return changes;
     }
 
+    private static void CheckIndependentOracle()
+    {
+        Random random = new(90);
+        long changes = 0;
+        for (int trial = 0; trial < 96; trial++)
+        {
+            byte[] q = new byte[2048], ownership = new byte[2048];
+            for (int index = 0; index < q.Length; index++)
+            {
+                int value = random.Next(100);
+                q[index] = value < 30 ? (byte)0x92 : value < 60 ? (byte)0xA5 : (byte)random.Next(256);
+                ownership[index] = random.Next(4) == 0 ? (byte)0 : (byte)random.Next(1, 256);
+            }
+            byte[] mask = IndependentMask(0x30000 + (uint)trial * 16);
+            byte[] actual = Xor(q, mask);
+            byte[] expected = (byte[])actual.Clone();
+            int expectedCount = Oracle(expected, mask, ownership);
+            int observed = Apply(actual, mask, ownership);
+            Require(expectedCount == observed && actual.AsSpan().SequenceEqual(expected), "independent scalar sector oracle");
+            Require(Apply(actual, mask, ownership) == 0, "random sectors are idempotent");
+            changes += observed;
+        }
+        Require(changes > 1000, "oracle fixtures exercise many owned fixed-phase values");
+    }
+
+    private static int Oracle(byte[] payload, byte[] mask, byte[] ownership)
+    {
+        byte[] q = Xor(payload, mask);
+        int changes = 0;
+        for (int index = 0; index < q.Length; index++)
+        {
+            if (index % 16 != 0 || ownership[index] == 0 || q[index] is 0xA5 or 0x9B) continue;
+            payload[index] = (byte)(mask[index] ^ 0x9B);
+            changes++;
+        }
+        return changes;
+    }
+
     private static void CheckPatternWriters()
     {
         var options = Options();
@@ -148,14 +209,16 @@ internal static class DvdReadCompatibilityGuardTests
         byte[] off = defaultOutput.ToArray(), on = enabled.ToArray();
         Require(!options.ReadCompatibility && original.CompatibilityChanges == 0 && off.AsSpan().SequenceEqual(explicitOff.ToArray()),
             "default and explicit off preserve identical bytes");
-        Require(guarded.CompatibilityChanges == options.FillSectors, "one bridge per all-white sector, including adjacent sectors");
+        Require(guarded.CompatibilityChanges == options.FillSectors * 128L,
+            "128 replacements per all-white sector, including adjacent sectors");
         for (int sector = 0; sector < options.FillSectors; sector++)
         {
             byte[] mask = IndependentMask(options.StartLba + options.PsnOffset + (uint)sector);
             for (int index = 0; index < 2048; index++)
             {
                 Require((off[sector * 2048 + index] ^ mask[index]) == 0x92, "off keeps every requested white byte");
-                Require((on[sector * 2048 + index] ^ mask[index]) == (index == 0 ? 0x9B : 0x92), "bridge starts over at every sector");
+                Require((on[sector * 2048 + index] ^ mask[index]) == (index % 16 == 0 ? 0x9B : 0x92),
+                    "the same periodic phase covers every sector");
             }
         }
 

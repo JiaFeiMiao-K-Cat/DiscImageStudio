@@ -9,6 +9,8 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DiscImageStudio.Cd;
+using DiscImageStudio.Dvd;
+using DiscImageStudio.BluRay;
 using DiscImageStudio.Core;
 using DiscImageStudio.Imaging;
 using DiscImageStudio.Services;
@@ -126,12 +128,8 @@ public partial class DesignViewModel : ObservableObject
         _ => "CD",
     };
 
-    /// <summary>CD composes against the scheme's fixed image outer radius; DVD and BD
-    /// against the generated outer radius, matching what the generation pages feed the
-    /// engines.</summary>
-    public double CanvasOuterRadiusMm => IsCd
-        ? CdDiscParameters.StandardImageOuterRadiusMm
-        : ContentOuterRadiusMm;
+    /// <summary>The artwork canvas ends at the last usable sector on the saved physical geometry.</summary>
+    public double CanvasOuterRadiusMm => ContentOuterRadiusMm;
 
     // Geometry snapshot: parsed from State with last-valid-value fallback so the canvas and
     // composer keep working while a field is mid-edit.
@@ -340,7 +338,42 @@ public partial class DesignViewModel : ObservableObject
             ContentOuterRadiusMm = defaultOuter;
         }
 
+        // The physical track still spans the saved geometry. Only the writable
+        // portion is shown as the artwork canvas and used as the source-image scale.
+        try
+        {
+            long usable = _state.GetUsableSectors(Family);
+            ContentOuterRadiusMm = Family switch
+            {
+                OpticalDiscFamily.Dvd => new DvdStreamingOptions(
+                    checked((uint)ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, "Total sectors")),
+                    ContentInnerRadiusMm, ContentOuterRadiusMm,
+                    PitchLinear: ParameterParser.ParseDouble(_state.DvdPitchLinear, "Pitch"),
+                    PitchQuadratic: ParameterParser.ParseDouble(_state.DvdPitchQuadratic, "Pitch"),
+                    PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, "Pitch"),
+                    UsableSectors: checked((uint)usable)).OutputOuterRadiusMm,
+                OpticalDiscFamily.BluRay => new BluRayDiscParameters(
+                    checked((uint)ParameterParser.ParsePositiveLong(_state.BdTotalSectors, "Total sectors")), 1,
+                    ContentInnerRadiusMm, ContentOuterRadiusMm,
+                    PitchLinear: ParameterParser.ParseDouble(_state.BdPitchLinear, "Pitch"),
+                    PitchQuadratic: ParameterParser.ParseDouble(_state.BdPitchQuadratic, "Pitch"),
+                    PitchCubic: ParameterParser.ParseDouble(_state.BdPitchCubic, "Pitch"),
+                    UsableSectors: checked((uint)usable)).OutputOuterRadiusMm,
+                _ => new CdDiscParameters(ContentInnerRadiusMm, ContentOuterRadiusMm,
+                    ParameterParser.ParsePositiveLong(_state.CdSectors, "Total sectors"),
+                    PitchLinear: ParameterParser.ParseDouble(_state.CdPitchLinear, "Pitch"),
+                    PitchQuadratic: ParameterParser.ParseDouble(_state.CdPitchQuadratic, "Pitch"),
+                    PitchCubic: ParameterParser.ParseDouble(_state.CdPitchCubic, "Pitch"),
+                    UsableSectors: usable).OutputOuterRadiusMm,
+            };
+        }
+        catch (Exception exception) when (exception is ArgumentException or FormatException or OverflowException)
+        {
+            // Fields can be temporarily incomplete while a project or preset is applied.
+        }
+        OnPropertyChanged(nameof(CanvasOuterRadiusMm));
         CanvasChanged?.Invoke();
+        ScheduleComposite();
     }
 
     public void SetDiscFamily(OpticalDiscFamily family)
@@ -491,7 +524,9 @@ public partial class DesignViewModel : ObservableObject
         CompositeRendered?.Invoke(null);
     }
 
-    /// <summary>Stored bottom-first; panel order is the reverse.</summary>
+    /// <summary>Stored bottom-first; panel order is the reverse. Rebase each scale onto
+    /// the current canvas diameter so reopening preserves its physical size after
+    /// geometry or usable-capacity edits, without changing the live layer.</summary>
     public IReadOnlyList<ProjectLayer> CaptureLayers()
         => Layers
             .AsEnumerable()
@@ -504,7 +539,7 @@ public partial class DesignViewModel : ObservableObject
                 layer.TranslateXMm,
                 layer.TranslateYMm,
                 layer.RotationDeg,
-                layer.Scale))
+                layer.Scale * (Math.Max(layer.BaseWidthMm, layer.BaseHeightMm) / (2 * ContentOuterRadiusMm))))
             .ToList();
 
     // ---- Composite pipeline ----

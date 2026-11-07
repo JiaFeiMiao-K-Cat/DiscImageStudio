@@ -26,7 +26,7 @@ public sealed record CdDataImageMetadata(
             metadata.Parameters.Validate();
             metadata.Tone.Validate();
             return metadata.DrawingStartLba < metadata.DrawingEndLbaExclusive
-                && metadata.DrawingEndLbaExclusive <= metadata.Parameters.Sectors ? metadata : null;
+                && metadata.DrawingEndLbaExclusive <= metadata.Parameters.OutputSectors ? metadata : null;
         }
         catch (Exception exception) when (exception is IOException or JsonException or ArgumentException
             or OverflowException or NotSupportedException)
