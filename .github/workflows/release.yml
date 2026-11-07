@@ -196,7 +196,7 @@ jobs:
 
   draft:
     needs: [metadata, package]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: write
@@ -217,6 +217,63 @@ jobs:
         shell: bash
         run: sha256sum --strict --check SHA256SUMS.txt
 
+      - name: Cache sequoia sq
+        uses: actions/cache@v4
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
+        if: ${{ env.SIGN_PRIVATE_KEY != '' }}
+        id: cache_sq
+        with:
+          path: |
+            ./sequoia/bin
+          # Change random value to rebuild
+          key: cargo-install-sequoia-sq-3e390883bc8a7f74838393b22cc24fb1e4474de61142ca3c7ca70b557392a4a8
+      - name: Build Sequoia SQ with OpenSSL
+        shell: bash
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
+        if: ${{ env.SIGN_PRIVATE_KEY != '' && steps.cache_sq.outputs.cache-hit !='true'}}
+        run: |
+          sudo apt-get update
+          ## No PQC support but faster
+          # sudo apt-get install -y sq
+          sudo apt-get install -y clang nettle-dev pkg-config libssl-dev capnproto libsqlite3-dev
+          cargo install sequoia-sq \
+            --locked \
+            --no-default-features \
+            --features crypto-openssl \
+            --root "./sequoia"
+      - name: Append sequoia to path
+        shell: bash
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
+        if: ${{ env.SIGN_PRIVATE_KEY != '' }}
+        run: echo "$PWD/sequoia/bin" >> "$GITHUB_PATH"
+      - name: Sign release artifacts
+        shell: bash
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
+        if: ${{ env.SIGN_PRIVATE_KEY != '' }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          trap 'shred -n 32 -u private_key.pgp; echo "Cleaned up private key."' EXIT
+          umask 077
+          printf '%s\n' "$SIGN_PRIVATE_KEY" >private_key.pgp
+          files=(release/*.exe release/*.tar.gz release/SHA256SUMS.txt)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No files found to sign"
+            exit 1
+          fi
+          
+          for file in "${files[@]}"; do
+            # Sign file with sequoia sq
+            sq sign --signer-file private_key.pgp --signature-file="${file}.sig" "${file}"
+          done
+          # Export Public Key
+          sq key delete \
+            --cert-file private_key.pgp \
+            --output release/public_key.asc
       - name: Create or refresh draft with all release attachments
         run: |
           # Never replace assets on an already published release.
@@ -250,7 +307,7 @@ jobs:
             throw 'The release tag already points to a different commit. Use a new version.'
           }
 
-          $assets = @(Get-ChildItem -Path 'release/*.exe','release/*.tar.gz' -File | ForEach-Object FullName)
+          $assets = @(Get-ChildItem -Path 'release/*.exe','release/*.tar.gz','release/*.sig','release/*.asc' -File | ForEach-Object FullName)
           $assets += 'release/SHA256SUMS.txt'
           $options = @('--title', "Disc Image Studio $env:RELEASE_TAG", '--notes-file', 'release/release-notes.md')
           if ($existing.Count -eq 1) {
