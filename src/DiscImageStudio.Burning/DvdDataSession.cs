@@ -9,7 +9,9 @@ internal interface IDvdDataSession
 
     long FreeSectorsOnMedia { get; }
 
-    void ConfigureMedia();
+    long TotalSectorsOnMedia { get; }
+
+    void ConfigureMedia(bool forceOverwrite);
 
     void DisableVerification();
 
@@ -34,11 +36,15 @@ internal sealed class DynamicDvdDataSession(object format, Action<object>? repor
 
     public long FreeSectorsOnMedia => Convert.ToInt64(_format.FreeSectorsOnMedia);
 
-    public void ConfigureMedia()
+    public long TotalSectorsOnMedia => Convert.ToInt64(_format.TotalSectorsOnMedia);
+
+    // ForceOverwrite is the only IMAPI switch that lets a formatted DVD+RW/RW be
+    // written again; without it WriteMedia fails with E_IMAPI_DF2DATA_MEDIA_NOT_BLANK.
+    public void ConfigureMedia(bool forceOverwrite)
     {
         _format.BufferUnderrunFreeDisabled = false;
         _format.ForceMediaToBeClosed = true;
-        _format.ForceOverwrite = false;
+        _format.ForceOverwrite = forceOverwrite;
     }
 
     public void DisableVerification() => DvdBurnVerification.Disable((object)_format);
