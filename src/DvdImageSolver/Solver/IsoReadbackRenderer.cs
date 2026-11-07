@@ -24,7 +24,8 @@ public sealed record IsoReadbackOptions(
     int SamplesPerSector,
     double PitchLinear = 0,
     double PitchQuadratic = 0,
-    double PitchCubic = 0);
+    double PitchCubic = 0,
+    double? PreviewOuterRadiusMm = null);
 
 public sealed record IsoReadbackSummary(
     string SourceIso,
@@ -168,7 +169,7 @@ public static class IsoReadbackRenderer
                         double arcLengthMm = globalBit * bitLengthMm;
                         (double radiusMm, double trackAngle) = spiral.AtArcLengthFast(arcLengthMm);
                         double polarAngle = direction * trackAngle;
-                        double pixelRadius = centre * radiusMm / options.OuterRadiusMm;
+                        double pixelRadius = centre * radiusMm / (options.PreviewOuterRadiusMm ?? options.OuterRadiusMm);
                         int pixelX = (int)Math.Round(centre + (pixelRadius * Math.Cos(polarAngle)));
                         int pixelY = (int)Math.Round(centre - (pixelRadius * Math.Sin(polarAngle)));
                         if ((uint)pixelX >= (uint)size || (uint)pixelY >= (uint)size)

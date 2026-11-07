@@ -23,16 +23,16 @@ public sealed class BluRayIsoPlan
     {
         Disc = disc;
         DrawingStartSector = 0;
-        DrawingEndSectorExclusive = disc.TotalSectors;
+        DrawingEndSectorExclusive = disc.OutputSectors;
         DrawingStartRadiusMm = disc.InnerRadiusMm;
-        DrawingEndRadiusMm = disc.OuterRadiusMm;
+        DrawingEndRadiusMm = disc.OutputOuterRadiusMm;
     }
 
     internal BluRayIsoPlan(BluRayDiscParameters disc, uint drawingStartSector, uint drawingEndSectorExclusive)
     {
         disc.Validate();
         if (drawingStartSector >= drawingEndSectorExclusive
-            || drawingEndSectorExclusive > disc.TotalSectors)
+            || drawingEndSectorExclusive > disc.OutputSectors)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(drawingEndSectorExclusive), "The drawing range must lie inside the disc.");
@@ -51,7 +51,7 @@ public sealed class BluRayIsoPlan
     public bool HasFileSystem => _filesystem is not null;
     public bool FilesAtOuterRing => _filesystem?.FilesAtOuterRing ?? false;
     public BluRayDiscParameters Disc { get; }
-    public uint TotalSectors => Disc.TotalSectors;
+    public uint TotalSectors => Disc.OutputSectors;
     public long ContentLength => Disc.ContentLength;
     public string? DataDirectory => _filesystem?.SourceDirectory is { Length: > 0 } source ? source : null;
     public string? VolumeLabel => _filesystem?.VolumeLabel;
@@ -97,7 +97,7 @@ public static class BluRayIsoGenerator
         ArgumentNullException.ThrowIfNull(disc);
         disc.Validate();
         if (dataDirectory is not null) ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
-        UdfImageWriter.LayoutPlan filesystem = UdfImageWriter.Plan(dataDirectory, disc.TotalSectors,
+        UdfImageWriter.LayoutPlan filesystem = UdfImageWriter.Plan(dataDirectory, disc.OutputSectors,
             volumeLabel, timestamp, filesAtOuterRing);
         uint drawingStart = filesystem.DrawingStartLba;
         if (drawingStart >= filesystem.DrawingEndLbaExclusive)

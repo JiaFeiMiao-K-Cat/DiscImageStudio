@@ -56,6 +56,15 @@ internal static class AppCubicMediaTests
         foreach (var media in Media)
         {
             ProjectGeometry geometry = new(24, 58, media.Sectors, .00012, -.00008, .00004);
+            ProjectGeometry resolved = geometry with
+            {
+                UsableSectors = media.Family switch
+                {
+                    OpticalDiscFamily.CompactDisc => 359_847,
+                    OpticalDiscFamily.Dvd => 2_294_496,
+                    _ => 12_219_392,
+                },
+            };
             ProjectDocument project = new(ProjectJsonStore.CurrentSchemaVersion, media.Name,
                 media.Family == OpticalDiscFamily.BluRay ? ProjectDocument.BluRayFamily : media.Name.ToLowerInvariant(),
                 geometry, [], new(Path.Combine(directory, media.Name + ".iso"), false, "", "TEST", false),
@@ -63,7 +72,8 @@ internal static class AppCubicMediaTests
             string path = Path.Combine(directory, media.Name + ".discproj");
             ProjectJsonStore.Save(path, project);
             ProjectSession.ApplyToState(ProjectJsonStore.Load(path), state);
-            Require(ProjectSession.CaptureGeometry(project, state) == geometry, media.Name + " project preserves coefficients");
+            Require(ProjectSession.CaptureGeometry(project, state) == resolved,
+                media.Name + " project preserves all geometry and resolves the absent usable count");
             Require(state.GetPitchSummary(media.Family, actual: true).Contains("x³"), media.Name + " measured preview starts with valid cubic geometry");
 
             state.AddUserPreset(media.Family, media.Name + " cubic", 24, 58, media.Sectors,
@@ -87,7 +97,8 @@ internal static class AppCubicMediaTests
                     state.ApplyBluRayDiscPreset(state.BluRayPresets.Single(p => p.Id == bd.Id));
                     break;
             }
-            Require(ProjectSession.CaptureGeometry(project, state) == geometry, media.Name + " preset restores coefficients");
+            Require(ProjectSession.CaptureGeometry(project, state) == resolved,
+                media.Name + " preset restores all geometry and the same usable count");
 
             ProjectDialogViewModel dialog = new(state, new(EditMode: true, PreselectFamily: media.Family),
                 new RecentTemplateStore(Path.Combine(directory, "recent.json")))

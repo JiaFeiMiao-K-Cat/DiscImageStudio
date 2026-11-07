@@ -111,6 +111,7 @@ internal static class ImageJobWorkflowTests
             File.WriteAllText(invalidImage, "not an image");
             shell.State.DvdImagePath = invalidImage;
             shell.State.DvdTotalSectors = "32";
+            shell.State.DvdUsableSectors = "32";
             shell.State.DvdInnerRadius = shell.State.DvdActualInnerRadius = "24";
             shell.State.DvdOuterRadius = shell.State.DvdActualOuterRadius = "58";
             shell.State.DvdPitchLinear = shell.State.DvdPitchQuadratic = shell.State.DvdPitchCubic = "0";

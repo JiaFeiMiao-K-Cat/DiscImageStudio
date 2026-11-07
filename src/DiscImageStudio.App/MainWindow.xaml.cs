@@ -793,6 +793,7 @@ public partial class MainWindow : Window
                 viewModel.InnerRadiusText = _shell.State.DvdInnerRadius;
                 viewModel.OuterRadiusText = _shell.State.DvdOuterRadius;
                 viewModel.SectorsText = _shell.State.DvdTotalSectors;
+                viewModel.UsableSectorsText = _shell.State.DvdUsableSectors;
                 viewModel.PitchLinearText = _shell.State.DvdPitchLinear;
                 viewModel.PitchQuadraticText = _shell.State.DvdPitchQuadratic;
                 viewModel.PitchCubicText = _shell.State.DvdPitchCubic;
@@ -802,6 +803,7 @@ public partial class MainWindow : Window
                 viewModel.InnerRadiusText = _shell.State.BdInnerRadius;
                 viewModel.OuterRadiusText = _shell.State.BdOuterRadius;
                 viewModel.SectorsText = _shell.State.BdTotalSectors;
+                viewModel.UsableSectorsText = _shell.State.BdUsableSectors;
                 viewModel.PitchLinearText = _shell.State.BdPitchLinear;
                 viewModel.PitchQuadraticText = _shell.State.BdPitchQuadratic;
                 viewModel.PitchCubicText = _shell.State.BdPitchCubic;
@@ -811,6 +813,7 @@ public partial class MainWindow : Window
                 viewModel.InnerRadiusText = _shell.State.CdInnerRadius;
                 viewModel.OuterRadiusText = _shell.State.CdOuterRadius;
                 viewModel.SectorsText = _shell.State.CdSectors;
+                viewModel.UsableSectorsText = _shell.State.CdUsableSectors;
                 viewModel.PitchLinearText = _shell.State.CdPitchLinear;
                 viewModel.PitchQuadraticText = _shell.State.CdPitchQuadratic;
                 viewModel.PitchCubicText = _shell.State.CdPitchCubic;

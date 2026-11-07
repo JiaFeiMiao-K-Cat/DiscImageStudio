@@ -396,12 +396,19 @@ public partial class CalibrationViewModel
             string sectors = p.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
             switch (p.Kind)
             {
-                case CalibrationDiscKind.Cd: _state.CdSectors = sectors; break;
+                case CalibrationDiscKind.Cd:
+                    _state.CdSectors = sectors;
+                    _state.CdUsableSectors = p.OutputSectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    break;
                 case CalibrationDiscKind.BluRay:
                     _state.BdTotalSectors = sectors;
+                    _state.BdUsableSectors = p.OutputSectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
                     _state.BdInvertMapping = p.BluRayInvertMapping;
                     break;
-                default: _state.DvdTotalSectors = sectors; break;
+                default:
+                    _state.DvdTotalSectors = sectors;
+                    _state.DvdUsableSectors = p.OutputSectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    break;
             }
             if (p.Kind == CalibrationDiscKind.Cd) _state.CdInterleave = _cdInterleave;
         }

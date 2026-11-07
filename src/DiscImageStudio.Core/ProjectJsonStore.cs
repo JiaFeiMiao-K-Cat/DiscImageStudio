@@ -13,7 +13,9 @@ public sealed record ProjectGeometry(
     long Sectors,
     double PitchLinear = 0,
     double PitchQuadratic = 0,
-    double PitchCubic = 0);
+    double PitchCubic = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    long? UsableSectors = null);
 
 /// <summary>One design layer: an image placed relative to the disc centre. Translation is in
 /// millimetres (+x right, +y down on the canvas), rotation in degrees clockwise, and scale is
@@ -295,9 +297,11 @@ public static class ProjectJsonStore
             throw DiagnosticMessage.InvalidData($"sectors 必须大于 0。");
         }
 
-        if (document.IsDvd && geometry.Sectors % 16 != 0)
+        int alignment = document.IsBluRay ? ProjectDocument.BluRaySectorsPerCluster : document.IsDvd ? 16 : 1;
+        if (geometry.UsableSectors is { } usable
+            && (usable <= 0 || usable > geometry.Sectors || usable % alignment != 0))
         {
-            throw DiagnosticMessage.InvalidData($"DVD 的 sectors 必须是 16 的倍数。");
+            throw DiagnosticMessage.InvalidData($"usableSectors 必须大于 0、不超过 sectors，且是 {alignment} 的倍数。");
         }
 
         if (document.IsBluRay)

@@ -4,6 +4,16 @@
 
 ## 本地验证
 
+2026-11-07，#183 提交前复查：修正 BD 缩小可用容量后，预览逐像素重复构造几何的问题，改为在渲染入口缓存有效外半径；新建 CD 固定地址粗标要求完整包含最外侧测量边界及后续浅色留白，旧冻结记录保持原样。新增回归用外圈标记识别 CD／DVD 错用几何尺度导致的裁边，验证 BD 普通图片流式缩短后与完整输出前缀逐字节一致；另检查三次轨距 BD 的外缘像素、两种预览路径一致、常轨距／三次轨距短 ISO 读回，以及 CD 粗标容量的不足、临界值、正常值和旧记录恢复。最终 Release 构建零警告、零错误，容量专项、DVD selftest 和完整 ArchitectureTests 全部通过。日志为 `artifacts/usable-sectors/build-review.log`、`focused-review.log`、`dvd-selftest-review.log` 和 `architecture-review.log`。未执行实盘刻录。
+
+English: the pre-commit review added cached BD preview radii and qualification of new CD coarse targets against their fixed outer boundary. Outer-ring fixtures detect incorrect CD/DVD image scaling; BD stream-prefix, reduced-capacity preview/readback and CD calibration boundary regressions passed. The final Release build, focused capacity checks, DVD selftest and complete architecture suite passed; no physical disc was used.
+
+2026-11-07，可用扇区与几何容量分离（#183）：最终 Release solution 构建通过（`--no-restore -m:1 -nr:false`，0 警告、0 错误），DVD 引擎 selftest、完整 ArchitectureTests 和容量／界面专项回归全部通过。新增检查覆盖内置预设可用数、旧预设缺省预留、显式值不重复扣减、工程／预设／标定记录往返、非对齐的 DVD 几何总数保留，以及 CD／DVD／BD 的输出长度与写入对齐。生成回归验证原始几何不变、画面按可用范围映射、文件系统在最终容量内完整布局、sidecar 恢复；设计图层在可用容量改变后保存／重开保持实际尺寸与合成像素。流式回归对照完整标定输出前缀，确认设备容量缩小时只截尾且不改保存的标定参数。设备替身覆盖 DVD 直接使用 Free、CD 单次预留与严格 DAO lead-out 边界、BD 原有完整布局限制，以及标定读取分别填入总数和可用数。
+
+新建／编辑工程与标定页离屏截图已目视检查，中英文几何总数／可用数可完整显示；本地化回归同时通过。日志和截图位于 `artifacts/usable-sectors/`，完整回归日志为 `architecture-final.log`；测试 `TEMP`／`TMP` 指向该目录的 `temp` 子目录。沙箱内文件原子替换受限，最终完整回归在不受该限制的执行环境复跑通过。未访问刻录设备、未执行实盘刻录；此次调整容量、图像坐标范围与布局，不改 ECC／EFM 等编码算法，DVD selftest 覆盖项不变。
+
+English: the final Release solution build completed with zero warnings/errors; DVD selftest, the complete architecture suite, and focused capacity/UI checks passed. Regression covers explicit usable counts without double deductions, legacy preset defaults, geometry preservation, aligned output, device capacity limits, image scaling, complete file layouts, metadata persistence, and stable saved layers. Truncated calibration streams match the full output prefix. Project/calibration offscreen screenshots were inspected. No optical device or physical burn was used; encoding algorithms and the DVD selftest scope are unchanged.
+
 2026-11-07，DVD／BD 详细诊断补齐：最终 Release solution 构建通过（`--no-restore -m:1 -nr:false`，0 警告、0 错误），DVD 引擎 selftest 和完整 ArchitectureTests 全部通过。新增回归覆盖所有 IMAPI 物理盘片类型、可选字段独立失败、DVD 设备操作顺序／容量／速度／校验失败阻断，以及在事件退订、取消注册注销和源流销毁前保存原始写入异常与快照；用阻塞的取消回调确认失败记录不会被清理延迟。BD 回归覆盖完整介质与轨道上下文、真实 MMC sense 保留、写入／刷新／关闭／释放失败及取消，检查未增加设备查询或改变清理顺序。CD 既有诊断与流式缓冲回归同时通过。未创建刻录设备、未执行实盘刻录；无 GUI 布局或编码链改动，selftest 覆盖项不变。日志位于 `artifacts/burn-diagnostics/`，测试 `TEMP`／`TMP` 使用该目录的 `temp` 子目录。
 
 English: the final Release solution build completed with zero warnings/errors; DVD selftest and the complete architecture suite passed. New checks cover shared physical media identification, DVD operation order and failure snapshots before event/cancellation cleanup, and BD cached media/track context, original MMC sense, finalization failures and cancellation. Existing CD and stream diagnostics also passed. No recorder or physical disc was used; the change adds diagnostics without changing encoded output or media support.

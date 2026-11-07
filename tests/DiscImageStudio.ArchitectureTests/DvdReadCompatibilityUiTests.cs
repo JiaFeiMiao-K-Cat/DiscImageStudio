@@ -33,7 +33,7 @@ internal static class DvdReadCompatibilityUiTests
 
     private static ProjectDocument Project(string path, string family = ProjectDocument.DvdFamily)
         => new(ProjectJsonStore.CurrentSchemaVersion, "DVD compatibility", family,
-            new(24, 58, 16), [], new(path, false, "", "TEST", false), null, null,
+            new(24, 58, 16, UsableSectors: 16), [], new(path, false, "", "TEST", false), null, null,
             DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch);
 
     private static void CheckProjectPersistence(string directory)
@@ -115,6 +115,7 @@ internal static class DvdReadCompatibilityUiTests
             calibration.SelectedDiscType = "DVD";
             calibration.SelectFineModeCommand.Execute(null);
             calibration.Parameters.DvdTotalSectors = "16";
+            calibration.Parameters.DvdUsableSectors = "16";
             calibration.Parameters.DvdInnerRadius = "24";
             calibration.Parameters.DvdOuterRadius = "58";
             calibration.Parameters.DvdPitchLinear = calibration.Parameters.DvdPitchQuadratic = calibration.Parameters.DvdPitchCubic = "0";

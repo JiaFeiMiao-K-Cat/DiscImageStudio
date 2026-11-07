@@ -12,7 +12,8 @@ public sealed record BluRayDiscParameters(
     double StartAngleDegrees = 0,
     double PitchLinear = 0,
     double PitchQuadratic = 0,
-    double PitchCubic = 0)
+    double PitchCubic = 0,
+    uint? UsableSectors = null)
 {
     public const int BytesPerSector = 2048;
     public const int SectorsPerCluster = 32;
@@ -23,7 +24,10 @@ public sealed record BluRayDiscParameters(
     public const int ChannelBitsPerRecordingUnit = 2760 + ChannelBitsPerPhysicalCluster + 1104;
     public const double ChannelBitLengthNm = 74.5;
     public const double NominalTrackPitchMicrometers = 0.320;
-    public long ContentLength => checked((long)TotalSectors * BytesPerSector);
+    public uint OutputSectors => UsableSectors ?? TotalSectors;
+    public long ContentLength => checked((long)OutputSectors * BytesPerSector);
+    public double OutputOuterRadiusMm => OutputSectors == TotalSectors ? OuterRadiusMm
+        : new BluRayTrackGeometry(this).AtSector(OutputSectors).RadiusMm;
     public bool HasVariablePitch => PitchLinear != 0 || PitchQuadratic != 0 || PitchCubic != 0;
 
     public void Validate()
@@ -33,6 +37,8 @@ public sealed record BluRayDiscParameters(
         if (TotalSectors == 0 || TotalSectors % SectorsPerCluster != 0 || TotalSectors > SectorsPerLayer)
             throw new ArgumentOutOfRangeException(nameof(TotalSectors),
                 $"BD-R total sectors must be a positive multiple of 32, no greater than {SectorsPerLayer}.");
+        if (OutputSectors == 0 || OutputSectors > TotalSectors || OutputSectors % SectorsPerCluster != 0)
+            throw new ArgumentOutOfRangeException(nameof(UsableSectors), "BD-R output sectors must be a positive multiple of 32 within the geometry.");
         if (!double.IsFinite(InnerRadiusMm) || !double.IsFinite(OuterRadiusMm)
             || InnerRadiusMm <= 0 || OuterRadiusMm <= InnerRadiusMm || OuterRadiusMm > 60)
             throw new ArgumentOutOfRangeException(nameof(OuterRadiusMm), "BD-R radii must satisfy 0 < inner < outer <= 60 mm.");
@@ -57,10 +63,15 @@ public sealed record BluRayDiscPreset(string Id, string DisplayName, int LayerCo
     string? Contributor = null)
 {
     public uint TotalSectors => Geometry?.TotalSectors ?? checked(BluRayDiscParameters.SectorsPerLayer * (uint)LayerCount);
-    public long ContentLength => (long)TotalSectors * BluRayDiscParameters.BytesPerSector;
+    public uint? UsableSectors => Geometry?.UsableSectors;
+    public uint ResolvedUsableSectors => ResolveUsableSectors(TotalSectors, UsableSectors);
+    public long ContentLength => (long)ResolvedUsableSectors * BluRayDiscParameters.BytesPerSector;
+    public static uint ResolveUsableSectors(uint totalSectors, uint? usableSectors = null)
+        => usableSectors ?? totalSectors / 32 * 32;
     public bool IsUserPreset => Geometry is not null && !IsCustom
         && !BuiltIn.Any(preset => preset.Id.Equals(Id, StringComparison.OrdinalIgnoreCase));
-    public BluRayDiscParameters CreateParameters() => Geometry ?? new(TotalSectors, LayerCount);
+    public BluRayDiscParameters CreateParameters()
+        => (Geometry ?? new(TotalSectors, LayerCount)) with { UsableSectors = ResolvedUsableSectors };
 
     public static BluRayDiscPreset Manual { get; } = new("__manual__", "自定义参数（未保存）", 1, IsCustom: true);
 

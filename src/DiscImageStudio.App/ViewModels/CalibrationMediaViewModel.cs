@@ -50,7 +50,8 @@ public partial class CalibrationViewModel
                     return;
                 }
 
-                long sectors = await _shell.OpticalBurner.GetMediaSectorCountAsync(selected.Id, kind, token);
+                OpticalMediaCapacity capacity = await _shell.OpticalBurner.GetMediaCapacityAsync(selected.Id, kind, token);
+                long sectors = capacity.TotalSectors;
                 token.ThrowIfCancellationRequested();
                 if (family != SelectedDiscType || SelectedCapacityRecorder?.Id != selected.Id)
                 {
@@ -61,14 +62,37 @@ public partial class CalibrationViewModel
                     && (sectors > BluRay.BluRayDiscParameters.SectorsPerLayer || sectors % BluRay.BluRayDiscParameters.SectorsPerCluster != 0)))
                     throw new InvalidOperationException(L.Format("CalibrationMedia.UnsupportedCapacity", sectors, family));
 
+                long writable = capacity.WritableSectors;
+                if (writable < 0 || writable > sectors)
+                    throw new InvalidOperationException(L.Format("CalibrationMedia.UnsupportedCapacity", writable, family));
+                // Keep the reported geometry unchanged. Only the output limit is
+                // rounded down to complete encoding blocks.
+                int alignment = family switch { "DVD" => 16, "BD" => 32, _ => 1 };
+                writable -= writable % alignment;
+
                 string value = sectors.ToString(CultureInfo.InvariantCulture);
+                // Recorded media can still describe geometry for a future blank
+                // disc. An empty limit uses the documented estimate; zero must
+                // not be presented as a measured capacity for that new disc.
+                string usable = writable == 0 ? string.Empty : writable.ToString(CultureInfo.InvariantCulture);
                 switch (family)
                 {
-                    case "DVD": Parameters.DvdTotalSectors = value; break;
-                    case "BD": Parameters.BdTotalSectors = value; break;
-                    default: Parameters.CdSectors = value; break;
+                    case "DVD":
+                        Parameters.DvdTotalSectors = value;
+                        Parameters.DvdUsableSectors = usable;
+                        break;
+                    case "BD":
+                        Parameters.BdTotalSectors = value;
+                        Parameters.BdUsableSectors = usable;
+                        break;
+                    default:
+                        Parameters.CdSectors = value;
+                        Parameters.CdUsableSectors = usable;
+                        break;
                 }
-                _statusMessage = CapacityStatus = L.Format("CalibrationMedia.Read", selected.DisplayName, family, sectors);
+                _statusMessage = CapacityStatus = writable == 0
+                    ? L.Format("CalibrationMedia.ReadGeometryOnly", selected.DisplayName, family, sectors)
+                    : L.Format("CalibrationMedia.Read", selected.DisplayName, family, sectors, writable);
             }
             catch (OperationCanceledException)
             {

@@ -105,9 +105,9 @@ internal static class CalibrationBurnWorkflowTests
         // recorder. This test never creates a burner or calls BurnAsync.
         DiscParametersState state = new()
         {
-            CdInnerRadius = "24.5", CdOuterRadius = "56.8", CdSectors = "8",
+            CdInnerRadius = "24.5", CdOuterRadius = "56.8", CdSectors = "8", CdUsableSectors = "8",
             CdInterleave = interleave, CdImagePath = "unused-image-must-not-be-read.png",
-            DvdInnerRadius = "24.5", DvdOuterRadius = "56.8", DvdTotalSectors = "16",
+            DvdInnerRadius = "24.5", DvdOuterRadius = "56.8", DvdTotalSectors = "16", DvdUsableSectors = "16",
             DvdImagePath = "unused-dvd-image-must-not-be-read.png",
             DvdDataDirectory = "unused-folder-must-not-be-read",
             BdInnerRadius = "24.0", BdOuterRadius = "58.0", BdTotalSectors = "64",
@@ -149,10 +149,12 @@ internal static class CalibrationBurnWorkflowTests
         state.CdInnerRadius = "25.2";
         state.CdOuterRadius = "57.3";
         state.CdSectors = "32";
+        state.CdUsableSectors = "32";
         state.CdInterleave = !interleave;
         state.DvdInnerRadius = "25.2";
         state.DvdOuterRadius = "57.3";
         state.DvdTotalSectors = "32";
+        state.DvdUsableSectors = "32";
         state.BdInnerRadius = "25.2";
         state.BdOuterRadius = "57.3";
         state.BdInvertMapping = true;
@@ -193,7 +195,7 @@ internal static class CalibrationBurnWorkflowTests
         MethodInfo factory = typeof(BurnViewModel).GetMethod("CreateCalibrationBurnRequest",
             BindingFlags.NonPublic | BindingFlags.Static)
             ?? throw new InvalidOperationException("Calibration burn request factory was not found.");
-        return (OpticalBurnRequest)(factory.Invoke(null, [target, interleave, "memory-only-test-device", speed])
+        return (OpticalBurnRequest)(factory.Invoke(null, [target, interleave, "memory-only-test-device", speed, null])
             ?? throw new InvalidOperationException("Calibration burn request factory returned no request."));
     }
 

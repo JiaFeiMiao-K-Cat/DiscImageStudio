@@ -30,11 +30,11 @@ public static class CalibrationWideBandPattern
             || parameters.Sectors <= 0 || parameters.Sectors > uint.MaxValue || parameters.OuterRadiusMm > 60)
             return false;
         long unit = parameters.Kind == CalibrationDiscKind.BluRay ? CalibrationParameters.BluRaySectorsPerCluster : 1;
-        long end = parameters.DrawingEndSectorExclusive == 0 ? parameters.Sectors : parameters.DrawingEndSectorExclusive;
+        long end = parameters.EffectiveDrawingEndSectorExclusive;
         long length = end - parameters.DrawingStartSector;
         // At least one complete unit of light must remain after the 95.5% edge.
         // A short isolated patch cannot safely estimate both full-track endpoints.
-        return parameters.Sectors % (parameters.Kind == CalibrationDiscKind.Dvd ? 16 : unit) == 0
+        return parameters.OutputSectors % (parameters.Kind == CalibrationDiscKind.Dvd ? 16 : unit) == 0
             && parameters.DrawingStartSector % unit == 0 && end % unit == 0
             && length / unit >= 23 && length >= .30 * parameters.Sectors;
     }
@@ -43,7 +43,7 @@ public static class CalibrationWideBandPattern
         IReadOnlyList<CalibrationAddressBand> bands)
     {
         long unit = p.Kind == CalibrationDiscKind.BluRay ? CalibrationParameters.BluRaySectorsPerCluster : 1;
-        long end = p.DrawingEndSectorExclusive == 0 ? p.Sectors : p.DrawingEndSectorExclusive;
+        long end = p.EffectiveDrawingEndSectorExclusive;
         long units = (end - p.DrawingStartSector) / unit;
         return Array.AsReadOnly(bands.Select(band =>
         {
@@ -64,7 +64,7 @@ public static class CalibrationWideBandPattern
         if (!Supports(p) || p.InnerRadiusMm < 7.5 || p.OuterRadiusMm > 60 || p.OuterRadiusMm <= p.InnerRadiusMm)
             return false;
         double q0 = p.DrawingStartSector / (double)p.Sectors;
-        double qLength = (p.DrawingEndSectorExclusive == 0 ? 1 : p.DrawingEndSectorExclusive / (double)p.Sectors) - q0;
+        double qLength = p.EffectiveDrawingEndSectorExclusive / (double)p.Sectors - q0;
         // Bound the radial guard strips, the space for the optical lobe, and the number
         // of carrier cycles. CD/DVD/BD recordable presets lie comfortably inside this range.
         double r2 = p.InnerRadiusMm * p.InnerRadiusMm;

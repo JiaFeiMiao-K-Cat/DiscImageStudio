@@ -40,11 +40,11 @@ public static class DvdImageGenerator
             format = "dvd-calibration-payload-v1",
             sourceImage = "calibration",
             startLba = 0,
-            fillSectors = options.TotalSectors,
+            fillSectors = options.OutputSectors,
             totalSectors = options.TotalSectors,
             readCompatibility = options.ReadCompatibility ? "bridge-9b-v1" : "off",
             compatibilityChanges = summary.CompatibilityChanges,
-            imageMapping = DvdStreamingGenerator.CreateSolveOptions(options, 0, options.TotalSectors).ImageMapping,
+            imageMapping = DvdStreamingGenerator.CreateSolveOptions(options, 0, options.OutputSectors).ImageMapping,
         };
         File.WriteAllText(path + ".json", JsonSerializer.Serialize(metadata, new JsonSerializerOptions
         {
@@ -72,7 +72,7 @@ public static class DvdImageGenerator
             request.DataDirectory!, request.Options, request.VolumeLabel, request.FilesAtOuterRing) : null;
         cancellationToken.ThrowIfCancellationRequested();
         MultiBlockSolveOptions options = DvdStreamingGenerator.CreateSolveOptions(request.Options,
-            plan?.DrawingStartLba ?? 0, plan?.DrawingSectors ?? request.Options.TotalSectors);
+            plan?.DrawingStartLba ?? 0, plan?.DrawingSectors ?? request.Options.OutputSectors);
         // The historical fast CLI records 64 even though this setting is not used
         // by dispersion. Keep the sidecar schema and values identical.
         options = options with

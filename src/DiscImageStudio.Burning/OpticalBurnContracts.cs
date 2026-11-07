@@ -27,6 +27,12 @@ public sealed record OpticalBurnDevice(
     string DisplayName,
     IReadOnlyList<string> VolumePaths);
 
+/// <summary>
+/// The medium's geometry extent and the current write limit are separate values.
+/// WritableSectors is a payload limit, not a replacement for geometry or filesystem free space.
+/// </summary>
+public sealed record OpticalMediaCapacity(long TotalSectors, long WritableSectors);
+
 public sealed record OpticalWriteSpeed(
     int SectorsPerSecond,
     bool RotationTypeIsPureCav)
@@ -121,6 +127,12 @@ public interface IOpticalDiscBurner
     /// <summary>Read the loaded medium's total sector count without preparing it for writing.</summary>
     Task<long> GetMediaSectorCountAsync(string deviceId, OpticalBurnMediaKind mediaKind,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Read geometry and writable payload capacity without preparing or formatting media.
+    /// A total-only implementation cannot safely infer the writable payload limit.</summary>
+    Task<OpticalMediaCapacity> GetMediaCapacityAsync(string deviceId, OpticalBurnMediaKind mediaKind,
+        CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("This recorder does not expose writable media capacity.");
 
     Task<IReadOnlyList<OpticalWriteSpeed>> GetSupportedWriteSpeedsAsync(
         string deviceId,

@@ -23,7 +23,9 @@ public sealed record CdDiscPresetDefinition(
     string? Contributor = null,
     double PitchLinear = 0,
     double PitchQuadratic = 0,
-    double PitchCubic = 0);
+    double PitchCubic = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    long? UsableSectors = null);
 
 public sealed record DvdDiscPresetDefinition(
     string Id,
@@ -43,7 +45,9 @@ public sealed record DvdDiscPresetDefinition(
     double PitchQuadratic = 0,
     double PitchCubic = 0,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    string? Contributor = null);
+    string? Contributor = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    uint? UsableSectors = null);
 
 public sealed record BluRayDiscPresetDefinition(
     string Id,
@@ -61,7 +65,9 @@ public sealed record BluRayDiscPresetDefinition(
     string? Contributor = null,
     double PitchLinear = 0,
     double PitchQuadratic = 0,
-    double PitchCubic = 0);
+    double PitchCubic = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    uint? UsableSectors = null);
 
 public sealed record DiscPresetJsonDocument(
     int SchemaVersion,
@@ -341,6 +347,7 @@ public static class DiscPresetJsonStore
                 throw InvalidValue(preset.Id, "sectors", $"必须大于 0");
             }
 
+            ValidateUsableSectors(preset.Id, preset.Sectors, preset.UsableSectors, 1);
             ValidateRadiusRange(preset.Id, preset.InnerRadiusMm, preset.OuterRadiusMm);
             ValidatePitch(preset.Id, preset.PitchLinear, preset.PitchQuadratic, preset.PitchCubic);
             ValidatePositiveFinite(
@@ -374,11 +381,7 @@ public static class DiscPresetJsonStore
                 throw InvalidValue(preset.Id, "totalSectors", $"必须大于 0");
             }
 
-            if (preset.TotalSectors % 16 != 0)
-            {
-                throw InvalidValue(preset.Id, "totalSectors", $"必须是 16 的倍数");
-            }
-
+            ValidateUsableSectors(preset.Id, preset.TotalSectors, preset.UsableSectors, 16);
             ValidateRadiusRange(preset.Id, preset.InnerRadiusMm, preset.OuterRadiusMm);
             ValidatePitch(preset.Id, preset.PitchLinear, preset.PitchQuadratic, preset.PitchCubic);
             ValidatePositiveFinite(preset.Id, "channelBitLengthNm", preset.ChannelBitLengthNm);
@@ -408,12 +411,21 @@ public static class DiscPresetJsonStore
                     $"必须是 32 的倍数且不超过 {ProjectDocument.BluRaySectorsPerLayer:N0}");
             }
 
+            ValidateUsableSectors(preset.Id, preset.TotalSectors, preset.UsableSectors, 32);
             ValidateRadiusRange(preset.Id, preset.InnerRadiusMm, preset.OuterRadiusMm);
             ValidatePitch(preset.Id, preset.PitchLinear, preset.PitchQuadratic, preset.PitchCubic);
             if (preset.OuterRadiusMm > 60)
             {
                 throw InvalidValue(preset.Id, "outerRadiusMm", $"不能超过 60");
             }
+        }
+    }
+
+    private static void ValidateUsableSectors(string presetId, long total, long? usable, int alignment)
+    {
+        if (usable is { } value && (value <= 0 || value > total || value % alignment != 0))
+        {
+            throw InvalidValue(presetId, "usableSectors", $"必须大于 0、不超过总扇区数，且是 {alignment} 的倍数");
         }
     }
 

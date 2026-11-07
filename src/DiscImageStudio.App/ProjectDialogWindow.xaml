@@ -235,8 +235,13 @@
                                         <TextBox Text="{Binding OuterRadiusText, UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
                                     <StackPanel Width="116" Margin="0,0,12,14">
-                                        <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.Sectors}" />
+                                        <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.GeometryTotalSectors}" />
                                         <TextBox Text="{Binding SectorsText, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                    <StackPanel Width="116" Margin="0,0,12,14">
+                                        <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.UsableSectors}" />
+                                        <TextBox Text="{Binding UsableSectorsText, UpdateSourceTrigger=PropertyChanged}"
+                                                 ToolTip="{loc:Text Xaml.UsableSectorsHint}" />
                                     </StackPanel>
                                     <StackPanel Width="124" Margin="0,0,16,14"
                                                 Visibility="Visible">

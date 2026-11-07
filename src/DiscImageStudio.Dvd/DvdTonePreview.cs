@@ -21,8 +21,8 @@ public static class DvdTonePreview
     {
         ArgumentNullException.ThrowIfNull(options);
         options.Validate();
-        uint drawingEnd = drawingEndLbaExclusive ?? options.TotalSectors;
-        if (drawingStartLba >= drawingEnd || drawingEnd > options.TotalSectors)
+        uint drawingEnd = drawingEndLbaExclusive ?? options.OutputSectors;
+        if (drawingStartLba >= drawingEnd || drawingEnd > options.OutputSectors)
             throw new ArgumentOutOfRangeException(nameof(drawingEndLbaExclusive),
                 "The drawing range must lie inside the disc.");
         CalibrationPreviewOptions preview = new(
@@ -45,7 +45,9 @@ public static class DvdTonePreview
             options.PitchLinear,
             options.PitchQuadratic,
             options.PitchCubic,
-            options.Tone);
+            options.Tone,
+            SourceImageOuterRadiusMm: options.SamplingImageOuterRadiusMm,
+            PreviewOuterRadiusMm: options.OutputOuterRadiusMm);
         return CalibrationPreviewRenderer.Render(
             imagePath,
             outputPath,

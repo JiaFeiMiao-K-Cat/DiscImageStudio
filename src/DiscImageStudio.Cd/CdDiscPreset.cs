@@ -13,8 +13,15 @@ public sealed record CdDiscPreset(
     string? Contributor = null,
     double PitchLinear = 0,
     double PitchQuadratic = 0,
-    double PitchCubic = 0)
+    double PitchCubic = 0,
+    long? UsableSectors = null)
 {
+    public long ResolvedUsableSectors => ResolveUsableSectors(Sectors, UsableSectors);
+
+    // Legacy presets reserve two sectors so the same output also fits TAO recording.
+    public static long ResolveUsableSectors(long totalSectors, long? usableSectors = null)
+        => usableSectors ?? (totalSectors > 2 ? totalSectors - 2 : 0);
+
     public static CdDiscPreset Manual { get; } = new(
         "__manual__",
         "自定义参数（未保存）",

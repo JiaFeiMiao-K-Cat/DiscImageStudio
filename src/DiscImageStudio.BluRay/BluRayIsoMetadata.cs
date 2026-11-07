@@ -28,7 +28,8 @@ public sealed record BluRayIsoMetadata(
     bool FilesAtOuterRing = false,
     double PitchLinear = 0,
     double PitchQuadratic = 0,
-    double PitchCubic = 0)
+    double PitchCubic = 0,
+    uint? UsableSectors = null)
 {
     public const string FormatName = "bd-r-image-v1";
 
@@ -36,7 +37,10 @@ public sealed record BluRayIsoMetadata(
     public string Format { get; init; } = FormatName;
 
     [JsonIgnore]
-    public long ContentLength => checked((long)TotalSectors * BluRayDiscParameters.BytesPerSector);
+    public uint OutputSectors => UsableSectors ?? TotalSectors;
+
+    [JsonIgnore]
+    public long ContentLength => checked((long)OutputSectors * BluRayDiscParameters.BytesPerSector);
 
     public static BluRayIsoMetadata FromPlan(BluRayIsoPlan plan, string sourceImage,
         string outputIso, bool invertMapping, ToneProfile tone, DateTimeOffset generatedUtc)
@@ -44,7 +48,7 @@ public sealed record BluRayIsoMetadata(
             Path.GetFullPath(sourceImage),
             Path.GetFullPath(outputIso),
             plan.ContentLength,
-            plan.TotalSectors,
+            plan.Disc.TotalSectors,
             plan.Disc.InnerRadiusMm,
             plan.Disc.OuterRadiusMm,
             invertMapping,
@@ -58,7 +62,7 @@ public sealed record BluRayIsoMetadata(
             plan.UdfTimestamp,
             generatedUtc,
             plan.FilesAtOuterRing,
-            plan.Disc.PitchLinear, plan.Disc.PitchQuadratic, plan.Disc.PitchCubic);
+            plan.Disc.PitchLinear, plan.Disc.PitchQuadratic, plan.Disc.PitchCubic, plan.Disc.UsableSectors);
 
     public static string PathFor(string isoPath) => isoPath + ".json";
 
@@ -108,6 +112,8 @@ public sealed record BluRayIsoMetadata(
             throw new InvalidDataException("BD sidecar sectors must be a 32-aligned single-layer size.");
         }
 
+        if (OutputSectors == 0 || OutputSectors > TotalSectors || OutputSectors % BluRayDiscParameters.SectorsPerCluster != 0)
+            throw new InvalidDataException("BD sidecar output sectors must be a 32-aligned range within the geometry.");
         if (!double.IsFinite(InnerRadiusMm) || !double.IsFinite(OuterRadiusMm)
             || InnerRadiusMm <= 0 || OuterRadiusMm <= InnerRadiusMm || OuterRadiusMm > 60)
         {
@@ -115,7 +121,7 @@ public sealed record BluRayIsoMetadata(
         }
 
         if (DrawingStartSector >= DrawingEndSectorExclusive
-            || DrawingEndSectorExclusive > TotalSectors)
+            || DrawingEndSectorExclusive > OutputSectors)
         {
             throw new InvalidDataException("BD sidecar drawing bounds are invalid.");
         }

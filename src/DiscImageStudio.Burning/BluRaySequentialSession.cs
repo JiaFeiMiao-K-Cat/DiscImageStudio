@@ -13,7 +13,8 @@ internal sealed record BluRaySequentialMediaInfo(
     uint FreeBlocks,
     uint TrackSize,
     uint MaximumBlocks,
-    int TrackNumber);
+    int TrackNumber,
+    int SpareClusters = 0);
 
 internal interface IBluRaySequentialSession : IDisposable
 {

@@ -18,22 +18,22 @@
     "cs": "Načíst z disku"
   },
   "CalibrationMedia.ReadHint": {
-    "zh-CN": "读取所选盘型的盘片总扇区数，填入新标靶参数。",
-    "zh-TW": "讀取所選碟型的光碟總磁區數，填入新標靶參數。",
-    "en": "Read the loaded disc’s total sector count for the new target.",
-    "ja": "選択した種類のディスクから総セクター数を読み取り、新しいターゲットに使用します。",
-    "tr": "Yeni hedef için takılı diskin toplam sektör sayısını okuyun.",
-    "es": "Lea el número total de sectores del disco insertado para el nuevo patrón.",
-    "cs": "Načtěte celkový počet sektorů vloženého disku pro nový terč."
+    "zh-CN": "读取盘片的几何总扇区数和当前可用扇区数，填入新标靶参数。",
+    "zh-TW": "讀取光碟的幾何總磁區數和目前可用磁區數，填入新標靶參數。",
+    "en": "Read the disc’s geometry sector count and current writable capacity for the new target.",
+    "ja": "ディスクの幾何学上の総セクター数と現在書き込み可能なセクター数を読み取り、新しいターゲットに使用します。",
+    "tr": "Yeni hedef için diskin geometrik toplam sektör sayısını ve mevcut yazılabilir kapasitesini okuyun.",
+    "es": "Lea el total de sectores de la geometría del disco y su capacidad de escritura actual para el nuevo patrón.",
+    "cs": "Načtěte celkový počet sektorů geometrie disku a aktuální zapisovatelnou kapacitu pro nový terč."
   },
   "CalibrationMedia.Reading": {
-    "zh-CN": "正在读取盘片总扇区数…",
-    "zh-TW": "正在讀取光碟總磁區數…",
-    "en": "Reading total sectors from the disc…",
-    "ja": "ディスクの総セクター数を読み取り中…",
-    "tr": "Diskin toplam sektör sayısı okunuyor…",
-    "es": "Leyendo el número total de sectores del disco…",
-    "cs": "Načítání celkového počtu sektorů disku…"
+    "zh-CN": "正在读取盘片总扇区数和可用扇区数…",
+    "zh-TW": "正在讀取光碟總磁區數和可用磁區數…",
+    "en": "Reading total and writable sectors from the disc…",
+    "ja": "ディスクの総セクター数と書き込み可能なセクター数を読み取り中…",
+    "tr": "Diskin toplam ve yazılabilir sektör sayıları okunuyor…",
+    "es": "Leyendo el total de sectores y los sectores disponibles para escritura del disco…",
+    "cs": "Načítání celkového počtu a počtu zapisovatelných sektorů disku…"
   },
   "CalibrationMedia.NoDevices": {
     "zh-CN": "未检测到刻录机。连接刻录机后可重新读取，也可手动填写扇区数。",
@@ -72,13 +72,26 @@
     "cs": "Načteno {0:N0} sektorů, mimo podporovaný rozsah kalibrace pro {1}."
   },
   "CalibrationMedia.Read": {
-    "zh-CN": "{0} · {1}，已填入 {2:N0} 扇区。",
-    "zh-TW": "{0} · {1}，已填入 {2:N0} 磁區。",
-    "en": "{0} · {1}. Entered {2:N0} sectors.",
-    "ja": "{0} · {1}、{2:N0} セクターを入力しました。",
-    "tr": "{0} · {1}. {2:N0} sektör girildi.",
-    "es": "{0} · {1}. Se han introducido {2:N0} sectores.",
-    "cs": "{0} · {1}. Zadáno {2:N0} sektorů."
+    "zh-CN": "{0} · {1}，已填入总扇区 {2:N0}、可用扇区 {3:N0}。",
+    "zh-TW": "{0} · {1}，已填入總磁區 {2:N0}、可用磁區 {3:N0}。",
+    "en": "{0} · {1}. Entered {2:N0} total sectors and {3:N0} usable sectors.",
+    "ja": "{0} · {1}、総セクター数 {2:N0}、使用可能なセクター数 {3:N0} を入力しました。",
+    "tr": "{0} · {1}. Toplam {2:N0} sektör ve {3:N0} kullanılabilir sektör girildi.",
+    "es": "{0} · {1}. Se han introducido {2:N0} sectores totales y {3:N0} sectores utilizables.",
+    "cs": "{0} · {1}. Zadáno celkem {2:N0} sektorů a {3:N0} využitelných sektorů."
+  },
+  "CalibrationMedia.ReadGeometryOnly": {
+    "zh-CN": "{0} · {1}，已填入几何总扇区 {2:N0}。当前盘片无可写容量；新标靶的可用扇区按缺省值估算。",
+    "zh-TW": "{0} · {1}，已填入幾何總磁區 {2:N0}。目前光碟無可寫容量；新標靶的可用磁區按預設值估算。",
+    "en": "{0} · {1}. Entered {2:N0} geometry sectors. This disc has no writable capacity; usable sectors for a new target use the default estimate."
+  },
+  "光驱未报告有效的 CD 容量。": {
+    "zh-CN": "光驱未报告有效的 CD 容量。",
+    "en": "The drive did not report a valid CD capacity."
+  },
+  "光驱报告的 DVD 可写容量无效。": {
+    "zh-CN": "光驱报告的 DVD 可写容量无效。",
+    "en": "The drive reported an invalid writable DVD capacity."
   },
   "CalibrationMedia.Failed": {
     "zh-CN": "读取失败。{0}",

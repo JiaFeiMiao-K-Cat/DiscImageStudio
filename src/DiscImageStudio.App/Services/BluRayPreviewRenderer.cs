@@ -34,6 +34,7 @@ public static class BluRayPreviewRenderer
         cancellationToken.ThrowIfCancellationRequested();
         BluRayGray8Raster source = BluRayImageLoader.Load(sourcePath, tone, cancellationToken);
         BluRayTrackGeometry geometry = new(disc);
+        double imageOuterRadiusMm = disc.OutputOuterRadiusMm;
         PixelProjection projection = new(disc, outputSize);
         byte[] pixels = new byte[checked(outputSize * outputSize * 4)];
         for (int y = 0; y < outputSize; y++)
@@ -43,7 +44,7 @@ public static class BluRayPreviewRenderer
             {
                 if (!projection.TryGetSector(x, y, out double sector)) continue;
                 BluRayTrackPoint point = geometry.AtSector(sector);
-                bool dark = source.SampleDiscPoint(point.Xmm, point.Ymm, disc.OuterRadiusMm) < 128;
+                bool dark = source.SampleDiscPoint(point.Xmm, point.Ymm, imageOuterRadiusMm) < 128;
                 SetPixel(pixels, (y * outputSize) + x, dark != invert ? (byte)0 : (byte)255);
             }
         }
@@ -59,11 +60,12 @@ public static class BluRayPreviewRenderer
         ArgumentNullException.ThrowIfNull(generated);
         generated.Validate();
         Validate(actual, outputSize);
-        if (drawingStartSector >= drawingEndSectorExclusive || drawingEndSectorExclusive > generated.TotalSectors)
+        if (drawingStartSector >= drawingEndSectorExclusive || drawingEndSectorExclusive > generated.OutputSectors)
             throw new ArgumentOutOfRangeException(nameof(drawingEndSectorExclusive), "The drawing range must lie inside the generated disc.");
         cancellationToken.ThrowIfCancellationRequested();
         BluRayGray8Raster source = BluRayImageLoader.Load(sourcePath, tone, cancellationToken);
         BluRayTrackGeometry sourceGeometry = new(generated);
+        double imageOuterRadiusMm = generated.OutputOuterRadiusMm;
         PixelProjection projection = new(actual, outputSize);
         byte[] pixels = new byte[checked(outputSize * outputSize * 4)];
         for (int y = 0; y < outputSize; y++)
@@ -76,7 +78,7 @@ public static class BluRayPreviewRenderer
                 if (sector >= drawingStartSector && sector < drawingEndSectorExclusive)
                 {
                     BluRayTrackPoint point = sourceGeometry.AtSector(sector);
-                    bool dark = source.SampleDiscPoint(point.Xmm, point.Ymm, generated.OuterRadiusMm) < 128;
+                    bool dark = source.SampleDiscPoint(point.Xmm, point.Ymm, imageOuterRadiusMm) < 128;
                     level = dark != invert ? (byte)0 : (byte)255;
                 }
                 SetPixel(pixels, y * outputSize + x, level);
@@ -95,8 +97,8 @@ public static class BluRayPreviewRenderer
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(isoPath);
         Validate(actual, outputSize);
-        uint drawingEnd = drawingEndSectorExclusive ?? actual.TotalSectors;
-        if (drawingStartSector >= drawingEnd || drawingEnd > actual.TotalSectors)
+        uint drawingEnd = drawingEndSectorExclusive ?? actual.OutputSectors;
+        if (drawingStartSector >= drawingEnd || drawingEnd > actual.OutputSectors)
             throw new ArgumentOutOfRangeException(nameof(drawingEndSectorExclusive), "The drawing range must lie inside the disc.");
         cancellationToken.ThrowIfCancellationRequested();
         using FileStream source = new(Path.GetFullPath(isoPath), FileMode.Open, FileAccess.Read,
@@ -261,6 +263,7 @@ public static class BluRayPreviewRenderer
         private readonly BluRayDiscParameters _disc;
         private readonly int _size;
         private readonly double _mmPerPixel;
+        private readonly double _outputOuterRadiusMm;
         private readonly double _growth;
         private readonly double _innerPrimitive;
         private readonly double _sectorsPerMm;
@@ -271,7 +274,8 @@ public static class BluRayPreviewRenderer
         {
             _disc = disc;
             _size = size;
-            _mmPerPixel = disc.OuterRadiusMm * 2 / size;
+            _outputOuterRadiusMm = disc.OutputOuterRadiusMm;
+            _mmPerPixel = _outputOuterRadiusMm * 2 / size;
             BluRayTrackGeometry geometry = new(disc);
             _variableGeometry = disc.HasVariablePitch ? geometry : null;
             _growth = geometry.EffectiveTrackPitchMicrometers / (2 * Math.PI * 1000);
@@ -285,16 +289,17 @@ public static class BluRayPreviewRenderer
             double x = (pixelX + 0.5 - _size / 2.0) * _mmPerPixel;
             double y = (_size / 2.0 - pixelY - 0.5) * _mmPerPixel;
             if (_variableGeometry is not null)
-                return _variableGeometry.TryGetSectorAtPoint(x, y, out sector);
+                return _variableGeometry.TryGetSectorAtPoint(x, y, out sector)
+                    && sector < _disc.OutputSectors;
             double radius = Math.Sqrt(x * x + y * y);
             sector = 0;
-            if (radius < _disc.InnerRadiusMm || radius >= _disc.OuterRadiusMm) return false;
+            if (radius < _disc.InnerRadiusMm || radius >= _outputOuterRadiusMm) return false;
             double spiralAngle = _angleOffset - (radius - _disc.InnerRadiusMm) / _growth;
             double difference = Math.IEEERemainder(Math.Atan2(y, x) - spiralAngle, 2 * Math.PI);
             double nearestRadius = radius - difference * _growth;
-            if (nearestRadius < _disc.InnerRadiusMm || nearestRadius >= _disc.OuterRadiusMm) return false;
+            if (nearestRadius < _disc.InnerRadiusMm || nearestRadius >= _outputOuterRadiusMm) return false;
             sector = Math.Clamp((Primitive(nearestRadius) - _innerPrimitive) * _sectorsPerMm,
-                0, Math.BitDecrement((double)_disc.TotalSectors));
+                0, Math.BitDecrement((double)_disc.OutputSectors));
             return true;
         }
 

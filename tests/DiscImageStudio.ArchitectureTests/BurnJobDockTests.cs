@@ -41,6 +41,7 @@ internal static class BurnJobDockTests
             shell.NavigateTo(Workspace.Calibration);
             Require(!shell.IsProjectOpen && shell.IsJobDockVisible, "standalone calibration has the shared dock");
             shell.Calibration.Parameters.BdTotalSectors = "64";
+            shell.Calibration.Parameters.BdUsableSectors = "64";
             shell.Calibration.SelectedDiscType = "BD";
             shell.Calibration.SelectFineModeCommand.Execute(null);
             shell.Calibration.EnsureTarget();
@@ -241,6 +242,9 @@ internal static class BurnJobDockTests
 
         public Task<long> GetMediaSectorCountAsync(string deviceId, OpticalBurnMediaKind mediaKind,
             CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
+        public Task<OpticalMediaCapacity> GetMediaCapacityAsync(string deviceId, OpticalBurnMediaKind mediaKind,
+            CancellationToken cancellationToken = default) => Task.FromResult(new OpticalMediaCapacity(64, 64));
 
         public Task<IReadOnlyList<OpticalWriteSpeed>> GetSupportedWriteSpeedsAsync(string deviceId,
             OpticalBurnMediaKind mediaKind, CancellationToken cancellationToken = default)

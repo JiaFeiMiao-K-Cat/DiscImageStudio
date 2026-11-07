@@ -13,6 +13,7 @@ internal sealed class CdImageSampler
     private readonly double _innerSquared;
     private readonly double _radiusSquaredRange;
     private readonly double _angleScale;
+    private readonly double _imageOuterRadius;
     private readonly DvdTrackGeometry? _geometry;
     private readonly CalibrationTarget? _referenceTarget;
     private readonly double _referenceInnerBoundary;
@@ -50,6 +51,7 @@ internal sealed class CdImageSampler
     private CdImageSampler(CdDiscParameters parameters)
     {
         _parameters = parameters;
+        _imageOuterRadius = parameters.SamplingImageOuterRadiusMm;
         _geometry = parameters.VariablePitchGeometry;
         _innerSquared = parameters.InnerRadiusMm * parameters.InnerRadiusMm;
         _radiusSquaredRange = (parameters.OuterRadiusMm * parameters.OuterRadiusMm) - _innerSquared;
@@ -70,7 +72,7 @@ internal sealed class CdImageSampler
                 return _sampleGray(radius * Math.Cos(angle), radius * Math.Sin(angle));
             RasterImage image = _source!;
             double centre = image.Width / 2.0;
-            double pixelRadius = centre * radius / _parameters.ImageOuterRadiusMm;
+            double pixelRadius = centre * radius / _imageOuterRadius;
             return image.GrayAt(centre + pixelRadius * Math.Cos(angle), centre + pixelRadius * Math.Sin(angle));
         }
         if (_sampleGray is not null)
@@ -79,7 +81,7 @@ internal sealed class CdImageSampler
             return _sampleGray(radius * Math.Cos(theta), radius * Math.Sin(theta));
         }
         RasterImage source = _source!;
-        (double x, double y) = _parameters.ImagePointFromByte(globalByte, source.Width);
+        (double x, double y) = _parameters.SourceImagePointFromByte(globalByte, source.Width);
         return source.GrayAt(x, y);
     }
 
@@ -90,7 +92,7 @@ internal sealed class CdImageSampler
     {
         // Mode 1 payload order crosses CIRC delay columns. Its four positions
         // need not be consecutive, and out-of-track lanes keep scalar clamping.
-        ulong totalBytes = (ulong)_parameters.TotalBytes;
+        ulong totalBytes = (ulong)_parameters.GeometryBytes;
         if ((ulong)firstByte >= totalBytes || (ulong)secondByte >= totalBytes
             || (ulong)thirdByte >= totalBytes || (ulong)fourthByte >= totalBytes)
             return SampleFourScalar(firstByte, secondByte, thirdByte, fourthByte);
@@ -108,7 +110,7 @@ internal sealed class CdImageSampler
         }
         else
         {
-            Vector256<double> fraction = indices / Vector256.Create((double)_parameters.TotalBytes);
+            Vector256<double> fraction = indices / Vector256.Create((double)_parameters.GeometryBytes);
             radius = Vector256.Sqrt(Vector256.Create(_innerSquared)
                 + fraction * Vector256.Create(_radiusSquaredRange));
             angle = Vector256.Create(_parameters.StartAngleRadians)
@@ -137,7 +139,7 @@ internal sealed class CdImageSampler
         RasterImage source = _source!;
         double centre = source.Width / 2.0;
         Vector256<double> pixelRadius = Vector256.Create(centre) * radius
-            / Vector256.Create(_parameters.ImageOuterRadiusMm);
+            / Vector256.Create(_imageOuterRadius);
         Vector256<double> x = Vector256.Create(centre) + pixelRadius * cos;
         Vector256<double> y = Vector256.Create(centre) + pixelRadius * sin;
         ReadOnlySpan<long> positions = stackalloc long[] { firstByte, secondByte, thirdByte, fourthByte };

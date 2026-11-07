@@ -18,7 +18,8 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
     [
         new("preset", "BD-R preset", DiscOptionValueType.Choice, DefaultValue: "bd-r-sl-25gb",
             Choices: BluRayDiscPreset.BuiltIn.Select(preset => preset.Id).ToArray()),
-        new("total-sectors", "Disc total sectors", DiscOptionValueType.Integer, DefaultValue: "12219392"),
+        new("total-sectors", "Geometry total sectors", DiscOptionValueType.Integer, DefaultValue: "12219392"),
+        new("usable-sectors", "Output sectors within the geometry", DiscOptionValueType.Integer),
         new("r0", "Inner radius", DiscOptionValueType.Decimal, DefaultValue: "24", Unit: "mm"),
         new("r1", "Outer radius", DiscOptionValueType.Decimal, DefaultValue: "58", Unit: "mm"),
         new("start-angle", "Start angle", DiscOptionValueType.Decimal, DefaultValue: "0", Unit: "degrees"),
@@ -116,7 +117,9 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
             options.TryGetValue("start-angle", out string? angle) ? Number(angle, "start-angle") : defaults.StartAngleDegrees,
             options.TryGetValue("pitch-linear", out string? linear) ? Number(linear, "pitch-linear") : defaults.PitchLinear,
             options.TryGetValue("pitch-quadratic", out string? quadratic) ? Number(quadratic, "pitch-quadratic") : defaults.PitchQuadratic,
-            options.TryGetValue("pitch-cubic", out string? cubic) ? Number(cubic, "pitch-cubic") : defaults.PitchCubic);
+            options.TryGetValue("pitch-cubic", out string? cubic) ? Number(cubic, "pitch-cubic") : defaults.PitchCubic,
+            options.TryGetValue("usable-sectors", out string? usable) ? UInt(usable, "usable-sectors")
+                : options.ContainsKey("total-sectors") ? null : defaults.UsableSectors);
         disc.Validate();
         if (command.Name == "bd-info")
         {
@@ -184,7 +187,7 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
         }
 
         uint start = UInt(options.GetValueOrDefault("start-sector", "0"), "start-sector");
-        if (start >= disc.TotalSectors)
+        if (start >= disc.OutputSectors)
             throw new ArgumentOutOfRangeException("start-sector", "First sector must be inside the disc.");
         uint count = options.TryGetValue("sectors", out string? sectorCount) ? UInt(sectorCount, "sectors") : 32;
         BluRayStreamingOptions streaming = new(disc, start, count);
