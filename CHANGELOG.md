@@ -13,6 +13,7 @@
 - 影调与预览页的文件区叠加和对应图例同步改为主题蓝色；影调面板中的图例移到设计画布左下角，不再占用右侧轨道高度。
 - 设计页图层卡片移除上移／下移／删除按钮：排序继续使用拖拽，删除保留右键菜单与 Del 键；随盘文件的选择按钮文案统一为「浏览…」。
 - 移除「显示数据可能占用区域」开关，蓝色占用区引导改为默认始终显示。
+- 新增铼德 Excellent X DVD+RW 4× 内置预设（MID `RITEK-004-48`）：内半径 23.941751 mm、外半径 58.143818 mm、2,295,104 扇区，三项轨距系数取自 Discussions #191。该盘片已完成一次整盘 DVD+RW 覆写刻录，预设可用于同型号介质。
 
 ### English
 
@@ -25,6 +26,7 @@
 - The tone and preview pages now use the same theme blue for their file-region overlay and legend. The tone panel's legend moved to the design canvas bottom-left corner, so it no longer consumes right-rail height.
 - Removed the move-up, move-down, and delete buttons from the design layer card. Reordering stays on drag, and deletion remains available from the row menu and the Del key. The disc-file picker buttons now read "Browse…".
 - Removed the "Show data occupancy area" toggle; the blue guide is always visible.
+- Added a built-in preset for the RiTEK Excellent X DVD+RW 4× (MID `RITEK-004-48`): inner radius 23.941751 mm, outer radius 58.143818 mm, 2,295,104 sectors, with the three track-pitch coefficients contributed in Discussions #191. The same disc completed one full-disc DVD+RW overwrite burn.
 
 ## [1.5.0] - 2026-11-07
 

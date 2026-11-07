@@ -315,7 +315,7 @@ static void TestDiscPresets()
 {
     DiscPresetJsonDocument builtIn = DiscPresetJsonStore.LoadBuiltIn();
     Equal(4, builtIn.CdPresets.Count, "built-in CD preset count");
-    Equal(8, builtIn.DvdPresets.Count, "built-in DVD preset count");
+    Equal(9, builtIn.DvdPresets.Count, "built-in DVD preset count");
     Equal(5, builtIn.BluRayPresets!.Count, "built-in Blu-ray preset count");
     Equal("zh-CN", builtIn.FallbackLanguage!, "built-in preset fallback language");
     True(
@@ -454,6 +454,15 @@ static void TestDiscPresets()
     Equal(1.0507210681810583E-05, ritekDvdR.PitchQuadratic, "Ritek DVD-R E-Series quadratic pitch");
     Equal(-8.562064227346657E-06, ritekDvdR.PitchCubic, "Ritek DVD-R E-Series cubic pitch");
     True(ritekDvdR.Contributor == "bczhc", "Ritek DVD-R E-Series contributor is recorded");
+    DvdDiscPresetDefinition ritekDvdRw = builtIn.DvdPresets.Single(
+        value => value.Id == "ritek-dvd-plus-rw-4x");
+    Equal(2_295_104U, ritekDvdRw.TotalSectors, "Ritek DVD+RW 4x sectors");
+    Equal(23.94175055849737, ritekDvdRw.InnerRadiusMm, "Ritek DVD+RW 4x inner radius");
+    Equal(58.14381800018976, ritekDvdRw.OuterRadiusMm, "Ritek DVD+RW 4x outer radius");
+    Equal(2.527588772812498E-05, ritekDvdRw.PitchLinear, "Ritek DVD+RW 4x linear pitch");
+    Equal(-6.043471664833591E-06, ritekDvdRw.PitchQuadratic, "Ritek DVD+RW 4x quadratic pitch");
+    Equal(-8.489947530016172E-08, ritekDvdRw.PitchCubic, "Ritek DVD+RW 4x cubic pitch");
+    True(ritekDvdRw.Contributor == "FanJZSS", "Ritek DVD+RW 4x contributor is recorded");
     BluRayDiscPresetDefinition ritekBd12x = builtIn.BluRayPresets!.Single(
         value => value.Id == "bd-r-ritek-12x");
     Equal("铼德 BD-R 12x（实测）", ritekBd12x.DisplayName, "Ritek BD-R 12x preset name");
@@ -530,7 +539,7 @@ static void TestDiscPresetJson()
 
         DiscPresetJsonDocument merged = DiscPresetJsonStore.Merge(builtIn, created);
         Equal(5, merged.CdPresets.Count, "merged CD preset count");
-        Equal(9, merged.DvdPresets.Count, "merged DVD preset count");
+        Equal(10, merged.DvdPresets.Count, "merged DVD preset count");
         Equal(6, merged.BluRayPresets!.Count, "merged Blu-ray preset count");
         DvdDiscPresetDefinition verbatim = merged.DvdPresets.Single(
             value => value.Id == "verbatim-dvd-r-azo-43533");

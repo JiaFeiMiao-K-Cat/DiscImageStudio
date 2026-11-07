@@ -144,6 +144,22 @@
       "contributor": "EternalEve"
     },
     {
+      "id": "ritek-dvd-plus-rw-4x",
+      "displayName": "铼德 Excellent X DVD+RW 4×（实测）",
+      "description": "铼德 Excellent X DVD+RW 4× 实测标定参数（MID RITEK-004-48，见 Discussions #191）：23.941751–58.143818 mm，共 2,295,104 个扇区；采用三次轨距分布。已在该盘片的 DVD+RW 覆写刻录中整盘写入。",
+      "totalSectors": 2295104,
+      "usableSectors": 2295104,
+      "innerRadiusMm": 23.94175055849737,
+      "outerRadiusMm": 58.14381800018976,
+      "channelBitLengthNm": 133.3,
+      "pitchLinear": 2.527588772812498E-05,
+      "pitchQuadratic": -6.043471664833591E-06,
+      "pitchCubic": -8.489947530016172E-08,
+      "displayNameResourceKey": "DiscPreset_RitekDvdPlusRw4x_DisplayName",
+      "descriptionResourceKey": "DiscPreset_RitekDvdPlusRw4x_Description",
+      "contributor": "FanJZSS"
+    },
+    {
       "id": "ritek-dvd-r-e-series",
       "displayName": "铼德 DVD-R E时代系列（实测）",
       "description": "铼德 DVD-R E时代系列实测标定参数：24.0631091841–58.2337337546 mm，共 2,298,496 个扇区；采用三次轨距分布。",
