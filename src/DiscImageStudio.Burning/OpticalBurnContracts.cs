@@ -91,6 +91,9 @@ public sealed record OpticalBurnRequest(
     OpticalWriteSpeed? WriteSpeed = null,
     OpticalBurnBufferOptions? BufferOptions = null)
 {
+    // Invoked on the burn worker immediately before modifying a nonblank rewritable DVD.
+    public Func<string, bool>? ConfirmDvdDataLoss { get; init; }
+
     public OpticalBurnBufferOptions EffectiveBufferOptions => BufferOptions
         ?? (MediaKind == OpticalBurnMediaKind.BluRayData
             ? OpticalBurnBufferOptions.BluRayDefault : OpticalBurnBufferOptions.Default);

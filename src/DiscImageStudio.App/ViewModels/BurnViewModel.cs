@@ -692,7 +692,9 @@ public partial class BurnViewModel : ObservableObject
                 L.T("确认开始流式刻录"),
                 L.F($"即将写入：{device.DisplayName}\n{contentDescription}\n")
                     + L.F($"请求速度：{selectedWriteSpeed.DisplayName}\n\n")
-                    + L.T("仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？"),
+                    + (dvd
+                        ? L.T("擦除或覆盖已有数据前会另行确认。开始后取消或断电可能使盘片报废。是否继续？")
+                        : L.T("仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？")),
                 L.T("确认刻录"));
             if (!confirmed)
             {
@@ -710,6 +712,21 @@ public partial class BurnViewModel : ObservableObject
             IsBurnRunning = true;
             CancellationTokenSource burnCancellation = new();
             _burnCancellation = burnCancellation;
+            if (dvd)
+            {
+                var dispatcher = System.Windows.Threading.Dispatcher.CurrentDispatcher;
+                request = request with
+                {
+                    ConfirmDvdDataLoss = media => dispatcher.InvokeAsync(() => _shell.ConfirmAsync(
+                        L.T("确认清除盘片数据"),
+                        L.F($"光驱：{device.DisplayName}\n盘片：{media}\n\n")
+                            + (media == "DVD-RAM"
+                                ? L.T("继续刻录将覆盖盘片上的原有数据。是否继续？")
+                                : L.T("继续刻录将先擦除盘片，原有数据将丢失。是否继续？")),
+                        media == "DVD-RAM" ? L.T("覆盖并刻录") : L.T("擦除并刻录")))
+                        .Task.Unwrap().GetAwaiter().GetResult(),
+                };
+            }
             _shell.BeginBurnDockJob(request.MediaKind, request.ContentLength);
             _shell.AppendLog(
                 L.F($"\n[{DateTime.Now:HH:mm:ss}] 开始流式刻录：{contentDescription}；")

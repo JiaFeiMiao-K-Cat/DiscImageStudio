@@ -128,6 +128,17 @@ internal static class CdDataBurnTests
                 "capacity failure reports required, available and missing sectors with binary size units");
         }
         WindowsImapiBurner.ValidateDataMedia(request with { ContentLength = 359_843L * 2048 }, 0x6, 359_843);
+        OpticalBurnRequest dvd = request with
+        {
+            MediaKind = OpticalBurnMediaKind.DvdData,
+            ContentLength = 359_843L * 2048,
+        };
+        WindowsImapiBurner.ValidateDataMedia(dvd, 0x1, 359_843, overwritesMedia: true);
+        Throws<InvalidOperationException>(() => WindowsImapiBurner.ValidateDataMedia(dvd, 0x1, 359_843),
+            "randomly writable DVD requires an explicit overwrite session");
+        Throws<InvalidOperationException>(() =>
+            WindowsImapiBurner.ValidateDataMedia(dvd, 0x801, 359_843, overwritesMedia: true),
+            "erase-required media cannot be written even in overwrite mode");
         foreach (OpticalBurnMediaKind kind in new[] { OpticalBurnMediaKind.CdData, OpticalBurnMediaKind.DvdData })
         {
             Require(WindowsImapiBurner.ValidateWritableDataCapacity(kind, 0x6, 359_843).Length > 0,

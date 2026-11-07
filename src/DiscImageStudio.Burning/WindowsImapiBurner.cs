@@ -10,6 +10,12 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
     private readonly OpticalBurnOperationGate _operationGate = new();
     private const int CdDaoFallbackSpeedSectorsPerSecond = 1200;
     private const int BlankMediaState = 0x2;
+    private const int OverwriteOnlyMediaState = 0x1;
+    private const int EraseRequiredMediaState = 0x800;
+    private const int UnsupportedMediaStates = 0xFC00;
+    private const int DvdRam = 0x5;
+    private const int DvdPlusRw = 0x7;
+    private const int DvdMinusRw = 0xA;
     // IMAPI_MEDIA_PHYSICAL_TYPE and IMAPI_PROFILE_TYPE (imapi2.h).
     // https://learn.microsoft.com/windows/win32/api/imapi2/ne-imapi2-imapi_media_physical_type
     // https://learn.microsoft.com/windows/win32/api/imapi2/ne-imapi2-imapi_profile_type
@@ -51,10 +57,14 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             OpticalMediaCapacity capacity;
             if (mediaKind == OpticalBurnMediaKind.DvdData)
             {
-                // Keep the geometry extent. IMAPI's Free property already removes
-                // recording overhead; never apply the legacy 608-sector estimate again.
-                capacity = ReadDvdMediaCapacity(Convert.ToInt32(format.CurrentPhysicalMediaType),
-                    Convert.ToInt64(format.TotalSectorsOnMedia), Convert.ToInt64(format.FreeSectorsOnMedia));
+                // Keep geometry separate from the write limit. Used rewritable media
+                // can reclaim its occupied sectors after the user approves preparation.
+                int mediaType = Convert.ToInt32(format.CurrentPhysicalMediaType);
+                long totalSectors = Convert.ToInt64(format.TotalSectorsOnMedia);
+                long writableSectors = mediaType == DvdRam
+                    || (IsRewritableDvd(mediaType) && !IsDvdBlank((object)format))
+                    ? totalSectors : Convert.ToInt64(format.FreeSectorsOnMedia);
+                capacity = ReadDvdMediaCapacity(mediaType, totalSectors, writableSectors);
             }
             else
             {
@@ -251,12 +261,14 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 throw new InvalidOperationException("所选光驱不支持这种刻录方式。");
             }
 
+            ValidateRequestedMedia(mediaKind, recorder, format);
             if (!(bool)format.IsCurrentMediaSupported(recorder))
             {
+                if (mediaKind == OpticalBurnMediaKind.DvdData && DvdNeedsErase((object)format))
+                    return [];
                 throw new InvalidOperationException("请放入与所选 CD/DVD/蓝光模式兼容的可写盘片。");
             }
 
-            ValidateRequestedMedia(mediaKind, recorder, format);
             cancellationToken.ThrowIfCancellationRequested();
             return ReadSupportedWriteSpeeds(format);
         }
@@ -295,6 +307,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             request.ContentLength));
         dynamic recorder = CreateRecorder(request.DeviceId);
         dynamic? format = null;
+        BluRayMmcCommands? removalProtection = null;
         OpticalBurnResult? result = null;
         Exception? burnFailure = null;
         string? environmentDiagnostic = null;
@@ -319,34 +332,15 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             }
 
             currentOperation = "检查当前盘片兼容性";
-            if (!(bool)format.IsCurrentMediaSupported(recorder))
+            ValidateRequestedMedia(request.MediaKind, recorder, format);
+            if (!(bool)format.IsCurrentMediaSupported(recorder)
+                && !(request.MediaKind == OpticalBurnMediaKind.DvdData && DvdNeedsErase((object)format)))
             {
                 throw new InvalidOperationException("当前盘片与所选 CD/DVD/蓝光模式不兼容。");
             }
 
-            ValidateRequestedMedia(request.MediaKind, recorder, format);
-            if (request.WriteSpeed is null)
-            {
-                currentOperation = "选择最低刻录速度";
-                IReadOnlyList<OpticalWriteSpeed> supportedSpeeds = ReadSupportedWriteSpeeds(format);
-                BurnDeviceDiagnostics.Report(ReportDiagnostic, () => "可选写入速度："
-                    + (supportedSpeeds.Count == 0 ? "none" : string.Join(" | ", supportedSpeeds.Select(BurnDeviceDiagnostics.DescribeSpeed))) + "。");
-                request = request with
-                {
-                    WriteSpeed = ResolveWriteSpeed(
-                        null,
-                        supportedSpeeds),
-                };
-                progress?.Report(new OpticalBurnProgress(
-                    "speed",
-                    request.WriteSpeed is null
-                        ? "当前盘片未报告可选速度，将使用刻录接口的保守回退设置…"
-                        : $"自动选择最低写入速度："
-                            + $"{request.WriteSpeed.GetMultiplier(request.MediaKind):0.#}×"
-                            + $"（{request.WriteSpeed.GetMegabytesPerSecond(request.MediaKind):0.0} MB/s）…",
-                    0,
-                    request.ContentLength));
-            }
+            if (request.MediaKind != OpticalBurnMediaKind.DvdData)
+                SelectAutomaticWriteSpeed();
 
             using GeneratedContentComStream content = new(
                 request.ContentLength,
@@ -418,11 +412,64 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             }
             else
             {
+                currentOperation = "准备 DVD 盘片";
+                int mediaType = Convert.ToInt32(format.CurrentPhysicalMediaType);
+                bool overwritesMedia = false;
+                if (IsRewritableDvd(mediaType))
+                {
+                    var commands = new BluRayMmcCommands(new ImapiMmcCommandTransport((object)recorder));
+                    commands.PreventRemoval(true);
+                    removalProtection = commands;
+                    ValidateRequestedMedia(request.MediaKind, recorder, format);
+                    if (Convert.ToInt32(format.CurrentPhysicalMediaType) != mediaType)
+                        throw new InvalidOperationException("盘片已更换，请重新开始刻录。");
+
+                    long capacity = ReadDvdSectorCount(mediaType, Convert.ToInt64(format.TotalSectorsOnMedia));
+                    ValidateDataMedia(request, BlankMediaState, capacity);
+                    int mediaState = Convert.ToInt32(format.CurrentMediaStatus);
+                    if ((mediaState & (UnsupportedMediaStates & ~EraseRequiredMediaState)) != 0)
+                        throw new InvalidOperationException("当前 DVD 盘片不可写入。");
+
+                    if (!IsDvdBlank((object)format, mediaState))
+                    {
+                        string medium = mediaType switch
+                        {
+                            DvdRam => "DVD-RAM",
+                            DvdPlusRw => "DVD+RW",
+                            _ => "DVD-RW",
+                        };
+                        cancellationToken.ThrowIfCancellationRequested();
+                        if (request.ConfirmDvdDataLoss?.Invoke(medium) != true)
+                            throw new OperationCanceledException("已取消清除盘片数据。");
+                        cancellationToken.ThrowIfCancellationRequested();
+                        if (mediaType != DvdRam)
+                        {
+                            ReportOperation("正在擦除 DVD±RW，擦除完成后将继续刻录…");
+                            EraseDvd((object)recorder);
+                            cancellationToken.ThrowIfCancellationRequested();
+                            ReleaseComObject((object)format);
+                            format = null;
+                            format = CreateComObject("IMAPI2.MsftDiscFormat2Data");
+                            format.Recorder = recorder;
+                            format.ClientName = "Disc Image Studio";
+                            ValidateRequestedMedia(request.MediaKind, recorder, format);
+                            if (Convert.ToInt32(format.CurrentPhysicalMediaType) != mediaType)
+                                throw new InvalidOperationException("盘片已更换，请重新开始刻录。");
+                            mediaState = Convert.ToInt32(format.CurrentMediaStatus);
+                        }
+                    }
+
+                    overwritesMedia = (mediaState & OverwriteOnlyMediaState) != 0;
+                }
+
+                if (!(bool)format.IsCurrentMediaSupported(recorder))
+                    throw new InvalidOperationException("当前 DVD 盘片不可写入。");
+                SelectAutomaticWriteSpeed();
                 currentOperation = "写入 DVD 数据";
                 Action<OpticalWriteSpeed> reportDataWriteSpeed =
                     speed => ReportWriteSpeed(progress, speed, request);
                 actualWriteSpeed = BurnData(
-                    new DynamicDvdDataSession((object)format, writeProgress.ReportDataUpdate),
+                    new DynamicDvdDataSession((object)format, writeProgress.ReportDataUpdate, overwritesMedia),
                     content,
                     request,
                     cancellationToken,
@@ -459,7 +506,8 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             {
                 CompleteBurnCleanup(burnFailure, cleanupWarnings,
                     () => { if (format is not null) ReleaseComObject((object)format); },
-                    () => ReleaseComObject((object)recorder));
+                    () => ReleaseComObject((object)recorder),
+                    removalProtection is null ? null : () => removalProtection.PreventRemoval(false));
             }
             catch (Exception exception)
             {
@@ -474,6 +522,23 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             request.ContentLength,
             request.ContentLength));
         return result!;
+
+        void SelectAutomaticWriteSpeed()
+        {
+            if (request.WriteSpeed is not null)
+                return;
+            currentOperation = "选择最低刻录速度";
+            IReadOnlyList<OpticalWriteSpeed> supportedSpeeds = ReadSupportedWriteSpeeds(format!);
+            BurnDeviceDiagnostics.Report(ReportDiagnostic, () => "可选写入速度："
+                + (supportedSpeeds.Count == 0 ? "none" : string.Join(" | ", supportedSpeeds.Select(BurnDeviceDiagnostics.DescribeSpeed))) + "。");
+            request = request with { WriteSpeed = ResolveWriteSpeed(null, supportedSpeeds) };
+            progress?.Report(new OpticalBurnProgress("speed",
+                request.WriteSpeed is null
+                    ? "当前盘片未报告可选速度，将使用刻录接口的保守回退设置…"
+                    : $"自动选择最低写入速度：{request.WriteSpeed.GetMultiplier(request.MediaKind):0.#}×"
+                        + $"（{request.WriteSpeed.GetMegabytesPerSecond(request.MediaKind):0.0} MB/s）…",
+                0, request.ContentLength));
+        }
 
         void ReportDiagnostic(string message)
             => progress?.Report(new OpticalBurnProgress("diagnostic", message, 0, request.ContentLength));
@@ -524,9 +589,11 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
     // Every caller-owned COM object gets its release attempt before we propagate
     // that exception or report an otherwise successful burn's cleanup failure.
     internal static void CompleteBurnCleanup(Exception? burnFailure, ICollection<string> cleanupWarnings,
-        Action releaseFormat, Action releaseRecorder)
+        Action releaseFormat, Action releaseRecorder, Action? allowRemoval = null)
     {
         Exception? firstCleanupFailure = null;
+        if (allowRemoval is not null)
+            ReleaseOne(allowRemoval, "解除盘片弹出保护");
         ReleaseOne(releaseFormat, "释放刻录格式 COM 对象");
         ReleaseOne(releaseRecorder, "释放刻录机 COM 对象");
 
@@ -1017,7 +1084,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             mediaState = session.CurrentMediaStatus;
             freeSectors = session.FreeSectorsOnMedia;
             Diagnose(DescribeCapacity);
-            ValidateDataMedia(request, mediaState.Value, freeSectors.Value);
+            ValidateDataMedia(request, mediaState.Value, freeSectors.Value, session.OverwritesMedia);
 
             SetOperation("设置 DVD 缓冲保护和封盘选项");
             session.ConfigureMedia();
@@ -1173,9 +1240,42 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             && currentProfiles.Contains(BluRaySequentialProfile);
     }
 
-    internal static void ValidateDataMedia(OpticalBurnRequest request, int mediaState, long freeSectors)
+    private static bool IsRewritableDvd(int mediaType) => mediaType is DvdRam or DvdPlusRw or DvdMinusRw;
+
+    private static bool IsDvdBlank(dynamic format, int? status = null)
     {
-        string mediaName = ValidateWritableDataCapacity(request.MediaKind, mediaState, freeSectors);
+        int mediaState = status ?? Convert.ToInt32(format.CurrentMediaStatus);
+        return (mediaState & EraseRequiredMediaState) == 0
+            && ((mediaState & BlankMediaState) != 0
+                || ((mediaState & OverwriteOnlyMediaState) != 0 && (bool)format.MediaHeuristicallyBlank));
+    }
+
+    private static bool DvdNeedsErase(dynamic format)
+        => Convert.ToInt32(format.CurrentPhysicalMediaType) is DvdPlusRw or DvdMinusRw
+            && (Convert.ToInt32(format.CurrentMediaStatus) & EraseRequiredMediaState) != 0;
+
+    private static void EraseDvd(dynamic recorder)
+    {
+        dynamic eraser = CreateComObject("IMAPI2.MsftDiscFormat2Erase");
+        try
+        {
+            if (!(bool)eraser.IsRecorderSupported(recorder) || !(bool)eraser.IsCurrentMediaSupported(recorder))
+                throw new InvalidOperationException("Windows 刻录接口无法擦除当前 DVD±RW。");
+            eraser.Recorder = recorder;
+            eraser.ClientName = "Disc Image Studio";
+            eraser.FullErase = false;
+            eraser.EraseMedia();
+        }
+        finally
+        {
+            ReleaseComObject((object)eraser);
+        }
+    }
+
+    internal static void ValidateDataMedia(OpticalBurnRequest request, int mediaState, long freeSectors,
+        bool overwritesMedia = false)
+    {
+        string mediaName = ValidateWritableDataCapacity(request.MediaKind, mediaState, freeSectors, overwritesMedia);
         long requiredSectors = request.ContentLength / 2048;
         if (freeSectors < requiredSectors)
         {
@@ -1188,7 +1288,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
     }
 
     internal static string ValidateWritableDataCapacity(OpticalBurnMediaKind mediaKind,
-        int mediaState, long freeSectors)
+        int mediaState, long freeSectors, bool overwritesMedia = false)
     {
         string mediaName = mediaKind switch
         {
@@ -1197,7 +1297,11 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             OpticalBurnMediaKind.BluRayData => "蓝光盘",
             _ => throw new ArgumentOutOfRangeException(nameof(mediaKind), "Expected CD, DVD or Blu-ray data."),
         };
-        if ((mediaState & BlankMediaState) == 0)
+        if ((mediaState & UnsupportedMediaStates) != 0)
+            throw new InvalidOperationException($"{mediaName} 当前状态不可写入，已取消刻录。");
+        if ((mediaState & BlankMediaState) == 0
+            && !(overwritesMedia && mediaKind == OpticalBurnMediaKind.DvdData
+                && (mediaState & OverwriteOnlyMediaState) != 0))
         {
             throw new InvalidOperationException($"{mediaName} 不是空白盘，已取消刻录。");
         }

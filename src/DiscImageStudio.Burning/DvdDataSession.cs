@@ -9,6 +9,8 @@ internal interface IDvdDataSession
 
     long FreeSectorsOnMedia { get; }
 
+    bool OverwritesMedia => false;
+
     void ConfigureMedia();
 
     void DisableVerification();
@@ -25,20 +27,25 @@ internal interface IDvdDataSession
     string? GetDiagnosticSummary() => null;
 }
 
-internal sealed class DynamicDvdDataSession(object format, Action<object>? reportWriteProgress = null)
+internal sealed class DynamicDvdDataSession(object format, Action<object>? reportWriteProgress = null,
+    bool overwritesMedia = false)
     : IDvdDataSession
 {
     private readonly dynamic _format = format;
 
     public int CurrentMediaStatus => Convert.ToInt32(_format.CurrentMediaStatus);
 
-    public long FreeSectorsOnMedia => Convert.ToInt64(_format.FreeSectorsOnMedia);
+    public bool OverwritesMedia => overwritesMedia;
+
+    public long FreeSectorsOnMedia => overwritesMedia
+        ? Convert.ToInt64(_format.TotalSectorsOnMedia)
+        : Convert.ToInt64(_format.FreeSectorsOnMedia);
 
     public void ConfigureMedia()
     {
         _format.BufferUnderrunFreeDisabled = false;
-        _format.ForceMediaToBeClosed = true;
-        _format.ForceOverwrite = false;
+        _format.ForceMediaToBeClosed = !overwritesMedia;
+        _format.ForceOverwrite = overwritesMedia;
     }
 
     public void DisableVerification() => DvdBurnVerification.Disable((object)_format);
