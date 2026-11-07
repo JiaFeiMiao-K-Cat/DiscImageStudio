@@ -6,8 +6,8 @@ namespace DiscImageStudio.Iso;
 
 /// <summary>
 /// Plans a closed, read-only UDF 2.01 or 2.50 volume and writes it without seeking. The physical
-/// partition contains only the files and may be placed at either end; the drawing area is reserved volume space
-/// outside that partition. ECMA-167 (3rd edition), ECMA TR/112-4.
+/// partition contains the metadata and files and may be placed at either end; the drawing area is reserved
+/// volume space outside that partition. ECMA-167 (3rd edition), ECMA TR/112-4.
 /// </summary>
 public static class UdfImageWriter
 {
@@ -25,7 +25,8 @@ public static class UdfImageWriter
     {
         internal LayoutPlan(string sourceDirectory, uint volumeSectors, string volumeLabel,
             DateTimeOffset timestamp, List<Node> nodes, uint partitionStart, uint dataEnd,
-            uint drawingStart, uint drawingEnd, bool filesAtOuterRing, Revision revision)
+            uint drawingStart, uint drawingEnd, bool filesAtOuterRing, Revision revision,
+            uint metadataSectors, uint metadataMainStart, uint metadataMirrorEntry, uint metadataMirrorStart)
         {
             SourceDirectory = sourceDirectory;
             VolumeSectors = volumeSectors;
@@ -38,6 +39,10 @@ public static class UdfImageWriter
             DrawingEndLbaExclusive = drawingEnd;
             FilesAtOuterRing = filesAtOuterRing;
             UdfRevision = revision;
+            MetadataSectors = metadataSectors;
+            MetadataMainStartLba = metadataMainStart;
+            MetadataMirrorEntryLba = metadataMirrorEntry;
+            MetadataMirrorStartLba = metadataMirrorStart;
             FileCount = nodes.Count(node => !node.IsDirectory);
             DirectoryCount = nodes.Count - FileCount;
             FileBytes = nodes.Where(node => !node.IsDirectory).Sum(node => node.DataLength);
@@ -53,6 +58,10 @@ public static class UdfImageWriter
         public uint DrawingEndLbaExclusive { get; }
         public bool FilesAtOuterRing { get; }
         public Revision UdfRevision { get; }
+        internal uint MetadataSectors { get; }
+        internal uint MetadataMainStartLba { get; }
+        internal uint MetadataMirrorEntryLba { get; }
+        internal uint MetadataMirrorStartLba { get; }
         public string VolumeLabel { get; }
         public DateTimeOffset Timestamp { get; }
         internal List<Node> Nodes { get; }
@@ -108,9 +117,13 @@ public static class UdfImageWriter
         }
 
         uint cursor = checked(FirstPartitionLba + 2);
+        uint metadataSectors = 0;
+        uint metadataMainStart = 0;
+        uint metadataMirrorEntry = 0;
+        uint metadataMirrorStart = 0;
         foreach (Node node in nodes)
         {
-            node.EntryLba = cursor++;
+            if (revision != Revision.V2_50) node.EntryLba = cursor++;
             if (node.IsDirectory)
             {
                 node.DataLength = FileIdentifierLength(0, 0);
@@ -126,15 +139,38 @@ public static class UdfImageWriter
             if (node.Children.Count(child => child.IsDirectory) >= ushort.MaxValue)
                 throw new ArgumentException($"Too many child directories for a UDF link count: {node.SourcePath}");
         }
+        if (revision == Revision.V2_50)
+        {
+            // Assign logical metadata addresses only after directory lengths are known.
+            uint logicalCursor = 2;
+            foreach (Node node in nodes) node.EntryLba = logicalCursor++;
+            foreach (Node node in nodes.Where(node => node.IsDirectory))
+            {
+                node.DataLba = logicalCursor;
+                logicalCursor = checked(logicalCursor + SectorCount(node.DataLength));
+            }
+            metadataSectors = logicalCursor;
+            metadataMainStart = FirstPartitionLba + 32;
+            cursor = checked(metadataMainStart + metadataSectors);
+        }
         foreach (Node node in nodes.Where(node => node.IsDirectory))
         {
-            node.DataLba = cursor;
-            cursor = checked(cursor + SectorCount(node.DataLength));
+            if (revision != Revision.V2_50)
+            {
+                node.DataLba = cursor;
+                cursor = checked(cursor + SectorCount(node.DataLength));
+            }
         }
         foreach (Node node in nodes.Where(node => !node.IsDirectory))
         {
             node.DataLba = cursor;
             cursor = checked(cursor + SectorCount(node.DataLength));
+        }
+        if (revision == Revision.V2_50)
+        {
+            metadataMirrorEntry = cursor;
+            metadataMirrorStart = checked(cursor + 1);
+            cursor = checked(metadataMirrorStart + metadataSectors);
         }
         uint drawingEnd = (volumeSectors - 257) / 32 * 32;
         uint drawingStart = checked((cursor + 31) / 32 * 32);
@@ -151,8 +187,14 @@ public static class UdfImageWriter
             uint shift = partitionStart - FirstPartitionLba;
             foreach (Node node in nodes)
             {
-                node.EntryLba = checked(node.EntryLba + shift);
-                node.DataLba = checked(node.DataLba + shift);
+                if (revision != Revision.V2_50) node.EntryLba = checked(node.EntryLba + shift);
+                if (revision != Revision.V2_50 || !node.IsDirectory) node.DataLba = checked(node.DataLba + shift);
+            }
+            if (revision == Revision.V2_50)
+            {
+                metadataMainStart = checked(metadataMainStart + shift);
+                metadataMirrorEntry = checked(metadataMirrorEntry + shift);
+                metadataMirrorStart = checked(metadataMirrorStart + shift);
             }
             cursor = checked(cursor + shift);
             drawingStart = FirstPartitionLba;
@@ -162,7 +204,8 @@ public static class UdfImageWriter
         // All descriptors use precisely the same logical volume identifier.
         label = FitDstring(label, 128);
         return new LayoutPlan(sourcePath, volumeSectors, label, recorded, nodes, partitionStart,
-            cursor, drawingStart, drawingEnd, filesAtOuterRing, revision);
+            cursor, drawingStart, drawingEnd, filesAtOuterRing, revision,
+            metadataSectors, metadataMainStart, metadataMirrorEntry, metadataMirrorStart);
     }
 
     public static void WriteSequentialPrefix(LayoutPlan plan, Stream output, uint endLbaExclusive,
@@ -189,13 +232,29 @@ public static class UdfImageWriter
 
     private static void WritePartition(LayoutPlan plan, SequentialWriter writer)
     {
-        writer.WriteAtLba(plan.PartitionStartLba, FileSetDescriptor(plan));
-        writer.WriteAtLba(plan.PartitionStartLba + 1, Descriptor(8, 1, 512));
-        foreach (Node node in plan.Nodes)
-            writer.WriteAtLba(node.EntryLba, FileEntry(plan, node));
+        if (plan.UdfRevision == Revision.V2_50)
+        {
+            writer.WriteAtLba(plan.PartitionStartLba, MetadataFileEntry(plan, false));
+            writer.WriteAtLba(plan.PartitionStartLba + 1, Descriptor(8, 1, 512));
+            WriteMetadataContent(plan, writer, plan.MetadataMainStartLba);
+            foreach (Node file in plan.Nodes.Where(node => !node.IsDirectory)) writer.WriteFile(file);
+            writer.WriteAtLba(plan.MetadataMirrorEntryLba, MetadataFileEntry(plan, true));
+            WriteMetadataContent(plan, writer, plan.MetadataMirrorStartLba);
+            return;
+        }
+        else
+        {
+            writer.WriteAtLba(plan.PartitionStartLba, FileSetDescriptor(plan));
+            writer.WriteAtLba(plan.PartitionStartLba + 1, Descriptor(8, 1, 512));
+            foreach (Node node in plan.Nodes)
+                writer.WriteAtLba(node.EntryLba, FileEntry(plan, node));
+        }
         foreach (Node directory in plan.Nodes.Where(node => node.IsDirectory))
         {
-            writer.PadToLba(directory.DataLba);
+            uint physical = plan.UdfRevision == Revision.V2_50
+                ? checked(plan.MetadataMainStartLba + directory.DataLba)
+                : directory.DataLba;
+            writer.PadToLba(physical);
             long directoryOffset = 0;
             WriteIdentifier(directory.Parent ?? directory, [], parent: true);
             foreach (Node child in directory.Children)
@@ -212,6 +271,29 @@ public static class UdfImageWriter
         }
         foreach (Node file in plan.Nodes.Where(node => !node.IsDirectory))
             writer.WriteFile(file);
+    }
+
+    private static void WriteMetadataContent(LayoutPlan plan, SequentialWriter writer, uint physicalStart)
+    {
+        writer.WriteAtLba(physicalStart, FileSetDescriptor(plan));
+        writer.WriteAtLba(physicalStart + 1, Descriptor(8, 1, 512));
+        foreach (Node node in plan.Nodes)
+            writer.WriteAtLba(checked(physicalStart + node.EntryLba), FileEntry(plan, node));
+        foreach (Node directory in plan.Nodes.Where(node => node.IsDirectory))
+        {
+            writer.PadToLba(checked(physicalStart + directory.DataLba));
+            long directoryOffset = 0;
+            WriteIdentifier(directory.Parent ?? directory, [], true);
+            foreach (Node child in directory.Children) WriteIdentifier(child, child.Identifier, false);
+
+            void WriteIdentifier(Node target, byte[] identifier, bool parent)
+            {
+                uint location = checked(directory.DataLba + (uint)(directoryOffset / LogicalSectorBytes));
+                byte[] record = FileIdentifier(plan, target, identifier, parent, location, directoryOffset);
+                writer.Write(record);
+                directoryOffset += record.Length;
+            }
+        }
     }
 
     /// <summary>Appends the reserved tail after the caller has written the drawing range.</summary>
@@ -316,15 +398,31 @@ public static class UdfImageWriter
         Dstring(data.AsSpan(84, 128), plan.VolumeLabel);
         U32(data, 212, LogicalSectorBytes);
          Entity(data.AsSpan(216, 32), "*OSTA UDF Compliant", domain: true, revision: plan.UdfRevision);
-        LongAd(data.AsSpan(248, 16), LogicalSectorBytes * 2, 0);
-        U32(data, 264, 6);
-        U32(data, 268, 1);
+        LongAd(data.AsSpan(248, 16), LogicalSectorBytes * 2, 0,
+            plan.UdfRevision == Revision.V2_50 ? (ushort)1 : (ushort)0);
+        U32(data, 264, plan.UdfRevision == Revision.V2_50 ? 70u : 6u);
+        U32(data, 268, plan.UdfRevision == Revision.V2_50 ? 2u : 1u);
         Entity(data.AsSpan(272, 32), ImplementationId);
         Extent(data.AsSpan(432, 8), LogicalSectorBytes * 4, IntegrityLba);
-        data[440] = 1;
-        data[441] = 6;
-        U16(data, 442, 1); // Volume sequence number; partition number is zero.
-        SetTag(data, 6, location, 446);
+        data[440] = 1; data[441] = 6; U16(data, 442, 1);
+        if (plan.UdfRevision == Revision.V2_50)
+        {
+            Span<byte> map = data.AsSpan(446, 64);
+            map.Clear(); map[0] = 2; map[1] = 64;
+            map[4] = 0;
+            Encoding.ASCII.GetBytes("*UDF Metadata Partition", map[5..28]);
+            BinaryPrimitives.WriteUInt16LittleEndian(map[28..], (ushort)plan.UdfRevision);
+            BinaryPrimitives.WriteUInt16LittleEndian(map[36..], 1);
+            BinaryPrimitives.WriteUInt16LittleEndian(map[38..], 0);
+            BinaryPrimitives.WriteUInt32LittleEndian(map[40..], 0);
+            BinaryPrimitives.WriteUInt32LittleEndian(map[44..], plan.MetadataMirrorEntryLba - plan.PartitionStartLba);
+            BinaryPrimitives.WriteUInt32LittleEndian(map[48..], uint.MaxValue);
+            BinaryPrimitives.WriteUInt32LittleEndian(map[52..], 32);
+            BinaryPrimitives.WriteUInt16LittleEndian(map[56..], 32);
+            map[58] = 1;
+            SetTag(data, 6, location, 510);
+        }
+        else SetTag(data, 6, location, 446);
         return data;
     }
 
@@ -334,16 +432,29 @@ public static class UdfImageWriter
         Timestamp(data.AsSpan(16, 12), plan.Timestamp);
         U32(data, 28, 1); // Closed logical volume.
         U64(data, 40, checked((ulong)plan.Nodes.Count + 15));
-        U32(data, 72, 1);
-        U32(data, 76, 46);
-        U32(data, 84, plan.PartitionSectors);
-        Entity(data.AsSpan(88, 32), ImplementationId);
-        U32(data, 120, checked((uint)plan.FileCount));
-        U32(data, 124, checked((uint)plan.DirectoryCount));
-         U16(data, 128, (ushort)plan.UdfRevision);
-         U16(data, 130, (ushort)plan.UdfRevision);
-         U16(data, 132, (ushort)plan.UdfRevision);
-        SetTag(data, 9, IntegrityLba, 134);
+        uint partitions = plan.UdfRevision == Revision.V2_50 ? 2u : 1u;
+        U32(data, 72, partitions);
+        U32(data, 76, plan.UdfRevision == Revision.V2_50 ? 46u : 46u);
+        if (partitions == 1)
+        {
+            U32(data, 84, plan.PartitionSectors);
+        }
+        else
+        {
+            U32(data, 80, 0); U32(data, 84, 0); // free space table
+            U32(data, 88, plan.PartitionSectors); U32(data, 92, plan.MetadataSectors);
+        }
+        Entity(data.AsSpan(partitions == 2 ? 96 : 88, 32), ImplementationId);
+        int implementationUse = partitions == 2 ? 96 : 88;
+        int fileCount = implementationUse + 32;
+        int directoryCount = implementationUse + 36;
+        int revision = implementationUse + 40;
+        U32(data, fileCount, checked((uint)plan.FileCount));
+        U32(data, directoryCount, checked((uint)plan.DirectoryCount));
+        U16(data, revision, (ushort)plan.UdfRevision);
+        U16(data, revision + 2, (ushort)plan.UdfRevision);
+        U16(data, revision + 4, (ushort)plan.UdfRevision);
+        SetTag(data, 9, IntegrityLba, partitions == 2 ? 142 : 134);
         return data;
     }
 
@@ -368,7 +479,9 @@ public static class UdfImageWriter
         Dstring(data.AsSpan(112, 128), plan.VolumeLabel);
         Charspec(data.AsSpan(240, 64));
         Dstring(data.AsSpan(304, 32), FitDstring(plan.VolumeLabel, 32));
-        LongAd(data.AsSpan(400, 16), LogicalSectorBytes, plan.Nodes[0].EntryLba - plan.PartitionStartLba);
+        LongAd(data.AsSpan(400, 16), LogicalSectorBytes,
+            plan.UdfRevision == Revision.V2_50 ? plan.Nodes[0].EntryLba : plan.Nodes[0].EntryLba - plan.PartitionStartLba,
+            plan.UdfRevision == Revision.V2_50 ? (ushort)1 : (ushort)0);
          Entity(data.AsSpan(416, 32), "*OSTA UDF Compliant", domain: true, revision: plan.UdfRevision);
         SetTag(data, 256, 0, 512);
         return data;
@@ -377,38 +490,91 @@ public static class UdfImageWriter
     private static byte[] FileEntry(LayoutPlan plan, Node node)
     {
         byte[] data = new byte[LogicalSectorBytes];
+        bool metadata = plan.UdfRevision == Revision.V2_50;
+        bool shortAllocationDescriptors = metadata && node.IsDirectory;
         U16(data, 20, 4); // ICB strategy type 4, short allocation descriptors.
         U16(data, 24, 1);
         data[27] = node.IsDirectory ? (byte)4 : (byte)5;
-        U32(data, 28, (node.Parent ?? node).EntryLba - plan.PartitionStartLba);
-        U16(data, 34, 0); // AD type 0 (short_ad); no optional ICB flags.
+        U32(data, 28, metadata ? (node.Parent ?? node).EntryLba
+            : (node.Parent ?? node).EntryLba - plan.PartitionStartLba);
+        U16(data, 34, metadata ? (shortAllocationDescriptors ? (ushort)0x20 : (ushort)0x21) : (ushort)0);
         U32(data, 36, uint.MaxValue);
         U32(data, 40, uint.MaxValue);
         U32(data, 44, node.IsDirectory ? 0x14a5U : 0x1084U); // Read (and directory traverse).
         U16(data, 48, checked((ushort)(node.IsDirectory
             ? 1 + node.Children.Count(child => child.IsDirectory) : 1)));
         U64(data, 56, checked((ulong)node.DataLength));
-        U64(data, 64, SectorCount(node.DataLength));
-        Timestamp(data.AsSpan(72, 12), node.Timestamp);
-        Timestamp(data.AsSpan(84, 12), node.Timestamp);
-        Timestamp(data.AsSpan(96, 12), node.Timestamp);
-        U32(data, 108, 1);
-        Entity(data.AsSpan(128, 32), ImplementationId);
-        U64(data, 160, node.UniqueId);
-        int offset = 176;
+        if (metadata)
+        {
+            // Extended File Entry fields: Object Size, Logical Blocks Recorded,
+            // timestamps, implementation identifier and unique ID all move past
+            // the extra Object Size field compared with a File Entry.
+            U64(data, 64, checked((ulong)node.DataLength));
+            U64(data, 72, SectorCount(node.DataLength));
+            Timestamp(data.AsSpan(80, 12), node.Timestamp);
+            Timestamp(data.AsSpan(92, 12), node.Timestamp);
+            Timestamp(data.AsSpan(104, 12), node.Timestamp);
+            Timestamp(data.AsSpan(116, 12), node.Timestamp);
+            U32(data, 128, 1);
+            Entity(data.AsSpan(168, 32), ImplementationId);
+            U64(data, 200, node.UniqueId);
+        }
+        else
+        {
+            U64(data, 64, SectorCount(node.DataLength));
+            Timestamp(data.AsSpan(72, 12), node.Timestamp);
+            Timestamp(data.AsSpan(84, 12), node.Timestamp);
+            Timestamp(data.AsSpan(96, 12), node.Timestamp);
+            U32(data, 108, 1);
+            Entity(data.AsSpan(128, 32), ImplementationId);
+            U64(data, 160, node.UniqueId);
+        }
+        int offset = metadata ? 216 : 176;
         long remaining = node.DataLength;
-        uint lbn = node.DataLba - plan.PartitionStartLba;
+        uint lbn = metadata && node.IsDirectory ? node.DataLba : node.DataLba - plan.PartitionStartLba;
         while (remaining > 0)
         {
             uint length = (uint)Math.Min(remaining, MaximumExtentBytes);
             U32(data, offset, length);
             U32(data, offset + 4, lbn);
+            if (metadata && !shortAllocationDescriptors) U16(data, offset + 8, 0);
             remaining -= length;
             lbn = checked(lbn + SectorCount(length));
-            offset += 8;
+            offset += shortAllocationDescriptors ? 8 : metadata ? 16 : 8;
         }
-        U32(data, 172, checked((uint)(offset - 176)));
-        SetTag(data, 261, node.EntryLba - plan.PartitionStartLba, offset);
+        U32(data, metadata ? 212 : 172, checked((uint)(offset - (metadata ? 216 : 176))));
+        SetTag(data, metadata ? (ushort)266 : (ushort)261,
+            metadata ? node.EntryLba : node.EntryLba - plan.PartitionStartLba, offset);
+        return data;
+    }
+
+    private static byte[] MetadataFileEntry(LayoutPlan plan, bool mirror)
+    {
+        byte[] data = new byte[LogicalSectorBytes];
+        U16(data, 20, 4);
+        U16(data, 24, 1);
+        data[27] = mirror ? (byte)251 : (byte)250;
+        U32(data, 28, 0);
+        U16(data, 34, 0x20); // Metadata File uses short_ad.
+        U32(data, 36, uint.MaxValue);
+        U32(data, 40, uint.MaxValue);
+        U32(data, 44, 0);
+        U16(data, 48, 0);
+        U64(data, 56, checked((ulong)plan.MetadataSectors * LogicalSectorBytes));
+        U64(data, 64, checked((ulong)plan.MetadataSectors * LogicalSectorBytes));
+        U64(data, 72, plan.MetadataSectors);
+        Timestamp(data.AsSpan(80, 12), plan.Timestamp);
+        Timestamp(data.AsSpan(92, 12), plan.Timestamp);
+        Timestamp(data.AsSpan(104, 12), plan.Timestamp);
+        Timestamp(data.AsSpan(116, 12), plan.Timestamp);
+        U32(data, 128, 1);
+        Entity(data.AsSpan(168, 32), ImplementationId);
+        U64(data, 200, mirror ? 0x251UL : 0x250UL);
+        U32(data, 212, 8);
+        U32(data, 216, checked(plan.MetadataSectors * LogicalSectorBytes));
+        U32(data, 220, mirror ? checked(plan.MetadataMirrorStartLba - plan.PartitionStartLba)
+            : checked(plan.MetadataMainStartLba - plan.PartitionStartLba));
+        SetTag(data, 266, mirror ? plan.MetadataMirrorEntryLba - plan.PartitionStartLba : 0, 224);
         return data;
     }
 
@@ -420,7 +586,9 @@ public static class UdfImageWriter
         U16(data, 16, 1);
         data[18] = parent ? (byte)10 : target.IsDirectory ? (byte)2 : (byte)0;
         data[19] = checked((byte)identifier.Length);
-        LongAd(data.AsSpan(20, 16), LogicalSectorBytes, target.EntryLba - plan.PartitionStartLba);
+        LongAd(data.AsSpan(20, 16), LogicalSectorBytes,
+            plan.UdfRevision == Revision.V2_50 ? target.EntryLba : target.EntryLba - plan.PartitionStartLba,
+            plan.UdfRevision == Revision.V2_50 ? (ushort)1 : (ushort)0);
         // long_ad ImplementationUse: 2 flag bytes followed by the UDF unique ID.
         U32(data, 32, checked((uint)target.UniqueId));
         U16(data, 36, checked((ushort)implementationBytes));
@@ -518,7 +686,11 @@ public static class UdfImageWriter
         BinaryPrimitives.WriteUInt32LittleEndian(data[4..], lba);
     }
 
-    private static void LongAd(Span<byte> data, uint length, uint lbn) => Extent(data, length, lbn);
+    private static void LongAd(Span<byte> data, uint length, uint lbn, ushort partition = 0)
+    {
+        Extent(data, length, lbn);
+        BinaryPrimitives.WriteUInt16LittleEndian(data[8..], partition);
+    }
     private static void U16(byte[] data, int offset, ushort value) => BinaryPrimitives.WriteUInt16LittleEndian(data.AsSpan(offset, 2), value);
     private static void U32(byte[] data, int offset, uint value) => BinaryPrimitives.WriteUInt32LittleEndian(data.AsSpan(offset, 4), value);
     private static void U64(byte[] data, int offset, ulong value) => BinaryPrimitives.WriteUInt64LittleEndian(data.AsSpan(offset, 8), value);

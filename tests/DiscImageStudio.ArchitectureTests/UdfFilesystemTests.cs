@@ -98,6 +98,8 @@ internal static class UdfFilesystemTests
         private uint _partitionStart;
         private uint _partitionLength;
         private ushort _partitionNumber;
+        private uint _metadataStart;
+        private uint _metadataLength;
         private readonly Dictionary<string, byte[]> _files = new(StringComparer.Ordinal);
         private readonly HashSet<uint> _visited = [];
 
@@ -160,9 +162,33 @@ internal static class UdfFilesystemTests
             CheckTag(implementation, 4, mainStart + 1);
             Require(Encoding.ASCII.GetString(implementation.Slice(21, 23)).TrimEnd('\0') == "*UDF LV Info"
                 && U16(implementation, 44) == udfRevision, "implementation identifier carries the selected UDF revision");
-            Require(U32(logical, 264) == 6 && U32(logical, 268) == 1
+            Require(U32(logical, 264) == (udfRevision == 0x0250 ? 70u : 6u)
+                && U32(logical, 268) == (udfRevision == 0x0250 ? 2u : 1u)
                 && logical[440] == 1 && logical[441] == 6 && U16(logical, 442) == 1
                 && U16(logical, 444) == _partitionNumber, "one physical type-1 partition map");
+            if (udfRevision == 0x0250)
+            {
+                ReadOnlySpan<byte> map = logical.Slice(446, 64);
+                Require(map[0] == 2 && map[1] == 64 && map[58] == 1
+                    && Encoding.ASCII.GetString(map.Slice(5, 23)) == "*UDF Metadata Partition"
+                    && U16(map, 28) == 0x0250 && U16(map, 36) == 1 && U16(map, 38) == 0
+                    && U32(map, 40) == 0
+                    && U32(map, 48) == uint.MaxValue && U32(map, 52) == 32 && U16(map, 56) == 32,
+                    "BD5 type-2 metadata map");
+                ReadOnlySpan<byte> metadata = PartitionBlock(0);
+                Require(U16(metadata, 0) == 266 && metadata[27] == 250
+                    && U16(metadata, 34) == 0x20 && U32(metadata, 212) == 8
+                    && U64(metadata, 56) == U64(metadata, 64)
+                    && U64(metadata, 72) == U32(metadata, 216) / SectorSize,
+                    "metadata file entry uses a valid EFE with short allocation descriptors");
+                _metadataStart = checked(_partitionStart + U32(metadata, 220));
+                _metadataLength = U32(metadata, 216) / SectorSize;
+                ReadOnlySpan<byte> mirror = Block(checked(_partitionStart + U32(map, 44)));
+                Require(U16(mirror, 0) == 266 && mirror[27] == 251
+                    && U16(mirror, 34) == 0x20 && U32(mirror, 212) == 8
+                    && U64(mirror, 56) == U64(mirror, 64)
+                    && U32(mirror, 220) != U32(metadata, 220), "metadata mirror is distinct");
+            }
             string logicalName = DecodeDString(logical.Slice(84, 128));
             if (label is not null) Require(logicalName == label, "UDF logical volume label round trips through CS0");
 
@@ -171,26 +197,34 @@ internal static class UdfFilesystemTests
                 "integrity sequence extent is in volume");
             ReadOnlySpan<byte> integrity = Block(integrityStart);
             CheckTag(integrity, 9, integrityStart);
-            Require(U32(integrity, 28) == 1 && U32(integrity, 72) == 1, "closed logical volume with one partition");
-            Require(U32(integrity, 80) == 0 && U32(integrity, 84) == _partitionLength, "integrity size/free tables match the tightly allocated inner partition");
+            Require(U32(integrity, 28) == 1 && U32(integrity, 72) == (udfRevision == 0x0250 ? 2u : 1u), "closed logical volume partition count");
+            if (udfRevision == 0x0250)
+                Require(U32(integrity, 80) == 0 && U32(integrity, 84) == 0
+                    && U32(integrity, 88) == _partitionLength && U32(integrity, 92) == _metadataLength,
+                    "integrity size/free tables include metadata partition");
+            else Require(U32(integrity, 80) == 0 && U32(integrity, 84) == _partitionLength, "integrity tables match partition");
             CheckTag(Block(integrityStart + 1), 8, integrityStart + 1);
 
-            uint fileSetBlock = ReadLongAllocation(logical.Slice(248, 16), out uint fileSetLength);
+            uint fileSetBlock = ReadLongAllocation(logical.Slice(248, 16), out uint fileSetLength, out ushort fileSetMap);
             Require(fileSetLength >= 512, "file set descriptor referenced with sufficient extent length");
-            ReadOnlySpan<byte> fileSet = PartitionBlock(fileSetBlock);
+            ReadOnlySpan<byte> fileSet = PartitionBlock(fileSetBlock, fileSetMap);
             CheckTag(fileSet, 256, fileSetBlock);
-            CheckTag(PartitionBlock(fileSetBlock + 1), 8, fileSetBlock + 1);
+            CheckTag(PartitionBlock(fileSetBlock + 1, fileSetMap), 8, fileSetBlock + 1);
             CheckCharacterSet(fileSet.Slice(48, 64));
             Require(DecodeDString(fileSet.Slice(112, 128)) == logicalName, "file set belongs to the selected logical volume");
             Require(CheckDomain(fileSet.Slice(416, 32)) == udfRevision,
                 "file set domain revision matches the logical volume");
-            uint root = ReadLongAllocation(fileSet.Slice(400, 16), out uint rootLength);
+            uint root = ReadLongAllocation(fileSet.Slice(400, 16), out uint rootLength, out ushort rootMap);
             Require(rootLength == SectorSize, "root ICB covers one logical block");
-            ReadEntry(root, "", expectedDirectory: true);
-            Require(U32(integrity, 120) == _files.Count && U32(integrity, 124) == _visited.Count - _files.Count,
+            ReadEntry(root, "", expectedDirectory: true, rootMap);
+            int implementationUse = udfRevision == 0x0250 ? 96 : 88;
+            Require(U32(integrity, implementationUse + 32) == _files.Count
+                && U32(integrity, implementationUse + 36) == _visited.Count - _files.Count,
                 "integrity implementation data matches the traversed file and directory counts");
-            Require(U16(integrity, 128) == udfRevision && U16(integrity, 130) == udfRevision
-                && U16(integrity, 132) == udfRevision, "integrity revisions match the selected UDF revision");
+            Require(U16(integrity, implementationUse + 40) == udfRevision
+                && U16(integrity, implementationUse + 42) == udfRevision
+                && U16(integrity, implementationUse + 44) == udfRevision,
+                "integrity revisions match the selected UDF revision");
             return _files;
         }
 
@@ -211,39 +245,49 @@ internal static class UdfFilesystemTests
             throw new InvalidOperationException("UDF test reader: descriptor sequence has no terminator.");
         }
 
-        private void ReadEntry(uint block, string path, bool expectedDirectory)
+        private void ReadEntry(uint block, string path, bool expectedDirectory, ushort map = 0)
         {
             Require(_visited.Add(block), "directory traversal has no ICB cycles or aliasing");
-            ReadOnlySpan<byte> entry = PartitionBlock(block);
-            CheckTag(entry, 261, block);
+            ReadOnlySpan<byte> entry = PartitionBlock(block, map);
+            CheckTag(entry, U16(entry, 0) == 266 ? (ushort)266 : (ushort)261, block);
             bool isDirectory = entry[27] == 4;
             Require(isDirectory == expectedDirectory && (isDirectory || entry[27] == 5), "FID and ICB file type agree");
             Require(U16(entry, 20) == 4 && U16(entry, 24) == 1, "ICB uses strategy type 4 with one entry");
             int allocationType = U16(entry, 34) & 7;
             Require(allocationType is 0 or 1, "regular UDF allocation descriptor kind");
             ulong informationLength = U64(entry, 56);
-            uint extraAttributes = U32(entry, 168), allocationLength = U32(entry, 172);
-            int offset = checked(176 + (int)extraAttributes), size = allocationType == 0 ? 8 : 16;
+            bool extended = U16(entry, 0) == 266;
+            uint extraAttributes = extended ? U32(entry, 208) : U32(entry, 168);
+            uint allocationLength = extended ? U32(entry, 212) : U32(entry, 172);
+            int offset = checked((extended ? 216 : 176) + (int)extraAttributes), size = allocationType == 0 ? 8 : 16;
+            if (extended)
+                Require(U64(entry, 64) == informationLength && U64(entry, 72) == (ulong)((informationLength + SectorSize - 1) / SectorSize),
+                    "extended file entry object size and logical block count are valid");
             Require(offset <= SectorSize && allocationLength <= SectorSize - offset && allocationLength % size == 0,
                 "file allocation table lies inside its file entry");
             using MemoryStream contents = new();
             List<uint> contentBlocks = [];
             ulong recordedBlocks = 0;
+            int recordedBlocksOffset = extended ? 72 : 64;
             for (int cursor = offset; cursor < offset + allocationLength; cursor += size)
             {
                 uint encodedLength = U32(entry, cursor), extentLength = encodedLength & 0x3fffffff;
                 uint position = U32(entry, cursor + 4);
                 Require((encodedLength >> 30) == 0 && extentLength is > 0 and <= 0x3ffff800,
                     "data extent is recorded and respects the UDF maximum length");
-                if (size == 16) Require(U16(entry, cursor + 8) == 0, "data extent maps to physical partition zero");
+                ushort extentMap = size == 16 ? U16(entry, cursor + 8)
+                    : extended && allocationType == 0 ? (ushort)1 : (ushort)0;
                 uint blocks = (extentLength + SectorSize - 1) / SectorSize;
-                Require((ulong)position + blocks <= _partitionLength, "file data extent is contained in the inner partition");
-                Require((ulong)contents.Length + extentLength <= informationLength, "extent chain does not overrun the information length");
-                contents.Write(image.AsSpan(checked((int)(_partitionStart + position) * SectorSize), checked((int)extentLength)));
+                uint extentStart = extentMap == 1 ? _metadataStart : _partitionStart;
+                uint extentLimit = extentMap == 1 ? _metadataLength : _partitionLength;
+                Require((ulong)position + blocks <= extentLimit, "file data extent is contained in its partition map");
+                Require((ulong)contents.Length + extentLength <= informationLength,
+                    $"extent chain does not overrun the information length (entry {block}, map {extentMap}, info {informationLength}, content {contents.Length}, extent {extentLength})");
+                contents.Write(image.AsSpan(checked((int)(extentStart + position) * SectorSize), checked((int)extentLength)));
                 for (uint index = 0; index < blocks; index++) contentBlocks.Add(position + index);
                 recordedBlocks += blocks;
             }
-            Require((ulong)contents.Length == informationLength && recordedBlocks == U64(entry, 64),
+            Require((ulong)contents.Length == informationLength && recordedBlocks == U64(entry, recordedBlocksOffset),
                 "64-bit information length and recorded-block count match the allocation chain");
             byte[] bytes = contents.ToArray();
             if (!isDirectory) { _files.Add(path, bytes); return; }
@@ -259,7 +303,7 @@ internal static class UdfFilesystemTests
                 ReadOnlySpan<byte> fid = bytes.AsSpan(cursor, fidLength);
                 CheckTag(fid, 257, contentBlocks[cursor / SectorSize]);
                 Require(U16(fid, 16) == 1 && (fid[18] & 4) == 0, "file identifier version and live status");
-                uint child = ReadLongAllocation(fid.Slice(20, 16), out uint childLength);
+                uint child = ReadLongAllocation(fid.Slice(20, 16), out uint childLength, out ushort childMap);
                 Require(childLength == SectorSize, "child ICB occupies one block");
                 if ((fid[18] & 8) != 0)
                 {
@@ -270,21 +314,23 @@ internal static class UdfFilesystemTests
                 {
                     string name = DecodeCs0(fid.Slice(38 + implementationLength, nameLength));
                     Require(name.Length > 0 && !name.Contains('/') && !name.Contains('\\'), "valid CS0 path component");
-                    ReadEntry(child, path.Length == 0 ? name : path + "/" + name, (fid[18] & 2) != 0);
+                    ReadEntry(child, path.Length == 0 ? name : path + "/" + name, (fid[18] & 2) != 0, childMap);
                 }
                 cursor += fidLength;
             }
             Require(parentEntries == 1, "directory has exactly one parent FID, including the root");
         }
 
-        private uint ReadLongAllocation(ReadOnlySpan<byte> data, out uint length)
+        private uint ReadLongAllocation(ReadOnlySpan<byte> data, out uint length, out ushort map)
         {
             uint rawLength = U32(data, 0);
-            Require((rawLength >> 30) == 0 && U16(data, 8) == 0, "long allocation descriptor references recorded partition-zero data");
+            map = U16(data, 8);
+            Require((rawLength >> 30) == 0 && map is 0 or 1, "long allocation descriptor references a known partition map");
             length = rawLength & 0x3fffffff;
             uint block = U32(data, 4);
-            Require((ulong)block + (length + SectorSize - 1) / SectorSize <= _partitionLength,
-                "long allocation descriptor lies inside the partition");
+            uint limit = map == 1 ? _metadataLength : _partitionLength;
+            Require((ulong)block + (length + SectorSize - 1) / SectorSize <= limit,
+                "long allocation descriptor lies inside its partition map");
             return block;
         }
 
@@ -294,10 +340,12 @@ internal static class UdfFilesystemTests
             return image.AsSpan(checked((int)sector * SectorSize), SectorSize);
         }
 
-        private ReadOnlySpan<byte> PartitionBlock(uint block)
+        private ReadOnlySpan<byte> PartitionBlock(uint block, ushort map = 0)
         {
-            Require(block < _partitionLength, "metadata block lies within partition");
-            return Block(checked(_partitionStart + block));
+            uint start = map == 1 ? _metadataStart : _partitionStart;
+            uint length = map == 1 ? _metadataLength : _partitionLength;
+            Require(block < length, "metadata block lies within partition map");
+            return Block(checked(start + block));
         }
     }
 
@@ -330,7 +378,8 @@ internal static class UdfFilesystemTests
     private static void CheckTag(ReadOnlySpan<byte> descriptor, ushort type, uint location)
     {
         Require(descriptor.Length >= 16 && U16(descriptor, 0) == type && U16(descriptor, 2) == 3
-            && descriptor[5] == 0 && U32(descriptor, 12) == location, "descriptor type/version/location and reserved byte");
+            && descriptor[5] == 0 && U32(descriptor, 12) == location,
+            $"descriptor type/version/location and reserved byte (expected {type}@{location}, got {U16(descriptor, 0)}@{U32(descriptor, 12)})");
         int checksum = 0;
         for (int index = 0; index < 16; index++) if (index != 4) checksum += descriptor[index];
         Require((byte)checksum == descriptor[4], "descriptor tag checksum");
@@ -344,9 +393,10 @@ internal static class UdfFilesystemTests
             9 => 80 + 8 * U32(descriptor, 72) + U32(descriptor, 76),
             257 => checked((uint)descriptor.Length),
             261 => 176 + U32(descriptor, 168) + U32(descriptor, 172),
+            266 => 216 + U32(descriptor, 208) + U32(descriptor, 212),
             _ => throw new InvalidOperationException("Unexpected UDF descriptor type.")
         };
-        Require(length == descriptorLength - 16, "CRC covers the complete descriptor body");
+        Require(length == descriptorLength - 16, $"CRC covers the complete descriptor body (type {type}, crc {length}, body {descriptorLength - 16})");
         ushort crc = 0;
         foreach (byte value in descriptor.Slice(16, length))
         {
