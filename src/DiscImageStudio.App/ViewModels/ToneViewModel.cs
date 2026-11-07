@@ -176,6 +176,7 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.DvdPitchCubic)
             or nameof(DiscParametersState.DvdDataDirectory)
             or nameof(DiscParametersState.DvdVolumeLabel)
+            or nameof(DiscParametersState.DvdFileSystem)
             or nameof(DiscParametersState.DvdFilesAtOuterRing))
         {
             ScheduleTonePreview();

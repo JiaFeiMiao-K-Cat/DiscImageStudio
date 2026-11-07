@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using System.IO;
 using System.Text;
 using DiscImageStudio.BluRay;
+using DiscImageStudio.Iso;
 
 internal static class UdfFilesystemTests
 {
@@ -13,6 +14,7 @@ internal static class UdfFilesystemTests
         Directory.CreateDirectory(directory);
         try
         {
+            TestMetadataAlignment(directory);
             foreach (char unsupported in new[] { '\ufeff', '\ufffe' })
             {
                 bool rejected = false;
@@ -82,6 +84,32 @@ internal static class UdfFilesystemTests
             Console.WriteLine("udf-filesystem: passed (independent descriptor/CRC/extent reader, Unicode files, anchors, 2 MiB maximum ISO)");
         }
         finally { Directory.Delete(directory, recursive: true); }
+    }
+
+    private static void TestMetadataAlignment(string directory)
+    {
+        string source = Path.Combine(directory, "alignment-source");
+        Directory.CreateDirectory(source);
+        for (int index = 0; index < 47; index++)
+            File.WriteAllBytes(Path.Combine(source, $"file-{index:D2}.bin"), [(byte)index]);
+
+        UdfImageWriter.LayoutPlan plan = UdfImageWriter.Plan(source, 4096, "ALIGNMENT",
+            filesAtOuterRing: true, revision: UdfImageWriter.Revision.V2_50);
+        using MemoryStream suffix = new();
+        UdfImageWriter.WriteSequentialSuffix(plan, suffix, plan.DrawingEndLbaExclusive);
+        byte[] bytes = suffix.ToArray();
+        int metadataEntries = 0;
+        for (int offset = 0; offset + 2048 <= bytes.Length; offset += 2048)
+        {
+            ReadOnlySpan<byte> entry = bytes.AsSpan(offset, 2048);
+            if (U16(entry, 0) != 266 || entry[27] is not (250 or 251)) continue;
+            metadataEntries++;
+            Require(U32(entry, 216) % UdfImageWriter.MetadataAllocationUnitSectors == 0,
+                "UDF 2.50 metadata content is rounded to the allocation unit");
+            Require(U32(entry, 220) % UdfImageWriter.MetadataAllocationUnitSectors == 0,
+                "UDF 2.50 metadata main and mirror extents start on allocation-unit boundaries");
+        }
+        Require(metadataEntries == 2, "UDF 2.50 suffix contains main and mirror metadata entries");
     }
 
     // This reader follows ECMA-167 byte layouts and UDF 2.01 constraints, rather than

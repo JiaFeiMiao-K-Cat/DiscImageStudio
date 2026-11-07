@@ -18,6 +18,7 @@ public static class UdfImageWriter
     private const uint VdsSectors = 16;
     private const uint IntegrityLba = 48;
     private const uint FirstPartitionLba = 288;
+    public const uint MetadataAllocationUnitSectors = 32;
     private const uint MaximumExtentBytes = 0x3ffff800;
     private const string ImplementationId = "*DiscImageStudio";
 
@@ -149,8 +150,9 @@ public static class UdfImageWriter
                 node.DataLba = logicalCursor;
                 logicalCursor = checked(logicalCursor + SectorCount(node.DataLength));
             }
-            metadataSectors = logicalCursor;
-            metadataMainStart = FirstPartitionLba + 32;
+            metadataSectors = checked((logicalCursor + MetadataAllocationUnitSectors - 1)
+                / MetadataAllocationUnitSectors * MetadataAllocationUnitSectors);
+            metadataMainStart = FirstPartitionLba + MetadataAllocationUnitSectors;
             cursor = checked(metadataMainStart + metadataSectors);
         }
         foreach (Node node in nodes.Where(node => node.IsDirectory))
@@ -169,11 +171,14 @@ public static class UdfImageWriter
         if (revision == Revision.V2_50)
         {
             metadataMirrorEntry = cursor;
-            metadataMirrorStart = checked(cursor + 1);
+            metadataMirrorStart = checked((cursor + MetadataAllocationUnitSectors)
+                / MetadataAllocationUnitSectors * MetadataAllocationUnitSectors);
             cursor = checked(metadataMirrorStart + metadataSectors);
         }
-        uint drawingEnd = (volumeSectors - 257) / 32 * 32;
-        uint drawingStart = checked((cursor + 31) / 32 * 32);
+        uint drawingEnd = (volumeSectors - 257) / MetadataAllocationUnitSectors
+            * MetadataAllocationUnitSectors;
+        uint drawingStart = checked((cursor + MetadataAllocationUnitSectors - 1)
+            / MetadataAllocationUnitSectors * MetadataAllocationUnitSectors);
         if (drawingStart >= drawingEnd)
             throw new ArgumentException($"Files and UDF metadata need {cursor} sectors, leaving no complete drawing cluster before the backup metadata at sector {drawingEnd}.");
         uint partitionStart = FirstPartitionLba;
@@ -183,7 +188,8 @@ public static class UdfImageWriter
             // Its relative addresses stay identical; only the descriptor's partition
             // origin and the absolute sequential write positions change.
             uint partitionSectors = cursor - FirstPartitionLba;
-            partitionStart = (drawingEnd - partitionSectors) / 32 * 32;
+            partitionStart = (drawingEnd - partitionSectors) / MetadataAllocationUnitSectors
+                * MetadataAllocationUnitSectors;
             uint shift = partitionStart - FirstPartitionLba;
             foreach (Node node in nodes)
             {
@@ -417,8 +423,8 @@ public static class UdfImageWriter
             BinaryPrimitives.WriteUInt32LittleEndian(map[40..], 0);
             BinaryPrimitives.WriteUInt32LittleEndian(map[44..], plan.MetadataMirrorEntryLba - plan.PartitionStartLba);
             BinaryPrimitives.WriteUInt32LittleEndian(map[48..], uint.MaxValue);
-            BinaryPrimitives.WriteUInt32LittleEndian(map[52..], 32);
-            BinaryPrimitives.WriteUInt16LittleEndian(map[56..], 32);
+            BinaryPrimitives.WriteUInt32LittleEndian(map[52..], MetadataAllocationUnitSectors);
+            BinaryPrimitives.WriteUInt16LittleEndian(map[56..], checked((ushort)MetadataAllocationUnitSectors));
             map[58] = 1;
             SetTag(data, 6, location, 510);
         }

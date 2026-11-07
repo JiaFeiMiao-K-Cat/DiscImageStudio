@@ -118,6 +118,31 @@ internal static class DesignDataRegionTests
             outer[1].OuterRadiusMm, "DVD file annulus ends with the file data");
         Require(outer[0].OuterRadiusMm < outer[1].InnerRadiusMm,
             "DVD picture gap stays visible between the annuli");
+
+        DvdStreamingOptions udfOptions = options with { FileSystem = DvdDataFileSystem.Udf250 };
+        DvdHybridStreamingPlan udfInnerPlan = DvdStreamingGenerator.PrepareHybrid(
+            data, udfOptions, "GUIDE", false);
+        IReadOnlyList<DesignViewModel.DataRegionMm> udfInner = Compute(
+            OpticalDiscFamily.Dvd, data, false, totalSectors, usableSectors,
+            innerMm, outerMm, DvdDataFileSystem.Udf250);
+        Require(udfInner.Count == 1, "DVD UDF inner placement moves one physical partition");
+        Near(innerMm, udfInner[0].InnerRadiusMm, "DVD UDF inner annulus starts at the hub");
+        Near(DvdRadiusAt(geometry, totalSectors,
+                udfInnerPlan.FilesystemEndLbaExclusive + (uint)FilesystemMetadataBudget.ReserveSectors(udfInnerPlan.FileCount)),
+            udfInner[0].OuterRadiusMm, "DVD UDF inner annulus includes its reserve");
+
+        DvdHybridStreamingPlan udfOuterPlan = DvdStreamingGenerator.PrepareHybrid(
+            data, udfOptions, "GUIDE", true);
+        IReadOnlyList<DesignViewModel.DataRegionMm> udfOuter = Compute(
+            OpticalDiscFamily.Dvd, data, true, totalSectors, usableSectors,
+            innerMm, outerMm, DvdDataFileSystem.Udf250);
+        int udfReserve = FilesystemMetadataBudget.ReserveSectors(udfOuterPlan.FileCount);
+        Require(udfOuter.Count == 1, "DVD UDF outer placement keeps one relocated partition annulus");
+        Near(DvdRadiusAt(geometry, totalSectors,
+                Math.Max(udfOuterPlan.DrawingStartLba, udfOuterPlan.FileDataStartLba - (uint)udfReserve)),
+            udfOuter[0].InnerRadiusMm, "DVD UDF outer annulus grows inward for its reserve");
+        Near(DvdRadiusAt(geometry, totalSectors, udfOuterPlan.FilesystemEndLbaExclusive),
+            udfOuter[0].OuterRadiusMm, "DVD UDF outer annulus ends at the relocated partition");
     }
 
     private static void TestBluRay(string data)
@@ -174,9 +199,10 @@ internal static class DesignDataRegionTests
 
     private static IReadOnlyList<DesignViewModel.DataRegionMm> Compute(
         OpticalDiscFamily family, string directory, bool filesAtOuterRing,
-        long totalSectors, long usableSectors, double innerMm, double outerMm)
+        long totalSectors, long usableSectors, double innerMm, double outerMm,
+        DvdDataFileSystem dvdFileSystem = DvdDataFileSystem.Cdfs)
         => DataRegionPlanner.Compute(new DataRegionInputs(family, directory, "GUIDE", filesAtOuterRing,
-            totalSectors, usableSectors, innerMm, outerMm, 0, 0, 0))
+            totalSectors, usableSectors, innerMm, outerMm, 0, 0, 0, dvdFileSystem))
             ?? throw new InvalidOperationException("Expected the guide to return regions.");
 
     private static double RadiusAt(CdDiscParameters parameters, uint lba)
