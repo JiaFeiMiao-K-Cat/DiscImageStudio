@@ -15,7 +15,7 @@ using DiscImageStudio.ViewModels;
 
 internal static class FilePlacementPreviewTests
 {
-    private static readonly Color Yellow = Color.FromRgb(250, 204, 21);
+    private static readonly Color Blue = Color.FromRgb(51, 133, 255);
     private static readonly DateTimeOffset Timestamp = new(2026, 10, 26, 0, 0, 0, TimeSpan.Zero);
 
     internal static void Run()
@@ -30,7 +30,7 @@ internal static class FilePlacementPreviewTests
         thread.Start();
         thread.Join();
         if (error is not null) ExceptionDispatchInfo.Capture(error).Throw();
-        Console.WriteLine("file-placement-preview: passed (inner/outer projection and readback, exact cubic bounds, yellow file regions, missing metadata, invalid folders, stale state)");
+        Console.WriteLine("file-placement-preview: passed (inner/outer projection and readback, exact cubic bounds, blue file regions, missing metadata, invalid folders, stale state)");
     }
 
     private static void RunOnSta()
@@ -113,8 +113,8 @@ internal static class FilePlacementPreviewTests
             Color SampleCd(double radius)
                 => Sample(projection, (int)Math.Round(projection.PixelWidth / 2.0
                     + radius * projection.PixelWidth / (2 * disc.OuterRadiusMm)), projection.PixelHeight / 2);
-            Require(SampleCd(fileRadius) == Yellow, "CD overlay follows the explicit usable canvas and pixel centre");
-            Require(SampleCd(drawingMiddle) != Yellow, "CD drawing retains its physical range");
+            Require(SampleCd(fileRadius) == Blue, "CD overlay follows the explicit usable canvas and pixel centre");
+            Require(SampleCd(drawingMiddle) != Blue, "CD drawing retains its physical range");
 
             string iso = Path.Combine(directory, $"cd-{outer}.iso");
             CdDataImageGenerator.Generate(source, iso, disc, plan);
@@ -348,17 +348,17 @@ internal static class FilePlacementPreviewTests
         Require(Math.Abs(exact - areaEstimate) > 1, "cubic test separates exact geometry from area approximation");
         FileRegionPreviewOverlay.ApplyDvd(path, actual, 2048, 4096);
         BitmapSource bitmap = ReadPng(path);
-        Require(SampleRadius(bitmap, 24 + .5, dvd: true) == Yellow, "DVD inner file area is yellow");
+        Require(SampleRadius(bitmap, 24 + .5, dvd: true) == Blue, "DVD inner file area is blue");
         Require(SampleRadius(bitmap, exact + .5, dvd: true) == Colors.Red, "DVD drawing keeps its original pixels");
         double distinguishingRadius = (exact + areaEstimate) / 2;
-        Require(SampleRadius(bitmap, distinguishingRadius, dvd: true) == (distinguishingRadius < exact ? Yellow : Colors.Red),
+        Require(SampleRadius(bitmap, distinguishingRadius, dvd: true) == (distinguishingRadius < exact ? Blue : Colors.Red),
             "DVD cubic file boundary uses track arc length rather than disc area");
         Require(Sample(bitmap, 512, 512) == Colors.Red && Sample(bitmap, 0, 0) == Colors.Red,
             "file overlay preserves the centre hole and space outside the disc");
         WritePng(path, 1025, Colors.Red);
         FileRegionPreviewOverlay.ApplyDvd(path, actual, 0, 2048);
         bitmap = ReadPng(path);
-        Require(SampleRadius(bitmap, exact + .5, dvd: true) == Yellow
+        Require(SampleRadius(bitmap, exact + .5, dvd: true) == Blue
             && SampleRadius(bitmap, 24 + .5, dvd: true) == Colors.Red,
             "DVD outer file region moves outward without stretching the drawing");
     }
@@ -381,7 +381,7 @@ internal static class FilePlacementPreviewTests
             "BD readback still classifies drawing payload normally");
         FileRegionPreviewOverlay.ApplyBluRay(png, disc, 256, 768);
         BitmapSource after = ReadPng(png);
-        Require(SampleRadius(after, fileRadius, dvd: false) == Yellow
+        Require(SampleRadius(after, fileRadius, dvd: false) == Blue
             && SampleRadius(after, drawingRadius, dvd: false) == Colors.Black,
             "BD readback overlays only occupied regions");
         Require(original.SequenceEqual(File.ReadAllBytes(iso)), "preview coloration never changes burn data");
@@ -417,16 +417,16 @@ internal static class FilePlacementPreviewTests
 
     private static string Argument(string[] arguments, string name) => arguments[Array.IndexOf(arguments, name) + 1];
 
-    private static void RequirePreview(LivePreviewViewModel preview, bool yellow, string context)
+    private static void RequirePreview(LivePreviewViewModel preview, bool hasFileRegion, string context)
     {
         Require(preview.HasResultImage && preview.StatusText.StartsWith("已实时更新"), context + ": " + preview.StatusText);
-        Require(preview.HasFileRegionOverlay == yellow, context + " legend visibility");
+        Require(preview.HasFileRegionOverlay == hasFileRegion, context + " legend visibility");
         BitmapSource bitmap = preview.ResultImage!;
         byte[] pixels = Pixels(bitmap);
-        int yellowPixels = 0;
+        int bluePixels = 0;
         for (int i = 0; i < pixels.Length; i += 4)
-            if (pixels[i] == 21 && pixels[i + 1] == 204 && pixels[i + 2] == 250 && pixels[i + 3] == 255) yellowPixels++;
-        Require(yellow ? yellowPixels > 10 : yellowPixels == 0, context + " rendered yellow file pixels");
+            if (pixels[i] == 0xFF && pixels[i + 1] == 0x85 && pixels[i + 2] == 0x33 && pixels[i + 3] == 0xFF) bluePixels++;
+        Require(hasFileRegion ? bluePixels > 10 : bluePixels == 0, context + " rendered blue file pixels");
     }
 
     private static Color SampleRadius(BitmapSource bitmap, double radius, bool dvd)

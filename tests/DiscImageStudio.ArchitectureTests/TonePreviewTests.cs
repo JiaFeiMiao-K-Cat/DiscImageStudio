@@ -149,15 +149,15 @@ internal static class TonePreviewTests
         bool cd = family == OpticalDiscFamily.CompactDisc;
         double centre = cd ? Size / 2.0 : (Size - 1) / 2.0;
         double mmPerPixel = outer * 2 / (family == OpticalDiscFamily.Dvd ? Size - 1 : Size);
-        int wrongMask = 0, wrongFiles = 0, yellow = 0, opaqueDrawing = 0;
+        int wrongMask = 0, wrongFiles = 0, blue = 0, opaqueDrawing = 0;
         for (int y = 0; y < Size; y++)
         for (int x = 0; x < Size; x++)
         {
             int offset = (y * Size + x) * 4;
             double dx = (x - centre) * mmPerPixel, dy = (y - centre) * mmPerPixel;
             double radius = Math.Sqrt(dx * dx + dy * dy);
-            bool isYellow = pixels[offset] == 21 && pixels[offset + 1] == 204 && pixels[offset + 2] == 250 && pixels[offset + 3] == 255;
-            if (isYellow) yellow++;
+            bool isBlue = pixels[offset] == 0xFF && pixels[offset + 1] == 0x85 && pixels[offset + 2] == 0x33 && pixels[offset + 3] == 0xFF;
+            if (isBlue) blue++;
             // A one-pixel margin excludes sampling/rounding of the physical boundary.
             if (radius < inner - mmPerPixel || radius > outer + mmPerPixel)
             {
@@ -166,15 +166,15 @@ internal static class TonePreviewTests
             if (radius >= inner && radius < outer && drawing is { } range)
             {
                 bool expectedFile = radius < range.Inner || radius >= range.Outer;
-                if (expectedFile != isYellow) wrongFiles++;
+                if (expectedFile != isBlue) wrongFiles++;
             }
-            if (radius > inner + mmPerPixel && radius < outer - mmPerPixel && !isYellow && pixels[offset + 3] == 255)
+            if (radius > inner + mmPerPixel && radius < outer - mmPerPixel && !isBlue && pixels[offset + 3] == 255)
                 opaqueDrawing++;
         }
         Require(wrongMask == 0 && pixels[(256 * Size + 256) * 4 + 3] == 0,
             name + ": the centre and outside the recording annulus are transparent");
-        Require(wrongFiles == 0 && (drawing is null ? yellow == 0 : yellow > 0),
-            name + $": yellow pixels match the filesystem plan, including both ends (mismatches {wrongFiles}, yellow {yellow})");
+        Require(wrongFiles == 0 && (drawing is null ? blue == 0 : blue > 0),
+            name + $": blue pixels match the filesystem plan, including both ends (mismatches {wrongFiles}, blue {blue})");
         Require(opaqueDrawing > 1000, name + ": the tone picture remains visible inside the drawing range");
     }
 

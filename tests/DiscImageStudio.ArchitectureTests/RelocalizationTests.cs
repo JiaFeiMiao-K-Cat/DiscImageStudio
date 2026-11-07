@@ -28,7 +28,7 @@ internal static class RelocalizationTests
         TestBurnStatusStability();
         TestControlLoadedRefresh();
         Console.WriteLine("relocalization: passed (geometry preserved, completed and running read-backs untouched, " +
-            "result and probe failures recomposed, search ranges listed, control text refreshed on load)");
+            "failed previews cleared and reworded, search ranges listed, control text refreshed on load)");
     }
 
     private static void TestPresetGeometryStability()
@@ -169,33 +169,29 @@ internal static class RelocalizationTests
                     && preview.StatusText.StartsWith("已实时更新", StringComparison.Ordinal),
                     "the refresh that started without a result settles in the new language: " + preview.StatusText);
 
-                // A refresh failure is state, not chrome: a switch must re-word it, with the
-                // previous result still on screen or with nothing on screen at all.
+                // A refresh failure is state, not chrome: it replaces the result on screen
+                // instead of leaving the previous picture under the error line, and a language
+                // switch re-words the failure without bringing that picture back.
                 using (FileStream locked = new(iso, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
                 {
                     Wait(StartPreview(preview));
                 }
 
-                Require(preview.HasResultImage
+                Require(!preview.HasResultImage && !preview.HasFileRegionOverlay
+                    && preview.ResultPreviewPath.Length == 0
+                    && !preview.DownloadPreviewCommand.CanExecute(null)
+                    && preview.ResultPreviewPlaceholderText.StartsWith("实时预览失败：", StringComparison.Ordinal)
                     && preview.StatusText.StartsWith("实时预览失败：", StringComparison.Ordinal),
-                    "the blocked ISO read reports a failure: " + preview.StatusText);
+                    "the blocked ISO read clears the stale result and its export: " + preview.StatusText);
                 L.SetLanguage(L.English);
                 shell.Relocalize();
-                Require(preview.StatusText.StartsWith("Live preview failed:", StringComparison.Ordinal),
-                    "language switch re-words the failure above a kept result: " + preview.StatusText);
-
-                Invoke(preview, "UpdateMode", [true]);
-                using (FileStream locked = new(iso, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
-                {
-                    Wait(StartPreview(preview));
-                }
-
                 Require(!preview.HasResultImage
                     && preview.StatusText.StartsWith("Live preview failed:", StringComparison.Ordinal),
-                    "the blocked ISO read fails without a result: " + preview.StatusText);
+                    "language switch re-words the failure without restoring the result: " + preview.StatusText);
                 L.SetLanguage(L.Chinese);
                 shell.Relocalize();
-                Require(preview.StatusText.StartsWith("实时预览失败：", StringComparison.Ordinal),
+                Require(!preview.HasResultImage
+                    && preview.StatusText.StartsWith("实时预览失败：", StringComparison.Ordinal),
                     "language switch keeps a resultless failure instead of the idle hint: " + preview.StatusText);
 
                 state.CdInnerRadius = "24.5001";

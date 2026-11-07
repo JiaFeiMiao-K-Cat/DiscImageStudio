@@ -66,7 +66,7 @@ public static class UdfImageWriter
         public DateTimeOffset Timestamp { get; }
         internal List<Node> Nodes { get; }
         internal uint ReserveVdsLba => VolumeSectors - 256;
-        internal uint PartitionStartLba { get; }
+        public uint PartitionStartLba { get; }
         public uint PartitionStart { get { return PartitionStartLba; } }
         internal uint PartitionSectors => DataEndLbaExclusive - PartitionStartLba;
     }

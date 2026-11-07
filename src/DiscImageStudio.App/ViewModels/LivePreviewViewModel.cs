@@ -514,17 +514,14 @@ public partial class LivePreviewViewModel : ObservableObject
                 {
                     _livePreviewFailure = failure;
                     StatusText = L.F($"实时预览失败：{failure}");
+                    ResultPreviewPlaceholderText = StatusText;
                 }
             }
 
             return;
         }
 
-        if (_livePreviewFailure is { } failed)
-        {
-            StatusText = L.F($"实时预览失败：{failed}");
-        }
-        else if (_readyStatus is not null)
+        if (_readyStatus is not null)
         {
             StatusText = _readyStatus();
         }
@@ -563,10 +560,21 @@ public partial class LivePreviewViewModel : ObservableObject
             return;
         }
 
+        ClearResult();
+    }
+
+    /// <summary>Drops the rendered picture, its legend, its export source and its temporary
+    /// file. Every failed refresh routes through here first: a stale picture under an error
+    /// line claims the disc still carries what the previous run produced.</summary>
+    private void ClearResult()
+    {
+        HasFileRegionOverlay = false;
         ResultImage = null;
         HasResultImage = false;
         ResultPreviewPath = string.Empty;
         _downloadablePreview = false;
+        _readyStatus = null;
+        _livePreviewFailure = null;
         DownloadPreviewCommand.NotifyCanExecuteChanged();
         string? previousPath = _lastLivePreviewPath;
         _lastLivePreviewPath = null;
@@ -581,8 +589,20 @@ public partial class LivePreviewViewModel : ObservableObject
 
     private void SetLivePreviewFailure(Exception exception)
     {
+        ClearResult();
         _livePreviewFailure = exception.Message;
         StatusText = L.F($"实时预览失败：{exception.Message}");
+        ResultPreviewPlaceholderText = StatusText;
+    }
+
+    /// <summary>An input problem detected before rendering starts (missing artifact, invalid
+    /// geometry). It clears the picture exactly like a thrown failure, but the message is not
+    /// kept for a language switch: it names the missing input rather than a broken pipeline.</summary>
+    private void SetLivePreviewUnavailable(string message)
+    {
+        ClearResult();
+        StatusText = message;
+        ResultPreviewPlaceholderText = message;
     }
 
     internal void Schedule()
@@ -686,12 +706,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 out int samplesPerSector,
                 out string message))
         {
-            StatusText = message;
-            if (!HasResultImage)
-            {
-                ResultPreviewPlaceholderText = message;
-            }
-
+            SetLivePreviewUnavailable(message);
             return;
         }
 
@@ -774,12 +789,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 out ToneProfile tone,
                 out string message))
         {
-            StatusText = message;
-            if (!HasResultImage)
-            {
-                ResultPreviewPlaceholderText = message;
-            }
-
+            SetLivePreviewUnavailable(message);
             return;
         }
 
@@ -869,12 +879,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 out IsoReadbackOptions options,
                 out string message))
         {
-            StatusText = message;
-            if (!HasResultImage)
-            {
-                ResultPreviewPlaceholderText = message;
-            }
-
+            SetLivePreviewUnavailable(message);
             return;
         }
 
@@ -937,12 +942,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 out DvdHybridStreamingPlan? filePlan,
                 out string message))
         {
-            StatusText = message;
-            if (!HasResultImage)
-            {
-                ResultPreviewPlaceholderText = message;
-            }
-
+            SetLivePreviewUnavailable(message);
             return;
         }
 
@@ -1019,12 +1019,7 @@ public partial class LivePreviewViewModel : ObservableObject
             string message = imagePath.Length == 0
                 ? L.T("请先在设计页导入图片，合成图会自动填入。")
                 : L.T("蓝光源图片不存在。");
-            StatusText = message;
-            if (!HasResultImage)
-            {
-                ResultPreviewPlaceholderText = message;
-            }
-
+            SetLivePreviewUnavailable(message);
             return;
         }
 
@@ -1053,12 +1048,7 @@ public partial class LivePreviewViewModel : ObservableObject
                                               or IOException
                                               or UnauthorizedAccessException)
         {
-            StatusText = exception.Message;
-            if (!HasResultImage)
-            {
-                ResultPreviewPlaceholderText = exception.Message;
-            }
-
+            SetLivePreviewUnavailable(exception.Message);
             return;
         }
 
@@ -1126,12 +1116,7 @@ public partial class LivePreviewViewModel : ObservableObject
             string message = isoPath.Length == 0
                 ? L.T("请先选择生成的蓝光 ISO（导出页生成后自动填入）。")
                 : L.T("蓝光 ISO 文件不存在。");
-            StatusText = message;
-            if (!HasResultImage)
-            {
-                ResultPreviewPlaceholderText = message;
-            }
-
+            SetLivePreviewUnavailable(message);
             return;
         }
 
@@ -1149,12 +1134,7 @@ public partial class LivePreviewViewModel : ObservableObject
                                               or OverflowException
                                               or ArgumentException)
         {
-            StatusText = exception.Message;
-            if (!HasResultImage)
-            {
-                ResultPreviewPlaceholderText = exception.Message;
-            }
-
+            SetLivePreviewUnavailable(exception.Message);
             return;
         }
 

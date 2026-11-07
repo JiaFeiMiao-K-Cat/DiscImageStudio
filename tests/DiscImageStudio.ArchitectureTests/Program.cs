@@ -73,6 +73,12 @@ if (args is ["--test-usable-sectors"])
     return;
 }
 
+if (args is ["--test-data-region"])
+{
+    DesignDataRegionTests.Run();
+    return;
+}
+
 if (args is ["--benchmark-cd-pitch"])
 {
     CdCubicPitchTests.Benchmark();
@@ -248,6 +254,8 @@ CalibrationBoundaryWorkflowTests.Run();
 CalibrationFitLocalizationTests.Run();
 PopupLocalizationTests.Run();
 AppSettingsTests.Run();
+FilesystemMetadataBudgetTests.Run();
+DesignDataRegionTests.Run();
 LocalizationTests.Run();
 ThemePaletteTests.Run();
 TempFilesCacheTests.Run();

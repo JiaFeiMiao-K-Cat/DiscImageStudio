@@ -69,7 +69,7 @@ Přímé vypalování je experimentální. Používejte pouze testovací média,
 - **Podpora DVD**: Podporuje jakékoli DVD. Exportuje obrazy ISO.
 - **Podpora Blu-ray**: Podporuje jakýkoli jednovrstvý BD-R 25 GB v režimu pouhého kreslení a se soubory UDF 2.01. Viz [ADDING_BLURAY.md](docs/ADDING_BLURAY.md).
 - **Soubory na disku**: U CD, DVD a Blu-ray můžete vybrat složku a umístit její soubory na vnitřní nebo vnější okruh přímo na stránce Návrh, případně tato nastavení upravit na stránce Export. Nastavení se ukládá s projektem.
-- **Náhled oblasti souborů**: Projekce návrhu hybridních disků a zpětné čtení výstupu zvýrazňují oblast souborů včetně systému souborů žlutě.
+- **Náhled oblasti souborů**: Projekce návrhu hybridních disků a zpětné čtení výstupu zvýrazňují oblast souborů včetně systému souborů modře.
 - **Schémata šedi podle média**: CD i DVD používají dvě černo-bílé úrovně: `0D / AA` pro CD a `A5 / 92` v prokládané doméně DVD. Viz [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md).
 - **Nástroj pro dithering šedi**: Samostatný program dokáže zpracovat zdrojový obrázek na dvouúrovňový černo-bílý PNG `0/255`. Podporuje otevírání nebo přetahování zdrojových obrázků, náhledy vedle sebe a bezztrátový export PNG. Viz [návod k použití a sestavení](tools/FourLevelDither/README.md).
 - **Předvolby disků**: Vestavěné parametry disků pokrývají několik značek CD, DVD a BD. Můžete také přispět vlastními kalibrovanými daty; viz [údržba předvoleb](docs/DISC_PRESETS.md).
