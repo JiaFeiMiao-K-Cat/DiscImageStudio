@@ -127,14 +127,23 @@ internal static class CalibrationPhotoViewModelTests
             Directory.CreateDirectory(fixtureDirectory);
             CalibrationSessionJson.Save(Path.Combine(fixtureDirectory, "calibration-photo-trace.calibration.json"), session);
             CalibrationSessionJson.Save(Path.Combine(fixtureDirectory, "calibration-photo-boundary.calibration.json"),
-                session with { Photo = session.Photo! with { RectificationConfirmed = false, Traces = [] } });
+                session with { Photo = session.Photo! with { RectificationConfirmed = false, Traces = [] }, ConfirmedFit = null });
         }
         File.Delete(photoPath);
         var reopened = CreateModel(new DiscParametersState());
         Await(reopened, "LoadSessionFromAsync", sessionPath);
         Require(reopened.IsTraceStep && reopened.PhotoImage is not null && reopened.RectifiedPhoto is not null
             && reopened.TracePoints.Count == 70 && reopened.Target!.Id == target.Id, "session reopens without the original photo file");
-        Require(!reopened.ApplyParametersCommand.CanExecute(null), "reopened points require a fresh fit");
+        Require(reopened.ContourConfirmed && reopened.ApplyParametersCommand.CanExecute(null)
+            && reopened.SelectedCoarseCandidate?.Parameters == best.Parameters
+            && reopened.CrossPredictionContours.Count == 1,
+            "reopening a confirmed fit restores the chosen parameters, approval and predicted curve");
+        Require(reopened.Target!.Parameters == target.Parameters
+            && double.Parse(reopened.Parameters.CdInnerRadius, CultureInfo.InvariantCulture) == best.Parameters.InnerRadiusMm
+            && double.Parse(reopened.Parameters.CdPitchLinear, CultureInfo.InvariantCulture) == best.Parameters.PitchLinear
+            && double.Parse(reopened.Parameters.CdPitchQuadratic, CultureInfo.InvariantCulture) == best.Parameters.PitchQuadratic
+            && double.Parse(reopened.Parameters.CdPitchCubic, CultureInfo.InvariantCulture) == best.Parameters.PitchCubic,
+            "reopening restores the confirmed next-disc setup while preserving the photographed target geometry");
 
         bool cancelledAtPublication = false;
         System.ComponentModel.PropertyChangedEventHandler cancelAtPublication = (_, change) =>
@@ -558,7 +567,10 @@ internal static class CalibrationPhotoViewModelTests
         var target = CalibrationTarget.Create(original.Target.Parameters, artwork: CalibrationArtwork.FineCross);
         var actual = target.Parameters with { InnerRadiusMm = 24.507, OuterRadiusMm = 56.791 };
         // This box excludes the physical radii until the ring fit supplies the centre.
-        CalibrationSessionJson.Save(path, original with { Target = target, FitOptions = new(target.Parameters, .001, AutoRange: false) });
+        CalibrationSessionJson.Save(path, original with
+        {
+            Target = target, FitOptions = new(target.Parameters, .001, AutoRange: false), ConfirmedFit = null,
+        });
         var state = new DiscParametersState();
         var model = CreateModel(state);
         Await(model, "LoadSessionFromAsync", path);
@@ -671,6 +683,7 @@ internal static class CalibrationPhotoViewModelTests
         {
             Target = target, FitOptions = new(target.Parameters, .005),
             Photo = baseline.Photo! with { Traces = [] },
+            ConfirmedFit = null,
         };
         string path = Path.Combine(directory, "complete-observed-curve.calibration.json");
         CalibrationSessionJson.Save(path, startingSession);

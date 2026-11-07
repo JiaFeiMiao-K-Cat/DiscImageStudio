@@ -6,7 +6,8 @@ namespace DiscImageStudio.Core.Calibration;
 public sealed record CalibrationSession(
     CalibrationTarget Target, List<CalibrationObservation> Observations,
     CalibrationFitOptions? FitOptions = null, bool CdInterleave = true,
-    CalibrationPhotoSession? Photo = null)
+    CalibrationPhotoSession? Photo = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] CalibrationConfirmedFit? ConfirmedFit = null)
 {
     public void Validate()
     {
@@ -16,6 +17,7 @@ public sealed record CalibrationSession(
         CalibrationFitter.ValidateObservations(Target, Observations);
         FitOptions?.Validate(Target);
         Photo?.Validate();
+        ConfirmedFit?.Validate(Target, Photo);
         if (Target.HasWideAddressBands && Photo?.UseRingSeed == true)
             throw new ArgumentException("宽带测量用于估算下一张盘的初始半径。");
         bool wrongWideDiscSize = Target.Parameters.Kind == CalibrationDiscKind.Cd && Photo?.PhysicalOuterRadiusMm != 60;
@@ -43,6 +45,35 @@ public sealed record CalibrationSession(
              || Photo.ArcDraft is not null || (uint)selection >= (uint)CalibrationRingFitter.MeasurementCount(Target)))
             throw new ArgumentException("单线取点记录中的交界或照片状态无效。");
     }
+}
+
+/// <summary>A manually confirmed fit belongs to the photographed target, whose original
+/// generation geometry stays frozen. Its selected candidate supplies the next disc's setup.</summary>
+public sealed record CalibrationConfirmedFit(string TargetId, CalibrationFitResult Result, int SelectedCandidateIndex)
+{
+    internal void Validate(CalibrationTarget target, CalibrationPhotoSession? photo)
+    {
+        if (TargetId != target.Id || photo?.RectificationConfirmed != true
+            || !(target.HasCrossArms || target.HasSingleRadialLine || target.HasBoundaryPattern)
+            || Result is null || Result.Candidates is null || Result.Candidates.Count is < 1 or > 20
+            || (uint)SelectedCandidateIndex >= (uint)Result.Candidates.Count
+            || Result.Warnings is null || Result.Warnings.Any(warning => warning is null)
+            || !double.IsFinite(Result.RotationRadians) || !ValidError(Result.RmsErrorMm))
+            throw new ArgumentException("Invalid confirmed calibration fit.");
+        if (Result.BestParameters is { } best) target.ValidateCompatible(best);
+        if (Result.Succeeded && Result.BestParameters is null)
+            throw new ArgumentException("Invalid confirmed calibration fit.");
+        foreach (CalibrationFitCandidate candidate in Result.Candidates)
+        {
+            if (candidate is null || candidate.Parameters is null
+                || !double.IsFinite(candidate.RotationRadians) || !ValidError(candidate.RmsErrorMm)
+                || !ValidError(candidate.RobustCost) || !ValidError(candidate.MaxErrorMm) || candidate.OutlierCount < 0)
+                throw new ArgumentException("Invalid confirmed calibration fit candidate.");
+            target.ValidateCompatible(candidate.Parameters);
+        }
+    }
+
+    private static bool ValidError(double value) => double.IsFinite(value) && value >= 0;
 }
 
 /// <summary>Selection in three-point mode and up to two clicks on an unfinished inner edge.</summary>

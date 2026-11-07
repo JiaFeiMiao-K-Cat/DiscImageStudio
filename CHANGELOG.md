@@ -4,6 +4,7 @@
 
 ### 中文
 
+- 工程切换盘片预设时同步高级预览的实测半径和三项轨距系数；在工程设置中保存预设后立即应用并选中新条目，后续取消窗口不撤销该次保存。标定记录可保存已确认的拟合结果，重开后恢复所选候选及设置，同时保留照片对应的原刻录参数。
 - 分离盘片几何总扇区数与可用扇区数，补齐内置预设；旧预设缺字段时 CD 预留 2 扇区、DVD 保守预留 608 扇区，显式可用值不重复扣减。设计、预览和导出使用可用区域，流式刻录在布局前按实际可写容量限制输出并保持 DVD 16／BD 32 扇区对齐；标定读盘同时保留几何与可写容量，混合镜像按输出长度安排文件及尾部元数据。移除 CD 隐式允许超出 DAO 边界 3 扇区的容差，写前严格遵守设备报告的 lead-out 上限。新建 CD 粗标会检查最外侧固定测量边界是否完整可写；BD 预览缓存有效外半径，避免缩小容量时逐像素重复解算几何。
 - 将详细刻录诊断扩展到 DVD 和 BD：共同记录构建环境、光驱固件、物理盘片类型及空白状态；DVD 记录容量、缓冲保护／封盘设置和阶段耗时，BD 记录 profile、格式化状态、轨道与可写地址及刷新／封盘／释放耗时。失败前缓存源流与设备上下文，保留 BD 底层真实 SCSI sense；DVD 高层接口未提供的 sense 明确记为不可用。
 - 补充 CD 音轨／数据盘 DAO 刻录诊断：记录构建版本、系统、光驱固件、实际盘片类型与写前空白状态、子通道及速度设置、容量余量、阶段耗时、生成与主机缓冲状态；导入区事件快照每两秒最多记录一次。失败上下文在清理前保存，不额外查询故障设备；明确标注 IMAPI 未提供失败命令的 SCSI sense。
@@ -15,6 +16,7 @@
 
 ### English
 
+- Synchronize advanced preview radii and cubic pitch coefficients when applying a project preset. Saving a preset in project settings immediately applies and selects it, even if the dialog is later cancelled. Calibration records retain confirmed fitting results and restore the selected candidate and setup while preserving the photographed disc's original generation parameters.
 - Separate geometry sector counts from usable capacity and populate built-in presets. Legacy presets without a usable value reserve 2 CD sectors or a conservative 608 DVD sectors; explicit limits are never reduced twice. Artwork, previews and exports follow the usable region. Streaming burns constrain layouts to the current writable capacity, aligned to 16 DVD sectors or 32 BD sectors. Calibration reads retain both counts, and filesystem layouts keep files and trailing metadata within the output length. Remove the implicit 3-sector CD DAO overburn allowance so the final check strictly enforces the reported lead-out limit. Reject new CD coarse targets whose outer fixed measurement edge cannot fit, and cache the usable radius during BD previews to avoid solving geometry for every pixel.
 - Extended detailed burn diagnostics to DVD and BD, sharing build/runtime, recorder firmware, physical media type and blank-state reporting. DVD adds capacity, buffer/closure settings and phase timings; BD adds profile, format state, track/writable-address data and flush/close/release timings. Source and device context are cached before cleanup, preserving real BD command-level SCSI sense and explicitly marking sense unavailable through the high-level DVD API.
 - Added CD audio/data DAO diagnostics for the build, OS, recorder firmware, reported physical media type and pre-write blank state, sector/speed settings, capacity margin, phase timings and producer/host-buffer state. Lead-in event snapshots are throttled to at most one every two seconds. Failure context is retained before cleanup without querying the failing device; unavailable command-level SCSI sense is explicitly identified.

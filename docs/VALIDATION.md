@@ -4,6 +4,12 @@
 
 ## 本地验证
 
+2026-11-07，#184 参数保存流程：CD／DVD／BD 切换预设时同步高级预览的半径和三项轨距系数；工程设置保存预设成功后立即应用并按新 ID 选中，取消后保留该次保存，后续未确认输入不应用。覆盖同名条目、新建工程隔离、命名取消、保存失败、仅改名保留手工实测值和 BD 极性。
+
+标定记录回归覆盖已确认但尚未应用／应用后的拟合保存重开、所选候选与预测恢复、原 Target 冻结、旧记录兼容、取消确认／更改点位后的失效、无效目标和候选校验，以及加载期间切换候选和取消加载不会误恢复确认。原有照片流程测试同步验证新的恢复行为。
+
+Release solution 构建通过（0 警告、0 错误）；`--test-parameter-persistence`、DVD `selftest` 和完整 ArchitectureTests 均通过，完整输出为 `architecture-selftest: all checks passed`，日志位于 `artifacts/parameter-persistence/architecture-tests.log`。测试进程的 `TEMP`／`TMP` 指向仓库 `tmp`，避免沙箱限制默认临时目录的原子重命名。工程设置离屏截图 `artifacts/parameter-persistence/project-settings.png` 已检查。
+
 2026-11-07，#183 提交前复查：修正 BD 缩小可用容量后，预览逐像素重复构造几何的问题，改为在渲染入口缓存有效外半径；新建 CD 固定地址粗标要求完整包含最外侧测量边界及后续浅色留白，旧冻结记录保持原样。新增回归用外圈标记识别 CD／DVD 错用几何尺度导致的裁边，验证 BD 普通图片流式缩短后与完整输出前缀逐字节一致；另检查三次轨距 BD 的外缘像素、两种预览路径一致、常轨距／三次轨距短 ISO 读回，以及 CD 粗标容量的不足、临界值、正常值和旧记录恢复。最终 Release 构建零警告、零错误，容量专项、DVD selftest 和完整 ArchitectureTests 全部通过。日志为 `artifacts/usable-sectors/build-review.log`、`focused-review.log`、`dvd-selftest-review.log` 和 `architecture-review.log`。未执行实盘刻录。
 
 English: the pre-commit review added cached BD preview radii and qualification of new CD coarse targets against their fixed outer boundary. Outer-ring fixtures detect incorrect CD/DVD image scaling; BD stream-prefix, reduced-capacity preview/readback and CD calibration boundary regressions passed. The final Release build, focused capacity checks, DVD selftest and complete architecture suite passed; no physical disc was used.

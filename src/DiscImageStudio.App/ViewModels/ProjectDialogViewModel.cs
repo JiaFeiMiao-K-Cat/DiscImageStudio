@@ -30,7 +30,8 @@ public sealed record ProjectDialogResult(
     double PitchCubic,
     string SavePath,
     bool BluRayInvertMapping = false,
-    long? UsableSectors = null);
+    long? UsableSectors = null,
+    bool SynchronizePreview = false);
 
 /// <summary>The name the user gave a preset in the save dialog. Null (from the handler)
 /// means the user cancelled.</summary>
@@ -264,7 +265,7 @@ public partial class ProjectDialogViewModel : ObservableObject
     public RelayCommand BrowseSavePathCommand { get; }
 
     /// <summary>Edit mode only: writes the fields' current geometry into the user preset
-    /// catalog, so a tuned project's parameters can seed future projects.</summary>
+    /// catalog and applies them to the open project after a successful save.</summary>
     public RelayCommand SaveAsPresetCommand { get; }
 
     /// <summary>Removes a user preset from the catalog; the context menu only offers it on
@@ -661,7 +662,8 @@ public partial class ProjectDialogViewModel : ObservableObject
             pitchCubic,
             savePath,
             BluRayInvertMapping: Family == OpticalDiscFamily.BluRay && _templateInvertMapping,
-            UsableSectors: DiscParametersState.ParseUsableSectors(Family, sectors, UsableSectorsText));
+            UsableSectors: DiscParametersState.ParseUsableSectors(Family, sectors, UsableSectorsText),
+            SynchronizePreview: _appliedTemplate is not null);
     }
 
     /// <summary>Shared by confirming the dialog and saving a preset: the geometry fields with
@@ -734,7 +736,8 @@ public partial class ProjectDialogViewModel : ObservableObject
                 pitchQuadratic,
                 pitchCubic,
                 invertMapping: Family == OpticalDiscFamily.BluRay && _templateInvertMapping,
-                usableSectors: DiscParametersState.ParseUsableSectors(Family, sectors, UsableSectorsText));
+                usableSectors: DiscParametersState.ParseUsableSectors(Family, sectors, UsableSectorsText),
+                applyPreset: _editMode);
             ErrorMessage = string.Empty;
             SavedPresetMessage = L.F($"已保存为预设：{displayName}");
             if (_editMode)
@@ -755,17 +758,17 @@ public partial class ProjectDialogViewModel : ObservableObject
     }
 
     /// <summary>Rebuilds the catalog after a save so the new preset appears in the list it was
-    /// saved from. The rebuild replaces the tile instances, so the highlight and the applied
-    /// preset follow their ids instead of their old references.</summary>
+    /// saved from. The newly applied preset is highlighted by ID, including when another
+    /// preset has the same display name.</summary>
     private void RefreshTemplatesAfterSave()
     {
-        string? appliedId = _appliedTemplate?.PresetId;
-        BuildTemplates();
-        if (_appliedTemplate is null)
+        string appliedId = Family switch
         {
-            return;
-        }
-
+            OpticalDiscFamily.Dvd => _state.SelectedDvdPreset.Id,
+            OpticalDiscFamily.BluRay => _state.SelectedBluRayPreset.Id,
+            _ => _state.SelectedCdPreset.Id,
+        };
+        BuildTemplates();
         ProjectTemplateTile? refreshed = AllTemplates.FirstOrDefault(
             t => t.Family == Family && t.PresetId == appliedId);
         _suppressPresetConfirm = true;

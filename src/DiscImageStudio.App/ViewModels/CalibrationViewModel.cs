@@ -570,7 +570,52 @@ public partial class CalibrationViewModel : ObservableObject
         if (!_installing) InvalidateFit();
     }
     private CalibrationSession Session() => new(_target ?? throw new InvalidOperationException(L.T("请先创建图案。")),
-        [], FitOptions(useRingSeed: false), _cdInterleave, PhotoSession());
+        [], FitOptions(useRingSeed: false), _cdInterleave, PhotoSession(), CaptureConfirmedFit());
+
+    private CalibrationConfirmedFit? CaptureConfirmedFit()
+    {
+        // Session() also runs while an export owns the busy state. Confirmation belongs
+        // to the measured inputs and current candidate, not to the operation status.
+        if (!ContourConfirmed || !_previewReady || _photoTransform is null || _photoPng is null
+            || _target is null || _fit is null || SelectedCoarseCandidate is not { } selected
+            || !CoarseCandidates.Contains(selected)) return null;
+        int index = _fit.Candidates.ToList().FindIndex(candidate => candidate.Parameters == selected.Parameters
+            && candidate.RotationRadians == selected.RotationRadians);
+        return index < 0 ? null : new(_target.Id, _fit, index);
+    }
+
+    private CoarseCandidate[] FitCandidates(CalibrationFitResult result) => result.Candidates.Select((candidate, index) =>
+        new CoarseCandidate(_target?.HasBoundaryPattern == true && (!result.Succeeded
+            || candidate.Parameters != result.BestParameters || candidate.RotationRadians != result.RotationRadians)
+            ? L.Format("HalfDisc.ComparisonCandidate", index + 1, candidate.RmsErrorMm)
+            : L.F($"候选 {index + 1} · 偏差 {candidate.RmsErrorMm:0.###} mm"), candidate.Parameters,
+            candidate.RotationRadians, candidate.RmsErrorMm, candidate.MaxErrorMm, candidate.OutlierCount)).ToArray();
+
+    private async Task RestoreConfirmedFitAsync(CalibrationConfirmedFit saved, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        CalibrationTarget? target = _target;
+        long revision = _inputRevision;
+        CalibrationFitResult result = saved.Result;
+        _fit = result;
+        CoarseCandidates = FitCandidates(result);
+        CoarseCandidate candidate = CoarseCandidates[saved.SelectedCandidateIndex];
+        _installing = true;
+        try { SelectedCoarseCandidate = candidate; }
+        finally { _installing = false; }
+        _fitStatusPointCount = TracePoints.Count;
+        await ShowCandidateAsync(candidate);
+        token.ThrowIfCancellationRequested();
+        // Another candidate can finish rendering before this cancelled preview resumes.
+        // Approval belongs only to the saved result and its unchanged measurement inputs.
+        if (_previewReady && ReferenceEquals(_target, target) && _inputRevision == revision
+            && ReferenceEquals(_fit, result) && ReferenceEquals(SelectedCoarseCandidate, candidate))
+        {
+            ContourConfirmed = true;
+            WriteSetupParameters(candidate.Parameters);
+        }
+        UpdateFitAssessment();
+    }
 
     private async Task SolveAsync()
     {
@@ -590,12 +635,7 @@ public partial class CalibrationViewModel : ObservableObject
             CalibrationFitResult result = attempt.Result;
             _fitRangeMm = attempt.RangeMm;
             _fitRangeExpanded = attempt.Expanded;
-            var candidates = result.Candidates.Select((c, index) =>
-                new CoarseCandidate(target.HasBoundaryPattern && (!result.Succeeded || c.Parameters != result.BestParameters
-                    || c.RotationRadians != result.RotationRadians)
-                    ? L.Format("HalfDisc.ComparisonCandidate", index + 1, c.RmsErrorMm)
-                    : L.F($"候选 {index + 1} · 偏差 {c.RmsErrorMm:0.###} mm"), c.Parameters,
-                    c.RotationRadians, c.RmsErrorMm, c.MaxErrorMm, c.OutlierCount)).ToArray();
+            var candidates = FitCandidates(result);
             token.ThrowIfCancellationRequested();
             if (revision != _inputRevision || !ReferenceEquals(target, _target)) throw new OperationCanceledException();
             // Publish the result and its candidate set together, only for the current inputs.

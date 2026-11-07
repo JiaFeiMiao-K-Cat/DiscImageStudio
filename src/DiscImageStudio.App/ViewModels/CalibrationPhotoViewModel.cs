@@ -455,6 +455,9 @@ public partial class CalibrationViewModel
                     ? L.F($"外缘偏差 {restoredFit.OuterRmsPixels:0.0} 像素 · 内缘偏差 {restoredFit.HoleRmsPixels:0.0} 像素")
                     : string.Empty;
             }
+            if (session.ConfirmedFit is { } confirmedFit)
+                await RestoreConfirmedFitAsync(confirmedFit, token);
+            token.ThrowIfCancellationRequested();
             _sessionPath = path; OutputPath = string.Empty;
             _statusMessage = L.T("已恢复标定图案、照片和曲线点，可继续编辑或重新反推。");
             RefreshCommands();

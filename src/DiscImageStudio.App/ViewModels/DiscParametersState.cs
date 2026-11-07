@@ -378,7 +378,8 @@ public partial class DiscParametersState : ObservableObject
     /// so hand-edited catalogs still explain each entry. The id carries a timestamp plus a
     /// random suffix so two saves within the same second stay distinct. Refreshing uses
     /// <see cref="LoadPresets"/> on purpose: it swaps the lists without re-applying the
-    /// selected preset, so the open project's live values are never overwritten. Throws when
+    /// selected preset. Project settings can explicitly apply the newly saved preset with
+    /// <paramref name="applyPreset"/> after the write succeeds. Throws when
     /// the name is blank or the JSON cannot be read or written; the caller surfaces the
     /// message.
     /// </summary>
@@ -392,7 +393,8 @@ public partial class DiscParametersState : ObservableObject
         double pitchQuadratic = 0,
         double pitchCubic = 0,
         bool invertMapping = false,
-        long? usableSectors = null)
+        long? usableSectors = null,
+        bool applyPreset = false)
     {
         string name = displayName.Trim();
         if (name.Length == 0)
@@ -475,6 +477,21 @@ public partial class DiscParametersState : ObservableObject
 
         DiscPresetJsonStore.Save(_discPresetJsonPath, updated);
         LoadPresets();
+        if (applyPreset)
+        {
+            switch (family)
+            {
+                case OpticalDiscFamily.Dvd:
+                    ApplyDvdDiscPreset(DvdPresets.Single(preset => preset.Id == id));
+                    break;
+                case OpticalDiscFamily.BluRay:
+                    ApplyBluRayDiscPreset(BluRayPresets.Single(preset => preset.Id == id));
+                    break;
+                default:
+                    ApplyCdDiscPreset(CdPresets.Single(preset => preset.Id == id));
+                    break;
+            }
+        }
         return displayName;
     }
 
@@ -752,6 +769,7 @@ public partial class DiscParametersState : ObservableObject
                 CdPitchLinear = FormatPresetNumber(preset.PitchLinear);
                 CdPitchQuadratic = FormatPresetNumber(preset.PitchQuadratic);
                 CdPitchCubic = FormatPresetNumber(preset.PitchCubic);
+                SynchronizePreviewGeometry(OpticalDiscFamily.CompactDisc);
             }
         }
         finally
@@ -777,6 +795,7 @@ public partial class DiscParametersState : ObservableObject
                 DvdPitchLinear = FormatPresetNumber(preset.PitchLinear);
                 DvdPitchQuadratic = FormatPresetNumber(preset.PitchQuadratic);
                 DvdPitchCubic = FormatPresetNumber(preset.PitchCubic);
+                SynchronizePreviewGeometry(OpticalDiscFamily.Dvd);
             }
         }
         finally
@@ -804,11 +823,40 @@ public partial class DiscParametersState : ObservableObject
                 BdPitchQuadratic = FormatPresetNumber(geometry.PitchQuadratic);
                 BdPitchCubic = FormatPresetNumber(geometry.PitchCubic);
                 BdInvertMapping = preset.InvertMapping;
+                SynchronizePreviewGeometry(OpticalDiscFamily.BluRay);
             }
         }
         finally
         {
             _isApplyingDiscPreset = previous;
+        }
+    }
+
+    internal void SynchronizePreviewGeometry(OpticalDiscFamily family)
+    {
+        switch (family)
+        {
+            case OpticalDiscFamily.Dvd:
+                DvdActualInnerRadius = DvdInnerRadius;
+                DvdActualOuterRadius = DvdOuterRadius;
+                DvdActualPitchLinear = DvdPitchLinear;
+                DvdActualPitchQuadratic = DvdPitchQuadratic;
+                DvdActualPitchCubic = DvdPitchCubic;
+                break;
+            case OpticalDiscFamily.BluRay:
+                BdActualInnerRadius = BdInnerRadius;
+                BdActualOuterRadius = BdOuterRadius;
+                BdActualPitchLinear = BdPitchLinear;
+                BdActualPitchQuadratic = BdPitchQuadratic;
+                BdActualPitchCubic = BdPitchCubic;
+                break;
+            default:
+                CdActualInnerRadius = CdInnerRadius;
+                CdActualOuterRadius = CdOuterRadius;
+                CdActualPitchLinear = CdPitchLinear;
+                CdActualPitchQuadratic = CdPitchQuadratic;
+                CdActualPitchCubic = CdPitchCubic;
+                break;
         }
     }
 
