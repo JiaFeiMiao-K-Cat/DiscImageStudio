@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### 中文
+
+- 预览生成失败时一律清空旧图和导出入口，状态栏与占位区只保留失败原因；切换界面语言会重新表述失败，不会恢复之前的画面。
+- 设计页占用区引导改用 CD、DVD、BD 的真实布局规划器，并按可用（可写）容量计算，包含文件系统元数据、逐文件扇区取整与对齐；与 #96 的碎片化放置共用与图片无关的元数据预留。外圈放置文件时同时标出内圈元数据，支持多个环形区域。文件夹或盘片参数变化后延迟合并计算，图片编辑不再触发重算。
+- 设计画布的占用区引导改为主题蓝色，并绘制在全部图层与选择框之上；同时提高不透明度，亮色画面不再遮住引导。
+- 影调与预览页的文件区叠加和对应图例同步改为主题蓝色；影调面板中的图例移到设计画布左下角，不再占用右侧轨道高度。
+- 设计页图层卡片移除上移／下移／删除按钮：排序继续使用拖拽，删除保留右键菜单与 Del 键；随盘文件的选择按钮文案统一为「浏览…」。
+- 移除「显示数据可能占用区域」开关，蓝色占用区引导改为默认始终显示。
+
+### English
+
+- Any failed preview now clears the previous picture and its export entry; the status line and placeholder keep only the failure reason. Switching the UI language re-words the failure without restoring the old image.
+- The design guide now uses the real CD, DVD and BD layout planners with the usable (writable) sector count, including filesystem metadata, per-file sector rounding and alignment. It shares the image-independent metadata reserve with the fragmented placement in #96. Outer-ring files also mark their inner metadata, and multiple annuli are supported. Folder or disc parameter edits are debounced and coalesced; artwork edits no longer recompute the guide.
+- The design canvas guide is now theme blue and is drawn above every layer and selection adorner. Its opacity is raised so bright artwork can no longer hide it.
+- The tone and preview pages now use the same theme blue for their file-region overlay and legend. The tone panel's legend moved to the design canvas bottom-left corner, so it no longer consumes right-rail height.
+- Removed the move-up, move-down, and delete buttons from the design layer card. Reordering stays on drag, and deletion remains available from the row menu and the Del key. The disc-file picker buttons now read "Browse…".
+- Removed the "Show data occupancy area" toggle; the blue guide is always visible.
+
 ## [1.5.0] - 2026-11-07
 
 ### 中文

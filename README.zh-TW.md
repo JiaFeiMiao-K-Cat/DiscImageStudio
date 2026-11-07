@@ -67,7 +67,7 @@ Windows 下載 `win-x64.exe` 後可直接執行。Linux 或 macOS 請下載與 C
 - **DVD 支援**：支援任何 DVD。您可匯出 ISO 映像。
 - **藍光支援**：支援任何單層 BD-R 25 GB，可純繪圖或附帶 UDF 2.01 檔案。詳見 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。
 - **隨碟檔案**：CD／DVD／藍光可在設計頁直接選擇要儲存的資料夾及內圈／外圈位置，也可在匯出頁調整；設定會隨專案儲存。
-- **檔案區域預覽**：混合光碟的設計投影與成品讀回會以黃色標示檔案區（含檔案系統）。
+- **檔案區域預覽**：混合光碟的設計投影與成品讀回會以藍色標示檔案區（含檔案系統）。
 - **媒體灰階方案**：CD 與 DVD 均使用黑白二階；CD 使用 `0D / AA`，DVD 擾碼域使用 `A5 / 92`。詳見 [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md)。
 - **灰階抖動工具**：獨立程式也可將原圖處理為 `0/255` 黑白二階 PNG；支援開啟或拖入原圖、並排預覽及無損 PNG 匯出。詳見[使用與建置說明](tools/FourLevelDither/README.md)。
 - **光碟預設**：內建數個品牌的光碟參數，涵蓋 CD／DVD／BD。您也可將自行校準的資料貢獻給我們，詳見[預設維護說明](docs/DISC_PRESETS.md)。

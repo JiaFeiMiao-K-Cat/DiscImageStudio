@@ -87,7 +87,7 @@ La grabación en directo es experimental. Usa únicamente discos de prueba que p
 - **Compatibilidad DVD**: admite cualquier DVD. Exporta imágenes ISO.
 - **Compatibilidad Blu-ray**: admite cualquier BD-R de 25 GB y una capa, con modo de sólo dibujo y archivos UDF 2.01. Consulta [ADDING_BLURAY.md](docs/ADDING_BLURAY.md).
 - **Archivos en el disco**: para CD, DVD y Blu-ray, selecciona una carpeta y coloca sus archivos en la zona interior o exterior desde Diseño, o ajusta estas opciones en Exportar. Los ajustes se guardan con el proyecto.
-- **Vista previa de la zona de archivos**: las proyecciones del diseño de discos híbridos y la relectura del archivo generado resaltan en amarillo la zona de archivos, incluido el sistema de archivos.
+- **Vista previa de la zona de archivos**: las proyecciones del diseño de discos híbridos y la relectura del archivo generado resaltan en azul la zona de archivos, incluido el sistema de archivos.
 - **Esquemas de gris según el medio**: CD y DVD usan dos niveles de blanco y negro: `0D / AA` para CD y `A5 / 92` en el dominio aleatorizado de DVD. Consulta [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md).
 - **Herramienta de tramado en escala de grises**: un programa independiente también puede convertir una imagen de origen en un PNG en blanco y negro de dos niveles `0/255`. Permite abrir o arrastrar imágenes de origen, compararlas en vistas paralelas y exportar PNG sin pérdida. Consulta las [instrucciones de uso y compilación](tools/FourLevelDither/README.md).
 - **Preajustes de discos**: los parámetros integrados abarcan varias marcas de CD, DVD y BD. También puedes aportar tus propios datos calibrados; consulta el [mantenimiento de preajustes](docs/DISC_PRESETS.md).
