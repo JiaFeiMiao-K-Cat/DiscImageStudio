@@ -43,7 +43,7 @@ Disc Image Studio 可將一張圖片轉換為符合 CD、DVD 與單層 BD-R 光�
 
 ## 快速開始
 
-Windows 下載 `win-x64.exe` 後可直接執行。Linux 或 macOS 請下載與 CPU 相符的**實驗性 CLI** 壓縮檔，解壓縮後執行 `./disc-image-studio --help`。各發布套件均包含 .NET 執行階段。 [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+Windows x64 請下載以 `win-x64.exe` 結尾的檔案；Windows 11 ARM64 請下載以 `win-arm64.exe` 結尾的原生版本，均可直接執行。Linux 或 macOS 請下載與 CPU 相符的**實驗性 CLI** 壓縮檔，解壓縮後執行 `./disc-image-studio --help`。各發布套件均包含 .NET 執行階段。 [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 ### 1. 新增專案
 
@@ -92,7 +92,7 @@ Disc Image Studio 提供一套智慧且精準的輔助校準流程。相較於�
 
 ## 系統與裝置需求
 
-- 桌面版需要 Windows 10 2004（2004/20H1，19041）以上版本，或 Windows 11。
+- x64 桌面版需要 Windows 10 2004（2004/20H1，19041）以上版本，或 Windows 11；ARM64 桌面版需要 Windows 11。ARM64 原生 CI 涵蓋軟體自我測試與 GUI 截圖，尚未驗證實體光碟燒錄。
 - 建置：.NET 10 SDK（`global.json` 鎖定 10.0.x）；自行建置的非獨立部署 GUI 需要 .NET 10 Windows 桌面執行階段。Release EXE 已包含執行階段，無須另外安裝 .NET。
 - 「即時燒錄」功能需要 Windows 可辨識的 CD / DVD / BD 燒錄機與空白光碟；BD-R 需要支援循序寫入的單層空白光碟。
 

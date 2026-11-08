@@ -65,16 +65,19 @@ GitHub Actions 从配置读取完整版本，自动创建对应的 `vA.B.C` 或 
 
 工作流从配置读取完整版本，校验格式及对应的非空、带日期 Changelog 段，确认发布提交属于 `origin/main`，并复用 `build.yml` 的构建与回归检查。全部通过后才创建对应版本标签与草稿。
 
-Windows x64 继续提供自包含的单文件 EXE。打包脚本在隔离目录运行最终 EXE，执行自检、两扇区 RAW/WAV 生成检查及 GUI 截图检查。
+Windows x64 与 ARM64 均提供自包含的单文件 EXE。`build.yml` 的 Windows 矩阵分别使用 `windows-latest`（`win-x64`）和 `windows-11-arm`（`win-arm64`）原生 runner，运行软件回归后，每次构建都调用 `Build-Release.ps1` 生成并检查最终 EXE。脚本核对 runner 的系统及进程架构、EXE 的 PE 架构和 CET 兼容标记，然后在隔离目录执行自检、两扇区 RAW/WAV 生成检查及 GUI 截图检查。ARM64 要求 Windows 11；这些 CI 检查不连接刻录设备，尚不能证明 ARM64 上的实盘刻录兼容性。
 
-Linux 与 macOS 的实验性离线 CLI 在各自的 x64、Arm64 runner 上构建，发布包自带 .NET 运行时。每个 runner 解开刚生成的 tar.gz，在仓库目录外运行 `--help`、DVD 自检以及 CD 音轨、DVD 镜像和蓝光镜像生成测试。发布流程收集通过这些测试的原始压缩包，并将它们与 Windows EXE 一同附加到草稿。例如：
+Windows 应用宿主设置 `CetCompat=false`，用于绕过 #229 所报的受影响系统启动问题；这会降低该应用进程的硬件影子栈保护，不修改 Windows 的全局安全设置。原报告机器上的修复效果仍待验证，发布说明不得将软件自检等同于原机复现验证。
+
+Linux 与 macOS 的实验性离线 CLI 在各自的 x64、Arm64 runner 上构建，发布包自带 .NET 运行时。每个 runner 解开刚生成的 tar.gz，在仓库目录外运行 `--help`、DVD 自检以及 CD 音轨、DVD 镜像和蓝光镜像生成测试。发布流程收集通过这些测试的四个原始压缩包，以及 Windows 矩阵已检查的两个原始 EXE；不会另行重建 EXE。每份制品均核对其相邻的 SHA-256 sidecar 后再汇集到同一个发布目录。附件命名如下（`A.B.C` 替换为实际版本，预发布还包括后缀）：
 
 ```text
-DiscImageStudio-v1.3.6-win-x64.exe
-DiscImageStudio-CLI-v1.3.6-linux-x64.tar.gz
-DiscImageStudio-CLI-v1.3.6-linux-arm64.tar.gz
-DiscImageStudio-CLI-v1.3.6-osx-x64.tar.gz
-DiscImageStudio-CLI-v1.3.6-osx-arm64.tar.gz
+DiscImageStudio-vA.B.C-win-x64.exe
+DiscImageStudio-vA.B.C-win-arm64.exe
+DiscImageStudio-CLI-vA.B.C-linux-x64.tar.gz
+DiscImageStudio-CLI-vA.B.C-linux-arm64.tar.gz
+DiscImageStudio-CLI-vA.B.C-osx-x64.tar.gz
+DiscImageStudio-CLI-vA.B.C-osx-arm64.tar.gz
 SHA256SUMS.txt
 ```
 
@@ -83,7 +86,7 @@ SHA256SUMS.txt
 维护者在 GitHub 的 [Releases 页面](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases) 检查草稿中的版本、发布说明、各平台附件和校验值，并下载验证启动后，再手动公开。可用下列命令计算 Windows 下载文件的 SHA-256，与 Release 说明中的值比较：
 
 ```powershell
-Get-FileHash .\DiscImageStudio-v1.3.6-win-x64.exe -Algorithm SHA256
+Get-FileHash .\DiscImageStudio-vA.B.C-win-x64.exe -Algorithm SHA256
 ```
 
 ### 失败重试与更正
@@ -96,13 +99,21 @@ Get-FileHash .\DiscImageStudio-v1.3.6-win-x64.exe -Algorithm SHA256
 
 ## 本地 EXE 演练
 
-在仓库根目录运行与 GitHub Actions 相同的打包脚本：
+在对应架构的 Windows 机器上，使用 PowerShell 7.4 或更新版本，从仓库根目录运行与 GitHub Actions 相同的打包脚本。默认 `RuntimeIdentifier` 为 `win-x64`：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File packaging/Build-Release.ps1
+pwsh -File packaging/Build-Release.ps1
 ```
 
-脚本自动使用 `Directory.Build.props` 中的版本。例如配置为 `1.0.26` 时，输出目录为 `artifacts/release/v1.0.26/`。脚本构建并单独验证自包含 `win-x64` EXE，生成 `DiscImageStudio-v1.0.26-win-x64.exe` 和该文件的 `SHA256SUMS.txt`。正式发布时，工作流将四个平台 CLI 压缩包的校验值追加到清单中。
+在 Windows 11 ARM64 上，使用 ARM64 PowerShell/.NET 进程运行：
+
+```powershell
+pwsh -File packaging/Build-Release.ps1 -RuntimeIdentifier win-arm64
+```
+
+脚本要求系统架构、进程架构与所选 RID 一致，不通过跨架构模拟完成发布验证，也不提供跳过最终 EXE 检查的开关。需要交叉编译时可单独使用 `dotnet publish`，但交叉编译结果不算通过本流程的原生发布验证。
+
+脚本自动使用 `Directory.Build.props` 中的版本，输出到 `artifacts/release/<tag>/<rid>/`。例如版本 `1.0.26` 的 x64 文件位于 `artifacts/release/v1.0.26/win-x64/`，文件名为 `DiscImageStudio-v1.0.26-win-x64.exe`，相邻校验文件为 `DiscImageStudio-v1.0.26-win-x64.exe.sha256`；ARM64 使用对应的 `win-arm64` 目录和文件名。正式发布时，工作流验证两份 Windows EXE 与四份 CLI 压缩包的 sidecar，再为全部六份制品生成统一的 `SHA256SUMS.txt`。
 
 ## Microsoft Store MSIX
 

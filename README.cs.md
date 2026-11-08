@@ -45,7 +45,7 @@ Disc Image Studio převádí obrázek na data, která splňují omezení fyzick�
 
 ## Rychlý start
 
-Ve Windows stáhněte a spusťte `win-x64.exe`. V Linuxu nebo macOS stáhněte **experimentální CLI** archiv odpovídající vašemu procesoru, rozbalte jej a spusťte `./disc-image-studio --help`. Každý balíček vydání obsahuje runtime .NET. [Vydání na GitHubu](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+Ve Windows x64 stáhněte a spusťte soubor končící na `win-x64.exe`; ve Windows 11 ARM64 zvolte nativní verzi končící na `win-arm64.exe`. V Linuxu nebo macOS stáhněte **experimentální CLI** archiv odpovídající vašemu procesoru, rozbalte jej a spusťte `./disc-image-studio --help`. Každý balíček vydání obsahuje runtime .NET. [Vydání na GitHubu](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 ### 1. Vytvoření projektu
 
@@ -93,7 +93,7 @@ Postup a parametry najdete v [průvodci asistovanou kalibrací](docs/CALIBRATI
 
 ## Požadavky na systém a hardware
 
-- Desktopová aplikace vyžaduje Windows 10 2004 (2004/20H1, 19041) nebo novější, případně Windows 11.
+- Desktopová aplikace x64 vyžaduje Windows 10 2004 (2004/20H1, 19041) nebo novější, případně Windows 11. Verze ARM64 vyžaduje Windows 11. Nativní CI pro ARM64 zahrnuje softwarové autotesty a snímky GUI; vypalování fyzických disků zatím nebylo ověřeno.
 - Sestavení: .NET 10 SDK (`global.json` uzamyká 10.0.x). Nesamostatná GUI sestavená ze zdrojového kódu vyžaduje .NET 10 Windows Desktop Runtime. Vydaný EXE obsahuje runtime, takže samostatná instalace .NET není nutná.
 - Přímé vypalování vyžaduje vypalovací mechaniku CD / DVD / BD rozpoznanou systémem Windows a prázdné médium. BD-R vyžaduje prázdný jednovrstvý disk podporující sekvenční zápis.
 

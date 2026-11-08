@@ -43,7 +43,7 @@ Disc Image Studio converts an image into data that meets the physical-layer cons
 
 ## Quick Start
 
-On Windows, download and run `win-x64.exe`. On Linux or macOS, download the **experimental CLI** archive for your CPU, extract it and run `./disc-image-studio --help`. Each release package includes the .NET runtime. [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+On Windows x64, download and run the file ending in `win-x64.exe`; on Windows 11 ARM64, choose the native `win-arm64.exe` build. On Linux or macOS, download the **experimental CLI** archive for your CPU, extract it and run `./disc-image-studio --help`. Each release package includes the .NET runtime. [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 ### 1. Create a Project
 
@@ -92,7 +92,7 @@ See the [assisted calibration guide](docs/CALIBRATION.md) for the workflow and p
 
 ## System and Hardware Requirements
 
-- The desktop app requires Windows 10 2004 (2004/20H1, 19041) or later, or Windows 11.
+- The x64 desktop app requires Windows 10 2004 (2004/20H1, 19041) or later, or Windows 11. The ARM64 app requires Windows 11. Native ARM64 CI covers software self-tests and GUI snapshots; physical disc burning on ARM64 remains unverified.
 - Building: .NET 10 SDK (`global.json` pins 10.0.x). A non-self-contained GUI built from source requires the .NET 10 Windows Desktop Runtime. The Release EXE includes the runtime, so a separate .NET installation is unnecessary.
 - Live burning requires a CD / DVD / BD recorder recognized by Windows and blank media. BD-R requires a blank single-layer disc that supports sequential writing.
 

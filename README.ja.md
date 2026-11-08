@@ -43,7 +43,7 @@ Disc Image Studio は、1 枚の画像を CD、DVD、片面一層 BD-R ディス
 
 ## クイックスタート
 
-Windows では `win-x64.exe` で終わるファイルをダウンロードして実行します。Linux または macOS では、CPU に合った**実験的な CLI** のアーカイブを展開し、`./disc-image-studio --help` を実行してください。いずれも .NET ランタイムを同梱しています。[GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+Windows x64 では `win-x64.exe`、Windows 11 ARM64 ではネイティブ版の `win-arm64.exe` で終わるファイルをダウンロードして実行します。Linux または macOS では、CPU に合った**実験的な CLI** のアーカイブを展開し、`./disc-image-studio --help` を実行してください。いずれも .NET ランタイムを同梱しています。[GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 ### 1. プロジェクトを新規作成
 
@@ -92,7 +92,7 @@ Disc Image Studio は、インテリジェントで高精度な補助キャリ�
 
 ## システム・デバイス要件
 
-- デスクトップ版には Windows 10 2004（2004/20H1、19041）以降、または Windows 11 が必要です。
+- x64 デスクトップ版には Windows 10 2004（2004/20H1、19041）以降、または Windows 11 が必要です。ARM64 版には Windows 11 が必要です。ARM64 のネイティブ CI はソフトウェアの自己テストと GUI スクリーンショットを確認しますが、実ディスクへの書き込みは未検証です。
 - ビルド：.NET 10 SDK（`global.json` で 10.0.x に固定）。自分でビルドした非自己完結型の GUI には .NET 10 Windows デスクトップランタイムが必要です。Release EXE にはランタイムが同梱されているため、.NET を別途インストールする必要はありません。
 - 「即時書き込み」機能には、Windows が認識できる CD / DVD / BD 書き込みドライブと空のディスクが必要です。BD-R にはシーケンシャル書き込みに対応した空の片面一層ディスクが必要です。
 
