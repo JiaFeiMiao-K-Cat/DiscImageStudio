@@ -5,6 +5,7 @@ using DiscImageStudio.BluRay;
 using DiscImageStudio.Cd;
 using DiscImageStudio.Core;
 using DiscImageStudio.Core.Calibration;
+using DiscImageStudio.Iso;
 using DiscImageStudio.Services;
 using DiscImageStudio.Dvd;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -17,6 +18,7 @@ namespace DiscImageStudio.ViewModels;
 /// </summary>
 public partial class DiscParametersState : ObservableObject
 {
+    private const string DefaultCdVolumeLabel = "CD_IMAGE";
     private const string DefaultDvdVolumeLabel = "DISC_IMAGE";
     private const string DefaultBluRayVolumeLabel = "BD_IMAGE";
 
@@ -82,7 +84,7 @@ public partial class DiscParametersState : ObservableObject
         nameof(CdOutputLabel), nameof(CdOutputHint))]
     private string _cdDataDirectory = string.Empty;
     [ObservableProperty] private bool _cdFilesAtOuterRing;
-    [ObservableProperty] private string _cdVolumeLabel = "CD_IMAGE";
+    [ObservableProperty] private string _cdVolumeLabel = DefaultCdVolumeLabel;
 
     // Second parameter set of the live preview page's calibration mode: the disc the reader
     // follows, as opposed to the generated geometry above. It is preview-only and never
@@ -322,6 +324,30 @@ public partial class DiscParametersState : ObservableObject
         if (resolved <= 0 || resolved > total || resolved % alignment != 0)
             throw new ArgumentException(L.F($"可用扇区数必须大于 0、不超过总扇区数，且是 {alignment} 的倍数。"));
         return resolved;
+    }
+
+    /// <summary>Trims the label for the selected family and supplies the placeholder when it
+    /// is empty. CD/DVD labels live in Joliet's 32-byte UCS-2 field, so anything longer than
+    /// 16 characters is rejected instead of being silently cut at write time. Blu-ray uses
+    /// UDF and keeps its wider label.</summary>
+    internal string ResolveVolumeLabel(OpticalDiscFamily family)
+    {
+        if (family == OpticalDiscFamily.BluRay)
+        {
+            string bluRayLabel = BdVolumeLabel.Trim();
+            return bluRayLabel.Length == 0 ? DefaultBluRayVolumeLabel : bluRayLabel;
+        }
+
+        bool dvd = family == OpticalDiscFamily.Dvd;
+        string label = (dvd ? DvdVolumeLabel : CdVolumeLabel).Trim();
+        if (label.Length == 0) return dvd ? DefaultDvdVolumeLabel : DefaultCdVolumeLabel;
+        if (label.Length > Iso9660ImageWriter.MaximumJolietVolumeLabelCharacters)
+        {
+            throw new ArgumentException(
+                L.F($"卷标最长 {Iso9660ImageWriter.MaximumJolietVolumeLabelCharacters} 个字符（Joliet 标准）。"));
+        }
+
+        return label;
     }
 
     /// <summary>
