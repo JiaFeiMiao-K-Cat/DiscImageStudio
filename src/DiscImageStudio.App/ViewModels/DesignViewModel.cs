@@ -415,6 +415,14 @@ public partial class DesignViewModel : ObservableObject
 
     private void Shell_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
+        if (e.PropertyName is nameof(ShellViewModel.IsBusy))
+        {
+            // The toolkit command keeps its last queried state; without this the import
+            // button stays enabled while a job holds the shell.
+            ImportImagesCommand.NotifyCanExecuteChanged();
+            return;
+        }
+
         if (e.PropertyName is nameof(ShellViewModel.IsProjectOpen)
             or nameof(ShellViewModel.CurrentProject))
         {

@@ -13,7 +13,7 @@ internal static class ImageDropTests
     internal static void Run()
     {
         WpfTestHost.Run(CheckDrop);
-        Console.WriteLine("image-drop: multiple files, filtering, fitting, failure feedback and busy guard passed");
+        Console.WriteLine("image-drop: multiple files, filtering, fitting, failure feedback, vanished files and busy guard passed");
     }
 
     private static void CheckDrop()
@@ -64,13 +64,28 @@ internal static class ImageDropTests
 
             Require(Raise(view, new DataObject(DataFormats.FileDrop, new[] { text, root }),
                 DragDrop.PreviewDragOverEvent).Effects == DragDropEffects.None, "unrelated files rejected");
-            Require(Raise(view, new DataObject(DataFormats.Text, first),
-                DragDrop.PreviewDropEvent).Effects == DragDropEffects.None, "text is not a file drop");
+            DragEventArgs textDrop = Raise(view, new DataObject(DataFormats.Text, first),
+                DragDrop.PreviewDropEvent);
+            Require(textDrop.Handled && textDrop.Effects == DragDropEffects.None,
+                "text is not a file drop");
             Require(Raise(view, files, DragDrop.PreviewDropEvent, DragDropEffects.Move).Effects
                 == DragDropEffects.None, "move-only source is rejected");
 
-            typeof(ShellViewModel).GetMethod("SetBusy", BindingFlags.Instance | BindingFlags.NonPublic)!
-                .Invoke(shell, [true]);
+            string vanished = Path.Combine(root, "vanished.png");
+            File.Copy(first, vanished);
+            DataObject vanishing = new(DataFormats.FileDrop, new[] { vanished });
+            Require(Raise(view, vanishing, DragDrop.PreviewDragOverEvent).Effects
+                == DragDropEffects.Copy, "hover accepts an image before it disappears");
+            File.Delete(vanished);
+            Require(Raise(view, vanishing, DragDrop.PreviewDropEvent).Effects
+                == DragDropEffects.None, "drop re-checks that the image still exists");
+            Require(shell.Design.Layers.Count == 2, "a vanished image adds no layer");
+
+            bool importStateChanged = false;
+            shell.Design.ImportImagesCommand.CanExecuteChanged += (_, _) => importStateChanged = true;
+            shell.SetBusy(true);
+            Require(importStateChanged && !shell.Design.ImportImagesCommand.CanExecute(null),
+                "busy disables the import command");
             Require(Raise(view, files, DragDrop.PreviewDragOverEvent).Effects == DragDropEffects.None,
                 "busy hover rejects import");
             Raise(view, files, DragDrop.PreviewDropEvent);

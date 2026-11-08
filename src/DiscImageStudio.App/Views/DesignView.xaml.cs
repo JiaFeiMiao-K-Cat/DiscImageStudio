@@ -88,45 +88,57 @@ public partial class DesignView : UserControl
         }
     }
 
-    // Handle external files before child text fields can consume a file drop as text.
-    // Layer reordering uses mouse capture rather than WPF file drag-and-drop.
+    // Claim file drops at the page level. Every other drag is refused explicitly: the page
+    // is the drop target for its whole area, so leaving one unhandled would keep the
+    // source's copy cursor while the drop itself does nothing. Layer reordering uses mouse
+    // capture rather than WPF file drag-and-drop.
     private void OnImageDragOver(object sender, DragEventArgs e)
     {
-        e.Effects = CanImportDrop(e) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Effects = DragDropEffects.None;
         e.Handled = true;
+
+        // Hover checks extensions only: the drop repeats the filter with File.Exists, so a
+        // network share is not stat'ed on every DragOver tick.
+        if (CanAcceptDrop(e) && GetDroppedPaths(e.Data) is { } paths && paths.Any(IsImagePath))
+        {
+            e.Effects = DragDropEffects.Copy;
+        }
     }
 
     private void OnImageDrop(object sender, DragEventArgs e)
     {
         e.Effects = DragDropEffects.None;
         e.Handled = true;
-        if (!CanImportDrop(e))
+        if (!CanAcceptDrop(e) || GetDroppedPaths(e.Data) is not { } paths)
         {
             return;
         }
 
-        _viewModel.ImportImages(GetDroppedImages(e.Data));
+        string[] images = paths.Where(IsImagePath).Where(File.Exists).ToArray();
+        if (images.Length == 0)
+        {
+            return;
+        }
+
+        _viewModel.ImportImages(images);
         e.Effects = DragDropEffects.Copy;
     }
 
-    private bool CanImportDrop(DragEventArgs e) =>
+    private bool CanAcceptDrop(DragEventArgs e) =>
         _viewModel.ImportImagesCommand.CanExecute(null)
-        && (e.AllowedEffects & DragDropEffects.Copy) != 0
-        && GetDroppedImages(e.Data).Length > 0;
+        && (e.AllowedEffects & DragDropEffects.Copy) != 0;
 
-    private static string[] GetDroppedImages(IDataObject data)
-    {
-        if (!data.GetDataPresent(DataFormats.FileDrop)
-            || data.GetData(DataFormats.FileDrop) is not string[] paths)
-        {
-            return [];
-        }
+    private static string[]? GetDroppedPaths(IDataObject data) =>
+        data.GetDataPresent(DataFormats.FileDrop)
+        && data.GetData(DataFormats.FileDrop) is string[] paths
+            ? paths
+            : null;
 
-        // Match the image picker's formats; directories and unrelated files are ignored.
-        return paths.Where(path => File.Exists(path)
-            && Path.GetExtension(path).ToLowerInvariant() is
-                ".png" or ".jpg" or ".jpeg" or ".bmp" or ".tif" or ".tiff" or ".gif").ToArray();
-    }
+    // Match the image picker's formats; directories and unrelated files are dropped by
+    // the File.Exists check at drop time.
+    private static bool IsImagePath(string path) =>
+        Path.GetExtension(path).ToLowerInvariant() is
+            ".png" or ".jpg" or ".jpeg" or ".bmp" or ".tif" or ".tiff" or ".gif";
 
     // ---- Layer list drag-reorder ----
 
