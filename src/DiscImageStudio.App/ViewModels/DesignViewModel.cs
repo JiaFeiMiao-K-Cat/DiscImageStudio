@@ -237,10 +237,21 @@ public partial class DesignViewModel : ObservableObject
             return;
         }
 
+        ImportImages(picked);
+    }
+
+    /// <summary>Imports files from either the picker or an external file drop.</summary>
+    public void ImportImages(IEnumerable<string> paths)
+    {
+        if (_shell.IsBusy)
+        {
+            return;
+        }
+
         // Fit rule uses the content ring captured now; edits to geometry do not re-fit.
         DesignLayerViewModel? firstAdded = null;
         List<string> failed = [];
-        foreach (string path in picked)
+        foreach (string path in paths)
         {
             DesignLayerViewModel layer = new()
             {
@@ -404,6 +415,14 @@ public partial class DesignViewModel : ObservableObject
 
     private void Shell_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
+        if (e.PropertyName is nameof(ShellViewModel.IsBusy))
+        {
+            // The toolkit command keeps its last queried state; without this the import
+            // button stays enabled while a job holds the shell.
+            ImportImagesCommand.NotifyCanExecuteChanged();
+            return;
+        }
+
         if (e.PropertyName is nameof(ShellViewModel.IsProjectOpen)
             or nameof(ShellViewModel.CurrentProject))
         {

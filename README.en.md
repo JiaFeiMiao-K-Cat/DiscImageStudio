@@ -51,7 +51,7 @@ Choose CD, DVD, or Blu-ray on the home page, specify an output location, and cre
 
 ### 2. Design the Disc Surface
 
-Import an image on the Design page, arrange it using layers, and adjust dithering, gamma, brightness, and grayscale levels in the **Tone** panel on the right.
+Click **Import images** on the Design page, or drag one or multiple images from Explorer onto the page. Arrange them using layers, and adjust dithering, gamma, brightness, and grayscale levels in the **Tone** panel on the right.
 
 ### 3. Preview and Export
 

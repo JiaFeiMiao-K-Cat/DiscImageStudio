@@ -10,6 +10,13 @@ using System.Runtime.InteropServices.ComTypes;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
+if (args is ["--test-image-drop"])
+{
+    ImageDropTests.Run();
+    LayerPanelTests.Run();
+    return;
+}
+
 if (args is ["--test-parameter-persistence"])
 {
     PresetApplicationTests.Run();
@@ -227,6 +234,7 @@ CalibrationPhotoTests.Run();
 CalibrationPhotoCanvasTests.Run();
 DesignCanvasZoomTests.Run();
 LayerPanelTests.Run();
+ImageDropTests.Run();
 CalibrationBurnWorkflowTests.Run();
 CalibrationBurnSourceTests.Run();
 BurnJobDockTests.Run();

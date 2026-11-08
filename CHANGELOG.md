@@ -4,6 +4,7 @@
 
 ### 中文
 
+- 设计页支持从资源管理器拖入单张或多张图片，沿用按钮导入的图层缩放和失败提示；忽略文件夹及非图片文件，任务执行期间禁用导入。
 - 预览生成失败时一律清空旧图和导出入口，状态栏与占位区只保留失败原因；切换界面语言会重新表述失败，不会恢复之前的画面。
 - 设计页占用区引导改用 CD、DVD、BD 的真实布局规划器，并按可用（可写）容量计算，包含文件系统元数据、逐文件扇区取整与对齐；与 #96 的碎片化放置共用与图片无关的元数据预留。外圈放置文件时同时标出内圈元数据，支持多个环形区域。文件夹或盘片参数变化后延迟合并计算，图片编辑不再触发重算。
 - 设计画布的占用区引导改为主题蓝色，并绘制在全部图层与选择框之上；同时提高不透明度，亮色画面不再遮住引导。
@@ -13,6 +14,7 @@
 
 ### English
 
+- Import one or multiple images by dragging files from Explorer onto the design page, using the same layer fitting and failure messages as the import button. Folders and unrelated files are ignored, and imports are disabled while a job is running.
 - Any failed preview now clears the previous picture and its export entry; the status line and placeholder keep only the failure reason. Switching the UI language re-words the failure without restoring the old image.
 - The design guide now uses the real CD, DVD and BD layout planners with the usable (writable) sector count, including filesystem metadata, per-file sector rounding and alignment. It shares the image-independent metadata reserve with the fragmented placement in #96. Outer-ring files also mark their inner metadata, and multiple annuli are supported. Folder or disc parameter edits are debounced and coalesced; artwork edits no longer recompute the guide.
 - The design canvas guide is now theme blue and is drawn above every layer and selection adorner. Its opacity is raised so bright artwork can no longer hide it.

@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -86,6 +87,58 @@ public partial class DesignView : UserControl
                 break;
         }
     }
+
+    // Claim file drops at the page level. Every other drag is refused explicitly: the page
+    // is the drop target for its whole area, so leaving one unhandled would keep the
+    // source's copy cursor while the drop itself does nothing. Layer reordering uses mouse
+    // capture rather than WPF file drag-and-drop.
+    private void OnImageDragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = DragDropEffects.None;
+        e.Handled = true;
+
+        // Hover checks extensions only: the drop repeats the filter with File.Exists, so a
+        // network share is not stat'ed on every DragOver tick.
+        if (CanAcceptDrop(e) && GetDroppedPaths(e.Data) is { } paths && paths.Any(IsImagePath))
+        {
+            e.Effects = DragDropEffects.Copy;
+        }
+    }
+
+    private void OnImageDrop(object sender, DragEventArgs e)
+    {
+        e.Effects = DragDropEffects.None;
+        e.Handled = true;
+        if (!CanAcceptDrop(e) || GetDroppedPaths(e.Data) is not { } paths)
+        {
+            return;
+        }
+
+        string[] images = paths.Where(IsImagePath).Where(File.Exists).ToArray();
+        if (images.Length == 0)
+        {
+            return;
+        }
+
+        _viewModel.ImportImages(images);
+        e.Effects = DragDropEffects.Copy;
+    }
+
+    private bool CanAcceptDrop(DragEventArgs e) =>
+        _viewModel.ImportImagesCommand.CanExecute(null)
+        && (e.AllowedEffects & DragDropEffects.Copy) != 0;
+
+    private static string[]? GetDroppedPaths(IDataObject data) =>
+        data.GetDataPresent(DataFormats.FileDrop)
+        && data.GetData(DataFormats.FileDrop) is string[] paths
+            ? paths
+            : null;
+
+    // Match the image picker's formats; directories and unrelated files are dropped by
+    // the File.Exists check at drop time.
+    private static bool IsImagePath(string path) =>
+        Path.GetExtension(path).ToLowerInvariant() is
+            ".png" or ".jpg" or ".jpeg" or ".bmp" or ".tif" or ".tiff" or ".gif";
 
     // ---- Layer list drag-reorder ----
 
