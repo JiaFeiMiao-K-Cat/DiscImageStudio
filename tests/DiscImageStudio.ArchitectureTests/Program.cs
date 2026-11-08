@@ -181,6 +181,7 @@ DesignComposerTests.Run();
 CdAudioCompatibilityTests.Run();
 CdParallelAudioTests.Run();
 CdDataImageTests.Run();
+VolumeLabelTests.Run();
 CdParallelDataTests.Run();
 CdDataBurnTests.Run();
 CdDataDaoWorkflowTests.Run();

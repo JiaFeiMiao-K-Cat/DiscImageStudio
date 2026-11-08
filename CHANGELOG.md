@@ -13,6 +13,7 @@
 - 影调与预览页的文件区叠加和对应图例同步改为主题蓝色；影调面板中的图例移到设计画布左下角，不再占用右侧轨道高度。
 - 设计页图层卡片移除上移／下移／删除按钮：排序继续使用拖拽，删除保留右键菜单与 Del 键；随盘文件的选择按钮文案统一为「浏览…」。
 - 移除「显示数据可能占用区域」开关，蓝色占用区引导改为默认始终显示。
+- 生成 CD／DVD 数据盘 ISO 时校验卷标长度：超过 Joliet 的 16 个字符会在写入前报错，不再静默截断；导出页的卷标输入限制为 16 个字符并显示提示，蓝光 UDF 卷标不受影响。
 
 ### English
 
@@ -25,6 +26,7 @@
 - The tone and preview pages now use the same theme blue for their file-region overlay and legend. The tone panel's legend moved to the design canvas bottom-left corner, so it no longer consumes right-rail height.
 - Removed the move-up, move-down, and delete buttons from the design layer card. Reordering stays on drag, and deletion remains available from the row menu and the Del key. The disc-file picker buttons now read "Browse…".
 - Removed the "Show data occupancy area" toggle; the blue guide is always visible.
+- Validate volume-label length when generating CD/DVD data ISOs: labels longer than Joliet's 16 characters now fail before writing instead of being silently truncated. The export page limits label input to 16 characters with a hint; Blu-ray UDF labels are unaffected.
 
 ## [1.5.0] - 2026-11-07
 

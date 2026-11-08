@@ -1,0 +1,20 @@
+{
+  "Xaml.VolumeLabelHint": {
+    "zh-CN": "最多 16 个字符（Joliet 标准）。",
+    "en": "Up to 16 characters (Joliet).",
+    "zh-TW": "卷標最多 16 個字元（Joliet 標準）。",
+    "ja": "ボリューム ラベルは最大 16 文字です（Joliet 規格）。",
+    "tr": "En fazla 16 karakter (Joliet).",
+    "es": "Máximo 16 caracteres (Joliet).",
+    "cs": "Nejvýše 16 znaků (Joliet)."
+  },
+  "卷标最长 {0} 个字符（Joliet 标准）。": {
+    "zh-CN": "卷标最长 {0} 个字符（Joliet 标准）。",
+    "en": "Volume labels are limited to {0} characters (Joliet).",
+    "zh-TW": "卷標最長 {0} 個字元（Joliet 標準）。",
+    "ja": "ボリューム ラベルは最大 {0} 文字です（Joliet 規格）。",
+    "tr": "Birim etiketleri en fazla {0} karakter olabilir (Joliet).",
+    "es": "Las etiquetas de volumen admiten como máximo {0} caracteres (Joliet).",
+    "cs": "Jmenovky svazku mohou mít nejvýše {0} znaků (Joliet)."
+  }
+}
