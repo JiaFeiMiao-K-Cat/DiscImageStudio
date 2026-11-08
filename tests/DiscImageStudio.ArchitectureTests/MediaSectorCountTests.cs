@@ -31,6 +31,10 @@ internal static class MediaSectorCountTests
         Throws<IOException>(() => WindowsImapiBurner.ReadCdMediaCapacity(2, physicallyBlank: true));
 
         Require(WindowsImapiBurner.ReadDvdSectorCount(0x9, 714_544) == 714_544);
+        Require(!WindowsImapiBurner.IsWritableMedia(OpticalBurnMediaKind.DvdData, 0x5, [0x12]));
+        Require(WindowsImapiBurner.IsWritableMedia(OpticalBurnMediaKind.DvdData, 0x7, [0x1A]));
+        Require(WindowsImapiBurner.IsWritableMedia(OpticalBurnMediaKind.DvdData, 0xA, [0x13]));
+        Require(WindowsImapiBurner.IsWritableMedia(OpticalBurnMediaKind.DvdData, 0xA, [0x14]));
         Require(WindowsImapiBurner.ReadDvdSectorCount(0x6, 2_295_104) == 2_295_104);
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadDvdSectorCount(0x9, 0));
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadDvdSectorCount(0xB, 4_171_712));

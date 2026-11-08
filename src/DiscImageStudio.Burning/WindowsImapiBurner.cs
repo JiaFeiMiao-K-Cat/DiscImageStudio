@@ -13,7 +13,6 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
     private const int OverwriteOnlyMediaState = 0x1;
     private const int EraseRequiredMediaState = 0x800;
     private const int UnsupportedMediaStates = 0xFC00;
-    private const int DvdRam = 0x5;
     private const int DvdPlusRw = 0x7;
     private const int DvdMinusRw = 0xA;
     // IMAPI_MEDIA_PHYSICAL_TYPE and IMAPI_PROFILE_TYPE (imapi2.h).
@@ -61,8 +60,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 // can reclaim its occupied sectors after the user approves preparation.
                 int mediaType = Convert.ToInt32(format.CurrentPhysicalMediaType);
                 long totalSectors = Convert.ToInt64(format.TotalSectorsOnMedia);
-                long writableSectors = mediaType == DvdRam
-                    || (IsRewritableDvd(mediaType) && !IsDvdBlank((object)format))
+                long writableSectors = IsRewritableDvd(mediaType) && !IsDvdBlank((object)format)
                     ? totalSectors : Convert.ToInt64(format.FreeSectorsOnMedia);
                 capacity = ReadDvdMediaCapacity(mediaType, totalSectors, writableSectors);
             }
@@ -432,31 +430,23 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
 
                     if (!IsDvdBlank((object)format, mediaState))
                     {
-                        string medium = mediaType switch
-                        {
-                            DvdRam => "DVD-RAM",
-                            DvdPlusRw => "DVD+RW",
-                            _ => "DVD-RW",
-                        };
+                        string medium = mediaType == DvdPlusRw ? "DVD+RW" : "DVD-RW";
                         cancellationToken.ThrowIfCancellationRequested();
                         if (request.ConfirmDvdDataLoss?.Invoke(medium) != true)
                             throw new OperationCanceledException("已取消清除盘片数据。");
                         cancellationToken.ThrowIfCancellationRequested();
-                        if (mediaType != DvdRam)
-                        {
-                            ReportOperation("正在擦除 DVD±RW，擦除完成后将继续刻录…");
-                            EraseDvd((object)recorder);
-                            cancellationToken.ThrowIfCancellationRequested();
-                            ReleaseComObject((object)format);
-                            format = null;
-                            format = CreateComObject("IMAPI2.MsftDiscFormat2Data");
-                            format.Recorder = recorder;
-                            format.ClientName = "Disc Image Studio";
-                            ValidateRequestedMedia(request.MediaKind, recorder, format);
-                            if (Convert.ToInt32(format.CurrentPhysicalMediaType) != mediaType)
-                                throw new InvalidOperationException("盘片已更换，请重新开始刻录。");
-                            mediaState = Convert.ToInt32(format.CurrentMediaStatus);
-                        }
+                        ReportOperation("正在擦除 DVD±RW，擦除完成后将继续刻录…");
+                        EraseDvd((object)recorder);
+                        cancellationToken.ThrowIfCancellationRequested();
+                        ReleaseComObject((object)format);
+                        format = null;
+                        format = CreateComObject("IMAPI2.MsftDiscFormat2Data");
+                        format.Recorder = recorder;
+                        format.ClientName = "Disc Image Studio";
+                        ValidateRequestedMedia(request.MediaKind, recorder, format);
+                        if (Convert.ToInt32(format.CurrentPhysicalMediaType) != mediaType)
+                            throw new InvalidOperationException("盘片已更换，请重新开始刻录。");
+                        mediaState = Convert.ToInt32(format.CurrentMediaStatus);
                     }
 
                     overwritesMedia = (mediaState & OverwriteOnlyMediaState) != 0;
@@ -1216,7 +1206,6 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             },
             OpticalBurnMediaKind.DvdData => physicalMediaType switch
             {
-                0x5 => currentProfiles.Contains(0x12), // DVD-RAM
                 0x6 => currentProfiles.Contains(0x1B), // DVD+R
                 0x7 => currentProfiles.Contains(0x1A), // DVD+RW
                 0x8 => currentProfiles.Contains(0x2B), // DVD+R DL
@@ -1240,7 +1229,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             && currentProfiles.Contains(BluRaySequentialProfile);
     }
 
-    private static bool IsRewritableDvd(int mediaType) => mediaType is DvdRam or DvdPlusRw or DvdMinusRw;
+    private static bool IsRewritableDvd(int mediaType) => mediaType is DvdPlusRw or DvdMinusRw;
 
     private static bool IsDvdBlank(dynamic format, int? status = null)
     {
