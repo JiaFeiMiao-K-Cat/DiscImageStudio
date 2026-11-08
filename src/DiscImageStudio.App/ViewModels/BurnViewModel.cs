@@ -692,7 +692,7 @@ public partial class BurnViewModel : ObservableObject
                 L.T("确认开始流式刻录"),
                 L.F($"即将写入：{device.DisplayName}\n{contentDescription}\n")
                     + L.F($"请求速度：{selectedWriteSpeed.DisplayName}\n\n")
-                    + (dvd
+                    + (capacity.RequiresErase
                         ? L.T("擦除已有数据前会另行确认。开始后取消或断电可能使盘片报废。是否继续？")
                         : L.T("仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？")),
                 L.T("确认刻录"));
@@ -712,7 +712,7 @@ public partial class BurnViewModel : ObservableObject
             IsBurnRunning = true;
             CancellationTokenSource burnCancellation = new();
             _burnCancellation = burnCancellation;
-            if (dvd)
+            if (capacity.RequiresErase)
             {
                 var dispatcher = System.Windows.Threading.Dispatcher.CurrentDispatcher;
                 request = request with

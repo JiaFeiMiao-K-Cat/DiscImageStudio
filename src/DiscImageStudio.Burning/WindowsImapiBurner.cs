@@ -60,9 +60,11 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 // can reclaim its occupied sectors after the user approves preparation.
                 int mediaType = Convert.ToInt32(format.CurrentPhysicalMediaType);
                 long totalSectors = Convert.ToInt64(format.TotalSectorsOnMedia);
-                long writableSectors = IsRewritableDvd(mediaType) && !IsDvdBlank((object)format)
+                bool requiresErase = IsRewritableDvd(mediaType) && !IsDvdBlank((object)format);
+                long writableSectors = requiresErase
                     ? totalSectors : Convert.ToInt64(format.FreeSectorsOnMedia);
-                capacity = ReadDvdMediaCapacity(mediaType, totalSectors, writableSectors);
+                capacity = ReadDvdMediaCapacity(mediaType, totalSectors, writableSectors)
+                    with { RequiresErase = requiresErase };
             }
             else
             {
