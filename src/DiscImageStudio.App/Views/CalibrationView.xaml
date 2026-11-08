@@ -360,7 +360,22 @@
                                         <StackPanel Margin="0,6,0,0">
                                             <controls:VisibilityGate IsOpen="{Binding IsCdSetup}"><CheckBox IsChecked="{Binding Parameters.CdInterleave, Mode=TwoWay}" Content="{loc:Text CalibrationMedia.CdInterleave}" Style="{StaticResource CompactCheckBox}" /></controls:VisibilityGate>
                                             <controls:VisibilityGate IsOpen="{Binding IsDvdSetup}" Margin="0,0,0,10">
-                                                <controls:DvdReadCompatibilityToggle IsChecked="{Binding Parameters.DvdReadCompatibility}" />
+                                                <StackPanel>
+                                                    <controls:DvdReadCompatibilityToggle IsChecked="{Binding Parameters.DvdReadCompatibility}" />
+                                                    <CheckBox IsChecked="{Binding CalibrateDualLayerDvd}" Margin="0,8,0,0"
+                                                              Content="{loc:Text Xaml.CalibrateDualLayerDvd}" Style="{StaticResource CompactCheckBox}" />
+                                                    <controls:VisibilityGate IsOpen="{Binding CalibrateDualLayerDvd}">
+                                                        <StackPanel Margin="0,6,0,0">
+                                                            <TextBlock Text="{loc:Text Xaml.DvdDlDefaults}" Style="{StaticResource FieldLabel}" />
+                                                            <ComboBox ItemsSource="{Binding DvdLayerFormats}" SelectedItem="{Binding CalibrationDvdLayerFormat}"
+                                                                      Style="{StaticResource CompactComboBox}" Margin="0,4,0,0" />
+                                                            <controls:PathField Label="{loc:Text Xaml.DvdDlLayerBreak}" Margin="0,6,0,0"
+                                                                                Text="{Binding CalibrationLayerBreak, UpdateSourceTrigger=PropertyChanged}"
+                                                                                ButtonLabel="{loc:Text Xaml.ReadDvdDlLayerBreak}" Command="{Binding ReadDiscSectorsCommand}"
+                                                                                Hint="{loc:Text Xaml.CalibrateDualLayerDvdHint}" />
+                                                        </StackPanel>
+                                                    </controls:VisibilityGate>
+                                                </StackPanel>
                                             </controls:VisibilityGate>
                                             <controls:VisibilityGate IsOpen="True">
                                                 <StackPanel>

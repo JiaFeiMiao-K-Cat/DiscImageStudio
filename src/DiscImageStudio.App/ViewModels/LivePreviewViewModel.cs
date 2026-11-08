@@ -352,7 +352,8 @@ public partial class LivePreviewViewModel : ObservableObject
             && state.DvdPitchLinear.Trim() == FormatNumber(metadata.PitchLinear)
             && state.DvdPitchQuadratic.Trim() == FormatNumber(metadata.PitchQuadratic)
             && state.DvdPitchCubic.Trim() == FormatNumber(metadata.PitchCubic)
-            && state.DvdFilesAtOuterRing == metadata.FilesAtOuterRing)
+            && state.DvdFilesInBothRings == metadata.FilesInBothRings
+            && (metadata.FilesInBothRings || state.DvdFilesAtOuterRing == metadata.FilesAtOuterRing))
         {
             return;
         }
@@ -364,7 +365,9 @@ public partial class LivePreviewViewModel : ObservableObject
         state.DvdPitchLinear = FormatNumber(metadata.PitchLinear);
         state.DvdPitchQuadratic = FormatNumber(metadata.PitchQuadratic);
         state.DvdPitchCubic = FormatNumber(metadata.PitchCubic);
-        state.DvdFilesAtOuterRing = metadata.FilesAtOuterRing;
+        state.DvdFilesInBothRings = metadata.FilesInBothRings;
+        if (!metadata.FilesInBothRings)
+            state.DvdFilesAtOuterRing = metadata.FilesAtOuterRing;
         _shell.AppendLog(
             L.F($"[{DateTime.Now:HH:mm:ss}] 已按 {System.IO.Path.GetFileName(isoPath)} 的生成参数载入标定几何：")
             + L.F($"r0={innerRadius} mm, r1={outerRadius} mm, {totalSectors} 总扇区；{state.DvdPitchSummary}\n"));
@@ -1505,7 +1508,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 DvdStreamingOptions generated = ReadDvdPreviewGeometry(calibration: false);
                 filePlan = DvdStreamingGenerator.PrepareHybrid(dataDirectory, generated,
                     string.IsNullOrWhiteSpace(_state.DvdVolumeLabel) ? "DISC_IMAGE" : _state.DvdVolumeLabel.Trim(),
-                    filesAtOuterRing: _state.DvdFilesAtOuterRing);
+                    filesAtOuterRing: _state.DvdFilesAtOuterRing, filesInBothRings: _state.DvdFilesInBothRings);
                 drawingStart = filePlan.DrawingStartLba;
                 drawingSectors = filePlan.DrawingSectors;
             }

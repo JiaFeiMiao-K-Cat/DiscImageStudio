@@ -6,6 +6,8 @@ using DiscImageStudio.Imaging;
 using DiscImageStudio.Cd;
 using DiscImageStudio.Dvd;
 using DiscImageStudio.BluRay;
+using DiscImageStudio.Burning;
+using System.Globalization;
 using DiscImageStudio.Services;
 
 namespace DiscImageStudio.ViewModels;
@@ -21,18 +23,27 @@ public partial class ExportViewModel : ObservableObject
     private readonly ShellViewModel _shell;
     private readonly DiscParametersState _state;
     private readonly DesignViewModel _design;
+    private readonly IOpticalDiscBurner _opticalDiscBurner;
+    private DvdLayerBoundary? _detectedDvdBoundary;
 
     /// <summary>Exposed for the view's two-way bindings to the shared parameters.</summary>
     public DiscParametersState State => _state;
 
-    public ExportViewModel(ShellViewModel shell, DiscParametersState state, DesignViewModel design)
+    public ExportViewModel(ShellViewModel shell, DiscParametersState state, DesignViewModel design, IOpticalDiscBurner opticalDiscBurner)
     {
         _shell = shell;
         _state = state;
         _design = design;
+        _opticalDiscBurner = opticalDiscBurner;
+        ReadDvdLayerBreakCommand = new AsyncRelayCommand(ReadDvdLayerBreakAsync, () => !_shell.IsBusy);
         BrowseOutputCommand = new RelayCommand(BrowseOutput, () => !_shell.IsBusy);
         BrowseDataCommand = new RelayCommand(BrowseData, () => !_shell.IsBusy);
-        GenerateCommand = new AsyncRelayCommand(GenerateAsync, () => !_shell.IsBusy);
+        GenerateCommand = new AsyncRelayCommand(GenerateAsync, () => !_shell.IsBusy && !ReadDvdLayerBreakCommand.IsRunning);
+        ReadDvdLayerBreakCommand.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(IAsyncRelayCommand.IsRunning))
+                GenerateCommand.NotifyCanExecuteChanged();
+        };
         _shell.BusyChanged += NotifyCommands;
         _shell.PropertyChanged += (_, args) =>
         {
@@ -87,6 +98,52 @@ public partial class ExportViewModel : ObservableObject
 
     public IAsyncRelayCommand GenerateCommand { get; }
 
+    public IAsyncRelayCommand ReadDvdLayerBreakCommand { get; }
+
+    [ObservableProperty] private bool _exportDualLayerDvd;
+    [ObservableProperty] private string _dvdLayerFormat = DvdDualLayerDefaults.Plus;
+    public IReadOnlyList<string> DvdLayerFormats => DvdDualLayerDefaults.Formats;
+
+    partial void OnDvdLayerFormatChanged(string value)
+    {
+        _detectedDvdBoundary = null;
+        DvdLayerBreak = DvdDualLayerDefaults.Layer0Sectors(value).ToString(CultureInfo.InvariantCulture);
+    }
+
+    [ObservableProperty] private string _dvdLayerBreak = DvdImageGenerator.MaxDvdPlusRLayer0Sectors.ToString(CultureInfo.InvariantCulture);
+
+    partial void OnExportDualLayerDvdChanged(bool value)
+    {
+        if (value && ReadDvdLayerBreakCommand.CanExecute(null))
+            ReadDvdLayerBreakCommand.Execute(null);
+    }
+
+    private async Task ReadDvdLayerBreakAsync()
+    {
+        string previousValue = DvdLayerBreak;
+        string previousFormat = DvdLayerFormat;
+        try
+        {
+            DvdLayerBoundary boundary = await _opticalDiscBurner.ReadDvdLayerBoundaryAsync();
+            if (!boundary.DvdMinusRTotalSectors.HasValue && boundary.Layer0Sectors > DvdImageGenerator.MaxDvdPlusRLayer0Sectors)
+                throw new InvalidOperationException(L.T("光驱返回的 DVD+R DL 换层点无效。"));
+            if (!ExportDualLayerDvd || DvdLayerBreak != previousValue || DvdLayerFormat != previousFormat)
+                return;
+            DvdLayerFormat = boundary.DvdMinusRTotalSectors.HasValue ? DvdDualLayerDefaults.Minus : DvdDualLayerDefaults.Plus;
+            _detectedDvdBoundary = boundary;
+            DvdLayerBreak = boundary.Layer0Sectors.ToString(CultureInfo.InvariantCulture);
+            string status = boundary.IsLocked ? L.T("已锁定") : L.T("可设置");
+            string message = L.F($"从 {boundary.DeviceName} 读取换层点 {boundary.Layer0Sectors}（{status}）。");
+            _shell.AppendLog(message + Environment.NewLine);
+            _shell.ShowToast(L.T("已读取换层点"), message, ToastKind.Success);
+        }
+        catch (Exception exception)
+        {
+            _shell.AppendLog(JobDiagnostics.FormatLog(L.T("未能读取换层点"), exception));
+            _shell.ShowToast(L.T("未能读取换层点"), L.Error(exception), ToastKind.Error);
+        }
+    }
+
     [ObservableProperty]
     private string _sourceSummary = L.T("请先在设计页导入图片。");
 
@@ -103,6 +160,7 @@ public partial class ExportViewModel : ObservableObject
         BrowseOutputCommand.NotifyCanExecuteChanged();
         BrowseDataCommand.NotifyCanExecuteChanged();
         GenerateCommand.NotifyCanExecuteChanged();
+        ReadDvdLayerBreakCommand.NotifyCanExecuteChanged();
     }
 
     private void BrowseOutput()
@@ -242,21 +300,36 @@ public partial class ExportViewModel : ObservableObject
     private async Task GenerateDvdAsync(string compositePath)
     {
         string output = RequirePath(_state.DvdOutputPath, L.T("请选择 DVD ISO 输出位置。"));
+        uint? layerBreak = ExportDualLayerDvd
+            ? checked((uint)ParameterParser.ParsePositiveLong(DvdLayerBreak, L.T("换层点（L0 扇区数）"))) : null;
+        uint? minusTotal = layerBreak.HasValue && DvdLayerFormat == DvdDualLayerDefaults.Minus
+            ? _detectedDvdBoundary?.DvdMinusRTotalSectors ?? DvdDualLayerDefaults.MinusTotalSectors : null;
+        if (minusTotal.HasValue && layerBreak != (_detectedDvdBoundary?.Layer0Sectors ?? DvdDualLayerDefaults.MinusLayer0Sectors))
+            throw new ArgumentException(L.T("DVD-R DL 请使用默认换层点或重新从盘片读取。"));
         DvdStreamingOptions options = new(
-            checked((uint)ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, L.T("总扇区数"))),
+            layerBreak.HasValue ? (minusTotal.HasValue ? layerBreak.Value : DvdImageGenerator.MaxDvdPlusRLayer0Sectors)
+                : checked((uint)ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, L.T("总扇区数"))),
             ParameterParser.ParsePositiveDouble(_state.DvdInnerRadius, L.T("内半径")),
             ParameterParser.ParsePositiveDouble(_state.DvdOuterRadius, L.T("外半径")),
             PitchLinear: ParameterParser.ParseDouble(_state.DvdPitchLinear, L.T("相对一次项")),
             PitchQuadratic: ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("相对二次项")),
             PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("相对三次项")),
-            UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.Dvd)),
+            UsableSectors: layerBreak ?? checked((uint)_state.GetUsableSectors(OpticalDiscFamily.Dvd)),
+            ChannelBitLengthNm: layerBreak.HasValue ? DvdDualLayerDefaults.ChannelBitLengthNm : DvdStreamingOptions.StandardChannelBitLengthNm,
             Tone: _state.DvdTone,
             ReadCompatibility: _state.DvdReadCompatibility);
         DvdImageRequest request = new(compositePath, output, options, _state.DvdDataDirectory.Trim(),
             string.IsNullOrWhiteSpace(_state.DvdVolumeLabel) ? "DISC_IMAGE" : _state.DvdVolumeLabel.Trim(),
-            !string.IsNullOrWhiteSpace(_state.DvdDataDirectory) && _state.DvdFilesAtOuterRing);
-        if (await _shell.RunImageJobAsync(L.T("正在生成 DVD ISO…"), output,
+            !string.IsNullOrWhiteSpace(_state.DvdDataDirectory) && _state.DvdFilesAtOuterRing,
+            !string.IsNullOrWhiteSpace(_state.DvdDataDirectory) && _state.DvdFilesInBothRings, layerBreak, minusTotal);
+        if (!await _shell.RunImageJobAsync(L.T("正在生成 DVD ISO…"), output,
                 (progress, token) => DvdImageGenerator.Generate(request, progress, token), request.ToString()))
+            return;
+        if (layerBreak is uint minusSplit && minusTotal.HasValue)
+            _shell.AppendLog(L.F($"DVD-R DL ISO 的换层点为 {minusSplit}。请用 DVD-R DL 顺序模式刻录。") + Environment.NewLine);
+        else if (layerBreak is uint split)
+            _shell.AppendLog(L.F($"DVD+R DL ISO 的换层点为 {split}。请在刻录工具中设置相同的值。") + Environment.NewLine);
+        else
             _state.DvdIsoPath = output;
     }
 

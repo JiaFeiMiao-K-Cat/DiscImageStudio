@@ -4,6 +4,13 @@
 
 ### 中文
 
+- 双层标靶可从辅助标定进入流式刻录。刻录前核对空白状态、顺序模式、容量和换层点。
+- 双层 DVD 导出和辅助标定提供 DVD+R DL 与 DVD-R DL 的默认参数，可在没有盘片时使用。
+- DVD-R DL 顺序模式支持双层 ISO 导出和 L0 辅助标定。换层点及容量从盘片读取。
+- 辅助标定读取光盘时按实际介质切换 CD、DVD 或蓝光。DVD+R DL 自动进入双层标定并读取换层点。
+- 辅助标定支持实验性 DVD+R DL 标靶，图案写在 L0，标定记录放在 L1，并保存所用换层点。
+- DVD 导出页新增实验性 DVD+R DL 双层 ISO，可从光驱读取换层点或手动输入。L0 放图案，L1 放文件。
+- DVD 混合盘可将完整文件自动放在内外两圈，把图案留在中间。此模式至少需要两个非空文件，适用于预览、ISO 导出和流式刻录。
 - Windows 流式刻录支持在确认后快速擦除已使用的 DVD+RW 和 DVD-RW。擦除成功后重新检查盘片并读取写入速度，再继续刻录。
 - Windows 应用宿主设置 `CetCompat=false`，作为 #229 所报启动失败的兼容性处理；这会降低该应用进程的硬件影子栈保护，不修改系统级安全设置。受影响原机上的启动结果仍待验证。
 - 新增 Windows ARM64 自包含单文件 EXE；Windows x64 与 ARM64 分别在原生 runner 上构建并对最终发布文件执行自检、音轨生成和 GUI 截图检查，Release 复用这些已测试制品。ARM64 使用 Windows 11，CI 仅覆盖软件检查，尚未验证实盘刻录。
@@ -17,6 +24,13 @@
 
 ### English
 
+- Dual-layer calibration targets can use streaming burn when the blank disc, recording mode, capacity, and layer break match.
+- Dual-layer DVD export and assisted calibration offer DVD+R DL and DVD-R DL defaults for use without a loaded disc.
+- DVD-R DL sequential mode supports dual-layer ISO export and Layer 0 calibration using the layer break and capacity read from the disc.
+- Assisted calibration detects and selects the loaded CD, DVD or Blu-ray family. DVD+R DL enables dual-layer calibration and reads the layer break.
+- Assisted calibration can generate experimental DVD+R DL targets with artwork on Layer 0 and the calibration record on Layer 1, retaining the selected layer break.
+- The DVD export page supports experimental DVD+R DL ISO export with a drive-reported or manually entered layer break. Layer 0 holds the drawing and Layer 1 holds the files.
+- DVD hybrid discs can place complete files in both rings and draw between them. The mode requires at least two nonempty files and works in previews, ISO exports and streaming burns.
 - On Windows, stream burning can quick-erase used DVD+RW and DVD-RW discs after confirmation. Once erasing succeeds, the app rechecks the disc and queries its write speeds before burning.
 - Set `CetCompat=false` on the Windows application host as a compatibility workaround for the startup failure reported in #229. This reduces hardware shadow-stack protection for this application process without changing system-wide security settings. Startup on the affected original machine still needs verification.
 - Add a self-contained single-file Windows ARM64 EXE. Windows x64 and ARM64 builds run on native runners and check the final executables with self-tests, audio-track generation and GUI snapshots; releases reuse those tested artifacts. ARM64 uses Windows 11. CI covers software checks only; physical disc burning on ARM64 remains unverified.
