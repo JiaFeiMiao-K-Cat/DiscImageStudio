@@ -66,14 +66,18 @@ internal sealed class BluRayMmcCommands(IMmcCommandTransport transport, Action<i
 {
     internal const int CommandHasSenseData = 0x00AA0200;
 
-    internal BluRaySequentialMediaInfo ReadMedia()
+    internal int ReadCurrentProfile()
     {
         byte[] configuration = Read(0x46, 8);
         RequireLength(configuration, 8, "GET CONFIGURATION");
         if (BinaryPrimitives.ReadUInt32BigEndian(configuration.AsSpan(0, 4)) < 4)
             throw new IOException("GET CONFIGURATION 返回了无效的长度字段。");
-        int profile = BinaryPrimitives.ReadUInt16BigEndian(configuration.AsSpan(6, 2));
+        return BinaryPrimitives.ReadUInt16BigEndian(configuration.AsSpan(6, 2));
+    }
 
+    internal BluRaySequentialMediaInfo ReadMedia()
+    {
+        int profile = ReadCurrentProfile();
         byte[] disc = Read(0x51, 64);
         RequireResponseLength(disc, 12, "READ DISC INFORMATION");
         bool discBlank = (disc[2] & 3) == 0;

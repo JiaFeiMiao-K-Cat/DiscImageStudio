@@ -1149,6 +1149,11 @@
     "es": "El disco informa de {0} configuraciones de escritura. El modo automático usa el valor más bajo: ",
     "cs": "Disk hlásí konfigurace zápisu: {0}. Automatický režim použije nejnižší hodnotu: "
   },
+  "当前盘片未提供可选速度，将自动选择。若需擦除盘片，擦除后会重新读取速度。": {
+    "zh-CN": "当前盘片未提供可选速度，将自动选择。若需擦除盘片，擦除后会重新读取速度。",
+    "en": "Selectable speeds are unavailable. Speed will be selected automatically. If the disc needs erasing, speeds will be queried again afterward.",
+    "zh-TW": "目前光碟片未提供可選速度，將自動選擇。若需抹除光碟片，抹除後會重新讀取速度。"
+  },
   "当前盘片未报告可选速度，将使用刻录接口的保守回退设置。": {
     "zh-CN": "当前盘片未报告可选速度，将使用刻录接口的保守回退设置。",
     "en": "The disc did not report available speeds. The burn interface will use its conservative fallback.",

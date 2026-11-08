@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Dynamic;
 using System.IO;
 using DiscImageStudio.Burning;
 
@@ -35,6 +36,15 @@ internal static class MediaSectorCountTests
         Require(WindowsImapiBurner.IsWritableMedia(OpticalBurnMediaKind.DvdData, 0x7, [0x1A]));
         Require(WindowsImapiBurner.IsWritableMedia(OpticalBurnMediaKind.DvdData, 0xA, [0x13]));
         Require(WindowsImapiBurner.IsWritableMedia(OpticalBurnMediaKind.DvdData, 0xA, [0x14]));
+        dynamic dvdFormat = new ExpandoObject();
+        dvdFormat.CurrentPhysicalMediaType = 0xA;
+        dvdFormat.CurrentMediaStatus = 0x4000; // Finalized, without ERASE_REQUIRED.
+        Require(WindowsImapiBurner.DvdNeedsErase((object)dvdFormat));
+        dvdFormat.CurrentMediaStatus = 0x2;
+        Require(!WindowsImapiBurner.DvdNeedsErase((object)dvdFormat));
+        dvdFormat.CurrentPhysicalMediaType = 0x9;
+        dvdFormat.CurrentMediaStatus = 0x4000;
+        Require(!WindowsImapiBurner.DvdNeedsErase((object)dvdFormat));
         Require(WindowsImapiBurner.ReadDvdSectorCount(0x6, 2_295_104) == 2_295_104);
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadDvdSectorCount(0x9, 0));
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadDvdSectorCount(0xB, 4_171_712));

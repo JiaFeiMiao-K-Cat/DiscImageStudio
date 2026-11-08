@@ -376,7 +376,7 @@ public partial class BurnViewModel : ObservableObject
         {
             OpticalBurnMediaKind mediaKind = CurrentMediaKind;
             SpeedStatusText = supported.Count == 0
-                ? L.T("当前盘片未报告可选速度，将使用刻录接口的保守回退设置。")
+                ? GetUnavailableSpeedText(mediaKind)
                 : L.F($"当前盘片报告 {supported.Count} 种写入配置；自动模式将使用最低值 ")
                     + L.F($"{FormatBurnWriteSpeed(supported[0], mediaKind)}，最终以刻录机采用值为准。");
         }
@@ -478,7 +478,7 @@ public partial class BurnViewModel : ObservableObject
                 : options.FindIndex(option => option.Speed == previousSpeed);
             SelectedSpeed = selectedIndex < 0 ? options[0] : options[selectedIndex];
             SpeedStatusText = speeds.Count == 0
-                ? L.T("当前盘片未报告可选速度，将使用刻录接口的保守回退设置。")
+                ? GetUnavailableSpeedText(mediaKind)
                 : L.F($"当前盘片报告 {speeds.Count} 种写入配置；自动模式将使用最低值 ")
                     + L.F($"{FormatBurnWriteSpeed(speeds[0], mediaKind)}，最终以刻录机采用值为准。");
         }
@@ -501,6 +501,11 @@ public partial class BurnViewModel : ObservableObject
             }
         }
     }
+
+    private static string GetUnavailableSpeedText(OpticalBurnMediaKind mediaKind)
+        => mediaKind == OpticalBurnMediaKind.DvdData
+            ? L.T("当前盘片未提供可选速度，将自动选择。若需擦除盘片，擦除后会重新读取速度。")
+            : L.T("当前盘片未报告可选速度，将使用刻录接口的保守回退设置。");
 
     private static string FormatBurnWriteSpeed(
         OpticalWriteSpeed speed,
