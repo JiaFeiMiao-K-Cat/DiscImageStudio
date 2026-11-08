@@ -587,9 +587,7 @@ public partial class BurnViewModel : ObservableObject
                     BluRayIsoPlan plan = BluRayIsoGenerator.PrepareDrawing(
                         disc,
                         dataDirectory.Length == 0 ? null : dataDirectory,
-                        string.IsNullOrWhiteSpace(_state.BdVolumeLabel)
-                            ? "BD_IMAGE"
-                            : _state.BdVolumeLabel.Trim(),
+                        _state.ResolveVolumeLabel(OpticalDiscFamily.BluRay),
                         filesAtOuterRing: dataDirectory.Length != 0 && _state.BdFilesAtOuterRing);
                     ToneProfile tone = _state.BluRayTone;
                     bool invert = _state.BdInvertMapping;
@@ -627,9 +625,7 @@ public partial class BurnViewModel : ObservableObject
                         : DvdStreamingGenerator.PrepareHybrid(
                             dataDirectory,
                             options,
-                            string.IsNullOrWhiteSpace(_state.DvdVolumeLabel)
-                                ? "DISC_IMAGE"
-                                : _state.DvdVolumeLabel.Trim(),
+                            _state.ResolveVolumeLabel(OpticalDiscFamily.Dvd),
                             filesAtOuterRing: _state.DvdFilesAtOuterRing);
                     request = new OpticalBurnRequest(
                         device.Id,
@@ -674,7 +670,7 @@ public partial class BurnViewModel : ObservableObject
                         compositePath,
                         parameters,
                         _state.CdDataDirectory,
-                        _state.CdVolumeLabel,
+                        _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc),
                         _state.CdFilesAtOuterRing,
                         _state.CdInterleave,
                         _state.Tone,

@@ -231,7 +231,7 @@ public partial class ExportViewModel : ObservableObject
             UsableSectors: _state.GetUsableSectors(OpticalDiscFamily.CompactDisc));
         CdImageRequest request = new(compositePath, output, parameters, _state.Tone,
             _state.CdInterleave, _state.CdWriteCue, _state.CdDataDirectory.Trim(),
-            string.IsNullOrWhiteSpace(_state.CdVolumeLabel) ? "CD_IMAGE" : _state.CdVolumeLabel.Trim(),
+            _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc),
             _state.CdFilesAtOuterRing);
         if (await _shell.RunImageJobAsync(
                 _state.HasCdFiles ? L.T("正在生成 CD 数据盘 ISO…") : L.T("正在生成 CD 音轨…"),
@@ -253,7 +253,7 @@ public partial class ExportViewModel : ObservableObject
             Tone: _state.DvdTone,
             ReadCompatibility: _state.DvdReadCompatibility);
         DvdImageRequest request = new(compositePath, output, options, _state.DvdDataDirectory.Trim(),
-            string.IsNullOrWhiteSpace(_state.DvdVolumeLabel) ? "DISC_IMAGE" : _state.DvdVolumeLabel.Trim(),
+            _state.ResolveVolumeLabel(OpticalDiscFamily.Dvd),
             !string.IsNullOrWhiteSpace(_state.DvdDataDirectory) && _state.DvdFilesAtOuterRing);
         if (await _shell.RunImageJobAsync(L.T("正在生成 DVD ISO…"), output,
                 (progress, token) => DvdImageGenerator.Generate(request, progress, token), request.ToString()))
@@ -273,7 +273,7 @@ public partial class ExportViewModel : ObservableObject
             UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.BluRay)));
         BluRayImageRequest request = new(compositePath, output, parameters, _state.BluRayTone,
             _state.BdInvertMapping, _state.BdDataDirectory.Trim(),
-            string.IsNullOrWhiteSpace(_state.BdVolumeLabel) ? "BD_IMAGE" : _state.BdVolumeLabel.Trim(),
+            _state.ResolveVolumeLabel(OpticalDiscFamily.BluRay),
             _state.BdFilesAtOuterRing);
         BluRayImageGenerator generator = new(BluRayImageLoader.Load);
         if (await _shell.RunImageJobAsync(L.T("正在生成蓝光 ISO…"), output,

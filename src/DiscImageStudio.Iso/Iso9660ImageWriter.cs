@@ -8,6 +8,12 @@ namespace DiscImageStudio.Iso;
 public static class Iso9660ImageWriter
 {
     public const int LogicalSectorBytes = 2048;
+
+    /// <summary>Joliet stores the volume identifier as UCS-2 in a 32-byte field, so a label
+    /// longer than 16 UTF-16 units cannot be represented. Rejecting it keeps the generated
+    /// image from showing a silently truncated name.</summary>
+    public const int MaximumJolietVolumeLabelCharacters = 16;
+
     private const uint PrimaryVolumeDescriptorLba = 16;
     private const uint SupplementaryVolumeDescriptorLba = 17;
     private const uint TerminatorLba = 18;
@@ -82,6 +88,8 @@ public static class Iso9660ImageWriter
         }
 
         ArgumentNullException.ThrowIfNull(volumeLabel);
+        string primaryVolumeLabel = NormalizePrimaryIdentifier(volumeLabel, 32, "DVD_IMAGE");
+        string jolietVolumeLabel = ValidateJolietVolumeLabel(volumeLabel);
         string sourceFullPath = sourceDirectory is null ? string.Empty : Path.GetFullPath(sourceDirectory);
         if (sourceDirectory is not null && !Directory.Exists(sourceFullPath))
             throw new DirectoryNotFoundException($"Data directory does not exist: {sourceFullPath}");
@@ -100,8 +108,8 @@ public static class Iso9660ImageWriter
             root,
             directories,
             layout,
-            NormalizePrimaryIdentifier(volumeLabel, 32, "DVD_IMAGE"),
-            NormalizeJolietIdentifier(volumeLabel, 16, "DVD_IMAGE"),
+            primaryVolumeLabel,
+            jolietVolumeLabel,
             timestamp ?? DateTimeOffset.UtcNow);
     }
 
@@ -730,7 +738,27 @@ public static class Iso9660ImageWriter
         int maximumLength,
         string fallback)
     {
-        StringBuilder result = new(maximumLength);
+        string normalized = NormalizeJolietText(value);
+        return normalized.Length == 0 ? fallback : Truncate(normalized, maximumLength);
+    }
+
+    private static string ValidateJolietVolumeLabel(string volumeLabel)
+    {
+        string normalized = NormalizeJolietText(volumeLabel.Trim());
+        if (normalized.Length > MaximumJolietVolumeLabelCharacters)
+        {
+            throw new ArgumentException(
+                $"Joliet volume labels are limited to {MaximumJolietVolumeLabelCharacters} characters.",
+                nameof(volumeLabel));
+        }
+
+        return normalized.Length == 0 ? "DVD_IMAGE" : normalized;
+    }
+
+    // File identifiers are truncated later; a volume label must be validated before truncation.
+    private static string NormalizeJolietText(string value)
+    {
+        StringBuilder result = new(value.Length);
         foreach (char character in value.Normalize(NormalizationForm.FormC))
         {
             char normalized = character is '\0' or '/' or '\\' or ':' or ';'
@@ -739,13 +767,9 @@ public static class Iso9660ImageWriter
                     ? '_'
                     : character;
             result.Append(normalized);
-            if (result.Length == maximumLength)
-            {
-                break;
-            }
         }
 
-        return result.Length == 0 ? fallback : result.ToString();
+        return result.ToString();
     }
 
     private static string Truncate(string value, int maximumCharacters)

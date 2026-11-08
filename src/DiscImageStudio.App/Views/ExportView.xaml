@@ -55,7 +55,9 @@
                             <controls:VisibilityGate IsOpen="{Binding State.HasCdFiles}">
                                 <StackPanel Margin="0,14,0,0">
                                     <TextBlock Style="{StaticResource FieldLabel}" Margin="0,0,0,6" Text="{loc:Text Xaml.VolumeLabel}" />
-                                    <TextBox Text="{Binding State.CdVolumeLabel, UpdateSourceTrigger=PropertyChanged}" MaxLength="32" />
+                                    <TextBox Text="{Binding State.CdVolumeLabel, UpdateSourceTrigger=PropertyChanged}" MaxLength="16" />
+                                    <TextBlock Style="{StaticResource HintText}" Margin="0,4,0,0"
+                                               Text="{loc:Text Xaml.VolumeLabelHint}" />
                                 </StackPanel>
                             </controls:VisibilityGate>
                             <controls:VisibilityGate IsOpen="{Binding State.IsCdAudioMode}">
@@ -80,7 +82,9 @@
                                                 ButtonLabel="{loc:Text Xaml.Select}"
                                                 Command="{Binding BrowseOutputCommand}" />
                             <TextBlock Style="{StaticResource FieldLabel}" Margin="0,14,0,6" Text="{loc:Text Xaml.VolumeLabel}" />
-                            <TextBox Text="{Binding State.DvdVolumeLabel, UpdateSourceTrigger=PropertyChanged}" MaxLength="32" />
+                            <TextBox Text="{Binding State.DvdVolumeLabel, UpdateSourceTrigger=PropertyChanged}" MaxLength="16" />
+                            <TextBlock Style="{StaticResource HintText}" Margin="0,4,0,0"
+                                       Text="{loc:Text Xaml.VolumeLabelHint}" />
                             <controls:DvdReadCompatibilityToggle IsChecked="{Binding State.DvdReadCompatibility}" Margin="0,14,0,0" />
                         </StackPanel>
                     </controls:VisibilityGate>

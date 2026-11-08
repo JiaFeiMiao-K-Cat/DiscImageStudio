@@ -800,7 +800,9 @@ public partial class LivePreviewViewModel : ObservableObject
         {
             outputPath = TempFiles.GetCacheFilePath($"cd-live-warp-{revision}.png");
             string dataDirectory = _state.CdDataDirectory.Trim();
-            string volumeLabel = _state.CdVolumeLabel.Trim();
+            string volumeLabel = dataDirectory.Length > 0
+                ? _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc)
+                : string.Empty;
             bool filesAtOuterRing = _state.CdFilesAtOuterRing;
             CdDataLayoutPlan? plan = await StaWorker.RunAsync(() =>
             {
@@ -1190,7 +1192,7 @@ public partial class LivePreviewViewModel : ObservableObject
         string dataDirectory = _state.BdDataDirectory.Trim();
         return BluRayIsoGenerator.PrepareDrawing(generated,
             dataDirectory.Length == 0 ? null : dataDirectory,
-            string.IsNullOrWhiteSpace(_state.BdVolumeLabel) ? "BD_IMAGE" : _state.BdVolumeLabel.Trim(),
+            _state.ResolveVolumeLabel(OpticalDiscFamily.BluRay),
             filesAtOuterRing: dataDirectory.Length > 0 && _state.BdFilesAtOuterRing);
     }
 
@@ -1504,7 +1506,7 @@ public partial class LivePreviewViewModel : ObservableObject
             {
                 DvdStreamingOptions generated = ReadDvdPreviewGeometry(calibration: false);
                 filePlan = DvdStreamingGenerator.PrepareHybrid(dataDirectory, generated,
-                    string.IsNullOrWhiteSpace(_state.DvdVolumeLabel) ? "DISC_IMAGE" : _state.DvdVolumeLabel.Trim(),
+                    _state.ResolveVolumeLabel(OpticalDiscFamily.Dvd),
                     filesAtOuterRing: _state.DvdFilesAtOuterRing);
                 drawingStart = filePlan.DrawingStartLba;
                 drawingSectors = filePlan.DrawingSectors;
