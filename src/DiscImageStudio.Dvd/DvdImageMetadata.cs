@@ -24,7 +24,8 @@ public sealed record DvdImageMetadata(
     bool ReadCompatibility = false,
     uint? UsableSectors = null,
     double? SourceImageOuterRadiusMm = null,
-    string? ReadCompatibilityMode = null)
+    string? ReadCompatibilityMode = null,
+    bool FilesInBothRings = false)
 {
     public uint OutputSectors => UsableSectors ?? TotalSectors;
 
@@ -76,6 +77,8 @@ public sealed record DvdImageMetadata(
                 return null;
             bool filesAtOuterRing = document.RootElement.TryGetProperty("filesAtOuterRing", out JsonElement position)
                 && position.ValueKind == JsonValueKind.True;
+            bool filesInBothRings = document.RootElement.TryGetProperty("filesInBothRings", out JsonElement both)
+                && both.ValueKind == JsonValueKind.True;
             bool hasFileSystem = document.RootElement.TryGetProperty("iso", out JsonElement iso)
                 && iso.ValueKind == JsonValueKind.Object
                 && iso.TryGetProperty("mountableFilesystem", out JsonElement mountable)
@@ -89,7 +92,7 @@ public sealed record DvdImageMetadata(
                 && innerRadius > 0 && outerRadius > innerRadius
                 ? new DvdImageMetadata(totalSectors, innerRadius, outerRadius, linear, quadratic, cubic,
                     filesAtOuterRing, drawingStart, drawingStart + drawingSectors, hasFileSystem, readCompatibility,
-                    usableSectors, sourceImageOuterRadiusMm, readCompatibilityMode)
+                    usableSectors, sourceImageOuterRadiusMm, readCompatibilityMode, filesInBothRings)
                 : null;
         }
         catch (Exception exception) when (exception is JsonException or IOException or ArgumentException)

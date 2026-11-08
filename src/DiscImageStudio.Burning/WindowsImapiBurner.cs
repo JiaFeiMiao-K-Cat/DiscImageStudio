@@ -16,6 +16,8 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
     private const int UnsupportedMediaStates = 0xFC00;
     private const int DvdPlusRw = 0x7;
     private const int DvdMinusRw = 0xA;
+    private const int DvdPlusRDoubleLayer = 0x8;
+    private const int DvdMinusRDoubleLayer = 0xB;
     // IMAPI_MEDIA_PHYSICAL_TYPE and IMAPI_PROFILE_TYPE (imapi2.h).
     // https://learn.microsoft.com/windows/win32/api/imapi2/ne-imapi2-imapi_media_physical_type
     // https://learn.microsoft.com/windows/win32/api/imapi2/ne-imapi2-imapi_profile_type
@@ -27,6 +29,138 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         CancellationToken cancellationToken = default)
         => _operationGate.RunAsync(() => RunOnStaThread(() => EnumerateDevices(cancellationToken)),
             cancellationToken);
+
+    public Task<OpticalBurnMediaKind?> DetectCalibrationMediaKindAsync(string deviceId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+        return _operationGate.RunAsync(() => RunOnStaThread(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            object recorder = CreateRecorder(deviceId);
+            try { return ClassifyCalibrationMedia(ReadPhysicalMediaType(recorder)); }
+            finally { ReleaseComObject(recorder); }
+        }), cancellationToken);
+    }
+
+    internal static OpticalBurnMediaKind? ClassifyCalibrationMedia(int physicalMediaType) => physicalMediaType switch
+    {
+        >= 0x1 and <= 0x3 => OpticalBurnMediaKind.CdAudio,
+        >= 0x4 and <= 0xB or 0xD => OpticalBurnMediaKind.DvdData,
+        >= 0x11 and <= 0x13 => OpticalBurnMediaKind.BluRayData,
+        _ => null,
+    };
+
+    public Task<DvdLayerBoundary> ReadDvdLayerBoundaryAsync(CancellationToken cancellationToken = default)
+        => _operationGate.RunAsync(() => RunOnStaThread(() => FindDvdLayerBoundary(cancellationToken)),
+            cancellationToken);
+
+    public Task<DvdLayerBoundary> ReadDvdLayerBoundaryAsync(string deviceId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+        return _operationGate.RunAsync(() => RunOnStaThread(() => FindDvdLayerBoundary(cancellationToken, deviceId)),
+            cancellationToken);
+    }
+
+    private static DvdLayerBoundary FindDvdLayerBoundary(CancellationToken token, string? deviceId = null)
+    {
+        foreach (OpticalBurnDevice device in EnumerateDevices(token))
+        {
+            token.ThrowIfCancellationRequested();
+            if (deviceId is not null && device.Id != deviceId) continue;
+            object? recorder = null;
+            try
+            {
+                recorder = CreateRecorder(device.Id);
+                var transport = new ImapiMmcCommandTransport(recorder);
+                int mediaType = ProbeDoubleLayerDvdType(recorder, transport);
+                if (mediaType == DvdPlusRDoubleLayer)
+                    return ReadDvdPlusRLayerBoundary(transport, device.DisplayName);
+                if (mediaType == DvdMinusRDoubleLayer)
+                    return ReadDvdMinusRLayerBoundary(transport, device.DisplayName);
+                if (mediaType == 0x16)
+                    throw new InvalidOperationException("DVD-R DL 标定需要顺序刻录模式，当前光驱报告跳层刻录模式。");
+            }
+            finally
+            {
+                if (recorder is not null) ReleaseComObject(recorder);
+            }
+        }
+        throw new InvalidOperationException("未找到装有 DVD±R DL 盘片的光驱。");
+    }
+
+    private static int ProbeDoubleLayerDvdType(object recorder, IMmcCommandTransport transport)
+    {
+        try
+        {
+            int profile = new BluRayMmcCommands(transport).ReadCurrentProfile();
+            if (profile == 0x2B) return DvdPlusRDoubleLayer;
+            if (profile == 0x15) return DvdMinusRDoubleLayer;
+            if (profile == 0x16) return profile;
+            if (profile != 0) return 0;
+        }
+        catch (Exception exception) when (exception is COMException or IOException) { }
+
+        try { return ReadPhysicalMediaType(recorder); }
+        catch (COMException) { return 0; }
+    }
+
+    private static int ReadPhysicalMediaType(object recorder)
+    {
+        dynamic? format = null;
+        try
+        {
+            format = CreateComObject("IMAPI2.MsftDiscFormat2Data");
+            format.Recorder = recorder;
+            return Convert.ToInt32(format.CurrentPhysicalMediaType);
+        }
+        finally
+        {
+            if (format is not null) ReleaseComObject(format);
+        }
+    }
+
+    internal static DvdLayerBoundary ReadDvdMinusRLayerBoundary(IMmcCommandTransport transport, string deviceName)
+    {
+        // MMC format 10h returns the prerecorded DVD-R physical format (ECMA-382 §25.1.6.1).
+        const byte allocation = 20;
+        byte[] cdb = [0xAD, 0, 0, 0, 0, 0, 0, 0x10, 0, allocation, 0, 0];
+        MmcCommandResult response = transport.Execute(cdb, allocation, 10);
+        if (response.HResult < 0 || response.HResult == BluRayMmcCommands.CommandHasSenseData)
+            throw new MmcCommandException(cdb[0], response);
+        byte[] data = response.Data;
+        if (data.Length < allocation || BinaryPrimitives.ReadUInt16BigEndian(data) < allocation - 2
+            || (data[6] & 0x70) != 0x30)
+            throw new IOException("光驱返回的 DVD-R DL 物理格式信息不完整或无效。");
+
+        uint start = ReadPsn(9), end = ReadPsn(13), endL0 = ReadPsn(17);
+        uint startL1 = 0xFFFFFF ^ endL0;
+        if (start != 0x030000 || endL0 < start || end < startL1)
+            throw new IOException("光驱返回的 DVD-R DL 扇区范围无效。");
+        uint layer0 = endL0 - start + 1;
+        uint layer1 = end - startL1 + 1;
+        if (layer0 % 16 != 0 || layer1 % 16 != 0 || layer0 + layer1 > 4_200_000)
+            throw new IOException("光驱返回的 DVD-R DL 扇区范围无效。");
+        return new(deviceName, layer0, IsLocked: true, DvdMinusRTotalSectors: layer0 + layer1);
+
+        uint ReadPsn(int offset) => (uint)(data[offset] << 16 | data[offset + 1] << 8 | data[offset + 2]);
+    }
+
+    internal static DvdLayerBoundary ReadDvdPlusRLayerBoundary(IMmcCommandTransport transport, string deviceName)
+    {
+        // MMC READ DISC STRUCTURE, format 20h: DVD+R DL Boundary Information.
+        const byte allocation = 12;
+        byte[] cdb = [0xAD, 0, 0, 0, 0, 0, 0, 0x20, 0, allocation, 0, 0];
+        MmcCommandResult response = transport.Execute(cdb, allocation, 10);
+        if (response.HResult < 0 || response.HResult == BluRayMmcCommands.CommandHasSenseData)
+            throw new MmcCommandException(cdb[0], response);
+        byte[] data = response.Data;
+        if (data.Length < allocation || BinaryPrimitives.ReadUInt16BigEndian(data) < allocation - 2)
+            throw new IOException("光驱返回的 DVD+R DL 换层信息不完整。");
+        uint sectors = BinaryPrimitives.ReadUInt32BigEndian(data.AsSpan(8, 4));
+        if (sectors == 0 || sectors % 16 != 0)
+            throw new IOException("光驱返回的 DVD+R DL 换层点无效。");
+        return new(deviceName, sectors, (data[4] & 0x80) != 0);
+    }
 
     public async Task<long> GetMediaSectorCountAsync(string deviceId, OpticalBurnMediaKind mediaKind,
         CancellationToken cancellationToken = default)
@@ -52,6 +186,10 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             format = CreateComObject("IMAPI2.MsftDiscFormat2Data");
             format.Recorder = recorder;
             format.ClientName = "Disc Image Studio";
+            int detectedMedia = Convert.ToInt32(format.CurrentPhysicalMediaType);
+            bool dvdOrCd = mediaKind == OpticalBurnMediaKind.DvdData || OpticalBurnMedia.UsesCdDao(mediaKind);
+            if (dvdOrCd && detectedMedia is DvdPlusRDoubleLayer or DvdMinusRDoubleLayer)
+                throw new DvdLayerBoundaryRequiredException();
             ValidateRequestedMedia(mediaKind, recorder, format);
             // These are media queries. PrepareMedia would enter a recording session.
             OpticalMediaCapacity capacity;
@@ -59,7 +197,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             {
                 // Keep geometry separate from the write limit. Used rewritable media
                 // can reclaim its occupied sectors after the user approves preparation.
-                int mediaType = Convert.ToInt32(format.CurrentPhysicalMediaType);
+                int mediaType = detectedMedia;
                 long totalSectors = Convert.ToInt64(format.TotalSectorsOnMedia);
                 bool requiresErase = DvdNeedsErase((object)format, mediaType);
                 long writableSectors = requiresErase
@@ -338,6 +476,8 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
 
             currentOperation = "检查当前盘片兼容性";
             ValidateRequestedMedia(request.MediaKind, recorder, format);
+            if (request.DvdLayerBreakLba.HasValue)
+                ValidateDvdLayerBurn(request, (object)recorder, (object)format);
             // Used DVD±RW can be erasable even when the data writer rejects its current state.
             if (!(request.MediaKind == OpticalBurnMediaKind.DvdData && DvdNeedsErase((object)format))
                 && !(bool)format.IsCurrentMediaSupported(recorder))
@@ -421,6 +561,13 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 currentOperation = "准备 DVD 盘片";
                 int mediaType = Convert.ToInt32(format.CurrentPhysicalMediaType);
                 bool overwritesMedia = false;
+                if (request.DvdLayerBreakLba.HasValue)
+                {
+                    var commands = new BluRayMmcCommands(new ImapiMmcCommandTransport((object)recorder));
+                    commands.PreventRemoval(true);
+                    removalProtection = commands;
+                    ValidateDvdLayerBurn(request, (object)recorder, (object)format);
+                }
                 if (IsRewritableDvd(mediaType))
                 {
                     var commands = new BluRayMmcCommands(new ImapiMmcCommandTransport((object)recorder));
@@ -1176,6 +1323,31 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 + $"ElapsedMs={(burnTimer.Elapsed - operationStarted).TotalMilliseconds:F0}。");
     }
 
+    private static void ValidateDvdLayerBurn(OpticalBurnRequest request, object recorder, object formatObject)
+    {
+        dynamic format = formatObject;
+        int expectedType = request.DvdMinusRDoubleLayer ? DvdMinusRDoubleLayer : DvdPlusRDoubleLayer;
+        if (Convert.ToInt32(format.CurrentPhysicalMediaType) != expectedType || !(bool)format.MediaPhysicallyBlank)
+            throw new InvalidOperationException("请放入与标靶格式一致的空白双层 DVD。");
+        var transport = new ImapiMmcCommandTransport(recorder);
+        int profile = new BluRayMmcCommands(transport).ReadCurrentProfile();
+        if (profile != (request.DvdMinusRDoubleLayer ? 0x15 : 0x2B))
+            throw new InvalidOperationException("光驱未报告与标靶匹配的双层 DVD 顺序写入模式。");
+        DvdLayerBoundary boundary = request.DvdMinusRDoubleLayer
+            ? ReadDvdMinusRLayerBoundary(transport, string.Empty) : ReadDvdPlusRLayerBoundary(transport, string.Empty);
+        ValidateDvdLayerBurnLayout(request, boundary);
+    }
+
+    internal static void ValidateDvdLayerBurnLayout(OpticalBurnRequest request, DvdLayerBoundary boundary)
+    {
+        if (!boundary.IsLocked)
+            throw new InvalidOperationException("DVD+R DL 换层点尚未锁定。请生成 ISO 并使用可指定换层点的刻录工具。");
+        if (boundary.Layer0Sectors != request.DvdLayerBreakLba
+            || request.DvdMinusRDoubleLayer != boundary.DvdMinusRTotalSectors.HasValue
+            || request.ContentLength / 2048 != (boundary.DvdMinusRTotalSectors ?? 2L * boundary.Layer0Sectors))
+            throw new InvalidOperationException("盘片的换层点或容量与标靶不一致，请读取盘片并重新生成标靶。");
+    }
+
     private static void ValidateRequestedMedia(
         OpticalBurnMediaKind mediaKind,
         dynamic recorder,
@@ -1190,7 +1362,8 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             return;
 
         int? currentProfile = null;
-        if (mediaKind == OpticalBurnMediaKind.DvdData && IsRewritableDvd(physicalMediaType))
+        if (mediaKind == OpticalBurnMediaKind.DvdData && (IsRewritableDvd(physicalMediaType)
+            || physicalMediaType is DvdPlusRDoubleLayer or DvdMinusRDoubleLayer))
         {
             // Some drives omit the current profile from the IMAPI profile list.
             var commands = new BluRayMmcCommands(new ImapiMmcCommandTransport((object)recorder));

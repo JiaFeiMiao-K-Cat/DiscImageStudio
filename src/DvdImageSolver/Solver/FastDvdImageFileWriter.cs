@@ -12,7 +12,7 @@ public static class FastDvdImageFileWriter
         string imagePath, string outputPath, MultiBlockSolveOptions options,
         HybridIsoImageWriter.LayoutPlan? layout = null,
         Action<FastDispersionProgress>? progress = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, uint? layerBreakLba = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
         ArgumentNullException.ThrowIfNull(options);
@@ -21,16 +21,17 @@ public static class FastDvdImageFileWriter
             throw new ArgumentException("A hybrid file request must include its filesystem layout.", nameof(layout));
         HybridIsoWriteSummary? hybrid = layout is null ? null
             : HybridIsoImageWriter.Create(layout, outputPath, cancellationToken);
-        return WritePrepared(imagePath, outputPath, options, hybrid, progress, cancellationToken);
+        return WritePrepared(imagePath, outputPath, options, hybrid, progress, cancellationToken, layerBreakLba);
     }
 
     internal static FastDispersionWriteResult WritePrepared(
         string imagePath, string outputPath, MultiBlockSolveOptions options,
         HybridIsoWriteSummary? hybrid, Action<FastDispersionProgress>? progress = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, uint? layerBreakLba = null)
     {
         FastDispersionWriteResult result = FastDispersionImageWriter.Write(
-            imagePath, outputPath, options, progress, cancellationToken);
+            imagePath, outputPath, options, progress, cancellationToken,
+            existingIsoSectors: layerBreakLba.HasValue ? hybrid?.VolumeSectors : null);
         cancellationToken.ThrowIfCancellationRequested();
         ImageMappingOptions imageMapping = options.ImageMapping;
         var metadata = new
@@ -40,8 +41,10 @@ public static class FastDvdImageFileWriter
             isoOutput = Path.GetFullPath(outputPath),
             startLba = options.StartLba,
             filesAtOuterRing = hybrid?.FilesAtOuterRing ?? false,
+            filesInBothRings = hybrid?.FilesInBothRings ?? false,
             fillSectors = options.FillSectors,
             totalSectors = imageMapping.TotalSectors,
+            layerBreakLba,
             psnOffset = $"0x{options.PsnOffset:X}",
             blockCount = result.CompletedBlocks,
             algorithm = "dispersion",

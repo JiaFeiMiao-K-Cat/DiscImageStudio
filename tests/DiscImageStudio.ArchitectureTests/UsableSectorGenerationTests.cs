@@ -140,6 +140,56 @@ internal static class UsableSectorGenerationTests
                 DvdStreamingGenerator.PrepareHybrid(files, limited, filesAtOuterRing: outer));
             Require(streamed.Length == bytes.Length, "DVD file and stream use the same bounded layout");
         }
+        string layered = Path.Combine(directory, "dvd-dual-layer.iso");
+        DvdImageGenerator.Generate(new(image, layered, limited, files, LayerBreakLba: 128));
+        byte[] layeredBytes = File.ReadAllBytes(layered);
+        Require(layeredBytes.Length == 256 * 2048
+            && BinaryPrimitives.ReadUInt32LittleEndian(layeredBytes.AsSpan(16 * 2048 + 80)) == 256,
+            "DVD+R DL volume includes both layers");
+        Require(layeredBytes.AsSpan(128 * 2048).IndexOf("usable capacity preserves outer files"u8) >= 0
+            && DvdImageMetadata.TryLoad(layered) is { DrawingEndLbaExclusive: 128, OutputSectors: 128 },
+            "DVD+R DL drawing ends at the break and file payload follows it");
+        using var metadata = System.Text.Json.JsonDocument.Parse(File.ReadAllText(layered + ".json"));
+        Require(metadata.RootElement.GetProperty("layerBreakLba").GetUInt32() == 128,
+            "DVD+R DL sidecar records the intended break");
+
+        var calibrationParameters = new DiscImageStudio.Core.Calibration.CalibrationParameters(
+            DiscImageStudio.Core.Calibration.CalibrationDiscKind.Dvd, 24, 58, 256, 133.3,
+            DrawingStartSector: 32, DrawingEndSectorExclusive: 128, UsableSectors: 128, DvdLayerBreakLba: 128);
+        var target = DiscImageStudio.Core.Calibration.CalibrationTarget.Create(calibrationParameters,
+            artwork: DiscImageStudio.Core.Calibration.CalibrationArtwork.ReferenceCross);
+        string targetPath = Path.Combine(directory, "dvd-dual-layer-calibration.iso");
+        DvdImageGenerator.GenerateCalibration(target, targetPath, limited, layer1Directory: files);
+        byte[] targetBytes = File.ReadAllBytes(targetPath);
+        Require(targetBytes.Length == 256 * 2048
+            && targetBytes.AsSpan(16 * 2048 + 1, 5).SequenceEqual("CD001"u8)
+            && targetBytes.AsSpan(128 * 2048).IndexOf("usable capacity preserves outer files"u8) >= 0
+            && DvdImageMetadata.TryLoad(targetPath) is { DrawingStartLba: 32, DrawingEndLbaExclusive: 128, HasFileSystem: true },
+            "DVD+R DL calibration preserves the filesystem and frozen drawing range");
+        string minusPath = Path.Combine(directory, "dvd-minus-dl.iso");
+        DvdImageGenerator.Generate(new(image, minusPath, limited, files, LayerBreakLba: 128, DvdMinusRTotalSectors: 240));
+        byte[] minusBytes = File.ReadAllBytes(minusPath);
+        Require(minusBytes.Length == 240 * 2048
+            && BinaryPrimitives.ReadUInt32LittleEndian(minusBytes.AsSpan(16 * 2048 + 80)) == 240
+            && minusBytes.AsSpan(128 * 2048).IndexOf("usable capacity preserves outer files"u8) >= 0,
+            "DVD-R DL uses the actual unequal layer capacities");
+        var minusTarget = DiscImageStudio.Core.Calibration.CalibrationTarget.Create(
+            calibrationParameters with { Sectors = 128, DvdMinusRTotalSectors = 240 },
+            artwork: DiscImageStudio.Core.Calibration.CalibrationArtwork.ReferenceCross);
+        var request = DiscImageStudio.ViewModels.BurnViewModel.CreateCalibrationBurnRequest(minusTarget, false, "test", null);
+        request.Validate();
+        DiscImageStudio.Burning.WindowsImapiBurner.ValidateDvdLayerBurnLayout(request, new("test", 128, true, 240));
+        bool mismatchRejected = false;
+        try { DiscImageStudio.Burning.WindowsImapiBurner.ValidateDvdLayerBurnLayout(request, new("test", 144, true, 240)); }
+        catch (InvalidOperationException) { mismatchRejected = true; }
+        Require(mismatchRejected, "dual-layer calibration rejects a different physical layer break");
+        using MemoryStream written = new();
+        request.ProduceContent(written, CancellationToken.None);
+        byte[] writtenBytes = written.ToArray();
+        Require(writtenBytes.Length == 240 * 2048
+            && writtenBytes.AsSpan(16 * 2048 + 1, 5).SequenceEqual("CD001"u8)
+            && writtenBytes.AsSpan(128 * 2048).IndexOf("dvdLayerBreakLba"u8) >= 0,
+            "dual-layer calibration stream writes a full ISO with its target record on Layer 1");
     }
 
     private static void CheckBluRay(string directory, string files)

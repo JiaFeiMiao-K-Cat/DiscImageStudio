@@ -95,6 +95,9 @@ public sealed record OpticalBurnRequest(
     OpticalWriteSpeed? WriteSpeed = null,
     OpticalBurnBufferOptions? BufferOptions = null)
 {
+    public uint? DvdLayerBreakLba { get; init; }
+    public bool DvdMinusRDoubleLayer { get; init; }
+
     // Invoked on the burn worker immediately before modifying a nonblank rewritable DVD.
     public Func<string, bool>? ConfirmDvdDataLoss { get; init; }
 
@@ -114,6 +117,11 @@ public sealed record OpticalBurnRequest(
                 $"Stream length must be a positive multiple of {sectorBytes} bytes.");
         }
 
+        if (DvdLayerBreakLba is uint split && (MediaKind != OpticalBurnMediaKind.DvdData
+            || split == 0 || split % 16 != 0 || ContentLength / 2048 <= split || ContentLength / 2048 % 16 != 0))
+            throw new ArgumentException("双层 DVD 刻录请求的换层点或容量无效。");
+        if (DvdMinusRDoubleLayer && DvdLayerBreakLba is null)
+            throw new ArgumentException("DVD-R DL 刻录需要明确的换层点。");
         WriteSpeed?.Validate();
         EffectiveBufferOptions.Validate();
     }
@@ -125,6 +133,11 @@ public sealed record OpticalBurnResult(
     long BytesWritten,
     TimeSpan Elapsed,
     OpticalWriteSpeed? ActualWriteSpeed = null);
+
+public sealed class DvdLayerBoundaryRequiredException() : InvalidOperationException(
+    "检测到双层 DVD，请读取换层点。") { }
+
+public sealed record DvdLayerBoundary(string DeviceName, uint Layer0Sectors, bool IsLocked, uint? DvdMinusRTotalSectors = null);
 
 public interface IOpticalDiscBurner
 {
@@ -140,6 +153,15 @@ public interface IOpticalDiscBurner
     Task<OpticalMediaCapacity> GetMediaCapacityAsync(string deviceId, OpticalBurnMediaKind mediaKind,
         CancellationToken cancellationToken = default)
         => throw new NotSupportedException("This recorder does not expose writable media capacity.");
+
+    Task<OpticalBurnMediaKind?> DetectCalibrationMediaKindAsync(string deviceId, CancellationToken cancellationToken = default)
+        => Task.FromResult<OpticalBurnMediaKind?>(null);
+
+    Task<DvdLayerBoundary> ReadDvdLayerBoundaryAsync(CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("This recorder does not expose DVD+R DL layer boundaries.");
+
+    Task<DvdLayerBoundary> ReadDvdLayerBoundaryAsync(string deviceId, CancellationToken cancellationToken = default)
+        => ReadDvdLayerBoundaryAsync(cancellationToken);
 
     Task<IReadOnlyList<OpticalWriteSpeed>> GetSupportedWriteSpeedsAsync(
         string deviceId,

@@ -38,10 +38,12 @@ internal static class DvdFilePlacementTests
 
             byte[]? innerImage = null;
             uint innerDrawingStart = 0;
-            foreach (bool outer in new[] { false, true })
+            foreach (string position in new[] { "inner", "outer", "both" })
             {
+                bool both = position == "both";
+                bool outer = position != "inner";
                 DvdStreamingOptions options = new(256, 24, 58, FastParallelism: 1);
-                DvdHybridStreamingPlan plan = DvdStreamingGenerator.PrepareHybrid(data, options, "PLACEMENT", outer);
+                DvdHybridStreamingPlan plan = DvdStreamingGenerator.PrepareHybrid(data, options, "PLACEMENT", outer, both);
                 Require(plan.FilesAtOuterRing == outer && plan.DrawingStartLba % 16 == 0
                     && plan.DrawingEndLbaExclusive % 16 == 0 && plan.DrawingSectors >= 16,
                     "aligned, nonempty drawing interval");
@@ -68,27 +70,32 @@ internal static class DvdFilePlacementTests
                 Require(entries["root.bin"].Bytes.SequenceEqual(rootBytes), "root file bytes");
                 Require(entries["资料/中文.bin"].Bytes.SequenceEqual(nestedBytes), "Unicode nested file bytes");
                 Require(entries["empty.txt"].Bytes.Length == 0, "empty file remains readable");
+                bool hasInnerFile = false, hasOuterFile = false;
                 foreach (Entry entry in entries.Values.Where(entry => entry.Bytes.Length > 0))
                 {
                     uint end = entry.Lba + (uint)((entry.Bytes.Length + 2047) / 2048);
-                    Require(outer ? entry.Lba >= plan.DrawingEndLbaExclusive : end <= plan.DrawingStartLba,
+                    bool isInner = end <= plan.DrawingStartLba;
+                    bool isOuter = entry.Lba >= plan.DrawingEndLbaExclusive;
+                    hasInnerFile |= isInner;
+                    hasOuterFile |= isOuter;
+                    Require(both ? isInner || isOuter : outer ? isOuter : isInner,
                         "all file extents stay outside the drawing");
                 }
 
-                string iso = Path.Combine(directory, outer ? "outer.iso" : "inner.iso");
-                Require(DvdCommandRunner.Run(GenerateArguments(image, data, iso,
-                    outer ? "outer" : "inner")) == 0, "CLI generation");
+                Require(!both || (hasInnerFile && hasOuterFile), "both rings hold file contents");
+                string iso = Path.Combine(directory, position + ".iso");
+                Require(DvdCommandRunner.Run(GenerateArguments(image, data, iso, position)) == 0, "CLI generation");
                 byte[] fileBytes = File.ReadAllBytes(iso);
                 NormalizeVolumeTimestamps(streamBytes);
                 NormalizeVolumeTimestamps(fileBytes);
                 Require(streamBytes.SequenceEqual(fileBytes), "file and nonseek stream layouts and drawing match");
                 DvdImageMetadata metadata = DvdImageMetadata.TryLoad(iso)
                     ?? throw new InvalidOperationException("Missing DVD placement metadata.");
-                Require(metadata.FilesAtOuterRing == outer && metadata.HasFileSystem
+                Require(metadata.FilesAtOuterRing == outer && metadata.FilesInBothRings == both && metadata.HasFileSystem
                     && metadata.DrawingStartLba == plan.DrawingStartLba
                     && metadata.DrawingEndLbaExclusive == plan.DrawingEndLbaExclusive,
                     "sidecar retains file placement and exact drawing interval");
-                string preview = Path.Combine(directory, outer ? "outer.png" : "inner.png");
+                string preview = Path.Combine(directory, position + ".png");
                 Require(DvdCommandRunner.Run(["simulate", "--iso", iso, "--output", preview,
                     "--inner-radius-mm", "24", "--outer-radius-mm", "58", "--preview-size", "64"])
                     == 0, "CLI readback accepts the sidecar range");
@@ -109,6 +116,12 @@ internal static class DvdFilePlacementTests
                 new(64, 24, 58), "PLACEMENT", true), "full filesystem leaves no ECC drawing block");
             Throws<ArgumentException>(() => DvdStreamingGenerator.PrepareHybrid(data,
                 new(32, 24, 58), "PLACEMENT", true), "metadata and files exceed capacity");
+            string single = Path.Combine(directory, "single");
+            Directory.CreateDirectory(single);
+            File.WriteAllBytes(Path.Combine(single, "payload.bin"), rootBytes);
+            File.WriteAllBytes(Path.Combine(single, "empty.bin"), []);
+            Throws<ArgumentException>(() => DvdStreamingGenerator.PrepareHybrid(single,
+                new(256, 24, 58), "PLACEMENT", filesInBothRings: true), "both rings require two nonempty files");
             string rejected = Path.Combine(directory, "preserved.iso");
             byte[] sentinel = "existing output"u8.ToArray();
             File.WriteAllBytes(rejected, sentinel);

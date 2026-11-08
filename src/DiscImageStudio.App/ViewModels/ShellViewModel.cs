@@ -57,7 +57,8 @@ public partial class ShellViewModel : ObservableObject
         Calibration = new CalibrationViewModel(this, calibrationState);
         Burn = new BurnViewModel(this, State, Design, opticalDiscBurner);
         CalibrationBurn = new BurnViewModel(this, calibrationState, Design, opticalDiscBurner, useCalibrationPattern: true);
-        Export = new ExportViewModel(this, State, Design);
+        Export = new ExportViewModel(this, State, Design, opticalDiscBurner);
+        Design.ConnectDvdLayerPreview(Export);
         Design.CompositeRendered += Design_CompositeRendered;
         Design.DesignEdited += () => MarkProjectDirty();
         OpenOutputCommand = new RelayCommand(OpenOutput, () => OpenOutputEnabled);
@@ -876,6 +877,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.DvdOutputPath),
         nameof(DiscParametersState.DvdDataDirectory),
         nameof(DiscParametersState.DvdFilesAtOuterRing),
+        nameof(DiscParametersState.DvdFilesInBothRings),
         nameof(DiscParametersState.DvdReadCompatibility),
         nameof(DiscParametersState.DvdVolumeLabel),
         nameof(DiscParametersState.BdInnerRadius),
