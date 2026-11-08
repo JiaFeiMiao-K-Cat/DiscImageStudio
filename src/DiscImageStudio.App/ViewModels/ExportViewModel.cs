@@ -297,16 +297,19 @@ public partial class ExportViewModel : ObservableObject
             _state.CdTrackPath = output;
     }
 
-    private async Task GenerateDvdAsync(string compositePath)
+    internal (uint? LayerBreak, uint? MinusTotal) GetDvdLayerLayout()
     {
-        string output = RequirePath(_state.DvdOutputPath, L.T("请选择 DVD ISO 输出位置。"));
         uint? layerBreak = ExportDualLayerDvd
             ? checked((uint)ParameterParser.ParsePositiveLong(DvdLayerBreak, L.T("换层点（L0 扇区数）"))) : null;
         uint? minusTotal = layerBreak.HasValue && DvdLayerFormat == DvdDualLayerDefaults.Minus
             ? _detectedDvdBoundary?.DvdMinusRTotalSectors ?? DvdDualLayerDefaults.MinusTotalSectors : null;
         if (minusTotal.HasValue && layerBreak != (_detectedDvdBoundary?.Layer0Sectors ?? DvdDualLayerDefaults.MinusLayer0Sectors))
             throw new ArgumentException(L.T("DVD-R DL 请使用默认换层点或重新从盘片读取。"));
-        DvdStreamingOptions options = new(
+        return (layerBreak, minusTotal);
+    }
+
+    internal DvdStreamingOptions GetDvdOptions(uint? layerBreak, uint? minusTotal)
+        => new(
             layerBreak.HasValue ? (minusTotal.HasValue ? layerBreak.Value : DvdImageGenerator.MaxDvdPlusRLayer0Sectors)
                 : checked((uint)ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, L.T("总扇区数"))),
             ParameterParser.ParsePositiveDouble(_state.DvdInnerRadius, L.T("内半径")),
@@ -318,6 +321,12 @@ public partial class ExportViewModel : ObservableObject
             ChannelBitLengthNm: layerBreak.HasValue ? DvdDualLayerDefaults.ChannelBitLengthNm : DvdStreamingOptions.StandardChannelBitLengthNm,
             Tone: _state.DvdTone,
             ReadCompatibility: _state.DvdReadCompatibility);
+
+    private async Task GenerateDvdAsync(string compositePath)
+    {
+        string output = RequirePath(_state.DvdOutputPath, L.T("请选择 DVD ISO 输出位置。"));
+        var (layerBreak, minusTotal) = GetDvdLayerLayout();
+        DvdStreamingOptions options = GetDvdOptions(layerBreak, minusTotal);
         DvdImageRequest request = new(compositePath, output, options, _state.DvdDataDirectory.Trim(),
             string.IsNullOrWhiteSpace(_state.DvdVolumeLabel) ? "DISC_IMAGE" : _state.DvdVolumeLabel.Trim(),
             !string.IsNullOrWhiteSpace(_state.DvdDataDirectory) && _state.DvdFilesAtOuterRing,

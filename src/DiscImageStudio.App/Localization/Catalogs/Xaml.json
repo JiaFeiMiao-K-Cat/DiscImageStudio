@@ -1746,6 +1746,21 @@
     "en": "For DVD-R DL, confirm the defaults by reading the disc and burn in sequential mode. For DVD+R DL, use the same layer break when burning.",
     "zh-TW": "產生雙層 ISO 後，在燒錄工具填入相同換層點。"
   },
+  "Xaml.DesignDualLayerDvd": {
+    "zh-CN": "双层 DVD（L0 图案，L1 文件）",
+    "en": "Dual-layer DVD (L0 artwork, L1 files)",
+    "zh-TW": "雙層 DVD（L0 圖案，L1 檔案）"
+  },
+  "Xaml.DvdLayerOccupancy": {
+    "zh-CN": "蓝色 · L1 文件占用",
+    "en": "Blue · L1 file usage",
+    "zh-TW": "藍色 · L1 檔案占用"
+  },
+  "Xaml.DvdLayerOccupancyUnavailable": {
+    "zh-CN": "无法计算，请检查数据文件夹和双层参数。",
+    "en": "Cannot calculate usage. Check the data folder and dual-layer settings.",
+    "zh-TW": "無法計算，請檢查資料檔案夾和雙層參數。"
+  },
   "Xaml.ExportDualLayerDvd": {
     "zh-CN": "导出 DVD±R DL 双层 ISO（实验性）",
     "en": "Export dual-layer DVD±R DL ISO (experimental)",

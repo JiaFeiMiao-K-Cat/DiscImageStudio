@@ -58,6 +58,7 @@ public partial class ShellViewModel : ObservableObject
         Burn = new BurnViewModel(this, State, Design, opticalDiscBurner);
         CalibrationBurn = new BurnViewModel(this, calibrationState, Design, opticalDiscBurner, useCalibrationPattern: true);
         Export = new ExportViewModel(this, State, Design, opticalDiscBurner);
+        Design.ConnectDvdLayerPreview(Export);
         Design.CompositeRendered += Design_CompositeRendered;
         Design.DesignEdited += () => MarkProjectDirty();
         OpenOutputCommand = new RelayCommand(OpenOutput, () => OpenOutputEnabled);
