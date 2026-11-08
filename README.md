@@ -43,7 +43,7 @@ Disc Image Studio 可将一张图片转换成符合 CD、DVD 与单层 BD-R 光�
 
 ## 快速开始
 
-Windows 下载 `win-x64.exe` 后可直接运行。Linux 或 macOS 请下载与 CPU 匹配的**实验性 CLI** 压缩包，解压后运行 `./disc-image-studio --help`。这些发布包均自带 .NET 运行时。 [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+Windows x64 下载以 `win-x64.exe` 结尾的文件；Windows 11 ARM64 下载以 `win-arm64.exe` 结尾的原生版本，均可直接运行。Linux 或 macOS 请下载与 CPU 匹配的**实验性 CLI** 压缩包，解压后运行 `./disc-image-studio --help`。这些发布包均自带 .NET 运行时。 [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 ### 1. 新建工程
 
@@ -51,7 +51,7 @@ Windows 下载 `win-x64.exe` 后可直接运行。Linux 或 macOS 请下载与 C
 
 ### 2. 设计盘面
 
-在设计页导入图片，用图层完成排版，并在右栏「影调」模块调整抖动、伽马、亮度与灰阶档位。
+在设计页点击「导入图片」，或从资源管理器将单张／多张图片拖入设计页，用图层完成排版，并在右栏「影调」模块调整抖动、伽马、亮度与灰阶档位。
 
 ### 3. 预览与导出
 
@@ -67,7 +67,7 @@ Windows 下载 `win-x64.exe` 后可直接运行。Linux 或 macOS 请下载与 C
 - **DVD 支持**：支持任何 DVD。您可导出 ISO 镜像。
 - **蓝光支持**：支持任何单层 BD-R 25 GB，支持纯绘图与 UDF 2.01 文件。详见 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。
 - **随盘文件**：CD／DVD／蓝光可在设计页直接选择要保存的文件夹及内圈／外圈位置，也可在导出页调整；设置随工程保存。
-- **文件区域预览**：混合盘的设计投影和成品读回用黄色标出文件区（含文件系统）。
+- **文件区域预览**：混合盘的设计投影和成品读回用蓝色标出文件区（含文件系统）。
 - **介质灰度方案**：CD 与 DVD 均使用黑白二阶，CD 使用 `0D / AA`，DVD 扰码域使用 `A5 / 92`。详见 [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md)。
 - **灰度抖动工具**：独立程序也可将原图处理为 `0/255` 黑白二阶 PNG；支持打开或拖入原图、并排预览及无损 PNG 导出。详见[使用与构建说明](tools/FourLevelDither/README.md)。
 - **盘片预设**：内置数个品牌的光盘参数，覆盖 CD／DVD／BD。您也可将自己标定好的数据贡献给我们，详见[预设维护说明](docs/DISC_PRESETS.md)。
@@ -92,7 +92,7 @@ Disc Image Studio 提供粗标定、边界标定和精细标定流程，通过�
 
 ## 系统与设备要求
 
-- 桌面版需要 Windows 10 2004（2004/20H1，19041）及以上，或 Windows 11。
+- x64 桌面版需要 Windows 10 2004（2004/20H1，19041）及以上，或 Windows 11；ARM64 桌面版需要 Windows 11。ARM64 的原生 CI 覆盖软件自检与 GUI 截图，尚未验证实盘刻录。
 - 构建：.NET 10 SDK（`global.json` 锁定 10.0.x）；自行构建的非自包含 GUI 需要 .NET 10 Windows 桌面运行时。Release EXE 已包含运行时，无需另行安装 .NET。
 - “即时刻录”功能需要一台 Windows 可识别的 CD / DVD / BD 刻录机与空白盘片；BD-R 需要支持顺序写入的单层空白盘。
 

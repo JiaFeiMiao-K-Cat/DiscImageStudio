@@ -23,6 +23,10 @@ internal static class DiscTheme
 
     public static Brush Selection => Resolve("DiscSelectionBrush", 0x33, 0x85, 0xFF);
 
+    /// <summary>Potential file occupancy on the design canvas. Stronger than the interface
+    /// soft tint because the ring must stay visible over arbitrary artwork.</summary>
+    public static Brush DataRegion => Resolve("DiscDataRegionBrush", 0x66, 0x33, 0x85, 0xFF);
+
     /// <summary>Footprint marker for a layer whose image file cannot be decoded.</summary>
     public static Brush MissingImage => Resolve("DangerBrush", 0xF3, 0x12, 0x60);
 

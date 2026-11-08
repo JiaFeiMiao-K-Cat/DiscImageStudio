@@ -20,6 +20,8 @@
     <Copyright>Copyright © 2026</Copyright>
     <NeutralLanguage>zh-CN</NeutralLanguage>
     <PublishSingleFile>true</PublishSingleFile>
+    <!-- Avoid CoreCLR startup failures on Windows with incomplete CET/APC support (#229). -->
+    <CetCompat>false</CetCompat>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <DebugType>embedded</DebugType>
   </PropertyGroup>

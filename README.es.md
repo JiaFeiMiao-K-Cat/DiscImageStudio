@@ -53,7 +53,7 @@ Disc Image Studio convierte una imagen en datos que cumplen las restricciones de
 <a id="快速开始"></a>
 ## Inicio rápido
 
-En Windows, descarga y ejecuta `win-x64.exe`. En Linux o macOS, descarga el archivo de la **CLI experimental** correspondiente a tu CPU, extráelo y ejecuta `./disc-image-studio --help`. Cada paquete publicado incluye el entorno de ejecución de .NET. [Versiones de GitHub](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+En Windows x64, descarga y ejecuta el archivo terminado en `win-x64.exe`; en Windows 11 ARM64, elige la versión nativa terminada en `win-arm64.exe`. En Linux o macOS, descarga el archivo de la **CLI experimental** correspondiente a tu CPU, extráelo y ejecuta `./disc-image-studio --help`. Cada paquete publicado incluye el entorno de ejecución de .NET. [Versiones de GitHub](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 <a id="1-create-a-project"></a>
 <a id="1-新建工程"></a>
@@ -87,7 +87,7 @@ La grabación en directo es experimental. Usa únicamente discos de prueba que p
 - **Compatibilidad DVD**: admite cualquier DVD. Exporta imágenes ISO.
 - **Compatibilidad Blu-ray**: admite cualquier BD-R de 25 GB y una capa, con modo de sólo dibujo y archivos UDF 2.01. Consulta [ADDING_BLURAY.md](docs/ADDING_BLURAY.md).
 - **Archivos en el disco**: para CD, DVD y Blu-ray, selecciona una carpeta y coloca sus archivos en la zona interior o exterior desde Diseño, o ajusta estas opciones en Exportar. Los ajustes se guardan con el proyecto.
-- **Vista previa de la zona de archivos**: las proyecciones del diseño de discos híbridos y la relectura del archivo generado resaltan en amarillo la zona de archivos, incluido el sistema de archivos.
+- **Vista previa de la zona de archivos**: las proyecciones del diseño de discos híbridos y la relectura del archivo generado resaltan en azul la zona de archivos, incluido el sistema de archivos.
 - **Esquemas de gris según el medio**: CD y DVD usan dos niveles de blanco y negro: `0D / AA` para CD y `A5 / 92` en el dominio aleatorizado de DVD. Consulta [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md).
 - **Herramienta de tramado en escala de grises**: un programa independiente también puede convertir una imagen de origen en un PNG en blanco y negro de dos niveles `0/255`. Permite abrir o arrastrar imágenes de origen, compararlas en vistas paralelas y exportar PNG sin pérdida. Consulta las [instrucciones de uso y compilación](tools/FourLevelDither/README.md).
 - **Preajustes de discos**: los parámetros integrados abarcan varias marcas de CD, DVD y BD. También puedes aportar tus propios datos calibrados; consulta el [mantenimiento de preajustes](docs/DISC_PRESETS.md).
@@ -117,7 +117,7 @@ Consulta la [guía de calibración asistida](docs/CALIBRATION.md) para conocer e
 <a id="系统与设备要求"></a>
 ## Requisitos del sistema y del hardware
 
-- La app de escritorio requiere Windows 10 2004 (2004/20H1, 19041) o posterior, o Windows 11.
+- La app de escritorio x64 requiere Windows 10 2004 (2004/20H1, 19041) o posterior, o Windows 11. La versión ARM64 requiere Windows 11. La CI nativa de ARM64 incluye autopruebas de software y capturas de la GUI; la grabación de discos físicos aún no está verificada.
 - Compilación: SDK .NET 10 (`global.json` fija 10.0.x). Una GUI compilada desde el código fuente sin entorno de ejecución incluido requiere .NET 10 Windows Desktop Runtime. El EXE publicado incluye el entorno de ejecución, por lo que no necesitas instalar .NET por separado.
 - La grabación en directo requiere una grabadora CD / DVD / BD reconocida por Windows y un disco virgen. BD-R requiere un disco virgen de una capa que admita escritura secuencial.
 

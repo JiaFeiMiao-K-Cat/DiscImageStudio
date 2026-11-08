@@ -5,8 +5,12 @@
              xmlns:controls="clr-namespace:DiscImageStudio.Controls"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:vm="clr-namespace:DiscImageStudio.ViewModels"
-             SizeChanged="OnPageSizeChanged">
+             SizeChanged="OnPageSizeChanged"
+             Background="Transparent" AllowDrop="True"
+             PreviewDragEnter="OnImageDragOver" PreviewDragOver="OnImageDragOver"
+             PreviewDrop="OnImageDrop">
     <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <!-- Property panel for the selected layer: numeric mm/°/% fields plus rename.
              Two-column compact grid instead of the old fixed 94px WrapPanel cells. -->
         <DataTemplate DataType="{x:Type vm:DesignLayerViewModel}">
@@ -205,27 +209,6 @@
                                         IsHitTestVisible="False" ClipToBounds="True"
                                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
                                 <StackPanel Grid.Row="2" Margin="12,10,12,12">
-                                    <!-- Selection actions: operate on the highlighted layer only. -->
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10"
-                                                Visibility="{Binding HasSelectionVisibility}">
-                                        <Button Style="{StaticResource IconButton}" Command="{Binding MoveSelectedUpCommand}"
-                                                AutomationProperties.Name="{loc:Text Xaml.MoveLayerUp}" ToolTip="{loc:Text Xaml.MoveUpOneLayer}">
-                                            <iconPacks:PackIconLucide Kind="ArrowUp" Width="15" Height="15"
-                                                                      Foreground="{DynamicResource TextSecondaryBrush}" />
-                                        </Button>
-                                        <Button Style="{StaticResource IconButton}" Margin="6,0,0,0"
-                                                Command="{Binding MoveSelectedDownCommand}"
-                                                AutomationProperties.Name="{loc:Text Xaml.MoveLayerDown}" ToolTip="{loc:Text Xaml.MoveDownOneLayer}">
-                                            <iconPacks:PackIconLucide Kind="ArrowDown" Width="15" Height="15"
-                                                                      Foreground="{DynamicResource TextSecondaryBrush}" />
-                                        </Button>
-                                        <Button Style="{StaticResource IconButton}" Margin="6,0,0,0"
-                                                Command="{Binding RemoveSelectedCommand}"
-                                                AutomationProperties.Name="{loc:Text Xaml.DeleteLayer}" ToolTip="{loc:Text Xaml.DeleteSelectedLayerDel}">
-                                            <iconPacks:PackIconLucide Kind="Trash2" Width="15" Height="15"
-                                                                      Foreground="{DynamicResource TextSecondaryBrush}" />
-                                        </Button>
-                                    </StackPanel>
                                     <Button Style="{StaticResource SecondaryButton}" Height="{StaticResource ControlHeight}"
                                             Content="{loc:Text Xaml.ImportImages}" Command="{Binding ImportImagesCommand}"
                                             HorizontalAlignment="Stretch" />
@@ -245,12 +228,24 @@
                                 <StackPanel>
                                     <TextBlock Text="{loc:Text Xaml.DiscFiles}" Style="{StaticResource PanelTitle}"
                                                Margin="0,0,0,12" />
+                                    <!-- The data exceeds the disc capacity: the layout planner
+                                         rejects it, so the canvas has no ring to draw. -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12"
+                                                Visibility="{Binding DataRegionOverflow, Converter={StaticResource BoolToVisibility}}">
+                                        <iconPacks:PackIconLucide Kind="TriangleAlert" Width="14" Height="14"
+                                                                  Foreground="{DynamicResource DangerBrush}"
+                                                                  VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding DataRegionOverflowText}"
+                                                   Foreground="{DynamicResource DangerBrush}"
+                                                   Margin="6,0,0,0" VerticalAlignment="Center"
+                                                   TextWrapping="Wrap" MaxWidth="260" />
+                                    </StackPanel>
                                     <controls:VisibilityGate IsOpen="{Binding IsCd}">
                                         <StackPanel>
                                             <controls:PathField Label="{loc:Text Xaml.Folder}" Compact="True"
                                                                 Text="{Binding State.CdDataDirectory}"
                                                                 ToolTip="{Binding State.CdDataDirectory}"
-                                                                ButtonLabel="{loc:Text Xaml.Browse3}"
+                                                                ButtonLabel="{loc:Text Xaml.Browse}"
                                                                 Command="{Binding BrowseDataCommand}" />
                                             <controls:VisibilityGate IsOpen="{Binding State.HasCdFiles}">
                                                 <StackPanel Margin="0,14,0,0">
@@ -269,7 +264,7 @@
                                             <controls:PathField Label="{loc:Text Xaml.FolderOptional}" Compact="True"
                                                                 Text="{Binding State.DvdDataDirectory}"
                                                                 ToolTip="{Binding State.DvdDataDirectory}"
-                                                                ButtonLabel="{loc:Text Xaml.Browse3}"
+                                                                ButtonLabel="{loc:Text Xaml.Browse}"
                                                                 Command="{Binding BrowseDataCommand}" />
                                             <controls:VisibilityGate IsOpen="{Binding State.HasDvdFiles}">
                                                 <StackPanel Margin="0,14,0,0">
@@ -286,7 +281,7 @@
                                             <controls:PathField Label="{loc:Text Xaml.FolderOptional}" Compact="True"
                                                                 Text="{Binding State.BdDataDirectory}"
                                                                 ToolTip="{Binding State.BdDataDirectory}"
-                                                                ButtonLabel="{loc:Text Xaml.Browse3}"
+                                                                ButtonLabel="{loc:Text Xaml.Browse}"
                                                                 Command="{Binding BrowseDataCommand}" />
                                             <controls:VisibilityGate IsOpen="{Binding State.HasBluRayFiles}">
                                                 <StackPanel Margin="0,14,0,0">
@@ -312,6 +307,23 @@
                         ClipToBounds="True">
                     <Grid>
                         <controls:DiscDesignCanvas x:Name="DesignCanvas" />
+                        <!-- The tone module's file-region legend sits in the canvas corner:
+                             it describes the blue zones without taking rail height. -->
+                        <controls:VisibilityGate HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                                                 Margin="10,0,0,10"
+                                                 IsOpen="{Binding Tone.HasFileRegionOverlay}">
+                            <Border Padding="8,4"
+                                    Background="{DynamicResource Surface2Brush}"
+                                    BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                                    CornerRadius="{StaticResource RadiusChip}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Rectangle Width="12" Height="12" Fill="#3385FF" RadiusX="2" RadiusY="2"
+                                               Margin="0,0,8,0" VerticalAlignment="Center" />
+                                    <TextBlock Style="{StaticResource MicroText}" VerticalAlignment="Center"
+                                               Text="{loc:Text Xaml.FileAreaIncludingFilesystem}" />
+                                </StackPanel>
+                            </Border>
+                        </controls:VisibilityGate>
                         <!-- Always visible: the buttons are the discoverable way to zoom out,
                              so hiding the bar at fit zoom would hide the feature itself. -->
                         <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"

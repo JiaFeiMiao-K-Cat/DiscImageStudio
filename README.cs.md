@@ -45,7 +45,7 @@ Disc Image Studio převádí obrázek na data, která splňují omezení fyzick�
 
 ## Rychlý start
 
-Ve Windows stáhněte a spusťte `win-x64.exe`. V Linuxu nebo macOS stáhněte **experimentální CLI** archiv odpovídající vašemu procesoru, rozbalte jej a spusťte `./disc-image-studio --help`. Každý balíček vydání obsahuje runtime .NET. [Vydání na GitHubu](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+Ve Windows x64 stáhněte a spusťte soubor končící na `win-x64.exe`; ve Windows 11 ARM64 zvolte nativní verzi končící na `win-arm64.exe`. V Linuxu nebo macOS stáhněte **experimentální CLI** archiv odpovídající vašemu procesoru, rozbalte jej a spusťte `./disc-image-studio --help`. Každý balíček vydání obsahuje runtime .NET. [Vydání na GitHubu](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 ### 1. Vytvoření projektu
 
@@ -69,7 +69,7 @@ Přímé vypalování je experimentální. Používejte pouze testovací média,
 - **Podpora DVD**: Podporuje jakékoli DVD. Exportuje obrazy ISO.
 - **Podpora Blu-ray**: Podporuje jakýkoli jednovrstvý BD-R 25 GB v režimu pouhého kreslení a se soubory UDF 2.01. Viz [ADDING_BLURAY.md](docs/ADDING_BLURAY.md).
 - **Soubory na disku**: U CD, DVD a Blu-ray můžete vybrat složku a umístit její soubory na vnitřní nebo vnější okruh přímo na stránce Návrh, případně tato nastavení upravit na stránce Export. Nastavení se ukládá s projektem.
-- **Náhled oblasti souborů**: Projekce návrhu hybridních disků a zpětné čtení výstupu zvýrazňují oblast souborů včetně systému souborů žlutě.
+- **Náhled oblasti souborů**: Projekce návrhu hybridních disků a zpětné čtení výstupu zvýrazňují oblast souborů včetně systému souborů modře.
 - **Schémata šedi podle média**: CD i DVD používají dvě černo-bílé úrovně: `0D / AA` pro CD a `A5 / 92` v prokládané doméně DVD. Viz [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md).
 - **Nástroj pro dithering šedi**: Samostatný program dokáže zpracovat zdrojový obrázek na dvouúrovňový černo-bílý PNG `0/255`. Podporuje otevírání nebo přetahování zdrojových obrázků, náhledy vedle sebe a bezztrátový export PNG. Viz [návod k použití a sestavení](tools/FourLevelDither/README.md).
 - **Předvolby disků**: Vestavěné parametry disků pokrývají několik značek CD, DVD a BD. Můžete také přispět vlastními kalibrovanými daty; viz [údržba předvoleb](docs/DISC_PRESETS.md).
@@ -93,7 +93,7 @@ Postup a parametry najdete v [průvodci asistovanou kalibrací](docs/CALIBRATI
 
 ## Požadavky na systém a hardware
 
-- Desktopová aplikace vyžaduje Windows 10 2004 (2004/20H1, 19041) nebo novější, případně Windows 11.
+- Desktopová aplikace x64 vyžaduje Windows 10 2004 (2004/20H1, 19041) nebo novější, případně Windows 11. Verze ARM64 vyžaduje Windows 11. Nativní CI pro ARM64 zahrnuje softwarové autotesty a snímky GUI; vypalování fyzických disků zatím nebylo ověřeno.
 - Sestavení: .NET 10 SDK (`global.json` uzamyká 10.0.x). Nesamostatná GUI sestavená ze zdrojového kódu vyžaduje .NET 10 Windows Desktop Runtime. Vydaný EXE obsahuje runtime, takže samostatná instalace .NET není nutná.
 - Přímé vypalování vyžaduje vypalovací mechaniku CD / DVD / BD rozpoznanou systémem Windows a prázdné médium. BD-R vyžaduje prázdný jednovrstvý disk podporující sekvenční zápis.
 

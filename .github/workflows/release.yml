@@ -112,34 +112,47 @@ jobs:
           ref: ${{ needs.metadata.outputs.commit }}
           persist-credentials: false
 
-      - uses: actions/setup-dotnet@v4
+      - name: Collect tested desktop packages
+        uses: actions/download-artifact@v4
         with:
-          dotnet-version: 10.0.x
-
-      - name: Build and verify standalone EXE
-        run: ./packaging/Build-Release.ps1 -Tag $env:RELEASE_TAG
+          pattern: windows-${{ needs.metadata.outputs.tag }}-*
+          path: artifacts/release-downloads/windows
 
       - name: Collect tested CLI archives
         uses: actions/download-artifact@v4
         with:
           pattern: cli-${{ needs.metadata.outputs.tag }}-*
-          path: artifacts/release/${{ needs.metadata.outputs.tag }}
-          merge-multiple: true
+          path: artifacts/release-downloads/cli
 
-      - name: Prepare release notes
+      - name: Verify and collect tested packages, then prepare release notes
         run: |
           $metadata = ./packaging/Get-ReleaseMetadata.ps1 -Tag $env:RELEASE_TAG -RequireReleaseNotes
-          $directory = Join-Path 'artifacts/release' $metadata.Tag
+          $directory = Join-Path (Join-Path $PWD.Path 'artifacts/release') $metadata.Tag
+          New-Item -ItemType Directory -Path $directory -Force | Out-Null
           $manifest = Join-Path $directory 'SHA256SUMS.txt'
-          $hashes = @((Get-Content -LiteralPath $manifest -Raw).Trim())
+          $packages = @()
+          foreach ($rid in 'win-x64','win-arm64') {
+            $packages += "DiscImageStudio-$($metadata.Tag)-$rid.exe"
+          }
           foreach ($rid in 'linux-x64','linux-arm64','osx-x64','osx-arm64') {
-            $archive = "DiscImageStudio-CLI-$($metadata.Tag)-$rid.tar.gz"
-            $path = Join-Path $directory $archive
-            $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
-            $line = "$hash  $archive"
-            if ((Get-Content -LiteralPath "$path.sha256" -Raw).Trim() -cne $line) {
-              throw "Downloaded CLI checksum does not match for $archive."
+            $packages += "DiscImageStudio-CLI-$($metadata.Tag)-$rid.tar.gz"
+          }
+          # Artifact uploads may retain version/RID directories. Flatten only the
+          # six expected packages after checking their adjacent checksum files.
+          $downloadedFiles = @(Get-ChildItem -LiteralPath 'artifacts/release-downloads' -File -Recurse)
+          $hashes = @()
+          foreach ($package in $packages) {
+            $packageMatches = @($downloadedFiles | Where-Object { $_.Name -ceq $package })
+            if ($packageMatches.Count -ne 1) {
+              throw "Expected exactly one tested package named $package; found $($packageMatches.Count)."
             }
+            $path = $packageMatches[0].FullName
+            $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            $line = "$hash  $package"
+            if ((Get-Content -LiteralPath "$path.sha256" -Raw).Trim() -cne $line) {
+              throw "Downloaded package checksum does not match for $package."
+            }
+            Copy-Item -LiteralPath $path -Destination (Join-Path $directory $package)
             $hashes += $line
           }
           $checksum = $hashes -join "`n"
@@ -149,12 +162,12 @@ jobs:
             ''
             '### 下载与运行 / Download and run'
             ''
-            '下载下方 win-x64.exe 后直接运行，支持 Windows 10 2004+ / Windows 11 x64，已内置 .NET 运行时。'
-            '此便携 EXE 未进行代码签名。即时流式刻录仍为实验性功能；硬件实测范围以仓库验证记录为准。'
+            'Windows 桌面版请按处理器选择：Intel / AMD x64 使用 win-x64.exe（Windows 10 2004+ / Windows 11 x64）；ARM64 使用 win-arm64.exe（Windows 11 ARM64）。两个版本均内置 .NET 运行时，下载后可直接运行。'
+            '这些便携 EXE 未进行代码签名。即时流式刻录仍为实验性功能；硬件实测范围以仓库验证记录为准。'
             '**Linux 和 macOS 命令行版为实验性功能。** 按系统和处理器选择自包含的 tar.gz，解压后运行 `./disc-image-studio --help`。macOS 的 arm64 对应 Apple 芯片，x64 对应 Intel。'
             ''
-            'Download the win-x64.exe below and run it directly on Windows 10 2004+ / Windows 11 x64. The .NET runtime is included.'
-            'This portable EXE is unsigned. Live streaming burn remains experimental; see the repository validation records for tested hardware coverage.'
+            'Choose the Windows desktop package for your CPU: win-x64.exe for Intel / AMD x64 (Windows 10 2004+ / Windows 11 x64), or win-arm64.exe for ARM64 (Windows 11 ARM64). Both include the .NET runtime and run directly after download.'
+            'These portable EXEs are unsigned. Live streaming burn remains experimental; see the repository validation records for tested hardware coverage.'
             '**The Linux and macOS CLIs are experimental.** Extract the self-contained tar.gz matching your OS and CPU, then run `./disc-image-studio --help` in that directory. On macOS, arm64 is Apple silicon and x64 is Intel.'
             ''
             '### SHA-256'

@@ -43,7 +43,7 @@ Disc Image Studio, standart bir görseli CD, DVD ve tek katmanlı BD-R disklerin
 
 ## Hızlı Başlangıç
 
-Windows üzerinde `win-x64.exe` dosyasını indirip çalıştırın. Linux veya macOS üzerinde, işlemcinize uygun **deneysel CLI** arşivini indirin, çıkartın ve `./disc-image-studio --help` komutunu çalıştırın. Her sürüm paketi .NET çalışma zamanını içerir: [GitHub Sürümleri (Releases)](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+Windows x64 için adı `win-x64.exe` ile, Windows 11 ARM64 için ise `win-arm64.exe` ile biten yerel sürümü indirip çalıştırın. Linux veya macOS üzerinde, işlemcinize uygun **deneysel CLI** arşivini indirin, çıkartın ve `./disc-image-studio --help` komutunu çalıştırın. Her sürüm paketi .NET çalışma zamanını içerir: [GitHub Sürümleri (Releases)](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 ### 1. Proje Oluşturun
 
@@ -67,7 +67,7 @@ Akışla doğrudan diske yazma deneyseldir. Yalnızca gözden çıkarabileceğin
 - **DVD Desteği**: Standart her türlü DVD'yi destekler. ISO imajları dışa aktarılır.
 - **Blu-ray Desteği**: Yalnızca çizim modu ve UDF 2.01 dosya yerleşimi ile her türlü tek katmanlı 25 GB BD-R'yi destekler. Bkz. [Blu-ray Desteği Ekleme](docs/ADDING_BLURAY.md).
 - **Disk Üzerinde Dosya Barındırma**: CD, DVD ve Blu-ray için doğrudan Tasarım sayfasından bir klasör seçip dosyalarını diskin iç veya dış halkasına yerleştirebilir ya da bu seçenekleri Dışa Aktarma sayfasından ayarlayabilirsiniz. Bu ayarlar projeyle birlikte kaydedilir.
-- **Dosya Bölgesi Önizlemesi**: Hibrit disk tasarım projeksiyonları ve ürün geri okumaları, dosya sistemi dahil olmak üzere dosya alanını sarı renkle vurgular.
+- **Dosya Bölgesi Önizlemesi**: Hibrit disk tasarım projeksiyonları ve ürün geri okumaları, dosya sistemi dahil olmak üzere dosya alanını mavi renkle vurgular.
 - **Medya Gri Tonlama Şemaları**: CD ve DVD'nin her ikisi de iki siyah-beyaz seviyesi kullanır: CD için `0D / AA` ve DVD karıştırılmış (scrambled) alanında `A5 / 92`. Bkz. [Fiziksel Model Denetimi](docs/PHYSICAL_MODEL_AUDIT.md).
 - **Gri Tonlama Sarsıntı (Dithering) Aracı**: Bağımsız bir yardımcı program, bir kaynak görseli iki seviyeli `0/255` siyah-beyaz PNG'ye dönüştürebilir. Görselleri açmayı, sürükleyip bırakmayı, yan yana önizlemeyi ve kayıpsız PNG dışa aktarımını destekler. Bkz. [Kullanım ve Derleme Talimatları](tools/FourLevelDither/README.md).
 - **Disk Önayarları**: Yerleşik disk parametreleri çeşitli CD, DVD ve BD markalarını kapsar. Ayrıca kendi kalibre edilmiş verilerinizle katkıda bulunabilirsiniz; bkz. [Disk Önayarı Yönetimi](docs/DISC_PRESETS.md).
@@ -91,7 +91,7 @@ Disc Image Studio, akıllı ve hassas bir destekli kalibrasyon iş akışı suna
 
 ## Sistem ve Donanım Gereksinimleri
 
-- Masaüstü uygulaması Windows 10 2004 (2004/20H1, 19041) veya üstü ya da Windows 11 gerektirir.
+- x64 masaüstü uygulaması Windows 10 2004 (2004/20H1, 19041) veya üstü ya da Windows 11 gerektirir. ARM64 sürümü Windows 11 gerektirir. Yerel ARM64 CI, yazılım öz testlerini ve GUI ekran görüntülerini kapsar; fiziksel diske yazma henüz doğrulanmamıştır.
 - Derleme: .NET 10 SDK (`global.json` 10.0.x sürümünü sabitler). Kaynak koddan derlenen bağımsız olmayan bir GUI, .NET 10 Windows Masaüstü Çalışma Zamanı (Windows Desktop Runtime) gerektirir. Dağıtılan Release EXE dosyası çalışma zamanını kendi içinde barındırdığı için harici bir .NET kurulumu gerektirmez.
 - Akışla yazma, Windows tarafından tanınan bir CD / DVD / BD yazıcı ve boş medya gerektirir. BD-R için sıralı yazmayı (sequential writing) destekleyen boş tek katmanlı bir disk gerekir.
 

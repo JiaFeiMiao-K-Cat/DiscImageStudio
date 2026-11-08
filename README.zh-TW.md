@@ -43,7 +43,7 @@ Disc Image Studio 可將一張圖片轉換為符合 CD、DVD 與單層 BD-R 光�
 
 ## 快速開始
 
-Windows 下載 `win-x64.exe` 後可直接執行。Linux 或 macOS 請下載與 CPU 相符的**實驗性 CLI** 壓縮檔，解壓縮後執行 `./disc-image-studio --help`。各發布套件均包含 .NET 執行階段。 [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
+Windows x64 請下載以 `win-x64.exe` 結尾的檔案；Windows 11 ARM64 請下載以 `win-arm64.exe` 結尾的原生版本，均可直接執行。Linux 或 macOS 請下載與 CPU 相符的**實驗性 CLI** 壓縮檔，解壓縮後執行 `./disc-image-studio --help`。各發布套件均包含 .NET 執行階段。 [GitHub Releases](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases)
 
 ### 1. 新增專案
 
@@ -67,7 +67,7 @@ Windows 下載 `win-x64.exe` 後可直接執行。Linux 或 macOS 請下載與 C
 - **DVD 支援**：支援任何 DVD。您可匯出 ISO 映像。
 - **藍光支援**：支援任何單層 BD-R 25 GB，可純繪圖或附帶 UDF 2.01 檔案。詳見 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。
 - **隨碟檔案**：CD／DVD／藍光可在設計頁直接選擇要儲存的資料夾及內圈／外圈位置，也可在匯出頁調整；設定會隨專案儲存。
-- **檔案區域預覽**：混合光碟的設計投影與成品讀回會以黃色標示檔案區（含檔案系統）。
+- **檔案區域預覽**：混合光碟的設計投影與成品讀回會以藍色標示檔案區（含檔案系統）。
 - **媒體灰階方案**：CD 與 DVD 均使用黑白二階；CD 使用 `0D / AA`，DVD 擾碼域使用 `A5 / 92`。詳見 [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md)。
 - **灰階抖動工具**：獨立程式也可將原圖處理為 `0/255` 黑白二階 PNG；支援開啟或拖入原圖、並排預覽及無損 PNG 匯出。詳見[使用與建置說明](tools/FourLevelDither/README.md)。
 - **光碟預設**：內建數個品牌的光碟參數，涵蓋 CD／DVD／BD。您也可將自行校準的資料貢獻給我們，詳見[預設維護說明](docs/DISC_PRESETS.md)。
@@ -92,7 +92,7 @@ Disc Image Studio 提供一套智慧且精準的輔助校準流程。相較於�
 
 ## 系統與裝置需求
 
-- 桌面版需要 Windows 10 2004（2004/20H1，19041）以上版本，或 Windows 11。
+- x64 桌面版需要 Windows 10 2004（2004/20H1，19041）以上版本，或 Windows 11；ARM64 桌面版需要 Windows 11。ARM64 原生 CI 涵蓋軟體自我測試與 GUI 截圖，尚未驗證實體光碟燒錄。
 - 建置：.NET 10 SDK（`global.json` 鎖定 10.0.x）；自行建置的非獨立部署 GUI 需要 .NET 10 Windows 桌面執行階段。Release EXE 已包含執行階段，無須另外安裝 .NET。
 - 「即時燒錄」功能需要 Windows 可辨識的 CD / DVD / BD 燒錄機與空白光碟；BD-R 需要支援循序寫入的單層空白光碟。
 

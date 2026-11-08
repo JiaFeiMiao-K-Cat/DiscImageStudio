@@ -1,6 +1,9 @@
+#requires -Version 7.4
 [CmdletBinding()]
 param(
-    [string]$Tag
+    [string]$Tag,
+    [ValidateSet('win-x64', 'win-arm64')]
+    [string]$RuntimeIdentifier = 'win-x64'
 )
 
 Set-StrictMode -Version Latest
@@ -10,10 +13,17 @@ if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT) {
     throw 'The Windows executable and its WPF smoke checks must be built on Windows.'
 }
 
+$expectedArchitecture = if ($RuntimeIdentifier -eq 'win-arm64') { 'Arm64' } else { 'X64' }
+$osArchitecture = [Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
+$processArchitecture = [Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString()
+if ($osArchitecture -ne $expectedArchitecture -or $processArchitecture -ne $expectedArchitecture) {
+    throw "Release $RuntimeIdentifier requires native $expectedArchitecture Windows and PowerShell for its smoke checks; OS=$osArchitecture, process=$processArchitecture."
+}
+
 $metadata = & (Join-Path $PSScriptRoot 'Get-ReleaseMetadata.ps1') -Tag $Tag
 $workspaceRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $workspacePrefix = $workspaceRoot.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
-$releaseDirectory = [IO.Path]::GetFullPath((Join-Path $workspaceRoot "artifacts\release\$($metadata.Tag)"))
+$releaseDirectory = [IO.Path]::GetFullPath((Join-Path $workspaceRoot "artifacts\release\$($metadata.Tag)\$RuntimeIdentifier"))
 
 function Assert-SafeReleasePath([string]$Path) {
     $fullPath = [IO.Path]::GetFullPath($Path)
@@ -44,7 +54,7 @@ if (Test-Path -LiteralPath $releaseDirectory) {
     if ($linkedItems.Count -ne 0) {
         throw "Refusing to clear a release directory containing junctions or symbolic links: $releaseDirectory"
     }
-    # Only this validated tag's output is replaced; other release versions are retained.
+    # Only this validated tag/RID output is replaced; other architectures are retained.
     Remove-Item -LiteralPath $releaseDirectory -Recurse -Force
 }
 
@@ -58,7 +68,7 @@ New-Item -ItemType Directory -Path $publishDirectory, $isolatedAppDirectory -For
 # global properties but the same runtimeconfig output. Serialize this publish graph.
 & dotnet publish $projectPath `
     --configuration Release `
-    --runtime win-x64 `
+    --runtime $RuntimeIdentifier `
     --self-contained true `
     --output $publishDirectory `
     -maxcpucount:1 `
@@ -88,9 +98,12 @@ if (Test-Path -LiteralPath $referencedRuntimeConfig) {
     Remove-Item -LiteralPath $referencedRuntimeConfig -Force
 }
 
-$packageFileName = "DiscImageStudio-$($metadata.Tag)-win-x64.exe"
+$packageFileName = "DiscImageStudio-$($metadata.Tag)-$RuntimeIdentifier.exe"
 $packagePath = Join-Path $releaseDirectory $packageFileName
 Copy-Item -LiteralPath $publishedExecutable -Destination $packagePath
+$peInfo = & (Join-Path $PSScriptRoot 'Assert-WindowsReleaseExecutable.ps1') `
+    -Path $packagePath -RuntimeIdentifier $RuntimeIdentifier
+Write-Host "Verified release PE: Machine=$($peInfo.Machine); CET-compatible=$($peInfo.CetCompatible)"
 $checkExecutable = Join-Path $isolatedAppDirectory $packageFileName
 Copy-Item -LiteralPath $packagePath -Destination $checkExecutable
 
@@ -168,6 +181,8 @@ if ((Get-FileHash -LiteralPath $checkExecutable -Algorithm SHA256).Hash.ToLowerI
     throw 'The isolated executable does not match the release executable.'
 }
 $checksumPath = Join-Path $releaseDirectory 'SHA256SUMS.txt'
-[IO.File]::WriteAllText($checksumPath, "$hash  $packageFileName`n", [Text.UTF8Encoding]::new($false))
+$checksumLine = "$hash  $packageFileName`n"
+[IO.File]::WriteAllText($checksumPath, $checksumLine, [Text.UTF8Encoding]::new($false))
+[IO.File]::WriteAllText("$packagePath.sha256", $checksumLine, [Text.UTF8Encoding]::new($false))
 Write-Host "Single executable release ready: $packagePath"
 Write-Host "Checksums: $checksumPath"

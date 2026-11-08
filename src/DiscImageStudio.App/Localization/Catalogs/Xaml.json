@@ -1106,14 +1106,14 @@
     "es": "Exportar la vista previa actual a la carpeta de origen de la entrada",
     "cs": "Exportovat aktuální náhled do složky se zdrojovým souborem"
   },
-  "Xaml.YellowFileAreaIncludingFilesystem": {
-    "zh-CN": "黄色：文件区（含文件系统）",
-    "en": "Yellow: file area (including filesystem)",
-    "zh-TW": "黃色：檔案區（含檔案系統）",
-    "ja": "黄: ファイル領域 (ファイル システムを含む)",
-    "tr": "Sarı: dosya alanı (dosya sistemi dahil)",
-    "es": "Amarillo: zona de archivos (incluido el sistema de archivos)",
-    "cs": "Žlutá: oblast souborů (včetně souborového systému)"
+  "Xaml.FileAreaIncludingFilesystem": {
+    "zh-CN": "蓝色：文件区（含文件系统）",
+    "en": "Blue: file area (including filesystem)",
+    "zh-TW": "藍色：檔案區（含檔案系統）",
+    "ja": "青: ファイル領域 (ファイル システムを含む)",
+    "tr": "Mavi: dosya alanı (dosya sistemi dahil)",
+    "es": "Azul: zona de archivos (incluido el sistema de archivos)",
+    "cs": "Modrá: oblast souborů (včetně souborového systému)"
   },
   "Xaml.CreateAndBurnVisibleArtworkOnOpticalDiscs": {
     "zh-CN": "全能的光盘盘面可见图像生成与刻录工作台",
@@ -1682,41 +1682,14 @@
     "es": "Mostrar / Ocultar",
     "cs": "Zobrazit / skrýt"
   },
-  "Xaml.MoveLayerUp": {
-    "zh-CN": "上移图层",
-    "en": "Move layer up",
-    "zh-TW": "上移圖層",
-    "ja": "レイヤーを上へ移動",
-    "tr": "Katmanı yukarı taşı",
-    "es": "Subir capa",
-    "cs": "Posunout vrstvu nahoru"
-  },
-  "Xaml.MoveUpOneLayer": {
-    "zh-CN": "上移一层",
-    "en": "Move up one layer",
-    "zh-TW": "上移一層",
-    "ja": "1 つ上へ移動",
-    "tr": "Bir katman yukarı taşı",
-    "es": "Subir una capa",
-    "cs": "Posunout o vrstvu výš"
-  },
-  "Xaml.MoveLayerDown": {
-    "zh-CN": "下移图层",
-    "en": "Move layer down",
-    "zh-TW": "下移圖層",
-    "ja": "レイヤーを下へ移動",
-    "tr": "Katmanı aşağı taşı",
-    "es": "Bajar capa",
-    "cs": "Posunout vrstvu dolů"
-  },
-  "Xaml.MoveDownOneLayer": {
-    "zh-CN": "下移一层",
-    "en": "Move down one layer",
-    "zh-TW": "下移一層",
-    "ja": "1 つ下へ移動",
-    "tr": "Bir katman aşağı taşı",
-    "es": "Bajar una capa",
-    "cs": "Posunout o vrstvu níž"
+  "Xaml.DataRegionOverflow": {
+    "zh-CN": "数据超出光盘容量",
+    "en": "Data exceeds the disc capacity",
+    "zh-TW": "資料超過光碟容量",
+    "ja": "データがディスク容量を超過しています",
+    "tr": "Veri disk kapasitesini aşıyor",
+    "es": "Los datos superan la capacidad del disco",
+    "cs": "Data překračují kapacitu disku"
   },
   "Xaml.DeleteLayer": {
     "zh-CN": "删除图层",
@@ -1726,15 +1699,6 @@
     "tr": "Katmanı sil",
     "es": "Eliminar capa",
     "cs": "Smazat vrstvu"
-  },
-  "Xaml.DeleteSelectedLayerDel": {
-    "zh-CN": "删除选中图层（Del）",
-    "en": "Delete selected layer (Del)",
-    "zh-TW": "刪除選取圖層（Del）",
-    "ja": "選択したレイヤーを削除 (Del)",
-    "tr": "Seçili katmanı sil (Del)",
-    "es": "Eliminar capa seleccionada (Supr)",
-    "cs": "Smazat vybranou vrstvu (Del)"
   },
   "Xaml.ImportImages": {
     "zh-CN": "导入图片",
@@ -1762,15 +1726,6 @@
     "tr": "Klasör",
     "es": "Carpeta",
     "cs": "Složka"
-  },
-  "Xaml.Browse3": {
-    "zh-CN": "选文件夹…",
-    "en": "Browse…",
-    "zh-TW": "選資料夾…",
-    "ja": "フォルダーを選択…",
-    "tr": "Klasör seç…",
-    "es": "Examinar…",
-    "cs": "Procházet…"
   },
   "Xaml.FilePlacement": {
     "zh-CN": "文件位置",

@@ -19,7 +19,7 @@ English: the data-only DAO adapter replaces audio ADR3/ISRC with complete ADR1 p
 
 数据轨使用 IMAPI 小端主通道约定：在标准 Mode 1 扇区上补齐 EDC、P/Q 纠错码并扰码，保持同步头 `00 FF…FF 00` 的字节顺序。CD-ROM 物理编码的相邻字节交换与转为小端的交换相抵消；这一点也与 cdrdao 的 [RAW 编码和设备字节序转换](https://github.com/cdrdao/cdrdao/blob/master/dao/dao.cc) 相符。文件内外圈的 ISO 布局和绘图物理坐标映射不随该传输约定改变。
 
-设计投影、影调小预览和带有效 `.iso.json` 布局信息的成品读回以黄色标出文件区（含文件系统）。同名元数据记录几何、影调和文件位置；移动 ISO 时建议同时移动它。预览显示绘图负载的映射，实盘效果仍需刻录验证。
+设计投影、影调小预览和带有效 `.iso.json` 布局信息的成品读回以主题蓝色标出文件区（含文件系统）。同名元数据记录几何、影调和文件位置；移动 ISO 时建议同时移动它。预览显示绘图负载的映射，实盘效果仍需刻录验证。
 
 ## 推荐用法
 

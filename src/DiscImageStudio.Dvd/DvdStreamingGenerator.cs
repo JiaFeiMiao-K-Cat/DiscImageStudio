@@ -142,6 +142,12 @@ public sealed class DvdHybridStreamingPlan
 
     public uint FilesystemEndLbaExclusive => IsoLayout.DataEndLbaExclusive;
 
+    /// <summary>Where the filesystem metadata ends and where file data begins: the design
+    /// guide maps both to annuli so outer-ring files still mark their inner metadata.</summary>
+    public uint MetadataEndLbaExclusive => IsoLayout.MetadataEndLbaExclusive;
+
+    public uint FileDataStartLba => IsoLayout.FileDataStartLba;
+
     public uint DrawingStartLba { get; }
 
     public uint DrawingEndLbaExclusive { get; }

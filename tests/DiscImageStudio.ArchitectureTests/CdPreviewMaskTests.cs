@@ -116,12 +116,12 @@ internal static class CdPreviewMaskTests
         {
             double radius = Radius(x, y, 256, 45.5);
             double squared = radius * radius;
-            bool expectedYellow = radius >= 24.5 && radius < 45.5
+            bool expectedFile = radius >= 24.5 && radius < 45.5
                 && (squared < drawingInnerSquared || squared >= drawingOuterSquared);
             int offset = (y * 256 + x) * 4;
-            bool yellow = overlay.Pixels[offset] == 21 && overlay.Pixels[offset + 1] == 204
-                && overlay.Pixels[offset + 2] == 250 && overlay.Pixels[offset + 3] == 255;
-            Require(yellow == expectedYellow, $"limited file overlay at ({x}, {y})");
+            bool file = overlay.Pixels[offset] == 0xFF && overlay.Pixels[offset + 1] == 0x85
+                && overlay.Pixels[offset + 2] == 0x33 && overlay.Pixels[offset + 3] == 0xFF;
+            Require(file == expectedFile, $"limited file overlay at ({x}, {y})");
         }
     }
 

@@ -8,9 +8,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DiscImageStudio.BluRay;
 using DiscImageStudio.Cd;
 using DiscImageStudio.Dvd;
-using DiscImageStudio.BluRay;
 using DiscImageStudio.Core;
 using DiscImageStudio.Imaging;
 using DiscImageStudio.Services;
@@ -27,29 +27,40 @@ public partial class DesignViewModel : ObservableObject
     public const double HubRadiusMm = 15.0;
     private const int PreviewCompositeSize = 2048;
     private static readonly TimeSpan CompositeDebounce = TimeSpan.FromMilliseconds(450);
+    private static readonly TimeSpan DataRegionDebounce = TimeSpan.FromMilliseconds(300);
 
     private readonly ShellViewModel _shell;
     private readonly DiscParametersState _state;
     private readonly DispatcherTimer _compositeTimer;
+    private readonly DispatcherTimer _dataRegionTimer;
     private long _compositeRevision;
     private long _previewRenderedRevision = -1;
     private long _exportRenderedRevision = -1;
     private bool _suppressLayerEvents;
+    private long _dataRegionRevision;
+    private bool _dataRegionRunning;
+    private bool _dataRegionPending;
 
     public DesignViewModel(ShellViewModel shell, DiscParametersState state, Dispatcher dispatcher)
     {
         _shell = shell;
         _state = state;
         _compositeTimer = new DispatcherTimer { Interval = CompositeDebounce };
+        _dataRegionTimer = new DispatcherTimer { Interval = DataRegionDebounce };
+        _shell.PropertyChanged += Shell_PropertyChanged;
+        _state.PropertyChanged += State_PropertyChanged;
         _compositeTimer.Tick += (_, _) =>
         {
             _compositeTimer.Stop();
             _ = RenderPreviewCompositeAsync();
         };
+        _dataRegionTimer.Tick += (_, _) =>
+        {
+            _dataRegionTimer.Stop();
+            RecomputeDataRegion();
+        };
         ImportImagesCommand = new RelayCommand(ImportImages, () => !_shell.IsBusy);
         RemoveSelectedCommand = new RelayCommand(RemoveSelected, () => SelectedLayer is not null && !_shell.IsBusy);
-        MoveSelectedUpCommand = new RelayCommand(MoveSelectedUp, () => CanMoveSelectedUp && !_shell.IsBusy);
-        MoveSelectedDownCommand = new RelayCommand(MoveSelectedDown, () => CanMoveSelectedDown && !_shell.IsBusy);
         ToggleVisibilityCommand = new RelayCommand<DesignLayerViewModel>(layer =>
         {
             if (layer is not null)
@@ -59,25 +70,53 @@ public partial class DesignViewModel : ObservableObject
         });
         Layers.CollectionChanged += Layers_CollectionChanged;
         Tone = new ToneViewModel(shell, state, this);
+        RefreshDataRegionText();
     }
 
     /// <summary>The right rail's tone module: its preview projects the same composite this
     /// page renders through the engines' tone mapping.</summary>
     public ToneViewModel Tone { get; }
 
-    /// <summary>The design page itself builds its text from XAML; only the tone module caches
-    /// a status line.</summary>
-    internal void Relocalize() => Tone.Relocalize();
+    /// <summary>The design page itself builds its text from XAML; only the tone module and
+    /// the overflow warning cache localized text.</summary>
+    internal void Relocalize()
+    {
+        Tone.Relocalize();
+        RefreshDataRegionText();
+    }
 
     /// <summary>Disc files are shared with export, preview and burn; they are not image layers.</summary>
     public DiscParametersState State => _state;
+
+    /// <summary>One occupied annulus in millimetres. The canvas draws every region as a
+    /// theme-blue guide ring. All families use the real ISO/UDF layout planners and the
+    /// usable (writable) sector count, so the regions are the fallback area the files may
+    /// occupy: the preview page shows the actual dispersed placement.</summary>
+    public sealed record DataRegionMm(double InnerRadiusMm, double OuterRadiusMm);
+
+    /// <summary>Null while computing or when the family has no data folder. May hold several
+    /// annuli: files at the outer ring still leave the filesystem metadata at the inner edge,
+    /// and both zones are marked. The list updates only with layout inputs (files, disc
+    /// parameters, ring choice) — never with picture edits — and is drawn on the canvas only,
+    /// never into the composite.</summary>
+    [ObservableProperty]
+    private IReadOnlyList<DataRegionMm>? _dataRegions;
+
+    /// <summary>True while the data does not fit the disc (the layout planner rejects it):
+    /// the canvas stays empty and the "Disc files" panel shows the red warning instead of
+    /// a ring.</summary>
+    [ObservableProperty]
+    private bool _dataRegionOverflow;
+
+    [ObservableProperty]
+    private string _dataRegionOverflowText = string.Empty;
 
     public RelayCommand BrowseDataCommand => _shell.Export.BrowseDataCommand;
 
     public ObservableCollection<DesignLayerViewModel> Layers { get; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSelection), nameof(CanMoveSelectedUp), nameof(CanMoveSelectedDown), nameof(HasSelectionVisibility))]
+    [NotifyPropertyChangedFor(nameof(HasSelection))]
     private DesignLayerViewModel? _selectedLayer;
 
     public bool HasLayers => Layers.Count > 0;
@@ -91,22 +130,9 @@ public partial class DesignViewModel : ObservableObject
 
     public bool HasSelection => SelectedLayer is not null;
 
-    public System.Windows.Visibility HasSelectionVisibility => HasSelection
-        ? System.Windows.Visibility.Visible
-        : System.Windows.Visibility.Collapsed;
-
-    private bool CanMoveSelectedUp => SelectedLayer is not null && Layers.IndexOf(SelectedLayer) > 0;
-
-    private bool CanMoveSelectedDown => SelectedLayer is not null
-        && Layers.IndexOf(SelectedLayer) < Layers.Count - 1;
-
     public RelayCommand ImportImagesCommand { get; }
 
     public RelayCommand RemoveSelectedCommand { get; }
-
-    public RelayCommand MoveSelectedUpCommand { get; }
-
-    public RelayCommand MoveSelectedDownCommand { get; }
 
     public RelayCommand<DesignLayerViewModel> ToggleVisibilityCommand { get; }
 
@@ -190,16 +216,13 @@ public partial class DesignViewModel : ObservableObject
     private void NotifySelectionCommands()
     {
         RemoveSelectedCommand.NotifyCanExecuteChanged();
-        MoveSelectedUpCommand.NotifyCanExecuteChanged();
-        MoveSelectedDownCommand.NotifyCanExecuteChanged();
     }
 
     partial void OnSelectedLayerChanged(DesignLayerViewModel? value)
     {
-        // Selection changes decide the three action buttons' CanExecute, so they must be
-        // re-queried right here: no collection change fires for a pure selection move, and
-        // the buttons would otherwise sit stale until the next incidental command-manager
-        // pass (visible as dead clicks after importing or selecting a hidden layer).
+        // Selection changes decide the delete command's CanExecute, so it must be re-queried
+        // here: no collection change fires for a pure selection move, and the context menu
+        // would otherwise sit stale until the next incidental command-manager pass.
         NotifySelectionCommands();
         CanvasChanged?.Invoke();
     }
@@ -214,10 +237,21 @@ public partial class DesignViewModel : ObservableObject
             return;
         }
 
+        ImportImages(picked);
+    }
+
+    /// <summary>Imports files from either the picker or an external file drop.</summary>
+    public void ImportImages(IEnumerable<string> paths)
+    {
+        if (_shell.IsBusy)
+        {
+            return;
+        }
+
         // Fit rule uses the content ring captured now; edits to geometry do not re-fit.
         DesignLayerViewModel? firstAdded = null;
         List<string> failed = [];
-        foreach (string path in picked)
+        foreach (string path in paths)
         {
             DesignLayerViewModel layer = new()
             {
@@ -263,38 +297,10 @@ public partial class DesignViewModel : ObservableObject
             : Layers[Math.Min(index, Layers.Count - 1)];
     }
 
-    private void MoveSelectedUp()
-    {
-        if (SelectedLayer is not DesignLayerViewModel layer)
-        {
-            return;
-        }
-
-        int index = Layers.IndexOf(layer);
-        if (index > 0)
-        {
-            Layers.Move(index, index - 1);
-        }
-    }
-
-    private void MoveSelectedDown()
-    {
-        if (SelectedLayer is not DesignLayerViewModel layer)
-        {
-            return;
-        }
-
-        int index = Layers.IndexOf(layer);
-        if (index >= 0 && index < Layers.Count - 1)
-        {
-            Layers.Move(index, index + 1);
-        }
-    }
-
     /// <summary>Moves a layer to an insertion slot expressed in the list's pre-drag order. The
     /// slot counts the gaps between rows (0 before the first row, Count after the last), so a
     /// drop below the source lands one position earlier once that row itself leaves the
-    /// sequence — the same convention the up/down buttons use.</summary>
+    /// sequence.</summary>
     public void MoveLayer(DesignLayerViewModel layer, int slotIndex)
     {
         if (_shell.IsBusy)
@@ -385,7 +391,225 @@ public partial class DesignViewModel : ObservableObject
         OnPropertyChanged(nameof(IsBluRay));
         OnPropertyChanged(nameof(FamilyLabel));
         OnPropertyChanged(nameof(CanvasOuterRadiusMm));
+        // The previous family's rings describe a different disc: drop them before the new
+        // plan lands, then plan immediately because every input just changed.
+        DataRegions = null;
+        DataRegionOverflow = false;
+        DataRegionOverflowText = string.Empty;
         RefreshGeometry();
+        _dataRegionTimer.Stop();
+        RecomputeDataRegion();
+    }
+
+    /// <summary>The overflow warning is the only localized guide text; refresh it on language
+    /// changes.</summary>
+    private void RefreshDataRegionText()
+    {
+        if (DataRegionOverflow)
+        {
+            DataRegionOverflowText = L.T("Xaml.DataRegionOverflow");
+        }
+    }
+
+    // ---- Data region guide ----
+
+    private void Shell_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ShellViewModel.IsBusy))
+        {
+            // The toolkit command keeps its last queried state; without this the import
+            // button stays enabled while a job holds the shell.
+            ImportImagesCommand.NotifyCanExecuteChanged();
+            return;
+        }
+
+        if (e.PropertyName is nameof(ShellViewModel.IsProjectOpen)
+            or nameof(ShellViewModel.CurrentProject))
+        {
+            ScheduleDataRegion();
+        }
+    }
+
+    private void State_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is
+            nameof(DiscParametersState.CdDataDirectory) or nameof(DiscParametersState.CdVolumeLabel)
+            or nameof(DiscParametersState.CdFilesAtOuterRing)
+            or nameof(DiscParametersState.CdInnerRadius) or nameof(DiscParametersState.CdOuterRadius)
+            or nameof(DiscParametersState.CdSectors) or nameof(DiscParametersState.CdUsableSectors)
+            or nameof(DiscParametersState.CdPitchLinear) or nameof(DiscParametersState.CdPitchQuadratic)
+            or nameof(DiscParametersState.CdPitchCubic)
+            or nameof(DiscParametersState.DvdDataDirectory) or nameof(DiscParametersState.DvdVolumeLabel)
+            or nameof(DiscParametersState.DvdFilesAtOuterRing)
+            or nameof(DiscParametersState.DvdTotalSectors) or nameof(DiscParametersState.DvdUsableSectors)
+            or nameof(DiscParametersState.DvdInnerRadius) or nameof(DiscParametersState.DvdOuterRadius)
+            or nameof(DiscParametersState.DvdPitchLinear) or nameof(DiscParametersState.DvdPitchQuadratic)
+            or nameof(DiscParametersState.DvdPitchCubic)
+            or nameof(DiscParametersState.BdDataDirectory) or nameof(DiscParametersState.BdVolumeLabel)
+            or nameof(DiscParametersState.BdFilesAtOuterRing)
+            or nameof(DiscParametersState.BdTotalSectors) or nameof(DiscParametersState.BdUsableSectors)
+            or nameof(DiscParametersState.BdInnerRadius) or nameof(DiscParametersState.BdOuterRadius)
+            or nameof(DiscParametersState.BdPitchLinear) or nameof(DiscParametersState.BdPitchQuadratic)
+            or nameof(DiscParametersState.BdPitchCubic))
+        {
+            ScheduleDataRegion();
+        }
+    }
+
+    /// <summary>Coalesces rapid field edits (typing a radius) into one folder scan. Layout
+    /// inputs only: picture edits never retrigger the guide.</summary>
+    private void ScheduleDataRegion()
+    {
+        _dataRegionTimer.Stop();
+        _dataRegionTimer.Start();
+    }
+
+    /// <summary>Recomputes the layout off the UI thread (the plans scan the folder), one
+    /// scan at a time; inputs are captured on the UI thread and superseded runs are dropped
+    /// by revision. The result feeds both the always-visible canvas guide and the capacity
+    /// verdict, and is never drawn into the composite.</summary>
+    private void RecomputeDataRegion()
+    {
+        _dataRegionRevision++;
+        if (_dataRegionRunning)
+        {
+            _dataRegionPending = true;
+            return;
+        }
+
+        _ = RunDataRegionAsync();
+    }
+
+    private async Task RunDataRegionAsync()
+    {
+        _dataRegionRunning = true;
+        try
+        {
+            do
+            {
+                _dataRegionPending = false;
+                long revision = _dataRegionRevision;
+                DataRegionInputs? inputs = null;
+                try
+                {
+                    inputs = CaptureDataRegionInputs();
+                }
+                catch (Exception exception) when (exception is FormatException
+                                                      or OverflowException
+                                                      or ArgumentException)
+                {
+                    // Fields are temporarily incomplete while a project or preset is applied.
+                }
+
+                IReadOnlyList<DataRegionMm>? regions = null;
+                bool overflow = false;
+                if (inputs is not null)
+                {
+                    try
+                    {
+                        regions = await StaWorker.RunAsync(() => DataRegionPlanner.Compute(inputs));
+                    }
+                    catch (DataRegionCapacityException)
+                    {
+                        overflow = true;
+                    }
+                    catch
+                    {
+                        // A missing folder or invalid geometry hides the guide silently.
+                    }
+                }
+
+                if (revision != _dataRegionRevision)
+                {
+                    _dataRegionPending = true;
+                    continue;
+                }
+
+                DataRegions = regions;
+                DataRegionOverflow = overflow;
+                DataRegionOverflowText = overflow ? L.T("Xaml.DataRegionOverflow") : string.Empty;
+                CanvasChanged?.Invoke();
+            }
+            while (_dataRegionPending);
+        }
+        finally
+        {
+            _dataRegionRunning = false;
+        }
+    }
+
+    /// <summary>Snapshot of every layout input, read on the UI thread so the worker never
+    /// touches the parameter state.</summary>
+    private DataRegionInputs CaptureDataRegionInputs()
+    {
+        string directory, label, totalText, usableText, innerText, outerText;
+        string pitchLinear, pitchQuadratic, pitchCubic;
+        bool filesAtOuterRing;
+        switch (Family)
+        {
+            case OpticalDiscFamily.Dvd:
+                directory = _state.DvdDataDirectory;
+                label = _state.DvdVolumeLabel;
+                totalText = _state.DvdTotalSectors;
+                usableText = _state.DvdUsableSectors;
+                innerText = _state.DvdInnerRadius;
+                outerText = _state.DvdOuterRadius;
+                pitchLinear = _state.DvdPitchLinear;
+                pitchQuadratic = _state.DvdPitchQuadratic;
+                pitchCubic = _state.DvdPitchCubic;
+                filesAtOuterRing = _state.DvdFilesAtOuterRing;
+                break;
+            case OpticalDiscFamily.BluRay:
+                directory = _state.BdDataDirectory;
+                label = _state.BdVolumeLabel;
+                totalText = _state.BdTotalSectors;
+                usableText = _state.BdUsableSectors;
+                innerText = _state.BdInnerRadius;
+                outerText = _state.BdOuterRadius;
+                pitchLinear = _state.BdPitchLinear;
+                pitchQuadratic = _state.BdPitchQuadratic;
+                pitchCubic = _state.BdPitchCubic;
+                filesAtOuterRing = _state.BdFilesAtOuterRing;
+                break;
+            default:
+                directory = _state.CdDataDirectory;
+                label = _state.CdVolumeLabel;
+                totalText = _state.CdSectors;
+                usableText = _state.CdUsableSectors;
+                innerText = _state.CdInnerRadius;
+                outerText = _state.CdOuterRadius;
+                pitchLinear = _state.CdPitchLinear;
+                pitchQuadratic = _state.CdPitchQuadratic;
+                pitchCubic = _state.CdPitchCubic;
+                filesAtOuterRing = _state.CdFilesAtOuterRing;
+                break;
+        }
+
+        (string innerPrompt, string outerPrompt) = Family switch
+        {
+            OpticalDiscFamily.Dvd => ("内半径", "外半径"),
+            OpticalDiscFamily.BluRay => ("蓝光内半径", "蓝光外半径"),
+            _ => ("内半径", "外半径"),
+        };
+        string directoryPath = directory.Trim();
+        long totalSectors = ParameterParser.ParsePositiveLong(totalText, L.T("总扇区数"));
+        return new DataRegionInputs(
+            Family,
+            directoryPath,
+            string.IsNullOrWhiteSpace(label) ? Family switch
+            {
+                OpticalDiscFamily.Dvd => "DISC_IMAGE",
+                OpticalDiscFamily.BluRay => "BD_IMAGE",
+                _ => "CD_IMAGE",
+            } : label.Trim(),
+            FilesAtOuterRing: directoryPath.Length > 0 && filesAtOuterRing,
+            totalSectors,
+            DiscParametersState.ParseUsableSectors(Family, totalSectors, usableText),
+            ParameterParser.ParsePositiveDouble(innerText, L.T(innerPrompt)),
+            ParameterParser.ParsePositiveDouble(outerText, L.T(outerPrompt)),
+            ParameterParser.ParseDouble(pitchLinear, L.T("相对一次项")),
+            ParameterParser.ParseDouble(pitchQuadratic, L.T("相对二次项")),
+            ParameterParser.ParseDouble(pitchCubic, L.T("相对三次项")));
     }
 
     private static double ParseMm(string raw, double fallback)

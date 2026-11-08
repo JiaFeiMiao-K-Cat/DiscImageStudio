@@ -10,6 +10,13 @@ using System.Runtime.InteropServices.ComTypes;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
+if (args is ["--test-image-drop"])
+{
+    ImageDropTests.Run();
+    LayerPanelTests.Run();
+    return;
+}
+
 if (args is ["--test-parameter-persistence"])
 {
     PresetApplicationTests.Run();
@@ -58,6 +65,12 @@ if (args is ["--test-usable-sectors"])
     StreamBurnCapacityTests.Run();
     MediaSectorCountTests.Run();
     CalibrationMediaReadTests.Run();
+    return;
+}
+
+if (args is ["--test-data-region"])
+{
+    DesignDataRegionTests.Run();
     return;
 }
 
@@ -221,6 +234,7 @@ CalibrationPhotoTests.Run();
 CalibrationPhotoCanvasTests.Run();
 DesignCanvasZoomTests.Run();
 LayerPanelTests.Run();
+ImageDropTests.Run();
 CalibrationBurnWorkflowTests.Run();
 CalibrationBurnSourceTests.Run();
 BurnJobDockTests.Run();
@@ -236,6 +250,8 @@ CalibrationBoundaryWorkflowTests.Run();
 CalibrationFitLocalizationTests.Run();
 PopupLocalizationTests.Run();
 AppSettingsTests.Run();
+FilesystemMetadataBudgetTests.Run();
+DesignDataRegionTests.Run();
 LocalizationTests.Run();
 ThemePaletteTests.Run();
 TempFilesCacheTests.Run();

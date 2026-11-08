@@ -96,6 +96,7 @@
     <SolidColorBrush x:Key="DiscGuideBrush" Color="#5571717A" />
     <SolidColorBrush x:Key="DiscMaskBrush" Color="#66000000" />
     <SolidColorBrush x:Key="DiscSelectionBrush" Color="{StaticResource PrimaryColor}" />
+    <SolidColorBrush x:Key="DiscDataRegionBrush" Color="#662569CC" />
     <SolidColorBrush x:Key="CalibrationPhotoBackdropBrush" Color="#D9DADE" />
     <SolidColorBrush x:Key="CalibrationCaptionBrush" Color="#E6FFFFFF" />
     <SolidColorBrush x:Key="CalibrationEdgeBrush" Color="#0B66D0" />
