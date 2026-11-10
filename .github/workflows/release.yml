@@ -318,7 +318,12 @@ jobs:
             exit 1
           fi
           for file in "${files[@]}"; do
-            # Sign file with sequoia sq
+            # Check if file exists 
+            if [ ! -f "${file}.sig" ]; then
+              echo "Signature file doesn't exist"
+              exit 1
+            fi
+            # Verify file with sequoia sq
             sq verify --signer-file release/public_key.asc --signature-file="${file}.sig" "${file}"
           done
       - name: Create or refresh draft with all release attachments
