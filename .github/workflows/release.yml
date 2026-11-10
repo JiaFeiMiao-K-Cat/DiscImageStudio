@@ -290,7 +290,7 @@ jobs:
           # sudo apt-get update
           # sudo apt-get install -y sq
           printf '%s\n' "$SIGN_PRIVATE_KEY" >private_key.pgp
-          files=(release/*.exe release/*.tar.gz release/SHA256SUMS.txt)
+          files=(release/*.exe release/*.tar.gz release/SHA256SUMS.txt release/latest.json)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No files found to sign"
             exit 1
@@ -313,7 +313,7 @@ jobs:
           set -euo pipefail
           shopt -s nullglob
           umask 077
-          files=(release/*.exe release/*.tar.gz release/SHA256SUMS.txt)
+          files=(release/*.exe release/*.tar.gz release/SHA256SUMS.txt release/latest.json)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No files found to verify"
             exit 1
