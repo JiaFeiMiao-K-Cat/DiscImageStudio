@@ -3,9 +3,9 @@
     "zh-CN": "工程路径必须包含目录。",
     "en": "The project path must include a directory."
   },
-  "不支持 schemaVersion={0}；当前支持 {1} 与 {2}。": {
-    "zh-CN": "不支持 schemaVersion={0}；当前支持 {1} 与 {2}。",
-    "en": "Unsupported schemaVersion={0}; supported versions are {1} and {2}."
+  "不支持 schemaVersion={0}；当前支持 {1}、{2} 与 {3}。": {
+    "zh-CN": "不支持 schemaVersion={0}；当前支持 {1}、{2} 与 {3}。",
+    "en": "Unsupported schemaVersion={0}; supported versions are {1}, {2} and {3}."
   },
   "schemaVersion 1 只包含 CD/DVD 工程，不能声明蓝光字段。": {
     "zh-CN": "schemaVersion 1 只包含 CD/DVD 工程，不能声明蓝光字段。",
@@ -14,6 +14,26 @@
   "bluRay 设置只用于蓝光工程。": {
     "zh-CN": "bluRay 设置只用于蓝光工程。",
     "en": "bluRay settings are only valid for Blu-ray projects."
+  },
+  "cdExtra 设置只用于 CD 工程。": {
+    "zh-CN": "cdExtra 设置只用于 CD 工程。",
+    "en": "cdExtra settings are only valid for CD projects."
+  },
+  "cdExtra 设置需要 schemaVersion 3。": {
+    "zh-CN": "cdExtra 设置需要 schemaVersion 3。",
+    "en": "cdExtra settings require schemaVersion 3."
+  },
+  "cdExtra.tracks 不能为空。": {
+    "zh-CN": "cdExtra.tracks 不能为空。",
+    "en": "cdExtra.tracks cannot be null."
+  },
+  "cdExtra 最多包含 {0} 首音乐。": {
+    "zh-CN": "cdExtra 最多包含 {0} 首音乐。",
+    "en": "cdExtra can contain at most {0} music tracks."
+  },
+  "cdExtra 的音乐路径不能为空。": {
+    "zh-CN": "cdExtra 的音乐路径不能为空。",
+    "en": "cdExtra music paths cannot be empty."
   },
   "工程名不能为空。": {
     "zh-CN": "工程名不能为空。",

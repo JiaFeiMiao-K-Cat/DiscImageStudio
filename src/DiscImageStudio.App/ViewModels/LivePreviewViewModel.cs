@@ -129,6 +129,10 @@ public partial class LivePreviewViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasFileRegionOverlay;
 
+    /// <summary>The preview marks CD-Extra bands: the music session and the session gap.</summary>
+    [ObservableProperty]
+    private bool _hasMusicRegionOverlay;
+
     public LivePreviewViewModel(Dispatcher dispatcher, ShellViewModel shell, DiscParametersState state)
     {
         _shell = shell;
@@ -247,6 +251,23 @@ public partial class LivePreviewViewModel : ObservableObject
         OnPropertyChanged(nameof(EmptyStateActionLabel));
     }
 
+    private void AdoptCdDataGeometry(CdDiscParameters parameters, ToneProfile tone, bool? filesAtOuterRing)
+    {
+        ToneProfile normalized = tone.Normalized();
+        _state.CdSectors = parameters.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        _state.CdUsableSectors = parameters.OutputSectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        _state.CdInnerRadius = FormatNumber(parameters.InnerRadiusMm);
+        _state.CdOuterRadius = FormatNumber(parameters.OuterRadiusMm);
+        _state.CdPitchLinear = FormatNumber(parameters.PitchLinear);
+        _state.CdPitchQuadratic = FormatNumber(parameters.PitchQuadratic);
+        _state.CdPitchCubic = FormatNumber(parameters.PitchCubic);
+        if (filesAtOuterRing is { } outer) _state.CdFilesAtOuterRing = outer;
+        _state.ToneDitherStrength = normalized.DitherStrength;
+        _state.ToneLevels = normalized.Levels;
+        _state.ToneBrightness = normalized.Brightness;
+        _state.ToneSrgbLinearization = normalized.SrgbLinearization;
+    }
+
     private void AdoptTrackMetadata(string trackPath)
     {
         if (trackPath.Length == 0
@@ -256,23 +277,21 @@ public partial class LivePreviewViewModel : ObservableObject
         }
 
         _calibratedTrackPath = trackPath;
+        // A CD-Extra picture session is read back with the geometry it was generated for,
+        // like a single-session data ISO; its sidecar also places the music and gap bands.
+        CdExtraImageMetadata? extraMetadata = CdExtraImageMetadata.TryLoad(trackPath);
+        if (extraMetadata is not null)
+        {
+            // The sidecar's placement is the effective one (inner without files); the read-back
+            // takes the ranges from the sidecar, so the user's own choice is left alone.
+            AdoptCdDataGeometry(extraMetadata.Parameters, extraMetadata.Tone, filesAtOuterRing: null);
+            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 已载入 {Path.GetFileName(trackPath)} 的 CD-Extra 图片区段几何与起点（LBA {extraMetadata.Session2StartLba:N0}）。\n"));
+            return;
+        }
         CdDataImageMetadata? dataMetadata = CdDataImageMetadata.TryLoad(trackPath);
         if (dataMetadata is not null)
         {
-            CdDiscParameters parameters = dataMetadata.Parameters;
-            ToneProfile dataTone = dataMetadata.Tone.Normalized();
-            _state.CdSectors = parameters.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            _state.CdUsableSectors = parameters.OutputSectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            _state.CdInnerRadius = FormatNumber(parameters.InnerRadiusMm);
-            _state.CdOuterRadius = FormatNumber(parameters.OuterRadiusMm);
-            _state.CdPitchLinear = FormatNumber(parameters.PitchLinear);
-            _state.CdPitchQuadratic = FormatNumber(parameters.PitchQuadratic);
-            _state.CdPitchCubic = FormatNumber(parameters.PitchCubic);
-            _state.CdFilesAtOuterRing = dataMetadata.FilesAtOuterRing;
-            _state.ToneDitherStrength = dataTone.DitherStrength;
-            _state.ToneLevels = dataTone.Levels;
-            _state.ToneBrightness = dataTone.Brightness;
-            _state.ToneSrgbLinearization = dataTone.SrgbLinearization;
+            AdoptCdDataGeometry(dataMetadata.Parameters, dataMetadata.Tone, dataMetadata.FilesAtOuterRing);
             _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 已载入 {Path.GetFileName(trackPath)} 的 CD 数据盘几何与文件位置。\n"));
             return;
         }
@@ -535,6 +554,7 @@ public partial class LivePreviewViewModel : ObservableObject
     internal void UpdateMode(bool clearResult)
     {
         HasFileRegionOverlay = false;
+        HasMusicRegionOverlay = false;
         _readyStatus = null;
         _livePreviewFailure = null;
         // The inspector is a lens over both families; every mode change routes through here, so
@@ -569,6 +589,7 @@ public partial class LivePreviewViewModel : ObservableObject
     private void ClearResult()
     {
         HasFileRegionOverlay = false;
+        HasMusicRegionOverlay = false;
         ResultImage = null;
         HasResultImage = false;
         ResultPreviewPath = string.Empty;
@@ -608,6 +629,7 @@ public partial class LivePreviewViewModel : ObservableObject
     internal void Schedule()
     {
         HasFileRegionOverlay = false;
+        HasMusicRegionOverlay = false;
         _readyStatus = null;
         _livePreviewFailure = null;
         if (!_shell.IsWindowLoaded)
@@ -626,6 +648,7 @@ public partial class LivePreviewViewModel : ObservableObject
     internal void RefreshNow()
     {
         HasFileRegionOverlay = false;
+        HasMusicRegionOverlay = false;
         _readyStatus = null;
         _livePreviewFailure = null;
         _livePreviewTimer.Stop();
@@ -648,6 +671,7 @@ public partial class LivePreviewViewModel : ObservableObject
             do
             {
                 HasFileRegionOverlay = false;
+                HasMusicRegionOverlay = false;
                 _readyStatus = null;
                 _livePreviewFailure = null;
                 _livePreviewRefreshPending = false;
@@ -718,24 +742,32 @@ public partial class LivePreviewViewModel : ObservableObject
         try
         {
             outputPath = TempFiles.GetCacheFilePath($"cd-live-preview-{revision}.png");
-            CdDataImageMetadata? metadata = dataImage ? CdDataImageMetadata.TryLoad(trackPath) : null;
-            if (metadata is not null)
+            // A CD-Extra picture session ISO carries its own sidecar: the file starts at
+            // session 2, and the music ring is marked from the recorded track layout.
+            CdExtraImageMetadata? session = dataImage ? CdExtraImageMetadata.TryLoad(trackPath) : null;
+            CdDataImageMetadata? metadata = dataImage && session is null ? CdDataImageMetadata.TryLoad(trackPath) : null;
+            CdDiscParameters? recorded = session?.Parameters ?? metadata?.Parameters;
+            if (recorded is not null)
             {
-                parameters = metadata.Parameters with
+                parameters = recorded with
                 {
                     InnerRadiusMm = parameters.InnerRadiusMm,
                     OuterRadiusMm = parameters.OuterRadiusMm,
                     Sectors = parameters.Sectors,
                 };
             }
-            bool overlay = metadata is not null && metadata.Parameters.Sectors == parameters.Sectors;
+            bool overlay = recorded is not null && recorded.Sectors == parameters.Sectors;
             await StaWorker.RunAsync(() =>
             {
                 if (dataImage)
                 {
                     CdDataImageGenerator.PreviewTrack(trackPath, outputPath, parameters,
                         outputSize, 2048 / samplesPerSector, cancellationToken);
-                    if (overlay)
+                    if (overlay && session is not null)
+                        FileRegionPreviewOverlay.ApplyCdExtra(outputPath, parameters, session.MusicEndLbaExclusive,
+                            session.Session2StartLba, session.DrawingStartLba, session.DrawingEndLbaExclusive,
+                            session.Session2StartLba + session.TrackSectors, cancellationToken);
+                    else if (overlay)
                         FileRegionPreviewOverlay.ApplyCd(outputPath, parameters,
                             metadata!.DrawingStartLba, metadata.DrawingEndLbaExclusive, cancellationToken);
                 }
@@ -753,9 +785,10 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
+            _pendingMusicRegionOverlay = overlay && session is not null;
             PublishPreview(outputPath, trackPath, "预览 - CD", overlay);
             keepOutput = true;
-            SetReadyStatus(() => L.F($"已实时更新 · 读回模拟 · {(dataImage ? L.T("CD 数据盘") : deinterleave ? L.T("逆交织") : L.T("纯音轨"))}")
+            SetReadyStatus(() => L.F($"已实时更新 · 读回模拟 · {(session is not null ? L.T("CD-Extra 图片区段") : dataImage ? L.T("CD 数据盘") : deinterleave ? L.T("逆交织") : L.T("纯音轨"))}")
                 + L.F($" · {outputSize} px · 每扇区 {samplesPerSector} 个采样"));
         }
         catch (OperationCanceledException)
@@ -804,9 +837,33 @@ public partial class LivePreviewViewModel : ObservableObject
                 ? _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc)
                 : string.Empty;
             bool filesAtOuterRing = _state.CdFilesAtOuterRing;
+            IReadOnlyList<string>? music = _state.CdExtraEnabled ? _state.CdMusicTracks : null;
+            string extraLabel = music is null ? string.Empty : _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc);
+            bool musicBands = false;
             CdDataLayoutPlan? plan = await StaWorker.RunAsync(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                if (music is not null)
+                {
+                    CdExtraPlan extra = CdExtraPlanner.Plan(generated, music,
+                        dataDirectory.Length == 0 ? null : dataDirectory, extraLabel, filesAtOuterRing,
+                        cancellationToken: cancellationToken);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (extra.IsValid)
+                    {
+                        CdDataImageGenerator.PreviewWarp(imagePath, outputPath, generated, actual,
+                            outputSize, samplesPerSector, tone, extra.DataPlan, cancellationToken);
+                        FileRegionPreviewOverlay.ApplyCdExtra(outputPath, actual, extra.Layout!.MusicEndLbaExclusive,
+                            extra.Layout.Session2StartLba, extra.DataPlan!.DrawingStartLba,
+                            extra.DataPlan.DrawingEndLbaExclusive,
+                            extra.DataPlan.VolumeStartLba + extra.DataPlan.TrackSectors, cancellationToken);
+                        musicBands = true;
+                        return extra.DataPlan;
+                    }
+                    if (extra.Problem != CdExtraPlanProblem.NoMusic)
+                        throw new InvalidOperationException(CdExtraPlanner.DescribeProblem(extra));
+                }
+
                 CdDataLayoutPlan? layout = dataDirectory.Length > 0
                     ? CdDataImageGenerator.PrepareLayout(dataDirectory, generated, volumeLabel, filesAtOuterRing)
                     : null;
@@ -831,7 +888,8 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, imagePath, "预览 - CD", plan is not null);
+            _pendingMusicRegionOverlay = musicBands;
+            PublishPreview(outputPath, imagePath, "预览 - CD", plan is not null && (!musicBands || dataDirectory.Length > 0));
             keepOutput = true;
             SetReadyStatus(() => L.F($"已实时更新 · 标定预览 · 灰度 {tone.Levels} 级")
                 + L.F($" · 抖动 {tone.DitherStrength * 100:0}% · {outputSize} px")
@@ -1233,16 +1291,23 @@ public partial class LivePreviewViewModel : ObservableObject
         return disc;
     }
 
+    // Set just before PublishPreview by the CD-Extra renderers; the publish consumes it so
+    // a stale flag never reaches a later preview.
+    private bool _pendingMusicRegionOverlay;
+
     /// <summary>Adopts a rendered preview as the canvas content and the export source, and
     /// retires the previous temporary file.</summary>
     private void PublishPreview(string outputPath, string inputPath, string titleKey,
         bool hasFileRegionOverlay = false)
     {
+        bool hasMusicRegionOverlay = _pendingMusicRegionOverlay;
+        _pendingMusicRegionOverlay = false;
         string? previousPath = _lastLivePreviewPath;
         _lastLivePreviewPath = outputPath;
         _downloadablePreview = true;
         bool loaded = ShowResultPreview(outputPath);
         HasFileRegionOverlay = hasFileRegionOverlay && loaded;
+        HasMusicRegionOverlay = hasMusicRegionOverlay && loaded;
         _isLivePreviewReady = true;
         _resultTitleKey = titleKey;
         ResultPreviewTitle = L.T(titleKey);
@@ -1538,6 +1603,7 @@ public partial class LivePreviewViewModel : ObservableObject
     internal void PrepareResultPreview(string outputPath)
     {
         HasFileRegionOverlay = false;
+        HasMusicRegionOverlay = false;
         ResultImage = null;
         HasResultImage = false;
         // The job output replaces the live result, so its completion line must not be
@@ -1555,6 +1621,7 @@ public partial class LivePreviewViewModel : ObservableObject
     internal bool ShowResultPreview(string outputPath)
     {
         HasFileRegionOverlay = false;
+        HasMusicRegionOverlay = false;
         if (!ShellViewModel.IsPngPath(outputPath))
         {
             return false;

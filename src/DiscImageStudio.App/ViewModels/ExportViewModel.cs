@@ -49,14 +49,36 @@ public partial class ExportViewModel : ObservableObject
         };
         _design.DesignEdited += UpdateSourceSummary;
         _design.CanvasChanged += UpdateSourceSummary;
+        _design.CdExtraPlanChanged += () => OnPropertyChanged(nameof(CdExtraSession2Hint));
         _state.PropertyChanged += (_, args) =>
         {
-            if (args.PropertyName == nameof(DiscParametersState.CdDataDirectory))
+            if (args.PropertyName is nameof(DiscParametersState.CdDataDirectory)
+                or nameof(DiscParametersState.CdExtraEnabled))
             {
                 OnPropertyChanged(nameof(GenerateButtonText));
             }
+            // A measured start belongs to one burned music session; other music invalidates it.
+            if (args.PropertyName is nameof(DiscParametersState.CdMusicTracks))
+                CdExtraSession2StartLba = string.Empty;
+        };
+        // Only a real project switch (close/open/new) clears it: confirming the project settings
+        // re-raises CurrentProject for the same disc and must keep the typed value.
+        _shell.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName is nameof(ShellViewModel.IsProjectOpen))
+                CdExtraSession2StartLba = string.Empty;
         };
     }
+
+    /// <summary>CD-Extra export only: where session 2 really starts on a disc whose music
+    /// session was written by other software (the second number of cdrecord -msinfo). Empty
+    /// uses the Track-at-Once prediction. Not saved: it describes one physical disc.</summary>
+    [ObservableProperty]
+    private string _cdExtraSession2StartLba = string.Empty;
+
+    public string CdExtraSession2Hint => _design.CdExtraPlan?.Layout is { } layout
+        ? L.F($"留空则按预计起点 LBA {layout.Session2StartLba:N0} 生成（假设第 1 区段按 Track-at-Once 刻录）。用其他软件刻录时，先刻录音乐区段并保持可追加，再填入 cdrecord -msinfo 输出的第二个数后重新生成。")
+        : L.T("留空则按预计起点生成（假设第 1 区段按 Track-at-Once 刻录）。用其他软件刻录时，先刻录音乐区段并保持可追加，再填入 cdrecord -msinfo 输出的第二个数后重新生成。");
 
     public bool IsCd => _shell.CurrentProject?.IsCd ?? true;
 
@@ -72,7 +94,8 @@ public partial class ExportViewModel : ObservableObject
     public string FamilyLabel => _shell.CurrentProject?.FamilyLabel ?? "CD";
 
     /// <summary>Primary action label: the artifact differs per family (WAV track vs ISO).</summary>
-    public string GenerateButtonText => !IsCd || _state.HasCdFiles ? L.T("生成镜像") : L.T("生成音轨");
+    public string GenerateButtonText => !IsCd || _state.HasCdFiles || _state.CdExtraEnabled
+        ? L.T("生成镜像") : L.T("生成音轨");
 
     /// <summary>The source card's jump into the project dialog, where the generation geometry
     /// is edited; every other workspace shows the same affordance for the same reason.</summary>
@@ -95,6 +118,7 @@ public partial class ExportViewModel : ObservableObject
     internal void Relocalize()
     {
         OnPropertyChanged(nameof(GenerateButtonText));
+        OnPropertyChanged(nameof(CdExtraSession2Hint));
         UpdateSourceSummary();
     }
 
@@ -123,9 +147,10 @@ public partial class ExportViewModel : ObservableObject
                 _state.DvdOutputPath = iso;
             }
         }
-        else if (_state.HasCdFiles)
+        else if (_state.HasCdFiles || _state.CdExtraEnabled)
         {
-            string? iso = _shell.Dialogs?.PickSave(L.T("ISO 镜像|*.iso|所有文件|*.*"), ".iso", "cd-image.iso");
+            string? iso = _shell.Dialogs?.PickSave(L.T("ISO 镜像|*.iso|所有文件|*.*"), ".iso",
+                _state.CdExtraEnabled ? "cd-extra-session2.iso" : "cd-image.iso");
             if (iso is not null)
             {
                 _state.CdOutputPath = iso;
@@ -219,8 +244,32 @@ public partial class ExportViewModel : ObservableObject
 
     private async Task GenerateCdAsync(string compositePath)
     {
+        CdImageRequest request = CreateCdImageRequest(compositePath);
+        bool cdExtra = request.MusicTracks is not null;
+        string output = request.OutputPath;
+        if (await _shell.RunImageJobAsync(
+                cdExtra ? L.T("正在生成 CD-Extra 图片区段 ISO…")
+                    : _state.HasCdFiles ? L.T("正在生成 CD 数据盘 ISO…") : L.T("正在生成 CD 音轨…"),
+                output, (progress, token) => CdImageGenerator.Generate(request, progress, token), request.ToString()))
+            _state.CdTrackPath = output;
+    }
+
+    /// <summary>The CD export request from the current state, validated: output path, music
+    /// for CD-Extra and the optional measured session 2 start.</summary>
+    internal CdImageRequest CreateCdImageRequest(string compositePath)
+    {
+        bool cdExtra = _state.CdExtraEnabled;
         string output = RequirePath(_state.CdOutputPath,
-            _state.HasCdFiles ? L.T("请选择 CD ISO 输出位置。") : L.T("请选择 CD 音轨输出位置。"));
+            cdExtra || _state.HasCdFiles ? L.T("请选择 CD ISO 输出位置。") : L.T("请选择 CD 音轨输出位置。"));
+        if (cdExtra && !_state.HasCdMusic)
+            throw new ArgumentException(L.T("CD-Extra 需要至少一首音乐：请在设计页添加 WAV 音乐，或切换回“整盘图片”。"));
+        long? measuredSession2 = null;
+        if (cdExtra && !string.IsNullOrWhiteSpace(CdExtraSession2StartLba))
+        {
+            measuredSession2 = CdExtraLayout.TryParseSession2Start(CdExtraSession2StartLba, out long lba)
+                ? lba
+                : throw new ArgumentException(L.T("实测第 2 区段起点需要填写 LBA，即 cdrecord -msinfo 输出的第二个数。"));
+        }
         CdDiscParameters parameters = new(
             ParameterParser.ParsePositiveDouble(_state.CdInnerRadius, L.T("内半径")),
             ParameterParser.ParsePositiveDouble(_state.CdOuterRadius, L.T("外半径")),
@@ -229,14 +278,12 @@ public partial class ExportViewModel : ObservableObject
             PitchQuadratic: ParameterParser.ParseDouble(_state.CdPitchQuadratic, L.T("相对二次项")),
             PitchCubic: ParameterParser.ParseDouble(_state.CdPitchCubic, L.T("相对三次项")),
             UsableSectors: _state.GetUsableSectors(OpticalDiscFamily.CompactDisc));
-        CdImageRequest request = new(compositePath, output, parameters, _state.Tone,
+        return new CdImageRequest(compositePath, output, parameters, _state.Tone,
             _state.CdInterleave, _state.CdWriteCue, _state.CdDataDirectory.Trim(),
             _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc),
-            _state.CdFilesAtOuterRing);
-        if (await _shell.RunImageJobAsync(
-                _state.HasCdFiles ? L.T("正在生成 CD 数据盘 ISO…") : L.T("正在生成 CD 音轨…"),
-                output, (progress, token) => CdImageGenerator.Generate(request, progress, token), request.ToString()))
-            _state.CdTrackPath = output;
+            _state.CdFilesAtOuterRing,
+            cdExtra ? _state.CdMusicTracks : null,
+            measuredSession2);
     }
 
     private async Task GenerateDvdAsync(string compositePath)

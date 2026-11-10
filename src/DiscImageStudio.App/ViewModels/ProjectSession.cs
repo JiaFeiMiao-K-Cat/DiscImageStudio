@@ -84,8 +84,14 @@ internal static class ProjectSession
                 state.CdPitchLinear = state.CdActualPitchLinear = Format(geometry.PitchLinear);
                 state.CdPitchQuadratic = state.CdActualPitchQuadratic = Format(geometry.PitchQuadratic);
                 state.CdPitchCubic = state.CdActualPitchCubic = Format(geometry.PitchCubic);
+                // The previous project's .wav/.raw choice must not resurface in this one.
+                state.ResetCdAudioFormat(outputs.OutputPath);
                 state.CdDataDirectory = outputs.DataDirectory;
                 state.CdFilesAtOuterRing = outputs.FilesAtOuterRing;
+                // Always assigned, so a project without CD-Extra does not inherit the
+                // previous project's music.
+                state.CdExtraEnabled = document.CdExtra?.Enabled ?? false;
+                state.CdMusicTracks = document.CdExtra?.Tracks.Select(track => track.Path).ToArray() ?? [];
                 state.CdVolumeLabel = string.IsNullOrWhiteSpace(outputs.VolumeLabel) ? "CD_IMAGE" : outputs.VolumeLabel;
                 state.CdOutputPath = outputs.OutputPath;
                 state.NormalizeCdOutputFormat();
@@ -153,7 +159,8 @@ internal static class ProjectSession
                     FilesAtOuterRing: state.BdFilesAtOuterRing);
             default:
                 return new ProjectOutputs(
-                    RequireOutput(state.CdOutputPath, state.HasCdFiles ? L.T("CD ISO 输出位置") : L.T("CD 音轨输出位置")),
+                    RequireOutput(state.CdOutputPath, state.CdExtraEnabled ? L.T("CD-Extra 图片区段输出位置")
+                        : state.HasCdFiles ? L.T("CD ISO 输出位置") : L.T("CD 音轨输出位置")),
                     state.CdWriteCue,
                     state.CdDataDirectory,
                     state.CdVolumeLabel,
@@ -177,6 +184,14 @@ internal static class ProjectSession
     public static ProjectBluRaySettings? CaptureBluRay(ProjectDocument current, DiscParametersState state)
         => current.Family == OpticalDiscFamily.BluRay
             ? new ProjectBluRaySettings(state.BdInvertMapping)
+            : null;
+
+    /// <summary>CD-only music session. Omitted (and absent from the file) while the mode is
+    /// off and no music is listed, so ordinary CD projects keep their JSON shape.</summary>
+    public static ProjectCdExtraSettings? CaptureCdExtra(ProjectDocument current, DiscParametersState state)
+        => current.Family == OpticalDiscFamily.CompactDisc && (state.CdExtraEnabled || state.HasCdMusic)
+            ? new ProjectCdExtraSettings(state.CdExtraEnabled,
+                state.CdMusicTracks.Select(path => new ProjectMusicTrack(path)).ToArray())
             : null;
 
     public static string Format(double value)

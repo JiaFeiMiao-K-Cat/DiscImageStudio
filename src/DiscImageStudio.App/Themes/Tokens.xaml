@@ -152,6 +152,10 @@
     <!-- File-occupancy guide: more opaque than PrimarySoftBrush so the ring stays legible
          over bright artwork, while the pictures underneath remain readable. -->
     <SolidColorBrush x:Key="DiscDataRegionBrush" Color="#663385FF" />
+    <!-- CD-Extra rings on the design canvas: the music session (amber) and the drive-written
+         lead-out/lead-in gap before the picture session (grey). Same hues as the previews. -->
+    <SolidColorBrush x:Key="DiscMusicRegionBrush" Color="#99F5A623" />
+    <SolidColorBrush x:Key="DiscSessionGapBrush" Color="#B37A7A85" />
     <SolidColorBrush x:Key="CalibrationPhotoBackdropBrush" Color="#13151A" />
     <SolidColorBrush x:Key="CalibrationCaptionBrush" Color="#DC13151A" />
     <!-- Calibration annotation colors, drawn over arbitrary photos: the azure/amber pair
