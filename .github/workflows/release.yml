@@ -196,6 +196,22 @@ jobs:
         env:
           RELEASE_COMMIT: ${{ needs.metadata.outputs.commit }}
 
+      - name: Generate update manifest
+        run: |
+          ./packaging/New-UpdateManifest.ps1 `
+            -ReleaseDirectory (Join-Path 'artifacts/release' $env:RELEASE_TAG) `
+            -Tag $env:RELEASE_TAG `
+            -Repository $env:GITHUB_REPOSITORY `
+            -ServerUrl $env:GITHUB_SERVER_URL
+
+      - name: Add update manifest to checksums
+        run: |
+          $directory = Join-Path 'artifacts/release' $env:RELEASE_TAG
+          $manifest = Join-Path $directory 'latest.json'
+          $checksumPath = Join-Path $directory 'SHA256SUMS.txt'
+          $hash = (Get-FileHash -LiteralPath $manifest -Algorithm SHA256).Hash.ToLowerInvariant()
+          [IO.File]::AppendAllText($checksumPath, "$hash  latest.json`n", [Text.UTF8Encoding]::new($false))
+
       - uses: actions/upload-artifact@v4
         with:
           name: release-${{ needs.metadata.outputs.tag }}
@@ -204,6 +220,7 @@ jobs:
           path: |
             artifacts/release/${{ needs.metadata.outputs.tag }}/*.exe
             artifacts/release/${{ needs.metadata.outputs.tag }}/*.tar.gz
+            artifacts/release/${{ needs.metadata.outputs.tag }}/latest.json
             artifacts/release/${{ needs.metadata.outputs.tag }}/SHA256SUMS.txt
             artifacts/release/${{ needs.metadata.outputs.tag }}/release-notes.md
 
@@ -264,6 +281,7 @@ jobs:
           }
 
           $assets = @(Get-ChildItem -Path 'release/*.exe','release/*.tar.gz' -File | ForEach-Object FullName)
+          $assets += 'release/latest.json'
           $assets += 'release/SHA256SUMS.txt'
           $options = @('--title', "Disc Image Studio $env:RELEASE_TAG", '--notes-file', 'release/release-notes.md')
           if ($existing.Count -eq 1) {

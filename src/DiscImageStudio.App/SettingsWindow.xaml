@@ -151,18 +151,45 @@
                                 <TextBlock Text="Disc Image Studio" Style="{StaticResource CardTitle}" FontWeight="Medium"
                                            Foreground="{DynamicResource TextPrimaryBrush}" />
                                 <TextBlock Text="{Binding VersionText}" Style="{StaticResource HintText}" Margin="0,6,0,0" />
+                                <TextBlock Text="{Binding UpdateMessage}" Margin="0,4,0,0" TextWrapping="Wrap"
+                                           AutomationProperties.LiveSetting="Polite">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource HintText}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding UpdateMessage}" Value="">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding UpdateFailed}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                             </StackPanel>
-                            <Button Grid.Column="2" Style="{StaticResource GhostButton}" Padding="10,0"
-                                    VerticalAlignment="Center" Command="{Binding OpenRepositoryCommand}"
-                                    ToolTip="{Binding RepositoryUrl}"
-                                    AutomationProperties.Name="{loc:Text Xaml.GitHub}">
-                                <StackPanel Orientation="Horizontal">
-                                    <iconPacks:PackIconLucide Kind="Github" Width="16" Height="16"
-                                                              VerticalAlignment="Center" />
-                                    <TextBlock Text="{loc:Text Xaml.GitHub}" Margin="6,0,0,0"
-                                               VerticalAlignment="Center" FontSize="13" />
-                                </StackPanel>
-                            </Button>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Style="{StaticResource GhostButton}" Padding="10,0"
+                                        Command="{Binding CheckForUpdatesCommand}"
+                                        AutomationProperties.Name="{loc:Text Xaml.CheckForUpdates}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <iconPacks:PackIconLucide Kind="FileDown" Width="16" Height="16"
+                                                                  VerticalAlignment="Center" />
+                                        <TextBlock Text="{loc:Text Xaml.CheckForUpdates}" Margin="6,0,0,0"
+                                                   VerticalAlignment="Center" FontSize="13" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource GhostButton}" Padding="10,0" Margin="8,0,0,0"
+                                        VerticalAlignment="Center" Command="{Binding OpenRepositoryCommand}"
+                                        ToolTip="{Binding RepositoryUrl}"
+                                        AutomationProperties.Name="{loc:Text Xaml.GitHub}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <iconPacks:PackIconLucide Kind="Github" Width="16" Height="16"
+                                                                  VerticalAlignment="Center" />
+                                        <TextBlock Text="{loc:Text Xaml.GitHub}" Margin="6,0,0,0"
+                                                   VerticalAlignment="Center" FontSize="13" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
                         </Grid>
 
                         <TextBlock Style="{StaticResource BodyText}" Margin="0,24,0,0" TextWrapping="Wrap"
@@ -226,5 +253,6 @@
         </Border>
 
         <controls:ConfirmModal x:Name="ClearCacheConfirm" Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="30" />
+        <controls:ConfirmModal x:Name="UpdateConfirm" Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="31" />
     </Grid>
 </Window>

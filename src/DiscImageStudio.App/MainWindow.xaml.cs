@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Security;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -31,6 +32,7 @@ public partial class MainWindow : Window
     private bool _isManuallyCollapsed;
     private bool _closeApproved;
     private bool _isCloseFlowRunning;
+    private bool _isUpdateRestarting;
     private int _projectUpdateRevision;
 
     public MainWindow()
@@ -332,12 +334,25 @@ public partial class MainWindow : Window
         // workspace the snapshot/startup flow selected before Show.
         UpdateStageBars();
         _shell.MarkWindowLoaded();
+        string? updateFailure = AppUpdateService.CompleteStartupUpdate();
+        if (!string.IsNullOrWhiteSpace(updateFailure))
+        {
+            _shell.ShowToast(L.T("上次更新未完成"), updateFailure, ToastKind.Warning);
+        }
     }
 
     private async void MainWindow_Closing(object? sender, CancelEventArgs e)
     {
         if (_closeApproved)
         {
+            return;
+        }
+
+        if (_isUpdateRestarting)
+        {
+            // The update flow closes the window itself once the helper owns the file swap;
+            // a user close during that preparation must not exit before the helper is ready.
+            e.Cancel = true;
             return;
         }
 
@@ -590,8 +605,9 @@ public partial class MainWindow : Window
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettingsDialog();
 
     /// <summary>Opens the settings modal. A successful Save applies the theme immediately and
-    /// points new cache writes at the chosen folder.</summary>
-    private void OpenSettingsDialog()
+    /// points new cache writes at the chosen folder. An update request closes the dialog first;
+    /// the main window then runs the same unsaved-changes gate as a normal close.</summary>
+    private async void OpenSettingsDialog()
     {
         if (BurnConfirmModal.IsOpen) return;
 
@@ -611,9 +627,16 @@ public partial class MainWindow : Window
         };
         _shell.PropertyChanged += busyHandler;
         viewModel.RefreshBusyState();
+        bool updateRequested = false;
+        string? updatePath = null;
         try
         {
-            if (window.ShowDialog() == true && viewModel.SavedSettings is { } settings)
+            bool? result = window.ShowDialog();
+            updateRequested = window.UpdateRequested;
+            updatePath = window.PendingUpdatePath;
+            // The update request persists valid pending edits before closing, so they must be
+            // applied even though the dialog result is Cancel rather than Save.
+            if ((result == true || updateRequested) && viewModel.SavedSettings is { } settings)
             {
                 ApplySettings(settings);
             }
@@ -621,6 +644,90 @@ public partial class MainWindow : Window
         finally
         {
             _shell.PropertyChanged -= busyHandler;
+        }
+
+        if (updateRequested && updatePath is not null)
+        {
+            await RestartForUpdateAsync(updatePath);
+        }
+    }
+
+    /// <summary>Installs an already downloaded update. Dirty projects get the normal
+    /// save/discard/cancel prompt first; cancelling or a failed save abandons the update and
+    /// leaves the application running. Only after the helper signals readiness does the
+    /// window approve its own close, so the update path cannot bypass the close guard.</summary>
+    private async Task RestartForUpdateAsync(string updatePath)
+    {
+        if (_isUpdateRestarting)
+        {
+            AppUpdateService.DiscardDownloadedUpdate(updatePath);
+            return;
+        }
+
+        _isUpdateRestarting = true;
+        try
+        {
+            if (_shell.IsProjectOpen && _shell.IsDirty)
+            {
+                CancelEventArgs decision = new();
+                try
+                {
+                    await _shell.HandleWindowClosingAsync(decision);
+                }
+                catch (InvalidOperationException)
+                {
+                    AppUpdateService.DiscardDownloadedUpdate(updatePath);
+                    _shell.ShowToast(
+                        L.T("更新已取消"),
+                        L.T("请关闭当前对话框后重新检查更新。"),
+                        ToastKind.Warning);
+                    return;
+                }
+
+                if (decision.Cancel)
+                {
+                    AppUpdateService.DiscardDownloadedUpdate(updatePath);
+                    _shell.ShowToast(
+                        L.T("更新已取消"),
+                        L.T("未保存的更改仍保留在应用中。"),
+                        ToastKind.Info);
+                    return;
+                }
+            }
+
+            try
+            {
+                await new AppUpdateService().ApplyAndRestartAsync(updatePath);
+            }
+            catch (AppUpdateException exception)
+            {
+                string message = L.T(exception.Message);
+                if (!string.IsNullOrWhiteSpace(exception.Details))
+                {
+                    message += "\n" + exception.Details;
+                }
+
+                _shell.ShowToast(L.T("无法安装更新"), message, ToastKind.Error);
+                return;
+            }
+            catch (Exception exception) when (exception is IOException
+                                                  or UnauthorizedAccessException
+                                                  or NotSupportedException
+                                                  or SecurityException)
+            {
+                _shell.ShowToast(
+                    L.T("无法安装更新"),
+                    L.T("请手动下载新版本。"),
+                    ToastKind.Error);
+                return;
+            }
+
+            _closeApproved = true;
+            Close();
+        }
+        finally
+        {
+            _isUpdateRestarting = false;
         }
     }
 

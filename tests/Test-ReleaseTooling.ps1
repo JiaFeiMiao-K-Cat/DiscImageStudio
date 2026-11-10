@@ -5,6 +5,7 @@ $fixtureParent = [IO.Path]::GetFullPath((Join-Path $workspaceRoot "artifacts\tes
 $fixtureRoot = [IO.Path]::GetFullPath((Join-Path $fixtureParent ([guid]::NewGuid().ToString("N"))))
 $fixturePackaging = Join-Path $fixtureRoot "packaging"
 $fixtureHelper = Join-Path $fixturePackaging "Get-ReleaseMetadata.ps1"
+$fixtureManifestHelper = Join-Path $fixturePackaging "New-UpdateManifest.ps1"
 $testCount = 0
 
 function Assert-ChildPath([string]$Path, [string]$Parent) {
@@ -47,6 +48,27 @@ function Set-Fixture {
     [IO.File]::WriteAllText((Join-Path $fixtureRoot "CHANGELOG.md"), $Changelog, [Text.UTF8Encoding]::new($false))
 }
 
+function Set-UpdateFixture {
+    param(
+        [string]$Tag = "v1.2.3",
+        [switch]$OmitArm64
+    )
+
+    $release = Join-Path $fixtureRoot "release"
+    if (Test-Path -LiteralPath $release) {
+        Remove-Item -LiteralPath $release -Recurse -Force
+    }
+    New-Item -ItemType Directory -Path $release -Force | Out-Null
+    foreach ($rid in 'win-x64', 'win-arm64') {
+        if ($OmitArm64 -and $rid -eq 'win-arm64') {
+            continue
+        }
+        $content = [byte[]](1..(16 + $rid.Length))
+        [IO.File]::WriteAllBytes((Join-Path $release "DiscImageStudio-$Tag-$rid.exe"), $content)
+    }
+    return $release
+}
+
 function Assert-Equal($Actual, $Expected, [string]$Description) {
     if ($Actual -cne $Expected) {
         throw "$Description`: expected '$Expected', received '$Actual'."
@@ -86,6 +108,7 @@ Assert-NoReparsePoint $fixtureRoot
 try {
     New-Item -ItemType Directory -Path $fixturePackaging -Force | Out-Null
     Copy-Item -LiteralPath (Join-Path $workspaceRoot "packaging\Get-ReleaseMetadata.ps1") -Destination $fixtureHelper
+    Copy-Item -LiteralPath (Join-Path $workspaceRoot "packaging\New-UpdateManifest.ps1") -Destination $fixtureManifestHelper
 
     Invoke-Test "default version metadata without VersionSuffix remains supported" {
         Set-Fixture
@@ -217,6 +240,84 @@ try {
         Set-Fixture -Changelog "# Changelog`r`n`r`n## [1.2.3] - 2024-02-29`r`n`r`n$expectedNotes`r`n"
         $metadata = & $fixtureHelper -RequireReleaseNotes
         Assert-Equal $metadata.Notes $expectedNotes "final CRLF release notes"
+    }
+
+    foreach ($tag in @("v1.2.3", "v1.2.3-rc.1")) {
+        Invoke-Test "generate update manifest for $tag" {
+            $release = Set-UpdateFixture -Tag $tag
+            $null = & $fixtureManifestHelper -ReleaseDirectory $release -Tag $tag -Repository "example/DiscImageStudio"
+            $manifestPath = Join-Path $release "latest.json"
+            if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+                throw "Update manifest was not written."
+            }
+
+            $raw = [IO.File]::ReadAllText($manifestPath)
+            if ($raw.Contains("`r")) {
+                throw "Update manifest must use LF line endings."
+            }
+            if (-not $raw.EndsWith("`n")) {
+                throw "Update manifest must end with a newline."
+            }
+
+            $manifest = $raw | ConvertFrom-Json
+            $version = $tag.Substring(1)
+            Assert-Equal $manifest.version $version "manifest version"
+            Assert-Equal $manifest.tag $tag "manifest tag"
+            Assert-Equal $manifest.notesUrl "https://github.com/example/DiscImageStudio/releases/tag/$tag" "manifest notes url"
+            Assert-Equal @($manifest.assets.PSObject.Properties).Count 2 "manifest asset count"
+
+            foreach ($rid in 'win-x64', 'win-arm64') {
+                $asset = $manifest.assets.$rid
+                if ($null -eq $asset) {
+                    throw "Manifest is missing the $rid asset."
+                }
+                Assert-Equal $asset.url "https://github.com/example/DiscImageStudio/releases/download/$tag/DiscImageStudio-$tag-$rid.exe" "$rid asset url"
+                if ($asset.sha256 -cnotmatch '^[0-9a-f]{64}$') {
+                    throw "$rid asset sha256 is not lowercase hexadecimal: $($asset.sha256)"
+                }
+                $package = Join-Path $release "DiscImageStudio-$tag-$rid.exe"
+                Assert-Equal $asset.sha256 (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash.ToLowerInvariant() "$rid asset sha256"
+                Assert-Equal ([long]$asset.size) ([long](Get-Item -LiteralPath $package).Length) "$rid asset size"
+            }
+        }
+    }
+
+    Invoke-Test "reject update manifest without an arm64 package" {
+        $release = Set-UpdateFixture -OmitArm64
+        Assert-Rejected { & $fixtureManifestHelper -ReleaseDirectory $release -Tag "v1.2.3" -Repository "example/DiscImageStudio" } "Missing tested package"
+    }
+
+    Invoke-Test "reject update manifest for an empty package" {
+        $release = Set-UpdateFixture
+        $package = Join-Path $release "DiscImageStudio-v1.2.3-win-x64.exe"
+        [IO.File]::WriteAllBytes($package, [byte[]]::new(0))
+        Assert-Rejected { & $fixtureManifestHelper -ReleaseDirectory $release -Tag "v1.2.3" -Repository "example/DiscImageStudio" } "Tested package is empty"
+    }
+
+    Invoke-Test "reject update manifest for a missing release directory" {
+        $missing = Join-Path $fixtureRoot "missing-release"
+        Assert-Rejected { & $fixtureManifestHelper -ReleaseDirectory $missing -Tag "v1.2.3" -Repository "example/DiscImageStudio" } "Release directory does not exist"
+    }
+
+    foreach ($tag in @("1.2.3", "v1.2.3-rc.0", "v1.2.3+build.1")) {
+        Invoke-Test "reject update manifest tag $tag" {
+            $release = Set-UpdateFixture -Tag "v1.2.3"
+            Assert-Rejected { & $fixtureManifestHelper -ReleaseDirectory $release -Tag $tag -Repository "example/DiscImageStudio" } "Tag must be"
+        }
+    }
+
+    foreach ($repository in @("owner", "owner/name/extra", "owner name/repo")) {
+        Invoke-Test "reject update manifest repository $repository" {
+            $release = Set-UpdateFixture
+            Assert-Rejected { & $fixtureManifestHelper -ReleaseDirectory $release -Tag "v1.2.3" -Repository $repository } "Repository must be owner/name"
+        }
+    }
+
+    foreach ($serverUrl in @("http://github.com", "https://github.com/", "ftp://github.com")) {
+        Invoke-Test "reject update manifest server url $serverUrl" {
+            $release = Set-UpdateFixture
+            Assert-Rejected { & $fixtureManifestHelper -ReleaseDirectory $release -Tag "v1.2.3" -Repository "example/DiscImageStudio" -ServerUrl $serverUrl } "ServerUrl must be an HTTPS origin"
+        }
     }
 
     Write-Host "release-tooling: all $testCount tests passed"

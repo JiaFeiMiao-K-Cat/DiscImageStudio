@@ -15,6 +15,10 @@ Disc Image Studio es una herramienta multiplataforma de generación y grabación
 ![Contribuciones bienvenidas](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=flat-square)
 [![Licencia: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue?style=flat-square)](LICENSE)
 
+<a href="https://trendshift.io/repositories/332271?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-332271" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/332271" alt="JiaFeiMiao-K-Cat%2FDiscImageStudio | Trendshift" width="250" height="55"/></a>
+
+<a href="https://discord.gg/7nDs9H3r"><img alt="Únete a la comunidad de Discord de Disc Image Studio" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
+
 </div>
 
 > Traducción al español · [Original](README.en.md). Las capturas muestran la aplicación Windows con Español seleccionado, renderizada con `ui-snapshot`. La documentación detallada se mantiene en sus idiomas originales.
@@ -241,7 +245,7 @@ Los componentes comunes de codificación CD también toman como referencia [ECMA
 <a id="隐私与安全"></a>
 ## Privacidad y seguridad
 
-- Disc Image Studio no accede a la red, sube archivos ni recoge telemetría. Consulta la [política de privacidad](PRIVACY.md).
+- Salvo cuando el usuario busca actualizaciones manualmente en la página Acerca de, Disc Image Studio no accede a la red, sube archivos ni recoge telemetría. Consulta la [política de privacidad](PRIVACY.md).
 - No reveles vulnerabilidades en incidencias públicas. Sigue la [política de seguridad](SECURITY.md) y usa los informes privados de GitHub.
 
 <a id="contributing"></a>

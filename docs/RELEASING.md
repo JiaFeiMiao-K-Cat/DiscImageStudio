@@ -25,6 +25,7 @@ GitHub Actions 从配置读取完整版本，自动创建对应的 `vA.B.C` 或 
 3. 版本段标题必须使用 `## [1.0.27] - YYYY-MM-DD` 或 `## [1.0.27-rc.1] - YYYY-MM-DD` 的形式，将日期占位符替换为实际发布日期，且段落内容不能为空。预发布和正式版各自需要与标签完全对应的版本段；从本次发布起，新增版本段按下文约定同时提供中文和英文日志。
 4. 将版本配置和发布日志放入同一个发布准备 PR，确认 `build` 工作流通过后合并到 `main`。该次 push 的变更范围必须同时包含这两个文件，且配置中的完整版本必须实际变化，才会启动自动发布。
 5. GitHub Actions 完成检查、自动创建版本标签并生成 Release 草稿；维护者检查后手动公开。
+6. 公开后，用上一个正式版的便携 EXE 在关于页执行一次「检查更新」，确认发现新版本、下载校验、替换重启和版本号更新。`releases/latest` 不包含草稿或预发布，因此该验证只能在公开后完成。
 
 例如未来修复版在 `Directory.Build.props` 中设置：
 
@@ -79,15 +80,34 @@ DiscImageStudio-CLI-vA.B.C-linux-arm64.tar.gz
 DiscImageStudio-CLI-vA.B.C-osx-x64.tar.gz
 DiscImageStudio-CLI-vA.B.C-osx-arm64.tar.gz
 SHA256SUMS.txt
+latest.json
 ```
 
-工作流合并并验证各平台的 SHA-256 校验值，写入 Release 说明和附件 `SHA256SUMS.txt`。工作流使用内置 `GITHUB_TOKEN` 创建 **GitHub Release 草稿**，无需配置个人访问令牌（PAT）。预发布标签自动设置 prerelease 标志，正式标签创建正式版草稿。
+工作流合并并验证各平台的 SHA-256 校验值，写入 Release 说明和附件 `SHA256SUMS.txt`，并根据已测试的两个 Windows EXE 生成应用内更新清单 `latest.json`。工作流使用内置 `GITHUB_TOKEN` 创建 **GitHub Release 草稿**，无需配置个人访问令牌（PAT）。预发布标签自动设置 prerelease 标志，正式标签创建正式版草稿。
 
 维护者在 GitHub 的 [Releases 页面](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases) 检查草稿中的版本、发布说明、各平台附件和校验值，并下载验证启动后，再手动公开。可用下列命令计算 Windows 下载文件的 SHA-256，与 Release 说明中的值比较：
 
 ```powershell
 Get-FileHash .\DiscImageStudio-vA.B.C-win-x64.exe -Algorithm SHA256
 ```
+
+## 应用内更新
+
+Windows 便携 EXE 的关于页提供「检查更新」，请求固定地址：
+
+```text
+https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/releases/latest/download/latest.json
+```
+
+发布流程从已测试的 win-x64 与 win-arm64 EXE 生成该清单，记录版本、标签、更新说明链接，以及每个架构的文件 URL、SHA-256 和字节数。`releases/latest` 只指向已公开的正式版；草稿和 prerelease 不会提供给稳定版客户端。更新源一次只保留一个正式版本，不提供预发布频道或增量更新。
+
+应用内更新只支持官方仓库 `JiaFeiMiao-K-Cat/DiscImageStudio` 的正式 Release。清单地址固定在代码中，下载 URL 必须属于同一仓库的 `releases/download/` 路径，且不能带查询串、片段、用户信息或非默认端口。fork、私有镜像和 GitHub Enterprise 构建不会读取各自的 Release，也没有改写更新源的设置；这些构建请自行分发，并由用户手动替换 EXE。
+
+客户端先校验清单结构、下载 URL、字节数、SHA-256、EXE 产品版本和 PE 架构，再把文件存入 `%LOCALAPPDATA%\DiscImageStudio\updates\<版本>`。用户确认安装后，设置窗口保存自己的改动并关闭，主窗口再对未保存的工程执行与关闭窗口相同的保存/放弃/取消流程；取消保存会放弃安装并删除已下载的文件。安装开始时，应用把 EXE 复制到同卷的 `<EXE>.update`，由临时 PowerShell 辅助进程等待主程序退出后原子替换原文件。新版本启动并写入健康标记后更新才算完成；启动失败时辅助进程回滚旧 EXE 并重新启动它。辅助进程错误写入 `update-error.txt`，下次启动会在主窗口提示上次更新未完成及原因。
+
+更新期间使用命名信号量阻止另一个实例同时下载或安装，同一路径的其他实例会被要求先关闭。检查更新可随时取消；关闭设置窗口会中止下载、释放确认对话框并删除未完成的临时文件。应用目录不可写、磁盘空间不足或文件与清单不符时，界面显示可读错误并建议手动下载，不会静默退出或留下交换用临时文件。
+
+更新包和清单未做代码签名，SHA-256 只能发现传输损坏或与清单不一致的文件；能够改写 Release 的维护者仍可发布任意二进制。不要把更新源改为未经核对的第三方镜像。
 
 ### 失败重试与更正
 
@@ -182,4 +202,4 @@ Add-AppxPackage -Path ".\artifacts\msix\DiscImageStudio_1.0.26.0_x64_unsigned-de
 - 对最终包运行 Windows App Certification Kit。
 - 提供至少一张 1366×768 或更大的真实桌面截图。
 - 将 `PRIVACY.md` 发布到公开 HTTPS 页面并填写真实支持联系方式。
-- 在认证备注中说明应用生成大文件、无需登录、不联网，并包含使用 Windows IMAPI2 的实验性 CD/DVD 直接刻录功能；如实列出适用的设备、空白盘片要求与当前验证范围。
+- 在认证备注中说明应用生成大文件，除用户主动检查更新外不联网（检查更新只访问 GitHub Releases），并包含使用 Windows IMAPI2 的实验性 CD/DVD 直接刻录功能；如实列出适用的设备、空白盘片要求与当前验证范围。
