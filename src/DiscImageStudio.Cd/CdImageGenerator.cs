@@ -104,9 +104,27 @@ public static class CdImageGenerator
         };
     }
 
-    /// <summary>Writes one WAV for a Disc-at-Once audio disc: the picture as the pre-gap
-    /// (index 0) of track 1, then the music tracks without gaps, and a CUE sheet that
-    /// starts track 1 at the music. Players begin at index 1, so the picture is not played
+    /// <summary>Writes the digital silence that ends the pre-gap of an outer-music disc,
+    /// between the picture and index 1 of track 1 (see
+    /// <see cref="CdExtraLayout.HiddenPictureGuardSectors"/>).</summary>
+    public static void WriteHiddenPictureGuard(CdExtraLayout layout, Stream output,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        ArgumentNullException.ThrowIfNull(output);
+        if (!layout.MusicAtOuterRing)
+            throw new ArgumentException("The layout keeps the music on the inner rings.", nameof(layout));
+        byte[] silence = new byte[CdDiscParameters.BytesPerSector];
+        for (long sector = layout.PictureEndLbaExclusive; sector < layout.MusicStartLba; sector++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            output.Write(silence);
+        }
+    }
+
+    /// <summary>Writes one WAV for a Disc-at-Once audio disc: the picture and a silent guard
+    /// as the pre-gap (index 0) of track 1, then the music tracks without gaps, and a CUE
+    /// sheet that starts track 1 at the music. Players begin at index 1, so the picture is not played
     /// unless a listener rewinds before the first track.</summary>
     private static DiscImageResult GenerateHiddenPicture(CdImageRequest request, IReadOnlyList<string> music,
         IProgress<DiscJobProgress>? progress, CancellationToken cancellationToken)
@@ -154,6 +172,7 @@ public static class CdImageGenerator
                 value => progress?.Report(new DiscJobProgress(CdDiscModule.ModuleId, "generate",
                     $"CD picture progress {value.Fraction:P1}", value.Fraction, value.CompletedBytes,
                     value.TotalBytes, value.Elapsed)), cancellationToken, output, CdAudioByteOrder.LittleEndian, tone);
+            WriteHiddenPictureGuard(layout, file, cancellationToken);
             foreach (CdMusicTrackInfo track in tracks)
             {
                 cancellationToken.ThrowIfCancellationRequested();

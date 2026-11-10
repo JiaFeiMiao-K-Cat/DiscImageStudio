@@ -33,26 +33,33 @@ internal static class CdOuterMusicTests
     {
         CdDiscParameters parameters = new(24.5, 57.5, 300_000);
         CdExtraLayout layout = CdExtraLayout.PlanOuterMusic(parameters, [18_000, 300, 9_000]);
-        Require(layout.MusicAtOuterRing && layout.PictureStartLba == 0 && layout.PictureEndLbaExclusive == 272_700
+        Require(layout.MusicAtOuterRing && layout.PictureStartLba == 0 && layout.PictureEndLbaExclusive == 272_550
                 && layout.MusicStartLba == 272_700 && layout.MusicEndLbaExclusive == 300_000
                 && layout.Tracks.Select(track => track.StartLba).SequenceEqual(new long[] { 272_700, 290_700, 291_000 })
-                && layout.MusicSectors == 27_300 && layout.PictureSectors == 272_700,
+                && layout.MusicSectors == 27_300 && layout.PictureSectors == 272_550,
             "the picture starts at LBA 0 and the gapless music ends at the capacity");
-        Require(layout.SessionGapAreaFraction == 0
-                && Math.Abs(layout.MusicAreaFraction + layout.PictureAreaFraction - 1) < 1e-9
+        // On a burned disc the picture reached 131 samples into track 1 (audio and index are
+        // not aligned to the sample), which a player reproduced as a click; two silent
+        // seconds absorb that.
+        Require(layout.MusicStartLba - layout.PictureEndLbaExclusive == CdExtraLayout.HiddenPictureGuardSectors
+                && CdExtraLayout.HiddenPictureGuardSectors == 150,
+            "two seconds of silence separate the picture from index 1 of track 1");
+        Require(layout.SessionGapAreaFraction is > 0 and < 0.001
+                && Math.Abs(layout.MusicAreaFraction + layout.SessionGapAreaFraction + layout.PictureAreaFraction - 1) < 1e-9
                 && Math.Abs(layout.MusicAreaFraction - 27_300.0 / 300_000) < 1e-6
                 && Math.Abs(layout.MusicOuterRadiusMm - 57.5) < 1e-6
                 && Math.Abs(layout.PictureInnerRadiusMm - 24.5) < 1e-6
-                && Math.Abs(layout.PictureOuterRadiusMm - layout.MusicInnerRadiusMm) < 1e-9,
-            "music and picture share the disc without a session gap");
+                && layout.PictureOuterRadiusMm < layout.MusicInnerRadiusMm
+                && layout.MusicInnerRadiusMm - layout.PictureOuterRadiusMm < 0.05,
+            "music and picture share the disc; the silent guard between them is a hair-thin ring");
 
         CdExtraLayout limited = CdExtraLayout.PlanOuterMusic(parameters with { UsableSectors = 200_000 }, [300]);
-        Require(limited.MusicEndLbaExclusive == 200_000 && limited.PictureSectors == 199_700,
+        Require(limited.MusicEndLbaExclusive == 200_000 && limited.PictureSectors == 199_550,
             "the music ends at the usable capacity of the disc in the drive");
-        Require(CdExtraLayout.PlanOuterMusic(parameters, [300_000 - 150]).PictureSectors == 150,
-            "a two-second picture is the smallest pre-gap with content");
-        Throws<CdExtraCapacityException>(() => CdExtraLayout.PlanOuterMusic(parameters, [300_000 - 149]),
-            "music that leaves less than a two-second pre-gap");
+        Require(CdExtraLayout.PlanOuterMusic(parameters, [300_000 - 300]).PictureSectors == 150,
+            "a two-second picture is the smallest pre-gap content in front of the guard");
+        Throws<CdExtraCapacityException>(() => CdExtraLayout.PlanOuterMusic(parameters, [300_000 - 299]),
+            "music that leaves less than a two-second picture");
         Throws<ArgumentOutOfRangeException>(() => CdExtraLayout.PlanOuterMusic(parameters, [299]), "a track under four seconds");
 
         // The inner (CD-Extra) layout keeps its meaning.
@@ -208,7 +215,8 @@ internal static class CdOuterMusicTests
             Interleave: false, MusicTracks: [first, second], MusicAtOuterRing: true));
         CdExtraLayout layout = CdImageGenerator.PlanOuterMusic(parameters, [first, second]);
         Require(layout.Tracks.Select(track => track.Sectors).SequenceEqual(new long[] { 320, 401 })
-                && layout.MusicEndLbaExclusive == 14_998 && layout.PictureSectors == 14_998 - 721,
+                && layout.MusicEndLbaExclusive == 14_998 && layout.PictureSectors == 14_998 - 721 - 150
+                && layout.MusicStartLba == 14_998 - 721,
             "the layout pads the second track to whole sectors");
         byte[] file = File.ReadAllBytes(output);
         Require(file.Length == 44 + 14_998 * 2352 && result.OutputPath == output, "one WAV holds the picture and the music");
@@ -220,11 +228,16 @@ internal static class CdOuterMusicTests
         int pictureBytes = checked((int)layout.PictureSectors * 2352);
         Require(file.AsSpan(44, pictureBytes).SequenceEqual(reference.AsSpan(44, pictureBytes)),
             "the picture bytes equal whole-disc drawing at the same addresses");
+        int musicOffset = 44 + checked((int)layout.MusicStartLba * 2352);
+        Require(musicOffset - 44 - pictureBytes == 150 * 2352
+                && file.AsSpan(44 + pictureBytes, 150 * 2352).IndexOfAnyExcept((byte)0) < 0
+                && file.AsSpan(44 + pictureBytes - 2352, 2352).IndexOfAnyExcept((byte)0) >= 0,
+            "the pre-gap ends with two seconds of digital silence behind the picture");
         byte[] firstPcm = File.ReadAllBytes(first)[44..];
         byte[] secondPcm = File.ReadAllBytes(second)[44..];
-        Require(file.AsSpan(44 + pictureBytes, firstPcm.Length).SequenceEqual(firstPcm)
-                && file.AsSpan(44 + pictureBytes + 320 * 2352, secondPcm.Length).SequenceEqual(secondPcm)
-                && file.AsSpan(44 + pictureBytes + 320 * 2352 + secondPcm.Length).IndexOfAnyExcept((byte)0) < 0,
+        Require(file.AsSpan(musicOffset, firstPcm.Length).SequenceEqual(firstPcm)
+                && file.AsSpan(musicOffset + 320 * 2352, secondPcm.Length).SequenceEqual(secondPcm)
+                && file.AsSpan(musicOffset + 320 * 2352 + secondPcm.Length).IndexOfAnyExcept((byte)0) < 0,
             "the music samples follow unchanged and the last sector is padded with silence");
 
         string cue = File.ReadAllText(Path.ChangeExtension(output, ".cue"));

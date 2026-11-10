@@ -29,8 +29,11 @@ public sealed record CdExtraAudioTrackLayout(int Number, long StartLba, long Sec
 /// instead (<see cref="PlanOuterMusic"/>): the picture is the index 0 pre-gap of track 1
 /// from LBA 0, the music tracks follow without gaps and end at the usable capacity. The
 /// table of contents points at index 1 of track 1, so players start with the music; every
-/// address is fixed before writing. There <see cref="Session2StartLba"/> is 0 and
-/// <see cref="DataEndLbaExclusive"/> is the end of the picture.
+/// address is fixed before writing. The last <see cref="HiddenPictureGuardSectors"/> of the
+/// pre-gap are digital silence, because on a burned disc the audio is not aligned with the
+/// index to the sample and players start a little before or behind it. There
+/// <see cref="Session2StartLba"/> is 0 and <see cref="DataEndLbaExclusive"/> is the end of
+/// the picture.
 /// </remarks>
 public sealed record CdExtraLayout(
     CdDiscParameters Parameters,
@@ -62,6 +65,13 @@ public sealed record CdExtraLayout(
     /// a pre-gap always has.</summary>
     public const int MinimumHiddenPictureSectors = 150;
 
+    /// <summary>Digital silence between the hidden picture and index 1 of track 1: the two
+    /// seconds of a standard pause. Audio and index are not aligned to the sample on a
+    /// burned disc (write and read offsets): without the guard the picture's full-scale
+    /// samples reached 131 samples into the first track on a test disc and were heard as a
+    /// click when the track started.</summary>
+    public const int HiddenPictureGuardSectors = 150;
+
     /// <summary>Single-session layout: picture in the pre-gap of track 1, music behind it.</summary>
     public bool MusicAtOuterRing { get; init; }
 
@@ -89,7 +99,11 @@ public sealed record CdExtraLayout(
     /// <summary>Area shares of the program area from LBA 0 to the end of the recording.
     /// Under constant linear velocity they equal the sector shares for a constant pitch.</summary>
     public double MusicAreaFraction => AreaFraction(MusicStartLba, MusicEndLbaExclusive);
-    public double SessionGapAreaFraction => MusicAtOuterRing ? 0 : AreaFraction(MusicEndLbaExclusive, Session2StartLba);
+    /// <summary>The ring between music and picture that carries neither: the session gap
+    /// of a CD-Extra disc, or the silent guard in front of the music on the outer rings.</summary>
+    public double SessionGapAreaFraction => MusicAtOuterRing
+        ? AreaFraction(PictureEndLbaExclusive, MusicStartLba)
+        : AreaFraction(MusicEndLbaExclusive, Session2StartLba);
     public double PictureAreaFraction => AreaFraction(PictureStartLba, PictureEndLbaExclusive);
 
     public double RadiusAtLba(long lba)
@@ -174,9 +188,9 @@ public sealed record CdExtraLayout(
     }
 
     /// <summary>Plans a single-session disc with the music on the outer rings: the picture
-    /// fills the pre-gap of track 1 from LBA 0 and the tracks follow without gaps, ending at
-    /// the usable capacity. Nothing depends on the recorder: the disc is written
-    /// Disc-at-Once from a known layout.</summary>
+    /// fills the pre-gap of track 1 from LBA 0, a silent guard follows, and the tracks come
+    /// behind it without gaps, ending at the usable capacity. Nothing depends on the
+    /// recorder: the disc is written Disc-at-Once from a known layout.</summary>
     public static CdExtraLayout PlanOuterMusic(CdDiscParameters parameters, IReadOnlyList<long> trackSectors)
     {
         ArgumentNullException.ThrowIfNull(parameters);
@@ -184,16 +198,17 @@ public sealed record CdExtraLayout(
         ValidateTracks(trackSectors);
         long end = Math.Min(parameters.OutputSectors, parameters.Sectors);
         long music = checked(trackSectors.Sum());
-        long picture = end - music;
+        long picture = end - music - HiddenPictureGuardSectors;
         if (picture < MinimumHiddenPictureSectors)
         {
             throw new CdExtraCapacityException(
                 $"The music needs {music} sectors of the {end} usable sectors, leaving {Math.Max(0, picture)} "
-                + $"for the picture; at least {MinimumHiddenPictureSectors} are required.");
+                + $"for the picture behind a {HiddenPictureGuardSectors}-sector silent guard; "
+                + $"at least {MinimumHiddenPictureSectors} are required.");
         }
 
         List<CdExtraAudioTrackLayout> tracks = new(trackSectors.Count);
-        long start = picture;
+        long start = picture + HiddenPictureGuardSectors;
         for (int index = 0; index < trackSectors.Count; index++)
         {
             tracks.Add(new CdExtraAudioTrackLayout(index + 1, start, trackSectors[index]));

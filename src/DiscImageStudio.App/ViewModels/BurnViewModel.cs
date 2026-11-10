@@ -894,8 +894,8 @@ public partial class BurnViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Outer-music request: one Disc-at-Once audio burn whose content is the picture (the
-    /// pre-gap of track 1) followed by the padded music tracks. Every address is known before
+    /// Outer-music request: one Disc-at-Once audio burn whose content is the picture and a
+    /// silent guard (together the pre-gap of track 1) followed by the padded music tracks. Every address is known before
     /// writing, so nothing is regenerated during the burn. The music files are verified when
     /// their samples are read; a file changed after planning fails the burn.
     /// </summary>
@@ -928,11 +928,12 @@ public partial class BurnViewModel : ObservableObject
                 using CdMusicPin pin = CdMusicFile.PinUnchanged(tracks);
                 CdTrackGenerator.GenerateToStream(imagePath, output, picture, interleave,
                     cancellationToken: token, audioByteOrder: CdAudioByteOrder.LittleEndian, tone: capturedTone);
+                CdImageGenerator.WriteHiddenPictureGuard(layout, output, token);
                 foreach (CdMusicTrackInfo track in tracks)
                     pin.WritePaddedPcm(track, output, token);
             },
             writeSpeed,
-            CdAudioLayout: new CdAudioDiscLayout(layout.PictureSectors, tracks.Select(track => track.RecordedSectors).ToArray()));
+            CdAudioLayout: new CdAudioDiscLayout(layout.MusicStartLba, tracks.Select(track => track.RecordedSectors).ToArray()));
     }
 
     /// <summary>Path, size and modification time of every music file: replacing a WAV after

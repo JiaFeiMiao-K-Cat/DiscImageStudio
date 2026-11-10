@@ -121,7 +121,7 @@ DVD 的 `IDvdDataSession` 隔离现有 COM 调用，保留介质检查、缓冲�
 
 CD-Extra 的地址计算集中在 `CdExtraLayout`（Track-at-Once：曲目之间 152 扇区，第 1 区段到第 2 区段数据之间 11,400 扇区，数据轨末尾 150 扇区后间隙）；`CdMusicFile` 只接受 44.1 kHz、16 位、立体声 PCM WAV，并原样输出补齐到整扇区和 4 秒下限的 PCM。第 2 区段复用数据盘生成器：`CdDataLayoutPlan` 记录卷起点 `VolumeStartLba`，元数据、文件和绘图范围都使用绝对 LBA；`Iso9660ImageWriter` 的 `lbaBias` 按 `mkisofs -C` 约定把卷空间大小、路径表、目录和文件 extent 写成绝对地址，偏移为 0 时与单区段数据盘的输出相同。图片仍按整盘坐标采样，同一张设计图在单区段数据盘和 CD-Extra 中落在相同的物理位置。同名 `.iso.json`（`cd-extra-v1`）记录起点与布局，供读回预览使用。
 
-音乐在外圈时不是 CD-Extra，而是单区段音频盘：`CdExtraLayout.PlanOuterMusic` 把图片放在 LBA 0 到音乐起点之前（第 1 轨的预间隙），音乐首尾相接排到可用容量末尾，布局记录的 `MusicAtOuterRing` 为真、没有区段间隔。`CdImageGenerator` 用 `HiddenPictureParameters` 把音轨生成器限制在图片范围内（固定源图比例，使截止点不改变图片缩放），随后原样追加每首音乐，导出为一个 WAV 和带 `INDEX 00` 的 CUE。刻录沿用 CD DAO 路径：`OpticalBurnRequest.CdAudioLayout`（预间隙扇区数与各轨扇区数）让 `DynamicCdRawImageSession` 对 IMAPI 原始镜像生成器调用 `AddSpecialPregap` 和逐轨 `AddTrack`；各段由 `SequentialSliceSource` 从同一条只进流里按顺序切出，乱序读取会报错而不是给出错位的数据。界面状态 `CdMusicAtOuterRing`（默认真）与工程字段 `cdExtra.musicAtOuterRing`（缺省为假，即内圈）决定走哪条路径；外圈音乐不能与随盘文件同时使用，规划器以 `FilesWithOuterMusic` 报告。
+音乐在外圈时不是 CD-Extra，而是单区段音频盘：`CdExtraLayout.PlanOuterMusic` 把图片放在 LBA 0 到音乐起点之前（第 1 轨的预间隙），预间隙的最后 150 扇区（`HiddenPictureGuardSectors`）是数字静音，用来吸收音频数据与索引之间几毫秒的错位（写入与读取偏移）；音乐首尾相接排到可用容量末尾，布局记录的 `MusicAtOuterRing` 为真、没有区段间隔。`CdImageGenerator` 用 `HiddenPictureParameters` 把音轨生成器限制在图片范围内（固定源图比例，使截止点不改变图片缩放），随后原样追加每首音乐，导出为一个 WAV 和带 `INDEX 00` 的 CUE。刻录沿用 CD DAO 路径：`OpticalBurnRequest.CdAudioLayout`（预间隙扇区数与各轨扇区数）让 `DynamicCdRawImageSession` 对 IMAPI 原始镜像生成器调用 `AddSpecialPregap` 和逐轨 `AddTrack`；各段由 `SequentialSliceSource` 从同一条只进流里按顺序切出，乱序读取会报错而不是给出错位的数据。界面状态 `CdMusicAtOuterRing`（默认真）与工程字段 `cdExtra.musicAtOuterRing`（缺省为假，即内圈）决定走哪条路径；外圈音乐不能与随盘文件同时使用，规划器以 `FilesWithOuterMusic` 报告。
 
 ### DVD
 

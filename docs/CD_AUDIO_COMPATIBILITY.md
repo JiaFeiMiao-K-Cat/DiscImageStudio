@@ -42,10 +42,13 @@ CD 工程在设计页的「音乐」卡片中选择「音乐 + 图片」并添�
 | 区域 | 位置 | 内容 |
 | --- | --- | --- |
 | 标准预间隙 | LBA −150 到 −1 | 2 秒静音，由镜像生成器写入 |
-| 图片 | LBA 0 到 P−1 | 第 1 轨的索引 0（预间隙）：按音轨方式绘制的图片 |
+| 图片 | LBA 0 到 P−151 | 第 1 轨的索引 0（预间隙）：按音轨方式绘制的图片 |
+| 静音保护段 | LBA P−150 到 P−1 | 预间隙的最后 2 秒：数字静音 |
 | 音乐 | LBA P 到可用容量末尾 | 第 1 轨的索引 1 起，各曲目首尾相接 |
 
-P 等于可用扇区数减去音乐扇区数，所以音乐总是贴着盘片外缘；音乐越长，图片区越小。目录（TOC）把第 1 轨的起点记在 P，CD 机从这里开始播放。图片的映射、延迟交织和影调与「整盘图片」的音轨完全相同，只是在音乐起点处截止；它至少要有 150 扇区。
+P 等于可用扇区数减去音乐扇区数，所以音乐总是贴着盘片外缘；音乐越长，图片区越小。目录（TOC）把第 1 轨的起点记在 P，CD 机从这里开始播放。图片的映射、延迟交织和影调与「整盘图片」的音轨完全相同，只是在音乐起点之前 150 扇区处截止；它至少要有 150 扇区。
+
+图片和第 1 首之间的 150 扇区（2 秒）是数字静音。刻出来的盘上，音频数据和索引并不精确到采样对齐（刻录机的写入偏移、读取设备的偏移都会让它错开几毫秒），CD 机起播的位置也各不相同。第一次实刻时图片紧贴第 1 首，回读测得图片的满幅采样越过第 1 首起点 131 个采样（约 3 毫秒），播放时就是 0:00 处的一声咔响。留出静音后，错开的部分落在静音里。
 
 程序内刻录（实验性）走与「整盘图片」音轨相同的 CD DAO 路径：把图片和音乐作为一条连续的数据流交给 Windows 的原始 CD 镜像生成器，图片作为第 1 轨的预间隙，每首音乐各成一轨。开始生成数据时程序先确认每个音乐文件与规划时一致，并在写完前阻止其他程序修改或删除它们。这种写入没有模拟写入选项。
 
@@ -62,9 +65,9 @@ FILE "disc.wav" WAVE
 
 用外部软件刻录时必须整盘一次写入（DAO／SAO）并使用这个 CUE，例如 ImgBurn 的「Write image file to disc」或 `cdrecord -dao cuefile=disc.cue`；Track-at-Once 会把预间隙写成静音，图片就没有了。命令行用 `cd-generate --music 文件夹 --output disc.wav`（`--music-position` 默认为 `outer`）。读回预览显示整个文件：图片在内，音乐表现为外缘的一圈噪声纹理，与实际盘面一致。
 
-外圈布局尚未实盘验证：很长的预间隙（几十分钟）在不同 CD 机上的寻轨和时间显示、以及各光驱的 DAO 写入，都有待实测。
+外圈布局实刻过一张盘，由此发现并修正了上面的咔声问题；修正后的盘尚未复测。很长的预间隙（几十分钟）在不同 CD 机上的寻轨和时间显示、以及各光驱的 DAO 写入，都有待实测。
 
-English: with "Music + picture", CD players play the music and never the picture. "Music position" selects the disc structure. **Outer (default)**: one Disc-at-Once audio session; the picture is the index 0 pre-gap of track 1 from LBA 0 and the gapless music ends at the usable capacity. Every address is fixed before writing and there is no session gap, but the picture exists as audio samples in front of track 1 (rewinding past the start of track 1 plays it as noise) and disc files are not possible. The export is one WAV with a CUE sheet whose track 1 has `INDEX 00 00:00:00`; it must be burned Disc-at-Once. **Inner**: a CD-Extra disc, described below. The inner layout has been burned once and plays on a CD player; the outer layout has not been verified on a physical recorder yet.
+English: with "Music + picture", CD players play the music and never the picture. "Music position" selects the disc structure. **Outer (default)**: one Disc-at-Once audio session; the picture is the index 0 pre-gap of track 1 from LBA 0 and the gapless music ends at the usable capacity. The last two seconds of the pre-gap are digital silence, because audio and index are not aligned to the sample on a burned disc and the picture would otherwise reach into track 1 (a first burn without the silence clicked at 0:00). Every address is fixed before writing and there is no session gap, but the picture exists as audio samples in front of track 1 (rewinding past the start of track 1 plays it as noise) and disc files are not possible. The export is one WAV with a CUE sheet whose track 1 has `INDEX 00 00:00:00`; it must be burned Disc-at-Once. **Inner**: a CD-Extra disc, described below. The inner layout has been burned once and plays on a CD player; the outer layout has not been verified on a physical recorder yet.
 
 ### 音乐在内圈：CD-Extra
 

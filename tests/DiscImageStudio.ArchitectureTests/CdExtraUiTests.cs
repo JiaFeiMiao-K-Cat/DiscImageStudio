@@ -592,9 +592,11 @@ internal static class CdExtraUiTests
 
         RunGuide(shell.Design);
         Require(shell.Design.CdExtraPlan is { IsValid: true, DataPlan: null, Layout: { MusicAtOuterRing: true } layout }
-                && layout.MusicEndLbaExclusive == 39_998 && layout.PictureSectors == 39_998 - 3_501
+                && layout.MusicEndLbaExclusive == 39_998 && layout.MusicStartLba == 39_998 - 3_501
+                && layout.PictureSectors == 39_998 - 3_501 - CdExtraLayout.HiddenPictureGuardSectors
                 && shell.Design.CdExtraRings is { } rings
-                && Math.Abs(rings.PictureOuterMm - rings.MusicInnerMm) < 1e-9 && rings.MusicOuterMm > rings.MusicInnerMm
+                && rings.PictureOuterMm < rings.MusicInnerMm && rings.MusicInnerMm - rings.PictureOuterMm < 0.05
+                && rings.MusicOuterMm > rings.MusicInnerMm
                 && Math.Abs(rings.PictureInnerMm - 24.5) < 1e-6,
             "the guide puts the picture inside and the music ring at the edge");
         Require(music.HasLayout && !music.HasSessionGap && music.GapShareText.Length == 0 && !music.HasProblem
@@ -657,7 +659,7 @@ internal static class CdExtraUiTests
         Require(request.MediaKind == OpticalBurnMediaKind.CdAudio && request.ContentLength == 14_998L * 2352
                 && request.CdAudioLayout is { PregapSectors: 14_998 - 3_501 } tracks
                 && tracks.TrackSectors.SequenceEqual(new long[] { 2_000, 1_501 }),
-            "one audio burn: the picture as the pre-gap of track 1, then both tracks");
+            "one audio burn: the picture and its silent guard as the pre-gap of track 1, then both tracks");
         using MemoryStream burned = new();
         request.ProduceContent(burned, CancellationToken.None);
         string wave = Path.Combine(directory, "outer.wav");
