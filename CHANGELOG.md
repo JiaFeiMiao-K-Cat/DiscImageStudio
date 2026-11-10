@@ -6,14 +6,10 @@
 
 - Windows 应用宿主设置 `CetCompat=false`，作为 #229 所报启动失败的兼容性处理；这会降低该应用进程的硬件影子栈保护，不修改系统级安全设置。受影响原机上的启动结果仍待验证。
 - 新增 Windows ARM64 自包含单文件 EXE；Windows x64 与 ARM64 分别在原生 runner 上构建并对最终发布文件执行自检、音轨生成和 GUI 截图检查，Release 复用这些已测试制品。ARM64 使用 Windows 11，CI 仅覆盖软件检查，尚未验证实盘刻录。
-- 设计页支持从资源管理器拖入单张或多张图片，沿用按钮导入的图层缩放和失败提示；忽略文件夹及非图片文件，任务执行期间禁用导入。
-- 预览生成失败时一律清空旧图和导出入口，状态栏与占位区只保留失败原因；切换界面语言会重新表述失败，不会恢复之前的画面。
+- 设计页支持从资源管理器拖入单张或多张图片。
 - 设计页占用区引导改用 CD、DVD、BD 的真实布局规划器，并按可用（可写）容量计算，包含文件系统元数据、逐文件扇区取整与对齐；与 #96 的碎片化放置共用与图片无关的元数据预留。外圈放置文件时同时标出内圈元数据，支持多个环形区域。文件夹或盘片参数变化后延迟合并计算，图片编辑不再触发重算。
-- 设计画布的占用区引导改为主题蓝色，并绘制在全部图层与选择框之上；同时提高不透明度，亮色画面不再遮住引导。
-- 影调与预览页的文件区叠加和对应图例同步改为主题蓝色；影调面板中的图例移到设计画布左下角，不再占用右侧轨道高度。
-- 设计页图层卡片移除上移／下移／删除按钮：排序继续使用拖拽，删除保留右键菜单与 Del 键；随盘文件的选择按钮文案统一为「浏览…」。
-- 移除「显示数据可能占用区域」开关，蓝色占用区引导改为默认始终显示。
 - 生成 CD／DVD 数据盘 ISO 时校验卷标长度：超过 Joliet 的 16 个字符会在写入前报错，不再静默截断；导出页的卷标输入限制为 16 个字符并显示提示，蓝光 UDF 卷标不受影响。
+- 关于页在 GitHub 按钮左侧新增「检查更新」：从上游 GitHub Release 的 `latest.json` 获取正式版信息，按当前处理器架构下载便携 EXE，核对长度与 SHA-256 后替换并重启；替换失败或新版本启动即退出时恢复旧 EXE，应用目录不可写时提示手动下载。更新包与清单未签名，完整性只相对发布清单有意义。
 
 ### English
 
@@ -27,6 +23,7 @@
 - Removed the move-up, move-down, and delete buttons from the design layer card. Reordering stays on drag, and deletion remains available from the row menu and the Del key. The disc-file picker buttons now read "Browse…".
 - Removed the "Show data occupancy area" toggle; the blue guide is always visible.
 - Validate volume-label length when generating CD/DVD data ISOs: labels longer than Joliet's 16 characters now fail before writing instead of being silently truncated. The export page limits label input to 16 characters with a hint; Blu-ray UDF labels are unaffected.
+- Add "Check for updates" to the About page, left of the GitHub button. It reads the stable release manifest (`latest.json`) from upstream GitHub Releases, downloads the portable EXE for the current processor architecture, verifies its length and SHA-256, then replaces the running file and restarts. A failed replacement, or a new build that exits during startup, restores the old EXE; a non-writable application folder prompts a manual download. The manifest and EXE remain unsigned, so integrity only holds relative to the published manifest.
 
 ## [1.5.0] - 2026-11-07
 

@@ -15,6 +15,10 @@ Disc Image Studio, herhangi bir kayıt sürücüsüyle herhangi bir DVD / CD / t
 ![Contributions welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=flat-square)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue?style=flat-square)](LICENSE)
 
+<a href="https://trendshift.io/repositories/332271?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-332271" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/332271" alt="JiaFeiMiao-K-Cat%2FDiscImageStudio | Trendshift" width="250" height="55"/></a>
+
+<a href="https://discord.gg/7nDs9H3r"><img alt="Disc Image Studio Discord topluluğuna katılın" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
+
 </div>
 
 ---
@@ -201,7 +205,7 @@ Ortak CD kodlama bileşenleri ayrıca [ECMA-130, 2. baskı (CD-ROM, 1996)](https
 
 ## Gizlilik ve Güvenlik
 
-- Disc Image Studio ağa erişmez, dosya yüklemez veya telemetri verisi toplamaz. Bkz. [Gizlilik Politikası](PRIVACY.md).
+- Kullanıcı Hakkında sayfasından güncellemeleri elle denetlemediği sürece Disc Image Studio ağa erişmez, dosya yüklemez veya telemetri verisi toplamaz. Bkz. [Gizlilik Politikası](PRIVACY.md).
 - Güvenlik açıklarını herkese açık sorun (issue) kayıtlarında paylaşmayın. [Güvenlik Politikasını](SECURITY.md) izleyin ve GitHub'ın özel güvenlik bildirimi özelliğini kullanın.
 
 ## Katkıda Bulunma

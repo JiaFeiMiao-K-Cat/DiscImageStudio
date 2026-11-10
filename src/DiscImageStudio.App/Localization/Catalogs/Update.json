@@ -1,0 +1,299 @@
+{
+  "正在检查更新": {
+    "zh-CN": "正在检查更新",
+    "en": "Checking for updates",
+    "zh-TW": "正在檢查更新",
+    "ja": "アップデートを確認しています",
+    "tr": "Güncellemeler denetleniyor",
+    "es": "Buscando actualizaciones",
+    "cs": "Kontrola aktualizací"
+  },
+  "已是最新版本。": {
+    "zh-CN": "已是最新版本。",
+    "en": "You are using the latest version.",
+    "zh-TW": "已是最新版本。",
+    "ja": "最新バージョンです。",
+    "tr": "En son sürümü kullanıyorsunuz.",
+    "es": "Ya tienes la última versión.",
+    "cs": "Používáte nejnovější verzi."
+  },
+  "发现新版本 {0}。": {
+    "zh-CN": "发现新版本 {0}。",
+    "en": "Version {0} is available.",
+    "zh-TW": "發現新版本 {0}。",
+    "ja": "バージョン {0} を利用できます。",
+    "tr": "{0} sürümü mevcut.",
+    "es": "La versión {0} está disponible.",
+    "cs": "K dispozici je nová verze {0}."
+  },
+  "发现新版本 {0}。是否下载并安装？应用将重新启动。": {
+    "zh-CN": "发现新版本 {0}。是否下载并安装？应用将重新启动。",
+    "en": "Version {0} is available. Download and install it now? The application will restart.",
+    "zh-TW": "發現新版本 {0}。要立即下載並安裝嗎？應用程式將重新啟動。",
+    "ja": "バージョン {0} を利用できます。今すぐダウンロードしてインストールしますか？アプリは再起動します。",
+    "tr": "{0} sürümü mevcut. Şimdi indirip kurulsun mu? Uygulama yeniden başlatılacak.",
+    "es": "La versión {0} está disponible. ¿Quieres descargarla e instalarla ahora? La aplicación se reiniciará.",
+    "cs": "K dispozici je nová verze {0}. Stáhnout a nainstalovat ji nyní? Aplikace se restartuje."
+  },
+  "下载并安装": {
+    "zh-CN": "下载并安装",
+    "en": "Download and install",
+    "zh-TW": "下載並安裝",
+    "ja": "ダウンロードしてインストール",
+    "tr": "İndir ve kur",
+    "es": "Descargar e instalar",
+    "cs": "Stáhnout a nainstalovat"
+  },
+  "应用更新": {
+    "zh-CN": "应用更新",
+    "en": "Application update",
+    "zh-TW": "應用程式更新",
+    "ja": "アプリのアップデート",
+    "tr": "Uygulamayı güncelle",
+    "es": "Actualizar la aplicación",
+    "cs": "Aktualizace aplikace"
+  },
+  "正在下载更新：{0}%": {
+    "zh-CN": "正在下载更新：{0}%",
+    "en": "Downloading update: {0}%",
+    "zh-TW": "正在下載更新：{0}%",
+    "ja": "アップデートをダウンロードしています: {0}%",
+    "tr": "Güncelleme indiriliyor: %{0}",
+    "es": "Descargando actualización: {0}%",
+    "cs": "Stahování aktualizace: {0} %"
+  },
+  "更新已下载，正在重启应用。": {
+    "zh-CN": "更新已下载，正在重启应用。",
+    "en": "The update has been downloaded. The application will restart.",
+    "zh-TW": "更新已下載，應用程式將重新啟動。",
+    "ja": "アップデートをダウンロードしました。アプリを再起動します。",
+    "tr": "Güncelleme indirildi. Uygulama yeniden başlatılacak.",
+    "es": "La actualización se ha descargado. La aplicación se reiniciará.",
+    "cs": "Aktualizace je stažena. Aplikace se restartuje."
+  },
+  "检查更新失败：{0}": {
+    "zh-CN": "检查更新失败：{0}",
+    "en": "Update check failed: {0}",
+    "zh-TW": "檢查更新失敗：{0}",
+    "ja": "アップデートの確認に失敗しました: {0}",
+    "tr": "Güncelleme denetimi başarısız: {0}",
+    "es": "No se pudo buscar actualizaciones: {0}",
+    "cs": "Kontrola aktualizací selhala: {0}"
+  },
+  "下载更新失败：{0}": {
+    "zh-CN": "下载更新失败：{0}",
+    "en": "Update download failed: {0}",
+    "zh-TW": "下載更新失敗：{0}",
+    "ja": "アップデートのダウンロードに失敗しました: {0}",
+    "tr": "Güncelleme indirilemedi: {0}",
+    "es": "No se pudo descargar la actualización: {0}",
+    "cs": "Stažení aktualizace selhalo: {0}"
+  },
+  "已取消更新。": {
+    "zh-CN": "已取消更新。",
+    "en": "Update cancelled.",
+    "zh-TW": "已取消更新。",
+    "ja": "アップデートをキャンセルしました。",
+    "tr": "Güncelleme iptal edildi.",
+    "es": "Actualización cancelada.",
+    "cs": "Aktualizace byla zrušena."
+  },
+  "未找到更新信息。": {
+    "zh-CN": "未找到更新信息。",
+    "en": "No update information was found.",
+    "zh-TW": "找不到更新資訊。",
+    "ja": "アップデート情報が見つかりません。",
+    "tr": "Güncelleme bilgisi bulunamadı.",
+    "es": "No se encontró información de actualización.",
+    "cs": "Informace o aktualizaci nebyly nalezeny."
+  },
+  "更新信息无效。": {
+    "zh-CN": "更新信息无效。",
+    "en": "The update information is invalid.",
+    "zh-TW": "更新資訊無效。",
+    "ja": "アップデート情報が無効です。",
+    "tr": "Güncelleme bilgisi geçersiz.",
+    "es": "La información de actualización no es válida.",
+    "cs": "Informace o aktualizaci jsou neplatné."
+  },
+  "更新文件校验失败。": {
+    "zh-CN": "更新文件校验失败。",
+    "en": "The update file failed verification.",
+    "zh-TW": "更新檔案驗證失敗。",
+    "ja": "アップデートファイルの検証に失敗しました。",
+    "tr": "Güncelleme dosyası doğrulanamadı.",
+    "es": "No se pudo verificar el archivo de actualización.",
+    "cs": "Ověření souboru aktualizace selhalo."
+  },
+  "当前系统架构不支持应用内更新。": {
+    "zh-CN": "当前系统架构不支持应用内更新。",
+    "en": "This system architecture does not support in-app updates.",
+    "zh-TW": "目前系統架構不支援應用程式內更新。",
+    "ja": "このシステムアーキテクチャはアプリ内アップデートに対応していません。",
+    "tr": "Bu sistem mimarisi uygulama içi güncellemeleri desteklemiyor.",
+    "es": "La arquitectura de este sistema no admite actualizaciones desde la aplicación.",
+    "cs": "Tato architektura systému nepodporuje aktualizace v aplikaci."
+  },
+  "应用内更新仅支持便携版 EXE。": {
+    "zh-CN": "应用内更新仅支持便携版 EXE。",
+    "en": "In-app updates are only supported for the portable EXE.",
+    "zh-TW": "應用程式內更新僅支援可攜版 EXE。",
+    "ja": "アプリ内アップデートはポータブル EXE のみに対応しています。",
+    "tr": "Uygulama içi güncellemeler yalnızca taşınabilir EXE için desteklenir.",
+    "es": "Las actualizaciones desde la aplicación solo se admiten para el EXE portátil.",
+    "cs": "Aktualizace v aplikaci jsou podporovány pouze pro přenosný EXE."
+  },
+  "无法写入应用所在目录，请手动下载新版本。": {
+    "zh-CN": "无法写入应用所在目录，请手动下载新版本。",
+    "en": "The application folder is not writable. Download the new version manually.",
+    "zh-TW": "無法寫入應用程式所在目錄，請手動下載新版本。",
+    "ja": "アプリのフォルダーに書き込めません。新しいバージョンを手動でダウンロードしてください。",
+    "tr": "Uygulama klasörüne yazılamıyor. Yeni sürümü el ile indirin.",
+    "es": "No se puede escribir en la carpeta de la aplicación. Descarga la nueva versión manualmente.",
+    "cs": "Do složky aplikace nelze zapisovat. Stáhněte novou verzi ručně."
+  },
+  "无法启动更新程序。": {
+    "zh-CN": "无法启动更新程序。",
+    "en": "The updater could not be started.",
+    "zh-TW": "無法啟動更新程式。",
+    "ja": "アップデートプログラムを起動できませんでした。",
+    "tr": "Güncelleme başlatılamadı.",
+    "es": "No se pudo iniciar la actualización.",
+    "cs": "Aktualizaci nelze spustit."
+  },
+  "检查更新超时。": {
+    "zh-CN": "检查更新超时。",
+    "en": "The update check timed out.",
+    "zh-TW": "檢查更新逾時。",
+    "ja": "アップデートの確認がタイムアウトしました。",
+    "tr": "Güncelleme denetimi zaman aşımına uğradı.",
+    "es": "Se agotó el tiempo de espera para buscar actualizaciones.",
+    "cs": "Vypršel časový limit pro kontrolu aktualizací."
+  },
+  "下载更新超时。": {
+    "zh-CN": "下载更新超时。",
+    "en": "The update download timed out.",
+    "zh-TW": "下載更新逾時。",
+    "ja": "アップデートのダウンロードがタイムアウトしました。",
+    "tr": "Güncelleme indirmesi zaman aşımına uğradı.",
+    "es": "Se agotó el tiempo de espera para descargar la actualización.",
+    "cs": "Vypršel časový limit pro stažení aktualizace."
+  },
+  "更新已下载。请修正设置后再次安装。": {
+    "zh-CN": "更新已下载。请修正设置后再次安装。",
+    "en": "The update has been downloaded. Fix the settings, then install it again.",
+    "zh-TW": "更新已下載。請修正設定後再安裝。",
+    "ja": "アップデートをダウンロードしました。設定を修正してから、もう一度インストールしてください。",
+    "tr": "Güncelleme indirildi. Ayarları düzeltip yeniden yükleyin.",
+    "es": "La actualización se ha descargado. Corrige la configuración y vuelve a instalarla.",
+    "cs": "Aktualizace je stažena. Opravte nastavení a potom ji nainstalujte znovu."
+  },
+  "更新已取消": {
+    "zh-CN": "更新已取消",
+    "en": "Update cancelled",
+    "zh-TW": "更新已取消",
+    "ja": "アップデートをキャンセルしました",
+    "tr": "Güncelleme iptal edildi",
+    "es": "Actualización cancelada",
+    "cs": "Aktualizace zrušena"
+  },
+  "请关闭当前对话框后重新检查更新。": {
+    "zh-CN": "请关闭当前对话框后重新检查更新。",
+    "en": "Close the current dialog, then check for updates again.",
+    "zh-TW": "請關閉目前的對話方塊後重新檢查更新。",
+    "ja": "現在のダイアログを閉じてから、もう一度アップデートを確認してください。",
+    "tr": "Geçerli iletişim kutusunu kapatıp güncellemeleri yeniden denetleyin.",
+    "es": "Cierra el cuadro de diálogo actual y vuelve a buscar actualizaciones.",
+    "cs": "Zavřete aktuální dialog a poté znovu zkontrolujte aktualizace."
+  },
+  "未保存的更改仍保留在应用中。": {
+    "zh-CN": "未保存的更改仍保留在应用中。",
+    "en": "Your unsaved changes are still open in the application.",
+    "zh-TW": "未儲存的變更仍保留在應用程式中。",
+    "ja": "保存されていない変更はアプリに残っています。",
+    "tr": "Kaydedilmemiş değişiklikleriniz uygulamada korunuyor.",
+    "es": "Los cambios sin guardar siguen abiertos en la aplicación.",
+    "cs": "Neuložené změny zůstávají v aplikaci otevřené."
+  },
+  "无法安装更新": {
+    "zh-CN": "无法安装更新",
+    "en": "The update could not be installed",
+    "zh-TW": "無法安裝更新",
+    "ja": "アップデートをインストールできませんでした",
+    "tr": "Güncelleme yüklenemedi",
+    "es": "No se pudo instalar la actualización",
+    "cs": "Aktualizaci nelze nainstalovat"
+  },
+  "请手动下载新版本。": {
+    "zh-CN": "请手动下载新版本。",
+    "en": "Download the new version manually.",
+    "zh-TW": "請手動下載新版本。",
+    "ja": "新しいバージョンを手動でダウンロードしてください。",
+    "tr": "Yeni sürümü el ile indirin.",
+    "es": "Descarga la nueva versión manualmente.",
+    "cs": "Stáhněte novou verzi ručně."
+  },
+  "上次更新未完成": {
+    "zh-CN": "上次更新未完成",
+    "en": "The last update did not finish",
+    "zh-TW": "上次更新未完成",
+    "ja": "前回のアップデートは完了しませんでした",
+    "tr": "Son güncelleme tamamlanmadı",
+    "es": "La última actualización no se completó",
+    "cs": "Poslední aktualizace nebyla dokončena"
+  },
+  "更新文件与应用版本不匹配。": {
+    "zh-CN": "更新文件与应用版本不匹配。",
+    "en": "The update file does not match the application version.",
+    "zh-TW": "更新檔案與應用程式版本不符。",
+    "ja": "アップデートファイルがアプリのバージョンと一致しません。",
+    "tr": "Güncelleme dosyası uygulama sürümüyle eşleşmiyor.",
+    "es": "El archivo de actualización no coincide con la versión de la aplicación.",
+    "cs": "Soubor aktualizace neodpovídá verzi aplikace."
+  },
+  "更新文件与当前系统架构不匹配。": {
+    "zh-CN": "更新文件与当前系统架构不匹配。",
+    "en": "The update file does not match this system architecture.",
+    "zh-TW": "更新檔案與目前系統架構不符。",
+    "ja": "アップデートファイルがこのシステムのアーキテクチャと一致しません。",
+    "tr": "Güncelleme dosyası bu sistem mimarisiyle eşleşmiyor.",
+    "es": "El archivo de actualización no coincide con la arquitectura de este sistema.",
+    "cs": "Soubor aktualizace neodpovídá architektuře tohoto systému."
+  },
+  "磁盘空间不足，无法下载更新。": {
+    "zh-CN": "磁盘空间不足，无法下载更新。",
+    "en": "There is not enough disk space to download the update.",
+    "zh-TW": "磁碟空間不足，無法下載更新。",
+    "ja": "ディスクの空き容量が不足しているため、アップデートをダウンロードできません。",
+    "tr": "Güncellemeyi indirmek için yeterli disk alanı yok.",
+    "es": "No hay suficiente espacio en disco para descargar la actualización.",
+    "cs": "K stažení aktualizace není dostatek místa na disku."
+  },
+  "更新目录不可用。": {
+    "zh-CN": "更新目录不可用。",
+    "en": "The update folder is unavailable.",
+    "zh-TW": "更新目錄無法使用。",
+    "ja": "アップデートフォルダーを利用できません。",
+    "tr": "Güncelleme klasörü kullanılamıyor.",
+    "es": "La carpeta de actualización no está disponible.",
+    "cs": "Složka aktualizace není dostupná."
+  },
+  "另一个实例正在下载或安装更新。": {
+    "zh-CN": "另一个实例正在下载或安装更新。",
+    "en": "Another instance is downloading or installing an update.",
+    "zh-TW": "另一個執行個體正在下載或安裝更新。",
+    "ja": "別のインスタンスがアップデートをダウンロードまたはインストールしています。",
+    "tr": "Başka bir örnek güncelleme indiriyor veya yüklüyor.",
+    "es": "Otra instancia está descargando o instalando una actualización.",
+    "cs": "Jiná instance právě stahuje nebo instaluje aktualizaci."
+  },
+  "请先关闭其他应用窗口再安装更新。": {
+    "zh-CN": "请先关闭其他应用窗口再安装更新。",
+    "en": "Close the other application windows before installing the update.",
+    "zh-TW": "請先關閉其他應用程式視窗再安裝更新。",
+    "ja": "他のアプリのウィンドウを閉じてから、アップデートをインストールしてください。",
+    "tr": "Güncellemeyi yüklemeden önce diğer uygulama pencerelerini kapatın.",
+    "es": "Cierra las otras ventanas de la aplicación antes de instalar la actualización.",
+    "cs": "Před instalací aktualizace zavřete ostatní okna aplikace."
+  }
+}

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using System.Reflection;
 using System.Security;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -17,6 +18,8 @@ namespace DiscImageStudio.ViewModels;
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly AppSettingsStore _store;
+    private readonly AppUpdateService _updateService = new();
+    private readonly CancellationTokenSource _lifetime = new();
 
     [ObservableProperty]
     private int _themeIndex;
@@ -44,6 +47,15 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isBusy;
+
+    [ObservableProperty]
+    private string _updateMessage = string.Empty;
+
+    [ObservableProperty]
+    private bool _updateFailed;
+
+    [ObservableProperty]
+    private bool _isCheckingForUpdates;
 
     public SettingsViewModel(AppSettings settings, AppSettingsStore store)
     {
@@ -111,6 +123,17 @@ public partial class SettingsViewModel : ObservableObject
 
     /// <summary>Double confirmation for 清空缓存, supplied by the window.</summary>
     public Func<Task<bool>>? ConfirmClearCache { get; set; }
+
+    /// <summary>Confirmation for installing a discovered version, supplied by the window.</summary>
+    public Func<string, Task<bool>>? ConfirmUpdate { get; set; }
+
+    /// <summary>Closes the dialog and hands the verified download to the main window, which
+    /// runs the unsaved-project check before starting the replacement helper. Returns false
+    /// when pending settings are invalid, so the dialog stays open for correction.</summary>
+    public Func<string, bool>? RequestUpdateRestart { get; set; }
+
+    /// <summary>Stops in-flight update work when the dialog closes for any reason.</summary>
+    public void CancelPendingOperations() => _lifetime.Cancel();
 
     /// <summary>Reads the shell's busy flag so clearing stays disabled during a job.</summary>
     public Func<bool>? IsBusyProvider { get; set; }
@@ -277,7 +300,123 @@ public partial class SettingsViewModel : ObservableObject
         }
     }
 
-    partial void OnIsBusyChanged(bool value) => ClearCacheCommand.NotifyCanExecuteChanged();
+    [RelayCommand(CanExecute = nameof(CanCheckForUpdates))]
+    private async Task CheckForUpdatesAsync()
+    {
+        if (IsCheckingForUpdates)
+        {
+            return;
+        }
+
+        CancellationToken cancellationToken = _lifetime.Token;
+        IsCheckingForUpdates = true;
+        UpdateFailed = false;
+        UpdateMessage = L.T("正在检查更新");
+        try
+        {
+            AppUpdateCheck? check;
+            try
+            {
+                check = await _updateService.CheckAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                UpdateMessage = L.T("已取消更新。");
+                return;
+            }
+            catch (AppUpdateException exception)
+            {
+                ShowUpdateFailure(L.T(exception.Message), exception.Details);
+                return;
+            }
+            catch (Exception exception) when (IsUpdateNetworkFailure(exception))
+            {
+                ShowUpdateFailure(L.F($"检查更新失败：{exception.Message}"));
+                return;
+            }
+
+            if (check is null)
+            {
+                UpdateMessage = L.T("已是最新版本。");
+                return;
+            }
+
+            UpdateMessage = L.F($"发现新版本 {check.Version}。");
+            if (ConfirmUpdate is null || !await ConfirmUpdate(check.Version.ToString()))
+            {
+                UpdateMessage = L.T("已取消更新。");
+                return;
+            }
+
+            string downloadedPath;
+            try
+            {
+                downloadedPath = await _updateService.DownloadAsync(
+                    check,
+                    new Progress<double>(percent => UpdateMessage = L.F($"正在下载更新：{percent}%")),
+                    cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                UpdateMessage = L.T("已取消更新。");
+                return;
+            }
+            catch (AppUpdateException exception)
+            {
+                ShowUpdateFailure(L.T(exception.Message), exception.Details);
+                return;
+            }
+            catch (Exception exception) when (IsUpdateNetworkFailure(exception))
+            {
+                ShowUpdateFailure(L.F($"下载更新失败：{exception.Message}"));
+                return;
+            }
+
+            if (RequestUpdateRestart is null)
+            {
+                ShowUpdateFailure(L.T("无法启动更新程序。"));
+                return;
+            }
+
+            // Success closes the dialog and lets the main window persist the project before
+            // any executable is touched. Invalid pending settings leave the dialog open.
+            if (!RequestUpdateRestart(downloadedPath))
+            {
+                UpdateMessage = L.T("更新已下载。请修正设置后再次安装。");
+                return;
+            }
+
+            UpdateMessage = L.T("更新已下载，正在重启应用。");
+        }
+        finally
+        {
+            IsCheckingForUpdates = false;
+        }
+    }
+
+    private static bool IsUpdateNetworkFailure(Exception exception) =>
+        exception is HttpRequestException
+            or IOException
+            or UnauthorizedAccessException
+            or SecurityException
+            or NotSupportedException
+            or TaskCanceledException;
+
+    private void ShowUpdateFailure(string message, string? details = null)
+    {
+        UpdateFailed = true;
+        UpdateMessage = string.IsNullOrWhiteSpace(details) ? message : message + "\n" + details;
+    }
+
+    private bool CanCheckForUpdates() => !IsBusy && !IsCheckingForUpdates;
+
+    partial void OnIsBusyChanged(bool value)
+    {
+        ClearCacheCommand.NotifyCanExecuteChanged();
+        CheckForUpdatesCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsCheckingForUpdatesChanged(bool value) => CheckForUpdatesCommand.NotifyCanExecuteChanged();
 
     private static bool TryNormalizeDirectory(
         string value,

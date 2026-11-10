@@ -256,6 +256,7 @@ DesignDataRegionTests.Run();
 LocalizationTests.Run();
 ThemePaletteTests.Run();
 TempFilesCacheTests.Run();
+UpdateTests.Run();
 RelocalizationTests.Run();
 CalibrationReturnButtonTests.Run();
 BurnWriteSpeedSelectionTests.Run();

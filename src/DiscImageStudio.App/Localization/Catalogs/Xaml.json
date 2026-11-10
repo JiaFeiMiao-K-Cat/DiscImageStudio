@@ -251,6 +251,15 @@
     "es": "GitHub",
     "cs": "GitHub"
   },
+  "Xaml.CheckForUpdates": {
+    "zh-CN": "检查更新",
+    "en": "Check for updates",
+    "zh-TW": "檢查更新",
+    "ja": "アップデートを確認",
+    "tr": "Güncellemeleri denetle",
+    "es": "Buscar actualizaciones",
+    "cs": "Zkontrolovat aktualizace"
+  },
   "Xaml.OpenSourceComponents": {
     "zh-CN": "开源组件",
     "en": "Open-source components",
