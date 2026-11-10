@@ -264,8 +264,6 @@ jobs:
         if: ${{ env.SIGN_PRIVATE_KEY != '' && steps.cache_sq.outputs.cache-hit !='true'}}
         run: |
           sudo apt-get update
-          ## No PQC support but faster
-          # sudo apt-get install -y sq
           sudo apt-get install -y clang nettle-dev pkg-config libssl-dev capnproto libsqlite3-dev
           cargo install sequoia-sq \
             --locked \
@@ -288,6 +286,9 @@ jobs:
           shopt -s nullglob
           trap 'shred -n 32 -u private_key.pgp; echo "Cleaned up private key."' EXIT
           umask 077
+          ## No PQC support
+          # sudo apt-get update
+          # sudo apt-get install -y sq
           printf '%s\n' "$SIGN_PRIVATE_KEY" >private_key.pgp
           files=(release/*.exe release/*.tar.gz release/SHA256SUMS.txt)
           if [ ${#files[@]} -eq 0 ]; then
