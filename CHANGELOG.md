@@ -9,7 +9,7 @@
 - 设计页支持从资源管理器拖入单张或多张图片。
 - 设计页占用区引导改用 CD、DVD、BD 的真实布局规划器，并按可用（可写）容量计算，包含文件系统元数据、逐文件扇区取整与对齐；与 #96 的碎片化放置共用与图片无关的元数据预留。外圈放置文件时同时标出内圈元数据，支持多个环形区域。文件夹或盘片参数变化后延迟合并计算，图片编辑不再触发重算。
 - 生成 CD／DVD 数据盘 ISO 时校验卷标长度：超过 Joliet 的 16 个字符会在写入前报错，不再静默截断；导出页的卷标输入限制为 16 个字符并显示提示，蓝光 UDF 卷标不受影响。
-- 关于页在 GitHub 按钮左侧新增「检查更新」：从上游 GitHub Release 的 `latest.json` 获取正式版信息，按当前处理器架构下载便携 EXE，核对长度与 SHA-256 后替换并重启；替换失败或新版本启动即退出时恢复旧 EXE，应用目录不可写时提示手动下载。更新包与清单未签名，完整性只相对发布清单有意义。
+- 关于页在 GitHub 按钮左侧新增「检查更新」：从上游 GitHub Release 的 `latest.json` 获取正式版信息，按当前处理器架构下载便携 EXE，核对长度与 SHA-256 后替换并重启；替换失败或新版本启动即退出时恢复旧 EXE，应用目录不可写时提示手动下载。应用内更新器不验证 Release 附带的 PGP 分离签名，也不对 `latest.json` 本身进行 PGP 身份验证；SHA-256 只能发现文件与清单不一致，不能防止有权修改 Release 的一方同时替换文件和清单。
 - 为 GitHub Actions Release 流程新增可选 PGP 签名：配置 `RELEASE_SIGN_KEY` 后，CI 使用 Sequoia PGP 为 EXE、压缩包、SHA-256 校验文件和更新清单生成独立签名文件，并随 Release 发布公钥；未配置密钥时跳过签名。应用内自动更新暂不验证这些签名。
 
 ### English
@@ -24,7 +24,7 @@
 - Removed the move-up, move-down, and delete buttons from the design layer card. Reordering stays on drag, and deletion remains available from the row menu and the Del key. The disc-file picker buttons now read "Browse…".
 - Removed the "Show data occupancy area" toggle; the blue guide is always visible.
 - Validate volume-label length when generating CD/DVD data ISOs: labels longer than Joliet's 16 characters now fail before writing instead of being silently truncated. The export page limits label input to 16 characters with a hint; Blu-ray UDF labels are unaffected.
-- Add "Check for updates" to the About page, left of the GitHub button. It reads the stable release manifest (`latest.json`) from upstream GitHub Releases, downloads the portable EXE for the current processor architecture, verifies its length and SHA-256, then replaces the running file and restarts. A failed replacement, or a new build that exits during startup, restores the old EXE; a non-writable application folder prompts a manual download. The manifest and EXE remain unsigned, so integrity only holds relative to the published manifest.
+- Add "Check for updates" to the About page, left of the GitHub button. It reads the stable release manifest (`latest.json`) from upstream GitHub Releases, downloads the portable EXE for the current processor architecture, verifies its length and SHA-256, then replaces the running file and restarts. A failed replacement, or a new build that exits during startup, restores the old EXE; a non-writable application folder prompts a manual download. The updater does not verify the detached PGP signatures attached to the Release or authenticate `latest.json` itself; SHA-256 only detects a mismatch with the manifest and cannot protect against an actor who can replace both the files and the manifest.
 - Added optional PGP signing to the GitHub Actions release workflow. When `RELEASE_SIGN_KEY` is configured, CI uses Sequoia PGP to generate detached signature files for EXEs, archives, the SHA-256 checksum file, and the update manifest, and publishes the public key with the release. Signing is skipped when the secret is not configured. The in-app updater does not yet verify these signatures.
 
 ## [1.5.0] - 2026-11-07
