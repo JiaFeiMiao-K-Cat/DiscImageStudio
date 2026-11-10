@@ -355,9 +355,10 @@ public partial class DesignViewModel : ObservableObject
                     checked((uint)ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, "Total sectors")),
                     ContentInnerRadiusMm, ContentOuterRadiusMm,
                     PitchLinear: ParameterParser.ParseDouble(_state.DvdPitchLinear, "Pitch"),
-                    PitchQuadratic: ParameterParser.ParseDouble(_state.DvdPitchQuadratic, "Pitch"),
-                    PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, "Pitch"),
-                    UsableSectors: checked((uint)usable)).OutputOuterRadiusMm,
+                     PitchQuadratic: ParameterParser.ParseDouble(_state.DvdPitchQuadratic, "Pitch"),
+                     PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, "Pitch"),
+                     UsableSectors: checked((uint)usable),
+                     FileSystem: _state.DvdFileSystem).OutputOuterRadiusMm,
                 OpticalDiscFamily.BluRay => new BluRayDiscParameters(
                     checked((uint)ParameterParser.ParsePositiveLong(_state.BdTotalSectors, "Total sectors")), 1,
                     ContentInnerRadiusMm, ContentOuterRadiusMm,
@@ -441,6 +442,7 @@ public partial class DesignViewModel : ObservableObject
             or nameof(DiscParametersState.CdPitchCubic)
             or nameof(DiscParametersState.DvdDataDirectory) or nameof(DiscParametersState.DvdVolumeLabel)
             or nameof(DiscParametersState.DvdFilesAtOuterRing)
+            or nameof(DiscParametersState.DvdFileSystem)
             or nameof(DiscParametersState.DvdTotalSectors) or nameof(DiscParametersState.DvdUsableSectors)
             or nameof(DiscParametersState.DvdInnerRadius) or nameof(DiscParametersState.DvdOuterRadius)
             or nameof(DiscParametersState.DvdPitchLinear) or nameof(DiscParametersState.DvdPitchQuadratic)
@@ -609,7 +611,8 @@ public partial class DesignViewModel : ObservableObject
             ParameterParser.ParsePositiveDouble(outerText, L.T(outerPrompt)),
             ParameterParser.ParseDouble(pitchLinear, L.T("相对一次项")),
             ParameterParser.ParseDouble(pitchQuadratic, L.T("相对二次项")),
-            ParameterParser.ParseDouble(pitchCubic, L.T("相对三次项")));
+            ParameterParser.ParseDouble(pitchCubic, L.T("相对三次项")),
+            Family == OpticalDiscFamily.Dvd ? _state.DvdFileSystem : DvdDataFileSystem.Cdfs);
     }
 
     private static double ParseMm(string raw, double fallback)

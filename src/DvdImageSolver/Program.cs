@@ -388,6 +388,9 @@ internal static class Program
     private static int SolveMultipleBlocks(CliArguments arguments, uint fillSectors)
     {
         bool hybridMode = arguments.Has("data-dir");
+        string fileSystem = ReadFileSystem(arguments);
+        if (fileSystem == "udf250" && !hybridMode)
+            throw new ArgumentException("--filesystem udf250 requires --data-dir (hybrid mode). CDFS is the default.");
         bool filesAtOuterRing = ReadFilesAtOuterRing(arguments);
         if (!arguments.Has("image") || arguments.Has("target"))
         {
@@ -458,6 +461,7 @@ internal static class Program
         ModulationBoundary discInitialBoundary = ReadBoundary(arguments);
         ModulationBoundary drawingInitialBoundary = discInitialBoundary;
         HybridIsoWriteSummary? hybridIso = null;
+        HybridIsoImageWriter.LayoutPlan? hybridLayout = null;
         uint lba;
         if (hybridMode)
         {
@@ -471,7 +475,8 @@ internal static class Program
                 arguments.Require("data-dir"),
                 imageMapping.TotalSectors,
                 arguments.Get("volume-label", "DVD_IMAGE"),
-                filesAtOuterRing);
+                filesAtOuterRing, fileSystem);
+            hybridLayout = isoLayout;
             uint minimumDrawingLba = AlignToEccBlock(filesAtOuterRing
                 ? isoLayout.MetadataEndLbaExclusive : isoLayout.DataEndLbaExclusive, psnOffset);
             lba = arguments.Has("drawing-start-lba")
@@ -499,7 +504,7 @@ internal static class Program
 
             uint drawingEndLba = filesAtOuterRing
                 ? isoLayout.FileDataStartLba / DvdEccBlockEncoder.SectorCount * DvdEccBlockEncoder.SectorCount
-                : imageMapping.TotalSectors;
+                : isoLayout.DrawingEndLbaExclusive;
             if (drawingEndLba < lba)
                 throw new ArgumentException("The selected drawing range overlaps the outer-ring files.");
             fillSectors = checked((drawingEndLba - lba)
@@ -566,7 +571,8 @@ internal static class Program
                 isoOutputPath,
                 options,
                 progressEvery,
-                hybridIso);
+                hybridIso,
+                hybridLayout);
         }
 
         Console.WriteLine(
@@ -609,6 +615,9 @@ internal static class Program
                         + $"elapsed={progress.Elapsed.TotalSeconds:F1}s");
                 }
             });
+
+        if (hybridLayout is not null)
+            HybridIsoImageWriter.WriteSuffixAfterDrawing(hybridLayout, isoOutputPath);
 
         var metadata = new
         {
@@ -745,12 +754,21 @@ internal static class Program
         return outer;
     }
 
+    private static string ReadFileSystem(CliArguments arguments)
+    {
+        string value = arguments.Get("filesystem", "cdfs").ToLowerInvariant();
+        return value is "cdfs" or "udf250"
+            ? value
+            : throw new ArgumentException("--filesystem must be 'cdfs' or 'udf250'.");
+    }
+
     private static int WriteFastDispersionImage(
         CliArguments arguments,
         string isoOutputPath,
         MultiBlockSolveOptions options,
         int progressEvery,
-        HybridIsoWriteSummary? hybridIso)
+        HybridIsoWriteSummary? hybridIso,
+        HybridIsoImageWriter.LayoutPlan? hybridLayout)
     {
         Console.WriteLine(
             $"fast raw ISO fill: LBA {options.StartLba}.."
@@ -787,7 +805,7 @@ internal static class Program
                         + $"LBA={progress.BlockLba}, controlled={progress.ControlledWords}, "
                         + $"rate={rate:F2} MiB/s, elapsed={progress.Elapsed.TotalSeconds:F1}s");
                 }
-            });
+            }, layout: hybridLayout);
 
         double totalMebibytes = result.FilledSectors
             * (double)IsoImageWriter.LogicalSectorBytes
@@ -1373,7 +1391,8 @@ internal static class Program
               --constraint-output FILE  Save the mapped 619008-symbol target
               --constraint-step N       Constrain every Nth channel bit (single block default 1)
               --fill-sectors N          Fill N consecutive sectors; N must be a multiple of 16
-              --data-dir DIR            Hybrid disc: store this directory together with the drawing
+               --data-dir DIR            Hybrid disc: store this directory together with the drawing
+               --filesystem cdfs|udf250  Hybrid filesystem (default cdfs; udf250 is UDF 2.50)
               --file-position MODE      inner (default) or outer; outer requires --data-dir
               --drawing-start-lba N     Hybrid override; must follow all files and align to an ECC Block
               --fast-output true|false Direct dispersion ISO output without ECC/EFM replay

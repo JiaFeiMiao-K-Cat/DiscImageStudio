@@ -1205,7 +1205,8 @@ public partial class LivePreviewViewModel : ObservableObject
             PitchLinear: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchLinear : _state.DvdPitchLinear, L.T("相对一次项")),
             PitchQuadratic: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchQuadratic : _state.DvdPitchQuadratic, L.T("相对二次项")),
             PitchCubic: ParameterParser.ParseDouble(calibration ? _state.DvdActualPitchCubic : _state.DvdPitchCubic, L.T("相对三次项")),
-            UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.Dvd)));
+            UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.Dvd)),
+            FileSystem: _state.DvdFileSystem);
         options.Validate();
         return options;
     }

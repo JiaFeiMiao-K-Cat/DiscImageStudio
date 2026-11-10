@@ -21,7 +21,8 @@ internal sealed record DataRegionInputs(
     double OuterRadiusMm,
     double PitchLinear,
     double PitchQuadratic,
-    double PitchCubic);
+    double PitchCubic,
+    DvdDataFileSystem DvdFileSystem = DvdDataFileSystem.Cdfs);
 
 /// <summary>The layout planner rejected the data because it cannot fit the disc (or the
 /// family's format), as opposed to invalid geometry that hides the guide silently.</summary>
@@ -88,7 +89,8 @@ internal static class DataRegionPlanner
             PitchLinear: inputs.PitchLinear,
             PitchQuadratic: inputs.PitchQuadratic,
             PitchCubic: inputs.PitchCubic,
-            UsableSectors: checked((uint)inputs.UsableSectors));
+            UsableSectors: checked((uint)inputs.UsableSectors),
+            FileSystem: inputs.DvdFileSystem);
         DvdHybridStreamingPlan plan = DvdStreamingGenerator.PrepareHybrid(
             inputs.Directory, options, inputs.VolumeLabel, inputs.FilesAtOuterRing);
 
@@ -99,10 +101,31 @@ internal static class DataRegionPlanner
         DvdTrackGeometry geometry = DvdTrackGeometry.Create(
             inputs.InnerRadiusMm, inputs.OuterRadiusMm, length,
             inputs.PitchLinear, inputs.PitchQuadratic, inputs.PitchCubic);
+        int reserve = FilesystemMetadataBudget.ReserveSectors(plan.FileCount);
+        if (inputs.DvdFileSystem == DvdDataFileSystem.Udf250)
+        {
+            // UDF 2.50 relocates the complete physical partition for outer-ring files;
+            // unlike CDFS there is no separate inner metadata annulus.
+            uint start = inputs.FilesAtOuterRing
+                ? Math.Max(plan.DrawingStartLba, plan.FileDataStartLba - (uint)reserve)
+                : plan.FileDataStartLba;
+            uint end = checked(plan.FilesystemEndLbaExclusive
+                + (inputs.FilesAtOuterRing ? 0u : (uint)reserve));
+            double inner = inputs.FilesAtOuterRing
+                ? Math.Clamp(geometry.RadiusAtArcLength(length * start / inputs.TotalSectors),
+                    inputs.InnerRadiusMm, inputs.OuterRadiusMm)
+                : inputs.InnerRadiusMm;
+            double outer = Math.Clamp(
+                geometry.RadiusAtArcLength(length * end / inputs.TotalSectors),
+                inputs.InnerRadiusMm, inputs.OuterRadiusMm);
+            return outer > inner
+                ? [new DesignViewModel.DataRegionMm(inner, outer)]
+                : [];
+        }
+
         return IsoDataRegions(inputs.InnerRadiusMm, inputs.OuterRadiusMm,
             plan.MetadataEndLbaExclusive, plan.FileDataStartLba, plan.FilesystemEndLbaExclusive,
-            FilesystemMetadataBudget.ReserveSectors(plan.FileCount),
-            lba => geometry.RadiusAtArcLength(length * lba / inputs.TotalSectors));
+            reserve, lba => geometry.RadiusAtArcLength(length * lba / inputs.TotalSectors));
     }
 
     private static IReadOnlyList<DesignViewModel.DataRegionMm> ComputeBluRay(DataRegionInputs inputs)

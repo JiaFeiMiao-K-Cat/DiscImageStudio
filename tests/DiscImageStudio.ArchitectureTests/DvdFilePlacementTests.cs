@@ -120,7 +120,9 @@ internal static class DvdFilePlacementTests
             string[] noDrawingSpace = GenerateArguments(image, data, rejected, "outer");
             noDrawingSpace[Array.IndexOf(noDrawingSpace, "--total-sectors") + 1] = "64";
             Require(DvdCommandRunner.Run(noDrawingSpace) != 0, "capacity rejected before creating ISO");
-            Require(File.ReadAllBytes(rejected).SequenceEqual(sentinel), "invalid requests preserve existing output");
+                Require(File.ReadAllBytes(rejected).SequenceEqual(sentinel), "invalid requests preserve existing output");
+
+            VerifyUdf250Placement(directory, image);
         }
         finally
         {
@@ -129,11 +131,77 @@ internal static class DvdFilePlacementTests
         Console.WriteLine("dvd-file-placement: passed (ISO/Joliet extents, Unicode contents, full geometry, streaming parity, ranges and guards)");
     }
 
-    private static string[] GenerateArguments(string image, string data, string iso, string position)
+    private static void VerifyUdf250Placement(string directory, string image)
+    {
+        string data = Path.Combine(directory, "udf-data");
+        foreach (string name in new[] { "BDMV/CLIPINF", "BDMV/PLAYLIST", "BDMV/STREAM" })
+            Directory.CreateDirectory(Path.Combine(data, name.Replace('/', Path.DirectorySeparatorChar)));
+        Dictionary<string, byte[]> expected = new(StringComparer.Ordinal)
+        {
+            ["BDMV/CLIPINF/index.clpi"] = Enumerable.Range(0, 7000).Select(i => (byte)(i * 13)).ToArray(),
+            ["BDMV/PLAYLIST/Мой плейлист.mpls"] = "unicode playlist"u8.ToArray(),
+            ["BDMV/STREAM/空.m2ts"] = [],
+            ["BDMV/STREAM/movie.m2ts"] = Enumerable.Range(0, 4097).Select(i => (byte)(i * 29)).ToArray(),
+        };
+        foreach ((string relative, byte[] bytes) in expected)
+        {
+            string path = Path.Combine(data, relative.Replace('/', Path.DirectorySeparatorChar));
+            File.WriteAllBytes(path, bytes);
+        }
+
+        for (int index = 0; index < 2; index++)
+        {
+            bool outer = index != 0;
+            DvdStreamingOptions options = new(1024, 24, 58, FastParallelism: 1,
+                FileSystem: DvdDataFileSystem.Udf250);
+            DvdHybridStreamingPlan plan = DvdStreamingGenerator.PrepareHybrid(data, options, "UDF250", outer);
+            Require(plan.FileSystem == "udf250" && plan.DrawingSectors >= 16,
+                "UDF 2.50 hybrid plan exposes a complete drawing interval");
+            string output = Path.Combine(directory, outer ? "udf250-outer.iso" : "udf250-inner.iso");
+            byte[] bytes;
+            if (!outer)
+            {
+                using MemoryStream stream = new();
+                using ForwardOnlyStream forward = new(stream);
+                DvdStreamingGenerator.GenerateHybrid(image, forward, options, plan);
+                bytes = stream.ToArray();
+            }
+            else
+            {
+                Require(DvdCommandRunner.Run(GenerateArguments(image, data, output, "outer", "udf250", 1024)) == 0,
+                    "CLI UDF 2.50 outer-ring generation");
+                bytes = File.ReadAllBytes(output);
+            }
+
+            Dictionary<string, byte[]> actual = UdfFilesystemTests.Inspect(bytes, options.OutputSectors,
+                "UDF250", outer ? null : plan.DrawingStartLba, plan.DrawingEndLbaExclusive);
+            Require(actual.Count == expected.Count && expected.All(pair => actual.TryGetValue(pair.Key, out byte[]? value)
+                && value.SequenceEqual(pair.Value)),
+                "UDF 2.50 preserves BDMV tree, Unicode, empty and cross-block file contents");
+            Require(plan.DrawingEndLbaExclusive <= options.OutputSectors
+                && (outer ? plan.DrawingStartLba < plan.DrawingEndLbaExclusive : plan.FilesystemEndLbaExclusive <= plan.DrawingStartLba),
+                "UDF 2.50 file extents do not overlap the drawing interval");
+            if (!outer)
+            {
+                string streamed = Path.Combine(directory, "udf250-stream.iso");
+                File.WriteAllBytes(streamed, bytes);
+            }
+            if (File.Exists(output))
+            {
+                using JsonDocument metadata = JsonDocument.Parse(File.ReadAllText(output + ".json"));
+                Require(metadata.RootElement.GetProperty("iso").GetProperty("hybrid").GetProperty("fileSystem").GetString() == "udf250",
+                    "UDF 2.50 sidecar records filesystem type");
+            }
+        }
+    }
+
+    private static string[] GenerateArguments(string image, string data, string iso, string position,
+        string filesystem = "cdfs", uint totalSectors = 256)
         => ["solve", "--image", image, "--data-dir", data, "--iso-output", iso,
-            "--volume-label", "PLACEMENT", "--total-sectors", "256", "--inner-radius-mm", "24",
+            "--volume-label", filesystem == "udf250" ? "UDF250" : "PLACEMENT", "--total-sectors", totalSectors.ToString(), "--inner-radius-mm", "24",
             "--outer-radius-mm", "58", "--algorithm", "dispersion", "--fast-output", "true",
-            "--fast-parallelism", "1", "--spiral-direction", "cw", "--file-position", position];
+            "--fast-parallelism", "1", "--spiral-direction", "cw", "--file-position", position,
+            "--filesystem", filesystem];
 
     private static void VerifyMetadataParsing(string directory)
     {

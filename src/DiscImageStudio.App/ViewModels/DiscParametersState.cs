@@ -103,6 +103,8 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty] private string _dvdOutputPath = string.Empty;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDvdFiles))] private string _dvdDataDirectory = string.Empty;
     [ObservableProperty] private bool _dvdFilesAtOuterRing;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(DvdFileSystemLabel))]
+    private DvdDataFileSystem _dvdFileSystem = DvdDataFileSystem.Cdfs;
     [ObservableProperty] private bool _dvdReadCompatibility;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(DvdPitchSummary), nameof(DvdActualPitchSummary))] private string _dvdTotalSectors = "2295104";
     [ObservableProperty] private string _dvdUsableSectors = string.Empty;
@@ -244,6 +246,17 @@ public partial class DiscParametersState : ObservableObject
     }
 
     public bool HasDvdFiles => !string.IsNullOrWhiteSpace(DvdDataDirectory);
+
+    public string DvdFileSystemLabel => DvdFileSystem == DvdDataFileSystem.Udf250
+        ? L.T("DvdFileSystem.Udf250") : L.T("DvdFileSystem.Cdfs");
+
+    partial void OnDvdDataDirectoryChanged(string value)
+    {
+        // UDF is meaningful only for the on-disc data region. Clearing the folder must
+        // return to the safe legacy default rather than leaving a latent UDF choice.
+        if (string.IsNullOrWhiteSpace(value))
+            DvdFileSystem = DvdDataFileSystem.Cdfs;
+    }
 
     public bool HasBluRayFiles => !string.IsNullOrWhiteSpace(BdDataDirectory);
 

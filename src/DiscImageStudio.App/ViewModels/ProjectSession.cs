@@ -2,6 +2,7 @@ using DiscImageStudio.Localization;
 using System.Globalization;
 using DiscImageStudio.Core;
 using DiscImageStudio.Services;
+using DiscImageStudio.Dvd;
 
 namespace DiscImageStudio.ViewModels;
 
@@ -53,6 +54,9 @@ internal static class ProjectSession
                 state.DvdDataDirectory = outputs.DataDirectory;
                 state.DvdFilesAtOuterRing = outputs.FilesAtOuterRing;
                 state.DvdVolumeLabel = outputs.VolumeLabel;
+                state.DvdFileSystem = !string.IsNullOrWhiteSpace(outputs.DataDirectory)
+                    && string.Equals(outputs.DvdFileSystem, "udf250", StringComparison.OrdinalIgnoreCase)
+                    ? DvdDataFileSystem.Udf250 : DvdDataFileSystem.Cdfs;
                 state.DvdImagePath = string.Empty;
                 break;
             case OpticalDiscFamily.BluRay:
@@ -142,7 +146,8 @@ internal static class ProjectSession
                     state.DvdVolumeLabel,
                     Interleave: false,
                     FilesAtOuterRing: state.DvdFilesAtOuterRing,
-                    DvdReadCompatibility: state.DvdReadCompatibility);
+                    DvdReadCompatibility: state.DvdReadCompatibility,
+                    DvdFileSystem: state.DvdFileSystem == DvdDataFileSystem.Udf250 ? "udf250" : "cdfs");
             case OpticalDiscFamily.BluRay:
                 return new ProjectOutputs(
                     RequireOutput(state.BdOutputPath, L.T("蓝光 ISO 输出位置")),

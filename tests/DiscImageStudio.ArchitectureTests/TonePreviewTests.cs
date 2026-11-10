@@ -69,6 +69,17 @@ internal static class TonePreviewTests
                     DrawingRange(family, firstFolder, false, 24, 58), familyName + " inner files");
                 Snapshot(tone, familyName + "-inner-files");
 
+                if (family == OpticalDiscFamily.Dvd)
+                {
+                    await Refresh(tone, () => shell.State.DvdFileSystem = DvdDataFileSystem.Udf250,
+                        "dvd UDF 2.50 filesystem");
+                    CheckImage(tone.TonePreviewImage!, family, 24, 58,
+                        DrawingRange(family, firstFolder, false, 24, 58, DvdDataFileSystem.Udf250),
+                        "dvd UDF 2.50 files");
+                    await Refresh(tone, () => shell.State.DvdFileSystem = DvdDataFileSystem.Cdfs,
+                        "dvd CDFS filesystem restore");
+                }
+
                 await Refresh(tone, () => SetOuter(shell.State, family, true), familyName + " outer placement");
                 CheckImage(tone.TonePreviewImage!, family, 24, 58,
                     DrawingRange(family, firstFolder, true, 24, 58), familyName + " outer files");
@@ -116,7 +127,8 @@ internal static class TonePreviewTests
     }
 
     private static (double Inner, double Outer) DrawingRange(OpticalDiscFamily family, string directory,
-        bool outer, double innerRadius, double outerRadius)
+        bool outer, double innerRadius, double outerRadius,
+        DvdDataFileSystem dvdFileSystem = DvdDataFileSystem.Cdfs)
     {
         if (family == OpticalDiscFamily.CompactDisc)
         {
@@ -127,7 +139,8 @@ internal static class TonePreviewTests
         }
         if (family == OpticalDiscFamily.Dvd)
         {
-            var options = new DvdStreamingOptions(Sectors, innerRadius, outerRadius);
+            var options = new DvdStreamingOptions(Sectors, innerRadius, outerRadius,
+                FileSystem: dvdFileSystem);
             var plan = DvdStreamingGenerator.PrepareHybrid(directory, options, "TONE_TEST", outer);
             double length = Sectors * 38688.0 * options.ChannelBitLengthNm * 1e-6;
             var geometry = DvdTrackGeometry.Create(innerRadius, outerRadius, length);

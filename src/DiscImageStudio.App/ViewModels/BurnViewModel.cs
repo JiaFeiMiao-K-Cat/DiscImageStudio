@@ -273,9 +273,10 @@ public partial class BurnViewModel : ObservableObject
         }
         else if (IsDvdBurn)
         {
-            string dataSuffix = string.IsNullOrWhiteSpace(_state.DvdDataDirectory)
-                ? string.Empty
-                : _state.DvdFilesAtOuterRing ? L.T("；文件位于外圈，图案位于其内侧") : L.T("；文件位于内圈，图案位于其外侧");
+             string dataSuffix = string.IsNullOrWhiteSpace(_state.DvdDataDirectory)
+                 ? string.Empty
+                 : (_state.DvdFilesAtOuterRing ? L.T("；文件位于外圈，图案位于其内侧") : L.T("；文件位于内圈，图案位于其外侧"))
+                   + L.F($" · {_state.DvdFileSystemLabel}");
             SourceTitle = _design.HasLayers
                 ? L.T("使用工程当前合成图与参数")
                 : L.T("请先在设计页导入图片");
@@ -285,7 +286,7 @@ public partial class BurnViewModel : ObservableObject
             identity = string.Join("\u001f", "dvd", _design.CompositeRevision, _state.DvdTotalSectors, _state.DvdUsableSectors,
                 _state.DvdInnerRadius, _state.DvdOuterRadius,
                 _state.DvdPitchLinear, _state.DvdPitchQuadratic, _state.DvdPitchCubic,
-                _state.DvdDataDirectory, _state.DvdVolumeLabel, _state.DvdFilesAtOuterRing, _state.DvdReadCompatibility,
+                 _state.DvdDataDirectory, _state.DvdVolumeLabel, _state.DvdFilesAtOuterRing, _state.DvdFileSystem, _state.DvdReadCompatibility,
                 _state.ToneDitherStrength, _state.ToneBrightness, _state.ToneSrgbLinearization);
         }
         else if (IsBluRayBurn)
@@ -899,7 +900,8 @@ public partial class BurnViewModel : ObservableObject
             PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("DVD 轨距三次项")),
             UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.Dvd)),
             Tone: _state.DvdTone,
-            ReadCompatibility: _state.DvdReadCompatibility);
+            ReadCompatibility: _state.DvdReadCompatibility,
+            FileSystem: _state.DvdFileSystem);
         options.Validate();
         return options;
     }

@@ -21,17 +21,20 @@ public static class FastDvdImageFileWriter
             throw new ArgumentException("A hybrid file request must include its filesystem layout.", nameof(layout));
         HybridIsoWriteSummary? hybrid = layout is null ? null
             : HybridIsoImageWriter.Create(layout, outputPath, cancellationToken);
-        return WritePrepared(imagePath, outputPath, options, hybrid, progress, cancellationToken);
+        return WritePrepared(imagePath, outputPath, options, hybrid, progress, cancellationToken, layout);
     }
 
     internal static FastDispersionWriteResult WritePrepared(
         string imagePath, string outputPath, MultiBlockSolveOptions options,
         HybridIsoWriteSummary? hybrid, Action<FastDispersionProgress>? progress = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        HybridIsoImageWriter.LayoutPlan? layout = null)
     {
         FastDispersionWriteResult result = FastDispersionImageWriter.Write(
             imagePath, outputPath, options, progress, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
+        if (layout is not null)
+            HybridIsoImageWriter.WriteSuffixAfterDrawing(layout, outputPath, cancellationToken);
         ImageMappingOptions imageMapping = options.ImageMapping;
         var metadata = new
         {

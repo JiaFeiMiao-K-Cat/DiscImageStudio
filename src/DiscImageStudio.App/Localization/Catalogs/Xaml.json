@@ -1736,6 +1736,15 @@
     "es": "Carpeta",
     "cs": "Složka"
   },
+  "Xaml.Browse3": {
+    "zh-CN": "选文件夹…",
+    "en": "Browse…",
+    "zh-TW": "選資料夾…",
+    "ja": "フォルダーを選択…",
+    "tr": "Klasör seç…",
+    "es": "Examinar…",
+    "cs": "Procházet…"
+  },
   "Xaml.FilePlacement": {
     "zh-CN": "文件位置",
     "en": "File placement",
@@ -1744,6 +1753,10 @@
     "tr": "Dosya konumu",
     "es": "Ubicación de archivos",
     "cs": "Umístění souborů"
+  },
+  "Xaml.DvdFileSystem": {
+    "zh-CN": "文件系统",
+    "en": "File system"
   },
   "Xaml.InnerRing": {
     "zh-CN": "内圈",

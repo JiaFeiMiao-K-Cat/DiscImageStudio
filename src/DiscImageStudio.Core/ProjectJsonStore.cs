@@ -38,7 +38,10 @@ public sealed record ProjectOutputs(
     string VolumeLabel,
     bool Interleave,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool FilesAtOuterRing = false,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool DvdReadCompatibility = false);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool DvdReadCompatibility = false,
+    // Stored as text so Core remains independent of the DVD streaming engine. Missing legacy
+    // members deserialize to the CDFS default.
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] string DvdFileSystem = "cdfs");
 
 /// <summary>Generation settings that exist only for BD-R: the 3T/6T mapping polarity.
 /// This is deliberately separate from <see cref="ToneProfile"/>: polarity selects which
@@ -383,6 +386,11 @@ public static class ProjectJsonStore
         if (string.IsNullOrWhiteSpace(outputs.OutputPath))
         {
             throw DiagnosticMessage.InvalidData($"outputs.outputPath 不能为空。");
+        }
+        if (!string.Equals(outputs.DvdFileSystem, "cdfs", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(outputs.DvdFileSystem, "udf250", StringComparison.OrdinalIgnoreCase))
+        {
+            throw DiagnosticMessage.InvalidData($"outputs.dvdFileSystem 必须是 cdfs 或 udf250。");
         }
     }
 

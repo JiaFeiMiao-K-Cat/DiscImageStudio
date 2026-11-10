@@ -42,6 +42,18 @@ if (args is ["--test-dvd-read-compatibility"])
     return;
 }
 
+if (args is ["--test-udf-filesystem"])
+{
+    UdfFilesystemTests.Run();
+    return;
+}
+
+if (args is ["--test-dvd-file-placement"])
+{
+    DvdFilePlacementTests.Run();
+    return;
+}
+
 if (args is ["--test-capacity-ui"])
 {
     DvdReadCompatibilityUiTests.Run();
