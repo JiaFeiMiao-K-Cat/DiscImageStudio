@@ -4,7 +4,9 @@ namespace DiscImageStudio.Cd;
 
 /// <summary>A CD audio or data-image export, shared by graphical and command-line hosts.
 /// With <see cref="MusicTracks"/>, the export is the picture session of a CD-Extra disc:
-/// the music forms session 1 and the output ISO is session 2.</summary>
+/// the music forms session 1 and the output ISO is session 2. With
+/// <see cref="MusicAtOuterRing"/> it is instead one WAV for a Disc-at-Once audio disc, the
+/// picture in the pre-gap of track 1 and the music behind it, with a CUE sheet.</summary>
 public sealed record CdImageRequest(
     string SourceImage,
     string OutputPath,
@@ -16,7 +18,8 @@ public sealed record CdImageRequest(
     string VolumeLabel = "CD_IMAGE",
     bool FilesAtOuterRing = false,
     IReadOnlyList<string>? MusicTracks = null,
-    long? Session2StartLba = null);
+    long? Session2StartLba = null,
+    bool MusicAtOuterRing = false);
 
 public static class CdImageGenerator
 {
@@ -30,7 +33,11 @@ public static class CdImageGenerator
         cancellationToken.ThrowIfCancellationRequested();
         request.Tone.Validate();
         if (request.MusicTracks is { Count: > 0 } music)
-            return GenerateCdExtra(request, music, progress, cancellationToken);
+        {
+            return request.MusicAtOuterRing
+                ? GenerateHiddenPicture(request, music, progress, cancellationToken)
+                : GenerateCdExtra(request, music, progress, cancellationToken);
+        }
         string? dataDirectory = request.DataDirectory?.Trim();
         if (!string.IsNullOrEmpty(dataDirectory))
         {
@@ -70,6 +77,108 @@ public static class CdImageGenerator
         List<long> sectors = new(musicTracks.Count);
         foreach (string track in musicTracks) sectors.Add(CdMusicFile.Inspect(track).RecordedSectors);
         return CdExtraLayout.Plan(parameters, sectors, session2StartLba);
+    }
+
+    /// <summary>Plans a disc with the music on the outer rings from the music files.</summary>
+    public static CdExtraLayout PlanOuterMusic(CdDiscParameters parameters, IReadOnlyList<string> musicTracks)
+    {
+        ArgumentNullException.ThrowIfNull(musicTracks);
+        List<long> sectors = new(musicTracks.Count);
+        foreach (string track in musicTracks) sectors.Add(CdMusicFile.Inspect(track).RecordedSectors);
+        return CdExtraLayout.PlanOuterMusic(parameters, sectors);
+    }
+
+    /// <summary>Generator parameters for the picture of an outer-music disc: the output ends
+    /// where the music starts, and the source-image scale is pinned so that limit does not
+    /// rescale the picture.</summary>
+    public static CdDiscParameters HiddenPictureParameters(CdDiscParameters parameters, CdExtraLayout layout)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+        ArgumentNullException.ThrowIfNull(layout);
+        if (!layout.MusicAtOuterRing)
+            throw new ArgumentException("The layout keeps the music on the inner rings.", nameof(layout));
+        return parameters with
+        {
+            UsableSectors = layout.PictureSectors,
+            SourceImageOuterRadiusMm = parameters.SamplingImageOuterRadiusMm,
+        };
+    }
+
+    /// <summary>Writes one WAV for a Disc-at-Once audio disc: the picture as the pre-gap
+    /// (index 0) of track 1, then the music tracks without gaps, and a CUE sheet that
+    /// starts track 1 at the music. Players begin at index 1, so the picture is not played
+    /// unless a listener rewinds before the first track.</summary>
+    private static DiscImageResult GenerateHiddenPicture(CdImageRequest request, IReadOnlyList<string> music,
+        IProgress<DiscJobProgress>? progress, CancellationToken cancellationToken)
+    {
+        if (request.Session2StartLba is not null)
+            throw new ArgumentException("A session 2 start applies only to music on the inner rings (CD-Extra).");
+        if (!string.IsNullOrWhiteSpace(request.DataDirectory))
+        {
+            throw new ArgumentException("Disc files cannot be combined with music on the outer rings: the disc is "
+                + "an audio disc. Put the music on the inner rings (CD-Extra) to add files.");
+        }
+
+        string output = Path.GetFullPath(request.OutputPath);
+        if (!Path.GetExtension(output).Equals(".wav", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException("Music on the outer rings is written as one .wav with a CUE sheet; "
+                + "use the inner position for a CD-Extra picture session .iso.", nameof(request));
+        }
+
+        string source = Path.GetFullPath(request.SourceImage);
+        if (source.Equals(output, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("The output must not overwrite the source image.", nameof(request));
+
+        List<CdMusicTrackInfo> tracks = new(music.Count);
+        foreach (string path in music)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (Path.GetFullPath(path).Equals(output, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("The output must not overwrite a music file.", nameof(request));
+            tracks.Add(CdMusicFile.Inspect(path));
+        }
+
+        CdExtraLayout layout = CdExtraLayout.PlanOuterMusic(request.Parameters,
+            tracks.Select(track => track.RecordedSectors).ToArray());
+        CdDiscParameters picture = HiddenPictureParameters(request.Parameters, layout);
+        long totalBytes = checked(layout.MusicEndLbaExclusive * CdDiscParameters.BytesPerSector);
+        CdWaveFile.ValidateLength(totalBytes);
+        ToneProfile tone = request.Tone.Normalized();
+        Directory.CreateDirectory(Path.GetDirectoryName(output)!);
+        using (FileStream file = new(output, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024,
+            FileOptions.SequentialScan))
+        {
+            CdWaveFile.WriteHeader(file, totalBytes);
+            CdTrackGenerator.GenerateToStream(source, file, picture, request.Interleave,
+                value => progress?.Report(new DiscJobProgress(CdDiscModule.ModuleId, "generate",
+                    $"CD picture progress {value.Fraction:P1}", value.Fraction, value.CompletedBytes,
+                    value.TotalBytes, value.Elapsed)), cancellationToken, output, CdAudioByteOrder.LittleEndian, tone);
+            foreach (CdMusicTrackInfo track in tracks)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                CdMusicFile.WritePaddedPcm(track, file, cancellationToken);
+            }
+        }
+
+        // The sidecar describes the whole file, so the read-back preview shows the disc as
+        // recorded: the picture and the music ring around it.
+        CdDiscParameters parameters = request.Parameters;
+        CdTrackMetadata.Save(output, new CdTrackMetadata(source, output, parameters.InnerRadiusMm,
+            parameters.OuterRadiusMm, parameters.Sectors, parameters.LinearVelocityMmPerSecond,
+            parameters.StartAngleRadians * 180.0 / Math.PI, parameters.ImageOuterRadiusMm, request.Interleave,
+            tone.DitherStrength, tone.Levels, tone.Brightness, tone.SrgbLinearization, parameters.PitchLinear,
+            parameters.PitchQuadratic, parameters.PitchCubic, layout.MusicEndLbaExclusive,
+            picture.SourceImageOuterRadiusMm));
+        string? cue = request.WriteCue
+            ? CdWaveFile.WriteCue(output, layout.Tracks.Select(track => track.StartLba).ToArray())
+            : null;
+        TimeSpan duration = TimeSpan.FromSeconds(tracks.Sum(track => track.Duration.TotalSeconds));
+        return new DiscImageResult(output,
+            $"CD picture + music track complete: picture in the pre-gap of track 1 ({layout.PictureSectors} sectors, "
+            + $"{layout.PictureAreaFraction:P1} of the disc area), {tracks.Count} audio tracks ({duration:hh\\:mm\\:ss}) "
+            + $"from LBA {layout.MusicStartLba}, {layout.MusicEndLbaExclusive} sectors, output={output}"
+            + (cue is null ? string.Empty : $", cue={cue}"));
     }
 
     private static DiscImageResult GenerateCdExtra(CdImageRequest request, IReadOnlyList<string> music,

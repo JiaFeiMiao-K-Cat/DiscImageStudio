@@ -82,10 +82,42 @@ public sealed record OpticalBurnProgress(
 }
 
 /// <summary>
+/// How the content of a CD audio burn is divided into tracks. The first
+/// <see cref="PregapSectors"/> sectors are recorded as the index 0 pre-gap of track 1: they
+/// are on the disc, but the table of contents starts track 1 behind them, so players do not
+/// play them. The tracks follow in order without gaps.
+/// </summary>
+public sealed record CdAudioDiscLayout(long PregapSectors, IReadOnlyList<long> TrackSectors)
+{
+    public const int SectorBytes = 2352;
+    public const int MaximumTracks = 99;
+    /// <summary>A pre-gap with content is at least the two seconds every pre-gap has.</summary>
+    public const int MinimumPregapSectors = 150;
+    /// <summary>A track lasts at least four seconds.</summary>
+    public const int MinimumTrackSectors = 300;
+
+    public long TotalSectors => checked(PregapSectors + TrackSectors.Sum());
+
+    public void Validate()
+    {
+        ArgumentNullException.ThrowIfNull(TrackSectors);
+        if (PregapSectors != 0 && PregapSectors < MinimumPregapSectors)
+            throw new ArgumentOutOfRangeException(nameof(PregapSectors),
+                $"A pre-gap with content needs at least {MinimumPregapSectors} sectors.");
+        if (TrackSectors.Count is 0 or > MaximumTracks)
+            throw new ArgumentOutOfRangeException(nameof(TrackSectors), $"A CD holds 1..{MaximumTracks} tracks.");
+        if (TrackSectors.Any(sectors => sectors < MinimumTrackSectors))
+            throw new ArgumentOutOfRangeException(nameof(TrackSectors),
+                $"Each audio track needs at least {MinimumTrackSectors} sectors.");
+    }
+}
+
+/// <summary>
 /// CD audio producers supply headerless 44.1 kHz, 16-bit stereo little-endian PCM,
 /// as required by IMAPI_CD_SECTOR_AUDIO. ContentLength excludes any WAV header.
 /// CD data, DVD and Blu-ray producers supply complete 2048-byte logical data sectors.
 /// The recording backend adds physical encoding and error correction.
+/// Without <see cref="CdAudioLayout"/> a CD audio burn records its content as one track.
 /// </summary>
 public sealed record OpticalBurnRequest(
     string DeviceId,
@@ -93,7 +125,8 @@ public sealed record OpticalBurnRequest(
     long ContentLength,
     Action<Stream, CancellationToken> ProduceContent,
     OpticalWriteSpeed? WriteSpeed = null,
-    OpticalBurnBufferOptions? BufferOptions = null)
+    OpticalBurnBufferOptions? BufferOptions = null,
+    CdAudioDiscLayout? CdAudioLayout = null)
 {
     public OpticalBurnBufferOptions EffectiveBufferOptions => BufferOptions
         ?? (MediaKind == OpticalBurnMediaKind.BluRayData
@@ -109,6 +142,15 @@ public sealed record OpticalBurnRequest(
             throw new ArgumentOutOfRangeException(
                 nameof(ContentLength),
                 $"Stream length must be a positive multiple of {sectorBytes} bytes.");
+        }
+
+        if (CdAudioLayout is not null)
+        {
+            if (MediaKind != OpticalBurnMediaKind.CdAudio)
+                throw new ArgumentException("A track layout applies to CD audio burns only.", nameof(CdAudioLayout));
+            CdAudioLayout.Validate();
+            if (CdAudioLayout.TotalSectors * CdAudioDiscLayout.SectorBytes != ContentLength)
+                throw new ArgumentException("The track layout does not cover the content length.", nameof(CdAudioLayout));
         }
 
         WriteSpeed?.Validate();

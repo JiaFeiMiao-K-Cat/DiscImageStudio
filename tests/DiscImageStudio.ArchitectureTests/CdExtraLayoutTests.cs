@@ -391,7 +391,7 @@ internal static class CdExtraLayoutTests
 
         string cliIso = Path.Combine(directory, "cli", "session2.iso");
         DiscJobResult cli = new CdDiscModule().ExecuteAsync(new DiscJobRequest("cd-generate",
-            ["--input", image, "--output", cliIso, "--music", music, "--r0", "24.5", "--r1", "27.5",
+            ["--input", image, "--output", cliIso, "--music", music, "--music-position", "inner", "--r0", "24.5", "--r1", "27.5",
              "--sectors", "15000", "--usable-sectors", "14998"]), null, CancellationToken.None).GetAwaiter().GetResult();
         Require(cli.ExitCode == 0 && File.Exists(cliIso) && CdExtraImageMetadata.TryLoad(cliIso) is { } cliMeta
                 && cliMeta.Session2StartLba == layout.Session2StartLba,
@@ -403,7 +403,7 @@ internal static class CdExtraLayoutTests
 
         string measured = Path.Combine(directory, "cli", "measured.iso");
         new CdDiscModule().ExecuteAsync(new DiscJobRequest("cd-generate",
-            ["--input", image, "--output", measured, "--music", music, "--r0", "24.5", "--r1", "27.5",
+            ["--input", image, "--output", measured, "--music", music, "--music-position", "inner", "--r0", "24.5", "--r1", "27.5",
              "--sectors", "15000", "--usable-sectors", "14998",
              "--session2-start-lba", (layout.Session2StartLba + 3).ToString(System.Globalization.CultureInfo.InvariantCulture)]),
             null, CancellationToken.None).GetAwaiter().GetResult();
@@ -416,7 +416,7 @@ internal static class CdExtraLayoutTests
         // The literal output of cdrecord -msinfo ("first,second") is accepted; junk is named.
         string msinfo = Path.Combine(directory, "cli", "msinfo.iso");
         new CdDiscModule().ExecuteAsync(new DiscJobRequest("cd-generate",
-            ["--input", image, "--output", msinfo, "--music", music, "--r0", "24.5", "--r1", "27.5",
+            ["--input", image, "--output", msinfo, "--music", music, "--music-position", "inner", "--r0", "24.5", "--r1", "27.5",
              "--sectors", "15000", "--usable-sectors", "14998",
              "--session2-start-lba", "0," + (layout.Session2StartLba + 5).ToString(System.Globalization.CultureInfo.InvariantCulture)]),
             null, CancellationToken.None).GetAwaiter().GetResult();
@@ -425,7 +425,7 @@ internal static class CdExtraLayoutTests
         try
         {
             new CdDiscModule().ExecuteAsync(new DiscJobRequest("cd-generate",
-                ["--input", image, "--output", msinfo, "--music", music, "--session2-start-lba", "next"]),
+                ["--input", image, "--output", msinfo, "--music", music, "--music-position", "inner", "--session2-start-lba", "next"]),
                 null, CancellationToken.None).GetAwaiter().GetResult();
             Require(false, "a non-numeric session address is refused");
         }
@@ -460,7 +460,7 @@ internal static class CdExtraLayoutTests
         DiscModuleCatalog catalog = new([module]);
         string warp = Path.Combine(directory, "cli", "warp.png");
         DiscJobResult previewed = catalog.ExecuteAsync(new DiscJobRequest("cd-preview-warp",
-            ["--input", image, "--output", warp, "--music", music, "--r0", "24.5", "--r1", "27.5",
+            ["--input", image, "--output", warp, "--music", music, "--music-position", "inner", "--r0", "24.5", "--r1", "27.5",
              "--sectors", "15000", "--usable-sectors", "14998", "--size", "128", "--samples-per-sector", "2"]))
             .GetAwaiter().GetResult();
         Require(previewed.Succeeded && new FileInfo(warp).Length > 0
@@ -469,7 +469,7 @@ internal static class CdExtraLayoutTests
             "cd-preview-warp --music renders the picture session and reports its start");
         string routed = Path.Combine(directory, "cli", "routed.iso");
         Require(catalog.ExecuteAsync(new DiscJobRequest("cd-generate",
-                    ["--input", image, "--output", routed, "--music", music, "--r0", "24.5", "--r1", "27.5",
+                    ["--input", image, "--output", routed, "--music", music, "--music-position", "inner", "--r0", "24.5", "--r1", "27.5",
                      "--sectors", "15000", "--usable-sectors", "14998"])).GetAwaiter().GetResult().Succeeded
                 && CdExtraImageMetadata.TryLoad(routed) is { } routedMeta && routedMeta.Session2StartLba == layout.Session2StartLba,
             "cd-generate --music is routed through the module catalog");

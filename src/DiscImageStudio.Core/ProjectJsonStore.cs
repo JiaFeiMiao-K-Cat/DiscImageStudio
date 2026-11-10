@@ -49,10 +49,13 @@ public sealed record ProjectBluRaySettings(bool InvertMapping = false);
 /// <summary>One CD-Extra music track: a CD-format PCM WAV referenced by absolute path.</summary>
 public sealed record ProjectMusicTrack(string Path);
 
-/// <summary>CD-Extra (Enhanced CD) settings, CD projects only. When enabled, the listed
-/// tracks form the audio session and the picture is written as a second, data session
-/// that audio players do not read. The list is kept while the mode is switched off.</summary>
-public sealed record ProjectCdExtraSettings(bool Enabled, IReadOnlyList<ProjectMusicTrack> Tracks)
+/// <summary>Music + picture settings, CD projects only. When enabled, the listed tracks are
+/// the music. With <see cref="MusicAtOuterRing"/> the disc is one audio session whose
+/// picture is the pre-gap of track 1; otherwise it is a CD-Extra (Enhanced CD) disc whose
+/// picture is a second, data session. Audio players play the picture in neither case.
+/// The list is kept while the mode is switched off.</summary>
+public sealed record ProjectCdExtraSettings(bool Enabled, IReadOnlyList<ProjectMusicTrack> Tracks,
+    bool MusicAtOuterRing = false)
 {
     /// <summary>One data track must remain within the CD limit of 99 tracks.</summary>
     public const int MaximumTracks = 98;

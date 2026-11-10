@@ -24,6 +24,13 @@ public sealed record CdExtraAudioTrackLayout(int Number, long StartLba, long Sec
 /// reports the real next writable address once session 1 is closed; the picture must
 /// be generated from that measured address, because one sector of error rotates it by
 /// 16–37°. A prediction is used only for design previews.
+///
+/// With <see cref="MusicAtOuterRing"/> the disc is a single Disc-at-Once audio session
+/// instead (<see cref="PlanOuterMusic"/>): the picture is the index 0 pre-gap of track 1
+/// from LBA 0, the music tracks follow without gaps and end at the usable capacity. The
+/// table of contents points at index 1 of track 1, so players start with the music; every
+/// address is fixed before writing. There <see cref="Session2StartLba"/> is 0 and
+/// <see cref="DataEndLbaExclusive"/> is the end of the picture.
 /// </remarks>
 public sealed record CdExtraLayout(
     CdDiscParameters Parameters,
@@ -51,21 +58,39 @@ public sealed record CdExtraLayout(
     /// lead-out and the next session's lead-in come first, whatever mode wrote them.</summary>
     public const int MinimumSession2StartLba = MinimumTrackSectors + FirstLeadoutSectors + NextLeadinSectors;
 
+    /// <summary>The picture hidden in the pre-gap of track 1 needs at least the two seconds
+    /// a pre-gap always has.</summary>
+    public const int MinimumHiddenPictureSectors = 150;
+
+    /// <summary>Single-session layout: picture in the pre-gap of track 1, music behind it.</summary>
+    public bool MusicAtOuterRing { get; init; }
+
     public long DataTrackSectors => DataEndLbaExclusive - Session2StartLba;
 
+    public long MusicStartLba => Tracks[0].StartLba;
+
+    public long PictureStartLba => Session2StartLba;
+
+    public long PictureEndLbaExclusive => DataEndLbaExclusive;
+
+    public long PictureSectors => PictureEndLbaExclusive - PictureStartLba;
+
+    /// <summary>End of everything this layout records before the final lead-out.</summary>
+    public long DiscEndLbaExclusive => MusicAtOuterRing ? MusicEndLbaExclusive : DataEndLbaExclusive;
+
     /// <summary>Sectors recorded for the music, including track padding and pauses.</summary>
-    public long MusicSectors => MusicEndLbaExclusive;
+    public long MusicSectors => MusicEndLbaExclusive - MusicStartLba;
 
-    public double MusicInnerRadiusMm => RadiusAtLba(0);
+    public double MusicInnerRadiusMm => RadiusAtLba(MusicStartLba);
     public double MusicOuterRadiusMm => RadiusAtLba(MusicEndLbaExclusive);
-    public double PictureInnerRadiusMm => RadiusAtLba(Session2StartLba);
-    public double PictureOuterRadiusMm => RadiusAtLba(DataEndLbaExclusive);
+    public double PictureInnerRadiusMm => RadiusAtLba(PictureStartLba);
+    public double PictureOuterRadiusMm => RadiusAtLba(PictureEndLbaExclusive);
 
-    /// <summary>Area shares of the program area from LBA 0 to the end of the data track.
+    /// <summary>Area shares of the program area from LBA 0 to the end of the recording.
     /// Under constant linear velocity they equal the sector shares for a constant pitch.</summary>
-    public double MusicAreaFraction => AreaFraction(0, MusicEndLbaExclusive);
-    public double SessionGapAreaFraction => AreaFraction(MusicEndLbaExclusive, Session2StartLba);
-    public double PictureAreaFraction => AreaFraction(Session2StartLba, DataEndLbaExclusive);
+    public double MusicAreaFraction => AreaFraction(MusicStartLba, MusicEndLbaExclusive);
+    public double SessionGapAreaFraction => MusicAtOuterRing ? 0 : AreaFraction(MusicEndLbaExclusive, Session2StartLba);
+    public double PictureAreaFraction => AreaFraction(PictureStartLba, PictureEndLbaExclusive);
 
     public double RadiusAtLba(long lba)
         => Parameters.RadiusFromByte(checked(Math.Max(0, lba) * CdDiscParameters.BytesPerSector));
@@ -148,6 +173,39 @@ public sealed record CdExtraLayout(
             measuredSession2StartLba.HasValue, dataEnd);
     }
 
+    /// <summary>Plans a single-session disc with the music on the outer rings: the picture
+    /// fills the pre-gap of track 1 from LBA 0 and the tracks follow without gaps, ending at
+    /// the usable capacity. Nothing depends on the recorder: the disc is written
+    /// Disc-at-Once from a known layout.</summary>
+    public static CdExtraLayout PlanOuterMusic(CdDiscParameters parameters, IReadOnlyList<long> trackSectors)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+        parameters.Validate();
+        ValidateTracks(trackSectors);
+        long end = Math.Min(parameters.OutputSectors, parameters.Sectors);
+        long music = checked(trackSectors.Sum());
+        long picture = end - music;
+        if (picture < MinimumHiddenPictureSectors)
+        {
+            throw new CdExtraCapacityException(
+                $"The music needs {music} sectors of the {end} usable sectors, leaving {Math.Max(0, picture)} "
+                + $"for the picture; at least {MinimumHiddenPictureSectors} are required.");
+        }
+
+        List<CdExtraAudioTrackLayout> tracks = new(trackSectors.Count);
+        long start = picture;
+        for (int index = 0; index < trackSectors.Count; index++)
+        {
+            tracks.Add(new CdExtraAudioTrackLayout(index + 1, start, trackSectors[index]));
+            start += trackSectors[index];
+        }
+
+        return new CdExtraLayout(parameters, tracks.AsReadOnly(), end, end, 0, false, picture)
+        {
+            MusicAtOuterRing = true,
+        };
+    }
+
     private static long MusicEndFor(IReadOnlyList<long> trackSectors)
     {
         long end = 0;
@@ -173,7 +231,7 @@ public sealed record CdExtraLayout(
     private double AreaFraction(long startLba, long endLbaExclusive)
     {
         double inner = RadiusAtLba(0);
-        double outer = RadiusAtLba(DataEndLbaExclusive);
+        double outer = RadiusAtLba(DiscEndLbaExclusive);
         double total = outer * outer - inner * inner;
         if (total <= 0) return 0;
         double a = RadiusAtLba(startLba);

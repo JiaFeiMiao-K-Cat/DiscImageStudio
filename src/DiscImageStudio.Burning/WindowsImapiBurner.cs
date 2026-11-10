@@ -814,7 +814,8 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
     {
         if (!OpticalBurnMedia.UsesCdDao(request.MediaKind))
             throw new ArgumentException("CD DAO requires an audio or CD data request.", nameof(request));
-        string trackDescription = request.MediaKind == OpticalBurnMediaKind.CdData ? "数据轨" : "音轨";
+        string trackDescription = request.MediaKind == OpticalBurnMediaKind.CdData ? "数据轨"
+            : request.CdAudioLayout is { } tracks ? $"音轨（预间隙图片 + {tracks.TrackSectors.Count} 轨）" : "音轨";
         bool prepared = false;
         Exception? operationException = null;
         string operation = "准备 CD 刻录";
@@ -877,7 +878,12 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
             Diagnose(() => mediaDiagnostic);
 
             SetOperation($"构造 CD DAO {trackDescription}");
-            IStream rawImage = imageSession.CreateImage(content, sectorType);
+            IStream rawImage = imageSession.CreateImage(content, sectorType, request.CdAudioLayout);
+            if (request.CdAudioLayout is { } audioLayout)
+            {
+                Diagnose(() => $"CD DAO 音轨布局：PregapSectors={audioLayout.PregapSectors}（第 1 轨索引 0，LBA 0 起）；"
+                    + $"Tracks={audioLayout.TrackSectors.Count}；TrackSectors={string.Join(",", audioLayout.TrackSectors)}。");
+            }
             long startOfLeadout = imageSession.StartOfLeadout;
             long lastPossibleStartOfLeadout = format.LastPossibleStartOfLeadout;
             long excessSectors = startOfLeadout - lastPossibleStartOfLeadout;
