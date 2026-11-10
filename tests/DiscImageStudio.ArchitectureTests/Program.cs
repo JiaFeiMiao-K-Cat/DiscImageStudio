@@ -74,6 +74,14 @@ if (args is ["--test-data-region"])
     return;
 }
 
+if (args is ["--test-cd-extra"])
+{
+    CdExtraLayoutTests.Run();
+    CdExtraBurnTests.Run();
+    CdExtraUiTests.Run();
+    return;
+}
+
 if (args is ["--benchmark-cd-pitch"])
 {
     CdCubicPitchTests.Benchmark();
@@ -180,6 +188,9 @@ FilePlacementPreviewTests.Run();
 DesignComposerTests.Run();
 CdAudioCompatibilityTests.Run();
 CdParallelAudioTests.Run();
+CdExtraLayoutTests.Run();
+CdExtraBurnTests.Run();
+CdExtraUiTests.Run();
 CdDataImageTests.Run();
 VolumeLabelTests.Run();
 CdParallelDataTests.Run();
