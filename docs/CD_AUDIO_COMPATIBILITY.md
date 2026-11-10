@@ -51,6 +51,8 @@ CD 工程在设计页的「音乐（CD-Extra）」卡片中选择「音乐 + 图
 3. 「模拟写入」让光驱执行同样的写入命令但不改变盘片，也不关闭区段，可先用来确认光驱接受 Track-at-Once 与多区段设置。
 4. 中途取消、失败或断电可能使盘片报废；若第 1 区段已经关闭，音乐仍可在 CD 机播放。
 
+这一流程已实刻过一张盘：CD 机（Syitern R300）播放音乐正常，在第 1 首开头继续快退时停在 0:00，盘面图片的位置和方向与设计一致。目前只有一台刻录机的结果，记录见 [VALIDATION.md](VALIDATION.md#实盘验证边界)。
+
 导出与外部刻录：导出页在 CD-Extra 模式下输出第 2 区段的 ISO 和同名 `.iso.json`。ISO 内所有地址都是整盘绝对 LBA（与 `mkisofs -C` 相同的约定），只有第 2 区段真正从生成时的地址开始，文件系统才可读、图片才不会旋转。「实测第 2 区段起点 LBA」留空时按预计起点生成（假设第 1 区段按 Track-at-Once 刻录）；用外部软件刻录时，先以 Track-at-Once 写入音乐并保持可追加，读取下一区段起点，填入该栏（或用 CLI 的 `--session2-start-lba`）后重新生成 ISO。两处都接受 `cdrecord -msinfo` 的原样输出，例如 `0,15055`。更换音乐或工程时该栏自动清空。下面以 cdrecord 为例，此流程尚未在实际光驱上验证：
 
 ```powershell
@@ -68,7 +70,7 @@ cdrecord dev=设备 -tao -data session2.iso
 
 `--music` 用来计算音乐区长度，第 3 步必须使用与第 1 步相同的曲目和顺序。不给 `--session2-start-lba` 时使用预计起点，只适合预览。`cd-preview-warp` 同样接受这两个参数；预览页读回带 `cd-extra-v1` 元数据的 ISO 时，按其绝对起点投影到盘面。
 
-English: CD-Extra puts the music into session 1 on the inner rings (Track-at-Once audio, 2-second gaps, tracks padded to whole sectors and to at least 4 s) and the picture into a Mode 1 data track of session 2 on the outer rings; the 11,400 sectors between them (lead-out, lead-in, pre-gap) cannot be drawn. Only 44.1 kHz 16-bit stereo PCM WAV is accepted and copied verbatim. In-app burning closes session 1, reads the recorder's next writable address, and only then generates the picture ISO for that address, because a one-sector error rotates the picture by about 16–37°. Exported ISOs use absolute LBAs (the `mkisofs -C` convention); for external burning regenerate the ISO with `--session2-start-lba` set to the second value of `cdrecord -msinfo`. Neither the in-app burner nor the external route has been verified on a physical recorder yet.
+English: CD-Extra puts the music into session 1 on the inner rings (Track-at-Once audio, 2-second gaps, tracks padded to whole sectors and to at least 4 s) and the picture into a Mode 1 data track of session 2 on the outer rings; the 11,400 sectors between them (lead-out, lead-in, pre-gap) cannot be drawn. Only 44.1 kHz 16-bit stereo PCM WAV is accepted and copied verbatim. In-app burning closes session 1, reads the recorder's next writable address, and only then generates the picture ISO for that address, because a one-sector error rotates the picture by about 16–37°. Exported ISOs use absolute LBAs (the `mkisofs -C` convention); for external burning regenerate the ISO with `--session2-start-lba` set to the second value of `cdrecord -msinfo`. The in-app burner has produced one disc that plays on a CD player (recorded in VALIDATION.md); the external route has not been verified on a physical recorder yet.
 
 ## 推荐用法
 
@@ -184,7 +186,7 @@ DiscImageStudio.exe cd-generate --input picture.png --output cd-track.wav `
 - 标定投影一致性：同一源图先按生成几何 `(24.5, 56.8)` 生成音轨，再把 `cd-preview-warp` 的投影（实测=生成、实测=`24.3/56.6`）与 `cd-preview-track` 用对应几何读回的结果逐像素比较，阈值化后完全一致（900 px）；实测半径缩小时投影的重心半径随之减小，因此两套几何不会串位。
 - Windows 内存实验：向现有 `MsftRawCDImageCreator` 输入 300 个非对称音频扇区，在 Cooked R-W 与 Raw P-W 两种结果类型下分别扫描完整的 2448 字节 RAW 结果扇区，全部音频字节原样保留；另一项回归确认两种类型的完整镜像逐字节相同，R-W 子通道为空。生成器不会替调用者交换字节。测试不创建刻录设备、不写入光盘。
 - 数据轨子码回归：两种格式均扫描 512 个数据扇区及完整 lead-in、预间隙、lead-out，核对 ADR3 替换、BCD 时间、CRC 和 ADR1 出现频率。音轨完整 DAO 镜像与独立原生 IMAPI 参考逐字节一致，音轨 ADR3 和非对称 PCM 保留；另有固定向量覆盖区域边界和 `99:59:74`。这些检查验证子码转换与音轨隔离，未进行此次修复的实盘读回。
-- CD-Extra：回归覆盖 Track-at-Once 地址与容量、WAV 校验与补静音、按绝对 LBA 编址的 ISO9660/Joliet、第 2 区段图片与整盘绘图逐字节一致、MODE SELECT 05h 页字段、WRITE(10) 地址与重试、关闭区段顺序，以及按实测起点生成图片；刻录部分只针对模拟光驱，未进行实盘刻录，也未在 CD 机上播放验证。
+- CD-Extra：回归覆盖 Track-at-Once 地址与容量、WAV 校验与补静音、按绝对 LBA 编址的 ISO9660/Joliet、第 2 区段图片与整盘绘图逐字节一致、MODE SELECT 05h 页字段、WRITE(10) 地址与重试、关闭区段顺序，以及按实测起点生成图片；刻录命令序列的回归只针对模拟光驱；另有一次程序内实刻在 CD 机上播放正常，记录见 [VALIDATION.md](VALIDATION.md#实盘验证边界)。
 - 2026-09-12 用户在本次修复后完成实盘试验，反馈已无重影。这是用户提供的实体盘结果；流式、cdrecord、ImgBurn 三个入口的逐项实测细节未单独记录。
 
 微软 `WriteMedia` 文档没有说明它内部的字节交换实现；上述结论没有把内存实验等同于观察到设备传输时的交换。[Microsoft WriteMedia 文档](https://learn.microsoft.com/en-us/windows/win32/api/imapi2/nf-imapi2-idiscformat2rawcd-writemedia)

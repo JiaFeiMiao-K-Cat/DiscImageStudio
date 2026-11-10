@@ -94,7 +94,7 @@ Postup a parametry najdete v [průvodci asistovanou kalibrací](docs/CALIBRATI
 
 - **Výstup obrazu disku**: Exportujte kompletní soubory ISO / RAW a vypalte je ručně vhodným vypalovacím softwarem.
 - **Přímé streamované vypalování (experimentální)**: Generujte a vypalujte data CD, DVD a BD-R současně bez ukládání kompletního obrazu disku. BD-R používá sekvenční zápis MMC.
-- **Vypalování CD-Extra (experimentální)**: Hudební relaci zapíše a uzavře v režimu Track-at-Once, poté vygeneruje a zapíše obrazovou relaci pro adresu, kterou ohlásí vypalovačka, a disk uzavře; předem lze spustit zkušební zápis. Na fyzickém disku zatím neověřeno.
+- **Vypalování CD-Extra (experimentální)**: Hudební relaci zapíše a uzavře v režimu Track-at-Once, poté vygeneruje a zapíše obrazovou relaci pro adresu, kterou ohlásí vypalovačka, a disk uzavře; předem lze spustit zkušební zápis. Jeden disk již byl vypálen a v přehrávači CD se přehrává správně.
 - **Nepoužívejte média, která nejsou prázdná!**
 
 ## Požadavky na systém a hardware

@@ -92,7 +92,7 @@ Disc Image Studio, akıllı ve hassas bir destekli kalibrasyon iş akışı suna
 
 - **Disk İmajı Çıktısı**: Eksiksiz ISO / RAW dosyalarını dışa aktarın ve uygun bir yazma yazılımıyla manuel olarak yazın.
 - **Akışla Canlı Yazma (Deneysel)**: Tam bir disk imajı kaydetmeden CD, DVD ve BD-R verilerini aynı anda oluşturup diske yazın. BD-R için MMC sıralı yazma (sequential writing) kullanılır.
-- **CD-Extra Yazma (Deneysel)**: Müzik oturumunu Track-at-Once ile yazıp kapatır, ardından resim oturumunu sürücünün bildirdiği adrese göre oluşturup yazar ve diski kapatır; önce bir deneme yazması yapılabilir. Henüz gerçek bir diskte doğrulanmadı.
+- **CD-Extra Yazma (Deneysel)**: Müzik oturumunu Track-at-Once ile yazıp kapatır, ardından resim oturumunu sürücünün bildirdiği adrese göre oluşturup yazar ve diski kapatır; önce bir deneme yazması yapılabilir. Gerçek bir diske yazıldı ve bir CD çalarda sorunsuz çalındı.
 - **Dolu veya boş olmayan medyaları kesinlikle kullanmayın!**
 
 ## Sistem ve Donanım Gereksinimleri

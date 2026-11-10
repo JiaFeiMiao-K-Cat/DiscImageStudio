@@ -93,7 +93,7 @@ See the [assisted calibration guide](docs/CALIBRATION.md) for the workflow and p
 
 - **Disc image output**: Export complete ISO / RAW files and burn them manually with suitable burning software.
 - **Live streaming burn (experimental)**: Generate and burn CD, DVD, and BD-R data simultaneously without saving a complete disc image. BD-R uses MMC sequential writing.
-- **CD-Extra burning (experimental)**: Writes and closes the music session with Track-at-Once, then generates and writes the picture session for the address the recorder reports and closes the disc; a test write can run first. Not yet verified on a physical disc.
+- **CD-Extra burning (experimental)**: Writes and closes the music session with Track-at-Once, then generates and writes the picture session for the address the recorder reports and closes the disc; a test write can run first. One disc has been burned and plays on a CD player.
 - **Do not use non-blank media!**
 
 ## System and Hardware Requirements

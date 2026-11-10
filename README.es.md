@@ -116,7 +116,7 @@ Consulta la [guía de calibración asistida](docs/CALIBRATION.md) para conocer e
 
 - **Salida de imágenes de disco**: exporta archivos ISO / RAW completos y grábalos manualmente con un programa adecuado.
 - **Grabación en streaming (experimental)**: genera y graba datos CD, DVD y BD-R a la vez, sin guardar una imagen de disco completa. BD-R usa escritura secuencial MMC.
-- **Grabación CD-Extra (experimental)**: graba y cierra la sesión de música con Track-at-Once, después genera y graba la sesión de imagen para la dirección que indica la grabadora y cierra el disco; antes se puede hacer una grabación de prueba. Aún no se ha verificado en un disco físico.
+- **Grabación CD-Extra (experimental)**: graba y cierra la sesión de música con Track-at-Once, después genera y graba la sesión de imagen para la dirección que indica la grabadora y cierra el disco; antes se puede hacer una grabación de prueba. Ya se ha grabado un disco, que se reproduce correctamente en un reproductor de CD.
 - **¡No uses discos que ya contengan datos!**
 
 <a id="system-and-hardware-requirements"></a>
