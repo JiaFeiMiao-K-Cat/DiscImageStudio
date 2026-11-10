@@ -244,11 +244,16 @@ public interface IOpticalDiscBurner
         OpticalBurnRequest request,
         IProgress<OpticalBurnProgress>? progress = null,
         CancellationToken cancellationToken = default);
+}
 
+/// <summary>A recorder back end that can also record a two-session CD-Extra disc. It is a
+/// separate capability, so a back end without it says so through its type and callers find
+/// out before a burn is prepared rather than from an exception while it runs.</summary>
+public interface ICdExtraBurner
+{
     /// <summary>Records a two-session CD-Extra disc; see <see cref="CdExtraBurnRequest"/>.</summary>
     Task<CdExtraBurnResult> BurnCdExtraAsync(
         CdExtraBurnRequest request,
         IProgress<OpticalBurnProgress>? progress = null,
-        CancellationToken cancellationToken = default)
-        => throw new NotSupportedException("This recorder does not support CD-Extra recording.");
+        CancellationToken cancellationToken = default);
 }

@@ -132,6 +132,9 @@ internal sealed class CdMmcCommands(IMmcCommandTransport transport, Action<TimeS
             disc[5] | disc[10] << 8, disc[6] | disc[11] << 8, disc[8]);
     }
 
+    /// <summary>Track number that addresses the invisible (next, not yet written) track.</summary>
+    internal const int InvisibleTrack = 0xff;
+
     internal CdTrackInformation ReadTrackInformation(int trackNumber)
     {
         if (trackNumber is <= 0 or > ushort.MaxValue) throw new ArgumentOutOfRangeException(nameof(trackNumber));
@@ -141,7 +144,8 @@ internal sealed class CdMmcCommands(IMmcCommandTransport transport, Action<TimeS
         byte[] track = ExecuteWhenReady(cdb, 48, 30).Data;
         RequireResponseLength(track, 36, 48, "READ TRACK INFORMATION");
         int returned = track[2] | track[32] << 8;
-        if (returned != trackNumber)
+        // The invisible track answers with its real number.
+        if (returned != trackNumber && trackNumber != InvisibleTrack)
             throw new IOException($"光驱返回了不同的轨道编号（请求 {trackNumber}，返回 {returned}），已停止刻录操作。");
         if ((track[5] & 0x20) != 0)
             throw new IOException("CD 轨道已标记为损坏，已停止刻录操作。");
@@ -154,13 +158,25 @@ internal sealed class CdMmcCommands(IMmcCommandTransport transport, Action<TimeS
     }
 
     /// <summary>The next, not yet written track of the open session: READ DISC
-    /// INFORMATION counts it as the last track of the last session.</summary>
+    /// INFORMATION counts it as the last track of the last session. A recorder that
+    /// answers with a written track instead is asked for the invisible track (FFh), the
+    /// way cdrecord and libburn find it; the caller checks whichever answer comes back.</summary>
     internal CdTrackInformation ReadNextWritableTrack()
     {
         CdDiscInformation disc = ReadDiscInformation();
         if (disc.LastTrackInLastSession <= 0)
             throw new IOException("光驱未报告可写入的 CD 轨道编号。");
-        return ReadTrackInformation(disc.LastTrackInLastSession);
+        CdTrackInformation track = ReadTrackInformation(disc.LastTrackInLastSession);
+        if (track.NextWritableAddressValid && track.Blank) return track;
+        try
+        {
+            CdTrackInformation invisible = ReadTrackInformation(InvisibleTrack);
+            return invisible.NextWritableAddressValid && invisible.Blank ? invisible : track;
+        }
+        catch (MmcCommandException)
+        {
+            return track;
+        }
     }
 
     internal byte[] ModeSenseWriteParameters()

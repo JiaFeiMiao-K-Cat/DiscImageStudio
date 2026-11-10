@@ -226,5 +226,9 @@
   "实测第 2 区段起点需要填写 LBA，即 cdrecord -msinfo 输出的第二个数。": {
     "zh-CN": "实测第 2 区段起点需要填写 LBA，即 cdrecord -msinfo 输出的第二个数。",
     "en": "The measured session 2 start must be an LBA: the second number printed by cdrecord -msinfo."
+  },
+  "当前的刻录后端不支持 CD-Extra 刻录；可以在导出页生成图片区段 ISO 后用其他软件刻录。": {
+    "zh-CN": "当前的刻录后端不支持 CD-Extra 刻录；可以在导出页生成图片区段 ISO 后用其他软件刻录。",
+    "en": "This recorder back end cannot burn CD-Extra discs; export the picture session ISO and burn it with other software."
   }
 }
