@@ -69,7 +69,7 @@ internal sealed class CdExtraProgressTracker
     }
 }
 
-public sealed partial class WindowsImapiBurner
+public sealed partial class WindowsImapiBurner : ICdExtraBurner
 {
     public Task<CdExtraBurnResult> BurnCdExtraAsync(
         CdExtraBurnRequest request,

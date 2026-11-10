@@ -46,6 +46,9 @@ internal static class CdExtraBurnTests
                 && CdTaoWriter.DataBlockBytes == CdExtraDataContent.SectorBytes
                 && new CdWriteParameters(1, 3, 0, 0, 0, false, false).AudioPauseLength == CdExtraLayout.TrackPauseSectors,
             "Core, Cd and Burning agree on the CD-Extra track limit, sector sizes, gaps and run-out");
+        Require(typeof(ICdExtraBurner).IsAssignableFrom(typeof(WindowsImapiBurner))
+                && typeof(IOpticalDiscBurner).GetMethod(nameof(ICdExtraBurner.BurnCdExtraAsync)) is null,
+            "CD-Extra recording is a capability of its own, not a member every burner must carry");
     }
 
     private static void TestWriteParametersPage()
@@ -171,6 +174,21 @@ internal static class CdExtraBurnTests
         ScriptedTransport reset = new() { Fail = { [0x51] = Sense(6, 0x29, 0) } };
         Throws<MmcCommandException>(() => new CdMmcCommands(reset, _ => { }).ReadDiscInformation(),
             "a bus reset is not retried: it clears the write parameters");
+        // A recorder that names a written track as the last one is asked for the invisible
+        // track (FFh), which answers with its real number.
+        byte[] writtenTrack = TrackInfo(track: 1, nwa: 0, free: 0);
+        writtenTrack[6] = 1;
+        writtenTrack[7] = 0;
+        ScriptedTransport lagging = new() { TrackInfo = writtenTrack, InvisibleTrackInfo = TrackInfo(track: 2, nwa: 22_636, free: 300_000) };
+        lagging.DiscInfo.Enqueue(DiscInfo(status: 1, lastSession: 1, lastTrack: 1));
+        CdTrackInformation invisible = new CdMmcCommands(lagging, _ => { }).ReadNextWritableTrack();
+        Require(invisible is { TrackNumber: 2, NextWritableAddress: 22_636, Blank: true, NextWritableAddressValid: true }
+                && lagging.Commands[^1][0] == 0x52 && lagging.Commands[^1][5] == 0xff,
+            "the invisible track is used when the numbered track is not writable");
+        ScriptedTransport unwritable = new() { TrackInfo = writtenTrack, InvisibleTrackInfo = writtenTrack };
+        unwritable.DiscInfo.Enqueue(DiscInfo(status: 1, lastSession: 1, lastTrack: 1));
+        Require(new CdMmcCommands(unwritable, _ => { }).ReadNextWritableTrack() is { Blank: false, TrackNumber: 1 },
+            "without a writable track the first answer is returned for the caller to report");
         byte[] shortTrack = TrackInfo(track: 3, nwa: 34_506, free: 325_341)[..40];
         ScriptedTransport truncated = new() { TrackInfo = shortTrack };
         Throws<IOException>(() => new CdMmcCommands(truncated, _ => { }).ReadTrackInformation(3),
@@ -612,6 +630,8 @@ internal static class CdExtraBurnTests
         internal List<byte[]> Commands { get; } = [];
         internal Queue<byte[]> DiscInfo { get; } = new();
         internal byte[] TrackInfo { get; set; } = [];
+        /// <summary>The answer for track FFh; null answers like any other track.</summary>
+        internal byte[]? InvisibleTrackInfo { get; set; }
         /// <summary>NOT READY answers (02/04/08) to send before executing an opcode.</summary>
         internal Dictionary<byte, int> Busy { get; } = [];
         /// <summary>One failure to answer for an opcode.</summary>
@@ -625,7 +645,7 @@ internal static class CdExtraBurnTests
             return cdb[0] switch
             {
                 0x51 => new(0, new byte[18], DiscInfo.Dequeue()),
-                0x52 => new(0, new byte[18], TrackInfo),
+                0x52 => new(0, new byte[18], cdb[5] == 0xff && InvisibleTrackInfo is { } invisible ? invisible : TrackInfo),
                 0x5b or 0x00 or 0x35 => Good(),
                 _ => throw new InvalidOperationException($"Unexpected command 0x{cdb[0]:X2}."),
             };

@@ -138,6 +138,19 @@ public static class ProjectJsonStore
     /// not know the block reports an unsupported version instead of a malformed file; every
     /// other project stays at <see cref="CurrentSchemaVersion"/> and opens in both.</summary>
     public const int CdExtraSchemaVersion = 3;
+
+    /// <summary>The version a file with this content is written as, which is also the lowest
+    /// version a file with this content may declare: the schema version states the newest
+    /// feature the document uses, not the newest format the writer knows. Saving and loading
+    /// both go through this one rule. In memory the version is not kept; a loaded document
+    /// always carries <see cref="CurrentSchemaVersion"/>.</summary>
+    public static int RequiredSchemaVersion(ProjectDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        // The block is present in the file even while the mode is switched off, and builds
+        // without CD-Extra reject any member they do not know.
+        return document.CdExtra is null ? CurrentSchemaVersion : CdExtraSchemaVersion;
+    }
     private const int LegacySchemaVersion = 1;
     public const string FileExtension = ".discproj";
     public const string FileFilter = "Disc Image Studio 工程|*.discproj";
@@ -187,7 +200,7 @@ public static class ProjectJsonStore
         // but never written back: saving is what migrates an old file to the current schema.
         ProjectDocument clean = document with
         {
-            SchemaVersion = document.CdExtra is null ? CurrentSchemaVersion : CdExtraSchemaVersion,
+            SchemaVersion = RequiredSchemaVersion(document),
             ExtensionData = document.ExtensionData is { Count: > 0 } ? null : document.ExtensionData,
         };
         string temporaryPath = Path.Combine(directory, $".{Path.GetFileName(fullPath)}.{Guid.NewGuid():N}.tmp");
@@ -473,7 +486,10 @@ public static class ProjectJsonStore
             }
 
             Validate(document);
-            if (document.SchemaVersion < CdExtraSchemaVersion && document.CdExtra is not null)
+            // Schema 1 is the accepted older form of schema 2. A file that uses a newer
+            // feature than the version it declares is refused.
+            int required = RequiredSchemaVersion(document);
+            if (required > CurrentSchemaVersion && document.SchemaVersion < required)
             {
                 throw DiagnosticMessage.InvalidData($"cdExtra 设置需要 schemaVersion 3。");
             }

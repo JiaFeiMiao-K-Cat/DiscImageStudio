@@ -74,6 +74,14 @@ internal static class CdExtraUiTests
         string downgraded = Path.Combine(directory, "downgraded.discproj");
         File.WriteAllText(downgraded, json.Replace("\"schemaVersion\": 3", "\"schemaVersion\": 2", StringComparison.Ordinal));
         Throws<InvalidDataException>(() => ProjectJsonStore.Load(downgraded), "a cdExtra block in a schema 2 file");
+        File.WriteAllText(downgraded, json.Replace("\"schemaVersion\": 3", "\"schemaVersion\": 1", StringComparison.Ordinal));
+        Throws<InvalidDataException>(() => ProjectJsonStore.Load(downgraded), "a cdExtra block in a schema 1 file");
+        // One rule decides the version for saving and loading: the newest feature in use.
+        Require(ProjectJsonStore.RequiredSchemaVersion(CdDocument(settings)) == ProjectJsonStore.CdExtraSchemaVersion
+                && ProjectJsonStore.RequiredSchemaVersion(CdDocument(new ProjectCdExtraSettings(false, [])))
+                    == ProjectJsonStore.CdExtraSchemaVersion
+                && ProjectJsonStore.RequiredSchemaVersion(CdDocument(null)) == ProjectJsonStore.CurrentSchemaVersion,
+            "a cdExtra block needs schema 3 even while the mode is off, because older builds reject the member");
         ProjectJsonStore.Save(path, loaded with { CdExtra = null });
         Require(File.ReadAllText(path).Contains("\"schemaVersion\": 2", StringComparison.Ordinal),
             "removing the music returns the project to schema 2");

@@ -733,6 +733,8 @@ public partial class BurnViewModel : ObservableObject
                 }
                 else if (IsCdExtraBurn)
                 {
+                    if (_opticalDiscBurner is not ICdExtraBurner)
+                        throw new NotSupportedException(L.T("当前的刻录后端不支持 CD-Extra 刻录；可以在导出页生成图片区段 ISO 后用其他软件刻录。"));
                     CdDiscParameters parameters = ReadCdGeneratedParameters();
                     parameters = parameters with
                     {
@@ -831,7 +833,7 @@ public partial class BurnViewModel : ObservableObject
             OpticalBurnResult result;
             if (cdExtraRequest is not null)
             {
-                CdExtraBurnResult extra = await _opticalDiscBurner.BurnCdExtraAsync(
+                CdExtraBurnResult extra = await ((ICdExtraBurner)_opticalDiscBurner).BurnCdExtraAsync(
                     cdExtraRequest, progress, burnCancellation.Token);
                 result = new OpticalBurnResult(extra.DeviceId, OpticalBurnMediaKind.CdAudio,
                     extra.AudioBytesWritten + extra.DataBytesWritten, extra.Elapsed, extra.ActualWriteSpeed);

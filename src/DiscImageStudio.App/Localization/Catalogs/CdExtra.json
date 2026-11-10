@@ -278,5 +278,9 @@
   " · {0} 扇区": {
     "zh-CN": " · {0} 扇区",
     "en": " · {0} sectors"
+  },
+  "当前的刻录后端不支持 CD-Extra 刻录；可以在导出页生成图片区段 ISO 后用其他软件刻录。": {
+    "zh-CN": "当前的刻录后端不支持 CD-Extra 刻录；可以在导出页生成图片区段 ISO 后用其他软件刻录。",
+    "en": "This recorder back end cannot burn CD-Extra discs; export the picture session ISO and burn it with other software."
   }
 }
