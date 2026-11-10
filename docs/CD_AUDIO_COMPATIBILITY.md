@@ -65,7 +65,7 @@ FILE "disc.wav" WAVE
 
 用外部软件刻录时必须整盘一次写入（DAO／SAO）并使用这个 CUE，例如 ImgBurn 的「Write image file to disc」或 `cdrecord -dao cuefile=disc.cue`；Track-at-Once 会把预间隙写成静音，图片就没有了。命令行用 `cd-generate --music 文件夹 --output disc.wav`（`--music-position` 默认为 `outer`）。读回预览显示整个文件：图片在内，音乐表现为外缘的一圈噪声纹理，与实际盘面一致。
 
-外圈布局实刻过一张盘，由此发现并修正了上面的咔声问题；修正后的盘尚未复测。很长的预间隙（几十分钟）在不同 CD 机上的寻轨和时间显示、以及各光驱的 DAO 写入，都有待实测。
+外圈布局第一次实刻时发现并修正了上面的咔声问题；修正后重新刻的盘在电脑上用 PotPlayer 播放正常，CD 机上尚未测试。很长的预间隙（几十分钟）在不同 CD 机上的寻轨和时间显示、以及各光驱的 DAO 写入，都有待实测。
 
 English: with "Music + picture", CD players play the music and never the picture. "Music position" selects the disc structure. **Outer (default)**: one Disc-at-Once audio session; the picture is the index 0 pre-gap of track 1 from LBA 0 and the gapless music ends at the usable capacity. The last two seconds of the pre-gap are digital silence, because audio and index are not aligned to the sample on a burned disc and the picture would otherwise reach into track 1 (a first burn without the silence clicked at 0:00). Every address is fixed before writing and there is no session gap, but the picture exists as audio samples in front of track 1 (rewinding past the start of track 1 plays it as noise) and disc files are not possible. The export is one WAV with a CUE sheet whose track 1 has `INDEX 00 00:00:00`; it must be burned Disc-at-Once. **Inner**: a CD-Extra disc, described below. The inner layout has been burned once and plays on a CD player; the outer layout has not been verified on a physical recorder yet.
 
