@@ -39,6 +39,20 @@
       "descriptionResourceKey": "DiscPreset_VerbatimAzo43438_Description"
     },
     {
+      "id": "verbatim-cdr-43347",
+      "displayName": "威宝 CD-R Extra Protection（43347）（实测）",
+      "description": "威宝 CD-R Extra Protection（CMC ATIP 97:26:66）实测等效几何参数：内半径 25.276144 mm、外半径 58.283068 mm，共 359,844 个扇区；采用三次轨距分布。",
+      "sectors": 359844,
+      "usableSectors": 359842,
+      "innerRadiusMm": 25.276144212110722,
+      "outerRadiusMm": 58.28306795541299,
+      "linearVelocityMmPerSecond": 1200,
+      "pitchLinear": 2.5851954651236925e-09,
+      "pitchQuadratic": -5.91768627050507e-10,
+      "pitchCubic": -2.6989935400056038e-09,
+      "contributor": "Try2Take"
+    },
+    {
       "id": "cd-74",
       "displayName": "标准 74min CD",
       "description": "ECMA-130／ISO/IEC 10149 标准速度 1200 mm/s；120 mm 盘、约 74 分钟，333,000 扇区（24.5–56.8 mm）。",

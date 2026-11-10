@@ -4,6 +4,7 @@
 
 ### 中文
 
+- 新增威宝 CD-R Extra Protection（CMC ATIP 97:26:66）实测几何预设，包含内外半径及三次轨距参数。
 - Windows 应用宿主设置 `CetCompat=false`，作为 #229 所报启动失败的兼容性处理；这会降低该应用进程的硬件影子栈保护，不修改系统级安全设置。受影响原机上的启动结果仍待验证。
 - 新增 Windows ARM64 自包含单文件 EXE；Windows x64 与 ARM64 分别在原生 runner 上构建并对最终发布文件执行自检、音轨生成和 GUI 截图检查，Release 复用这些已测试制品。ARM64 使用 Windows 11，CI 仅覆盖软件检查，尚未验证实盘刻录。
 - 设计页支持从资源管理器拖入单张或多张图片。
@@ -13,6 +14,7 @@
 
 ### English
 
+- Add a measured geometry preset for Verbatim CD-R Extra Protection (CMC ATIP 97:26:66), including calibrated radii and cubic track-pitch coefficients.
 - Set `CetCompat=false` on the Windows application host as a compatibility workaround for the startup failure reported in #229. This reduces hardware shadow-stack protection for this application process without changing system-wide security settings. Startup on the affected original machine still needs verification.
 - Add a self-contained single-file Windows ARM64 EXE. Windows x64 and ARM64 builds run on native runners and check the final executables with self-tests, audio-track generation and GUI snapshots; releases reuse those tested artifacts. ARM64 uses Windows 11. CI covers software checks only; physical disc burning on ARM64 remains unverified.
 - Import one or multiple images by dragging files from Explorer onto the design page, using the same layer fitting and failure messages as the import button. Folders and unrelated files are ignored, and imports are disabled while a job is running.
