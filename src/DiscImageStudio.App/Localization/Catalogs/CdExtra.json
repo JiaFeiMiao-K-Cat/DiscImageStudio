@@ -1,7 +1,7 @@
 {
   "Xaml.CdExtraMusicTitle": {
-    "zh-CN": "音乐（CD-Extra）",
-    "en": "Music (CD-Extra)"
+    "zh-CN": "音乐",
+    "en": "Music"
   },
   "Xaml.CdLayoutPictureOnly": {
     "zh-CN": "整盘图片",
@@ -12,8 +12,8 @@
     "en": "Music + picture"
   },
   "Xaml.CdExtraOffHint": {
-    "zh-CN": "整张盘只放图片。选择“音乐 + 图片”后，音乐写在内圈的第 1 区段，CD 机只播放音乐；图片写在外圈的第 2 区段数据轨。",
-    "en": "The whole disc holds the picture. With “Music + picture”, the music goes into session 1 on the inner rings and CD players play only the music; the picture becomes the data track of session 2 on the outer rings."
+    "zh-CN": "整张盘只放图片。选择“音乐 + 图片”后可以添加音乐：CD 机只播放音乐，图片所在的区域不会被当作曲目播放。",
+    "en": "The whole disc holds the picture. “Music + picture” adds music: CD players play only the music, and the picture area is never played as a track."
   },
   "Xaml.AddMusic": {
     "zh-CN": "添加音乐…",
@@ -36,8 +36,8 @@
     "en": "Disc area"
   },
   "Xaml.MusicSessionLegend": {
-    "zh-CN": "音乐区段（第 1 区段）",
-    "en": "Music session (session 1)"
+    "zh-CN": "音乐区",
+    "en": "Music"
   },
   "Xaml.SessionGapLegend": {
     "zh-CN": "区段间隔（导出区与导入区）",
@@ -226,5 +226,57 @@
   "实测第 2 区段起点需要填写 LBA，即 cdrecord -msinfo 输出的第二个数。": {
     "zh-CN": "实测第 2 区段起点需要填写 LBA，即 cdrecord -msinfo 输出的第二个数。",
     "en": "The measured session 2 start must be an LBA: the second number printed by cdrecord -msinfo."
+  },
+  "Xaml.MusicPlacement": {
+    "zh-CN": "音乐位置",
+    "en": "Music position"
+  },
+  "Xaml.CdOuterMusicHint": {
+    "zh-CN": "只接受 44.1 kHz、16 位、立体声 PCM 的 WAV，样本原样写入。音乐在外圈：整张盘是一个音频区段，图片写在第 1 轨的预间隙里，曲目之间没有间隔，不足 4 秒的曲目补静音。CD 机从第 1 首开始播放；只有在第 1 首开头继续倒退才会播到图片，听到的是噪声。",
+    "en": "Only 44.1 kHz, 16-bit stereo PCM WAV files are accepted; their samples are written unchanged. With the music on the outer rings the disc is one audio session: the picture is the pre-gap of track 1, tracks follow without gaps, and tracks shorter than 4 seconds are padded with silence. CD players start at track 1; only rewinding past its beginning reaches the picture, which sounds like noise."
+  },
+  "输出图片 + 音乐音轨 (.wav)": {
+    "zh-CN": "输出图片 + 音乐音轨 (.wav)",
+    "en": "Picture + music track output (.wav)"
+  },
+  "音乐在外圈：导出一个 WAV（图片在第 1 轨的预间隙里，音乐紧随其后）和 CUE，需用支持 CUE 的软件整盘一次写入（DAO）；程序内刻录会直接写入整张盘。": {
+    "zh-CN": "音乐在外圈：导出一个 WAV（图片在第 1 轨的预间隙里，音乐紧随其后）和 CUE，需用支持 CUE 的软件整盘一次写入（DAO）；程序内刻录会直接写入整张盘。",
+    "en": "Music on the outer rings: exports one WAV (the picture in the pre-gap of track 1, the music behind it) and a CUE sheet, to be burned Disc-at-Once with software that reads CUE sheets; burning in the app writes the whole disc directly."
+  },
+  "音乐在外圈时整张盘是音频盘，不能附带随盘文件：请清除随盘文件夹，或把音乐位置改为内圈。": {
+    "zh-CN": "音乐在外圈时整张盘是音频盘，不能附带随盘文件：请清除随盘文件夹，或把音乐位置改为内圈。",
+    "en": "With the music on the outer rings the disc is an audio disc and cannot carry disc files: clear the disc-file folder, or move the music to the inner rings."
+  },
+  "图片写在第 1 轨的预间隙里，CD 机从音乐开始播放；整盘一次写入，图片位置不依赖光驱。": {
+    "zh-CN": "图片写在第 1 轨的预间隙里，CD 机从音乐开始播放；整盘一次写入，图片位置不依赖光驱。",
+    "en": "The picture is the pre-gap of track 1, so CD players start with the music. The disc is written in one pass and the picture position does not depend on the recorder."
+  },
+  "图片 {0:P0} · 音乐 {1:P0}": {
+    "zh-CN": "图片 {0:P0} · 音乐 {1:P0}",
+    "en": "Picture {0:P0} · Music {1:P0}"
+  },
+  "WAV 音轨|*.wav|所有文件|*.*": {
+    "zh-CN": "WAV 音轨|*.wav|所有文件|*.*",
+    "en": "WAV track|*.wav|All files|*.*"
+  },
+  "正在生成图片 + 音乐音轨…": {
+    "zh-CN": "正在生成图片 + 音乐音轨…",
+    "en": "Generating the picture + music track…"
+  },
+  "音频盘（DAO） · 图片在第 1 轨预间隙 · 外圈 {0} 首音乐": {
+    "zh-CN": "音频盘（DAO） · 图片在第 1 轨预间隙 · 外圈 {0} 首音乐",
+    "en": "Audio disc (DAO) · picture in the pre-gap of track 1 · {0} music tracks on the outer rings"
+  },
+  "音频盘（DAO） · 图片在第 1 轨预间隙（LBA 0–{0:N0}，约占盘面 {1:P0}）": {
+    "zh-CN": "音频盘（DAO） · 图片在第 1 轨预间隙（LBA 0–{0:N0}，约占盘面 {1:P0}）",
+    "en": "Audio disc (DAO) · picture in the pre-gap of track 1 (LBA 0–{0:N0}, about {1:P0} of the disc)"
+  },
+  " · 外圈 {0} 首音乐（{1}）": {
+    "zh-CN": " · 外圈 {0} 首音乐（{1}）",
+    "en": " · {0} music tracks on the outer rings ({1})"
+  },
+  " · {0} 扇区": {
+    "zh-CN": " · {0} 扇区",
+    "en": " · {0} sectors"
   }
 }

@@ -22,7 +22,8 @@ internal sealed record DataRegionInputs(
     double PitchLinear,
     double PitchQuadratic,
     double PitchCubic,
-    IReadOnlyList<string>? MusicTracks = null)
+    IReadOnlyList<string>? MusicTracks = null,
+    bool MusicAtOuterRing = false)
 {
     /// <summary>The CD geometry the design guide and the CD-Extra plan share.</summary>
     internal CdDiscParameters CreateCdParameters() => new(
@@ -84,8 +85,9 @@ internal static class DataRegionPlanner
         parameters.Validate();
         CdExtraPlan plan = CdExtraPlanner.Plan(parameters, inputs.MusicTracks,
             inputs.Directory.Length == 0 ? null : inputs.Directory, inputs.VolumeLabel,
-            inputs.FilesAtOuterRing, cancellationToken: cancellationToken);
-        if (!plan.IsValid || inputs.Directory.Length == 0)
+            inputs.FilesAtOuterRing, cancellationToken: cancellationToken,
+            musicAtOuterRing: inputs.MusicAtOuterRing);
+        if (!plan.IsValid || plan.DataPlan is null || inputs.Directory.Length == 0)
             return (null, plan);
         CdDataLayoutPlan data = plan.DataPlan!;
         double Radius(uint lba) => parameters.RadiusFromByte((long)lba * CdDiscParameters.BytesPerSector);

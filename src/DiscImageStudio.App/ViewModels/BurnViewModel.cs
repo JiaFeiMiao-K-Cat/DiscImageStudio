@@ -130,6 +130,7 @@ public partial class BurnViewModel : ObservableObject
             }
             else if (args.PropertyName is nameof(DiscParametersState.CdDataDirectory)
                     or nameof(DiscParametersState.CdExtraEnabled)
+                    or nameof(DiscParametersState.CdMusicAtOuterRing)
                 && !UseCalibrationPattern
                 && _shell.CurrentProject?.Family == OpticalDiscFamily.CompactDisc)
             {
@@ -202,7 +203,13 @@ public partial class BurnViewModel : ObservableObject
     /// <summary>A CD project in CD-Extra mode: music session plus picture session.</summary>
     public bool IsCdExtraBurn => !UseCalibrationPattern
         && _shell.CurrentProject?.Family == OpticalDiscFamily.CompactDisc
-        && _state.CdExtraEnabled;
+        && _state.IsCdMusicInner;
+
+    /// <summary>A CD project with the music on the outer rings: one Disc-at-Once audio
+    /// session, the picture in the pre-gap of track 1.</summary>
+    public bool IsCdOuterMusicBurn => !UseCalibrationPattern
+        && _shell.CurrentProject?.Family == OpticalDiscFamily.CompactDisc
+        && _state.IsCdMusicOuter;
 
     /// <summary>CD-Extra only: the recorder simulates every WRITE (Test Write) and no session
     /// is closed, so a drive can be checked without using a disc.</summary>
@@ -218,7 +225,7 @@ public partial class BurnViewModel : ObservableObject
         ? OpticalBurnMediaKind.BluRayData
         : IsDvdBurn
             ? OpticalBurnMediaKind.DvdData
-            : !UseCalibrationPattern && !string.IsNullOrWhiteSpace(_state.CdDataDirectory)
+            : !UseCalibrationPattern && !string.IsNullOrWhiteSpace(_state.CdDataDirectory) && !_state.IsCdMusicOuter
                 ? OpticalBurnMediaKind.CdData : OpticalBurnMediaKind.CdAudio;
 
     /// <summary>Device→speeds→confirm gating: not busy, device chosen, checkbox ticked.</summary>
@@ -346,6 +353,8 @@ public partial class BurnViewModel : ObservableObject
             string encoding = IsCdExtraBurn
                 ? L.F($"CD-Extra · 第 1 区段 {_state.CdMusicTracks.Count} 首音乐 · 第 2 区段图片数据轨")
                     + (CdExtraTestWrite ? L.T(" · 模拟写入") : string.Empty)
+                : IsCdOuterMusicBurn
+                ? L.F($"音频盘（DAO） · 图片在第 1 轨预间隙 · 外圈 {_state.CdMusicTracks.Count} 首音乐")
                 : string.IsNullOrWhiteSpace(_state.CdDataDirectory)
                     ? _state.CdInterleave ? L.T("CD 音轨 · 启用延迟交织") : L.T("CD 音轨 · 未交织")
                     : L.F($"CD 数据盘 · 文件位于{(_state.CdFilesAtOuterRing ? L.T("外圈") : L.T("内圈"))}");
@@ -357,7 +366,8 @@ public partial class BurnViewModel : ObservableObject
                 _state.CdPitchLinear, _state.CdPitchQuadratic, _state.CdPitchCubic,
                 _state.CdDataDirectory, _state.CdVolumeLabel, _state.CdFilesAtOuterRing,
                 _state.ToneDitherStrength, _state.ToneLevels, _state.ToneBrightness,
-                _state.ToneSrgbLinearization, IsCdExtraBurn, CdExtraTestWrite, DescribeMusicIdentity(refreshFiles));
+                _state.ToneSrgbLinearization, IsCdExtraBurn, CdExtraTestWrite, IsCdOuterMusicBurn,
+                DescribeMusicIdentity(refreshFiles));
         }
 
         if (!string.Equals(identity, _sourceIdentity, StringComparison.Ordinal))
@@ -692,6 +702,35 @@ public partial class BurnViewModel : ObservableObject
                             + L.F($" · 绘图 LBA {hybridPlan.DrawingStartLba}–{hybridPlan.DrawingEndLbaExclusive - 1}")
                             + $" · {options.ContentLength / (1024.0 * 1024.0):F1} MiB";
                 }
+                else if (IsCdOuterMusicBurn)
+                {
+                    CdDiscParameters parameters = ReadCdGeneratedParameters();
+                    parameters = parameters with
+                    {
+                        SourceImageOuterRadiusMm = parameters.SamplingImageOuterRadiusMm,
+                        UsableSectors = StreamBurnCapacity.Resolve(parameters.OutputSectors, capacity.WritableSectors, mediaKind),
+                    };
+                    IReadOnlyList<string> music = _state.CdMusicTracks;
+                    if (music.Count == 0)
+                        throw new ArgumentException(L.T("CD-Extra 需要至少一首音乐：请在设计页添加 WAV 音乐，或切换回“整盘图片”。"));
+                    string dataDirectory = _state.CdDataDirectory.Trim();
+                    bool interleave = _state.CdInterleave;
+                    ToneProfile tone = _state.Tone;
+                    OpticalWriteSpeed? speed = selectedWriteSpeed.Speed;
+                    (OpticalBurnRequest Request, CdExtraPlan Plan) prepared = await StaWorker.RunAsync(() =>
+                    {
+                        CdExtraPlan outer = CdExtraPlanner.Plan(parameters, music,
+                            dataDirectory.Length == 0 ? null : dataDirectory, string.Empty, filesAtOuterRing: false,
+                            musicAtOuterRing: true);
+                        return (CreateCdOuterMusicBurnRequest(compositePath, parameters, outer, interleave, tone,
+                            device.Id, speed), outer);
+                    });
+                    request = prepared.Request;
+                    CdExtraLayout layout = prepared.Plan.Layout!;
+                    contentDescription = L.F($"音频盘（DAO） · 图片在第 1 轨预间隙（LBA 0–{layout.PictureEndLbaExclusive - 1:N0}，约占盘面 {layout.PictureAreaFraction:P0}）")
+                        + L.F($" · 外圈 {music.Count} 首音乐（{CdMusicViewModel.FormatDuration(prepared.Plan.MusicDuration)}）")
+                        + L.F($" · {layout.MusicEndLbaExclusive} 扇区");
+                }
                 else if (IsCdExtraBurn)
                 {
                     CdDiscParameters parameters = ReadCdGeneratedParameters();
@@ -852,6 +891,48 @@ public partial class BurnViewModel : ObservableObject
             OnPropertyChanged(nameof(CanEditDvdReadCompatibility));
             UpdateActionState();
         }
+    }
+
+    /// <summary>
+    /// Outer-music request: one Disc-at-Once audio burn whose content is the picture (the
+    /// pre-gap of track 1) followed by the padded music tracks. Every address is known before
+    /// writing, so nothing is regenerated during the burn. The music files are verified when
+    /// their samples are read; a file changed after planning fails the burn.
+    /// </summary>
+    internal static OpticalBurnRequest CreateCdOuterMusicBurnRequest(
+        string imagePath,
+        CdDiscParameters parameters,
+        CdExtraPlan plan,
+        bool interleave,
+        ToneProfile tone,
+        string deviceId,
+        OpticalWriteSpeed? writeSpeed)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        parameters.Validate();
+        if (!plan.IsValid || plan.Layout is not { MusicAtOuterRing: true } layout)
+        {
+            throw new ArgumentException(CdExtraPlanner.DescribeProblem(plan));
+        }
+
+        ToneProfile capturedTone = tone.Normalized();
+        CdMusicTrackInfo[] tracks = plan.Tracks.Select(track => track.Info!).ToArray();
+        CdDiscParameters picture = CdImageGenerator.HiddenPictureParameters(parameters, layout);
+        return new OpticalBurnRequest(deviceId, OpticalBurnMediaKind.CdAudio,
+            checked(layout.MusicEndLbaExclusive * CdDiscParameters.BytesPerSector),
+            (output, token) =>
+            {
+                // The music is recorded last, long after production starts: check every file
+                // and keep it unchanged from the first generated byte, which is produced
+                // before the recorder is asked to write.
+                using CdMusicPin pin = CdMusicFile.PinUnchanged(tracks);
+                CdTrackGenerator.GenerateToStream(imagePath, output, picture, interleave,
+                    cancellationToken: token, audioByteOrder: CdAudioByteOrder.LittleEndian, tone: capturedTone);
+                foreach (CdMusicTrackInfo track in tracks)
+                    pin.WritePaddedPcm(track, output, token);
+            },
+            writeSpeed,
+            CdAudioLayout: new CdAudioDiscLayout(layout.PictureSectors, tracks.Select(track => track.RecordedSectors).ToArray()));
     }
 
     /// <summary>Path, size and modification time of every music file: replacing a WAV after

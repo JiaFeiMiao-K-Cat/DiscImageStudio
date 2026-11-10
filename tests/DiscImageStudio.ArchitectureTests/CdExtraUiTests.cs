@@ -40,10 +40,11 @@ internal static class CdExtraUiTests
             if (error is not null) ExceptionDispatchInfo.Capture(error).Throw();
             WpfTestHost.Run(() => TestDesignView(directory));
             WpfTestHost.Run(() => TestMusicDrop(directory));
+            WpfTestHost.Run(() => TestOuterMusic(directory));
             WpfTestHost.Run(() => Wait(TestTonePreviewAsync(directory)));
         }
         finally { Directory.Delete(directory, recursive: true); }
-        Console.WriteLine("cd-extra-ui: passed (project round trip and legacy shape, validation, CD mode switches incl. RAW round trip, music list edits and order, guide plan, rings and problems, preview bands, export measured start, read-back sidecar, design page, WAV drops)");
+        Console.WriteLine("cd-extra-ui: passed (project round trip and legacy shape, validation, CD mode switches incl. RAW round trip, music list edits and order, guide plan, rings and problems, preview bands, export measured start, read-back sidecar, design page, WAV drops, outer-music mode switches, plan, project field, export and burn requests)");
     }
 
     private static ProjectDocument CdDocument(ProjectCdExtraSettings? cdExtra, string family = ProjectDocument.CdFamily)
@@ -122,6 +123,8 @@ internal static class CdExtraUiTests
         state.CdExtraEnabled = false;
         state.CdDataDirectory = string.Empty;
         state.CdOutputPath = "D:\\out\\disc.raw";
+        // A project without music takes the default position (outer); this suite covers CD-Extra.
+        state.CdMusicAtOuterRing = false;
         state.CdExtraEnabled = true;
         Require(state.CdOutputPath == "D:\\out\\disc.iso", "CD-Extra turns a RAW output into the session ISO");
         state.CdExtraEnabled = false;
@@ -146,6 +149,7 @@ internal static class CdExtraUiTests
         };
         ProjectSession.ApplyToState(rawProject, state);
         ProjectSession.ApplyToState(rawProject, state);
+        state.CdMusicAtOuterRing = false;
         state.CdExtraEnabled = true;
         state.CdExtraEnabled = false;
         Require(state.CdOutputPath == "D:\\a\\disc.raw", "reopening a RAW project keeps its format");
@@ -231,6 +235,7 @@ internal static class CdExtraUiTests
         state.CdSectors = "40000";
         state.CdUsableSectors = "39998";
         state.CdDataDirectory = string.Empty;
+        state.CdMusicAtOuterRing = false;
 
         CdMusicViewModel music = design.Music;
         music.AddTracks([first, second, first.ToUpperInvariant()]);
@@ -323,6 +328,7 @@ internal static class CdExtraUiTests
             state.CdSamplesPerSector = "2";
             state.CdDataDirectory = string.Empty;
             state.CdVolumeLabel = "CD_EXTRA";
+            state.CdMusicAtOuterRing = false;
             state.CdExtraEnabled = true;
             state.CdMusicTracks = [first, second];
             RunPreview(preview);
@@ -360,6 +366,7 @@ internal static class CdExtraUiTests
     {
         ShellViewModel shell = new(Dispatcher.CurrentDispatcher);
         shell.Design.SetDiscFamily(OpticalDiscFamily.CompactDisc);
+        shell.State.CdMusicAtOuterRing = false;
         shell.State.CdExtraEnabled = true;
         shell.State.CdMusicTracks = [Path.Combine(directory, "01.wav"), Path.Combine(directory, "02.wav")];
         RunGuide(shell.Design);
@@ -547,6 +554,127 @@ internal static class CdExtraUiTests
             CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
         if (!task.IsCompleted) Dispatcher.PushFrame(frame);
         task.GetAwaiter().GetResult();
+    }
+
+    /// <summary>Music on the outer rings through the app: the default position, the output
+    /// format, the guide plan and summary, the project field, and the export and burn
+    /// requests, whose bytes are the same recording.</summary>
+    private static void TestOuterMusic(string directory)
+    {
+        string first = Path.Combine(directory, "01.wav");
+        string second = Path.Combine(directory, "02.wav");
+        ShellViewModel shell = new(Dispatcher.CurrentDispatcher);
+        DiscParametersState state = shell.State;
+        shell.Design.SetDiscFamily(OpticalDiscFamily.CompactDisc);
+        shell.IsProjectOpen = true;
+        state.CdInnerRadius = "24.5";
+        state.CdOuterRadius = "32";
+        state.CdSectors = "40000";
+        state.CdUsableSectors = "39998";
+        state.CdDataDirectory = string.Empty;
+        state.CdOutputPath = "D:\\out\\disc.raw";
+        Require(state.CdMusicAtOuterRing && !state.IsCdMusicOuter, "the outer position is the default; without music it changes nothing");
+
+        CdMusicViewModel music = shell.Design.Music;
+        music.AddTracks([first, second]);
+        Require(state.IsCdMusicOuter && !state.IsCdMusicInner && state.IsCdAudioMode && !state.UsesCdVolumeLabel
+                && state.CdOutputPath == "D:\\out\\disc.wav",
+            "music on the outer rings exports one WAV track");
+        state.CdMusicAtOuterRing = false;
+        Require(state.IsCdMusicInner && !state.IsCdAudioMode && state.UsesCdVolumeLabel
+                && state.CdOutputPath == "D:\\out\\disc.iso",
+            "moving the music to the inner rings makes a CD-Extra disc with an ISO output");
+        state.CdMusicAtOuterRing = true;
+        Require(state.CdOutputPath == "D:\\out\\disc.wav", "and back to the WAV track");
+        state.CdExtraEnabled = false;
+        Require(state.CdOutputPath == "D:\\out\\disc.raw", "without music the RAW choice returns");
+        state.CdExtraEnabled = true;
+
+        RunGuide(shell.Design);
+        Require(shell.Design.CdExtraPlan is { IsValid: true, DataPlan: null, Layout: { MusicAtOuterRing: true } layout }
+                && layout.MusicEndLbaExclusive == 39_998 && layout.PictureSectors == 39_998 - 3_501
+                && shell.Design.CdExtraRings is { } rings
+                && Math.Abs(rings.PictureOuterMm - rings.MusicInnerMm) < 1e-9 && rings.MusicOuterMm > rings.MusicInnerMm
+                && Math.Abs(rings.PictureInnerMm - 24.5) < 1e-6,
+            "the guide puts the picture inside and the music ring at the edge");
+        Require(music.HasLayout && !music.HasSessionGap && music.GapShareText.Length == 0 && !music.HasProblem
+                && music.MusicShareWidth.Value == 0 && music.GapShareWidth.Value == 0
+                && music.OuterMusicShareWidth.Value > 0 && music.PictureShareWidth.Value > music.OuterMusicShareWidth.Value
+                && music.MusicShareText.Length > 0 && music.CanvasLegendText.Length > 0,
+            "the card shows picture and music shares without a session gap");
+        typeof(ShellViewModel).GetProperty(nameof(ShellViewModel.CurrentProject))!.SetValue(shell, CdDocument(null));
+        Require(shell.Burn.IsCdOuterMusicBurn && !shell.Burn.IsCdExtraBurn, "the burn page writes one audio session");
+        state.CdMusicAtOuterRing = false;
+        Require(shell.Burn.IsCdExtraBurn && !shell.Burn.IsCdOuterMusicBurn, "the inner position selects the two-session burn");
+        state.CdMusicAtOuterRing = true;
+
+        // An audio disc cannot carry disc files; the rings stay visible next to the problem.
+        state.CdDataDirectory = Path.Combine(directory, "files");
+        RunGuide(shell.Design);
+        Require(shell.Design.CdExtraPlan is { IsValid: false, Problem: CdExtraPlanProblem.FilesWithOuterMusic, Layout: not null }
+                && music.HasProblem && music.HasLayout && shell.Design.DataRegions is null,
+            "disc files with outer music are reported, not planned");
+        string composite = Path.Combine(directory, "outer-source.png");
+        CdExtraLayoutTests.WriteImage(composite);
+        Throws<ArgumentException>(() => shell.Export.CreateCdImageRequest(composite), "exporting outer music with disc files");
+        state.CdDataDirectory = string.Empty;
+        RunGuide(shell.Design);
+        Require(!music.HasProblem, "clearing the folder clears the problem");
+        CdImageRequest export = shell.Export.CreateCdImageRequest(composite);
+        Require(export.MusicAtOuterRing && export.MusicTracks!.SequenceEqual(new[] { first, second })
+                && export.Session2StartLba is null && export.OutputPath.EndsWith(".wav", StringComparison.Ordinal),
+            "the export request carries the position");
+
+        // Project field: written with the position, absent means inner (earlier files).
+        ProjectDocument document = CdDocument(null) with
+        {
+            Outputs = new ProjectOutputs("D:\\out\\disc.wav", true, string.Empty, "CD_IMAGE", true),
+        };
+        ProjectCdExtraSettings? captured = ProjectSession.CaptureCdExtra(document, state);
+        Require(captured is { Enabled: true, MusicAtOuterRing: true, Tracks.Count: 2 }, "save captures the position");
+        string project = Path.Combine(directory, "outer.discproj");
+        ProjectJsonStore.Save(project, document with { CdExtra = captured });
+        Require(File.ReadAllText(project).Contains("\"musicAtOuterRing\": true", StringComparison.Ordinal),
+            "the project file records the outer position");
+        DiscParametersState reopened = new(Path.Combine(directory, "outer-presets.json"));
+        ProjectSession.ApplyToState(ProjectJsonStore.Load(project), reopened);
+        Require(reopened.IsCdMusicOuter && reopened.CdOutputPath == "D:\\out\\disc.wav", "reopening restores the outer position");
+        ProjectSession.ApplyToState(document with
+        {
+            CdExtra = new ProjectCdExtraSettings(true, [new ProjectMusicTrack(first)]),
+        }, reopened);
+        Require(reopened.IsCdMusicInner && reopened.CdOutputPath == "D:\\out\\disc.iso",
+            "a project without the field keeps its music on the inner rings");
+        ProjectSession.ApplyToState(CdDocument(null), reopened);
+        Require(reopened.CdMusicAtOuterRing && !reopened.CdExtraEnabled, "a project without music returns to the default position");
+
+        // The burn request records exactly what the export writes.
+        CdDiscParameters parameters = new(24.5, 27.5, 15_000, UsableSectors: 14_998, SourceImageOuterRadiusMm: 27.5);
+        CdExtraPlan plan = CdExtraPlanner.Plan(parameters, [first, second], null, string.Empty, false, musicAtOuterRing: true);
+        OpticalBurnRequest request = BurnViewModel.CreateCdOuterMusicBurnRequest(composite, parameters, plan,
+            interleave: true, ToneProfile.Photo, "drive", null);
+        request.Validate();
+        Require(request.MediaKind == OpticalBurnMediaKind.CdAudio && request.ContentLength == 14_998L * 2352
+                && request.CdAudioLayout is { PregapSectors: 14_998 - 3_501 } tracks
+                && tracks.TrackSectors.SequenceEqual(new long[] { 2_000, 1_501 }),
+            "one audio burn: the picture as the pre-gap of track 1, then both tracks");
+        using MemoryStream burned = new();
+        request.ProduceContent(burned, CancellationToken.None);
+        string wave = Path.Combine(directory, "outer.wav");
+        CdImageGenerator.Generate(new CdImageRequest(composite, wave, parameters, ToneProfile.Photo,
+            Interleave: true, MusicTracks: [first, second], MusicAtOuterRing: true));
+        Require(burned.ToArray().AsSpan().SequenceEqual(File.ReadAllBytes(wave).AsSpan(44)),
+            "the burned content equals the exported WAV");
+        CdExtraPlan withFiles = CdExtraPlanner.Plan(parameters, [first, second], Path.Combine(directory, "files"),
+            string.Empty, false, musicAtOuterRing: true);
+        Throws<ArgumentException>(() => BurnViewModel.CreateCdOuterMusicBurnRequest(composite, parameters, withFiles,
+            true, ToneProfile.Photo, "drive", null), "a burn request for outer music with disc files");
+        Throws<ArgumentException>(() => BurnViewModel.CreateCdOuterMusicBurnRequest(composite, parameters,
+            CdExtraPlanner.Plan(parameters, [first, second], null, "CD_EXTRA", false), true, ToneProfile.Photo, "drive", null),
+            "an inner-music plan is not an outer-music burn");
+        Require(!CdExtraPlanner.Plan(parameters, [first, second, first, second, first, second, first, second, first],
+                null, string.Empty, false, musicAtOuterRing: true).IsValid,
+            "music longer than the disc leaves no picture");
     }
 
     private static void RunPreview(LivePreviewViewModel preview)

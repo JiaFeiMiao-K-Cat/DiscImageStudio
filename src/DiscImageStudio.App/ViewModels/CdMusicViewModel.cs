@@ -63,7 +63,8 @@ public sealed partial class CdMusicViewModel : ObservableObject
         {
             if (e.PropertyName is nameof(DiscParametersState.CdMusicTracks))
                 RebuildRows();
-            else if (e.PropertyName is nameof(DiscParametersState.CdExtraEnabled))
+            else if (e.PropertyName is nameof(DiscParametersState.CdExtraEnabled)
+                     or nameof(DiscParametersState.CdMusicAtOuterRing))
                 RefreshSummary();
         };
         _shell.PropertyChanged += (_, e) =>
@@ -129,6 +130,15 @@ public sealed partial class CdMusicViewModel : ObservableObject
 
     [ObservableProperty]
     private GridLength _pictureShareWidth = new(1, GridUnitType.Star);
+
+    /// <summary>The music segment behind the picture when the music is on the outer rings;
+    /// the bar reads from the disc centre outwards.</summary>
+    [ObservableProperty]
+    private GridLength _outerMusicShareWidth = new(0);
+
+    /// <summary>Only a CD-Extra disc has a session gap.</summary>
+    [ObservableProperty]
+    private bool _hasSessionGap;
 
     [ObservableProperty]
     private bool _hasProblem;
@@ -285,8 +295,22 @@ public sealed partial class CdMusicViewModel : ObservableObject
         // not fit or cannot be read, so the shares stay visible next to the problem.
         CdExtraLayout? layout = plan?.Layout;
         HasLayout = layout is not null;
-        if (layout is not null)
+        HasSessionGap = layout is { MusicAtOuterRing: false };
+        if (layout is { MusicAtOuterRing: true })
         {
+            MusicShareText = L.F($"音乐区 {layout.MusicInnerRadiusMm:F1}–{layout.MusicOuterRadiusMm:F1} mm · 约占 {layout.MusicAreaFraction:P0}");
+            GapShareText = string.Empty;
+            PictureShareText = L.F($"图片区 {layout.PictureInnerRadiusMm:F1}–{layout.PictureOuterRadiusMm:F1} mm · 约占 {layout.PictureAreaFraction:P0}");
+            Session2Text = L.T("图片写在第 1 轨的预间隙里，CD 机从音乐开始播放；整盘一次写入，图片位置不依赖光驱。");
+            MusicShareWidth = new GridLength(0);
+            GapShareWidth = new GridLength(0);
+            PictureShareWidth = new GridLength(layout.PictureAreaFraction, GridUnitType.Star);
+            OuterMusicShareWidth = new GridLength(layout.MusicAreaFraction, GridUnitType.Star);
+            CanvasLegendText = L.F($"图片 {layout.PictureAreaFraction:P0} · 音乐 {layout.MusicAreaFraction:P0}");
+        }
+        else if (layout is not null)
+        {
+            OuterMusicShareWidth = new GridLength(0);
             MusicShareText = L.F($"音乐区 {layout.MusicInnerRadiusMm:F1}–{layout.MusicOuterRadiusMm:F1} mm · 约占 {layout.MusicAreaFraction:P0}");
             GapShareText = L.F($"区段间隔 {layout.MusicOuterRadiusMm:F1}–{layout.PictureInnerRadiusMm:F1} mm · 约占 {layout.SessionGapAreaFraction:P1}（导出区与导入区，不能绘图）");
             PictureShareText = L.F($"图片区 {layout.PictureInnerRadiusMm:F1}–{layout.PictureOuterRadiusMm:F1} mm · 约占 {layout.PictureAreaFraction:P0}");
@@ -301,6 +325,7 @@ public sealed partial class CdMusicViewModel : ObservableObject
             MusicShareText = GapShareText = PictureShareText = Session2Text = CanvasLegendText = string.Empty;
             MusicShareWidth = new GridLength(0);
             GapShareWidth = new GridLength(0);
+            OuterMusicShareWidth = new GridLength(0);
             PictureShareWidth = new GridLength(1, GridUnitType.Star);
         }
 

@@ -62,7 +62,7 @@
                             </controls:VisibilityGate>
                             <!-- CD-Extra: the picture ISO is valid only where session 2 really
                                  starts; music burned by other software needs the measured start. -->
-                            <controls:VisibilityGate IsOpen="{Binding State.CdExtraEnabled}">
+                            <controls:VisibilityGate IsOpen="{Binding State.IsCdMusicInner}">
                                 <StackPanel Margin="0,14,0,0">
                                     <TextBlock Style="{StaticResource FieldLabel}" Margin="0,0,0,6"
                                                Text="{loc:Text Xaml.CdExtraMeasuredStart}" />

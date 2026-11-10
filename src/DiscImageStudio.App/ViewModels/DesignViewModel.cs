@@ -468,6 +468,7 @@ public partial class DesignViewModel : ObservableObject
             nameof(DiscParametersState.CdDataDirectory) or nameof(DiscParametersState.CdVolumeLabel)
             or nameof(DiscParametersState.CdFilesAtOuterRing)
             or nameof(DiscParametersState.CdExtraEnabled) or nameof(DiscParametersState.CdMusicTracks)
+            or nameof(DiscParametersState.CdMusicAtOuterRing)
             or nameof(DiscParametersState.CdInnerRadius) or nameof(DiscParametersState.CdOuterRadius)
             or nameof(DiscParametersState.CdSectors) or nameof(DiscParametersState.CdUsableSectors)
             or nameof(DiscParametersState.CdPitchLinear) or nameof(DiscParametersState.CdPitchQuadratic)
@@ -661,7 +662,8 @@ public partial class DesignViewModel : ObservableObject
             ParameterParser.ParseDouble(pitchLinear, L.T("相对一次项")),
             ParameterParser.ParseDouble(pitchQuadratic, L.T("相对二次项")),
             ParameterParser.ParseDouble(pitchCubic, L.T("相对三次项")),
-            Family == OpticalDiscFamily.CompactDisc && _state.CdExtraEnabled ? _state.CdMusicTracks : null);
+            Family == OpticalDiscFamily.CompactDisc && _state.CdExtraEnabled ? _state.CdMusicTracks : null,
+            _state.CdMusicAtOuterRing);
     }
 
     private static double ParseMm(string raw, double fallback)

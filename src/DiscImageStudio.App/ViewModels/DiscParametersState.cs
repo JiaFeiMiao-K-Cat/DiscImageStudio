@@ -89,9 +89,19 @@ public partial class DiscParametersState : ObservableObject
     /// <summary>CD-Extra: the music forms session 1 and the picture becomes the data track
     /// of session 2. The track list survives switching the mode off.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsCdExtraMode), nameof(IsCdAudioMode), nameof(IsCdWaveOutput),
+    [NotifyPropertyChangedFor(nameof(IsCdExtraMode), nameof(IsCdMusicOuter), nameof(IsCdMusicInner),
+        nameof(IsCdAudioMode), nameof(IsCdWaveOutput),
         nameof(CdOutputLabel), nameof(CdOutputHint), nameof(UsesCdVolumeLabel))]
     private bool _cdExtraEnabled;
+
+    /// <summary>Where the music goes while it is enabled. On the outer rings the disc is one
+    /// audio session with the picture in the pre-gap of track 1; on the inner rings it is a
+    /// CD-Extra disc with the picture in session 2.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCdMusicOuter), nameof(IsCdMusicInner),
+        nameof(IsCdAudioMode), nameof(IsCdWaveOutput),
+        nameof(CdOutputLabel), nameof(CdOutputHint), nameof(UsesCdVolumeLabel))]
+    private bool _cdMusicAtOuterRing = true;
 
     /// <summary>Absolute WAV paths in disc order. Every edit assigns a new list so a single
     /// notification reaches the guide, previews, export and burn.</summary>
@@ -234,20 +244,31 @@ public partial class DiscParametersState : ObservableObject
 
     public bool HasCdMusic => CdMusicTracks.Count > 0;
 
-    /// <summary>The CD output carries an ISO9660 volume: a data disc or the CD-Extra picture session.</summary>
-    public bool UsesCdVolumeLabel => HasCdFiles || CdExtraEnabled;
+    /// <summary>Music + picture with the music on the outer rings: one audio session.</summary>
+    public bool IsCdMusicOuter => CdExtraEnabled && CdMusicAtOuterRing;
 
-    public bool IsCdAudioMode => !HasCdFiles && !CdExtraEnabled;
+    /// <summary>Music + picture with the music on the inner rings: a CD-Extra disc.</summary>
+    public bool IsCdMusicInner => CdExtraEnabled && !CdMusicAtOuterRing;
+
+    /// <summary>The CD output carries an ISO9660 volume: a data disc or the CD-Extra picture session.</summary>
+    public bool UsesCdVolumeLabel => !IsCdAudioMode;
+
+    /// <summary>The CD output is an audio track: a picture-only disc without files, or the
+    /// picture and the music of an outer-music disc in one track file.</summary>
+    public bool IsCdAudioMode => CdExtraEnabled ? CdMusicAtOuterRing : !HasCdFiles;
 
     /// <summary>True when the CD output is an ISO: a data disc or a CD-Extra picture session.</summary>
-    private bool IsCdIsoOutput => HasCdFiles || CdExtraEnabled;
+    private bool IsCdIsoOutput => !IsCdAudioMode;
 
     /// <summary>Label of the CD output the design page's pipeline card offers; the artifact
     /// switches between a data ISO and an audio track as the on-disc folder appears.</summary>
-    public string CdOutputLabel => CdExtraEnabled ? L.T("输出图片区段 (.iso)")
+    public string CdOutputLabel => IsCdMusicOuter ? L.T("输出图片 + 音乐音轨 (.wav)")
+        : CdExtraEnabled ? L.T("输出图片区段 (.iso)")
         : HasCdFiles ? L.T("输出数据盘 (.iso)") : L.T("输出音轨 (.wav / .raw)");
 
-    public string CdOutputHint => CdExtraEnabled
+    public string CdOutputHint => IsCdMusicOuter
+        ? L.T("音乐在外圈：导出一个 WAV（图片在第 1 轨的预间隙里，音乐紧随其后）和 CUE，需用支持 CUE 的软件整盘一次写入（DAO）；程序内刻录会直接写入整张盘。")
+        : CdExtraEnabled
         ? L.T("CD-Extra：导出第 2 区段（图片数据轨）的 ISO，只适用于从下方起点开始的第 2 区段；程序内刻录会自动写入音乐和图片两个区段。")
         : HasCdFiles
             ? L.T("包含随盘文件，导出为 CD 数据盘 ISO。")
@@ -256,6 +277,8 @@ public partial class DiscParametersState : ObservableObject
     partial void OnCdDataDirectoryChanged(string value) => NormalizeCdOutputFormat();
 
     partial void OnCdExtraEnabledChanged(bool value) => NormalizeCdOutputFormat();
+
+    partial void OnCdMusicAtOuterRingChanged(bool value) => NormalizeCdOutputFormat();
 
     // The audio format (.wav or .raw) last chosen for the CD output, restored when an ISO
     // output (data disc or CD-Extra picture session) returns to an audio track.
@@ -280,12 +303,25 @@ public partial class DiscParametersState : ObservableObject
         string output = CdOutputPath.Trim();
         if (output.Length == 0) return;
         string extension = Path.GetExtension(output);
-        if (IsCdIsoOutput && (extension.Equals(".wav", StringComparison.OrdinalIgnoreCase)
-            || extension.Equals(".raw", StringComparison.OrdinalIgnoreCase)))
+        bool wave = extension.Equals(".wav", StringComparison.OrdinalIgnoreCase);
+        bool raw = extension.Equals(".raw", StringComparison.OrdinalIgnoreCase);
+        bool iso = extension.Equals(".iso", StringComparison.OrdinalIgnoreCase);
+        if (IsCdIsoOutput)
         {
-            CdOutputPath = Path.ChangeExtension(output, ".iso");
+            if (wave || raw) CdOutputPath = Path.ChangeExtension(output, ".iso");
         }
-        else if (!IsCdIsoOutput && extension.Equals(".iso", StringComparison.OrdinalIgnoreCase))
+        else if (IsCdMusicOuter)
+        {
+            // The picture + music track is a WAV with a CUE sheet. The remembered .raw
+            // choice of a picture-only track survives for when the music is switched off.
+            if (iso || raw)
+            {
+                string remembered = _cdAudioExtension;
+                CdOutputPath = Path.ChangeExtension(output, ".wav");
+                _cdAudioExtension = remembered;
+            }
+        }
+        else if (iso || (wave && _cdAudioExtension == ".raw"))
         {
             CdOutputPath = Path.ChangeExtension(output, _cdAudioExtension);
         }

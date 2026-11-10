@@ -24,9 +24,13 @@ internal enum CdExtraPlanProblem
     /// <summary>The picture session's filesystem cannot be planned: the folder is missing or
     /// unreadable, the volume label is invalid, or a file is not supported.</summary>
     DataError,
+    /// <summary>Music on the outer rings makes an audio disc, which cannot carry disc files.</summary>
+    FilesWithOuterMusic,
 }
 
-/// <summary>A CD-Extra plan for previews, export and burning: the music layout of session 1
+/// <summary>A music + picture plan for previews, export and burning. With the music on the
+/// outer rings it is the single-session layout alone (<see cref="DataPlan"/> stays null).
+/// Otherwise it is a CD-Extra plan: the music layout of session 1
 /// and the picture session's data track. Without a measured address the session 2 start is
 /// the Track-at-Once prediction; the burner replaces it with the recorder's value. With
 /// <see cref="CdExtraPlanProblem.DataCapacity"/> or <see cref="CdExtraPlanProblem.DataError"/>
@@ -38,7 +42,8 @@ internal sealed record CdExtraPlan(
     CdExtraPlanProblem Problem,
     Exception? DataFailure = null)
 {
-    public bool IsValid => Layout is not null && DataPlan is not null && Problem == CdExtraPlanProblem.None;
+    public bool IsValid => Layout is not null && Problem == CdExtraPlanProblem.None
+        && (DataPlan is not null || Layout.MusicAtOuterRing);
 
     public TimeSpan MusicDuration => TimeSpan.FromTicks(Tracks.Sum(track => track.Info?.Duration.Ticks ?? 0));
 }
@@ -71,13 +76,13 @@ internal static class CdExtraPlanner
     internal static CdExtraPlan Plan(CdDiscParameters parameters, IReadOnlyList<string> trackPaths,
         string? dataDirectory, string volumeLabel, bool filesAtOuterRing,
         long? measuredSession2StartLba = null, long? dataTrackSectorLimit = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, bool musicAtOuterRing = false)
         => Plan(parameters, Probe(trackPaths, cancellationToken), dataDirectory, volumeLabel, filesAtOuterRing,
-            measuredSession2StartLba, dataTrackSectorLimit);
+            measuredSession2StartLba, dataTrackSectorLimit, musicAtOuterRing);
 
     internal static CdExtraPlan Plan(CdDiscParameters parameters, IReadOnlyList<CdExtraTrackProbe> probes,
         string? dataDirectory, string volumeLabel, bool filesAtOuterRing,
-        long? measuredSession2StartLba = null, long? dataTrackSectorLimit = null)
+        long? measuredSession2StartLba = null, long? dataTrackSectorLimit = null, bool musicAtOuterRing = false)
     {
         ArgumentNullException.ThrowIfNull(parameters);
         ArgumentNullException.ThrowIfNull(probes);
@@ -89,6 +94,23 @@ internal static class CdExtraPlanner
             return new CdExtraPlan(probes, null, null, CdExtraPlanProblem.Capacity);
 
         CdExtraLayout layout;
+        if (musicAtOuterRing)
+        {
+            try
+            {
+                layout = CdExtraLayout.PlanOuterMusic(parameters,
+                    probes.Select(probe => probe.Info!.RecordedSectors).ToArray());
+            }
+            catch (Exception exception) when (IsCapacity(exception))
+            {
+                return new CdExtraPlan(probes, null, null, CdExtraPlanProblem.Capacity, exception);
+            }
+
+            // The rings stay known next to the problem, as for disc files that do not fit.
+            return new CdExtraPlan(probes, layout, null, dataDirectory is null
+                ? CdExtraPlanProblem.None : CdExtraPlanProblem.FilesWithOuterMusic);
+        }
+
         try
         {
             layout = CdExtraLayout.Plan(parameters,
@@ -130,6 +152,7 @@ internal static class CdExtraPlanner
             CdExtraPlanProblem.UnreadableMusic => L.T("有音乐文件无法使用，请删除或替换标红的音轨。"),
             CdExtraPlanProblem.DataCapacity => L.T("随盘文件太大：图片区段放不下这些文件。"),
             CdExtraPlanProblem.DataError => L.F($"图片区段无法规划：{plan.DataFailure?.Message}"),
+            CdExtraPlanProblem.FilesWithOuterMusic => L.T("音乐在外圈时整张盘是音频盘，不能附带随盘文件：请清除随盘文件夹，或把音乐位置改为内圈。"),
             _ => L.T("音乐太长：音乐区之后没有足够空间写入图片区段。"),
         };
     }

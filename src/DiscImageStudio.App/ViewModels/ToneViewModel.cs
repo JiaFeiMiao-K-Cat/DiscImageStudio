@@ -172,6 +172,7 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.CdVolumeLabel)
             or nameof(DiscParametersState.CdFilesAtOuterRing)
             or nameof(DiscParametersState.CdExtraEnabled)
+            or nameof(DiscParametersState.CdMusicAtOuterRing)
             or nameof(DiscParametersState.CdMusicTracks)
             or nameof(DiscParametersState.DvdInnerRadius)
             or nameof(DiscParametersState.DvdOuterRadius)
@@ -366,6 +367,7 @@ public partial class ToneViewModel : ObservableObject
                     : string.Empty;
                 bool filesAtOuterRing = _state.CdFilesAtOuterRing;
                 IReadOnlyList<string>? music = _state.CdExtraEnabled ? _state.CdMusicTracks : null;
+                bool musicAtOuterRing = _state.CdMusicAtOuterRing;
                 // Audio-only projects may carry a legacy label the hidden field cannot fix.
                 string extraLabel = music is null ? string.Empty : _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc);
                 hasFileRegionOverlay = dataDirectory.Length > 0;
@@ -378,8 +380,18 @@ public partial class ToneViewModel : ObservableObject
                         // the session gap are marked as bands.
                         CdExtraPlan extra = CdExtraPlanner.Plan(parameters, music,
                             dataDirectory.Length == 0 ? null : dataDirectory, extraLabel, filesAtOuterRing,
-                            cancellationToken: cancellationToken);
+                            cancellationToken: cancellationToken, musicAtOuterRing: musicAtOuterRing);
                         cancellationToken.ThrowIfCancellationRequested();
+                        if (extra.IsValid && extra.Layout!.MusicAtOuterRing)
+                        {
+                            // Music on the outer rings: the picture is an audio track that
+                            // ends where the music starts; the music ring is marked as a band.
+                            CdTrackGenerator.PreviewWarp(sourcePath, outputPath,
+                                CdImageGenerator.HiddenPictureParameters(parameters, extra.Layout), display,
+                                TonePreviewSize, samplesPerSector, tone, cancellationToken);
+                            FileRegionPreviewOverlay.ApplyOuterMusic(outputPath, display, extra.Layout, cancellationToken);
+                            return (false, true);
+                        }
                         if (extra.IsValid)
                         {
                             CdDataImageGenerator.PreviewWarp(sourcePath, outputPath, parameters, display,

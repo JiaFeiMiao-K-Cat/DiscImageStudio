@@ -868,6 +868,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.CdFilesAtOuterRing),
         nameof(DiscParametersState.CdVolumeLabel),
         nameof(DiscParametersState.CdExtraEnabled),
+        nameof(DiscParametersState.CdMusicAtOuterRing),
         nameof(DiscParametersState.CdMusicTracks),
         nameof(DiscParametersState.DvdInnerRadius),
         nameof(DiscParametersState.DvdOuterRadius),

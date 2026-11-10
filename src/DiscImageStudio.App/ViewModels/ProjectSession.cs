@@ -91,6 +91,8 @@ internal static class ProjectSession
                 // Always assigned, so a project without CD-Extra does not inherit the
                 // previous project's music.
                 state.CdExtraEnabled = document.CdExtra?.Enabled ?? false;
+                // A project that never had music takes the default position (outer).
+                state.CdMusicAtOuterRing = document.CdExtra?.MusicAtOuterRing ?? true;
                 state.CdMusicTracks = document.CdExtra?.Tracks.Select(track => track.Path).ToArray() ?? [];
                 state.CdVolumeLabel = string.IsNullOrWhiteSpace(outputs.VolumeLabel) ? "CD_IMAGE" : outputs.VolumeLabel;
                 state.CdOutputPath = outputs.OutputPath;
@@ -159,8 +161,8 @@ internal static class ProjectSession
                     FilesAtOuterRing: state.BdFilesAtOuterRing);
             default:
                 return new ProjectOutputs(
-                    RequireOutput(state.CdOutputPath, state.CdExtraEnabled ? L.T("CD-Extra 图片区段输出位置")
-                        : state.HasCdFiles ? L.T("CD ISO 输出位置") : L.T("CD 音轨输出位置")),
+                    RequireOutput(state.CdOutputPath, state.IsCdMusicInner ? L.T("CD-Extra 图片区段输出位置")
+                        : state.IsCdAudioMode ? L.T("CD 音轨输出位置") : L.T("CD ISO 输出位置")),
                     state.CdWriteCue,
                     state.CdDataDirectory,
                     state.CdVolumeLabel,
@@ -191,7 +193,8 @@ internal static class ProjectSession
     public static ProjectCdExtraSettings? CaptureCdExtra(ProjectDocument current, DiscParametersState state)
         => current.Family == OpticalDiscFamily.CompactDisc && (state.CdExtraEnabled || state.HasCdMusic)
             ? new ProjectCdExtraSettings(state.CdExtraEnabled,
-                state.CdMusicTracks.Select(path => new ProjectMusicTrack(path)).ToArray())
+                state.CdMusicTracks.Select(path => new ProjectMusicTrack(path)).ToArray(),
+                state.CdMusicAtOuterRing)
             : null;
 
     public static string Format(double value)

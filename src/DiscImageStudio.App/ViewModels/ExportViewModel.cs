@@ -53,7 +53,8 @@ public partial class ExportViewModel : ObservableObject
         _state.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName is nameof(DiscParametersState.CdDataDirectory)
-                or nameof(DiscParametersState.CdExtraEnabled))
+                or nameof(DiscParametersState.CdExtraEnabled)
+                or nameof(DiscParametersState.CdMusicAtOuterRing))
             {
                 OnPropertyChanged(nameof(GenerateButtonText));
             }
@@ -94,7 +95,7 @@ public partial class ExportViewModel : ObservableObject
     public string FamilyLabel => _shell.CurrentProject?.FamilyLabel ?? "CD";
 
     /// <summary>Primary action label: the artifact differs per family (WAV track vs ISO).</summary>
-    public string GenerateButtonText => !IsCd || _state.HasCdFiles || _state.CdExtraEnabled
+    public string GenerateButtonText => !IsCd || !_state.IsCdAudioMode
         ? L.T("生成镜像") : L.T("生成音轨");
 
     /// <summary>The source card's jump into the project dialog, where the generation geometry
@@ -147,7 +148,15 @@ public partial class ExportViewModel : ObservableObject
                 _state.DvdOutputPath = iso;
             }
         }
-        else if (_state.HasCdFiles || _state.CdExtraEnabled)
+        else if (_state.IsCdMusicOuter)
+        {
+            string? track = _shell.Dialogs?.PickSave(L.T("WAV 音轨|*.wav|所有文件|*.*"), ".wav", "cd-picture-music.wav");
+            if (track is not null)
+            {
+                _state.CdOutputPath = track;
+            }
+        }
+        else if (!_state.IsCdAudioMode)
         {
             string? iso = _shell.Dialogs?.PickSave(L.T("ISO 镜像|*.iso|所有文件|*.*"), ".iso",
                 _state.CdExtraEnabled ? "cd-extra-session2.iso" : "cd-image.iso");
@@ -245,10 +254,11 @@ public partial class ExportViewModel : ObservableObject
     private async Task GenerateCdAsync(string compositePath)
     {
         CdImageRequest request = CreateCdImageRequest(compositePath);
-        bool cdExtra = request.MusicTracks is not null;
+        bool cdExtra = request.MusicTracks is not null && !request.MusicAtOuterRing;
         string output = request.OutputPath;
         if (await _shell.RunImageJobAsync(
                 cdExtra ? L.T("正在生成 CD-Extra 图片区段 ISO…")
+                    : request.MusicAtOuterRing ? L.T("正在生成图片 + 音乐音轨…")
                     : _state.HasCdFiles ? L.T("正在生成 CD 数据盘 ISO…") : L.T("正在生成 CD 音轨…"),
                 output, (progress, token) => CdImageGenerator.Generate(request, progress, token), request.ToString()))
             _state.CdTrackPath = output;
@@ -259,12 +269,15 @@ public partial class ExportViewModel : ObservableObject
     internal CdImageRequest CreateCdImageRequest(string compositePath)
     {
         bool cdExtra = _state.CdExtraEnabled;
+        bool musicAtOuterRing = _state.IsCdMusicOuter;
         string output = RequirePath(_state.CdOutputPath,
-            cdExtra || _state.HasCdFiles ? L.T("请选择 CD ISO 输出位置。") : L.T("请选择 CD 音轨输出位置。"));
+            _state.IsCdAudioMode ? L.T("请选择 CD 音轨输出位置。") : L.T("请选择 CD ISO 输出位置。"));
         if (cdExtra && !_state.HasCdMusic)
             throw new ArgumentException(L.T("CD-Extra 需要至少一首音乐：请在设计页添加 WAV 音乐，或切换回“整盘图片”。"));
+        if (musicAtOuterRing && _state.HasCdFiles)
+            throw new ArgumentException(L.T("音乐在外圈时整张盘是音频盘，不能附带随盘文件：请清除随盘文件夹，或把音乐位置改为内圈。"));
         long? measuredSession2 = null;
-        if (cdExtra && !string.IsNullOrWhiteSpace(CdExtraSession2StartLba))
+        if (cdExtra && !musicAtOuterRing && !string.IsNullOrWhiteSpace(CdExtraSession2StartLba))
         {
             measuredSession2 = CdExtraLayout.TryParseSession2Start(CdExtraSession2StartLba, out long lba)
                 ? lba
@@ -283,7 +296,8 @@ public partial class ExportViewModel : ObservableObject
             _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc),
             _state.CdFilesAtOuterRing,
             cdExtra ? _state.CdMusicTracks : null,
-            measuredSession2);
+            measuredSession2,
+            musicAtOuterRing);
     }
 
     private async Task GenerateDvdAsync(string compositePath)

@@ -67,6 +67,23 @@ internal static class FileRegionPreviewOverlay
             dataPlan.VolumeStartLba + dataPlan.TrackSectors, token);
     }
 
+    /// <summary>Outer-music preview band: the music (amber) around the picture. The preview
+    /// renders only the picture, so the band shows where the disc carries music instead.</summary>
+    internal static void ApplyOuterMusic(string path, CdDiscParameters actual, CdExtraLayout layout,
+        CancellationToken token = default)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        actual.Validate();
+        if (!layout.MusicAtOuterRing) throw new ArgumentException("The layout keeps the music on the inner rings.", nameof(layout));
+        double Radius(long lba) => actual.RadiusFromByte(lba * CdDiscParameters.BytesPerSector);
+        List<(double Inner, double Outer, Color Colour)> bands =
+        [
+            (Radius(layout.MusicStartLba), Radius(layout.MusicEndLbaExclusive), MusicColor),
+        ];
+        ApplyBands(path, actual.InnerRadiusMm, actual.OutputOuterRadiusMm, bands, token,
+            actual.PreviewImageOuterRadiusMm);
+    }
+
     /// <summary>Band overlay from recorded addresses, e.g. a CD-Extra sidecar.</summary>
     internal static void ApplyCdExtra(string path, CdDiscParameters actual, long musicEndLbaExclusive,
         long session2StartLba, long drawingStartLba, long drawingEndLbaExclusive, long trackEndLbaExclusive,

@@ -838,6 +838,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 : string.Empty;
             bool filesAtOuterRing = _state.CdFilesAtOuterRing;
             IReadOnlyList<string>? music = _state.CdExtraEnabled ? _state.CdMusicTracks : null;
+            bool musicAtOuterRing = _state.CdMusicAtOuterRing;
             string extraLabel = music is null ? string.Empty : _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc);
             bool musicBands = false;
             CdDataLayoutPlan? plan = await StaWorker.RunAsync(() =>
@@ -847,8 +848,17 @@ public partial class LivePreviewViewModel : ObservableObject
                 {
                     CdExtraPlan extra = CdExtraPlanner.Plan(generated, music,
                         dataDirectory.Length == 0 ? null : dataDirectory, extraLabel, filesAtOuterRing,
-                        cancellationToken: cancellationToken);
+                        cancellationToken: cancellationToken, musicAtOuterRing: musicAtOuterRing);
                     cancellationToken.ThrowIfCancellationRequested();
+                    if (extra.IsValid && extra.Layout!.MusicAtOuterRing)
+                    {
+                        CdTrackGenerator.PreviewWarp(imagePath, outputPath,
+                            CdImageGenerator.HiddenPictureParameters(generated, extra.Layout), actual,
+                            outputSize, samplesPerSector, tone, cancellationToken);
+                        FileRegionPreviewOverlay.ApplyOuterMusic(outputPath, actual, extra.Layout, cancellationToken);
+                        musicBands = true;
+                        return null;
+                    }
                     if (extra.IsValid)
                     {
                         CdDataImageGenerator.PreviewWarp(imagePath, outputPath, generated, actual,
