@@ -46,6 +46,18 @@ public sealed record ProjectOutputs(
 /// that bit.</summary>
 public sealed record ProjectBluRaySettings(bool InvertMapping = false);
 
+/// <summary>One CD-Extra music track: a CD-format PCM WAV referenced by absolute path.</summary>
+public sealed record ProjectMusicTrack(string Path);
+
+/// <summary>CD-Extra (Enhanced CD) settings, CD projects only. When enabled, the listed
+/// tracks form the audio session and the picture is written as a second, data session
+/// that audio players do not read. The list is kept while the mode is switched off.</summary>
+public sealed record ProjectCdExtraSettings(bool Enabled, IReadOnlyList<ProjectMusicTrack> Tracks)
+{
+    /// <summary>One data track must remain within the CD limit of 99 tracks.</summary>
+    public const int MaximumTracks = 98;
+}
+
 /// <summary>The on-disk project (.discproj): everything needed to reopen a disc design and
 /// regenerate its outputs. Images stay referenced by absolute path.
 /// <see cref="Tone"/> is null for files written before tone mapping existed; those projects
@@ -64,7 +76,9 @@ public sealed record ProjectDocument(
     DateTimeOffset CreatedUtc,
     DateTimeOffset ModifiedUtc,
     ToneProfile? Tone = null,
-    ProjectBluRaySettings? BluRay = null)
+    ProjectBluRaySettings? BluRay = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    ProjectCdExtraSettings? CdExtra = null)
 {
     public const string CdFamily = "cd";
     public const string DvdFamily = "dvd";
@@ -117,6 +131,10 @@ public sealed record ProjectDocument(
 public static class ProjectJsonStore
 {
     public const int CurrentSchemaVersion = 2;
+    /// <summary>Written only for a project that carries a cdExtra block, so a build that does
+    /// not know the block reports an unsupported version instead of a malformed file; every
+    /// other project stays at <see cref="CurrentSchemaVersion"/> and opens in both.</summary>
+    public const int CdExtraSchemaVersion = 3;
     private const int LegacySchemaVersion = 1;
     public const string FileExtension = ".discproj";
     public const string FileFilter = "Disc Image Studio 工程|*.discproj";
@@ -166,7 +184,7 @@ public static class ProjectJsonStore
         // but never written back: saving is what migrates an old file to the current schema.
         ProjectDocument clean = document with
         {
-            SchemaVersion = CurrentSchemaVersion,
+            SchemaVersion = document.CdExtra is null ? CurrentSchemaVersion : CdExtraSchemaVersion,
             ExtensionData = document.ExtensionData is { Count: > 0 } ? null : document.ExtensionData,
         };
         string temporaryPath = Path.Combine(directory, $".{Path.GetFileName(fullPath)}.{Guid.NewGuid():N}.tmp");
@@ -196,10 +214,10 @@ public static class ProjectJsonStore
     public static void Validate(ProjectDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
-        if (document.SchemaVersion is not (LegacySchemaVersion or CurrentSchemaVersion))
+        if (document.SchemaVersion is not (LegacySchemaVersion or CurrentSchemaVersion or CdExtraSchemaVersion))
         {
             throw DiagnosticMessage.InvalidData(
-                $"不支持 schemaVersion={document.SchemaVersion}；当前支持 {LegacySchemaVersion} 与 {CurrentSchemaVersion}。");
+                $"不支持 schemaVersion={document.SchemaVersion}；当前支持 {LegacySchemaVersion}、{CurrentSchemaVersion} 与 {CdExtraSchemaVersion}。");
         }
 
         if (document.SchemaVersion == LegacySchemaVersion
@@ -211,6 +229,11 @@ public static class ProjectJsonStore
         if (!document.IsBluRay && document.BluRay is not null)
         {
             throw DiagnosticMessage.InvalidData($"bluRay 设置只用于蓝光工程。");
+        }
+
+        if (!document.IsCd && document.CdExtra is not null)
+        {
+            throw DiagnosticMessage.InvalidData($"cdExtra 设置只用于 CD 工程。");
         }
 
         if (string.IsNullOrWhiteSpace(document.Name))
@@ -238,8 +261,36 @@ public static class ProjectJsonStore
         ValidateGeometry(document);
         ValidateLayers(document);
         ValidateOutputs(document);
+        ValidateCdExtra(document);
         ValidateTone(document);
         ValidateThumbnail(document.ThumbnailPngBase64);
+    }
+
+    private static void ValidateCdExtra(ProjectDocument document)
+    {
+        if (document.CdExtra is not { } settings)
+        {
+            return;
+        }
+
+        if (settings.Tracks is null)
+        {
+            throw DiagnosticMessage.InvalidData($"cdExtra.tracks 不能为空。");
+        }
+
+        if (settings.Tracks.Count > ProjectCdExtraSettings.MaximumTracks)
+        {
+            throw DiagnosticMessage.InvalidData(
+                $"cdExtra 最多包含 {ProjectCdExtraSettings.MaximumTracks} 首音乐。");
+        }
+
+        foreach (ProjectMusicTrack? track in settings.Tracks)
+        {
+            if (track is null || string.IsNullOrWhiteSpace(track.Path))
+            {
+                throw DiagnosticMessage.InvalidData($"cdExtra 的音乐路径不能为空。");
+            }
+        }
     }
 
     private static void ValidateTone(ProjectDocument document)
@@ -419,10 +470,16 @@ public static class ProjectJsonStore
             }
 
             Validate(document);
-            // Schema 1 is read as its current equivalent; the next save writes version 2.
-            return document.SchemaVersion == LegacySchemaVersion
-                ? document with { SchemaVersion = CurrentSchemaVersion }
-                : document;
+            if (document.SchemaVersion < CdExtraSchemaVersion && document.CdExtra is not null)
+            {
+                throw DiagnosticMessage.InvalidData($"cdExtra 设置需要 schemaVersion 3。");
+            }
+
+            // Every file version is read as its current equivalent; saving chooses the
+            // version again (3 with a cdExtra block, otherwise 2).
+            return document.SchemaVersion == CurrentSchemaVersion
+                ? document
+                : document with { SchemaVersion = CurrentSchemaVersion };
         }
         catch (JsonException exception)
         {
