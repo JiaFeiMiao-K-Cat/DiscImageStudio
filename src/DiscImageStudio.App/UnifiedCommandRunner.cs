@@ -62,7 +62,8 @@ internal static class UnifiedCommandRunner
                     FindOption(snapshotArguments, "theme"),
                     settingsDialog,
                     FindOption(snapshotArguments, "settings-view"),
-                    FindOption(snapshotArguments, "language"));
+                    FindOption(snapshotArguments, "language"),
+                    FindOption(snapshotArguments, "drive-fixture"));
             }
 
             if (command == "burn-devices")
@@ -120,6 +121,7 @@ internal static class UnifiedCommandRunner
                           [--expand] [--scroll N] [--home-hover]
                           [--burn-progress write|buffer|finalize|write-complete|verify|flush|close-track|close-disc|release]
                           [--project-update] [--project-save] [--tone-preview]
+                          [--drive-fixture none|empty|cd|dvd|bd|error]
               burn-devices
               burn-build-info
 
@@ -133,7 +135,8 @@ internal static class UnifiedCommandRunner
             page's tone module and switches the snapshot to that page; --theme picks the
             palette before the window is created; --settings-dialog captures the settings
             window at 760x600 by default and never touches the real settings file;
-            --settings-view picks its category.
+            --settings-view picks its category; --drive-fixture feeds the sidebar drive card
+            with a deterministic fixture (none by default, so snapshots never open a recorder).
 
             Blu-ray: bd-info exports parameters; bd-probe exports raw payload tests;
             bd-encode exports one ECC cluster; bd-generate maps dark to 3T and light to 6T run-count bias.

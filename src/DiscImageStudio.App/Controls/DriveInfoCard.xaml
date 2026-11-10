@@ -1,0 +1,159 @@
+<UserControl x:Class="DiscImageStudio.Controls.DriveInfoCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:DiscImageStudio.Controls"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:loc="clr-namespace:DiscImageStudio.Localization"
+             Visibility="Collapsed"
+             SnapsToDevicePixels="True">
+    <!-- The disc rises out of the card on insertion; the card is painted after it and its top
+         edge crosses the disc centre, so only the upper half stays visible. -->
+    <Grid>
+        <Grid x:Name="DiscHost" Width="128" Height="128" HorizontalAlignment="Center"
+              VerticalAlignment="Top" Opacity="0" IsHitTestVisible="False">
+            <Grid.Effect>
+                <DropShadowEffect BlurRadius="14" ShadowDepth="3" Direction="270"
+                                  Opacity="0.34" Color="#000000" />
+            </Grid.Effect>
+            <Grid.RenderTransform>
+                <TranslateTransform x:Name="DiscRise" Y="38" />
+            </Grid.RenderTransform>
+            <controls:OpticalDiscVisual />
+        </Grid>
+
+        <Button x:Name="CardHost" Margin="0,64,0,0" Padding="0" Style="{StaticResource TileButton}"
+                Command="{Binding ToggleDetailsCommand}"
+                ToolTip="{loc:Text DriveInfo.DetailsHint}"
+                AutomationProperties.Name="{loc:Text DriveInfo.DetailsTitle}">
+            <Border BorderThickness="1" CornerRadius="{StaticResource RadiusCard}"
+                    Padding="12,10,12,11">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}"
+                                         Value="True">
+                                <Setter Property="Background" Value="{DynamicResource Surface2Brush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <iconPacks:PackIconLucide Kind="HardDrive" Width="13" Height="13"
+                                                  VerticalAlignment="Center"
+                                                  Foreground="{DynamicResource TextSecondaryBrush}" />
+                        <TextBlock Grid.Column="1" Text="{Binding DriveName}" Style="{StaticResource RowText}"
+                                   FontSize="12" FontWeight="Medium" Margin="6,0,4,0"
+                                   TextTrimming="CharacterEllipsis" ToolTip="{Binding DriveName}" />
+                        <iconPacks:PackIconLucide Grid.Column="2" Kind="ChevronRight" Width="12" Height="12"
+                                                  VerticalAlignment="Center"
+                                                  Foreground="{DynamicResource TextMutedBrush}" />
+                    </Grid>
+                    <controls:VisibilityGate IsOpen="{Binding HasDriveMeta}" Margin="0,2,0,0">
+                        <TextBlock Text="{Binding DriveMeta}" Style="{StaticResource MicroText}"
+                                   TextTrimming="CharacterEllipsis" />
+                    </controls:VisibilityGate>
+                    <TextBlock Text="{Binding MediaSummary}" Style="{StaticResource CompactText}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="0,4,0,0" TextTrimming="CharacterEllipsis" />
+                    <!-- The media ID stays on the card itself (not only in the flyout) because
+                         it is the key used by preset lookup. Both values below copy on click. -->
+                    <controls:VisibilityGate IsOpen="{Binding HasMediaId}" Margin="0,4,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{loc:Text DriveInfo.MediaId}" Style="{StaticResource MicroText}"
+                                       VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <controls:CopyableText Grid.Column="1" Text="{Binding MediaIdText}"
+                                                   FontFamily="{StaticResource MonoFontFamily}"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   VerticalAlignment="Center" />
+                        </Grid>
+                    </controls:VisibilityGate>
+                    <controls:VisibilityGate IsOpen="{Binding HasMedia}" Margin="0,8,0,0">
+                        <Border Background="{DynamicResource Surface2Brush}"
+                                CornerRadius="{StaticResource RadiusPanel}" Padding="8,6">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{loc:Text DriveInfo.Sectors}"
+                                               Style="{StaticResource MicroText}" />
+                                    <controls:CopyableText Text="{Binding TotalSectorsText}" FontSize="12"
+                                                           FontFamily="{StaticResource MonoFontFamily}"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                    <TextBlock Text="{loc:Text DriveInfo.UsableSectors}"
+                                               Style="{StaticResource MicroText}" />
+                                    <controls:CopyableText Text="{Binding UsableSectorsText}" FontSize="12"
+                                                           FontFamily="{StaticResource MonoFontFamily}"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </controls:VisibilityGate>
+                </StackPanel>
+            </Border>
+        </Button>
+
+        <Popup x:Name="DetailsPopup" Placement="Right" PlacementTarget="{Binding ElementName=CardHost}"
+               HorizontalOffset="10" VerticalOffset="-8" AllowsTransparency="True"
+               StaysOpen="False" PopupAnimation="Fade"
+               IsOpen="{Binding IsDetailsOpen, Mode=TwoWay}">
+            <Border Width="252" Background="{DynamicResource Surface1Brush}"
+                    BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                    CornerRadius="{StaticResource RadiusFloating}" Padding="14,12"
+                    Effect="{StaticResource FloatingShadow}">
+                <StackPanel>
+                    <TextBlock Text="{loc:Text DriveInfo.DetailsTitle}" Style="{StaticResource RowText}"
+                               FontWeight="Medium" />
+                    <controls:VisibilityGate IsOpen="{Binding IsMultipleDrives}" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Text="{loc:Text DriveInfo.Drive}"
+                                       Style="{StaticResource MicroText}" Margin="0,0,0,4" />
+                            <ComboBox ItemsSource="{Binding Drives}" SelectedItem="{Binding SelectedDrive}"
+                                      DisplayMemberPath="DisplayName" />
+                        </StackPanel>
+                    </controls:VisibilityGate>
+                    <ItemsControl ItemsSource="{Binding Details}" Margin="0,10,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" MinWidth="74" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Label}" Style="{StaticResource MicroText}"
+                                               Margin="0,1,8,0" />
+                                    <controls:CopyableText Grid.Column="1" Text="{Binding Value}"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                           TextAlignment="Right" TextWrapping="Wrap" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{loc:Text DriveInfo.CapacityHint}"
+                               Style="{StaticResource MicroText}" TextWrapping="Wrap"
+                               Margin="0,4,0,0" />
+                </StackPanel>
+            </Border>
+        </Popup>
+    </Grid>
+</UserControl>

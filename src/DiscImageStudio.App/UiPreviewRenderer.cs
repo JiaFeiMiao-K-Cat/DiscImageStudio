@@ -39,7 +39,8 @@ internal static class UiPreviewRenderer
         string? theme = null,
         bool settingsDialog = false,
         string? settingsView = null,
-        string? language = null)
+        string? language = null,
+        string? driveFixture = null)
     {
         // The settings window is 760 px wide, so its snapshots relax the page minimum.
         int minimumWidth = settingsDialog ? 640 : 800;
@@ -78,7 +79,10 @@ internal static class UiPreviewRenderer
             // while that workspace is active.
             workspace = Workspace.Design;
         }
-        MainWindow window = new()
+        // Snapshots always get a fixture probe: the default reports no drive, so a capture never
+        // opens the workstation's recorder or renders hardware-dependent content.
+        MainWindow window = new(new AppSettings(), new AppSettingsStore(),
+            new SnapshotOpticalDriveProbe(driveFixture ?? "none"))
         {
             Width = width,
             Height = height,
@@ -102,6 +106,16 @@ internal static class UiPreviewRenderer
         if (burnProgress is not null) window.ShowBurnProgressForSnapshot(burnProgress);
         window.Show();
         window.UpdateLayout();
+        if (driveFixture is "empty" or "cd" or "dvd" or "bd" or "error")
+        {
+            WaitForDriveProbe(window, TimeSpan.FromSeconds(10));
+            if (driveFixture is "cd" or "dvd" or "bd")
+            {
+                // The disc rises on insertion; let the animation reach its rest position.
+                PumpDispatcher(TimeSpan.FromMilliseconds(400));
+                window.UpdateLayout();
+            }
+        }
         if (homeHover)
         {
             window.ShowHomeHoverForSnapshot();
@@ -353,6 +367,37 @@ internal static class UiPreviewRenderer
         if (!window.IsTonePreviewReady)
         {
             throw new TimeoutException("Tone preview did not finish within the snapshot timeout.");
+        }
+    }
+
+    private static void WaitForDriveProbe(MainWindow window, TimeSpan timeout)
+    {
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        while (!window.IsDriveProbeReady && stopwatch.Elapsed < timeout)
+        {
+            DispatcherFrame frame = new();
+            DispatcherTimer timer = new() { Interval = TimeSpan.FromMilliseconds(50) };
+            timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; };
+            timer.Start();
+            Dispatcher.PushFrame(frame);
+        }
+
+        if (!window.IsDriveProbeReady)
+        {
+            throw new TimeoutException("Drive probe did not finish within the snapshot timeout.");
+        }
+    }
+
+    private static void PumpDispatcher(TimeSpan duration)
+    {
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        while (stopwatch.Elapsed < duration)
+        {
+            DispatcherFrame frame = new();
+            DispatcherTimer timer = new() { Interval = TimeSpan.FromMilliseconds(50) };
+            timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; };
+            timer.Start();
+            Dispatcher.PushFrame(frame);
         }
     }
 

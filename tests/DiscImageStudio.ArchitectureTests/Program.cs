@@ -167,6 +167,7 @@ BurnStreamDiagnosticsTests.Run();
 BurnProgressDisplayTests.Run();
 OpticalBurnOperationGateTests.Run();
 MediaSectorCountTests.Run();
+OpticalDriveProbeTests.Run();
 BluRaySequentialBurnTests.Run();
 BluRayFlushDiagnosticsTests.Run();
 BluRaySequentialWriterTests.Run();

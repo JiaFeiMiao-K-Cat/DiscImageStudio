@@ -1,0 +1,27 @@
+<UserControl x:Class="DiscImageStudio.Controls.CopyableText"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:DiscImageStudio.Localization"
+             Background="Transparent" Cursor="Hand" Focusable="False"
+             ToolTip="{loc:Text DriveInfo.ClickToCopy}" ToolTipService.InitialShowDelay="450"
+             SnapsToDevicePixels="True">
+    <Grid>
+        <TextBlock x:Name="ValueText"
+                   Text="{Binding Text, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                   TextAlignment="{Binding TextAlignment, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                   TextWrapping="{Binding TextWrapping, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                   TextTrimming="{Binding TextTrimming, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+        <!-- Copy confirmation: a chip that fades in above the value and closes itself. It is
+             not a control surface; the text itself stays the only target. -->
+        <Popup x:Name="CopiedPopup" Placement="Top"
+               PlacementTarget="{Binding ElementName=ValueText}" VerticalOffset="-5"
+               AllowsTransparency="True" StaysOpen="True" IsHitTestVisible="False">
+            <Border x:Name="CopiedChip" Background="{DynamicResource SuccessSoftBrush}"
+                    BorderBrush="{DynamicResource SuccessBrush}" BorderThickness="1"
+                    CornerRadius="{StaticResource RadiusChip}" Padding="7,2">
+                <TextBlock Text="{loc:Text DriveInfo.Copied}" FontSize="10.5"
+                           Foreground="{DynamicResource SuccessBrush}" />
+            </Border>
+        </Popup>
+    </Grid>
+</UserControl>

@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using DiscImageStudio.Burning;
 using DiscImageStudio.Controls;
 using DiscImageStudio.Core;
 using DiscImageStudio.Services;
@@ -28,8 +29,6 @@ public partial class MainWindow : Window
     private readonly PageHeader?[] _pageHeaders = new PageHeader?[Enum.GetValues<Workspace>().Length];
     private readonly AppSettingsStore _settingsStore;
     private AppSettings _settings;
-    private bool _isSidebarCollapsed;
-    private bool _isManuallyCollapsed;
     private bool _closeApproved;
     private bool _isCloseFlowRunning;
     private bool _isUpdateRestarting;
@@ -40,13 +39,14 @@ public partial class MainWindow : Window
     {
     }
 
-    internal MainWindow(AppSettings settings, AppSettingsStore settingsStore)
+    internal MainWindow(AppSettings settings, AppSettingsStore settingsStore,
+        IOpticalDriveProbe? driveProbe = null)
     {
         _settings = settings;
         _settingsStore = settingsStore;
         InitializeComponent();
         _workArea = new WindowWorkArea(this);
-        _shell = new ShellViewModel(Dispatcher)
+        _shell = new ShellViewModel(Dispatcher, new WindowsImapiBurner(), driveProbe)
         {
             Dialogs = new FileDialogService(() => this),
         };
@@ -85,13 +85,13 @@ public partial class MainWindow : Window
         }
 
         _shell.PropertyChanged += Shell_PropertyChanged;
+        _shell.Drive.PropertyChanged += Drive_PropertyChanged;
         L.LanguageChanged += Language_LanguageChanged;
         UpdateNavActive(Workspace.Home);
         UpdateProjectHeader();
         UpdateStageBars();
         PageHost.Content = _pages[(int)Workspace.Home];
 
-        SizeChanged += (_, _) => UpdateSidebarCollapse();
         PreviewKeyDown += MainWindow_PreviewKeyDown;
         SourceInitialized += (_, _) => WindowCorners.Apply(this);
         Loaded += MainWindow_Loaded;
@@ -106,6 +106,10 @@ public partial class MainWindow : Window
     // ---- Snapshot hooks (used by UiPreviewRenderer / CLI ui-snapshot) ----
 
     internal bool IsLivePreviewReady => _shell.LivePreview.IsLivePreviewReady;
+
+    /// <summary>Snapshot hook: waits for the first drive probe so a fixture-driven card is
+    /// rendered before the bitmap is captured. No recorder is opened by the fixture path.</summary>
+    internal bool IsDriveProbeReady => _shell.Drive.IsInitialProbeComplete;
 
     // An empty project has no composite to project, so the snapshot wait must not sit out
     // its timeout waiting for a preview that will never arrive.
@@ -334,6 +338,7 @@ public partial class MainWindow : Window
         // workspace the snapshot/startup flow selected before Show.
         UpdateStageBars();
         _shell.MarkWindowLoaded();
+        _shell.Drive.Start();
         string? updateFailure = AppUpdateService.CompleteStartupUpdate();
         if (!string.IsNullOrWhiteSpace(updateFailure))
         {
@@ -439,6 +444,7 @@ public partial class MainWindow : Window
     {
         L.LanguageChanged -= Language_LanguageChanged;
         _workArea.Dispose();
+        _shell.Drive.OnWindowClosed();
         _shell.LivePreview.OnWindowClosed();
         _shell.Calibration.OnWindowClosed();
     }
@@ -448,7 +454,6 @@ public partial class MainWindow : Window
     /// without reopening the window.</summary>
     private void Language_LanguageChanged(object? sender, EventArgs e)
     {
-        UpdateSidebarCollapse();
         UpdateProjectHeader();
         _shell.Relocalize();
     }
@@ -763,6 +768,7 @@ public partial class MainWindow : Window
     private void UpdateProjectHeader()
     {
         SidebarBorder.Visibility = _shell.IsProjectMode ? Visibility.Visible : Visibility.Collapsed;
+        UpdateDriveCardVisibility();
         UpdateJobDockVisibility();
         if (!_shell.IsProjectOpen)
         {
@@ -772,6 +778,26 @@ public partial class MainWindow : Window
         ProjectNameText.Text = _shell.CurrentProject!.Name;
         ProjectFamilyText.Text = _shell.CurrentProject.FamilyLabel;
         ProjectDirtyText.Visibility = _shell.IsDirty ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>The drive module is a project-mode surface: hidden before a project opens and
+    /// when no recorder is present.</summary>
+    private void UpdateDriveCardVisibility()
+    {
+        bool visible = _shell.IsProjectMode && _shell.Drive.HasDrive;
+        DriveCardHost.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        if (!visible)
+        {
+            _shell.Drive.IsDetailsOpen = false;
+        }
+    }
+
+    private void Drive_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(OpticalDriveViewModel.HasDrive))
+        {
+            UpdateDriveCardVisibility();
+        }
     }
 
     private void Shell_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -981,60 +1007,5 @@ public partial class MainWindow : Window
         translate.BeginAnimation(
             TranslateTransform.YProperty,
             new DoubleAnimation(8, 0, Motion.Base) { EasingFunction = Motion.EaseOut });
-    }
-
-    // ---- Sidebar collapse (window width < 920, or the manual toggle) ----
-
-    private void SidebarCollapseToggle_Click(object sender, RoutedEventArgs e)
-    {
-        // Narrow windows own the collapsed layout via auto-collapse; manual expand is a no-op there.
-        if (ActualWidth < 920)
-        {
-            return;
-        }
-
-        _isManuallyCollapsed = !_isManuallyCollapsed;
-        UpdateSidebarCollapse();
-    }
-
-    private void UpdateSidebarCollapse()
-    {
-        bool narrow = ActualWidth < 920;
-        bool collapsed = narrow || _isManuallyCollapsed;
-        // Auto-collapse owns the narrow layout, so the manual toggle is meaningless there;
-        // it comes back once the window widens past the breakpoint.
-        SidebarCollapseToggle.Visibility = narrow ? Visibility.Collapsed : Visibility.Visible;
-        if (collapsed != _isSidebarCollapsed)
-        {
-            double sidebarWidth = ThemeValues.Double("SidebarWidth", 288);
-            double sidebarCollapsedWidth = ThemeValues.Double("SidebarCollapsedWidth", 72);
-            double from = _isSidebarCollapsed ? sidebarCollapsedWidth : sidebarWidth;
-            double to = collapsed ? sidebarCollapsedWidth : sidebarWidth;
-            _isSidebarCollapsed = collapsed;
-            SidebarBorder.BeginAnimation(
-                WidthProperty,
-                new DoubleAnimation(from, to, Motion.Fast) { EasingFunction = Motion.EaseOut });
-            foreach ((SideNavItem item, _) in _navItems)
-            {
-                item.IsCollapsed = collapsed;
-            }
-
-            ProjectHeaderButton.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
-            SaveProjectButton.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
-            // Group captions only make sense with labels to group; the collapsed icon rail is flat.
-            DiscMakingGroupHeader.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
-            CalibrationGroupHeader.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
-            // 16 matches the expanded margin in MainWindow.xaml; a different value here made the
-            // whole nav jump on the first toggle.
-            TopNavPanel.Margin = collapsed ? new Thickness(0, 20, 0, 0) : new Thickness(0, 16, 0, 0);
-            SidebarGrid.Margin = collapsed ? new Thickness(0) : new Thickness(24, 0, 24, 0);
-            BackHomeButton.HorizontalAlignment = collapsed ? HorizontalAlignment.Center : HorizontalAlignment.Left;
-            CollapseLeftIcon.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
-            CollapseRightIcon.Visibility = collapsed ? Visibility.Visible : Visibility.Collapsed;
-        }
-
-        // The tooltip is the one label here that is not an XAML binding, so it refreshes on
-        // every call, including a language switch while the collapse state is unchanged.
-        SidebarCollapseToggle.ToolTip = collapsed ? L.T("展开侧边栏") : L.T("收起侧边栏");
     }
 }

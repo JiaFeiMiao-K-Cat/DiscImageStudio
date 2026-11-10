@@ -121,10 +121,8 @@
     <sys:Double x:Key="ButtonHeight">34</sys:Double>
     <sys:Double x:Key="ControlHeight">32</sys:Double>
     <sys:Double x:Key="CompactHeight">28</sys:Double>
-    <!-- Sidebar chrome widths: expanded matches the page-column rhythm, collapsed is the
-         icon rail. Doubles so both the Border width and the collapse animation read them. -->
+    <!-- Sidebar width: matches the page-column rhythm. -->
     <sys:Double x:Key="SidebarWidth">264</sys:Double>
-    <sys:Double x:Key="SidebarCollapsedWidth">60</sys:Double>
     <!-- Standard width for the context/inspector columns flanking a workspace stage; a
          GridLength so column definitions can take it directly. -->
     <GridLength x:Key="SidePanelWidth">256</GridLength>

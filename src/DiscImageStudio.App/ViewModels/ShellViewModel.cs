@@ -40,7 +40,8 @@ public partial class ShellViewModel : ObservableObject
     {
     }
 
-    internal ShellViewModel(Dispatcher dispatcher, IOpticalDiscBurner opticalDiscBurner)
+    internal ShellViewModel(Dispatcher dispatcher, IOpticalDiscBurner opticalDiscBurner,
+        IOpticalDriveProbe? driveProbe = null)
     {
         _dispatcher = dispatcher;
         OpticalBurner = opticalDiscBurner;
@@ -57,6 +58,7 @@ public partial class ShellViewModel : ObservableObject
         Calibration = new CalibrationViewModel(this, calibrationState);
         Burn = new BurnViewModel(this, State, Design, opticalDiscBurner);
         CalibrationBurn = new BurnViewModel(this, calibrationState, Design, opticalDiscBurner, useCalibrationPattern: true);
+        Drive = new OpticalDriveViewModel(this, _dispatcher, driveProbe ?? new ImapiOpticalDriveProbe());
         Export = new ExportViewModel(this, State, Design);
         Design.CompositeRendered += Design_CompositeRendered;
         Design.DesignEdited += () => MarkProjectDirty();
@@ -97,6 +99,9 @@ public partial class ShellViewModel : ObservableObject
 
     public BurnViewModel CalibrationBurn { get; }
     public CalibrationViewModel Calibration { get; }
+
+    /// <summary>Sidebar drive card: read-only drive and media information.</summary>
+    public OpticalDriveViewModel Drive { get; }
 
     public ObservableCollection<ToastItem> Toasts { get; } = [];
 
@@ -410,6 +415,7 @@ public partial class ShellViewModel : ObservableObject
         Design.Relocalize();
         Burn.Relocalize();
         CalibrationBurn.Relocalize();
+        Drive.Relocalize();
         Export.Relocalize();
         Calibration.Relocalize();
     }

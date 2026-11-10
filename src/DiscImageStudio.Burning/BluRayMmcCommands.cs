@@ -35,6 +35,7 @@ internal sealed class MmcCommandException : IOException
     public bool HasValidSense => SenseKey >= 0;
     public bool IsOperationInProgress => SenseKey == 2
         && AdditionalSenseCode == 4 && AdditionalSenseQualifier is 1 or 7 or 8;
+    public bool IsMediumNotPresent => SenseKey == 2 && AdditionalSenseCode == 0x3a;
 
     private static string Describe(byte opcode, MmcCommandResult result)
     {
@@ -312,6 +313,7 @@ internal sealed class ImapiMmcCommandTransport(object recorder) : IMmcCommandTra
 {
     private readonly IDiscRecorder2ExCommands _recorder = (IDiscRecorder2ExCommands)recorder;
     private MmcWriteTransferLimits? _transferLimits;
+    private MmcWriteTransferLimits? _readTransferLimits;
 
     public MmcWriteTransferLimits GetWriteTransferLimits()
     {
@@ -319,6 +321,23 @@ internal sealed class ImapiMmcCommandTransport(object recorder) : IMmcCommandTra
         Marshal.ThrowExceptionForHR(_recorder.GetByteAlignmentMask(out uint alignment));
         Marshal.ThrowExceptionForHR(_recorder.GetMaximumPageAlignedTransferSize(out uint maximum));
         return _transferLimits = new(alignment, maximum);
+    }
+
+    private MmcWriteTransferLimits GetReadTransferLimits()
+    {
+        if (_readTransferLimits is not null) return _readTransferLimits;
+        try
+        {
+            return _readTransferLimits = GetWriteTransferLimits();
+        }
+        catch (COMException)
+        {
+            // Some recorder drivers do not expose the optional alignment queries.
+            // Reads still need a buffer; page alignment is the conservative fallback.
+            // The write path calls GetWriteTransferLimits directly and keeps the
+            // adapter-reported requirement, so this fallback never reaches writes.
+            return _readTransferLimits = new(0, int.MaxValue);
+        }
     }
 
     public MmcCommandResult SendData(byte[] cdb, IntPtr buffer, int bufferLength, uint timeoutSeconds)
@@ -348,7 +367,7 @@ internal sealed class ImapiMmcCommandTransport(object recorder) : IMmcCommandTra
         {
             // Read-command payloads have the same adapter alignment contract as
             // writes; ordinary managed arrays do not guarantee that alignment.
-            using AlignedMmcWriteBuffer buffer = new(allocationLength, GetWriteTransferLimits());
+            using AlignedMmcWriteBuffer buffer = new(allocationLength, GetReadTransferLimits());
             result = _recorder.SendCommandGetDataFromDevice(cdb, (uint)cdb.Length, sense,
                 timeoutSeconds, buffer.Pointer, (uint)data.Length, out uint fetched);
             if (fetched > data.Length) throw new IOException("IMAPI 返回了超过接收缓冲区的长度。");
