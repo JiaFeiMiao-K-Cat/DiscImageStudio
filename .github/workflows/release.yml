@@ -286,7 +286,7 @@ jobs:
           shopt -s nullglob
           trap 'shred -n 32 -u private_key.pgp; echo "Cleaned up private key."' EXIT
           umask 077
-          ## No PQC support
+          ## No PQC support (sequoia pgp with nettle)
           # sudo apt-get update
           # sudo apt-get install -y sq
           printf '%s\n' "$SIGN_PRIVATE_KEY" >private_key.pgp
