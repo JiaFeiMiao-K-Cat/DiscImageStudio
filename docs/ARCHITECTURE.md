@@ -47,7 +47,7 @@ flowchart LR
 
 ## 工程模型与外壳
 
-`DiscImageStudio.Core.ProjectJsonStore` 持有 `.discproj`（UTF-8 JSON，schemaVersion 2）：工程名、盘型（CD/DVD/BD）、几何（CD/DVD/BD 均保存内外半径、扇区数与三次轨距系数；BD 另要求 32 扇区对齐、单层容量与 ≤60 mm）、图层列表、输出配置、可选的 `tone` 影调节、可选的 `bluRay` 极性节、标定记录路径和保存时渲染的缩略图。`tone` 缺省表示旧版硬阈值；schemaVersion 1 的 CD/DVD 文件读取后自动按 2 写回。BD 的 `bluRay.invertMapping` 只存在于 BD 工程，CD/DVD 携带该节会被拒绝。读写都经过校验并使用临时文件原子替换，规则与预设 JSON 一致。图层按绝对路径引用图片，不收集资源。
+`DiscImageStudio.Core.ProjectJsonStore` 持有 `.discproj`（UTF-8 JSON，schemaVersion 2）：工程名、盘型（CD/DVD/BD）、几何（CD/DVD/BD 均保存内外半径、扇区数与三次轨距系数；BD 另要求 32 扇区对齐、单层容量与 ≤60 mm）、图层列表、输出配置、可选的 `tone` 影调节、可选的 `bluRay` 极性节、标定记录路径和保存时渲染的缩略图。`tone` 缺省表示旧版硬阈值；schemaVersion 1 的 CD/DVD 文件读取后自动按 2 写回。BD 的 `bluRay.invertMapping` 只存在于 BD 工程，CD/DVD 携带该节会被拒绝。CD 工程可携带可选的 `cdExtra` 节（`enabled` 与按播放顺序排列的 `tracks[].path`，最多 98 首）；未启用且没有音乐时不写出，旧工程格式不变，DVD/BD 工程携带该节会被拒绝。带该节的工程写为 schemaVersion 3，使不认识它的旧版本报告“版本不受支持”而不是文件损坏；schemaVersion 2 的文件携带该节会被拒绝，去掉音乐后保存又回到 2。读写都经过校验并使用临时文件原子替换，规则与预设 JSON 一致。图层按绝对路径引用图片，不收集资源。
 
 外壳是工作区模型：起始页（无侧边栏，提供新建/打开、模板卡片与最近工程）加上五个工程工作区——设计 / 预览 / 导出 / 刻录 / 标定（`Workspace` 枚举，侧边栏顺序即工作流顺序）。每个工作区都是同一个工程的一个视角，不是各自独立的一套流程：共享一个 `DiscParametersState`，打开工程时 `ProjectSession` 把文档内容填进它，保存时再捕获回文档；预览、导出、刻录、标定对 State 的绑定因此与工程生命周期完全解耦。脏标记只跟踪会写进工程文件的 State 属性。
 
@@ -75,6 +75,8 @@ flowchart LR
 
 设计工作区（`DesignViewModel` + `DiscDesignCanvas` + `DesignComposer`）维护图层栈：图层按面板顺序存储（顶部索引 0，画布自下而上绘制，与合成顺序一致），画布以盘心为原点的毫米坐标系渲染并支持拖动/角点缩放/旋转柄；图层行是可选中列表，与画布及属性面板双向同步。图层编辑经 450 ms 防抖后由 `DesignComposer` 渲染出方形合成图（预览 2048 px，导出 8192 px）：方形中心即盘心，边长对应 2 × 可用区域的物理外半径；此半径由原几何在可用扇区末端的位置求得。生成器的图像采样使用同一尺度，避免输出缩短时丢失画面外缘。旧底层调用未指定可用数时仍保留原图像尺度。合成图写入 State 的源图片路径，成为导出与预览的共同输入；生成 CLI 与管线对此无感知。导出与刻录两条交付路径都使用导出质量的 8192 px 合成图，因此预览验证的素材就是写入盘片的素材。页眉的「下一步」贯穿 设计 → 预览 → 导出 → 刻录，标定经侧边栏或刻录页的链接进入。
 
+CD-Extra 的布局只在 CD 模块里计算：`CdMusicFile.Inspect` 读取每个 WAV 头，`CdExtraLayout.Plan` 算出音轨起点、第 2 区段起点和数据轨长度，`CdDataImageGenerator.PrepareSessionLayout` 规划第 2 区段的文件系统与绘图范围。界面通过 `Services/CdExtraPlanner` 依次调用这三步，并把失败归类成可本地化的提示（没有音乐、文件不可用、音乐太长、随盘文件太大）；设计页引导（`DesignViewModel` 的防抖后台计算）、影调与预览叠加和刻录前的规划都使用它。导出页和命令行经 `CdImageGenerator.Generate`／`PlanCdExtra` 调用同样的三步，刻录中途按实测起点重新规划时也是如此，所以画布圆环、占比卡片、预览、导出的 ISO 和写入的盘片描述同一布局。`CdMusicViewModel` 只编辑 State 中的曲目列表和模式开关；时长、占比和错误标记来自最近一次引导计算的计划，读不出的文件只把对应行标红，不隐藏整个布局。
+
 设计语言集中在 `Themes/Tokens.xaml`（颜色、语义色、圆角含 `RadiusChip`/`RadiusPanel`/卡片头尾镜像弧、控件高度、`SidePanelWidth`、页面留白、浮层阴影、画布调色板）与 `Themes/Controls.xaml`（文字层级、按钮族、输入控件、列表行、披露面板、`DangerCard` 警示卡、监视器与步骤卡模板）。代码侧动画统一走 `Controls/Motion.cs` 的三档时长，自定义画布统一通过 `Controls/DiscTheme.cs` 与 `Controls/DiscRenderCore.cs` 取色与绘制盘体，不再各自内置一套调色板。`Controls.xaml` 内基于隐式样式的派生样式（`BasedOn="{StaticResource {x:Type X}}"`）必须写在隐式样式之后：前向引用不会报错，而是静默回退到 Windows 自带样式，控件会以浅色系统外观出现。需要承载页面命名内容的面板（如 `MonitorCard`）做成模板化自定义控件而不是 UserControl：UserControl 会把内容隔离进自己的名称范围，页面里 `x:Name` 的元素无法编译，快照钩子与画布接线也因此够不到它们。
 
 主题切换是即时的：`Themes/Palette.Light.xaml` 覆盖 `Tokens.xaml` 的全部颜色与画刷键，`Services/ThemeResolver` 在合并字典的第 1 位插入或移除浅色层，窗口无需重建。因此视图对调色板键必须使用 `DynamicResource`（`StaticResource` 会把深色值固化在加载时刻，`ThemePaletteTests` 会拦截）；代码侧取色的控件（`SideNavItem`、`SegmentedControl`、`DiscDesignCanvas`、`CalibrationPhotoCanvas`、`JobDock`、`HelpHint`）订阅 `ThemeResolver.Changed` 并重新读取令牌。系统主题取 `HKCU\...\Themes\Personalize\AppsUseLightTheme`。
@@ -91,17 +93,19 @@ CD 的 `OpticalBurnRequest.ProduceContent` 明确要求无头的 44.1 kHz、16 �
 
 `IOpticalDiscBurner.GetMediaCapacityAsync` 同时返回几何容量和当前可写容量。生成前按预设可用数与设备可写数的较小值确定本次输出并向下对齐；画面尺度仍使用预设可用区域，设备容量较小时只截尾，文件布局则重新规划，布局完成后仍在写前重新检查介质状态与容量；设备 Free 不再扣固定预留。DVD 使用 IMAPI Free，CD 用 ATIP 几何减 2 的保守单轨上限并在 DAO 准备后严格检查 lead-out（移除原有 3 扇区隐式 overburn 容差），BD 保留全新未格式化 SRM、无备用区的完整布局检查。标定“从盘片读取”分别填入几何与对齐后的可用数；已录盘仍可读取几何，但无可写容量时可用字段留空并明确提示缺省估算。
 
+CD-Extra 不经过 IMAPI 的 DAO 格式化接口：`WindowsImapiBurner.BurnCdExtraAsync` 通过 `IDiscRecorder2Ex` 发送原始 MMC 命令（`CdMmcCommands`、`CdTaoWriter`、`ICdExtraSession`）。它把写入参数页 05h 设为 Track-at-Once 与多区段，逐首以 WRITE(10) 写入 2352 字节音频块并关闭第 1 区段，随后用 READ TRACK INFORMATION 读取下一可写地址，交给请求方的 `CreateData` 按该地址生成第 2 区段 ISO 流，以 2048 字节 Mode 1 块写入并关闭最终区段。因为图片依赖实测地址，第 2 区段的数据在刻录中途才生成，且在读取该地址前已选好数据轨的写入参数；模拟写入设置 Test Write 位并保持预计布局。除 TEST UNIT READY 外，光驱回答 02/04/01、07、08 或 06/28/00（命令未执行）时等待就绪后重发，WRITE 只对前者重试；CLOSE 报错时只在盘片已处于预期状态时视为成功。请求的 `PrepareAudio` 在第一条 WRITE 前确认全部音乐文件未变，并以拒绝写入和删除的共享方式打开它们，直到音乐区段写完。`DynamicCdExtraSession` 另有以 `IMmcCommandTransport` 构造的入口，回归测试用命令级 CD-R 模型走完同一套命令序列。契约里的 `BurnCdExtraAsync` 是默认接口方法，其他刻录器实现不受影响。
+
 `DiscImageStudio.Burning` 只负责 Windows IMAPI2 设备枚举、介质检查、COM `IStream` 适配、64 MiB 有界内存缓冲（开刻前预填充 32 MiB）和刻录生命周期。自动速度会在真正开始 CD/DVD 刻录时重新读取当前盘片的写入配置并选择最低值，手动选择仍保持原值；设备不报告速度时使用刻录接口的保守回退。CD/DVD 生成器仍拥有介质格式：CD 顺序产生 2352 字节音频扇区，DVD 快速算法顺序产生 2048 字节数据扇区。刻录器按需读取这些块，因此磁盘上不出现完整镜像。原文件输出入口不经过该层，失败时不会破坏原工作流。
 
 DVD 混合文件夹模式采用两阶段顺序生成：第一阶段扫描目录，确定 ISO9660/Joliet 元数据、文件 extent 及绘图起止 LBA；第二阶段按规划的盘面顺序输出，内圈模式为“元数据 → 文件 → 图案”，外圈模式为“元数据 → 图案 → 文件”。图案按 16 扇区 ECC Block 对齐。布局计划只保存元数据，不缓存文件内容，支持不可 Seek 的流。
 
 BD-R 复用同一刻录契约：`BluRayIsoGenerator` 在一个前向流里写入 UDF 2.01、图案区与盘尾备份元数据；外圈模式将完整文件分区移至尾部备份区前，图案始终保持 32 扇区对齐且位于分区之外。刻录页把该流直接喂给 MMC 顺序写入会话，不落盘完整 25 GB 镜像。BD 不提供备用区重映射；中断后盘片通常不可继续写入。
 
-CD、DVD 和 BD 共用 `BurnDeviceDiagnostics` 的写前环境、固件及物理盘片类型／空白状态日志。物理类型按 IMAPI 返回值记录（如 DVD-R、DVD+R DL、BD-R、BD-RE），不由工程预设或光驱名称推断；识别类型不代表新增对该类型的写入支持。可选字段读取失败只记 `unavailable`，不阻止刻录。
+CD、DVD、BD 和 CD-Extra 共用 `BurnDeviceDiagnostics` 的写前环境、固件及物理盘片类型／空白状态日志。物理类型按 IMAPI 返回值记录（如 DVD-R、DVD+R DL、BD-R、BD-RE），不由工程预设或光驱名称推断；识别类型不代表新增对该类型的写入支持。可选字段读取失败只记 `unavailable`，不阻止刻录。
 
 DVD 的 `IDvdDataSession` 隔离现有 COM 调用，保留介质检查、缓冲保护、封盘设置、关闭校验、速度、事件订阅和写入顺序。诊断缓存 `MediaState`、`FreeSectors`、`RequiredSectors`、容量余量、请求／实际速度、设置及阶段耗时。BD 使用原有写前 `ReadMedia` 结果记录 profile、空白／格式化状态、轨道起点与容量、下一可写地址及有效性；另记录写入、刷新、关闭轨道、封盘和释放耗时。
 
-失败时在源流销毁与设备清理前保存 `Burn.DeviceContext`、对应介质的 `Burn.CdDaoContext`／`Burn.DvdContext`／`Burn.BluRayContext` 及 `Burn.ContentAtFailure`。上下文只使用已缓存的设备信息、现有事件和主机流计数，不再查询故障设备。生成量、源流读取量及主机队列量不等于实际落盘量；IMAPI 系统缓冲也不等于光驱物理缓存。CD／DVD 高层接口不暴露失败命令的 SCSI sense，日志明确标记不可用；BD MMC 异常已有的真实 sense 保持原样。CD 导入区事件节流与字段说明见 [CD 失败日志](CD_AUDIO_COMPATIBILITY.md#cd-dao-失败日志)。
+失败时在源流销毁与设备清理前保存 `Burn.DeviceContext`、对应介质的 `Burn.CdDaoContext`／`Burn.DvdContext`／`Burn.BluRayContext` 及 `Burn.ContentAtFailure`；CD-Extra 保存 `Burn.DeviceContext` 与 `Burn.CdExtraContext`（失败操作、是否已开始写入、第 1 区段是否已关闭、各音轨起点），其 MMC 异常同样带真实 sense。上下文只使用已缓存的设备信息、现有事件和主机流计数，不再查询故障设备。生成量、源流读取量及主机队列量不等于实际落盘量；IMAPI 系统缓冲也不等于光驱物理缓存。CD／DVD 高层接口不暴露失败命令的 SCSI sense，日志明确标记不可用；BD MMC 异常已有的真实 sense 保持原样。CD 导入区事件节流与字段说明见 [CD 失败日志](CD_AUDIO_COMPATIBILITY.md#cd-dao-失败日志)。
 
 `ProjectOutputs.FilesAtOuterRing` 为可选字段，默认 `false`，DVD/BD 各自通过共享参数状态同步导出、预览与刻录。文件区在 GUI 预览中按绘图起止边界标黄，包含必要的文件系统保留区；该配色不进入生成器。已有成品依赖其 sidecar 的固定范围，不使用当前目录重新猜测布局。
 
@@ -114,6 +118,8 @@ DVD 的 `IDvdDataSession` 隔离现有 COM 调用，保留介质检查、缓冲�
 `DiscImageStudio.Cd` 拥有 CD 几何、图片采样、RAW 输出和延迟交织。它实现取消，并把字节进度转换成统一的 `DiscJobProgress`。
 
 图片和冻结的内置标定目标由 `CdBlockPipeline` 按 32 扇区分块，并行进行采样与影调计算；Mode 1 的绘图区使用同一管线。每批最多容纳两倍工作线程数的块，工作线程数不超过 16，缓冲空间不随盘容量增长。所有工作线程结束本批计算后，调用线程按原顺序写出并报告进度；音轨整段共用一个 CIRC 交织器，保留跨块延迟状态。任意外部采样回调和带游标的逻辑地址标定保持顺序执行。文件导出与直接刻录默认使用该管线，`useParallelSampling=false` 可选择原顺序实现进行字节对照。
+
+CD-Extra 的地址计算集中在 `CdExtraLayout`（Track-at-Once：曲目之间 152 扇区，第 1 区段到第 2 区段数据之间 11,400 扇区，数据轨末尾 150 扇区后间隙）；`CdMusicFile` 只接受 44.1 kHz、16 位、立体声 PCM WAV，并原样输出补齐到整扇区和 4 秒下限的 PCM。第 2 区段复用数据盘生成器：`CdDataLayoutPlan` 记录卷起点 `VolumeStartLba`，元数据、文件和绘图范围都使用绝对 LBA；`Iso9660ImageWriter` 的 `lbaBias` 按 `mkisofs -C` 约定把卷空间大小、路径表、目录和文件 extent 写成绝对地址，偏移为 0 时与单区段数据盘的输出相同。图片仍按整盘坐标采样，同一张设计图在单区段数据盘和 CD-Extra 中落在相同的物理位置。同名 `.iso.json`（`cd-extra-v1`）记录起点与布局，供读回预览使用。
 
 ### DVD
 
