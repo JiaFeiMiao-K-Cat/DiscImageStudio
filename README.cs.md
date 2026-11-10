@@ -73,7 +73,7 @@ Přímé vypalování je experimentální. Používejte pouze testovací média,
 - **Podpora DVD**: Podporuje jakékoli DVD. Exportuje obrazy ISO.
 - **Podpora Blu-ray**: Podporuje jakýkoli jednovrstvý BD-R 25 GB v režimu pouhého kreslení a se soubory UDF 2.01. Viz [ADDING_BLURAY.md](docs/ADDING_BLURAY.md).
 - **Soubory na disku**: U CD, DVD a Blu-ray můžete vybrat složku a umístit její soubory na vnitřní nebo vnější okruh přímo na stránce Návrh, případně tato nastavení upravit na stránce Export. Nastavení se ukládá s projektem.
-- **CD-Extra (hudba + obrázek)**: Projekty CD mohou na stránce Návrh přidat hudbu ve formátu WAV. Hudba se zapíše do 1. relace na vnitřních stopách a obrázek tvoří datovou stopu 2. relace na vnějších stopách, takže přehrávače CD přehrají jen hudbu. Stránka Návrh při úpravách zobrazuje poloměr a podíl plochy disku pro hudbu, mezeru mezi relacemi a obrázek. Viz [CD-Extra](docs/CD_AUDIO_COMPATIBILITY.md#cd-extra音乐--图片).
+- **Hudba + obrázek**: Projekty CD mohou na stránce Návrh přidat hudbu ve formátu WAV. Přehrávače CD přehrají jen hudbu a obrázek nikdy nepřehrají jako stopu. Ve výchozím nastavení je hudba na vnějších stopách (celý disk tvoří jednu zvukovou relaci a obrázek se zapíše do pregapu stopy 1); lze ji umístit i na vnitřní stopy (CD-Extra, obrázek tvoří datovou stopu 2. relace). Stránka Návrh při úpravách zobrazuje poloměr a podíl plochy disku pro hudbu a obrázek. Viz [Hudba + obrázek](docs/CD_AUDIO_COMPATIBILITY.md#音乐--图片).
 - **Náhled oblasti souborů**: Projekce návrhu hybridních disků a zpětné čtení výstupu zvýrazňují oblast souborů včetně systému souborů modře.
 - **Schémata šedi podle média**: CD i DVD používají dvě černo-bílé úrovně: `0D / AA` pro CD a `A5 / 92` v prokládané doméně DVD. Viz [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md).
 - **Nástroj pro dithering šedi**: Samostatný program dokáže zpracovat zdrojový obrázek na dvouúrovňový černo-bílý PNG `0/255`. Podporuje otevírání nebo přetahování zdrojových obrázků, náhledy vedle sebe a bezztrátový export PNG. Viz [návod k použití a sestavení](tools/FourLevelDither/README.md).
@@ -94,7 +94,7 @@ Postup a parametry najdete v [průvodci asistovanou kalibrací](docs/CALIBRATI
 
 - **Výstup obrazu disku**: Exportujte kompletní soubory ISO / RAW a vypalte je ručně vhodným vypalovacím softwarem.
 - **Přímé streamované vypalování (experimentální)**: Generujte a vypalujte data CD, DVD a BD-R současně bez ukládání kompletního obrazu disku. BD-R používá sekvenční zápis MMC.
-- **Vypalování CD-Extra (experimentální)**: Hudební relaci zapíše a uzavře v režimu Track-at-Once, poté vygeneruje a zapíše obrazovou relaci pro adresu, kterou ohlásí vypalovačka, a disk uzavře; předem lze spustit zkušební zápis. Na fyzickém disku zatím neověřeno.
+- **Vypalování hudby s obrázkem (experimentální)**: Je-li hudba na vnějších stopách, zapíše se celý disk v režimu Disc-at-Once. Je-li na vnitřních stopách, hudební relace se zapíše a uzavře v režimu Track-at-Once a poté se vygeneruje a zapíše obrazová relace pro adresu, kterou ohlásí vypalovačka; předem lze spustit zkušební zápis. Na fyzickém disku zatím neověřeno.
 - **Nepoužívejte média, která nejsou prázdná!**
 
 ## Požadavky na systém a hardware
@@ -142,7 +142,7 @@ CLI čte PNG, JPEG, BMP a GIF a u animovaných obrázků používá první sn
 | `calibrate` | Kalibrační projekce: vzorkuje zdrojový obraz DVD podle geometrie generování a promítne jej na disk podle naměřené geometrie |
 | `simulate` | Simuluje zpětné čtení vygenerovaného DVD ISO podle naměřených poloměrů |
 | `selftest` | Spustí deterministické regresní autotesty motoru DVD |
-| `cd-generate` | Vygeneruje zvukové stopy WAV + CUE / RAW, pokud na disku nejsou soubory; při zadání `--data-dir` vytvoří ISO datového disku CD; při zadání `--music` vytvoří ISO 2. relace CD-Extra (datová stopa s obrázkem) |
+| `cd-generate` | Vygeneruje zvukové stopy WAV + CUE / RAW, pokud na disku nejsou soubory; při zadání `--data-dir` vytvoří ISO datového disku CD; při zadání `--music` vytvoří WAV + CUE s obrázkem a hudbou (hudba na vnějších stopách), s `--music-position inner` ISO 2. relace CD-Extra (datová stopa s obrázkem) |
 | `cd-preview-warp` | Kalibrační projekce: promítne zdrojový obraz CD podle naměřené geometrie |
 | `cd-preview-track` | Vykreslí existující zvukovou stopu WAV nebo RAW CD-DA podle kalibrované geometrie (simulace zpětného čtení) |
 | `bd-generate` | Vygeneruje kompletní BD-R ISO a zapíše doprovodný soubor `<iso>.json` |
@@ -177,7 +177,7 @@ docs/                        Dokumentace architektury, motorů, předvoleb, vyd�
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Abstrakce modulů, hranice mezi vrstvami a pravidla rozšiřování |
 | [LOCALIZATION.md](docs/LOCALIZATION.md) | Nastavení jazyka a údržba překladových zdrojů |
 | [DVD_ENGINE.md](docs/DVD_ENGINE.md) | Konvence řešiče omezení obrazu DVD NRZI, kódovací řetězec a pokrytí autotestů |
-| [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | Formáty zvukových stop CD, pořadí bajtů, řešení duchů (ghosting) a CD-Extra |
+| [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | Formáty zvukových stop CD, pořadí bajtů, řešení duchů (ghosting) a disky s hudbou a obrázkem |
 | [ADDING_BLURAY.md](docs/ADDING_BLURAY.md) | Fyzikální model modulu Blu-ray, generování a vypalování a rozšiřovací body |
 | [DISC_PRESETS.md](docs/DISC_PRESETS.md) | Vrstvený formát JSON a pravidla slučování upravitelných předvoleb disků |
 | [CALIBRATION.md](docs/CALIBRATION.md) | Rektifikace fotografií (vyznačení nejvnějšího fyzického okraje disku a okraje středového otvoru), kalibrace křivek a proložení kubické rozteče stop DVD |

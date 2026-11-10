@@ -21,9 +21,54 @@ English: the data-only DAO adapter replaces audio ADR3/ISRC with complete ADR1 p
 
 设计投影、影调小预览和带有效 `.iso.json` 布局信息的成品读回以主题蓝色标出文件区（含文件系统）。同名元数据记录几何、影调和文件位置；移动 ISO 时建议同时移动它。预览显示绘图负载的映射，实盘效果仍需刻录验证。
 
-## CD-Extra（音乐 + 图片）
+## 音乐 + 图片
 
-CD 工程在设计页的「音乐（CD-Extra）」卡片中选择「音乐 + 图片」并添加 WAV 音乐后，按增强型 CD（CD-Extra / Enhanced CD）布局：
+CD 工程在设计页的「音乐」卡片中选择「音乐 + 图片」并添加 WAV 音乐后，同一张盘上既有可播放的音乐，又有盘面图片，CD 机只播放音乐。卡片里的「音乐位置」决定盘片结构：
+
+| 音乐位置 | 盘片结构 | 图片所在 | 写入方式 | 导出物 |
+| --- | --- | --- | --- | --- |
+| 外圈（默认） | 一个音频区段 | 第 1 轨的预间隙（索引 0），从 LBA 0 开始 | 整盘一次写入（DAO） | 一个 WAV 和 CUE |
+| 内圈 | 两个区段（CD-Extra） | 第 2 区段的 Mode 1 数据轨 | Track-at-Once，先音乐后图片 | 第 2 区段的 ISO |
+
+两种位置各有取舍：
+
+- **外圈**：盘片是标准的单区段音频 CD。图片从 LBA 0 开始，地址在写入前就确定，不依赖光驱报告的地址；没有区段间隔，曲目之间也没有强制的 2 秒间隔。代价是图片以音频采样的形式存在于第 1 首之前：在第 1 首开头继续倒退，或用能读取预间隙的抓轨软件，会读到它，听到的是噪声；这种盘不能附带随盘文件。
+- **内圈（CD-Extra）**：图片在数据区段里，CD 机不会把它当音频播放，也可以附带随盘文件。代价是区段间隔占 11,400 扇区（约 1 mm 宽的环）不能绘图，图片起点取决于光驱关闭第 1 区段后报告的地址，曲目之间有 2 秒间隔，个别老式 CD 机不识别多区段盘。
+
+两种位置的音乐要求相同：只接受 44.1 kHz、16 位、立体声 PCM 的 WAV（包括 WAVE_FORMAT_EXTENSIBLE 封装的 16 位 PCM），样本原样写入，不转码、不调整音量；每首向上取整到整扇区，不足 4 秒（300 扇区）的曲目在末尾补数字静音；最多 98 首。
+
+### 音乐在外圈
+
+| 区域 | 位置 | 内容 |
+| --- | --- | --- |
+| 标准预间隙 | LBA −150 到 −1 | 2 秒静音，由镜像生成器写入 |
+| 图片 | LBA 0 到 P−1 | 第 1 轨的索引 0（预间隙）：按音轨方式绘制的图片 |
+| 音乐 | LBA P 到可用容量末尾 | 第 1 轨的索引 1 起，各曲目首尾相接 |
+
+P 等于可用扇区数减去音乐扇区数，所以音乐总是贴着盘片外缘；音乐越长，图片区越小。目录（TOC）把第 1 轨的起点记在 P，CD 机从这里开始播放。图片的映射、延迟交织和影调与「整盘图片」的音轨完全相同，只是在音乐起点处截止；它至少要有 150 扇区。
+
+程序内刻录（实验性）走与「整盘图片」音轨相同的 CD DAO 路径：把图片和音乐作为一条连续的数据流交给 Windows 的原始 CD 镜像生成器，图片作为第 1 轨的预间隙，每首音乐各成一轨。开始生成数据时程序先确认每个音乐文件与规划时一致，并在写完前阻止其他程序修改或删除它们。这种写入没有模拟写入选项。
+
+导出页输出一个 WAV（图片在前、音乐在后）和 CUE。CUE 把图片记为第 1 轨的 `INDEX 00`：
+
+```text
+FILE "disc.wav" WAVE
+  TRACK 01 AUDIO
+    INDEX 00 00:00:00
+    INDEX 01 59:12:40
+  TRACK 02 AUDIO
+    INDEX 01 63:25:02
+```
+
+用外部软件刻录时必须整盘一次写入（DAO／SAO）并使用这个 CUE，例如 ImgBurn 的「Write image file to disc」或 `cdrecord -dao cuefile=disc.cue`；Track-at-Once 会把预间隙写成静音，图片就没有了。命令行用 `cd-generate --music 文件夹 --output disc.wav`（`--music-position` 默认为 `outer`）。读回预览显示整个文件：图片在内，音乐表现为外缘的一圈噪声纹理，与实际盘面一致。
+
+外圈布局尚未实盘验证：很长的预间隙（几十分钟）在不同 CD 机上的寻轨和时间显示、以及各光驱的 DAO 写入，都有待实测。
+
+English: with "Music + picture", CD players play the music and never the picture. "Music position" selects the disc structure. **Outer (default)**: one Disc-at-Once audio session; the picture is the index 0 pre-gap of track 1 from LBA 0 and the gapless music ends at the usable capacity. Every address is fixed before writing and there is no session gap, but the picture exists as audio samples in front of track 1 (rewinding past the start of track 1 plays it as noise) and disc files are not possible. The export is one WAV with a CUE sheet whose track 1 has `INDEX 00 00:00:00`; it must be burned Disc-at-Once. **Inner**: a CD-Extra disc, described below. Neither layout has been verified on a physical recorder yet.
+
+### 音乐在内圈：CD-Extra
+
+把「音乐位置」设为内圈后，按增强型 CD（CD-Extra / Enhanced CD）布局：
 
 | 区域 | 位置 | 内容 |
 | --- | --- | --- |
@@ -61,12 +106,12 @@ cdrecord dev=设备 -msinfo
 # 3. 按实际起点生成第 2 区段 ISO（--music 可以是文件夹、播放列表或单个 WAV；
 #    文件夹按文件名自然顺序，--session2-start-lba 也可直接写 0,15055）
 DiscImageStudio.exe cd-generate --input picture.png --output session2.iso `
-  --music "D:\音乐" --session2-start-lba 15055 --volume-label CD_EXTRA
+  --music "D:\音乐" --music-position inner --session2-start-lba 15055 --volume-label CD_EXTRA
 # 4. 写入数据轨并封盘
 cdrecord dev=设备 -tao -data session2.iso
 ```
 
-`--music` 用来计算音乐区长度，第 3 步必须使用与第 1 步相同的曲目和顺序。不给 `--session2-start-lba` 时使用预计起点，只适合预览。`cd-preview-warp` 同样接受这两个参数；预览页读回带 `cd-extra-v1` 元数据的 ISO 时，按其绝对起点投影到盘面。
+`--music` 用来计算音乐区长度，第 3 步必须使用与第 1 步相同的曲目和顺序。不给 `--session2-start-lba` 时使用预计起点，只适合预览。`cd-preview-warp` 同样接受这些参数；预览页读回带 `cd-extra-v1` 元数据的 ISO 时，按其绝对起点投影到盘面。
 
 English: CD-Extra puts the music into session 1 on the inner rings (Track-at-Once audio, 2-second gaps, tracks padded to whole sectors and to at least 4 s) and the picture into a Mode 1 data track of session 2 on the outer rings; the 11,400 sectors between them (lead-out, lead-in, pre-gap) cannot be drawn. Only 44.1 kHz 16-bit stereo PCM WAV is accepted and copied verbatim. In-app burning closes session 1, reads the recorder's next writable address, and only then generates the picture ISO for that address, because a one-sector error rotates the picture by about 16–37°. Exported ISOs use absolute LBAs (the `mkisofs -C` convention); for external burning regenerate the ISO with `--session2-start-lba` set to the second value of `cdrecord -msinfo`. Neither the in-app burner nor the external route has been verified on a physical recorder yet.
 

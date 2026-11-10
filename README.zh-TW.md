@@ -71,7 +71,7 @@ Windows x64 請下載以 `win-x64.exe` 結尾的檔案；Windows 11 ARM64 請下
 - **DVD 支援**：支援任何 DVD。您可匯出 ISO 映像。
 - **藍光支援**：支援任何單層 BD-R 25 GB，可純繪圖或附帶 UDF 2.01 檔案。詳見 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。
 - **隨碟檔案**：CD／DVD／藍光可在設計頁直接選擇要儲存的資料夾及內圈／外圈位置，也可在匯出頁調整；設定會隨專案儲存。
-- **CD-Extra（音樂 + 圖片）**：CD 專案可在設計頁加入 WAV 音樂，音樂寫在內圈的第 1 區段，圖片作為第 2 區段的資料軌寫在外圈，CD 播放機只播放音樂。設計頁會隨編輯顯示音樂區、區段間隔與圖片區的半徑和碟面占比。詳見 [CD-Extra 說明](docs/CD_AUDIO_COMPATIBILITY.md#cd-extra音乐--图片)。
+- **音樂 + 圖片**：CD 專案可在設計頁加入 WAV 音樂，CD 播放機只播放音樂，不會把圖片當成曲目播放。音樂預設在外圈（整張碟是一個音訊區段，圖片寫在第 1 軌的預間隙裡），也可放在內圈（CD-Extra，圖片作為第 2 區段的資料軌）。設計頁會隨編輯顯示音樂區與圖片區的半徑和碟面占比。詳見 [音樂 + 圖片說明](docs/CD_AUDIO_COMPATIBILITY.md#音乐--图片)。
 - **檔案區域預覽**：混合光碟的設計投影與成品讀回會以藍色標示檔案區（含檔案系統）。
 - **媒體灰階方案**：CD 與 DVD 均使用黑白二階；CD 使用 `0D / AA`，DVD 擾碼域使用 `A5 / 92`。詳見 [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md)。
 - **灰階抖動工具**：獨立程式也可將原圖處理為 `0/255` 黑白二階 PNG；支援開啟或拖入原圖、並排預覽及無損 PNG 匯出。詳見[使用與建置說明](tools/FourLevelDither/README.md)。
@@ -93,7 +93,7 @@ Disc Image Studio 提供一套智慧且精準的輔助校準流程。相較於�
 
 - **映像檔輸出**：您可以匯出完整 ISO / RAW 檔案，並使用合適的燒錄軟體手動燒錄。
 - **即時串流燒錄（實驗性）**：CD、DVD 與 BD-R 一邊產生資料、一邊燒錄，不儲存完整映像；BD-R 使用 MMC 循序寫入。
-- **CD-Extra 燒錄（實驗性）**：以 Track-at-Once 先寫入並關閉音樂區段，再依光碟機回報的位址產生並寫入圖片區段，最後封片；可先模擬寫入。尚未實際燒錄驗證。
+- **音樂 + 圖片燒錄（實驗性）**：音樂在外圈時整張碟一次寫入（DAO）；音樂在內圈時以 Track-at-Once 先寫入並關閉音樂區段，再依光碟機回報的位址產生並寫入圖片區段，可先模擬寫入。尚未實際燒錄驗證。
 - **請勿使用非空白媒體！**
 
 ## 系統與裝置需求
@@ -141,7 +141,7 @@ CLI 可讀取 PNG、JPEG、BMP 和 GIF，動畫圖片使用第一幀。以下範
 | `calibrate` | 校準投影：依產生映像所用的幾何參數從 DVD 來源圖片取樣，再依實測幾何參數投影至碟面 |
 | `simulate` | 依實測半徑對產生的 DVD ISO 進行讀回模擬 |
 | `selftest` | 執行 DVD 引擎的確定性迴歸自我檢查 |
-| `cd-generate` | 無隨碟檔案時產生 WAV + CUE / RAW 音軌；指定 `--data-dir` 時產生 CD 資料光碟 ISO；指定 `--music` 時產生 CD-Extra 第 2 區段（圖片資料軌）ISO |
+| `cd-generate` | 無隨碟檔案時產生 WAV + CUE / RAW 音軌；指定 `--data-dir` 時產生 CD 資料光碟 ISO；指定 `--music` 時產生圖片 + 音樂的 WAV + CUE（音樂在外圈），加上 `--music-position inner` 時產生 CD-Extra 第 2 區段（圖片資料軌）ISO |
 | `cd-preview-warp` | 校準投影：依實測幾何參數投影 CD 來源圖片 |
 | `cd-preview-track` | 依校準幾何參數算繪現有的 WAV 或 RAW CD-DA 音軌（讀回模擬） |
 | `bd-generate` | 產生完整 BD-R ISO，並寫出 `<iso>.json` sidecar |
@@ -175,7 +175,7 @@ docs/                        架構、引擎、預設、發布等文件
 | --- | --- |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | 模組抽象、層間邊界與擴充規則 |
 | [DVD_ENGINE.md](docs/DVD_ENGINE.md) | DVD NRZI 圖像限制求解器的慣例、編碼流程與自我檢查涵蓋範圍 |
-| [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | CD 音軌格式、位元組順序、重影問題排查與 CD-Extra |
+| [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | CD 音軌格式、位元組順序、重影問題排查與音樂 + 圖片光碟 |
 | [ADDING_BLURAY.md](docs/ADDING_BLURAY.md) | 藍光模組的物理模型、產生／燒錄流程與擴充點 |
 | [DISC_PRESETS.md](docs/DISC_PRESETS.md) | 可編輯光碟預設的分層 JSON 格式與合併規則 |
 | [CALIBRATION.md](docs/CALIBRATION.md) | 相片校正（框選光碟實體最外緣與中心孔邊緣）、曲線校準與 DVD 三次軌距擬合 |

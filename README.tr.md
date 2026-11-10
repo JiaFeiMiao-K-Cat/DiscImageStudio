@@ -71,7 +71,7 @@ Akışla doğrudan diske yazma deneyseldir. Yalnızca gözden çıkarabileceğin
 - **DVD Desteği**: Standart her türlü DVD'yi destekler. ISO imajları dışa aktarılır.
 - **Blu-ray Desteği**: Yalnızca çizim modu ve UDF 2.01 dosya yerleşimi ile her türlü tek katmanlı 25 GB BD-R'yi destekler. Bkz. [Blu-ray Desteği Ekleme](docs/ADDING_BLURAY.md).
 - **Disk Üzerinde Dosya Barındırma**: CD, DVD ve Blu-ray için doğrudan Tasarım sayfasından bir klasör seçip dosyalarını diskin iç veya dış halkasına yerleştirebilir ya da bu seçenekleri Dışa Aktarma sayfasından ayarlayabilirsiniz. Bu ayarlar projeyle birlikte kaydedilir.
-- **CD-Extra (müzik + resim)**: CD projelerinde Tasarım sayfasından WAV müzik eklenebilir. Müzik iç halkalardaki 1. oturuma, resim ise dış halkalardaki 2. oturumun veri izi olarak yazılır; CD çalarlar yalnızca müziği çalar. Tasarım sayfası, düzenleme sırasında müzik bölgesinin, oturum boşluğunun ve resim bölgesinin yarıçapını ve disk yüzeyindeki payını gösterir. Bkz. [CD-Extra](docs/CD_AUDIO_COMPATIBILITY.md#cd-extra音乐--图片).
+- **Müzik + Resim**: CD projelerinde Tasarım sayfasından WAV müzik eklenebilir. CD çalarlar yalnızca müziği çalar; resim hiçbir zaman parça olarak çalınmaz. Müzik varsayılan olarak dış halkalardadır (diskin tamamı tek bir ses oturumudur ve resim 1. izin ön boşluğuna yazılır); iç halkalara da yerleştirilebilir (CD-Extra, resim 2. oturumun veri izi olur). Tasarım sayfası, düzenleme sırasında müzik ve resim bölgelerinin yarıçapını ve disk yüzeyindeki payını gösterir. Bkz. [Müzik + Resim](docs/CD_AUDIO_COMPATIBILITY.md#音乐--图片).
 - **Dosya Bölgesi Önizlemesi**: Hibrit disk tasarım projeksiyonları ve ürün geri okumaları, dosya sistemi dahil olmak üzere dosya alanını mavi renkle vurgular.
 - **Medya Gri Tonlama Şemaları**: CD ve DVD'nin her ikisi de iki siyah-beyaz seviyesi kullanır: CD için `0D / AA` ve DVD karıştırılmış (scrambled) alanında `A5 / 92`. Bkz. [Fiziksel Model Denetimi](docs/PHYSICAL_MODEL_AUDIT.md).
 - **Gri Tonlama Sarsıntı (Dithering) Aracı**: Bağımsız bir yardımcı program, bir kaynak görseli iki seviyeli `0/255` siyah-beyaz PNG'ye dönüştürebilir. Görselleri açmayı, sürükleyip bırakmayı, yan yana önizlemeyi ve kayıpsız PNG dışa aktarımını destekler. Bkz. [Kullanım ve Derleme Talimatları](tools/FourLevelDither/README.md).
@@ -92,7 +92,7 @@ Disc Image Studio, akıllı ve hassas bir destekli kalibrasyon iş akışı suna
 
 - **Disk İmajı Çıktısı**: Eksiksiz ISO / RAW dosyalarını dışa aktarın ve uygun bir yazma yazılımıyla manuel olarak yazın.
 - **Akışla Canlı Yazma (Deneysel)**: Tam bir disk imajı kaydetmeden CD, DVD ve BD-R verilerini aynı anda oluşturup diske yazın. BD-R için MMC sıralı yazma (sequential writing) kullanılır.
-- **CD-Extra Yazma (Deneysel)**: Müzik oturumunu Track-at-Once ile yazıp kapatır, ardından resim oturumunu sürücünün bildirdiği adrese göre oluşturup yazar ve diski kapatır; önce bir deneme yazması yapılabilir. Henüz gerçek bir diskte doğrulanmadı.
+- **Müzik + Resim Yazma (Deneysel)**: Müzik dış halkalardayken diskin tamamı Disc-at-Once ile yazılır. Müzik iç halkalardayken müzik oturumu Track-at-Once ile yazılıp kapatılır, ardından resim oturumu sürücünün bildirdiği adrese göre oluşturulup yazılır; önce bir deneme yazması yapılabilir. Henüz gerçek bir diskte doğrulanmadı.
 - **Dolu veya boş olmayan medyaları kesinlikle kullanmayın!**
 
 ## Sistem ve Donanım Gereksinimleri
@@ -140,7 +140,7 @@ CLI; PNG, JPEG, BMP ve GIF formatlarını okur (hareketli görsellerin ilk kares
 | `calibrate` | Kalibrasyon projeksiyonu: DVD kaynak görüntüsünü oluşturma geometrisini kullanarak örnekler ve ölçülen geometriyi kullanarak diske yansıtır |
 | `simulate` | Ölçülen yarıçapları kullanarak oluşturulmuş bir DVD ISO'sunun geri okumasını simüle eder |
 | `selftest` | DVD motoru için belirleyici regresyon öz sınamalarını çalıştırır |
-| `cd-generate` | Diske dosya dahil edilmediğinde WAV + CUE / RAW ses izleri oluşturur; `--data-dir` belirtildiğinde bir CD veri diski ISO'su oluşturur; `--music` belirtildiğinde CD-Extra 2. oturum (resim veri izi) ISO'su oluşturur |
+| `cd-generate` | Diske dosya dahil edilmediğinde WAV + CUE / RAW ses izleri oluşturur; `--data-dir` belirtildiğinde bir CD veri diski ISO'su oluşturur; `--music` belirtildiğinde resim + müzik WAV + CUE dosyası (müzik dış halkalarda), `--music-position inner` eklendiğinde CD-Extra 2. oturum (resim veri izi) ISO'su oluşturur |
 | `cd-preview-warp` | Kalibrasyon projeksiyonu: CD kaynak görüntüsünü ölçülen geometriyi kullanarak yansıtır |
 | `cd-preview-track` | Mevcut bir WAV veya RAW CD-DA ses izini kalibre edilmiş geometri kullanarak işler (geri okuma simülasyonu) |
 | `bd-generate` | Eksiksiz bir BD-R ISO'su oluşturur ve bir `<iso>.json` yan dosyası (sidecar) yazar |
@@ -175,7 +175,7 @@ docs/                        Mimari, motor, önayar, sürüm ve diğer dokümant
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modül soyutlamaları, katman sınırları ve genişletme kuralları |
 | [LOCALIZATION.md](docs/LOCALIZATION.md) | Dil ayarları ve çeviri kaynaklarının bakımı |
 | [DVD_ENGINE.md](docs/DVD_ENGINE.md) | DVD NRZI görsel kısıtlama çözücü kuralları, kodlama zinciri ve öz sınama kapsamı |
-| [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | CD ses izi biçimleri, bayt sırası, gölgelenme sorunlarını giderme ve CD-Extra |
+| [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | CD ses izi biçimleri, bayt sırası, gölgelenme sorunlarını giderme ve müzik + resim diskleri |
 | [ADDING_BLURAY.md](docs/ADDING_BLURAY.md) | Blu-ray modülü fiziksel modeli, üretim/yazma hattı ve genişletme noktaları |
 | [DISC_PRESETS.md](docs/DISC_PRESETS.md) | Düzenlenebilir disk önayarları için katmanlı JSON biçimi ve birleştirme kuralları |
 | [CALIBRATION.md](docs/CALIBRATION.md) | Fotoğraf düzeltme (diskin en dış fiziksel kenarını ve merkez delik kenarını işaretleme), eğri kalibrasyonu ve DVD kübik iz aralığı uydurma |
