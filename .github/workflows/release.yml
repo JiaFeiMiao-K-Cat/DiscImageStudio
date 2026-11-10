@@ -256,8 +256,7 @@ jobs:
         with:
           path: |
             ./sequoia/bin
-          # Change random value to rebuild
-          key: cargo-install-sequoia-sq-3e390883bc8a7f74838393b22cc24fb1e4474de61142ca3c7ca70b557392a4a8
+          key: sequoia-sq-binary-cache
       - name: Build Sequoia SQ with OpenSSL
         shell: bash
         env:
