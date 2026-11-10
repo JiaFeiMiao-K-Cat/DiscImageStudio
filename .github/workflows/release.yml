@@ -304,6 +304,24 @@ jobs:
           sq key delete \
             --cert-file private_key.pgp \
             --output release/public_key.asc
+      - name: Verify release artifacts with public key
+        shell: bash
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
+        if: ${{ env.SIGN_PRIVATE_KEY != '' }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          umask 077
+          files=(release/*.exe release/*.tar.gz release/SHA256SUMS.txt)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No files found to verify"
+            exit 1
+          fi
+          for file in "${files[@]}"; do
+            # Sign file with sequoia sq
+            sq verify --signer-file release/public_key.asc --signature-file="${file}.sig" "${file}"
+          done
       - name: Create or refresh draft with all release attachments
         run: |
           # Never replace assets on an already published release.
