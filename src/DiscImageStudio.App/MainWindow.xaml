@@ -149,7 +149,7 @@
 
                         <!-- Nav groups: disc-making workspaces and the calibration pair.
                              The groups carry no numbers — the flow order is the visual
-                             order — and the header disappears with the collapsed rail. -->
+                             order. -->
                         <TextBlock x:Name="DiscMakingGroupHeader" Text="{loc:Text Xaml.GroupDiscMaking}"
                                    Style="{StaticResource MicroText}"
                                    Foreground="{DynamicResource TextMutedBrush}"
@@ -170,18 +170,9 @@
                                               IconKind="Crosshair" />
                     </StackPanel>
 
-                    <Button x:Name="SidebarCollapseToggle" Grid.Row="1" Height="40" Margin="0,8,0,16"
-                            Style="{StaticResource GhostButton}" Padding="0" Focusable="False"
-                            ToolTip="{loc:Text Xaml.CollapseSidebar}" Click="SidebarCollapseToggle_Click">
-                        <Grid>
-                            <iconPacks:PackIconLucide x:Name="CollapseLeftIcon" Kind="ChevronLeft"
-                                                      Width="20" Height="20" HorizontalAlignment="Left"
-                                                      Margin="12,0,0,0" Foreground="{DynamicResource TextSecondaryBrush}" />
-                            <iconPacks:PackIconLucide x:Name="CollapseRightIcon" Kind="ChevronRight"
-                                                      Width="20" Height="20" HorizontalAlignment="Center"
-                                                      Visibility="Collapsed" Foreground="{DynamicResource TextSecondaryBrush}" />
-                        </Grid>
-                    </Button>
+                    <controls:DriveInfoCard x:Name="DriveCardHost" Grid.Row="1"
+                                            DataContext="{Binding Drive}"
+                                            HasDisc="{Binding HasMedia}" Margin="0,0,0,16" />
                 </Grid>
             </Border>
 

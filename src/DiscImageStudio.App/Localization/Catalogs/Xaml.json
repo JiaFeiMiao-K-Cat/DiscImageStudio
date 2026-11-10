@@ -800,15 +800,6 @@
     "es": "Calibrar",
     "cs": "Kalibrace"
   },
-  "Xaml.CollapseSidebar": {
-    "zh-CN": "收起侧边栏",
-    "en": "Collapse sidebar",
-    "zh-TW": "收起側邊欄",
-    "ja": "サイドバーを折りたたむ",
-    "tr": "Kenar çubuğunu daralt",
-    "es": "Contraer barra lateral",
-    "cs": "Sbalit postranní panel"
-  },
   "Xaml.ExportTheDesignCompositeAsABurnableImageAdjust": {
     "zh-CN": "导出设计页的合成图为可刻录的镜像。相关参数请在“工程设置”中修改",
     "en": "Export the design composite as a burnable image. Adjust its parameters in Project settings.",
