@@ -245,7 +245,7 @@ jobs:
       - name: Verify release attachments
         working-directory: release
         shell: bash
-        run: sha256sum --strict --check SHA256SUMS.
+        run: sha256sum --strict --check SHA256SUMS.txt
 
       - name: Cache sequoia sq
         uses: actions/cache@v4
