@@ -78,7 +78,7 @@ public sealed partial class WindowsImapiBurner
     {
         ArgumentNullException.ThrowIfNull(request);
         request.Validate();
-        return _operationGate.RunAsync(() => RunOnStaThread(() => BurnCdExtraOnDevice(request, progress, cancellationToken)),
+        return _operationGate.RunAsync(() => ImapiCom.RunOnStaThread(() => BurnCdExtraOnDevice(request, progress, cancellationToken)),
             cancellationToken);
     }
 
@@ -90,7 +90,7 @@ public sealed partial class WindowsImapiBurner
         tracker.Stage("device", "正在检查刻录机和空白 CD…");
         cancellationToken.ThrowIfCancellationRequested();
         List<string> cleanupWarnings = [];
-        dynamic recorder = CreateRecorder(request.DeviceId);
+        dynamic recorder = ImapiCom.CreateRecorder(request.DeviceId);
         dynamic? format = null;
         CdExtraBurnResult? result = null;
         Exception? failure = null;
@@ -100,7 +100,7 @@ public sealed partial class WindowsImapiBurner
         {
             ReportDevice(() => BurnDeviceDiagnostics.DescribeEnvironment(request));
             ReportDevice(() => BurnDeviceDiagnostics.DescribeRecorder((object)recorder));
-            format = CreateComObject("IMAPI2.MsftDiscFormat2Data");
+            format = ImapiCom.CreateComObject("IMAPI2.MsftDiscFormat2Data");
             format.Recorder = recorder;
             format.ClientName = "Disc Image Studio";
             ReportDevice(() => BurnDeviceDiagnostics.DescribePhysicalMedia((object)format));
@@ -141,8 +141,8 @@ public sealed partial class WindowsImapiBurner
                 catch { /* Optional diagnostics must preserve the original failure. */ }
             }
             CompleteBurnCleanup(failure, cleanupWarnings,
-                () => { if (format is not null) ReleaseComObject((object)format); },
-                () => ReleaseComObject((object)recorder));
+                () => { if (format is not null) ImapiCom.ReleaseComObject((object)format); },
+                () => ImapiCom.ReleaseComObject((object)recorder));
         }
 
         void ReportDevice(Func<string?> describe)

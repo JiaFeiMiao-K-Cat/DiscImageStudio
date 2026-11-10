@@ -19,7 +19,7 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
 
     public Task<IReadOnlyList<OpticalBurnDevice>> GetDevicesAsync(
         CancellationToken cancellationToken = default)
-        => _operationGate.RunAsync(() => RunOnStaThread(() => EnumerateDevices(cancellationToken)),
+        => _operationGate.RunAsync(() => ImapiCom.RunOnStaThread(() => EnumerateDevices(cancellationToken)),
             cancellationToken);
 
     public async Task<long> GetMediaSectorCountAsync(string deviceId, OpticalBurnMediaKind mediaKind,
@@ -31,7 +31,7 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
         _ = OpticalBurnMedia.GetSectorBytes(mediaKind);
-        return _operationGate.RunAsync(() => RunOnStaThread(() =>
+        return _operationGate.RunAsync(() => ImapiCom.RunOnStaThread(() =>
             ReadMediaCapacity(deviceId, mediaKind, cancellationToken)), cancellationToken);
     }
 
@@ -42,8 +42,8 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
         dynamic? format = null;
         try
         {
-            recorder = CreateRecorder(deviceId);
-            format = CreateComObject("IMAPI2.MsftDiscFormat2Data");
+            recorder = ImapiCom.CreateRecorder(deviceId);
+            format = ImapiCom.CreateComObject("IMAPI2.MsftDiscFormat2Data");
             format.Recorder = recorder;
             format.ClientName = "Disc Image Studio";
             ValidateRequestedMedia(mediaKind, recorder, format);
@@ -72,8 +72,8 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
         }
         finally
         {
-            if (format is not null) ReleaseComObject(format);
-            if (recorder is not null) ReleaseComObject(recorder);
+            if (format is not null) ImapiCom.ReleaseComObject(format);
+            if (recorder is not null) ImapiCom.ReleaseComObject(recorder);
         }
     }
 
@@ -106,19 +106,39 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
         return ReadBluRaySectorCount(blocks, status, spareClusters);
     }
 
-    private static long ReadBluRaySectorCount(uint blocks, int status, int spareClusters)
+    internal static long ReadBluRaySectorCount(uint blocks, int status, int spareClusters)
+    {
+        if (!TryReadBluRaySectorCount(blocks, status, spareClusters, out long total, out string reason))
+            throw new InvalidOperationException(reason);
+        return total;
+    }
+
+    private static bool TryReadBluRaySectorCount(uint blocks, int status, int spareClusters,
+        out long total, out string reason)
     {
         // Type 1 counts data-zone blocks; spareClusters is the possible maximum.
         // Type 2 counts user blocks; spareClusters is actually allocated space.
         // Smaller drawing ranges can be authored, but the recorder requires the
         // complete physical layout of the supported no-spare 25 GB single layer.
+        total = 0;
         if (status is not (1 or 2))
-            throw new InvalidOperationException("光驱未报告当前 BD-R 的有效容量。");
+        {
+            reason = "光驱未报告当前 BD-R 的有效容量。";
+            return false;
+        }
         if (status == 2 && spareClusters != 0)
-            throw new InvalidOperationException("BD-R 已分配备用区，逻辑容量不能用于无备用区标定。");
+        {
+            reason = "BD-R 已分配备用区，逻辑容量不能用于无备用区标定。";
+            return false;
+        }
         if (blocks != BluRaySingleLayerSectors)
-            throw new InvalidOperationException($"BD-R 报告 {blocks:N0} 扇区，当前标定仅支持 25 GB 单层无备用区的 12,219,392 扇区布局。");
-        return blocks;
+        {
+            reason = $"BD-R 报告 {blocks:N0} 扇区，当前标定仅支持 25 GB 单层无备用区的 12,219,392 扇区布局。";
+            return false;
+        }
+        total = blocks;
+        reason = string.Empty;
+        return true;
     }
 
     internal static OpticalMediaCapacity ReadCdMediaCapacity(long atipSectors, bool physicallyBlank)
@@ -168,7 +188,7 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
         _ = OpticalBurnMedia.GetSectorBytes(mediaKind);
-        return _operationGate.RunAsync(() => RunOnStaThread(() => EnumerateWriteSpeeds(
+        return _operationGate.RunAsync(() => ImapiCom.RunOnStaThread(() => EnumerateWriteSpeeds(
             deviceId,
             mediaKind,
             cancellationToken)), cancellationToken);
@@ -181,7 +201,7 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
     {
         ArgumentNullException.ThrowIfNull(request);
         request.Validate();
-        return _operationGate.RunAsync(() => RunOnStaThread(() => Burn(request, progress, cancellationToken)),
+        return _operationGate.RunAsync(() => ImapiCom.RunOnStaThread(() => Burn(request, progress, cancellationToken)),
             cancellationToken);
     }
 
@@ -189,7 +209,7 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        dynamic master = CreateComObject("IMAPI2.MsftDiscMaster2");
+        dynamic master = ImapiCom.CreateComObject("IMAPI2.MsftDiscMaster2");
         try
         {
             if (!(bool)master.IsSupportedEnvironment)
@@ -203,12 +223,12 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 string id = (string)master.Item(index);
-                dynamic recorder = CreateRecorder(id);
+                dynamic recorder = ImapiCom.CreateRecorder(id);
                 try
                 {
                     string vendor = Convert.ToString(recorder.VendorId)?.Trim() ?? string.Empty;
                     string product = Convert.ToString(recorder.ProductId)?.Trim() ?? string.Empty;
-                    IReadOnlyList<string> volumes = ReadStrings(recorder.VolumePathNames);
+                    IReadOnlyList<string> volumes = ImapiCom.ReadStrings(recorder.VolumePathNames);
                     string drive = volumes.Count == 0 ? string.Empty : $" ({string.Join(", ", volumes)})";
                     string model = string.Join(" ", new[] { vendor, product }
                         .Where(value => !string.IsNullOrWhiteSpace(value)));
@@ -219,7 +239,7 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
                 }
                 finally
                 {
-                    ReleaseComObject(recorder);
+                    ImapiCom.ReleaseComObject(recorder);
                 }
             }
 
@@ -227,7 +247,7 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
         }
         finally
         {
-            ReleaseComObject(master);
+            ImapiCom.ReleaseComObject(master);
         }
     }
 
@@ -237,13 +257,13 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        dynamic recorder = CreateRecorder(deviceId);
+        dynamic recorder = ImapiCom.CreateRecorder(deviceId);
         dynamic? format = null;
         try
         {
             format = OpticalBurnMedia.UsesCdDao(mediaKind)
-                ? CreateComObject("IMAPI2.MsftDiscFormat2RawCD")
-                : CreateComObject("IMAPI2.MsftDiscFormat2Data");
+                ? ImapiCom.CreateComObject("IMAPI2.MsftDiscFormat2RawCD")
+                : ImapiCom.CreateComObject("IMAPI2.MsftDiscFormat2Data");
             format.Recorder = recorder;
             format.ClientName = "Disc Image Studio";
             if (!(bool)format.IsRecorderSupported(recorder))
@@ -270,10 +290,10 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
         {
             if (format is not null)
             {
-                ReleaseComObject(format);
+                ImapiCom.ReleaseComObject(format);
             }
 
-            ReleaseComObject(recorder);
+            ImapiCom.ReleaseComObject(recorder);
         }
     }
 
@@ -293,7 +313,7 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
             "正在检查刻录机和空白介质…",
             0,
             request.ContentLength));
-        dynamic recorder = CreateRecorder(request.DeviceId);
+        dynamic recorder = ImapiCom.CreateRecorder(request.DeviceId);
         dynamic? format = null;
         OpticalBurnResult? result = null;
         Exception? burnFailure = null;
@@ -306,8 +326,8 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
             BurnDeviceDiagnostics.Report(ReportDiagnostic, () => recorderDiagnostic = BurnDeviceDiagnostics.DescribeRecorder((object)recorder));
             currentOperation = "创建刻录格式";
             format = OpticalBurnMedia.UsesCdDao(request.MediaKind)
-                ? CreateComObject("IMAPI2.MsftDiscFormat2RawCD")
-                : CreateComObject("IMAPI2.MsftDiscFormat2Data");
+                ? ImapiCom.CreateComObject("IMAPI2.MsftDiscFormat2RawCD")
+                : ImapiCom.CreateComObject("IMAPI2.MsftDiscFormat2Data");
             currentOperation = "连接刻录机";
             format.Recorder = recorder;
             format.ClientName = "Disc Image Studio";
@@ -458,8 +478,8 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
             try
             {
                 CompleteBurnCleanup(burnFailure, cleanupWarnings,
-                    () => { if (format is not null) ReleaseComObject((object)format); },
-                    () => ReleaseComObject((object)recorder));
+                    () => { if (format is not null) ImapiCom.ReleaseComObject((object)format); },
+                    () => ImapiCom.ReleaseComObject((object)recorder));
             }
             catch (Exception exception)
             {
@@ -773,19 +793,44 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
 
     private static void ValidateBluRaySequentialLayout(BluRaySequentialMediaInfo media)
     {
+        if (!IsBluRaySequentialWritable(media, out string reason))
+            throw new InvalidOperationException(reason);
+    }
+
+    /// <summary>Shared writability rule: the probe reports zero usable sectors for every layout
+    /// that the sequential BD-R burn path would reject, so card and burner cannot disagree.</summary>
+    internal static bool IsBluRaySequentialWritable(BluRaySequentialMediaInfo media, out string reason)
+    {
+        if (!TryReadBluRaySectorCount(media.MaximumBlocks, media.FormatStatus,
+            media.SpareClusters, out _, out reason))
+            return false;
         if (media.Profile != BluRaySequentialProfile)
-            throw new InvalidOperationException("无备用区绘图需要顺序记录 BD-R（SRM）；不支持 BD-RE 或随机记录 BD-R。");
+        {
+            reason = "无备用区绘图需要顺序记录 BD-R（SRM）；不支持 BD-RE 或随机记录 BD-R。";
+            return false;
+        }
         if (!media.DiscIsBlank || !media.TrackIsBlank || !media.NextWritableAddressValid
             || media.NextWritableAddress != 0 || media.TrackStartAddress != 0 || media.TrackNumber != 1)
-            throw new InvalidOperationException("无备用区绘图需要从 LBA 0 开始的全新空白 BD-R，已取消刻录。");
+        {
+            reason = "无备用区绘图需要从 LBA 0 开始的全新空白 BD-R，已取消刻录。";
+            return false;
+        }
         if (media.FormatStatus != 1)
-            throw new InvalidOperationException("BD-R 已格式化或格式状态未知；无法保证无备用区的物理位置，请使用未格式化的新盘。");
+        {
+            reason = "BD-R 已格式化或格式状态未知；无法保证无备用区的物理位置，请使用未格式化的新盘。";
+            return false;
+        }
 
         if (media.MaximumBlocks != BluRaySingleLayerSectors
             || media.TrackSize != media.MaximumBlocks || media.FreeBlocks != media.TrackSize)
-            throw new InvalidOperationException(
-                $"盘片原始容量或轨道布局不符合单层无备用区 BD-R：最大 {media.MaximumBlocks:N0}、"
-                + $"轨道 {media.TrackSize:N0}、可写 {media.FreeBlocks:N0} 扇区；需要完整的 12,219,392 扇区布局。");
+        {
+            reason = $"盘片原始容量或轨道布局不符合单层无备用区 BD-R：最大 {media.MaximumBlocks:N0}、"
+                + $"轨道 {media.TrackSize:N0}、可写 {media.FreeBlocks:N0} 扇区；需要完整的 12,219,392 扇区布局。";
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
     }
 
     internal static OpticalWriteSpeed BurnCdAudio(
@@ -1257,7 +1302,7 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
                     }
                     finally
                     {
-                        ReleaseComObject(item);
+                        ImapiCom.ReleaseComObject(item);
                     }
                 }
             }
@@ -1324,71 +1369,4 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
 
     private static string FormatSectorTypes(IReadOnlyCollection<int> sectorTypes)
         => sectorTypes.Count == 0 ? "无" : string.Join(", ", sectorTypes);
-
-    private static dynamic CreateRecorder(string id)
-    {
-        dynamic recorder = CreateComObject("IMAPI2.MsftDiscRecorder2");
-        recorder.InitializeDiscRecorder(id);
-        return recorder;
-    }
-
-    private static dynamic CreateComObject(string programmaticId)
-    {
-        Type type = Type.GetTypeFromProgID(programmaticId, throwOnError: false)
-            ?? throw new PlatformNotSupportedException(
-                "Windows Image Mastering API 2 (IMAPI2) 不可用。");
-        return Activator.CreateInstance(type)
-            ?? throw new InvalidOperationException($"无法创建 Windows 刻录组件 {programmaticId}。");
-    }
-
-    private static IReadOnlyList<string> ReadStrings(object? value)
-    {
-        if (value is not Array array)
-        {
-            return [];
-        }
-
-        List<string> result = [];
-        foreach (object? item in array)
-        {
-            string? text = Convert.ToString(item)?.Trim();
-            if (!string.IsNullOrWhiteSpace(text))
-            {
-                result.Add(text);
-            }
-        }
-
-        return result;
-    }
-
-    private static void ReleaseComObject(object value)
-    {
-        if (Marshal.IsComObject(value))
-        {
-            _ = Marshal.FinalReleaseComObject(value);
-        }
-    }
-
-    private static Task<T> RunOnStaThread<T>(Func<T> action)
-    {
-        TaskCompletionSource<T> completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        Thread thread = new(() =>
-        {
-            try
-            {
-                completion.SetResult(action());
-            }
-            catch (Exception exception)
-            {
-                completion.SetException(exception);
-            }
-        })
-        {
-            IsBackground = true,
-            Name = "DiscImageStudio.IMAPI2",
-        };
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        return completion.Task;
-    }
 }
