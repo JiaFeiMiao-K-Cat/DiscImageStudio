@@ -52,6 +52,7 @@ internal static class ProjectSession
                 state.DvdOutputPath = outputs.OutputPath;
                 state.DvdDataDirectory = outputs.DataDirectory;
                 state.DvdFilesAtOuterRing = outputs.FilesAtOuterRing;
+                state.DvdOuterRingBleed = outputs.OuterRingBleed;
                 state.DvdVolumeLabel = outputs.VolumeLabel;
                 state.DvdImagePath = string.Empty;
                 break;
@@ -68,6 +69,7 @@ internal static class ProjectSession
                 state.BdOutputPath = outputs.OutputPath;
                 state.BdDataDirectory = outputs.DataDirectory;
                 state.BdFilesAtOuterRing = outputs.FilesAtOuterRing;
+                state.BdOuterRingBleed = outputs.OuterRingBleed;
                 state.BdVolumeLabel = outputs.VolumeLabel;
                 state.BdInvertMapping = document.BluRay?.InvertMapping ?? false;
                 state.BdDrawingStartSector = "0";
@@ -86,6 +88,7 @@ internal static class ProjectSession
                 state.CdPitchCubic = state.CdActualPitchCubic = Format(geometry.PitchCubic);
                 state.CdDataDirectory = outputs.DataDirectory;
                 state.CdFilesAtOuterRing = outputs.FilesAtOuterRing;
+                state.CdOuterRingBleed = outputs.OuterRingBleed;
                 state.CdVolumeLabel = string.IsNullOrWhiteSpace(outputs.VolumeLabel) ? "CD_IMAGE" : outputs.VolumeLabel;
                 state.CdOutputPath = outputs.OutputPath;
                 state.NormalizeCdOutputFormat();
@@ -96,6 +99,9 @@ internal static class ProjectSession
         }
     }
 
+    /// <summary>Geometry as the project stores it. The usable limit is captured raw (bleed
+    /// excluded): the cap is a recording preference rebuilt from <see cref="ProjectOutputs"/>,
+    /// so saving it here would stop a later bleed toggle from restoring full capacity.</summary>
     public static ProjectGeometry CaptureGeometry(ProjectDocument current, DiscParametersState state)
     {
         switch (current.Family)
@@ -108,7 +114,7 @@ internal static class ProjectSession
                     ParameterParser.ParseDouble(state.DvdPitchLinear, L.T("DVD 相对一次项")),
                     ParameterParser.ParseDouble(state.DvdPitchQuadratic, L.T("DVD 相对二次项")),
                     ParameterParser.ParseDouble(state.DvdPitchCubic, L.T("DVD 相对三次项")),
-                    UsableSectors: state.GetUsableSectors(current.Family));
+                    UsableSectors: state.GetUsableSectors(current.Family, applyOuterRingBleed: false));
             case OpticalDiscFamily.BluRay:
                 return new ProjectGeometry(
                     ParameterParser.ParsePositiveDouble(state.BdInnerRadius, L.T("蓝光内半径")),
@@ -117,7 +123,7 @@ internal static class ProjectSession
                     ParameterParser.ParseDouble(state.BdPitchLinear, L.T("相对一次项")),
                     ParameterParser.ParseDouble(state.BdPitchQuadratic, L.T("相对二次项")),
                     ParameterParser.ParseDouble(state.BdPitchCubic, L.T("相对三次项")),
-                    UsableSectors: state.GetUsableSectors(current.Family));
+                    UsableSectors: state.GetUsableSectors(current.Family, applyOuterRingBleed: false));
             default:
                 return new ProjectGeometry(
                     ParameterParser.ParsePositiveDouble(state.CdInnerRadius, L.T("CD 内半径")),
@@ -126,7 +132,7 @@ internal static class ProjectSession
                     ParameterParser.ParseDouble(state.CdPitchLinear, L.T("相对一次项")),
                     ParameterParser.ParseDouble(state.CdPitchQuadratic, L.T("相对二次项")),
                     ParameterParser.ParseDouble(state.CdPitchCubic, L.T("相对三次项")),
-                    UsableSectors: state.GetUsableSectors(current.Family));
+                    UsableSectors: state.GetUsableSectors(current.Family, applyOuterRingBleed: false));
         }
     }
 
@@ -142,7 +148,8 @@ internal static class ProjectSession
                     state.DvdVolumeLabel,
                     Interleave: false,
                     FilesAtOuterRing: state.DvdFilesAtOuterRing,
-                    DvdReadCompatibility: state.DvdReadCompatibility);
+                    DvdReadCompatibility: state.DvdReadCompatibility,
+                    OuterRingBleed: state.DvdOuterRingBleed);
             case OpticalDiscFamily.BluRay:
                 return new ProjectOutputs(
                     RequireOutput(state.BdOutputPath, L.T("蓝光 ISO 输出位置")),
@@ -150,7 +157,8 @@ internal static class ProjectSession
                     state.BdDataDirectory,
                     state.BdVolumeLabel,
                     Interleave: false,
-                    FilesAtOuterRing: state.BdFilesAtOuterRing);
+                    FilesAtOuterRing: state.BdFilesAtOuterRing,
+                    OuterRingBleed: state.BdOuterRingBleed);
             default:
                 return new ProjectOutputs(
                     RequireOutput(state.CdOutputPath, state.HasCdFiles ? L.T("CD ISO 输出位置") : L.T("CD 音轨输出位置")),
@@ -158,7 +166,8 @@ internal static class ProjectSession
                     state.CdDataDirectory,
                     state.CdVolumeLabel,
                     state.CdInterleave,
-                    FilesAtOuterRing: state.CdFilesAtOuterRing);
+                    FilesAtOuterRing: state.CdFilesAtOuterRing,
+                    OuterRingBleed: state.CdOuterRingBleed);
         }
     }
 
