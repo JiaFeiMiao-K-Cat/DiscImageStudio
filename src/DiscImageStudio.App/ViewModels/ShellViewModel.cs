@@ -870,6 +870,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.CdInterleave),
         nameof(DiscParametersState.CdDataDirectory),
         nameof(DiscParametersState.CdFilesAtOuterRing),
+        nameof(DiscParametersState.CdOuterRingBleed),
         nameof(DiscParametersState.CdVolumeLabel),
         nameof(DiscParametersState.DvdInnerRadius),
         nameof(DiscParametersState.DvdOuterRadius),
@@ -882,6 +883,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.DvdOutputPath),
         nameof(DiscParametersState.DvdDataDirectory),
         nameof(DiscParametersState.DvdFilesAtOuterRing),
+        nameof(DiscParametersState.DvdOuterRingBleed),
         nameof(DiscParametersState.DvdReadCompatibility),
         nameof(DiscParametersState.DvdVolumeLabel),
         nameof(DiscParametersState.BdInnerRadius),
@@ -895,6 +897,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.BdOutputPath),
         nameof(DiscParametersState.BdDataDirectory),
         nameof(DiscParametersState.BdFilesAtOuterRing),
+        nameof(DiscParametersState.BdOuterRingBleed),
         nameof(DiscParametersState.BdVolumeLabel),
         nameof(DiscParametersState.BdInvertMapping),
         nameof(DiscParametersState.ToneDitherStrength),
@@ -954,6 +957,9 @@ public partial class ShellViewModel : ObservableObject
             or nameof(DiscParametersState.CdSectors) or nameof(DiscParametersState.CdUsableSectors)
             or nameof(DiscParametersState.DvdTotalSectors) or nameof(DiscParametersState.DvdUsableSectors)
             or nameof(DiscParametersState.BdTotalSectors) or nameof(DiscParametersState.BdUsableSectors)
+            or nameof(DiscParametersState.CdOuterRingBleed)
+            or nameof(DiscParametersState.DvdOuterRingBleed)
+            or nameof(DiscParametersState.BdOuterRingBleed)
             or nameof(DiscParametersState.CdPitchLinear) or nameof(DiscParametersState.CdPitchQuadratic) or nameof(DiscParametersState.CdPitchCubic)
             or nameof(DiscParametersState.DvdPitchLinear) or nameof(DiscParametersState.DvdPitchQuadratic) or nameof(DiscParametersState.DvdPitchCubic)
             or nameof(DiscParametersState.BdPitchLinear) or nameof(DiscParametersState.BdPitchQuadratic) or nameof(DiscParametersState.BdPitchCubic))

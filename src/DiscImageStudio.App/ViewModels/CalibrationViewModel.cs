@@ -393,7 +393,7 @@ public partial class CalibrationViewModel : ObservableObject
                 ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("DVD 相对二次项")),
                 ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("DVD 相对三次项")),
                 DvdReadCompatibility: _state.DvdReadCompatibility,
-                UsableSectors: _state.GetUsableSectors(OpticalDiscFamily.Dvd)),
+                UsableSectors: _state.GetUsableSectors(OpticalDiscFamily.Dvd, applyOuterRingBleed: false)),
             "BD" => CreateBluRayParameters(),
             "CD" => new(CalibrationDiscKind.Cd, Number(_state.CdInnerRadius), Number(_state.CdOuterRadius),
                 ParameterParser.ParsePositiveLong(_state.CdSectors, L.T("CD 扇区数")),
@@ -401,7 +401,7 @@ public partial class CalibrationViewModel : ObservableObject
                 ParameterParser.ParseDouble(_state.CdPitchLinear, L.T("相对一次项")),
                 ParameterParser.ParseDouble(_state.CdPitchQuadratic, L.T("相对二次项")),
                 ParameterParser.ParseDouble(_state.CdPitchCubic, L.T("相对三次项")),
-                UsableSectors: _state.GetUsableSectors(OpticalDiscFamily.CompactDisc)),
+                UsableSectors: _state.GetUsableSectors(OpticalDiscFamily.CompactDisc, applyOuterRingBleed: false)),
             _ => throw new ArgumentException(L.T("CalibrationSetup.ChooseFamily")),
         };
         ValidateOutputParameters(p);
@@ -447,7 +447,7 @@ public partial class CalibrationViewModel : ObservableObject
             PitchLinear: ParameterParser.ParseDouble(_state.BdPitchLinear, L.T("相对一次项")),
             PitchQuadratic: ParameterParser.ParseDouble(_state.BdPitchQuadratic, L.T("相对二次项")),
             PitchCubic: ParameterParser.ParseDouble(_state.BdPitchCubic, L.T("相对三次项")),
-            UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.BluRay)));
+            UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.BluRay, applyOuterRingBleed: false)));
         disc.Validate();
         return new CalibrationParameters(
             CalibrationDiscKind.BluRay,

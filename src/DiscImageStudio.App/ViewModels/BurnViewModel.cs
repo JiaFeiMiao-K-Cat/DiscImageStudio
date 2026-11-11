@@ -285,7 +285,7 @@ public partial class BurnViewModel : ObservableObject
             identity = string.Join("\u001f", "dvd", _design.CompositeRevision, _state.DvdTotalSectors, _state.DvdUsableSectors,
                 _state.DvdInnerRadius, _state.DvdOuterRadius,
                 _state.DvdPitchLinear, _state.DvdPitchQuadratic, _state.DvdPitchCubic,
-                _state.DvdDataDirectory, _state.DvdVolumeLabel, _state.DvdFilesAtOuterRing, _state.DvdReadCompatibility,
+                _state.DvdDataDirectory, _state.DvdVolumeLabel, _state.DvdFilesAtOuterRing, _state.DvdOuterRingBleed, _state.DvdReadCompatibility,
                 _state.ToneDitherStrength, _state.ToneBrightness, _state.ToneSrgbLinearization);
         }
         else if (IsBluRayBurn)
@@ -303,7 +303,7 @@ public partial class BurnViewModel : ObservableObject
             identity = string.Join("\u001f", "bd", _design.CompositeRevision, _state.BdTotalSectors, _state.BdUsableSectors,
                 _state.BdInnerRadius, _state.BdOuterRadius, _state.BdDataDirectory,
                 _state.BdPitchLinear, _state.BdPitchQuadratic, _state.BdPitchCubic,
-                _state.BdVolumeLabel, _state.BdInvertMapping, _state.BdFilesAtOuterRing,
+                _state.BdVolumeLabel, _state.BdInvertMapping, _state.BdFilesAtOuterRing, _state.BdOuterRingBleed,
                 _state.ToneDitherStrength, _state.ToneBrightness, _state.ToneSrgbLinearization);
         }
         else
@@ -322,7 +322,7 @@ public partial class BurnViewModel : ObservableObject
             identity = string.Join("\u001f", "cd", _design.CompositeRevision, _state.CdSectors, _state.CdUsableSectors,
                 _state.CdInnerRadius, _state.CdOuterRadius, _state.CdInterleave,
                 _state.CdPitchLinear, _state.CdPitchQuadratic, _state.CdPitchCubic,
-                _state.CdDataDirectory, _state.CdVolumeLabel, _state.CdFilesAtOuterRing,
+                _state.CdDataDirectory, _state.CdVolumeLabel, _state.CdFilesAtOuterRing, _state.CdOuterRingBleed,
                 _state.ToneDitherStrength, _state.ToneLevels, _state.ToneBrightness,
                 _state.ToneSrgbLinearization);
         }
