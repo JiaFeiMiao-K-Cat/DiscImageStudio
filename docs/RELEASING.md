@@ -91,6 +91,42 @@ latest.json
 Get-FileHash .\DiscImageStudio-vA.B.C-win-x64.exe -Algorithm SHA256
 ```
 
+## Release 附件的可选 PGP 签名
+
+Release 工作流支持可选的 OpenPGP 分离签名。只有在仓库的 GitHub Actions Secrets 中配置了 `RELEASE_SIGN_KEY`（值为用于签名的 PGP 私钥）时，签名步骤才会执行；未配置时，工作流会跳过 Sequoia SQ 的构建、签名和验签步骤，不影响原有发布流程。
+
+启用签名后，工作流使用 Sequoia PGP 为以下附件生成分离签名，签名文件以原文件名加 `.sig` 命名，并在上传草稿前使用导出的公钥执行验签：
+
+- Windows x64 与 ARM64 EXE；
+- Linux 与 macOS CLI 的 tar.gz 压缩包；
+- `SHA256SUMS.txt`；
+- 应用内更新清单 `latest.json`。
+
+公钥以 `public_key.asc` 随 Release 发布。工作流通过 `sq key delete --cert-file private_key.pgp --output release/public_key.asc` 从私钥文件导出公钥证书；该命令会从输出证书中移除私钥材料，并不意味着删除或吊销原始密钥。需要同时保留原始密钥文件时，应先备份。具体语义见 [Sequoia PGP 文档](https://book.sequoia-pgp.org/revocation.html#delete-a-key)。
+
+### 配置与构建
+
+在仓库 Settings → Secrets and variables → Actions 中创建名为 `RELEASE_SIGN_KEY` 的 Repository Secret，并将 PGP 私钥内容作为 Secret 值。不要把私钥提交到仓库、写入普通工作流变量，或上传为 Actions Artifact。
+
+签名 job 使用 Ubuntu 26.04 提供的 OpenSSL 3.5.x，并通过 Cargo 从源码构建 Sequoia SQ，显式启用 `crypto-openssl` 特性。工作流将 `./sequoia/bin` 缓存为 Actions Cache；当前缓存键固定，因此更新 Sequoia SQ 构建时，需要删除对应缓存，才能强制重新构建。未配置 `RELEASE_SIGN_KEY` 时不会安装或构建 Sequoia SQ。
+
+### 验证签名
+
+下载对应附件、其 `.sig` 文件及 `public_key.asc` 后，可使用 Sequoia SQ 验证分离签名。例如：
+
+```bash
+sq verify \
+  --signer-file public_key.asc \
+  --signature-file "DiscImageStudio-vA.B.C-win-x64.exe.sig" \
+  "DiscImageStudio-vA.B.C-win-x64.exe"
+```
+
+将示例文件名替换为实际 Release 附件名称。验证签名时还必须确认公钥属于项目官方发布者。不能仅因为公钥与签名文件来自同一个 Release，就认为公钥可信；发布者应通过独立可信渠道公布公钥指纹，用户应通过该渠道核对指纹。
+
+OpenPGP 分离签名与 Windows Authenticode 代码签名是两种不同机制。提供 PGP 签名不会使 Windows EXE 成为 Authenticode 已签名文件。
+
+**应用内更新目前不执行上述 PGP 验签。** 更新器仍只根据 `latest.json` 中的文件长度和 SHA-256 检查下载的 EXE；它既不验证 EXE 的 `.sig`，也不验证 `latest.json` 的 PGP 签名。因此，这些校验不能抵御有权同时修改 Release 附件和清单的攻击者。
+
 ## 应用内更新
 
 Windows 便携 EXE 的关于页提供「检查更新」，请求固定地址：
