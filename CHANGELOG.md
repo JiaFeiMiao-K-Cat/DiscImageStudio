@@ -10,10 +10,11 @@
 - 设计页占用区引导改用 CD、DVD、BD 的真实布局规划器，并按可用（可写）容量计算，包含文件系统元数据、逐文件扇区取整与对齐；与 #96 的碎片化放置共用与图片无关的元数据预留。外圈放置文件时同时标出内圈元数据，支持多个环形区域。文件夹或盘片参数变化后延迟合并计算，图片编辑不再触发重算。
 - 生成 CD／DVD 数据盘 ISO 时校验卷标长度：超过 Joliet 的 16 个字符会在写入前报错，不再静默截断；导出页的卷标输入限制为 16 个字符并显示提示，蓝光 UDF 卷标不受影响。
 - 关于页在 GitHub 按钮左侧新增「检查更新」：从上游 GitHub Release 的 `latest.json` 获取正式版信息，按当前处理器架构下载便携 EXE，核对长度与 SHA-256 后替换并重启；替换失败或新版本启动即退出时恢复旧 EXE，应用目录不可写时提示手动下载。更新包与清单未签名，完整性只相对发布清单有意义。
-- 新增 CD-Extra（音乐 + 图片）：音乐写在内圈第 1 区段，图片作为第 2 区段的 Mode 1 数据轨写在外圈，音频 CD 机只播放第 1 区段。设计页新增「音乐（CD-Extra）」卡片，可添加或拖入 44.1 kHz、16 位、立体声 PCM WAV（原样写入，不转码），调整顺序，并显示时长以及音乐区、区段间隔和图片区的半径与面积占比；画布、影调和预览页标出音乐区与间隔。
+- 新增 CD-Extra（音乐 + 图片）：音乐写在内圈第 1 区段，图片作为第 2 区段的 Mode 1 数据轨写在外圈，音频 CD 机只播放第 1 区段。设计页新增「音乐（CD-Extra）」卡片，可添加或拖入 44.1 kHz、16 位、立体声 PCM WAV（含 WAVE_FORMAT_EXTENSIBLE 封装；原样写入，不转码），调整顺序，并显示时长以及音乐区、区段间隔和图片区的半径与面积占比；画布、影调和预览页标出音乐区与间隔。
 - CD-Extra 导出与命令行：导出页生成第 2 区段 ISO（ISO9660/Joliet 使用整盘绝对 LBA）和 `.iso.json`，可填写外部刻录后实测的第 2 区段起点；`cd-generate`、`cd-preview-warp` 新增 `--music` 与 `--session2-start-lba`（接受 `cdrecord -msinfo` 的原样输出）。含音乐的工程保存可选的 `cdExtra` 字段并写为 schemaVersion 3，旧版本会提示版本不受支持；其他工程仍为 schemaVersion 2。
 - CD-Extra 程序内刻录（实验性）：用 Track-at-Once 先写入并关闭音乐区段，再按光驱报告的第 2 区段起点生成图片并封盘，可先做不改变盘片的模拟写入。已实刻一张盘并在 CD 机上播放正常，目前只有一台刻录机的结果。
-- CD 工程清除随盘文件夹后恢复此前选择的 `.wav` 或 `.raw` 输出格式，不再一律改回 `.wav`；CD 音轨读取同时接受 WAVE_FORMAT_EXTENSIBLE 封装的 16 位 PCM WAV。
+- CD 音轨读回预览接受 WAVE_FORMAT_EXTENSIBLE 封装的 44.1 kHz、16 位立体声 PCM WAV（不少编辑软件这样导出）；浮点、24 位和多声道仍然拒绝。
+- CD 输出格式：加入随盘文件使输出变为 ISO 后，再去掉随盘文件时恢复为之前选择的 .raw 或 .wav，不再一律变成 .wav；打开工程时按该工程保存的输出路径决定，不沿用上一个工程的选择。
 
 ### English
 
@@ -28,10 +29,11 @@
 - Removed the "Show data occupancy area" toggle; the blue guide is always visible.
 - Validate volume-label length when generating CD/DVD data ISOs: labels longer than Joliet's 16 characters now fail before writing instead of being silently truncated. The export page limits label input to 16 characters with a hint; Blu-ray UDF labels are unaffected.
 - Add "Check for updates" to the About page, left of the GitHub button. It reads the stable release manifest (`latest.json`) from upstream GitHub Releases, downloads the portable EXE for the current processor architecture, verifies its length and SHA-256, then replaces the running file and restarts. A failed replacement, or a new build that exits during startup, restores the old EXE; a non-writable application folder prompts a manual download. The manifest and EXE remain unsigned, so integrity only holds relative to the published manifest.
-- Add CD-Extra (music + picture): the music goes into session 1 on the inner rings and the picture becomes the Mode 1 data track of session 2 on the outer rings, so audio CD players play session 1 only. The design page gains a "Music (CD-Extra)" card that adds 44.1 kHz 16-bit stereo PCM WAV files by button or drag and drop (written unchanged, never transcoded), reorders them, and shows the lengths plus the radius and area share of the music, the session gap and the picture. The canvas, tone and preview pages mark the music and the gap.
+- Add CD-Extra (music + picture): the music goes into session 1 on the inner rings and the picture becomes the Mode 1 data track of session 2 on the outer rings, so audio CD players play session 1 only. The design page gains a "Music (CD-Extra)" card that adds 44.1 kHz 16-bit stereo PCM WAV files, also in the WAVE_FORMAT_EXTENSIBLE container, by button or drag and drop (written unchanged, never transcoded), reorders them, and shows the lengths plus the radius and area share of the music, the session gap and the picture. The canvas, tone and preview pages mark the music and the gap.
 - CD-Extra export and command line: the export page writes the session 2 ISO (ISO 9660/Joliet with whole-disc absolute LBAs) and its `.iso.json`, and accepts a measured session 2 start for music burned elsewhere. `cd-generate` and `cd-preview-warp` gain `--music` and `--session2-start-lba` (which also takes raw `cdrecord -msinfo` output). Projects with music store an optional `cdExtra` field and are written as schemaVersion 3, which older builds report as unsupported; all other projects stay at schemaVersion 2.
 - In-app CD-Extra burning (experimental): Track-at-Once writes and closes the music session, then the picture is generated for the session 2 start the recorder reports and the disc is closed. An optional test write leaves the disc unchanged. One disc has been burned and plays on a CD player; this is the result of a single recorder so far.
-- Clearing the disc-file folder of a CD project now restores the previously chosen `.wav` or `.raw` output instead of always returning to `.wav`; CD audio reading also accepts 16-bit PCM WAV files in the WAVE_FORMAT_EXTENSIBLE container.
+- CD track read-back preview accepts WAVE_FORMAT_EXTENSIBLE 44.1 kHz 16-bit stereo PCM WAVs, as several editors export them; float, 24-bit and multichannel files are still rejected.
+- CD output format: removing the disc files after they turned the output into an ISO restores the .raw or .wav chosen before instead of always .wav; opening a project takes the format from that project's saved output path, not from the previous project.
 
 ## [1.5.0] - 2026-11-07
 

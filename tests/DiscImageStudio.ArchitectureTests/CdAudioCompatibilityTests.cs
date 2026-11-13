@@ -15,6 +15,7 @@ internal static class CdAudioCompatibilityTests
         True(
             new DiscParametersState().CdInterleave,
             "a new CD parameter state enables delay interleave by default");
+        TestAudioFormatRestore();
         string directory = Path.Combine(Path.GetTempPath(), $"disc-cd-audio-test-{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
         try
@@ -396,6 +397,83 @@ internal static class CdAudioCompatibilityTests
                     deinterleave: true),
                 "WAV preview rejects " + name);
         }
+
+        // WAVE_FORMAT_EXTENSIBLE carrying 16-bit stereo PCM (what many editors write) reads
+        // back exactly like the plain PCM header; other sub-formats and layouts stay rejected.
+        string extensiblePath = Path.Combine(directory, "extensible.wav");
+        File.WriteAllBytes(extensiblePath, ToExtensible(wav, PcmSubFormat, validBits: 16, channelMask: 3));
+        string extensiblePreview = Path.Combine(directory, "extensible-preview.png");
+        CdTrackGenerator.PreviewTrack(extensiblePath, extensiblePreview, largerGeometry, 256, 1, deinterleave: true);
+        True(
+            ReadPngPixels(rawPreview).SequenceEqual(ReadPngPixels(extensiblePreview)),
+            "WAV reader accepts WAVE_FORMAT_EXTENSIBLE 16-bit PCM");
+        foreach ((byte[] subFormat, ushort validBits, uint channelMask, string name) in new[]
+        {
+            (FloatSubFormat, (ushort)16, 3U, "an extensible float sub-format"),
+            (PcmSubFormat, (ushort)20, 3U, "20 valid bits in an extensible header"),
+            (PcmSubFormat, (ushort)16, 0x33U, "a surround channel mask"),
+        })
+        {
+            string invalidPath = Path.Combine(directory, "unsupported-extensible.wav");
+            File.WriteAllBytes(invalidPath, ToExtensible(wav, subFormat, validBits, channelMask));
+            Throws<InvalidDataException>(
+                () => CdTrackGenerator.PreviewTrack(
+                    invalidPath,
+                    Path.Combine(directory, "unsupported-extensible-preview.png"),
+                    parameters,
+                    256,
+                    1,
+                    deinterleave: true),
+                "WAV preview rejects " + name);
+        }
+    }
+
+    // KSDATAFORMAT_SUBTYPE_PCM and _IEEE_FLOAT in file byte order.
+    private static readonly byte[] PcmSubFormat =
+        [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71];
+    private static readonly byte[] FloatSubFormat =
+        [0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71];
+
+    /// <summary>The same WAV with its 16-byte PCM fmt chunk replaced by a 40-byte
+    /// WAVE_FORMAT_EXTENSIBLE one (cbSize 22, valid bits, channel mask, sub-format).</summary>
+    private static byte[] ToExtensible(byte[] wav, byte[] subFormat, ushort validBits, uint channelMask)
+    {
+        using MemoryStream output = new();
+        output.Write(wav.AsSpan(0, 12));
+        byte[] format = new byte[40];
+        wav.AsSpan(20, 16).CopyTo(format);
+        BinaryPrimitives.WriteUInt16LittleEndian(format.AsSpan(0, 2), 0xFFFE);
+        BinaryPrimitives.WriteUInt16LittleEndian(format.AsSpan(16, 2), 22);
+        BinaryPrimitives.WriteUInt16LittleEndian(format.AsSpan(18, 2), validBits);
+        BinaryPrimitives.WriteUInt32LittleEndian(format.AsSpan(20, 4), channelMask);
+        subFormat.CopyTo(format.AsSpan(24));
+        WriteWaveChunk(output, "fmt ", format);
+        output.Write(wav.AsSpan(36));
+        byte[] result = output.ToArray();
+        BinaryPrimitives.WriteUInt32LittleEndian(result.AsSpan(4, 4), checked((uint)(result.Length - 8)));
+        return result;
+    }
+
+    /// <summary>A RAW (or WAV) choice survives a detour through a data-disc ISO, and a newly
+    /// opened project takes its own format instead of the previous project's.</summary>
+    private static void TestAudioFormatRestore()
+    {
+        DiscParametersState state = new() { CdOutputPath = "track.raw" };
+        state.CdDataDirectory = "files";
+        Equal("track.iso", state.CdOutputPath, "disc files switch the CD output to an ISO");
+        state.CdDataDirectory = string.Empty;
+        Equal("track.raw", state.CdOutputPath, "removing the files restores the RAW output");
+        state.CdOutputPath = "track.wav";
+        state.CdDataDirectory = "files";
+        state.CdDataDirectory = string.Empty;
+        Equal("track.wav", state.CdOutputPath, "and the WAV output when that was chosen");
+
+        state.CdOutputPath = "old.raw";
+        state.ResetCdAudioFormat("new.iso");
+        state.CdOutputPath = "new.iso";
+        state.CdDataDirectory = "files";
+        state.CdDataDirectory = string.Empty;
+        Equal("new.wav", state.CdOutputPath, "a project opened as an ISO does not inherit the previous RAW choice");
     }
 
     private static void WriteWaveChunk(Stream output, string id, byte[] payload)
