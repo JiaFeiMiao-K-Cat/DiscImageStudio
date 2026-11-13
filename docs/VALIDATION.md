@@ -4,6 +4,10 @@
 
 ## 本地验证
 
+2026-11-13，外圈音乐同步：合并内圈分支（含上游 main `619ec75` 的外缘出血 #315 和上一条记录的改动）后，Release solution 构建零警告、零错误，DVD 引擎 selftest 与完整 ArchitectureTests 通过，包括 `cd-outer-music`、`outer-ring-bleed` 和三组 CD-Extra 回归。外圈音乐是纯音频盘、不能带随盘文件，所以「外缘出血」不会截止它，音乐仍写到可用容量末尾。仅在 Windows 上验证，未新增实盘刻录。
+
+English: after merging the inner branch (with upstream main `619ec75`, the outer-ring bleed #315, and the changes in the entry below), the Release solution build has zero warnings and errors, and the DVD engine selftest and the full ArchitectureTests pass, including `cd-outer-music`, `outer-ring-bleed` and the three CD-Extra groups. Outer music makes an audio disc that cannot carry disc files, so the outer-ring bleed never caps it; the music still runs to the end of the usable capacity. Windows only; no new physical burn.
+
 2026-11-13，CD-Extra 同步上游：合并 main `619ec75`（含外缘出血 #315）后，Release solution 构建零警告、零错误，DVD 引擎 selftest 与完整 ArchitectureTests 通过，包括 `outer-ring-bleed`、`hybrid-drawing-parity` 和三组 CD-Extra 回归。上游对 CD 数据盘读回容量的修正（`ResolveAdoptedUsableSectors`）同时用于 CD-Extra 图片区段。新增回归：关闭第 1 区段后最后区段状态为 3 也视为已关闭（命令级回答与整盘模型；把规则改回只接受 0 时该组回归失败，确认测试有效）；随盘文件放外圈并开启「外缘出血」时，CD-Extra 计划使用 95% 截止容量，没有随盘文件时不受影响，读回这样的图片区段保留未截止容量。仅在 Windows 上验证，未新增实盘刻录。
 
 English: after merging main `619ec75` (outer-ring bleed, #315), the Release solution build has zero warnings and errors, and the DVD engine selftest and the full ArchitectureTests pass, including `outer-ring-bleed`, `hybrid-drawing-parity` and the three CD-Extra groups. Upstream's read-back capacity rule (`ResolveAdoptedUsableSectors`) now also covers CD-Extra picture sessions. New regressions: a last-session state of 3 after closing session 1 counts as closed (scripted replies and the whole-disc model; reverting the rule to accept only 0 makes the group fail), and with disc files at the outer ring and the bleed on, the CD-Extra plan uses the 95% cap, without disc files it does not, and reading such a picture session back keeps the uncapped limit. Windows only; no new physical burn.
