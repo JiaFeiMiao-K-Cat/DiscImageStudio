@@ -1,5 +1,6 @@
 using System.IO;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Runtime.ExceptionServices;
 using System.Windows;
 using System.Windows.Media;
@@ -378,7 +379,7 @@ internal static class CdExtraUiTests
         string iso = Path.Combine(directory, "readback", "session2.iso");
         CdImageGenerator.Generate(new CdImageRequest(Path.Combine(directory, "source.png"), iso,
             new CdDiscParameters(24.5, 27.5, 15_000, UsableSectors: 14_998), ToneProfile.LegacyBinary,
-            MusicTracks: [first]));
+            MusicTracks: [first], MusicPosition: CdMusicPosition.Inner));
         MethodInfo adopt = typeof(LivePreviewViewModel).GetMethod("AdoptTrackMetadata", BindingFlags.Instance | BindingFlags.NonPublic)!;
         adopt.Invoke(shell.LivePreview, [iso]);
         Require(state.CdSectors == "15000" && state.CdUsableSectors == "14998" && state.CdOuterRadius == "27.5",
@@ -394,7 +395,7 @@ internal static class CdExtraUiTests
         string bleedIso = Path.Combine(directory, "readback", "session2-bleed.iso");
         CdImageGenerator.Generate(new CdImageRequest(Path.Combine(directory, "source.png"), bleedIso,
             new CdDiscParameters(24.5, 27.5, 15_000, UsableSectors: readbackCap), ToneProfile.LegacyBinary,
-            DataDirectory: bleedFiles, FilesAtOuterRing: true, MusicTracks: [first]));
+            DataDirectory: bleedFiles, FilesAtOuterRing: true, MusicTracks: [first], MusicPosition: CdMusicPosition.Inner));
         Require(CdExtraImageMetadata.TryLoad(bleedIso) is { FilesAtOuterRing: true } bleedMetadata
                 && bleedMetadata.Parameters.OutputSectors == readbackCap,
             "the bleed-capped picture session records the cap and its outer-ring files");
@@ -668,7 +669,7 @@ internal static class CdExtraUiTests
         RunGuide(shell.Design);
         Require(!music.HasProblem, "clearing the folder clears the problem");
         CdImageRequest export = shell.Export.CreateCdImageRequest(composite);
-        Require(export.MusicAtOuterRing && export.MusicTracks!.SequenceEqual(new[] { first, second })
+        Require(export.MusicPosition == CdMusicPosition.Outer && export.MusicTracks!.SequenceEqual(new[] { first, second })
                 && export.Session2StartLba is null && export.OutputPath.EndsWith(".wav", StringComparison.Ordinal),
             "the export request carries the position");
 
@@ -678,11 +679,27 @@ internal static class CdExtraUiTests
             Outputs = new ProjectOutputs("D:\\out\\disc.wav", true, string.Empty, "CD_IMAGE", true),
         };
         ProjectCdExtraSettings? captured = ProjectSession.CaptureCdExtra(document, state);
-        Require(captured is { Enabled: true, MusicAtOuterRing: true, Tracks.Count: 2 }, "save captures the position");
+        Require(captured is { Enabled: true, MusicPosition: CdMusicPosition.Outer, Tracks.Count: 2 }, "save captures the position");
         string project = Path.Combine(directory, "outer.discproj");
         ProjectJsonStore.Save(project, document with { CdExtra = captured });
-        Require(File.ReadAllText(project).Contains("\"musicAtOuterRing\": true", StringComparison.Ordinal),
+        Require(File.ReadAllText(project).Contains("\"musicPosition\": \"outer\"", StringComparison.Ordinal),
             "the project file records the outer position");
+        string innerProject = Path.Combine(directory, "inner.discproj");
+        ProjectJsonStore.Save(innerProject, document with { CdExtra = captured! with { MusicPosition = CdMusicPosition.Inner } });
+        Require(File.ReadAllText(innerProject).Contains("\"musicPosition\": \"inner\"", StringComparison.Ordinal)
+                && ProjectJsonStore.Load(innerProject).CdExtra is { Position: CdMusicPosition.Inner },
+            "the inner position is written out as well");
+        string withoutField = Path.Combine(directory, "no-position.discproj");
+        File.WriteAllText(withoutField, Regex.Replace(File.ReadAllText(project), ",\\s*\"musicPosition\":\\s*\"outer\"", string.Empty));
+        Require(!File.ReadAllText(withoutField).Contains("musicPosition", StringComparison.Ordinal)
+                && ProjectJsonStore.Load(withoutField).CdExtra is { Position: CdMusicPosition.Inner, MusicPosition: null },
+            "a cdExtra block without the field, as an inner-only build writes it, reads as inner");
+        string unknown = Path.Combine(directory, "bad-position.discproj");
+        File.WriteAllText(unknown, File.ReadAllText(project).Replace("\"musicPosition\": \"outer\"", "\"musicPosition\": \"middle\"", StringComparison.Ordinal));
+        Throws<InvalidDataException>(() => ProjectJsonStore.Load(unknown), "an unknown music position");
+        string legacy = Path.Combine(directory, "legacy-position.discproj");
+        File.WriteAllText(legacy, File.ReadAllText(project).Replace("\"musicPosition\": \"outer\"", "\"musicAtOuterRing\": true", StringComparison.Ordinal));
+        Throws<InvalidDataException>(() => ProjectJsonStore.Load(legacy), "the pre-review musicAtOuterRing member");
         DiscParametersState reopened = new(Path.Combine(directory, "outer-presets.json"));
         ProjectSession.ApplyToState(ProjectJsonStore.Load(project), reopened);
         Require(reopened.IsCdMusicOuter && reopened.CdOutputPath == "D:\\out\\disc.wav", "reopening restores the outer position");
@@ -709,7 +726,7 @@ internal static class CdExtraUiTests
         request.ProduceContent(burned, CancellationToken.None);
         string wave = Path.Combine(directory, "outer.wav");
         CdImageGenerator.Generate(new CdImageRequest(composite, wave, parameters, ToneProfile.Photo,
-            Interleave: true, MusicTracks: [first, second], MusicAtOuterRing: true));
+            Interleave: true, MusicTracks: [first, second], MusicPosition: CdMusicPosition.Outer));
         Require(burned.ToArray().AsSpan().SequenceEqual(File.ReadAllBytes(wave).AsSpan(44)),
             "the burned content equals the exported WAV");
         CdExtraPlan withFiles = CdExtraPlanner.Plan(parameters, [first, second], Path.Combine(directory, "files"),

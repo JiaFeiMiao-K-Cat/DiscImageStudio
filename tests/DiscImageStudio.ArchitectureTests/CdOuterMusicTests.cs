@@ -212,7 +212,7 @@ internal static class CdOuterMusicTests
 
         string output = Path.Combine(directory, "disc.wav");
         DiscImageResult result = CdImageGenerator.Generate(new CdImageRequest(image, output, parameters, tone,
-            Interleave: false, MusicTracks: [first, second], MusicAtOuterRing: true));
+            Interleave: false, MusicTracks: [first, second], MusicPosition: CdMusicPosition.Outer));
         CdExtraLayout layout = CdImageGenerator.PlanOuterMusic(parameters, [first, second]);
         Require(layout.Tracks.Select(track => track.Sectors).SequenceEqual(new long[] { 320, 401 })
                 && layout.MusicEndLbaExclusive == 14_998 && layout.PictureSectors == 14_998 - 721 - 150
@@ -251,15 +251,15 @@ internal static class CdOuterMusicTests
         Require(new FileInfo(readBack).Length > 0, "the read-back preview renders the exported file");
 
         Throws<ArgumentException>(() => CdImageGenerator.Generate(new CdImageRequest(image, Path.Combine(directory, "disc.iso"),
-            parameters, tone, MusicTracks: [first], MusicAtOuterRing: true)), "an ISO output for outer music");
+            parameters, tone, MusicTracks: [first], MusicPosition: CdMusicPosition.Outer)), "an ISO output for outer music");
         Throws<ArgumentException>(() => CdImageGenerator.Generate(new CdImageRequest(image, Path.Combine(directory, "disc.raw"),
-            parameters, tone, MusicTracks: [first], MusicAtOuterRing: true)), "a RAW output for outer music");
+            parameters, tone, MusicTracks: [first], MusicPosition: CdMusicPosition.Outer)), "a RAW output for outer music");
         Throws<ArgumentException>(() => CdImageGenerator.Generate(new CdImageRequest(image, output, parameters, tone,
-            DataDirectory: music, MusicTracks: [first], MusicAtOuterRing: true)), "disc files with outer music");
+            DataDirectory: music, MusicTracks: [first], MusicPosition: CdMusicPosition.Outer)), "disc files with outer music");
         Throws<ArgumentException>(() => CdImageGenerator.Generate(new CdImageRequest(image, output, parameters, tone,
-            MusicTracks: [first], Session2StartLba: 12_000, MusicAtOuterRing: true)), "a session 2 start with outer music");
+            MusicTracks: [first], Session2StartLba: 12_000, MusicPosition: CdMusicPosition.Outer)), "a session 2 start with outer music");
         Throws<ArgumentException>(() => CdImageGenerator.Generate(new CdImageRequest(image, first, parameters, tone,
-            MusicTracks: [first], MusicAtOuterRing: true)), "an output that overwrites a music file");
+            MusicTracks: [first], MusicPosition: CdMusicPosition.Outer)), "an output that overwrites a music file");
 
         // Command line: the outer position is the default.
         CdDiscModule module = new();

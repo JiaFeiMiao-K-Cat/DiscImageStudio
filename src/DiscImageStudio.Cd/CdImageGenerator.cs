@@ -3,10 +3,11 @@ using DiscImageStudio.Core;
 namespace DiscImageStudio.Cd;
 
 /// <summary>A CD audio or data-image export, shared by graphical and command-line hosts.
-/// With <see cref="MusicTracks"/>, the export is the picture session of a CD-Extra disc:
-/// the music forms session 1 and the output ISO is session 2. With
-/// <see cref="MusicAtOuterRing"/> it is instead one WAV for a Disc-at-Once audio disc, the
-/// picture in the pre-gap of track 1 and the music behind it, with a CUE sheet.</summary>
+/// With <see cref="MusicTracks"/>, <see cref="MusicPosition"/> says where the music goes:
+/// on the outer rings the export is one WAV for a Disc-at-Once audio disc, the picture in
+/// the pre-gap of track 1 and the music behind it, with a CUE sheet; on the inner rings it
+/// is the picture session of a CD-Extra disc, whose music forms session 1 and whose output
+/// ISO is session 2. Without music the position is ignored.</summary>
 public sealed record CdImageRequest(
     string SourceImage,
     string OutputPath,
@@ -19,7 +20,7 @@ public sealed record CdImageRequest(
     bool FilesAtOuterRing = false,
     IReadOnlyList<string>? MusicTracks = null,
     long? Session2StartLba = null,
-    bool MusicAtOuterRing = false);
+    CdMusicPosition MusicPosition = CdMusicPosition.Outer);
 
 public static class CdImageGenerator
 {
@@ -34,7 +35,7 @@ public static class CdImageGenerator
         request.Tone.Validate();
         if (request.MusicTracks is { Count: > 0 } music)
         {
-            return request.MusicAtOuterRing
+            return request.MusicPosition == CdMusicPosition.Outer
                 ? GenerateHiddenPicture(request, music, progress, cancellationToken)
                 : GenerateCdExtra(request, music, progress, cancellationToken);
         }

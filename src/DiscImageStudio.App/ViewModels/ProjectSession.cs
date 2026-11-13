@@ -95,7 +95,7 @@ internal static class ProjectSession
                 // previous project's music.
                 state.CdExtraEnabled = document.CdExtra?.Enabled ?? false;
                 // A project that never had music takes the default position (outer).
-                state.CdMusicAtOuterRing = document.CdExtra?.MusicAtOuterRing ?? true;
+                state.CdMusicAtOuterRing = (document.CdExtra?.Position ?? CdMusicPosition.Outer) == CdMusicPosition.Outer;
                 state.CdMusicTracks = document.CdExtra?.Tracks.Select(track => track.Path).ToArray() ?? [];
                 state.CdVolumeLabel = string.IsNullOrWhiteSpace(outputs.VolumeLabel) ? "CD_IMAGE" : outputs.VolumeLabel;
                 state.CdOutputPath = outputs.OutputPath;
@@ -203,7 +203,7 @@ internal static class ProjectSession
         => current.Family == OpticalDiscFamily.CompactDisc && (state.CdExtraEnabled || state.HasCdMusic)
             ? new ProjectCdExtraSettings(state.CdExtraEnabled,
                 state.CdMusicTracks.Select(path => new ProjectMusicTrack(path)).ToArray(),
-                state.CdMusicAtOuterRing)
+                state.CdMusicAtOuterRing ? CdMusicPosition.Outer : CdMusicPosition.Inner)
             : null;
 
     public static string Format(double value)

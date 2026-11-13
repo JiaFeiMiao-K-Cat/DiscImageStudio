@@ -372,7 +372,7 @@ internal static class CdExtraLayoutTests
         CdDiscParameters parameters = new(24.5, 27.5, 15_000, UsableSectors: 14_998);
         string iso = Path.Combine(directory, "out", "cd-extra-session2.iso");
         CdImageRequest request = new(image, iso, parameters, ToneProfile.LegacyBinary,
-            MusicTracks: CdMusicFile.ResolveSource(music));
+            MusicTracks: CdMusicFile.ResolveSource(music), MusicPosition: CdMusicPosition.Inner);
         DiscImageResult result = CdImageGenerator.Generate(request);
         CdExtraLayout layout = CdImageGenerator.PlanCdExtra(parameters, request.MusicTracks!);
         Require(result.OutputPath == iso && new FileInfo(iso).Length == layout.DataTrackSectors * 2048

@@ -133,7 +133,7 @@ public sealed class CdDiscModule : IOpticalDiscModule
         IProgress<DiscJobProgress>? progress,
         CancellationToken cancellationToken)
     {
-        (IReadOnlyList<string>? music, long? session2, bool musicAtOuterRing) = ReadCdExtra(options);
+        (IReadOnlyList<string>? music, long? session2, CdMusicPosition position) = ReadCdExtra(options);
         CdImageRequest image = new(
             options.Require("input"),
             options.Require("output"),
@@ -146,12 +146,12 @@ public sealed class CdDiscModule : IOpticalDiscModule
             ReadFilePosition(options),
             music,
             session2,
-            musicAtOuterRing);
+            position);
         DiscImageResult result = CdImageGenerator.Generate(image, progress, cancellationToken);
         return new DiscJobResult(ModuleId, request.Command, 0, result.Summary, result.OutputPath);
     }
 
-    private static (IReadOnlyList<string>? Music, long? Session2StartLba, bool MusicAtOuterRing) ReadCdExtra(
+    private static (IReadOnlyList<string>? Music, long? Session2StartLba, CdMusicPosition Position) ReadCdExtra(
         CdCommandOptions options)
     {
         string music = options.GetString("music", string.Empty).Trim();
@@ -166,11 +166,11 @@ public sealed class CdDiscModule : IOpticalDiscModule
         {
             if (session2 is not null) throw new ArgumentException("--session2-start-lba requires --music.");
             if (options.Contains("music-position")) throw new ArgumentException("--music-position requires --music.");
-            return (null, null, false);
+            return (null, null, CdMusicPosition.Outer);
         }
         if (outer && session2 is not null)
             throw new ArgumentException("--session2-start-lba applies to --music-position inner (CD-Extra) only.");
-        return (CdMusicFile.ResolveSource(music), session2, outer);
+        return (CdMusicFile.ResolveSource(music), session2, outer ? CdMusicPosition.Outer : CdMusicPosition.Inner);
     }
 
     /// <summary>The session 2 start LBA, or the whole "first,second" output of cdrecord
@@ -192,8 +192,8 @@ public sealed class CdDiscModule : IOpticalDiscModule
         CdDiscParameters generated = ReadParameters(options);
         string dataDirectory = options.GetString("data-dir", string.Empty).Trim();
         bool outer = ReadFilePosition(options);
-        (IReadOnlyList<string>? music, long? session2, bool musicAtOuterRing) = ReadCdExtra(options);
-        if (music is not null && musicAtOuterRing)
+        (IReadOnlyList<string>? music, long? session2, CdMusicPosition position) = ReadCdExtra(options);
+        if (music is not null && position == CdMusicPosition.Outer)
         {
             if (dataDirectory.Length > 0)
                 throw new ArgumentException("--data-dir cannot be combined with music on the outer rings; use --music-position inner.");

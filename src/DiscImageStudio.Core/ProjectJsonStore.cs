@@ -50,16 +50,36 @@ public sealed record ProjectBluRaySettings(bool InvertMapping = false);
 /// <summary>One CD-Extra music track: a CD-format PCM WAV referenced by absolute path.</summary>
 public sealed record ProjectMusicTrack(string Path);
 
+/// <summary>Where the music of a music + picture CD is recorded. New projects use
+/// <see cref="Outer"/>.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<CdMusicPosition>))]
+public enum CdMusicPosition
+{
+    /// <summary>One audio session: the picture is the pre-gap of track 1 from the centre
+    /// outwards and the music follows it to the outer edge.</summary>
+    [JsonStringEnumMemberName("outer")]
+    Outer,
+
+    /// <summary>A CD-Extra (Enhanced CD) disc: the music is session 1 from the centre and
+    /// the picture is a data track in session 2 further out.</summary>
+    [JsonStringEnumMemberName("inner")]
+    Inner,
+}
+
 /// <summary>Music + picture settings, CD projects only. When enabled, the listed tracks are
-/// the music. With <see cref="MusicAtOuterRing"/> the disc is one audio session whose
-/// picture is the pre-gap of track 1; otherwise it is a CD-Extra (Enhanced CD) disc whose
-/// picture is a second, data session. Audio players play the picture in neither case.
-/// The list is kept while the mode is switched off.</summary>
+/// the music and <see cref="Position"/> says where it goes. Audio players play the picture
+/// with either position. The list is kept while the mode is switched off.</summary>
+/// <param name="MusicPosition">Always written. A block without it was saved by a build that
+/// knew only the inner position, so it reads as <see cref="CdMusicPosition.Inner"/>.</param>
 public sealed record ProjectCdExtraSettings(bool Enabled, IReadOnlyList<ProjectMusicTrack> Tracks,
-    bool MusicAtOuterRing = false)
+    CdMusicPosition? MusicPosition = null)
 {
     /// <summary>One data track must remain within the CD limit of 99 tracks.</summary>
     public const int MaximumTracks = 98;
+
+    /// <summary>The music position this block describes.</summary>
+    [JsonIgnore]
+    public CdMusicPosition Position => MusicPosition ?? CdMusicPosition.Inner;
 }
 
 /// <summary>The on-disk project (.discproj): everything needed to reopen a disc design and
@@ -293,6 +313,12 @@ public static class ProjectJsonStore
         if (settings.Tracks is null)
         {
             throw DiagnosticMessage.InvalidData($"cdExtra.tracks 不能为空。");
+        }
+
+        if (settings.MusicPosition is { } position && !Enum.IsDefined(position))
+        {
+            throw DiagnosticMessage.InvalidData(
+                $"cdExtra.musicPosition '{position}' 无效；仅支持 'outer' 与 'inner'。");
         }
 
         if (settings.Tracks.Count > ProjectCdExtraSettings.MaximumTracks)

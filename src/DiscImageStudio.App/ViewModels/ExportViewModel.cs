@@ -254,11 +254,11 @@ public partial class ExportViewModel : ObservableObject
     private async Task GenerateCdAsync(string compositePath)
     {
         CdImageRequest request = CreateCdImageRequest(compositePath);
-        bool cdExtra = request.MusicTracks is not null && !request.MusicAtOuterRing;
+        bool hasMusic = request.MusicTracks is not null;
         string output = request.OutputPath;
         if (await _shell.RunImageJobAsync(
-                cdExtra ? L.T("正在生成 CD-Extra 图片区段 ISO…")
-                    : request.MusicAtOuterRing ? L.T("正在生成图片 + 音乐音轨…")
+                hasMusic && request.MusicPosition == CdMusicPosition.Inner ? L.T("正在生成 CD-Extra 图片区段 ISO…")
+                    : hasMusic ? L.T("正在生成图片 + 音乐音轨…")
                     : _state.HasCdFiles ? L.T("正在生成 CD 数据盘 ISO…") : L.T("正在生成 CD 音轨…"),
                 output, (progress, token) => CdImageGenerator.Generate(request, progress, token), request.ToString()))
             _state.CdTrackPath = output;
@@ -297,7 +297,7 @@ public partial class ExportViewModel : ObservableObject
             _state.CdFilesAtOuterRing,
             cdExtra ? _state.CdMusicTracks : null,
             measuredSession2,
-            musicAtOuterRing);
+            musicAtOuterRing ? CdMusicPosition.Outer : CdMusicPosition.Inner);
     }
 
     private async Task GenerateDvdAsync(string compositePath)
