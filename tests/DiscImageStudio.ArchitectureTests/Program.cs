@@ -83,6 +83,18 @@ if (args is ["--test-cd-extra"])
     return;
 }
 
+if (args is ["--test-hybrid-parity"])
+{
+    HybridDrawingParityTests.Run();
+    return;
+}
+
+if (args is ["--test-outer-ring-bleed"])
+{
+    OuterRingBleedTests.Run();
+    return;
+}
+
 if (args is ["--benchmark-cd-pitch"])
 {
     CdCubicPitchTests.Benchmark();
@@ -186,6 +198,7 @@ CalibrationConfirmedFitTests.Run();
 ProjectStoreTests.Run();
 ProjectSessionTests.Run();
 FilePlacementProjectTests.Run();
+OuterRingBleedTests.Run();
 FilePlacementPreviewTests.Run();
 DesignComposerTests.Run();
 CdAudioCompatibilityTests.Run();
@@ -222,6 +235,7 @@ TonePreviewTests.Run();
 SaveTrailTests.Run();
 DvdCubicPipelineTests.Run();
 DvdFilePlacementTests.Run();
+HybridDrawingParityTests.Run();
 DvdSimdSamplingTests.Run();
 DvdStableRegionTests.Run();
 DvdSampleReuseTests.Run();

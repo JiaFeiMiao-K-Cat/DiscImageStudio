@@ -251,17 +251,25 @@ public partial class LivePreviewViewModel : ObservableObject
         OnPropertyChanged(nameof(EmptyStateActionLabel));
     }
 
-    private void AdoptCdDataGeometry(CdDiscParameters parameters, ToneProfile tone, bool? filesAtOuterRing)
+    /// <summary>Takes over a generated CD data image's geometry and tone. The usable count goes
+    /// through <see cref="DiscParametersState.ResolveAdoptedUsableSectors"/> with the sidecar's
+    /// effective placement, so an outer-ring bleed cap recorded in the sidecar does not become
+    /// the raw limit. <paramref name="adoptPlacement"/> also copies that placement into the
+    /// state; CD-Extra leaves the user's own choice alone.</summary>
+    private void AdoptCdDataGeometry(CdDiscParameters parameters, ToneProfile tone, bool filesAtOuterRing,
+        bool adoptPlacement)
     {
         ToneProfile normalized = tone.Normalized();
         _state.CdSectors = parameters.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        _state.CdUsableSectors = parameters.OutputSectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        _state.CdUsableSectors = _state.ResolveAdoptedUsableSectors(
+            OpticalDiscFamily.CompactDisc, parameters.Sectors, parameters.OutputSectors, filesAtOuterRing)
+            .ToString(System.Globalization.CultureInfo.InvariantCulture);
         _state.CdInnerRadius = FormatNumber(parameters.InnerRadiusMm);
         _state.CdOuterRadius = FormatNumber(parameters.OuterRadiusMm);
         _state.CdPitchLinear = FormatNumber(parameters.PitchLinear);
         _state.CdPitchQuadratic = FormatNumber(parameters.PitchQuadratic);
         _state.CdPitchCubic = FormatNumber(parameters.PitchCubic);
-        if (filesAtOuterRing is { } outer) _state.CdFilesAtOuterRing = outer;
+        if (adoptPlacement) _state.CdFilesAtOuterRing = filesAtOuterRing;
         _state.ToneDitherStrength = normalized.DitherStrength;
         _state.ToneLevels = normalized.Levels;
         _state.ToneBrightness = normalized.Brightness;
@@ -284,14 +292,16 @@ public partial class LivePreviewViewModel : ObservableObject
         {
             // The sidecar's placement is the effective one (inner without files); the read-back
             // takes the ranges from the sidecar, so the user's own choice is left alone.
-            AdoptCdDataGeometry(extraMetadata.Parameters, extraMetadata.Tone, filesAtOuterRing: null);
+            AdoptCdDataGeometry(extraMetadata.Parameters, extraMetadata.Tone, extraMetadata.FilesAtOuterRing,
+                adoptPlacement: false);
             _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 已载入 {Path.GetFileName(trackPath)} 的 CD-Extra 图片区段几何与起点（LBA {extraMetadata.Session2StartLba:N0}）。\n"));
             return;
         }
         CdDataImageMetadata? dataMetadata = CdDataImageMetadata.TryLoad(trackPath);
         if (dataMetadata is not null)
         {
-            AdoptCdDataGeometry(dataMetadata.Parameters, dataMetadata.Tone, dataMetadata.FilesAtOuterRing);
+            AdoptCdDataGeometry(dataMetadata.Parameters, dataMetadata.Tone, dataMetadata.FilesAtOuterRing,
+                adoptPlacement: true);
             _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 已载入 {Path.GetFileName(trackPath)} 的 CD 数据盘几何与文件位置。\n"));
             return;
         }
@@ -310,7 +320,11 @@ public partial class LivePreviewViewModel : ObservableObject
             metadata.ToneLevels,
             metadata.ToneBrightness,
             metadata.ToneSrgbLinearization).Normalized();
-        if (state.CdUsableSectors.Trim() == (metadata.UsableSectors ?? metadata.Sectors).ToString(System.Globalization.CultureInfo.InvariantCulture)
+        string adoptedUsable = state.ResolveAdoptedUsableSectors(
+            OpticalDiscFamily.CompactDisc, metadata.Sectors, metadata.UsableSectors,
+            filesAtOuterRing: false)
+            .ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (state.CdUsableSectors.Trim() == adoptedUsable
             && state.CdSectors.Trim() == sectors
             && state.CdInnerRadius.Trim() == innerRadius
             && state.CdOuterRadius.Trim() == outerRadius
@@ -327,7 +341,7 @@ public partial class LivePreviewViewModel : ObservableObject
         }
 
         state.CdSectors = sectors;
-        state.CdUsableSectors = (metadata.UsableSectors ?? metadata.Sectors).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        state.CdUsableSectors = adoptedUsable;
         state.CdInnerRadius = innerRadius;
         state.CdOuterRadius = outerRadius;
         state.CdPitchLinear = FormatNumber(metadata.PitchLinear);
@@ -364,7 +378,11 @@ public partial class LivePreviewViewModel : ObservableObject
             System.Globalization.CultureInfo.InvariantCulture);
         string innerRadius = FormatNumber(metadata.InnerRadiusMm);
         string outerRadius = FormatNumber(metadata.OuterRadiusMm);
-        if (state.DvdUsableSectors.Trim() == (metadata.UsableSectors ?? metadata.TotalSectors).ToString(System.Globalization.CultureInfo.InvariantCulture)
+        string adoptedUsable = state.ResolveAdoptedUsableSectors(
+            OpticalDiscFamily.Dvd, metadata.TotalSectors, metadata.UsableSectors,
+            metadata.FilesAtOuterRing)
+            .ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (state.DvdUsableSectors.Trim() == adoptedUsable
             && state.DvdTotalSectors.Trim() == totalSectors
             && state.DvdInnerRadius.Trim() == innerRadius
             && state.DvdOuterRadius.Trim() == outerRadius
@@ -377,7 +395,7 @@ public partial class LivePreviewViewModel : ObservableObject
         }
 
         state.DvdTotalSectors = totalSectors;
-        state.DvdUsableSectors = (metadata.UsableSectors ?? metadata.TotalSectors).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        state.DvdUsableSectors = adoptedUsable;
         state.DvdInnerRadius = innerRadius;
         state.DvdOuterRadius = outerRadius;
         state.DvdPitchLinear = FormatNumber(metadata.PitchLinear);
@@ -416,7 +434,10 @@ public partial class LivePreviewViewModel : ObservableObject
         string innerRadius = FormatNumber(metadata.InnerRadiusMm);
         string outerRadius = FormatNumber(metadata.OuterRadiusMm);
         state.BdTotalSectors = sectors;
-        state.BdUsableSectors = (metadata.UsableSectors ?? metadata.TotalSectors).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        state.BdUsableSectors = state.ResolveAdoptedUsableSectors(
+            OpticalDiscFamily.BluRay, metadata.TotalSectors, metadata.UsableSectors,
+            metadata.FilesAtOuterRing)
+            .ToString(System.Globalization.CultureInfo.InvariantCulture);
         state.BdInnerRadius = innerRadius;
         state.BdOuterRadius = outerRadius;
         state.BdPitchLinear = FormatNumber(metadata.PitchLinear);

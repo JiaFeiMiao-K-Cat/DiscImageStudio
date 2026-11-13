@@ -139,6 +139,16 @@ internal static class CdExtraBurnTests
             "CLOSE TRACK SESSION function 010b with Immed");
         Require(transport.Commands.Count(cdb => cdb[0] == 0x5b) == 1, "the session is closed once");
 
+        // cdrecord and libburn name 3 "complete": a recorder that reports the session it has
+        // just closed instead of the new empty one is accepted as well (the tested BU20N
+        // reports 0; this path is covered by the model only).
+        ScriptedTransport reportsComplete = new();
+        reportsComplete.DiscInfo.Enqueue(DiscInfo(status: 1, lastSession: 1, lastTrack: 3));
+        reportsComplete.DiscInfo.Enqueue(DiscInfo(status: 1, lastSession: 3, lastTrack: 3));
+        new CdMmcCommands(reportsComplete, _ => { }).CloseSession(expectFinalized: false);
+        Require(reportsComplete.Commands.Count(cdb => cdb[0] == 0x51) == 2,
+            "an incomplete session is waited on, then state 3 counts as closed");
+
         transport.DiscInfo.Enqueue(DiscInfo(status: 2, lastSession: 3, lastTrack: 4));
         commands.CloseSession(expectFinalized: true);
         transport.DiscInfo.Enqueue(DiscInfo(status: 2, lastSession: 3, lastTrack: 4));
@@ -198,6 +208,9 @@ internal static class CdExtraBurnTests
         ScriptedTransport closedAnyway = new() { Fail = { [0x5b] = Sense(5, 0x2c, 0) } };
         closedAnyway.DiscInfo.Enqueue(DiscInfo(status: 1, lastSession: 0, lastTrack: 4));
         new CdMmcCommands(closedAnyway, _ => { }).CloseSession(expectFinalized: false);
+        ScriptedTransport closedAnywayComplete = new() { Fail = { [0x5b] = Sense(5, 0x2c, 0) } };
+        closedAnywayComplete.DiscInfo.Enqueue(DiscInfo(status: 1, lastSession: 3, lastTrack: 4));
+        new CdMmcCommands(closedAnywayComplete, _ => { }).CloseSession(expectFinalized: false);
         ScriptedTransport stillOpen = new() { Fail = { [0x5b] = Sense(5, 0x2c, 0) } };
         stillOpen.DiscInfo.Enqueue(DiscInfo(status: 1, lastSession: 1, lastTrack: 3));
         Throws<MmcCommandException>(() => new CdMmcCommands(stillOpen, _ => { }).CloseSession(expectFinalized: false),
@@ -451,6 +464,18 @@ internal static class CdExtraBurnTests
                     && report.CompletedBytes == request.AudioBytes + 32 * 2048),
             "WRITE acknowledgements of both sessions reach the progress display");
 
+        // A recorder that reports the closed session as complete (3) instead of the new empty
+        // one: the burn continues into session 2 the same way.
+        FakeTaoRecorder reportsComplete = new() { LastSessionStateAfterClose = 3 };
+        using (DynamicCdExtraSession session = Session(reportsComplete, null))
+        {
+            CdExtraBurnResult completeResult = WindowsImapiBurner.BurnCdExtra(session, Request(_ => DataContent(1_000)),
+                new CdExtraProgressTracker(null, 1, 1), CancellationToken.None);
+            Require(completeResult.Session2StartLba == 12_254 && reportsComplete.DiscStatus == 2
+                    && reportsComplete.Tracks.Count == 3 && reportsComplete.Tracks[^1] == (12_254L, 1_000L, 2),
+                "last-session state 3 after closing session 1 continues into session 2");
+        }
+
         // The address changes between measuring and writing: refuse, keep the music playable.
         FakeTaoRecorder moving = new() { ShiftNwaAfterFirstSession2Read = true };
         InvalidOperationException? moved = null;
@@ -694,6 +719,9 @@ internal static class CdExtraBurnTests
 
         internal long LeadoutStart { get; init; } = 40_000;
         internal long Session2Offset { get; init; }
+        /// <summary>State of Last Session after a multi-session close: 0 (the tested BU20N)
+        /// or 3 (complete, as cdrecord and libburn name it).</summary>
+        internal int LastSessionStateAfterClose { get; init; }
         internal long? Session2FreeBlocks { get; init; }
         internal long? Session2FreeBlocksOnSecondRead { get; init; }
         internal bool ShiftNwaAfterFirstSession2Read { get; init; }
@@ -869,7 +897,7 @@ internal static class CdExtraBurnTests
                 _nwa = leadout + 6_750 + 4_500 + 150 + Session2Offset;
                 _session++;
                 _firstTrackInSession = Tracks.Count + 1;
-                _lastSessionState = 0;
+                _lastSessionState = LastSessionStateAfterClose;
             }
             else
             {

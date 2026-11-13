@@ -16,6 +16,18 @@ internal sealed record CdDiscInformation(
     internal const int Empty = 0;
     internal const int Appendable = 1;
     internal const int Complete = 2;
+
+    // State of Last Session, bits 3-2 of byte 2.
+    internal const int SessionEmpty = 0;
+    internal const int SessionIncomplete = 1;
+    internal const int SessionComplete = 3;
+
+    /// <summary>A multi-session close has finished and another session may follow. The
+    /// tested recorder (HP BD-RE BU20N) then reports the new, empty session (0); cdrecord and
+    /// libburn name 3 "complete", which a recorder may report for the session it has just
+    /// closed. Both mean session 1 is closed; 1 (incomplete) means it is still open.</summary>
+    internal bool IsAppendableAfterClose => DiscStatus == Appendable
+        && LastSessionState is SessionEmpty or SessionComplete;
 }
 
 /// <summary>READ TRACK INFORMATION fields (MMC-5 Table 499).</summary>
@@ -252,7 +264,7 @@ internal sealed class CdMmcCommands(IMmcCommandTransport transport, Action<TimeS
             }
             if (disc.DiscStatus == CdDiscInformation.Complete)
                 throw new IOException("关闭第 1 区段时光驱封闭了整张盘，无法再写入图片区段。");
-            return disc.DiscStatus == CdDiscInformation.Appendable && disc.LastSessionState == 0;
+            return disc.IsAppendableAfterClose;
         }, expectFinalized ? "等待光驱确认封盘完成超时。" : "等待光驱确认第 1 区段关闭超时。");
     }
 
@@ -304,7 +316,7 @@ internal sealed class CdMmcCommands(IMmcCommandTransport transport, Action<TimeS
             CdDiscInformation disc = ReadDiscInformation();
             return expectFinalized
                 ? disc.DiscStatus == CdDiscInformation.Complete
-                : disc.DiscStatus == CdDiscInformation.Appendable && disc.LastSessionState == 0;
+                : disc.IsAppendableAfterClose;
         }
         catch (Exception exception) when (exception is IOException or TimeoutException)
         {

@@ -305,7 +305,22 @@ internal static class CdExtraUiTests
         Require(design.DataRegionOverflow && design.CdExtraRings is not null && music.HasProblem && music.HasLayout
                 && music.ProblemText.Contains("随盘文件太大", StringComparison.Ordinal),
             "files that do not fit warn in the files card and keep the music rings");
+
+        // Outer-ring bleed (upstream #315): with disc files at the outer ring the CD-Extra plan
+        // uses the same capped capacity as every other recording path, and only then.
+        state.CdDataDirectory = Path.Combine(directory, "files");
+        state.CdFilesAtOuterRing = true;
+        state.CdOuterRingBleed = true;
+        RunGuide(design);
+        long bleedCap = DiscParametersState.OuterRingBleedCap(OpticalDiscFamily.CompactDisc, 40_000);
+        Require(design.CdExtraPlan is { IsValid: true, Layout: { } capped } && capped.Parameters.OutputSectors == bleedCap,
+            "files at the outer ring with the bleed cap the CD-Extra plan");
         state.CdDataDirectory = string.Empty;
+        RunGuide(design);
+        Require(design.CdExtraPlan is { IsValid: true, Layout: { } full } && full.Parameters.OutputSectors == 39_998,
+            "without disc files the bleed leaves the CD-Extra plan alone");
+        state.CdFilesAtOuterRing = false;
+        state.CdOuterRingBleed = false;
         RunGuide(design);
 
         music.AddTracks([broken]);
@@ -368,6 +383,28 @@ internal static class CdExtraUiTests
         adopt.Invoke(shell.LivePreview, [iso]);
         Require(state.CdSectors == "15000" && state.CdUsableSectors == "14998" && state.CdOuterRadius == "27.5",
             "a CD-Extra ISO's own geometry is adopted for read-back");
+
+        // A picture session generated with the outer-ring bleed records the 95% cap; reading it
+        // back keeps the raw limit (as for a single-session data ISO), so switching the bleed
+        // off later restores the full capacity. The user's own placement choice is kept.
+        string bleedFiles = Path.Combine(directory, "readback-files");
+        Directory.CreateDirectory(bleedFiles);
+        File.WriteAllBytes(Path.Combine(bleedFiles, "notes.bin"), new byte[8 * 2048]);
+        long readbackCap = DiscParametersState.OuterRingBleedCap(OpticalDiscFamily.CompactDisc, 15_000);
+        string bleedIso = Path.Combine(directory, "readback", "session2-bleed.iso");
+        CdImageGenerator.Generate(new CdImageRequest(Path.Combine(directory, "source.png"), bleedIso,
+            new CdDiscParameters(24.5, 27.5, 15_000, UsableSectors: readbackCap), ToneProfile.LegacyBinary,
+            DataDirectory: bleedFiles, FilesAtOuterRing: true, MusicTracks: [first]));
+        Require(CdExtraImageMetadata.TryLoad(bleedIso) is { FilesAtOuterRing: true } bleedMetadata
+                && bleedMetadata.Parameters.OutputSectors == readbackCap,
+            "the bleed-capped picture session records the cap and its outer-ring files");
+        state.CdFilesAtOuterRing = false;
+        state.CdOuterRingBleed = true;
+        state.CdUsableSectors = "14998";
+        adopt.Invoke(shell.LivePreview, [bleedIso]);
+        Require(state.CdUsableSectors == "14998" && !state.CdFilesAtOuterRing,
+            "reading back a bleed-capped CD-Extra session keeps the raw limit and the placement choice");
+        state.CdOuterRingBleed = false;
     }
 
     private static void TestDesignView(string directory)
