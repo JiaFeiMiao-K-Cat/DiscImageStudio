@@ -163,7 +163,7 @@ internal sealed class DynamicCdExtraSession : ICdExtraSession
     {
         RequireMedia();
         CdDiscInformation disc = _commands.ReadDiscInformation();
-        if (disc.DiscStatus != CdDiscInformation.Appendable || disc.LastSessionState != 0)
+        if (!disc.IsAppendableAfterClose)
             throw new IOException($"第 1 区段关闭后盘片状态异常（DiscStatus={disc.DiscStatus}，LastSessionState={disc.LastSessionState}）。");
         SelectWriteParameters(CdWriteParameters.FinalDataSession(_media!.TaoFeature.BufferUnderrunFree, testWrite: false));
         CdTrackInformation track = RequireWritableTrack();
