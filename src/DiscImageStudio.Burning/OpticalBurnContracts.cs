@@ -67,14 +67,49 @@ public sealed record OpticalWriteSpeed(
     }
 }
 
+/// <param name="SectorBytes">User bytes per sector of the data being written when it differs
+/// from the media kind's default (a CD-Extra picture track writes 2048-byte Mode 1 sectors
+/// in an otherwise 2352-byte audio job); used to convert the rate into a speed multiple.</param>
 public sealed record OpticalBurnProgress(
     string Stage,
     string Message,
     long CompletedBytes,
     long TotalBytes,
-    double? BytesPerSecond = null)
+    double? BytesPerSecond = null,
+    int? SectorBytes = null)
 {
     public double Fraction => TotalBytes == 0 ? 0 : (double)CompletedBytes / TotalBytes;
+}
+
+/// <summary>
+/// How the content of a CD audio burn is divided into tracks. The first
+/// <see cref="PregapSectors"/> sectors are recorded as the index 0 pre-gap of track 1: they
+/// are on the disc, but the table of contents starts track 1 behind them, so players do not
+/// play them. The tracks follow in order without gaps.
+/// </summary>
+public sealed record CdAudioDiscLayout(long PregapSectors, IReadOnlyList<long> TrackSectors)
+{
+    public const int SectorBytes = 2352;
+    public const int MaximumTracks = 99;
+    /// <summary>A pre-gap with content is at least the two seconds every pre-gap has.</summary>
+    public const int MinimumPregapSectors = 150;
+    /// <summary>A track lasts at least four seconds.</summary>
+    public const int MinimumTrackSectors = 300;
+
+    public long TotalSectors => checked(PregapSectors + TrackSectors.Sum());
+
+    public void Validate()
+    {
+        ArgumentNullException.ThrowIfNull(TrackSectors);
+        if (PregapSectors != 0 && PregapSectors < MinimumPregapSectors)
+            throw new ArgumentOutOfRangeException(nameof(PregapSectors),
+                $"A pre-gap with content needs at least {MinimumPregapSectors} sectors.");
+        if (TrackSectors.Count is 0 or > MaximumTracks)
+            throw new ArgumentOutOfRangeException(nameof(TrackSectors), $"A CD holds 1..{MaximumTracks} tracks.");
+        if (TrackSectors.Any(sectors => sectors < MinimumTrackSectors))
+            throw new ArgumentOutOfRangeException(nameof(TrackSectors),
+                $"Each audio track needs at least {MinimumTrackSectors} sectors.");
+    }
 }
 
 /// <summary>
@@ -82,6 +117,7 @@ public sealed record OpticalBurnProgress(
 /// as required by IMAPI_CD_SECTOR_AUDIO. ContentLength excludes any WAV header.
 /// CD data, DVD and Blu-ray producers supply complete 2048-byte logical data sectors.
 /// The recording backend adds physical encoding and error correction.
+/// Without <see cref="CdAudioLayout"/> a CD audio burn records its content as one track.
 /// </summary>
 public sealed record OpticalBurnRequest(
     string DeviceId,
@@ -89,7 +125,8 @@ public sealed record OpticalBurnRequest(
     long ContentLength,
     Action<Stream, CancellationToken> ProduceContent,
     OpticalWriteSpeed? WriteSpeed = null,
-    OpticalBurnBufferOptions? BufferOptions = null)
+    OpticalBurnBufferOptions? BufferOptions = null,
+    CdAudioDiscLayout? CdAudioLayout = null)
 {
     public OpticalBurnBufferOptions EffectiveBufferOptions => BufferOptions
         ?? (MediaKind == OpticalBurnMediaKind.BluRayData
@@ -107,6 +144,15 @@ public sealed record OpticalBurnRequest(
                 $"Stream length must be a positive multiple of {sectorBytes} bytes.");
         }
 
+        if (CdAudioLayout is not null)
+        {
+            if (MediaKind != OpticalBurnMediaKind.CdAudio)
+                throw new ArgumentException("A track layout applies to CD audio burns only.", nameof(CdAudioLayout));
+            CdAudioLayout.Validate();
+            if (CdAudioLayout.TotalSectors * CdAudioDiscLayout.SectorBytes != ContentLength)
+                throw new ArgumentException("The track layout does not cover the content length.", nameof(CdAudioLayout));
+        }
+
         WriteSpeed?.Validate();
         EffectiveBufferOptions.Validate();
     }
@@ -118,6 +164,103 @@ public sealed record OpticalBurnResult(
     long BytesWritten,
     TimeSpan Elapsed,
     OpticalWriteSpeed? ActualWriteSpeed = null);
+
+/// <summary>One CD-Extra music track. The producer writes exactly
+/// <see cref="ContentLength"/> bytes of headerless 44.1 kHz, 16-bit stereo little-endian
+/// PCM (WAV sample order), already padded with silence to whole 2352-byte sectors.</summary>
+public sealed record CdExtraAudioTrack(long Sectors, Action<Stream, CancellationToken> ProducePcm)
+{
+    public const int SectorBytes = 2352;
+    public const int MinimumSectors = 300;
+    public long ContentLength => checked(Sectors * SectorBytes);
+}
+
+/// <summary>Where the picture session starts, read from the recorder after the audio
+/// session was closed. <see cref="NextWritableAddress"/> is the absolute LBA of the data
+/// track's first user sector; the picture and its filesystem must be generated for it.</summary>
+public sealed record CdExtraSessionStart(
+    long NextWritableAddress,
+    long FreeBlocks,
+    long AtipLeadoutStart,
+    IReadOnlyList<long> AudioTrackStarts,
+    bool Simulated = false);
+
+/// <summary>The picture session's data track: complete 2048-byte Mode 1 user sectors that
+/// start at the measured next writable address. The recorder adds headers, EDC/ECC and
+/// scrambling.</summary>
+public sealed record CdExtraDataContent(long Sectors, Action<Stream, CancellationToken> Produce)
+{
+    public const int SectorBytes = 2048;
+    public long ContentLength => checked(Sectors * SectorBytes);
+}
+
+/// <summary>
+/// Records an Enhanced CD (CD-Extra) in Track-at-Once mode on a blank CD-R/RW: the audio
+/// tracks form session 1, which is closed with a pointer to a next session; the picture is
+/// one Mode 1 data track in session 2, which finalizes the disc. The data producer is
+/// created only after session 1 is closed, from the address the recorder reports.
+/// With <see cref="TestWrite"/> the recorder only simulates every WRITE (no disc changes),
+/// sessions are not closed and the data track uses the predicted address.
+/// <see cref="PrepareAudio"/>, when set, runs once before the first audio WRITE: it checks
+/// that the music sources are unchanged and returns an object that keeps them so until the
+/// music session is written (it is disposed then). If it throws, nothing is written.
+/// </summary>
+public sealed record CdExtraBurnRequest(
+    string DeviceId,
+    IReadOnlyList<CdExtraAudioTrack> AudioTracks,
+    Func<CdExtraSessionStart, CdExtraDataContent> CreateData,
+    long PredictedSession2StartLba,
+    long PredictedDataSectors,
+    OpticalWriteSpeed? WriteSpeed = null,
+    OpticalBurnBufferOptions? BufferOptions = null,
+    bool TestWrite = false,
+    Func<IDisposable>? PrepareAudio = null)
+{
+    public const int MaximumAudioTracks = 98;
+    /// <summary>Run-out blocks the recorder writes behind every Track-at-Once track.</summary>
+    public const int RunOutSectors = 2;
+    /// <summary>The data track's post-gap, part of its recorded length.</summary>
+    public const int DataPostgapSectors = 150;
+
+    public OpticalBurnBufferOptions EffectiveBufferOptions => BufferOptions ?? OpticalBurnBufferOptions.Default;
+
+    public long AudioBytes => AudioTracks.Sum(track => track.ContentLength);
+
+    public long PredictedTotalBytes => checked(AudioBytes + PredictedDataSectors * CdExtraDataContent.SectorBytes);
+
+    public void Validate()
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(DeviceId);
+        ArgumentNullException.ThrowIfNull(AudioTracks);
+        ArgumentNullException.ThrowIfNull(CreateData);
+        if (AudioTracks.Count is 0 or > MaximumAudioTracks)
+            throw new ArgumentOutOfRangeException(nameof(AudioTracks),
+                $"A CD-Extra disc needs 1..{MaximumAudioTracks} audio tracks.");
+        foreach (CdExtraAudioTrack track in AudioTracks)
+        {
+            ArgumentNullException.ThrowIfNull(track);
+            ArgumentNullException.ThrowIfNull(track.ProducePcm);
+            if (track.Sectors < CdExtraAudioTrack.MinimumSectors)
+                throw new ArgumentOutOfRangeException(nameof(AudioTracks),
+                    $"Each audio track needs at least {CdExtraAudioTrack.MinimumSectors} sectors.");
+        }
+        if (PredictedSession2StartLba <= 0 || PredictedDataSectors <= 0)
+            throw new ArgumentOutOfRangeException(nameof(PredictedSession2StartLba),
+                "The predicted picture session must start after LBA 0 and contain sectors.");
+        WriteSpeed?.Validate();
+        EffectiveBufferOptions.Validate();
+    }
+}
+
+public sealed record CdExtraBurnResult(
+    string DeviceId,
+    IReadOnlyList<long> AudioTrackStarts,
+    long Session2StartLba,
+    long AudioBytesWritten,
+    long DataBytesWritten,
+    TimeSpan Elapsed,
+    OpticalWriteSpeed? ActualWriteSpeed = null,
+    bool TestWrite = false);
 
 public interface IOpticalDiscBurner
 {
@@ -141,6 +284,18 @@ public interface IOpticalDiscBurner
 
     Task<OpticalBurnResult> BurnAsync(
         OpticalBurnRequest request,
+        IProgress<OpticalBurnProgress>? progress = null,
+        CancellationToken cancellationToken = default);
+}
+
+/// <summary>A recorder back end that can also record a two-session CD-Extra disc. It is a
+/// separate capability, so a back end without it says so through its type and callers find
+/// out before a burn is prepared rather than from an exception while it runs.</summary>
+public interface ICdExtraBurner
+{
+    /// <summary>Records a two-session CD-Extra disc; see <see cref="CdExtraBurnRequest"/>.</summary>
+    Task<CdExtraBurnResult> BurnCdExtraAsync(
+        CdExtraBurnRequest request,
         IProgress<OpticalBurnProgress>? progress = null,
         CancellationToken cancellationToken = default);
 }

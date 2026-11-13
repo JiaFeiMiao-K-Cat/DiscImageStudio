@@ -241,13 +241,31 @@
                             </Style>
                         </controls:EmptyStateCard.Style>
                     </controls:EmptyStateCard>
-                    <controls:VisibilityGate Grid.Row="1" IsOpen="{Binding HasFileRegionOverlay}">
-                        <StackPanel Orientation="Horizontal" Margin="18,0,18,14">
-                            <Rectangle Width="12" Height="12" Fill="#3385FF" RadiusX="2" RadiusY="2" Margin="0,0,8,0" />
-                            <TextBlock Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Text="{loc:Text Xaml.FileAreaIncludingFilesystem}" />
-                        </StackPanel>
-                    </controls:VisibilityGate>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal">
+                        <controls:VisibilityGate IsOpen="{Binding HasFileRegionOverlay}">
+                            <StackPanel Orientation="Horizontal" Margin="18,0,18,14">
+                                <Rectangle Width="12" Height="12" Fill="#3385FF" RadiusX="2" RadiusY="2" Margin="0,0,8,0" />
+                                <TextBlock Foreground="{DynamicResource TextSecondaryBrush}"
+                                           Text="{loc:Text Xaml.FileAreaIncludingFilesystem}" />
+                            </StackPanel>
+                        </controls:VisibilityGate>
+                        <!-- The amber ring is the music; on a CD-Extra disc the grey ring is the
+                             recorder-written lead-out/lead-in before the picture session. -->
+                        <controls:VisibilityGate IsOpen="{Binding HasMusicRegionOverlay}">
+                            <StackPanel Orientation="Horizontal" Margin="18,0,18,14">
+                                <Rectangle Width="12" Height="12" Fill="#F5A623" RadiusX="2" RadiusY="2" Margin="0,0,8,0" />
+                                <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,12,0"
+                                           Text="{loc:Text Xaml.MusicSessionLegend}" />
+                                <controls:VisibilityGate IsOpen="{Binding State.IsCdMusicInner}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Rectangle Width="12" Height="12" Fill="#7A7A85" RadiusX="2" RadiusY="2" Margin="0,0,8,0" />
+                                        <TextBlock Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   Text="{loc:Text Xaml.SessionGapLegend}" />
+                                    </StackPanel>
+                                </controls:VisibilityGate>
+                            </StackPanel>
+                        </controls:VisibilityGate>
+                    </StackPanel>
                 </Grid>
             </controls:MonitorCard>
         </Grid>

@@ -47,6 +47,41 @@ public sealed record ProjectOutputs(
 /// that bit.</summary>
 public sealed record ProjectBluRaySettings(bool InvertMapping = false);
 
+/// <summary>One CD-Extra music track: a CD-format PCM WAV referenced by absolute path.</summary>
+public sealed record ProjectMusicTrack(string Path);
+
+/// <summary>Where the music of a music + picture CD is recorded. New projects use
+/// <see cref="Outer"/>.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<CdMusicPosition>))]
+public enum CdMusicPosition
+{
+    /// <summary>One audio session: the picture is the pre-gap of track 1 from the centre
+    /// outwards and the music follows it to the outer edge.</summary>
+    [JsonStringEnumMemberName("outer")]
+    Outer,
+
+    /// <summary>A CD-Extra (Enhanced CD) disc: the music is session 1 from the centre and
+    /// the picture is a data track in session 2 further out.</summary>
+    [JsonStringEnumMemberName("inner")]
+    Inner,
+}
+
+/// <summary>Music + picture settings, CD projects only. When enabled, the listed tracks are
+/// the music and <see cref="Position"/> says where it goes. Audio players play the picture
+/// with either position. The list is kept while the mode is switched off.</summary>
+/// <param name="MusicPosition">Always written. A block without it was saved by a build that
+/// knew only the inner position, so it reads as <see cref="CdMusicPosition.Inner"/>.</param>
+public sealed record ProjectCdExtraSettings(bool Enabled, IReadOnlyList<ProjectMusicTrack> Tracks,
+    CdMusicPosition? MusicPosition = null)
+{
+    /// <summary>One data track must remain within the CD limit of 99 tracks.</summary>
+    public const int MaximumTracks = 98;
+
+    /// <summary>The music position this block describes.</summary>
+    [JsonIgnore]
+    public CdMusicPosition Position => MusicPosition ?? CdMusicPosition.Inner;
+}
+
 /// <summary>The on-disk project (.discproj): everything needed to reopen a disc design and
 /// regenerate its outputs. Images stay referenced by absolute path.
 /// <see cref="Tone"/> is null for files written before tone mapping existed; those projects
@@ -65,7 +100,9 @@ public sealed record ProjectDocument(
     DateTimeOffset CreatedUtc,
     DateTimeOffset ModifiedUtc,
     ToneProfile? Tone = null,
-    ProjectBluRaySettings? BluRay = null)
+    ProjectBluRaySettings? BluRay = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    ProjectCdExtraSettings? CdExtra = null)
 {
     public const string CdFamily = "cd";
     public const string DvdFamily = "dvd";
@@ -118,6 +155,23 @@ public sealed record ProjectDocument(
 public static class ProjectJsonStore
 {
     public const int CurrentSchemaVersion = 2;
+    /// <summary>Written only for a project that carries a cdExtra block, so a build that does
+    /// not know the block reports an unsupported version instead of a malformed file; every
+    /// other project stays at <see cref="CurrentSchemaVersion"/> and opens in both.</summary>
+    public const int CdExtraSchemaVersion = 3;
+
+    /// <summary>The version a file with this content is written as, which is also the lowest
+    /// version a file with this content may declare: the schema version states the newest
+    /// feature the document uses, not the newest format the writer knows. Saving and loading
+    /// both go through this one rule. In memory the version is not kept; a loaded document
+    /// always carries <see cref="CurrentSchemaVersion"/>.</summary>
+    public static int RequiredSchemaVersion(ProjectDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        // The block is present in the file even while the mode is switched off, and builds
+        // without CD-Extra reject any member they do not know.
+        return document.CdExtra is null ? CurrentSchemaVersion : CdExtraSchemaVersion;
+    }
     private const int LegacySchemaVersion = 1;
     public const string FileExtension = ".discproj";
     public const string FileFilter = "Disc Image Studio 工程|*.discproj";
@@ -167,7 +221,7 @@ public static class ProjectJsonStore
         // but never written back: saving is what migrates an old file to the current schema.
         ProjectDocument clean = document with
         {
-            SchemaVersion = CurrentSchemaVersion,
+            SchemaVersion = RequiredSchemaVersion(document),
             ExtensionData = document.ExtensionData is { Count: > 0 } ? null : document.ExtensionData,
         };
         string temporaryPath = Path.Combine(directory, $".{Path.GetFileName(fullPath)}.{Guid.NewGuid():N}.tmp");
@@ -197,10 +251,10 @@ public static class ProjectJsonStore
     public static void Validate(ProjectDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
-        if (document.SchemaVersion is not (LegacySchemaVersion or CurrentSchemaVersion))
+        if (document.SchemaVersion is not (LegacySchemaVersion or CurrentSchemaVersion or CdExtraSchemaVersion))
         {
             throw DiagnosticMessage.InvalidData(
-                $"不支持 schemaVersion={document.SchemaVersion}；当前支持 {LegacySchemaVersion} 与 {CurrentSchemaVersion}。");
+                $"不支持 schemaVersion={document.SchemaVersion}；当前支持 {LegacySchemaVersion}、{CurrentSchemaVersion} 与 {CdExtraSchemaVersion}。");
         }
 
         if (document.SchemaVersion == LegacySchemaVersion
@@ -212,6 +266,11 @@ public static class ProjectJsonStore
         if (!document.IsBluRay && document.BluRay is not null)
         {
             throw DiagnosticMessage.InvalidData($"bluRay 设置只用于蓝光工程。");
+        }
+
+        if (!document.IsCd && document.CdExtra is not null)
+        {
+            throw DiagnosticMessage.InvalidData($"cdExtra 设置只用于 CD 工程。");
         }
 
         if (string.IsNullOrWhiteSpace(document.Name))
@@ -239,8 +298,42 @@ public static class ProjectJsonStore
         ValidateGeometry(document);
         ValidateLayers(document);
         ValidateOutputs(document);
+        ValidateCdExtra(document);
         ValidateTone(document);
         ValidateThumbnail(document.ThumbnailPngBase64);
+    }
+
+    private static void ValidateCdExtra(ProjectDocument document)
+    {
+        if (document.CdExtra is not { } settings)
+        {
+            return;
+        }
+
+        if (settings.Tracks is null)
+        {
+            throw DiagnosticMessage.InvalidData($"cdExtra.tracks 不能为空。");
+        }
+
+        if (settings.MusicPosition is { } position && !Enum.IsDefined(position))
+        {
+            throw DiagnosticMessage.InvalidData(
+                $"cdExtra.musicPosition '{position}' 无效；仅支持 'outer' 与 'inner'。");
+        }
+
+        if (settings.Tracks.Count > ProjectCdExtraSettings.MaximumTracks)
+        {
+            throw DiagnosticMessage.InvalidData(
+                $"cdExtra 最多包含 {ProjectCdExtraSettings.MaximumTracks} 首音乐。");
+        }
+
+        foreach (ProjectMusicTrack? track in settings.Tracks)
+        {
+            if (track is null || string.IsNullOrWhiteSpace(track.Path))
+            {
+                throw DiagnosticMessage.InvalidData($"cdExtra 的音乐路径不能为空。");
+            }
+        }
     }
 
     private static void ValidateTone(ProjectDocument document)
@@ -420,10 +513,19 @@ public static class ProjectJsonStore
             }
 
             Validate(document);
-            // Schema 1 is read as its current equivalent; the next save writes version 2.
-            return document.SchemaVersion == LegacySchemaVersion
-                ? document with { SchemaVersion = CurrentSchemaVersion }
-                : document;
+            // Schema 1 is the accepted older form of schema 2. A file that uses a newer
+            // feature than the version it declares is refused.
+            int required = RequiredSchemaVersion(document);
+            if (required > CurrentSchemaVersion && document.SchemaVersion < required)
+            {
+                throw DiagnosticMessage.InvalidData($"cdExtra 设置需要 schemaVersion 3。");
+            }
+
+            // Every file version is read as its current equivalent; saving chooses the
+            // version again (3 with a cdExtra block, otherwise 2).
+            return document.SchemaVersion == CurrentSchemaVersion
+                ? document
+                : document with { SchemaVersion = CurrentSchemaVersion };
         }
         catch (JsonException exception)
         {

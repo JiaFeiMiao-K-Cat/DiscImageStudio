@@ -1,0 +1,286 @@
+{
+  "Xaml.CdExtraMusicTitle": {
+    "zh-CN": "音乐",
+    "en": "Music"
+  },
+  "Xaml.CdLayoutPictureOnly": {
+    "zh-CN": "整盘图片",
+    "en": "Picture only"
+  },
+  "Xaml.CdLayoutExtra": {
+    "zh-CN": "音乐 + 图片",
+    "en": "Music + picture"
+  },
+  "Xaml.CdExtraOffHint": {
+    "zh-CN": "整张盘只放图片。选择“音乐 + 图片”后可以添加音乐：CD 机只播放音乐，图片所在的区域不会被当作曲目播放。",
+    "en": "The whole disc holds the picture. “Music + picture” adds music: CD players play only the music, and the picture area is never played as a track."
+  },
+  "Xaml.AddMusic": {
+    "zh-CN": "添加音乐…",
+    "en": "Add music…"
+  },
+  "Xaml.MoveTrackUp": {
+    "zh-CN": "上移音乐",
+    "en": "Move track up"
+  },
+  "Xaml.MoveTrackDown": {
+    "zh-CN": "下移音乐",
+    "en": "Move track down"
+  },
+  "Xaml.RemoveTrack": {
+    "zh-CN": "移除音乐",
+    "en": "Remove track"
+  },
+  "Xaml.DiscShare": {
+    "zh-CN": "盘面占比",
+    "en": "Disc area"
+  },
+  "Xaml.MusicSessionLegend": {
+    "zh-CN": "音乐区",
+    "en": "Music"
+  },
+  "Xaml.SessionGapLegend": {
+    "zh-CN": "区段间隔（导出区与导入区）",
+    "en": "Session gap (lead-out and lead-in)"
+  },
+  "Xaml.CdExtraHint": {
+    "zh-CN": "只接受 44.1 kHz、16 位、立体声 PCM 的 WAV，样本原样写入。按 Track-at-Once 写入：曲目之间有 2 秒间隔，不足 4 秒的曲目补静音。音频 CD 机只读取第 1 区段，图片区段不会被当作音轨播放。",
+    "en": "Only 44.1 kHz, 16-bit stereo PCM WAV files are accepted; their samples are written unchanged. Recording uses Track-at-Once: tracks are separated by 2-second gaps and tracks shorter than 4 seconds are padded with silence. Audio CD players read only session 1, so the picture session is never played as audio."
+  },
+  "Xaml.CdExtraTestWrite": {
+    "zh-CN": "模拟写入（不改变盘片）",
+    "en": "Test write (the disc is not changed)"
+  },
+  "Xaml.CdExtraBurnHint": {
+    "zh-CN": "CD-Extra 用 Track-at-Once 命令依次写入并关闭音乐区段，再按光驱报告的第 2 区段地址生成图片并封盘。需要空白 CD-R（或已擦除的 CD-RW）。模拟写入只检查光驱是否接受这些命令。",
+    "en": "CD-Extra writes and closes the music session with Track-at-Once commands, then generates the picture for the session 2 address the recorder reports and closes the disc. A blank CD-R (or an erased CD-RW) is required. A test write only checks that the recorder accepts these commands."
+  },
+  " · 模拟写入": {
+    "zh-CN": " · 模拟写入",
+    "en": " · test write"
+  },
+  " · 模拟写入（不改变盘片）": {
+    "zh-CN": " · 模拟写入（不改变盘片）",
+    "en": " · test write (disc unchanged)"
+  },
+  " · 第 2 区段图片预计从 LBA {0:N0} 开始，约占盘面 {1:P0}": {
+    "zh-CN": " · 第 2 区段图片预计从 LBA {0:N0} 开始，约占盘面 {1:P0}",
+    "en": " · session 2 picture expected at LBA {0:N0}, about {1:P0} of the disc"
+  },
+  "CD-Extra · 第 1 区段 {0} 首音乐 · 第 2 区段图片数据轨": {
+    "zh-CN": "CD-Extra · 第 1 区段 {0} 首音乐 · 第 2 区段图片数据轨",
+    "en": "CD-Extra · session 1: {0} music tracks · session 2: picture data track"
+  },
+  "CD-Extra · 第 1 区段 {0} 首音乐（{1}）": {
+    "zh-CN": "CD-Extra · 第 1 区段 {0} 首音乐（{1}）",
+    "en": "CD-Extra · session 1: {0} music tracks ({1})"
+  },
+  "CD-Extra 图片区段": {
+    "zh-CN": "CD-Extra 图片区段",
+    "en": "CD-Extra picture session"
+  },
+  "CD-Extra 图片区段输出位置": {
+    "zh-CN": "CD-Extra 图片区段输出位置",
+    "en": "CD-Extra picture session output location"
+  },
+  "CD-Extra 需要至少一首音乐：请在设计页添加 WAV 音乐，或切换回“整盘图片”。": {
+    "zh-CN": "CD-Extra 需要至少一首音乐：请在设计页添加 WAV 音乐，或切换回“整盘图片”。",
+    "en": "CD-Extra needs at least one music track: add WAV music on the Design page, or switch back to “Picture only”."
+  },
+  "WAV 音乐（44.1 kHz 16 位立体声）|*.wav|所有文件|*.*": {
+    "zh-CN": "WAV 音乐（44.1 kHz 16 位立体声）|*.wav|所有文件|*.*",
+    "en": "WAV music (44.1 kHz 16-bit stereo)|*.wav|All files|*.*"
+  },
+  "[{0:HH:mm:ss}] CD-Extra：音轨起点 LBA {1}；": {
+    "zh-CN": "[{0:HH:mm:ss}] CD-Extra：音轨起点 LBA {1}；",
+    "en": "[{0:HH:mm:ss}] CD-Extra: track starts at LBA {1}; "
+  },
+  "{0} 首 · 共 {1}": {
+    "zh-CN": "{0} 首 · 共 {1}",
+    "en": "{0} tracks · {1} in total"
+  },
+  "{0}（不足 4 秒，补静音）": {
+    "zh-CN": "{0}（不足 4 秒，补静音）",
+    "en": "{0} (shorter than 4 s, padded with silence)"
+  },
+  "仅允许空白 CD-R 或已擦除的 CD-RW。先写入并关闭音乐区段，再按光驱报告的地址生成并写入图片区段，最后封盘。中途取消或断电可能使盘片报废；若音乐区段已关闭，音乐仍可在 CD 机播放。是否继续？": {
+    "zh-CN": "仅允许空白 CD-R 或已擦除的 CD-RW。先写入并关闭音乐区段，再按光驱报告的地址生成并写入图片区段，最后封盘。中途取消或断电可能使盘片报废；若音乐区段已关闭，音乐仍可在 CD 机播放。是否继续？",
+    "en": "Only a blank CD-R or an erased CD-RW is allowed. The music session is written and closed first; then the picture session is generated for the address the recorder reports, written, and the disc is closed. Cancelling or a power loss may ruin the disc; once the music session is closed, its music still plays in CD players. Continue?"
+  },
+  "区段间隔 {0:F1}–{1:F1} mm · 约占 {2:P1}（导出区与导入区，不能绘图）": {
+    "zh-CN": "区段间隔 {0:F1}–{1:F1} mm · 约占 {2:P1}（导出区与导入区，不能绘图）",
+    "en": "Session gap {0:F1}–{1:F1} mm · about {2:P1} (lead-out and lead-in, cannot be drawn)"
+  },
+  "图片区 {0:F1}–{1:F1} mm · 约占 {2:P0}": {
+    "zh-CN": "图片区 {0:F1}–{1:F1} mm · 约占 {2:P0}",
+    "en": "Picture {0:F1}–{1:F1} mm · about {2:P0}"
+  },
+  "尚未添加音乐": {
+    "zh-CN": "尚未添加音乐",
+    "en": "No music added yet"
+  },
+  "文件不存在": {
+    "zh-CN": "文件不存在",
+    "en": "File not found"
+  },
+  "无法读取": {
+    "zh-CN": "无法读取",
+    "en": "Cannot be read"
+  },
+  "有音乐文件无法使用，请删除或替换标红的音轨。": {
+    "zh-CN": "有音乐文件无法使用，请删除或替换标红的音轨。",
+    "en": "Some music files cannot be used; remove or replace the tracks marked in red."
+  },
+  "模拟写入：光驱按 Track-at-Once 走完全部写入命令，但不会改变盘片，也不会关闭区段。需要放入空白 CD-R。是否继续？": {
+    "zh-CN": "模拟写入：光驱按 Track-at-Once 走完全部写入命令，但不会改变盘片，也不会关闭区段。需要放入空白 CD-R。是否继续？",
+    "en": "Test write: the recorder runs every Track-at-Once write command without changing the disc, and no session is closed. A blank CD-R must be loaded. Continue?"
+  },
+  "正在生成 CD-Extra 图片区段 ISO…": {
+    "zh-CN": "正在生成 CD-Extra 图片区段 ISO…",
+    "en": "Generating the CD-Extra picture session ISO…"
+  },
+  "正在读取…": {
+    "zh-CN": "正在读取…",
+    "en": "Reading…"
+  },
+  "没有读取权限": {
+    "zh-CN": "没有读取权限",
+    "en": "No permission to read"
+  },
+  "添加 WAV 音乐后，这里会显示音乐区与图片区各占多少盘面。": {
+    "zh-CN": "添加 WAV 音乐后，这里会显示音乐区与图片区各占多少盘面。",
+    "en": "Add WAV music to see how much of the disc the music and the picture take."
+  },
+  "添加音乐": {
+    "zh-CN": "添加音乐",
+    "en": "Add music"
+  },
+  "第 2 区段起点 LBA {0}{1}。\n": {
+    "zh-CN": "第 2 区段起点 LBA {0}{1}。\n",
+    "en": "session 2 starts at LBA {0}{1}.\n"
+  },
+  "第 2 区段预计从 LBA {0:N0} 开始；刻录时按光驱报告的实际地址生成图片。": {
+    "zh-CN": "第 2 区段预计从 LBA {0:N0} 开始；刻录时按光驱报告的实际地址生成图片。",
+    "en": "Session 2 is expected at LBA {0:N0}; burning generates the picture for the address the recorder reports."
+  },
+  "输出图片区段 (.iso)": {
+    "zh-CN": "输出图片区段 (.iso)",
+    "en": "Picture session output (.iso)"
+  },
+  "需要 44.1 kHz、16 位、立体声 PCM 的 WAV 文件": {
+    "zh-CN": "需要 44.1 kHz、16 位、立体声 PCM 的 WAV 文件",
+    "en": "Needs a 44.1 kHz, 16-bit stereo PCM WAV file"
+  },
+  "音乐 {0:P0} · 区段间隔 {1:P1} · 图片 {2:P0}": {
+    "zh-CN": "音乐 {0:P0} · 区段间隔 {1:P1} · 图片 {2:P0}",
+    "en": "Music {0:P0} · gap {1:P1} · picture {2:P0}"
+  },
+  "音乐区 {0:F1}–{1:F1} mm · 约占 {2:P0}": {
+    "zh-CN": "音乐区 {0:F1}–{1:F1} mm · 约占 {2:P0}",
+    "en": "Music {0:F1}–{1:F1} mm · about {2:P0}"
+  },
+  "音乐太长：音乐区之后没有足够空间写入图片区段。": {
+    "zh-CN": "音乐太长：音乐区之后没有足够空间写入图片区段。",
+    "en": "The music is too long: no room is left for the picture session."
+  },
+  "（模拟写入，未改变盘片）": {
+    "zh-CN": "（模拟写入，未改变盘片）",
+    "en": " (test write, disc unchanged)"
+  },
+  "CD-Extra：导出第 2 区段（图片数据轨）的 ISO，只适用于从下方起点开始的第 2 区段；程序内刻录会自动写入音乐和图片两个区段。": {
+    "zh-CN": "CD-Extra：导出第 2 区段（图片数据轨）的 ISO，只适用于从下方起点开始的第 2 区段；程序内刻录会自动写入音乐和图片两个区段。",
+    "en": "CD-Extra: exports the ISO of session 2 (the picture data track), valid only for a session 2 that starts at the address below; burning in the app writes both the music and the picture session."
+  },
+  "随盘文件太大：图片区段放不下这些文件。": {
+    "zh-CN": "随盘文件太大：图片区段放不下这些文件。",
+    "en": "The disc files are too large for the picture session."
+  },
+  "图片区段无法规划：{0}": {
+    "zh-CN": "图片区段无法规划：{0}",
+    "en": "The picture session cannot be planned: {0}"
+  },
+  "[{0:HH:mm:ss}] 已载入 {1} 的 CD-Extra 图片区段几何与起点（LBA {2:N0}）。\n": {
+    "zh-CN": "[{0:HH:mm:ss}] 已载入 {1} 的 CD-Extra 图片区段几何与起点（LBA {2:N0}）。\n",
+    "en": "[{0:HH:mm:ss}] Loaded the CD-Extra picture-session geometry and start (LBA {2:N0}) from {1}.\n"
+  },
+  "模拟写入完成": {
+    "zh-CN": "模拟写入完成",
+    "en": "Test write complete"
+  },
+  "光驱接受了全部写入命令，盘片没有被改变。": {
+    "zh-CN": "光驱接受了全部写入命令，盘片没有被改变。",
+    "en": "The recorder accepted every write command; the disc was not changed."
+  },
+  "Xaml.CdExtraMeasuredStart": {
+    "zh-CN": "实测第 2 区段起点 LBA（可选）",
+    "en": "Measured session 2 start LBA (optional)"
+  },
+  "留空则按预计起点 LBA {0:N0} 生成（假设第 1 区段按 Track-at-Once 刻录）。用其他软件刻录时，先刻录音乐区段并保持可追加，再填入 cdrecord -msinfo 输出的第二个数后重新生成。": {
+    "zh-CN": "留空则按预计起点 LBA {0:N0} 生成（假设第 1 区段按 Track-at-Once 刻录）。用其他软件刻录时，先刻录音乐区段并保持可追加，再填入 cdrecord -msinfo 输出的第二个数后重新生成。",
+    "en": "Leave empty to use the predicted start, LBA {0:N0} (session 1 written Track-at-Once). When burning with other software, write the music session first and keep the disc appendable, then enter the second number printed by cdrecord -msinfo and generate again."
+  },
+  "留空则按预计起点生成（假设第 1 区段按 Track-at-Once 刻录）。用其他软件刻录时，先刻录音乐区段并保持可追加，再填入 cdrecord -msinfo 输出的第二个数后重新生成。": {
+    "zh-CN": "留空则按预计起点生成（假设第 1 区段按 Track-at-Once 刻录）。用其他软件刻录时，先刻录音乐区段并保持可追加，再填入 cdrecord -msinfo 输出的第二个数后重新生成。",
+    "en": "Leave empty to use the predicted start (session 1 written Track-at-Once). When burning with other software, write the music session first and keep the disc appendable, then enter the second number printed by cdrecord -msinfo and generate again."
+  },
+  "实测第 2 区段起点需要填写 LBA，即 cdrecord -msinfo 输出的第二个数。": {
+    "zh-CN": "实测第 2 区段起点需要填写 LBA，即 cdrecord -msinfo 输出的第二个数。",
+    "en": "The measured session 2 start must be an LBA: the second number printed by cdrecord -msinfo."
+  },
+  "Xaml.MusicPlacement": {
+    "zh-CN": "音乐位置",
+    "en": "Music position"
+  },
+  "Xaml.CdOuterMusicHint": {
+    "zh-CN": "只接受 44.1 kHz、16 位、立体声 PCM 的 WAV，样本原样写入。音乐在外圈：整张盘是一个音频区段，图片写在第 1 轨的预间隙里，曲目之间没有间隔，不足 4 秒的曲目补静音。CD 机从第 1 首开始播放；只有在第 1 首开头继续倒退才会播到图片，听到的是噪声。",
+    "en": "Only 44.1 kHz, 16-bit stereo PCM WAV files are accepted; their samples are written unchanged. With the music on the outer rings the disc is one audio session: the picture is the pre-gap of track 1, tracks follow without gaps, and tracks shorter than 4 seconds are padded with silence. CD players start at track 1; only rewinding past its beginning reaches the picture, which sounds like noise."
+  },
+  "输出图片 + 音乐音轨 (.wav)": {
+    "zh-CN": "输出图片 + 音乐音轨 (.wav)",
+    "en": "Picture + music track output (.wav)"
+  },
+  "音乐在外圈：导出一个 WAV（图片在第 1 轨的预间隙里，音乐紧随其后）和 CUE，需用支持 CUE 的软件整盘一次写入（DAO）；程序内刻录会直接写入整张盘。": {
+    "zh-CN": "音乐在外圈：导出一个 WAV（图片在第 1 轨的预间隙里，音乐紧随其后）和 CUE，需用支持 CUE 的软件整盘一次写入（DAO）；程序内刻录会直接写入整张盘。",
+    "en": "Music on the outer rings: exports one WAV (the picture in the pre-gap of track 1, the music behind it) and a CUE sheet, to be burned Disc-at-Once with software that reads CUE sheets; burning in the app writes the whole disc directly."
+  },
+  "音乐在外圈时整张盘是音频盘，不能附带随盘文件：请清除随盘文件夹，或把音乐位置改为内圈。": {
+    "zh-CN": "音乐在外圈时整张盘是音频盘，不能附带随盘文件：请清除随盘文件夹，或把音乐位置改为内圈。",
+    "en": "With the music on the outer rings the disc is an audio disc and cannot carry disc files: clear the disc-file folder, or move the music to the inner rings."
+  },
+  "图片写在第 1 轨的预间隙里，CD 机从音乐开始播放；整盘一次写入，图片位置不依赖光驱。": {
+    "zh-CN": "图片写在第 1 轨的预间隙里，CD 机从音乐开始播放；整盘一次写入，图片位置不依赖光驱。",
+    "en": "The picture is the pre-gap of track 1, so CD players start with the music. The disc is written in one pass and the picture position does not depend on the recorder."
+  },
+  "图片 {0:P0} · 音乐 {1:P0}": {
+    "zh-CN": "图片 {0:P0} · 音乐 {1:P0}",
+    "en": "Picture {0:P0} · Music {1:P0}"
+  },
+  "WAV 音轨|*.wav|所有文件|*.*": {
+    "zh-CN": "WAV 音轨|*.wav|所有文件|*.*",
+    "en": "WAV track|*.wav|All files|*.*"
+  },
+  "正在生成图片 + 音乐音轨…": {
+    "zh-CN": "正在生成图片 + 音乐音轨…",
+    "en": "Generating the picture + music track…"
+  },
+  "音频盘（DAO） · 图片在第 1 轨预间隙 · 外圈 {0} 首音乐": {
+    "zh-CN": "音频盘（DAO） · 图片在第 1 轨预间隙 · 外圈 {0} 首音乐",
+    "en": "Audio disc (DAO) · picture in the pre-gap of track 1 · {0} music tracks on the outer rings"
+  },
+  "音频盘（DAO） · 图片在第 1 轨预间隙（LBA 0–{0:N0}，约占盘面 {1:P0}）": {
+    "zh-CN": "音频盘（DAO） · 图片在第 1 轨预间隙（LBA 0–{0:N0}，约占盘面 {1:P0}）",
+    "en": "Audio disc (DAO) · picture in the pre-gap of track 1 (LBA 0–{0:N0}, about {1:P0} of the disc)"
+  },
+  " · 外圈 {0} 首音乐（{1}）": {
+    "zh-CN": " · 外圈 {0} 首音乐（{1}）",
+    "en": " · {0} music tracks on the outer rings ({1})"
+  },
+  " · {0} 扇区": {
+    "zh-CN": " · {0} 扇区",
+    "en": " · {0} sectors"
+  },
+  "当前的刻录后端不支持 CD-Extra 刻录；可以在导出页生成图片区段 ISO 后用其他软件刻录。": {
+    "zh-CN": "当前的刻录后端不支持 CD-Extra 刻录；可以在导出页生成图片区段 ISO 后用其他软件刻录。",
+    "en": "This recorder back end cannot burn CD-Extra discs; export the picture session ISO and burn it with other software."
+  }
+}

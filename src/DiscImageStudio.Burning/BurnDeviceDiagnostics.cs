@@ -9,14 +9,25 @@ internal static class BurnDeviceDiagnostics
 {
     internal static string DescribeEnvironment(OpticalBurnRequest request)
     {
+        int sectorBytes = OpticalBurnMedia.GetSectorBytes(request.MediaKind);
+        return DescribeHost()
+            + $"MediaKind={request.MediaKind}；ContentBytes={request.ContentLength}；"
+            + $"SectorBytes={sectorBytes}；TrackSectors={request.ContentLength / sectorBytes}。";
+    }
+
+    internal static string DescribeEnvironment(CdExtraBurnRequest request)
+        => DescribeHost()
+            + $"MediaKind=CdExtra；AudioTracks={request.AudioTracks.Count}；AudioBytes={request.AudioBytes}；"
+            + $"PredictedSession2StartLba={request.PredictedSession2StartLba}；"
+            + $"PredictedDataSectors={request.PredictedDataSectors}；TestWrite={request.TestWrite}。";
+
+    private static string DescribeHost()
+    {
         Assembly assembly = typeof(WindowsImapiBurner).Assembly;
         string version = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
             ?? assembly.GetName().Version?.ToString() ?? "unknown";
-        int sectorBytes = OpticalBurnMedia.GetSectorBytes(request.MediaKind);
         return $"刻录环境：Build={version}；OS={RuntimeInformation.OSDescription}；"
-            + $"Runtime={RuntimeInformation.FrameworkDescription}；Architecture={RuntimeInformation.ProcessArchitecture}；"
-            + $"MediaKind={request.MediaKind}；ContentBytes={request.ContentLength}；"
-            + $"SectorBytes={sectorBytes}；TrackSectors={request.ContentLength / sectorBytes}。";
+            + $"Runtime={RuntimeInformation.FrameworkDescription}；Architecture={RuntimeInformation.ProcessArchitecture}；";
     }
 
     internal static string DescribeRecorder(object recorderObject)

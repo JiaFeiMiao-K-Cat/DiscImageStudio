@@ -73,6 +73,7 @@ Windows x64 下载以 `win-x64.exe` 结尾的文件；Windows 11 ARM64 下载以
 - **DVD 支持**：支持任何 DVD。您可导出 ISO 镜像。
 - **蓝光支持**：支持任何单层 BD-R 25 GB，支持纯绘图与 UDF 2.01 文件。详见 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。
 - **随盘文件**：CD／DVD／蓝光可在设计页直接选择要保存的文件夹及内圈／外圈位置，也可在导出页调整；设置随工程保存。
+- **音乐 + 图片**：CD 工程可在设计页添加 WAV 音乐，CD 机只播放音乐，不会把图片当作曲目播放。音乐默认在外圈（整盘一个音频区段，图片写在第 1 轨的预间隙里），也可放在内圈（CD-Extra，图片作为第 2 区段的数据轨）。设计页随编辑显示音乐区和图片区的半径与盘面占比。详见 [音乐 + 图片说明](docs/CD_AUDIO_COMPATIBILITY.md#音乐--图片)。
 - **文件区域预览**：混合盘的设计投影和成品读回用蓝色标出文件区（含文件系统）。
 - **介质灰度方案**：CD 与 DVD 均使用黑白二阶，CD 使用 `0D / AA`，DVD 扰码域使用 `A5 / 92`。详见 [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md)。
 - **灰度抖动工具**：独立程序也可将原图处理为 `0/255` 黑白二阶 PNG；支持打开或拖入原图、并排预览及无损 PNG 导出。详见[使用与构建说明](tools/FourLevelDither/README.md)。
@@ -94,6 +95,7 @@ Disc Image Studio 提供粗标定、边界标定和精细标定流程，通过�
 
 - **镜像文件输出**：您可以导出完整 ISO / RAW 文件并使用合适的刻录软件手动刻录。
 - **即时流式刻录（实验性）**：CD、DVD 与 BD-R 边生成边刻录，不保存完整镜像；BD-R 走 MMC 顺序写入。
+- **音乐 + 图片刻录（实验性）**：音乐在外圈时整盘一次写入（DAO）；音乐在内圈时按 Track-at-Once 先写入并关闭音乐区段，再按光驱报告的地址生成并写入图片区段，可先模拟写入。两种布局都已实刻并在三台 CD 机上播放正常。
 - **不要使用非空白介质！**
 
 ## 系统与设备要求
@@ -141,7 +143,7 @@ CLI 可读取 PNG、JPEG、BMP 和 GIF，使用动画图片的第一帧。下面
 | `calibrate` | 标定投影：按生成几何从 DVD 源图片取样，按实测几何投到盘面 |
 | `simulate` | 按实测半径对生成的 DVD ISO 做读回模拟 |
 | `selftest` | 运行 DVD 引擎的确定性回归自检 |
-| `cd-generate` | 无随盘文件时生成 WAV + CUE / RAW 音轨；指定 `--data-dir` 时生成 CD 数据盘 ISO |
+| `cd-generate` | 无随盘文件时生成 WAV + CUE / RAW 音轨；指定 `--data-dir` 时生成 CD 数据盘 ISO；指定 `--music` 时生成图片 + 音乐的 WAV + CUE（音乐在外圈），加 `--music-position inner` 时生成 CD-Extra 第 2 区段（图片数据轨）ISO |
 | `cd-preview-warp` | 标定投影：按实测几何投影 CD 源图片 |
 | `cd-preview-track` | 按标定几何渲染已有的 WAV 或 RAW CD-DA 音轨（读回模拟） |
 | `bd-generate` | 生成完整 BD-R ISO，并写出 `<iso>.json` sidecar |
@@ -176,7 +178,7 @@ docs/                        架构、引擎、预设、发布等文档
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | 模块抽象、层间边界与扩展规则 |
 | [LOCALIZATION.md](docs/LOCALIZATION.md) | 界面语言配置、系统语言回退与翻译资源维护 |
 | [DVD_ENGINE.md](docs/DVD_ENGINE.md) | DVD NRZI 图像约束求解器的约定、编码链与自检覆盖 |
-| [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | CD 音轨格式、字节序与重影排查 |
+| [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | CD 音轨格式、字节序、重影排查与音乐 + 图片盘 |
 | [ADDING_BLURAY.md](docs/ADDING_BLURAY.md) | 蓝光模块的物理模型、生成/刻录链路与扩展点 |
 | [DISC_PRESETS.md](docs/DISC_PRESETS.md) | 可编辑盘片预设的分层 JSON 格式与合并规则 |
 | [CALIBRATION.md](docs/CALIBRATION.md) | 照片矫正、三阶段取点示例、三次轨距拟合与再次精标 |

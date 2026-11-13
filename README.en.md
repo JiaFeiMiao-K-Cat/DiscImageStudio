@@ -73,6 +73,7 @@ Live burning is experimental. Use only expendable test media.
 - **DVD support**: Supports any DVD. Export ISO images.
 - **Blu-ray support**: Supports any single-layer 25 GB BD-R, with drawing-only mode and UDF 2.01 files. See [ADDING_BLURAY.md](docs/ADDING_BLURAY.md).
 - **Files on disc**: For CD, DVD, and Blu-ray, select a folder and place its files on the inner or outer ring directly from the Design page, or adjust these options on the Export page. The settings are saved with the project.
+- **Music + picture**: CD projects can add WAV music on the Design page. CD players play only the music and never the picture. By default the music is on the outer rings (one audio session, the picture in the pre-gap of track 1); it can also go on the inner rings (CD-Extra, the picture as the data track of session 2). The Design page shows the radius and disc-area share of the music and the picture as you edit. See [Music + picture](docs/CD_AUDIO_COMPATIBILITY.md#音乐--图片).
 - **File region preview**: Hybrid-disc design projections and artifact readback highlight the file region, including the file system, in blue.
 - **Media grayscale schemes**: CD and DVD both use two black-and-white levels: `0D / AA` for CD and `A5 / 92` in the DVD scrambled domain. See [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md).
 - **Grayscale dithering tool**: A standalone program can also process a source image into a two-level `0/255` black-and-white PNG. It supports opening or dragging in source images, side-by-side previews, and lossless PNG export. See the [usage and build instructions](tools/FourLevelDither/README.md).
@@ -94,6 +95,7 @@ See the [assisted calibration guide](docs/CALIBRATION.md) for the workflow and p
 
 - **Disc image output**: Export complete ISO / RAW files and burn them manually with suitable burning software.
 - **Live streaming burn (experimental)**: Generate and burn CD, DVD, and BD-R data simultaneously without saving a complete disc image. BD-R uses MMC sequential writing.
+- **Music + picture burning (experimental)**: With the music on the outer rings the whole disc is written Disc-at-Once. With the music on the inner rings, Track-at-Once writes and closes the music session, then the picture session is generated and written for the address the recorder reports; a test write can run first. Both layouts have been burned and play on three CD players.
 - **Do not use non-blank media!**
 
 ## System and Hardware Requirements
@@ -141,7 +143,7 @@ The CLI reads PNG, JPEG, BMP and GIF, using the first frame of animated images. 
 | `calibrate` | Calibration projection: sample the DVD source image using the generation geometry and project it onto the disc using the measured geometry |
 | `simulate` | Simulate readback of a generated DVD ISO using measured radii |
 | `selftest` | Run deterministic regression self-tests for the DVD engine |
-| `cd-generate` | Generate WAV + CUE / RAW audio tracks when no files are included on the disc; generate a CD data disc ISO when `--data-dir` is specified |
+| `cd-generate` | Generate WAV + CUE / RAW audio tracks when no files are included on the disc; generate a CD data disc ISO when `--data-dir` is specified; generate a picture + music WAV + CUE (music on the outer rings) when `--music` is specified, or the CD-Extra session 2 (picture data track) ISO with `--music-position inner` |
 | `cd-preview-warp` | Calibration projection: project the CD source image using measured geometry |
 | `cd-preview-track` | Render an existing WAV or RAW CD-DA audio track using calibrated geometry (readback simulation) |
 | `bd-generate` | Generate a complete BD-R ISO and write an `<iso>.json` sidecar |
@@ -176,7 +178,7 @@ docs/                        Architecture, engine, preset, release, and other do
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Module abstractions, boundaries between layers, and extension rules |
 | [LOCALIZATION.md](docs/LOCALIZATION.md) | Language settings and translation resource maintenance |
 | [DVD_ENGINE.md](docs/DVD_ENGINE.md) | DVD NRZI image constraint solver conventions, encoding chain, and self-test coverage |
-| [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | CD audio track formats, byte order, and ghosting troubleshooting |
+| [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | CD audio track formats, byte order, ghosting troubleshooting, and music + picture discs |
 | [ADDING_BLURAY.md](docs/ADDING_BLURAY.md) | Blu-ray module physical model, generation/burning pipeline, and extension points |
 | [DISC_PRESETS.md](docs/DISC_PRESETS.md) | Layered JSON format and merging rules for editable disc presets |
 | [CALIBRATION.md](docs/CALIBRATION.md) | Photo rectification (marking the disc’s outermost physical edge and center-hole edge), curve calibration, and DVD cubic track-pitch fitting |

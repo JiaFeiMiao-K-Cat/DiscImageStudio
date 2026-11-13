@@ -14,6 +14,7 @@ internal sealed class BurnProgressDisplay
     private TimeSpan? _lastTransferLog;
     private TimeSpan? _lastWriteTime;
     private double? _bytesPerSecond;
+    private int? _sectorBytes;
     private bool _finished;
 
     internal BurnProgressDisplay(OpticalBurnMediaKind mediaKind, long totalBytes, Func<TimeSpan>? elapsed = null)
@@ -39,7 +40,7 @@ internal sealed class BurnProgressDisplay
         get
         {
             if (BytesPerSecond is not { } rate) return "—×";
-            int sectorBytes = _mediaKind == OpticalBurnMediaKind.CdAudio ? 2352 : 2048;
+            int sectorBytes = _sectorBytes ?? (_mediaKind == OpticalBurnMediaKind.CdAudio ? 2352 : 2048);
             double multiplier = rate / sectorBytes * new OpticalWriteSpeed(1, false).GetMultiplier(_mediaKind);
             return $"{multiplier:0.0}×";
         }
@@ -56,10 +57,11 @@ internal sealed class BurnProgressDisplay
             _lastWriteTime = _elapsed();
             _bytesPerSecond = progress.Stage == "write" && progress.BytesPerSecond is { } rate
                 && double.IsFinite(rate) && rate >= 0 ? rate : null;
+            if (progress.SectorBytes is { } sectorBytes and > 0) _sectorBytes = sectorBytes;
             _finished = progress.Stage == "complete";
         }
         else if (progress.Stage is "device" or "media" or "buffer" or "finalize" or "write-complete"
-            or "verify" or "flush" or "close-track" or "close-disc" or "release")
+            or "verify" or "flush" or "close-track" or "close-disc" or "close-session" or "release")
         {
             // Device write completion can still be followed by verification and session cleanup.
             // Only the lifecycle's complete stage above finishes this display.

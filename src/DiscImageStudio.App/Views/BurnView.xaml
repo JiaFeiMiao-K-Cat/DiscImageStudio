@@ -41,6 +41,16 @@
                             </controls:VisibilityGate>
                         </StackPanel>
                     </controls:VisibilityGate>
+                    <!-- CD-Extra writes two sessions with explicit Track-at-Once commands; a
+                         simulated run lets a recorder be checked without using a disc. -->
+                    <controls:VisibilityGate IsOpen="{Binding IsCdExtraBurn}" Margin="0,14,0,0">
+                        <StackPanel>
+                            <CheckBox Content="{loc:Text Xaml.CdExtraTestWrite}" IsChecked="{Binding CdExtraTestWrite}"
+                                      IsEnabled="{Binding IsSetupEnabled}" />
+                            <TextBlock Text="{loc:Text Xaml.CdExtraBurnHint}" Style="{StaticResource HintText}"
+                                       Margin="0,6,0,0" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </controls:VisibilityGate>
                 </StackPanel>
             </controls:SectionCard>
 

@@ -70,6 +70,7 @@ public partial class DesignViewModel : ObservableObject
         });
         Layers.CollectionChanged += Layers_CollectionChanged;
         Tone = new ToneViewModel(shell, state, this);
+        Music = new CdMusicViewModel(shell, state, this);
         RefreshDataRegionText();
     }
 
@@ -77,13 +78,42 @@ public partial class DesignViewModel : ObservableObject
     /// page renders through the engines' tone mapping.</summary>
     public ToneViewModel Tone { get; }
 
+    /// <summary>The left rail's CD-Extra module: music list and disc-share summary.</summary>
+    public CdMusicViewModel Music { get; }
+
     /// <summary>The design page itself builds its text from XAML; only the tone module and
     /// the overflow warning cache localized text.</summary>
     internal void Relocalize()
     {
         Tone.Relocalize();
+        Music.Relocalize();
         RefreshDataRegionText();
     }
+
+    /// <summary>CD-Extra rings on the canvas: the music session from the inner edge, and the
+    /// picture session from <see cref="PictureInnerMm"/>. The space between them is the
+    /// recorder-written lead-out, lead-in and pre-gap.</summary>
+    public sealed record CdExtraRingsMm(double MusicInnerMm, double MusicOuterMm,
+        double PictureInnerMm, double PictureOuterMm);
+
+    /// <summary>Null unless a CD project is in CD-Extra mode with a valid plan.</summary>
+    [ObservableProperty]
+    private CdExtraRingsMm? _cdExtraRings;
+
+    private CdExtraPlan? _cdExtraPlan;
+
+    /// <summary>The latest CD-Extra plan of the guide pass (also when it reports a problem).</summary>
+    internal CdExtraPlan? CdExtraPlan
+    {
+        get => _cdExtraPlan;
+        private set
+        {
+            if (SetProperty(ref _cdExtraPlan, value))
+                CdExtraPlanChanged?.Invoke();
+        }
+    }
+
+    internal event Action? CdExtraPlanChanged;
 
     /// <summary>Disc files are shared with export, preview and burn; they are not image layers.</summary>
     public DiscParametersState State => _state;
@@ -396,6 +426,8 @@ public partial class DesignViewModel : ObservableObject
         DataRegions = null;
         DataRegionOverflow = false;
         DataRegionOverflowText = string.Empty;
+        CdExtraRings = null;
+        CdExtraPlan = null;
         RefreshGeometry();
         _dataRegionTimer.Stop();
         RecomputeDataRegion();
@@ -436,6 +468,8 @@ public partial class DesignViewModel : ObservableObject
             nameof(DiscParametersState.CdDataDirectory) or nameof(DiscParametersState.CdVolumeLabel)
             or nameof(DiscParametersState.CdFilesAtOuterRing)
             or nameof(DiscParametersState.CdOuterRingBleed)
+            or nameof(DiscParametersState.CdExtraEnabled) or nameof(DiscParametersState.CdMusicTracks)
+            or nameof(DiscParametersState.CdMusicAtOuterRing)
             or nameof(DiscParametersState.CdInnerRadius) or nameof(DiscParametersState.CdOuterRadius)
             or nameof(DiscParametersState.CdSectors) or nameof(DiscParametersState.CdUsableSectors)
             or nameof(DiscParametersState.CdPitchLinear) or nameof(DiscParametersState.CdPitchQuadratic)
@@ -506,11 +540,24 @@ public partial class DesignViewModel : ObservableObject
 
                 IReadOnlyList<DataRegionMm>? regions = null;
                 bool overflow = false;
+                CdExtraPlan? extraPlan = null;
                 if (inputs is not null)
                 {
                     try
                     {
-                        regions = await StaWorker.RunAsync(() => DataRegionPlanner.Compute(inputs));
+                        if (inputs.MusicTracks is not null)
+                        {
+                            // CD-Extra: the music, the session gap and the picture session's
+                            // files come from one plan; capacity problems live in the plan.
+                            (regions, extraPlan) = await StaWorker.RunAsync(() => DataRegionPlanner.ComputeCdExtra(inputs));
+                            // Disc files too large for the picture session: the files card
+                            // shows the same overflow warning as in picture-only mode.
+                            overflow = extraPlan.Problem == CdExtraPlanProblem.DataCapacity;
+                        }
+                        else
+                        {
+                            regions = await StaWorker.RunAsync(() => DataRegionPlanner.Compute(inputs));
+                        }
                     }
                     catch (DataRegionCapacityException)
                     {
@@ -531,6 +578,11 @@ public partial class DesignViewModel : ObservableObject
                 DataRegions = regions;
                 DataRegionOverflow = overflow;
                 DataRegionOverflowText = overflow ? L.T("Xaml.DataRegionOverflow") : string.Empty;
+                CdExtraRings = extraPlan?.Layout is { } layout
+                    ? new CdExtraRingsMm(layout.MusicInnerRadiusMm, layout.MusicOuterRadiusMm,
+                        layout.PictureInnerRadiusMm, layout.PictureOuterRadiusMm)
+                    : null;
+                CdExtraPlan = extraPlan;
                 CanvasChanged?.Invoke();
             }
             while (_dataRegionPending);
@@ -611,7 +663,9 @@ public partial class DesignViewModel : ObservableObject
             ParameterParser.ParsePositiveDouble(outerText, L.T(outerPrompt)),
             ParameterParser.ParseDouble(pitchLinear, L.T("相对一次项")),
             ParameterParser.ParseDouble(pitchQuadratic, L.T("相对二次项")),
-            ParameterParser.ParseDouble(pitchCubic, L.T("相对三次项")));
+            ParameterParser.ParseDouble(pitchCubic, L.T("相对三次项")),
+            Family == OpticalDiscFamily.CompactDisc && _state.CdExtraEnabled ? _state.CdMusicTracks : null,
+            _state.CdMusicAtOuterRing);
     }
 
     private static double ParseMm(string raw, double fallback)
