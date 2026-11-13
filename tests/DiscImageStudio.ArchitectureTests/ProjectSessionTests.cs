@@ -7,7 +7,8 @@ internal static class ProjectSessionTests
     {
         TestBluRayRoundtrip();
         TestFamilyIsolation();
-        Console.WriteLine("project-session: passed (BD apply/capture, tone normalization, polarity, family isolation)");
+        TestCdAudioFormatPerProject();
+        Console.WriteLine("project-session: passed (BD apply/capture, tone normalization, polarity, family isolation, CD RAW/WAV per project)");
     }
 
     private static void TestBluRayRoundtrip()
@@ -69,6 +70,35 @@ internal static class ProjectSessionTests
         Require(state.DvdTotalSectors == "2295104" && state.ToneLevels == ToneProfile.TwoLevels,
             "DVD session normalizes four levels to two");
     }
+
+    /// <summary>Opening a project takes the RAW/WAV choice from that project's saved output
+    /// path: a RAW project opened before must not turn this project's ISO into RAW once its
+    /// disc files are removed.</summary>
+    private static void TestCdAudioFormatPerProject()
+    {
+        DiscParametersState state = new();
+        ProjectSession.ApplyToState(CdProject("first.raw", string.Empty), state);
+        Require(state.CdOutputPath == "first.raw", "a RAW project opens as RAW");
+        ProjectSession.ApplyToState(CdProject("second.iso", "files"), state);
+        Require(state.CdOutputPath == "second.iso", "a project with disc files opens as an ISO");
+        state.CdDataDirectory = string.Empty;
+        Require(state.CdOutputPath == "second.wav",
+            "removing the files of a project saved as an ISO gives WAV, not the previous project's RAW");
+
+        ProjectSession.ApplyToState(CdProject("third.raw", string.Empty), state);
+        state.CdDataDirectory = "files";
+        Require(state.CdOutputPath == "third.iso", "disc files turn a RAW output into an ISO");
+        state.CdDataDirectory = string.Empty;
+        Require(state.CdOutputPath == "third.raw", "removing them again restores the RAW output");
+    }
+
+    private static ProjectDocument CdProject(string outputPath, string dataDirectory)
+        => Document(
+            ProjectDocument.CdFamily,
+            new ProjectGeometry(24.5, 56.8, 359_849),
+            new ProjectOutputs(outputPath, false, dataDirectory, string.Empty, true),
+            new ToneProfile(0.5, ToneProfile.FourLevels, 0),
+            BluRay: null);
 
     private static ProjectDocument Document(
         string family, ProjectGeometry geometry, ProjectOutputs outputs, ToneProfile tone,

@@ -15,6 +15,7 @@ internal static class CdAudioCompatibilityTests
         True(
             new DiscParametersState().CdInterleave,
             "a new CD parameter state enables delay interleave by default");
+        TestAudioFormatRestore();
         string directory = Path.Combine(Path.GetTempPath(), $"disc-cd-audio-test-{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
         try
@@ -451,6 +452,28 @@ internal static class CdAudioCompatibilityTests
         byte[] result = output.ToArray();
         BinaryPrimitives.WriteUInt32LittleEndian(result.AsSpan(4, 4), checked((uint)(result.Length - 8)));
         return result;
+    }
+
+    /// <summary>A RAW (or WAV) choice survives a detour through a data-disc ISO, and a newly
+    /// opened project takes its own format instead of the previous project's.</summary>
+    private static void TestAudioFormatRestore()
+    {
+        DiscParametersState state = new() { CdOutputPath = "track.raw" };
+        state.CdDataDirectory = "files";
+        Equal("track.iso", state.CdOutputPath, "disc files switch the CD output to an ISO");
+        state.CdDataDirectory = string.Empty;
+        Equal("track.raw", state.CdOutputPath, "removing the files restores the RAW output");
+        state.CdOutputPath = "track.wav";
+        state.CdDataDirectory = "files";
+        state.CdDataDirectory = string.Empty;
+        Equal("track.wav", state.CdOutputPath, "and the WAV output when that was chosen");
+
+        state.CdOutputPath = "old.raw";
+        state.ResetCdAudioFormat("new.iso");
+        state.CdOutputPath = "new.iso";
+        state.CdDataDirectory = "files";
+        state.CdDataDirectory = string.Empty;
+        Equal("new.wav", state.CdOutputPath, "a project opened as an ISO does not inherit the previous RAW choice");
     }
 
     private static void WriteWaveChunk(Stream output, string id, byte[] payload)
