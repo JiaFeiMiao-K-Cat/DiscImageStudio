@@ -446,7 +446,8 @@ public partial class ShellViewModel : ObservableObject
             case Workspace.Burn:
             case Workspace.CalibrationBurn:
                 var burn = workspace == Workspace.Burn ? Burn : CalibrationBurn;
-                burn.UpdateSourceSummary();
+                // Opening the page re-reads the music files, so a WAV edited meanwhile re-arms.
+                burn.UpdateSourceSummary(refreshFiles: true);
                 if (!IsBusy && burn.Devices is not { Count: > 0 })
                 {
                     _ = burn.RefreshDevicesAsync();
@@ -759,6 +760,7 @@ public partial class ShellViewModel : ObservableObject
             Outputs = ProjectSession.CaptureOutputs(current, State),
             Tone = ProjectSession.CaptureTone(current, State),
             BluRay = ProjectSession.CaptureBluRay(current, State),
+            CdExtra = ProjectSession.CaptureCdExtra(current, State),
             Layers = Design.CaptureLayers(),
             ThumbnailPngBase64 = await Design.RenderThumbnailAsync() ?? current.ThumbnailPngBase64,
             ModifiedUtc = DateTimeOffset.Now,
@@ -872,6 +874,8 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.CdFilesAtOuterRing),
         nameof(DiscParametersState.CdOuterRingBleed),
         nameof(DiscParametersState.CdVolumeLabel),
+        nameof(DiscParametersState.CdExtraEnabled),
+        nameof(DiscParametersState.CdMusicTracks),
         nameof(DiscParametersState.DvdInnerRadius),
         nameof(DiscParametersState.DvdOuterRadius),
         nameof(DiscParametersState.DvdTotalSectors),
@@ -1264,7 +1268,8 @@ public partial class ShellViewModel : ObservableObject
         if (_burnProgressDisplay is null) return;
         string? diagnostic = _burnProgressDisplay.Apply(progress);
         if (!cancellationRequested && progress.Stage is ("device" or "media" or "buffer" or "write" or "finalize"
-            or "write-complete" or "verify" or "flush" or "close-track" or "close-disc" or "release"))
+            or "write-complete" or "verify" or "flush" or "close-track" or "close-disc" or "close-session"
+            or "release"))
             JobStatusText = progress.Message;
         UpdateBurnTelemetry();
         if (!string.IsNullOrWhiteSpace(diagnostic)) AppendLog($"[{DateTime.Now:HH:mm:ss}] {diagnostic}\n");

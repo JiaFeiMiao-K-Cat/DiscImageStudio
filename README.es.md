@@ -93,6 +93,7 @@ La grabación en directo es experimental. Usa únicamente discos de prueba que p
 - **Compatibilidad DVD**: admite cualquier DVD. Exporta imágenes ISO.
 - **Compatibilidad Blu-ray**: admite cualquier BD-R de 25 GB y una capa, con modo de sólo dibujo y archivos UDF 2.01. Consulta [ADDING_BLURAY.md](docs/ADDING_BLURAY.md).
 - **Archivos en el disco**: para CD, DVD y Blu-ray, selecciona una carpeta y coloca sus archivos en la zona interior o exterior desde Diseño, o ajusta estas opciones en Exportar. Los ajustes se guardan con el proyecto.
+- **CD-Extra (música + imagen)**: los proyectos CD pueden añadir música WAV en la página Diseño. La música se graba en la sesión 1, en los anillos interiores, y la imagen pasa a ser la pista de datos de la sesión 2, en los exteriores, de modo que los reproductores de CD sólo reproducen la música. La página Diseño muestra, mientras editas, el radio y la proporción de superficie de la música, del espacio entre sesiones y de la imagen. Consulta [CD-Extra](docs/CD_AUDIO_COMPATIBILITY.md#cd-extra音乐--图片).
 - **Vista previa de la zona de archivos**: las proyecciones del diseño de discos híbridos y la relectura del archivo generado resaltan en azul la zona de archivos, incluido el sistema de archivos.
 - **Esquemas de gris según el medio**: CD y DVD usan dos niveles de blanco y negro: `0D / AA` para CD y `A5 / 92` en el dominio aleatorizado de DVD. Consulta [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md).
 - **Herramienta de tramado en escala de grises**: un programa independiente también puede convertir una imagen de origen en un PNG en blanco y negro de dos niveles `0/255`. Permite abrir o arrastrar imágenes de origen, compararlas en vistas paralelas y exportar PNG sin pérdida. Consulta las [instrucciones de uso y compilación](tools/FourLevelDither/README.md).
@@ -117,6 +118,7 @@ Consulta la [guía de calibración asistida](docs/CALIBRATION.md) para conocer e
 
 - **Salida de imágenes de disco**: exporta archivos ISO / RAW completos y grábalos manualmente con un programa adecuado.
 - **Grabación en streaming (experimental)**: genera y graba datos CD, DVD y BD-R a la vez, sin guardar una imagen de disco completa. BD-R usa escritura secuencial MMC.
+- **Grabación CD-Extra (experimental)**: graba y cierra la sesión de música con Track-at-Once, después genera y graba la sesión de imagen para la dirección que indica la grabadora y cierra el disco; antes se puede hacer una grabación de prueba. Ya se ha grabado un disco, que se reproduce correctamente en un reproductor de CD.
 - **¡No uses discos que ya contengan datos!**
 
 <a id="system-and-hardware-requirements"></a>
@@ -170,7 +172,7 @@ La CLI lee PNG, JPEG, BMP y GIF; usa el primer fotograma de las imágenes animad
 | `calibrate` | Proyección de calibración: muestrea la imagen DVD de origen con la geometría de generación y la proyecta sobre el disco con la geometría medida |
 | `simulate` | Simula la relectura de una ISO DVD generada con radios medidos |
 | `selftest` | Ejecuta las autopruebas deterministas de regresión del motor DVD |
-| `cd-generate` | Genera pistas de audio WAV + CUE / RAW cuando no se incluyen archivos en el disco; genera una ISO de disco de datos CD cuando se indica `--data-dir` |
+| `cd-generate` | Genera pistas de audio WAV + CUE / RAW cuando no se incluyen archivos en el disco; genera una ISO de disco de datos CD cuando se indica `--data-dir`; genera la ISO de la sesión 2 de CD-Extra (pista de datos con la imagen) cuando se indica `--music` |
 | `cd-preview-warp` | Proyección de calibración: proyecta la imagen CD de origen con la geometría medida |
 | `cd-preview-track` | Renderiza una pista de audio CD-DA WAV o RAW existente con la geometría calibrada (simulación de relectura) |
 | `bd-generate` | Genera una ISO BD-R completa y escribe un archivo auxiliar `<iso>.json` |
@@ -209,7 +211,7 @@ docs/                        Documentación de arquitectura, motores, preajustes
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Abstracciones de módulos, límites entre capas y reglas de extensión |
 | [LOCALIZATION.md](docs/LOCALIZATION.md) | Configuración del idioma y mantenimiento de traducciones |
 | [DVD_ENGINE.md](docs/DVD_ENGINE.md) | Convenciones del solucionador de restricciones de imagen NRZI DVD, cadena de codificación y cobertura de autopruebas |
-| [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | Formatos de pistas CD, orden de bytes y diagnóstico de imágenes fantasma |
+| [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | Formatos de pistas CD, orden de bytes, diagnóstico de imágenes fantasma y CD-Extra |
 | [ADDING_BLURAY.md](docs/ADDING_BLURAY.md) | Modelo físico del módulo Blu-ray, generación/grabación y puntos de extensión |
 | [DISC_PRESETS.md](docs/DISC_PRESETS.md) | Formato JSON por capas y reglas de combinación de preajustes editables |
 | [CALIBRATION.md](docs/CALIBRATION.md) | Rectificación de fotos (borde exterior físico y borde del orificio central), calibración de curvas y ajuste de paso de pista DVD cúbico |

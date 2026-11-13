@@ -63,6 +63,18 @@ public partial class DesignView : UserControl
             return;
         }
 
+        // The music list owns Delete while it has focus: removing a track must never
+        // delete the selected picture layer underneath it.
+        if (MusicList is not null && MusicList.IsKeyboardFocusWithin)
+        {
+            if (e.Key == Key.Delete && _viewModel.Music.RemoveSelectedCommand.CanExecute(null))
+            {
+                _viewModel.Music.RemoveSelectedCommand.Execute(null);
+                e.Handled = true;
+            }
+            return;
+        }
+
         switch (e.Key)
         {
             case Key.Left or Key.Right or Key.Up or Key.Down
@@ -103,13 +115,36 @@ public partial class DesignView : UserControl
         {
             e.Effects = DragDropEffects.Copy;
         }
+        else if (CanAcceptMusicDrop(e) && GetDroppedPaths(e.Data) is { } music && music.Any(IsMusicPath))
+        {
+            e.Effects = DragDropEffects.Copy;
+        }
     }
 
     private void OnImageDrop(object sender, DragEventArgs e)
     {
         e.Effects = DragDropEffects.None;
         e.Handled = true;
-        if (!CanAcceptDrop(e) || GetDroppedPaths(e.Data) is not { } paths)
+        if (GetDroppedPaths(e.Data) is not { } paths)
+        {
+            return;
+        }
+
+        // Music in a mixed drop is taken only while the project already is a CD-Extra one:
+        // adding music switches the layout and the output format, which a folder of covers
+        // and songs dropped on a picture-only project must not do. A drop of WAV files
+        // alone is the explicit request.
+        if (CanAcceptMusicDrop(e) && (_viewModel.Music.State.CdExtraEnabled || !paths.Any(IsImagePath)))
+        {
+            string[] music = paths.Where(IsMusicPath).Where(File.Exists).ToArray();
+            if (music.Length > 0)
+            {
+                _viewModel.Music.AddTracks(music);
+                e.Effects = DragDropEffects.Copy;
+            }
+        }
+
+        if (!CanAcceptDrop(e))
         {
             return;
         }
@@ -123,6 +158,14 @@ public partial class DesignView : UserControl
         _viewModel.ImportImages(images);
         e.Effects = DragDropEffects.Copy;
     }
+
+    private bool CanAcceptMusicDrop(DragEventArgs e) =>
+        _viewModel.IsCd
+        && _viewModel.Music.AddMusicCommand.CanExecute(null)
+        && (e.AllowedEffects & DragDropEffects.Copy) != 0;
+
+    private static bool IsMusicPath(string path) =>
+        Path.GetExtension(path).Equals(".wav", StringComparison.OrdinalIgnoreCase);
 
     private bool CanAcceptDrop(DragEventArgs e) =>
         _viewModel.ImportImagesCommand.CanExecute(null)
@@ -709,9 +752,9 @@ public partial class DesignView : UserControl
         // the ListBox in a viewport. Bound the layer card to the room left by the file
         // controls; the list then scrolls internally instead of pushing the picker below
         // every layer. Very short windows can still scroll the whole rail.
-        double fileControlsHeight = FilesCardGate.Visibility == Visibility.Visible
+        double fileControlsHeight = (FilesCardGate.Visibility == Visibility.Visible
             ? FilesCardGate.ActualHeight
-            : 0;
+            : 0) + (MusicCardGate.Visibility == Visibility.Visible ? MusicCardGate.ActualHeight : 0);
         LayersCard.MaxHeight = Math.Max(StackedLayersHeight,
             LeftRailScroll.ViewportHeight - fileControlsHeight);
         // The rail matches the viewport when its content is shorter: the tone card's star

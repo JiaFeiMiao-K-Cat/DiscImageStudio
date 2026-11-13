@@ -21,6 +21,59 @@ English: the data-only DAO adapter replaces audio ADR3/ISRC with complete ADR1 p
 
 设计投影、影调小预览和带有效 `.iso.json` 布局信息的成品读回以主题蓝色标出文件区（含文件系统）。同名元数据记录几何、影调和文件位置；移动 ISO 时建议同时移动它。预览显示绘图负载的映射，实盘效果仍需刻录验证。
 
+## CD-Extra（音乐 + 图片）
+
+CD 工程在设计页的「音乐（CD-Extra）」卡片中选择「音乐 + 图片」并添加 WAV 音乐后，按增强型 CD（CD-Extra / Enhanced CD）布局：
+
+| 区域 | 位置 | 内容 |
+| --- | --- | --- |
+| 第 1 区段 | 内圈，从 LBA 0 开始 | 音乐：CD-DA 音轨，按 Track-at-Once 写入 |
+| 区段间隔 | 紧接音乐之后 | 第 1 区段导出区 6,750 扇区、第 2 区段导入区 4,500 扇区和数据轨预间隙 150 扇区，共 11,400 扇区，由光驱写入，不能绘图 |
+| 第 2 区段 | 外圈，直到可用容量末尾 | 一条 Mode 1 数据轨：ISO9660/Joliet 文件系统、随盘文件和图片，末尾留 150 扇区后间隙 |
+
+设计页的「外缘出血」（随盘文件放在外圈时，可用容量截止在标准容量的 95%）对 CD-Extra 同样生效：只有带随盘文件并选了外圈时，第 2 区段才随之提前结束；没有随盘文件时不受影响。读回这样生成的图片区段时，保留未截止的可用扇区数。
+
+音频 CD 机只读取第 1 区段，图片所在的第 2 区段不会被当作音轨播放；第 2 区段在目录中也标记为数据轨。电脑上第 2 区段显示为数据盘（卷标与随盘文件），音乐仍可用播放器读取。
+
+这里的 CD-Extra 指“音乐区段 + 数据区段”的多区段布局。Blue Book 规定的 Enhanced CD 要求第 2 区段使用 CD-ROM XA（Mode 2 Form 1）并带 `CDPLUS` 等目录结构；本实现写的是 Mode 1 数据轨，也不生成这些结构，因此不带 Enhanced CD 标识，依赖该标识的旧软件不会把它识别为 CD-Extra。
+
+音乐要求：
+
+- 只接受 44.1 kHz、16 位、立体声 PCM 的 WAV（包括 WAVE_FORMAT_EXTENSIBLE 封装的 16 位 PCM），样本原样写入，不转码、不调整音量。其他格式请先用外部工具转换，例如 `ffmpeg -i in.flac -ar 44100 -ac 2 -sample_fmt s16 out.wav`。
+- 最多 98 首，第 99 条轨道留给图片数据轨。用按钮或拖放一次添加的多个文件按文件名自然顺序排列（`2` 在 `10` 之前），之后可用上移／下移调整。
+- Track-at-Once 在曲目之间写入 2 秒（150 扇区）静音间隔，因此不能做无缝连续播放。每首长度向上取整到整扇区（1/75 秒）；不足 4 秒（300 扇区）的曲目在末尾补数字静音。
+- 不写入 CD-Text、ISRC 和 UPC/EAN。
+
+设计：音乐从内圈开始，音乐越长，图片区越靠外、面积越小。卡片列出每首和总时长，并按面积给出音乐区、区段间隔和图片区的半径与占比；设计画布以琥珀色标出音乐区、灰色标出区段间隔，影调与预览页同样标出。图片仍按整盘坐标绘制，落在音乐区和区段间隔里的部分不会出现在盘面上，应把画面主体放在图片区内。80 分钟盘上区段间隔约占 3.2% 的面积。
+
+程序内刻录（实验性）：
+
+1. 只使用空白 CD-R（或已擦除的 CD-RW）。刻录页显示「CD-Extra · 第 1 区段 N 首音乐 · 第 2 区段图片数据轨」。
+2. 开始写入前，程序确认每个音乐文件与规划时一致，并在音乐区段写完前阻止其他程序修改或删除它们；文件有变化时不写入任何数据。随后用 Track-at-Once 命令逐首写入音乐并关闭第 1 区段（保留追加），选好数据轨写入参数后读取光驱报告的下一可写地址作为第 2 区段起点，按该地址生成图片 ISO，再写入数据轨并封盘。设计页显示的是预计起点；实际地址不同时以光驱报告为准，因为起点差一个扇区就会让图片旋转约 16°–37°。光驱在刷新缓存后短暂回答“正在写入”，或在关闭区段后报告一次“介质可能已更换”（06/28/00）时，命令会在光驱就绪后重发。
+3. 「模拟写入」让光驱执行同样的写入命令但不改变盘片，也不关闭区段，可先用来确认光驱接受 Track-at-Once 与多区段设置。
+4. 中途取消、失败或断电可能使盘片报废；若第 1 区段已经关闭，音乐仍可在 CD 机播放。
+
+这一流程已实刻过一张盘：CD 机（Syitern R300）播放音乐正常，在第 1 首开头继续快退时停在 0:00，盘面图片的位置和方向与设计一致。水月雨梦想碟机2 上同样播放正常，曲目数量正确，倒退也播不到图片。之后在三台 CD 机（Syitern R300、索尼 D232 老式机、水月雨梦想碟机2）上逐项检查都正常，只有总时间显示为 79 分 59 秒而不是音乐长度，不影响播放，原因还没有确认。目前只有一台刻录机的结果，记录见 [VALIDATION.md](VALIDATION.md#实盘验证边界)。
+
+导出与外部刻录：导出页在 CD-Extra 模式下输出第 2 区段的 ISO 和同名 `.iso.json`。ISO 内所有地址都是整盘绝对 LBA（与 `mkisofs -C` 相同的约定），只有第 2 区段真正从生成时的地址开始，文件系统才可读、图片才不会旋转。「实测第 2 区段起点 LBA」留空时按预计起点生成（假设第 1 区段按 Track-at-Once 刻录）；用外部软件刻录时，先以 Track-at-Once 写入音乐并保持可追加，读取下一区段起点，填入该栏（或用 CLI 的 `--session2-start-lba`）后重新生成 ISO。两处都接受 `cdrecord -msinfo` 的原样输出，例如 `0,15055`。更换音乐或工程时该栏自动清空。下面以 cdrecord 为例，此流程尚未在实际光驱上验证：
+
+```powershell
+# 1. 写入音乐区段，Track-at-Once，保留追加；-pad 把每首补到整扇区，与程序的规划一致
+cdrecord dev=设备 -tao -multi -pad -audio "01.wav" "02.wav"
+# 2. 读取下一区段起点：输出形如 0,15055，第二个数是第 2 区段起点
+cdrecord dev=设备 -msinfo
+# 3. 按实际起点生成第 2 区段 ISO（--music 可以是文件夹、播放列表或单个 WAV；
+#    文件夹按文件名自然顺序，--session2-start-lba 也可直接写 0,15055）
+DiscImageStudio.exe cd-generate --input picture.png --output session2.iso `
+  --music "D:\音乐" --session2-start-lba 15055 --volume-label CD_EXTRA
+# 4. 写入数据轨并封盘
+cdrecord dev=设备 -tao -data session2.iso
+```
+
+`--music` 用来计算音乐区长度，第 3 步必须使用与第 1 步相同的曲目和顺序。不给 `--session2-start-lba` 时使用预计起点，只适合预览。`cd-preview-warp` 同样接受这两个参数；预览页读回带 `cd-extra-v1` 元数据的 ISO 时，按其绝对起点投影到盘面。
+
+English: CD-Extra puts the music into session 1 on the inner rings (Track-at-Once audio, 2-second gaps, tracks padded to whole sectors and to at least 4 s) and the picture into a Mode 1 data track of session 2 on the outer rings; the 11,400 sectors between them (lead-out, lead-in, pre-gap) cannot be drawn. Only 44.1 kHz 16-bit stereo PCM WAV is accepted and copied verbatim. In-app burning closes session 1, reads the recorder's next writable address, and only then generates the picture ISO for that address, because a one-sector error rotates the picture by about 16–37°. Exported ISOs use absolute LBAs (the `mkisofs -C` convention); for external burning regenerate the ISO with `--session2-start-lba` set to the second value of `cdrecord -msinfo`. The in-app burner has produced one disc that plays on a CD player (recorded in VALIDATION.md); the external route has not been verified on a physical recorder yet.
+
 ## 推荐用法
 
 新生成任务默认输出 `cd-track.wav`，同时生成 `cd-track.cue`。WAV 为无压缩 PCM：44.1 kHz、16 位、双声道，数据区为小端。将这两个文件放在同一目录，移动或改名时也要同步更新 CUE 中的文件名。CUE 是可选项：导出工作区取消勾选“同时导出 CUE 文件”，或命令行传 `--cue false`，则只写出 WAV。
@@ -135,6 +188,7 @@ DiscImageStudio.exe cd-generate --input picture.png --output cd-track.wav `
 - 标定投影一致性：同一源图先按生成几何 `(24.5, 56.8)` 生成音轨，再把 `cd-preview-warp` 的投影（实测=生成、实测=`24.3/56.6`）与 `cd-preview-track` 用对应几何读回的结果逐像素比较，阈值化后完全一致（900 px）；实测半径缩小时投影的重心半径随之减小，因此两套几何不会串位。
 - Windows 内存实验：向现有 `MsftRawCDImageCreator` 输入 300 个非对称音频扇区，在 Cooked R-W 与 Raw P-W 两种结果类型下分别扫描完整的 2448 字节 RAW 结果扇区，全部音频字节原样保留；另一项回归确认两种类型的完整镜像逐字节相同，R-W 子通道为空。生成器不会替调用者交换字节。测试不创建刻录设备、不写入光盘。
 - 数据轨子码回归：两种格式均扫描 512 个数据扇区及完整 lead-in、预间隙、lead-out，核对 ADR3 替换、BCD 时间、CRC 和 ADR1 出现频率。音轨完整 DAO 镜像与独立原生 IMAPI 参考逐字节一致，音轨 ADR3 和非对称 PCM 保留；另有固定向量覆盖区域边界和 `99:59:74`。这些检查验证子码转换与音轨隔离，未进行此次修复的实盘读回。
+- CD-Extra：回归覆盖 Track-at-Once 地址与容量、WAV 校验与补静音、按绝对 LBA 编址的 ISO9660/Joliet、第 2 区段图片与整盘绘图逐字节一致、MODE SELECT 05h 页字段、WRITE(10) 地址与重试、关闭区段顺序，以及按实测起点生成图片；刻录命令序列的回归只针对模拟光驱；另有一次程序内实刻在 CD 机上播放正常，记录见 [VALIDATION.md](VALIDATION.md#实盘验证边界)。
 - 2026-09-12 用户在本次修复后完成实盘试验，反馈已无重影。这是用户提供的实体盘结果；流式、cdrecord、ImgBurn 三个入口的逐项实测细节未单独记录。
 
 微软 `WriteMedia` 文档没有说明它内部的字节交换实现；上述结论没有把内存实验等同于观察到设备传输时的交换。[Microsoft WriteMedia 文档](https://learn.microsoft.com/en-us/windows/win32/api/imapi2/nf-imapi2-idiscformat2rawcd-writemedia)

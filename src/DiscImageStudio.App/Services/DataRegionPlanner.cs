@@ -21,7 +21,19 @@ internal sealed record DataRegionInputs(
     double OuterRadiusMm,
     double PitchLinear,
     double PitchQuadratic,
-    double PitchCubic);
+    double PitchCubic,
+    IReadOnlyList<string>? MusicTracks = null)
+{
+    /// <summary>The CD geometry the design guide and the CD-Extra plan share.</summary>
+    internal CdDiscParameters CreateCdParameters() => new(
+        InnerRadiusMm,
+        OuterRadiusMm,
+        TotalSectors,
+        PitchLinear: PitchLinear,
+        PitchQuadratic: PitchQuadratic,
+        PitchCubic: PitchCubic,
+        UsableSectors: UsableSectors);
+}
 
 /// <summary>The layout planner rejected the data because it cannot fit the disc (or the
 /// family's format), as opposed to invalid geometry that hides the guide silently.</summary>
@@ -61,16 +73,32 @@ internal static class DataRegionPlanner
         }
     }
 
+    /// <summary>CD-Extra guide: the music/gap/picture plan plus the picture session's file
+    /// regions (blue), which live inside session 2 rather than at the disc's inner edge.
+    /// Capacity problems are reported in the plan instead of an exception.</summary>
+    internal static (IReadOnlyList<DesignViewModel.DataRegionMm>? Regions, CdExtraPlan Plan) ComputeCdExtra(
+        DataRegionInputs inputs, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(inputs.MusicTracks);
+        CdDiscParameters parameters = inputs.CreateCdParameters();
+        parameters.Validate();
+        CdExtraPlan plan = CdExtraPlanner.Plan(parameters, inputs.MusicTracks,
+            inputs.Directory.Length == 0 ? null : inputs.Directory, inputs.VolumeLabel,
+            inputs.FilesAtOuterRing, cancellationToken: cancellationToken);
+        if (!plan.IsValid || inputs.Directory.Length == 0)
+            return (null, plan);
+        CdDataLayoutPlan data = plan.DataPlan!;
+        double Radius(uint lba) => parameters.RadiusFromByte((long)lba * CdDiscParameters.BytesPerSector);
+        double sessionInner = parameters.RadiusFromByte(data.VolumeStartLba * CdDiscParameters.BytesPerSector);
+        double sessionOuter = parameters.RadiusFromByte((data.VolumeStartLba + data.TrackSectors)
+            * CdDiscParameters.BytesPerSector);
+        return (IsoDataRegions(sessionInner, sessionOuter, data.MetadataEndLbaExclusive, data.FileDataStartLba,
+            data.DataEndLbaExclusive, FilesystemMetadataBudget.ReserveSectors(data.FileCount), Radius), plan);
+    }
+
     private static IReadOnlyList<DesignViewModel.DataRegionMm> ComputeCd(DataRegionInputs inputs)
     {
-        CdDiscParameters parameters = new(
-            inputs.InnerRadiusMm,
-            inputs.OuterRadiusMm,
-            inputs.TotalSectors,
-            PitchLinear: inputs.PitchLinear,
-            PitchQuadratic: inputs.PitchQuadratic,
-            PitchCubic: inputs.PitchCubic,
-            UsableSectors: inputs.UsableSectors);
+        CdDiscParameters parameters = inputs.CreateCdParameters();
         CdDataLayoutPlan plan = CdDataImageGenerator.PrepareLayout(
             inputs.Directory, parameters, inputs.VolumeLabel, inputs.FilesAtOuterRing);
         return IsoDataRegions(parameters.InnerRadiusMm, parameters.OuterRadiusMm,

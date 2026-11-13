@@ -320,6 +320,35 @@ public class DiscDesignCanvas : FrameworkElement
         {
             DrawDataRegions(drawingContext, center, dataRegions);
         }
+
+        if (_design.CdExtraRings is { } rings)
+        {
+            DrawCdExtraRings(drawingContext, center, rings);
+        }
+    }
+
+    /// <summary>CD-Extra guide: the music session (amber) covers the inner rings and the
+    /// recorder-written lead-out/lead-in gap (grey) separates it from the picture session.
+    /// Artwork under either ring is not burned, so both stay visible over the layers.</summary>
+    private void DrawCdExtraRings(DrawingContext context, Point center, DesignViewModel.CdExtraRingsMm rings)
+    {
+        DrawAnnulus(context, center, rings.MusicInnerMm, rings.MusicOuterMm, DiscTheme.MusicRegion);
+        DrawAnnulus(context, center, rings.MusicOuterMm, rings.PictureInnerMm, DiscTheme.SessionGap);
+    }
+
+    private void DrawAnnulus(DrawingContext context, Point center, double innerMm, double outerMm, Brush brush)
+    {
+        double outer = ScreenLength(outerMm);
+        double inner = ScreenLength(innerMm);
+        if (outer <= inner || inner < 0)
+        {
+            return;
+        }
+
+        PathGeometry ring = new() { FillRule = FillRule.EvenOdd };
+        ring.Figures.Add(DiscRenderCore.CircleFigure(center, outer));
+        ring.Figures.Add(DiscRenderCore.CircleFigure(center, inner));
+        context.DrawGeometry(brush, null, ring);
     }
 
     private void DrawLayer(DrawingContext context, DesignLayerViewModel layer)

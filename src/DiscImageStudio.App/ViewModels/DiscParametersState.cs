@@ -81,13 +81,26 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty] private bool _cdInterleave = true;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasCdFiles), nameof(IsCdAudioMode), nameof(IsCdWaveOutput),
-        nameof(CdOutputLabel), nameof(CdOutputHint))]
+        nameof(CdOutputLabel), nameof(CdOutputHint), nameof(UsesCdVolumeLabel))]
     private string _cdDataDirectory = string.Empty;
     [ObservableProperty] private bool _cdFilesAtOuterRing;
     // Outer-ring bleed pulls the data area's outer edge inward to ~95% of the medium's
     // standard capacity, leaving the poorest-quality outermost ring unwritten (issue 312).
     [ObservableProperty] private bool _cdOuterRingBleed;
     [ObservableProperty] private string _cdVolumeLabel = DefaultCdVolumeLabel;
+
+    /// <summary>CD-Extra: the music forms session 1 and the picture becomes the data track
+    /// of session 2. The track list survives switching the mode off.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCdExtraMode), nameof(IsCdAudioMode), nameof(IsCdWaveOutput),
+        nameof(CdOutputLabel), nameof(CdOutputHint), nameof(UsesCdVolumeLabel))]
+    private bool _cdExtraEnabled;
+
+    /// <summary>Absolute WAV paths in disc order. Every edit assigns a new list so a single
+    /// notification reaches the guide, previews, export and burn.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCdMusic))]
+    private IReadOnlyList<string> _cdMusicTracks = [];
 
     // Second parameter set of the live preview page's calibration mode: the disc the reader
     // follows, as opposed to the generated geometry above. It is preview-only and never
@@ -220,31 +233,66 @@ public partial class DiscParametersState : ObservableObject
 
     public bool HasCdFiles => !string.IsNullOrWhiteSpace(CdDataDirectory);
 
-    public bool IsCdAudioMode => !HasCdFiles;
+    /// <summary>CD-Extra mode. Meaningful for CD projects only; every consumer also checks
+    /// the open project's family.</summary>
+    public bool IsCdExtraMode => CdExtraEnabled;
+
+    public bool HasCdMusic => CdMusicTracks.Count > 0;
+
+    /// <summary>The CD output carries an ISO9660 volume: a data disc or the CD-Extra picture session.</summary>
+    public bool UsesCdVolumeLabel => HasCdFiles || CdExtraEnabled;
+
+    public bool IsCdAudioMode => !HasCdFiles && !CdExtraEnabled;
+
+    /// <summary>True when the CD output is an ISO: a data disc or a CD-Extra picture session.</summary>
+    private bool IsCdIsoOutput => HasCdFiles || CdExtraEnabled;
 
     /// <summary>Label of the CD output the design page's pipeline card offers; the artifact
     /// switches between a data ISO and an audio track as the on-disc folder appears.</summary>
-    public string CdOutputLabel => HasCdFiles ? L.T("输出数据盘 (.iso)") : L.T("输出音轨 (.wav / .raw)");
+    public string CdOutputLabel => CdExtraEnabled ? L.T("输出图片区段 (.iso)")
+        : HasCdFiles ? L.T("输出数据盘 (.iso)") : L.T("输出音轨 (.wav / .raw)");
 
-    public string CdOutputHint => HasCdFiles
-        ? L.T("包含随盘文件，导出为 CD 数据盘 ISO。")
-        : L.T("无随盘文件时生成音轨，推荐 WAV 格式。");
+    public string CdOutputHint => CdExtraEnabled
+        ? L.T("CD-Extra：导出第 2 区段（图片数据轨）的 ISO，只适用于从下方起点开始的第 2 区段；程序内刻录会自动写入音乐和图片两个区段。")
+        : HasCdFiles
+            ? L.T("包含随盘文件，导出为 CD 数据盘 ISO。")
+            : L.T("无随盘文件时生成音轨，推荐 WAV 格式。");
 
     partial void OnCdDataDirectoryChanged(string value) => NormalizeCdOutputFormat();
+
+    partial void OnCdExtraEnabledChanged(bool value) => NormalizeCdOutputFormat();
+
+    // The audio format (.wav or .raw) last chosen for the CD output, restored when an ISO
+    // output (data disc or CD-Extra picture session) returns to an audio track.
+    private string _cdAudioExtension = ".wav";
+
+    /// <summary>Takes the audio format from the project being opened (its saved output path),
+    /// so neither the previous project's choice nor an unchanged path string leaks through.</summary>
+    internal void ResetCdAudioFormat(string? projectOutputPath)
+        => _cdAudioExtension = Path.GetExtension(projectOutputPath?.Trim() ?? string.Empty)
+            .Equals(".raw", StringComparison.OrdinalIgnoreCase) ? ".raw" : ".wav";
+
+    partial void OnCdOutputPathChanged(string value)
+    {
+        string extension = Path.GetExtension(value.Trim());
+        if (extension.Equals(".wav", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".raw", StringComparison.OrdinalIgnoreCase))
+            _cdAudioExtension = extension.ToLowerInvariant();
+    }
 
     internal void NormalizeCdOutputFormat()
     {
         string output = CdOutputPath.Trim();
         if (output.Length == 0) return;
         string extension = Path.GetExtension(output);
-        if (HasCdFiles && (extension.Equals(".wav", StringComparison.OrdinalIgnoreCase)
+        if (IsCdIsoOutput && (extension.Equals(".wav", StringComparison.OrdinalIgnoreCase)
             || extension.Equals(".raw", StringComparison.OrdinalIgnoreCase)))
         {
             CdOutputPath = Path.ChangeExtension(output, ".iso");
         }
-        else if (!HasCdFiles && extension.Equals(".iso", StringComparison.OrdinalIgnoreCase))
+        else if (!IsCdIsoOutput && extension.Equals(".iso", StringComparison.OrdinalIgnoreCase))
         {
-            CdOutputPath = Path.ChangeExtension(output, ".wav");
+            CdOutputPath = Path.ChangeExtension(output, _cdAudioExtension);
         }
     }
 
