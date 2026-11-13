@@ -86,6 +86,8 @@ internal static class ProjectSession
                 state.CdPitchLinear = state.CdActualPitchLinear = Format(geometry.PitchLinear);
                 state.CdPitchQuadratic = state.CdActualPitchQuadratic = Format(geometry.PitchQuadratic);
                 state.CdPitchCubic = state.CdActualPitchCubic = Format(geometry.PitchCubic);
+                // The previous project's .wav/.raw choice must not resurface in this one.
+                state.ResetCdAudioFormat(outputs.OutputPath);
                 state.CdDataDirectory = outputs.DataDirectory;
                 state.CdFilesAtOuterRing = outputs.FilesAtOuterRing;
                 state.CdOuterRingBleed = outputs.OuterRingBleed;

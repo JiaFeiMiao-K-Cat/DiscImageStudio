@@ -10,6 +10,8 @@
 - 设计页占用区引导改用 CD、DVD、BD 的真实布局规划器，并按可用（可写）容量计算，包含文件系统元数据、逐文件扇区取整与对齐；与 #96 的碎片化放置共用与图片无关的元数据预留。外圈放置文件时同时标出内圈元数据，支持多个环形区域。文件夹或盘片参数变化后延迟合并计算，图片编辑不再触发重算。
 - 生成 CD／DVD 数据盘 ISO 时校验卷标长度：超过 Joliet 的 16 个字符会在写入前报错，不再静默截断；导出页的卷标输入限制为 16 个字符并显示提示，蓝光 UDF 卷标不受影响。
 - 关于页在 GitHub 按钮左侧新增「检查更新」：从上游 GitHub Release 的 `latest.json` 获取正式版信息，按当前处理器架构下载便携 EXE，核对长度与 SHA-256 后替换并重启；替换失败或新版本启动即退出时恢复旧 EXE，应用目录不可写时提示手动下载。更新包与清单未签名，完整性只相对发布清单有意义。
+- CD 音轨读回预览接受 WAVE_FORMAT_EXTENSIBLE 封装的 44.1 kHz、16 位立体声 PCM WAV（不少编辑软件这样导出）；浮点、24 位和多声道仍然拒绝。
+- CD 输出格式：加入随盘文件使输出变为 ISO 后，再去掉随盘文件时恢复为之前选择的 .raw 或 .wav，不再一律变成 .wav；打开工程时按该工程保存的输出路径决定，不沿用上一个工程的选择。
 
 ### English
 
@@ -24,6 +26,8 @@
 - Removed the "Show data occupancy area" toggle; the blue guide is always visible.
 - Validate volume-label length when generating CD/DVD data ISOs: labels longer than Joliet's 16 characters now fail before writing instead of being silently truncated. The export page limits label input to 16 characters with a hint; Blu-ray UDF labels are unaffected.
 - Add "Check for updates" to the About page, left of the GitHub button. It reads the stable release manifest (`latest.json`) from upstream GitHub Releases, downloads the portable EXE for the current processor architecture, verifies its length and SHA-256, then replaces the running file and restarts. A failed replacement, or a new build that exits during startup, restores the old EXE; a non-writable application folder prompts a manual download. The manifest and EXE remain unsigned, so integrity only holds relative to the published manifest.
+- CD track read-back preview accepts WAVE_FORMAT_EXTENSIBLE 44.1 kHz 16-bit stereo PCM WAVs, as several editors export them; float, 24-bit and multichannel files are still rejected.
+- CD output format: removing the disc files after they turned the output into an ISO restores the .raw or .wav chosen before instead of always .wav; opening a project takes the format from that project's saved output path, not from the previous project.
 
 ## [1.5.0] - 2026-11-07
 
