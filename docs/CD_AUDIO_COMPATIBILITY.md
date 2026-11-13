@@ -32,7 +32,7 @@ CD 工程在设计页的「音乐」卡片中选择「音乐 + 图片」并添�
 
 两种位置各有取舍：
 
-- **外圈**：盘片是标准的单区段音频 CD。图片从 LBA 0 开始，地址在写入前就确定，不依赖光驱报告的地址；没有区段间隔，曲目之间也没有强制的 2 秒间隔。代价是图片以音频采样的形式存在于第 1 首之前：在第 1 首开头继续倒退，或用能读取预间隙的抓轨软件，会读到它，听到的是噪声；这种盘不能附带随盘文件。
+- **外圈**：盘片是标准的单区段音频 CD。图片从 LBA 0 开始，地址在写入前就确定，不依赖光驱报告的地址；没有区段间隔，曲目之间也没有强制的 2 秒间隔。代价是图片以音频采样的形式存在于第 1 首之前：允许倒退进预间隙的 CD 机，或能读取预间隙的抓轨软件，会读到它，听到的是噪声（实测的三台 CD 机在第 1 首开头倒退都不会播到它）；这种盘不能附带随盘文件。
 - **内圈（CD-Extra）**：图片在数据区段里，CD 机不会把它当音频播放，也可以附带随盘文件。代价是区段间隔占 11,400 扇区（约 1 mm 宽的环）不能绘图，图片起点取决于光驱关闭第 1 区段后报告的地址，曲目之间有 2 秒间隔，个别老式 CD 机不识别多区段盘。
 
 两种位置的音乐要求相同：只接受 44.1 kHz、16 位、立体声 PCM 的 WAV（包括 WAVE_FORMAT_EXTENSIBLE 封装的 16 位 PCM），样本原样写入，不转码、不调整音量；每首向上取整到整扇区，不足 4 秒（300 扇区）的曲目在末尾补数字静音；最多 98 首。
@@ -65,9 +65,9 @@ FILE "disc.wav" WAVE
 
 用外部软件刻录时必须整盘一次写入（DAO／SAO）并使用这个 CUE，例如 ImgBurn 的「Write image file to disc」或 `cdrecord -dao cuefile=disc.cue`；Track-at-Once 会把预间隙写成静音，图片就没有了。命令行用 `cd-generate --music 文件夹 --output disc.wav`（`--music-position` 默认为 `outer`）。读回预览显示整个文件：图片在内，音乐表现为外缘的一圈噪声纹理，与实际盘面一致。
 
-外圈布局第一次实刻时发现并修正了上面的咔声问题；修正后重新刻的盘在电脑上用 PotPlayer、在 CD 机（Syitern R300）上播放都正常，没有杂音；在水月雨梦想碟机2 上也播放正常，曲目数量正确，在第 1 首开头倒退不会播到图片，盘面图片的位置和方向正常。目前只有这两种 CD 机的结果；很长的预间隙（几十分钟）在其他 CD 机上的寻轨和时间显示、以及各光驱的 DAO 写入，仍有待实测。
+外圈布局第一次实刻时发现并修正了上面的咔声问题；修正后重新刻的盘在电脑上用 PotPlayer、在 CD 机（Syitern R300）上播放都正常，没有杂音；在水月雨梦想碟机2 上也播放正常，曲目数量正确，在第 1 首开头倒退不会播到图片，盘面图片的位置和方向正常。之后在三台 CD 机（Syitern R300、索尼 D232 老式机、水月雨梦想碟机2）上逐项检查都正常；CD 机显示的总时间是 79:59 而不是音乐长度，因为音乐排到盘片末尾、总时间按导出区位置计算，预间隙里的图片也算在内，不影响播放。很长的预间隙（几十分钟）在其他 CD 机上的寻轨、以及其他光驱的 DAO 写入，仍有待实测。
 
-English: with "Music + picture", CD players play the music and never the picture. "Music position" selects the disc structure. **Outer (default)**: one Disc-at-Once audio session; the picture is the index 0 pre-gap of track 1 from LBA 0 and the gapless music ends at the usable capacity. The last two seconds of the pre-gap are digital silence, because audio and index are not aligned to the sample on a burned disc and the picture would otherwise reach into track 1 (a first burn without the silence clicked at 0:00). Every address is fixed before writing and there is no session gap, but the picture exists as audio samples in front of track 1 (rewinding past the start of track 1 plays it as noise) and disc files are not possible. The export is one WAV with a CUE sheet whose track 1 has `INDEX 00 00:00:00`; it must be burned Disc-at-Once. **Inner**: a CD-Extra disc, described below. Both layouts have been burned and play on a CD player; so far this is the result of one recorder and two player models (Syitern R300 and MOONDROP DISCDREAM 2).
+English: with "Music + picture", CD players play the music and never the picture. "Music position" selects the disc structure. **Outer (default)**: one Disc-at-Once audio session; the picture is the index 0 pre-gap of track 1 from LBA 0 and the gapless music ends at the usable capacity. The last two seconds of the pre-gap are digital silence, because audio and index are not aligned to the sample on a burned disc and the picture would otherwise reach into track 1 (a first burn without the silence clicked at 0:00). Every address is fixed before writing and there is no session gap, but the picture exists as audio samples in front of track 1 (a player that rewinds into the pre-gap, or a ripper that reads it, plays it as noise; none of the three tested players does) and disc files are not possible. The export is one WAV with a CUE sheet whose track 1 has `INDEX 00 00:00:00`; it must be burned Disc-at-Once. **Inner**: a CD-Extra disc, described below. Both layouts have been burned and play on three CD players (Syitern R300, an old Sony D232 and a MOONDROP DISCDREAM 2), which show a total time of 79:59 without any effect on playback; so far this is the result of one recorder.
 
 ### 音乐在内圈：CD-Extra
 
@@ -101,7 +101,7 @@ English: with "Music + picture", CD players play the music and never the picture
 3. 「模拟写入」让光驱执行同样的写入命令但不改变盘片，也不关闭区段，可先用来确认光驱接受 Track-at-Once 与多区段设置。
 4. 中途取消、失败或断电可能使盘片报废；若第 1 区段已经关闭，音乐仍可在 CD 机播放。
 
-这一流程已实刻过一张盘：CD 机（Syitern R300）播放音乐正常，在第 1 首开头继续快退时停在 0:00，盘面图片的位置和方向与设计一致。水月雨梦想碟机2 上同样播放正常，曲目数量正确，倒退也播不到图片。目前只有一台刻录机的结果，记录见 [VALIDATION.md](VALIDATION.md#实盘验证边界)。
+这一流程已实刻过一张盘：CD 机（Syitern R300）播放音乐正常，在第 1 首开头继续快退时停在 0:00，盘面图片的位置和方向与设计一致。水月雨梦想碟机2 上同样播放正常，曲目数量正确，倒退也播不到图片。之后在三台 CD 机（Syitern R300、索尼 D232 老式机、水月雨梦想碟机2）上逐项检查都正常，只有总时间显示为 79 分 59 秒而不是音乐长度，不影响播放，原因还没有确认。目前只有一台刻录机的结果，记录见 [VALIDATION.md](VALIDATION.md#实盘验证边界)。
 
 导出与外部刻录：导出页在 CD-Extra 模式下输出第 2 区段的 ISO 和同名 `.iso.json`。ISO 内所有地址都是整盘绝对 LBA（与 `mkisofs -C` 相同的约定），只有第 2 区段真正从生成时的地址开始，文件系统才可读、图片才不会旋转。「实测第 2 区段起点 LBA」留空时按预计起点生成（假设第 1 区段按 Track-at-Once 刻录）；用外部软件刻录时，先以 Track-at-Once 写入音乐并保持可追加，读取下一区段起点，填入该栏（或用 CLI 的 `--session2-start-lba`）后重新生成 ISO。两处都接受 `cdrecord -msinfo` 的原样输出，例如 `0,15055`。更换音乐或工程时该栏自动清空。下面以 cdrecord 为例，此流程尚未在实际光驱上验证：
 
