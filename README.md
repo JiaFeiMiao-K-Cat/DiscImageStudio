@@ -25,9 +25,11 @@ Disc Image Studio 是一个多平台的光盘盘面图像生成与刻录工具�
 
 ## 效果预览
 
-![](docs/images/case1.jpg)
-
-![](docs/images/case2.jpg)
+<p align="center">
+  <img src="docs/images/case1.jpg" alt="盘面效果示例" height="300">
+  <a href="https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues/61"><img src="docs/images/case-community-61.jpg" alt="社区提供的盘面效果示例（Issue #61）" height="300"></a>
+  <img src="docs/images/case2.jpg" alt="盘面效果示例" height="300">
+</p>
 
 ---
 

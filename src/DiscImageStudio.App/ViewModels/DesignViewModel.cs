@@ -467,6 +467,7 @@ public partial class DesignViewModel : ObservableObject
         if (e.PropertyName is
             nameof(DiscParametersState.CdDataDirectory) or nameof(DiscParametersState.CdVolumeLabel)
             or nameof(DiscParametersState.CdFilesAtOuterRing)
+            or nameof(DiscParametersState.CdOuterRingBleed)
             or nameof(DiscParametersState.CdExtraEnabled) or nameof(DiscParametersState.CdMusicTracks)
             or nameof(DiscParametersState.CdInnerRadius) or nameof(DiscParametersState.CdOuterRadius)
             or nameof(DiscParametersState.CdSectors) or nameof(DiscParametersState.CdUsableSectors)
@@ -474,12 +475,14 @@ public partial class DesignViewModel : ObservableObject
             or nameof(DiscParametersState.CdPitchCubic)
             or nameof(DiscParametersState.DvdDataDirectory) or nameof(DiscParametersState.DvdVolumeLabel)
             or nameof(DiscParametersState.DvdFilesAtOuterRing)
+            or nameof(DiscParametersState.DvdOuterRingBleed)
             or nameof(DiscParametersState.DvdTotalSectors) or nameof(DiscParametersState.DvdUsableSectors)
             or nameof(DiscParametersState.DvdInnerRadius) or nameof(DiscParametersState.DvdOuterRadius)
             or nameof(DiscParametersState.DvdPitchLinear) or nameof(DiscParametersState.DvdPitchQuadratic)
             or nameof(DiscParametersState.DvdPitchCubic)
             or nameof(DiscParametersState.BdDataDirectory) or nameof(DiscParametersState.BdVolumeLabel)
             or nameof(DiscParametersState.BdFilesAtOuterRing)
+            or nameof(DiscParametersState.BdOuterRingBleed)
             or nameof(DiscParametersState.BdTotalSectors) or nameof(DiscParametersState.BdUsableSectors)
             or nameof(DiscParametersState.BdInnerRadius) or nameof(DiscParametersState.BdOuterRadius)
             or nameof(DiscParametersState.BdPitchLinear) or nameof(DiscParametersState.BdPitchQuadratic)
@@ -593,7 +596,7 @@ public partial class DesignViewModel : ObservableObject
     /// touches the parameter state.</summary>
     private DataRegionInputs CaptureDataRegionInputs()
     {
-        string directory, label, totalText, usableText, innerText, outerText;
+        string directory, label, totalText, innerText, outerText;
         string pitchLinear, pitchQuadratic, pitchCubic;
         bool filesAtOuterRing;
         switch (Family)
@@ -602,7 +605,6 @@ public partial class DesignViewModel : ObservableObject
                 directory = _state.DvdDataDirectory;
                 label = _state.DvdVolumeLabel;
                 totalText = _state.DvdTotalSectors;
-                usableText = _state.DvdUsableSectors;
                 innerText = _state.DvdInnerRadius;
                 outerText = _state.DvdOuterRadius;
                 pitchLinear = _state.DvdPitchLinear;
@@ -614,7 +616,6 @@ public partial class DesignViewModel : ObservableObject
                 directory = _state.BdDataDirectory;
                 label = _state.BdVolumeLabel;
                 totalText = _state.BdTotalSectors;
-                usableText = _state.BdUsableSectors;
                 innerText = _state.BdInnerRadius;
                 outerText = _state.BdOuterRadius;
                 pitchLinear = _state.BdPitchLinear;
@@ -626,7 +627,6 @@ public partial class DesignViewModel : ObservableObject
                 directory = _state.CdDataDirectory;
                 label = _state.CdVolumeLabel;
                 totalText = _state.CdSectors;
-                usableText = _state.CdUsableSectors;
                 innerText = _state.CdInnerRadius;
                 outerText = _state.CdOuterRadius;
                 pitchLinear = _state.CdPitchLinear;
@@ -655,7 +655,9 @@ public partial class DesignViewModel : ObservableObject
             } : label.Trim(),
             FilesAtOuterRing: directoryPath.Length > 0 && filesAtOuterRing,
             totalSectors,
-            DiscParametersState.ParseUsableSectors(Family, totalSectors, usableText),
+            // The guide must plan with the same capacity the export writes: the outer-ring
+            // bleed cap is part of the resolved limit, not a separate drawing-only rule.
+            _state.GetUsableSectors(Family),
             ParameterParser.ParsePositiveDouble(innerText, L.T(innerPrompt)),
             ParameterParser.ParsePositiveDouble(outerText, L.T(outerPrompt)),
             ParameterParser.ParseDouble(pitchLinear, L.T("相对一次项")),

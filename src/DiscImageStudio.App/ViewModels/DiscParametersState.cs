@@ -84,6 +84,9 @@ public partial class DiscParametersState : ObservableObject
         nameof(CdOutputLabel), nameof(CdOutputHint), nameof(UsesCdVolumeLabel))]
     private string _cdDataDirectory = string.Empty;
     [ObservableProperty] private bool _cdFilesAtOuterRing;
+    // Outer-ring bleed pulls the data area's outer edge inward to ~95% of the medium's
+    // standard capacity, leaving the poorest-quality outermost ring unwritten (issue 312).
+    [ObservableProperty] private bool _cdOuterRingBleed;
     [ObservableProperty] private string _cdVolumeLabel = DefaultCdVolumeLabel;
 
     /// <summary>CD-Extra: the music forms session 1 and the picture becomes the data track
@@ -116,6 +119,7 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty] private string _dvdOutputPath = string.Empty;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDvdFiles))] private string _dvdDataDirectory = string.Empty;
     [ObservableProperty] private bool _dvdFilesAtOuterRing;
+    [ObservableProperty] private bool _dvdOuterRingBleed;
     [ObservableProperty] private bool _dvdReadCompatibility;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(DvdPitchSummary), nameof(DvdActualPitchSummary))] private string _dvdTotalSectors = "2295104";
     [ObservableProperty] private string _dvdUsableSectors = string.Empty;
@@ -142,6 +146,7 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty] private string _bdOutputPath = string.Empty;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasBluRayFiles))] private string _bdDataDirectory = string.Empty;
     [ObservableProperty] private bool _bdFilesAtOuterRing;
+    [ObservableProperty] private bool _bdOuterRingBleed;
     [ObservableProperty] private string _bdVolumeLabel = DefaultBluRayVolumeLabel;
     [ObservableProperty] private string _bdTotalSectors = "12219392";
     [ObservableProperty] private string _bdUsableSectors = string.Empty;
@@ -344,14 +349,82 @@ public partial class DiscParametersState : ObservableObject
 
     public IReadOnlyList<BluRayDiscPreset> BluRayPresets => _bluRayPresets;
 
-    public long GetUsableSectors(OpticalDiscFamily family)
+    /// <summary>Resolved writable capacity for generation, preview and burn. The outer-ring
+    /// bleed cap applies here so every recording path shares it; persistence and calibration
+    /// pass <paramref name="applyOuterRingBleed"/> = false to keep the underlying limit.</summary>
+    public long GetUsableSectors(OpticalDiscFamily family, bool applyOuterRingBleed = true)
     {
-        string totalText = family == OpticalDiscFamily.Dvd ? DvdTotalSectors
-            : family == OpticalDiscFamily.BluRay ? BdTotalSectors : CdSectors;
         string usableText = family == OpticalDiscFamily.Dvd ? DvdUsableSectors
             : family == OpticalDiscFamily.BluRay ? BdUsableSectors : CdUsableSectors;
-        long total = ParameterParser.ParsePositiveLong(totalText, L.T("总扇区数"));
-        return ParseUsableSectors(family, total, usableText);
+        long total = ParameterParser.ParsePositiveLong(TotalSectorsText(family), L.T("总扇区数"));
+        long resolved = ParseUsableSectors(family, total, usableText);
+        if (applyOuterRingBleed && ShouldApplyOuterRingBleed(family))
+            resolved = Math.Min(resolved, OuterRingBleedCap(family, total));
+        return resolved;
+    }
+
+    private string TotalSectorsText(OpticalDiscFamily family)
+        => family == OpticalDiscFamily.Dvd ? DvdTotalSectors
+            : family == OpticalDiscFamily.BluRay ? BdTotalSectors : CdSectors;
+
+    /// <summary>Usable count to adopt from a generated artifact's sidecar. The sidecar records
+    /// the effective output, so with bleed enabled it carries the 95% cap; adopting that value
+    /// would bake the preference into the raw limit and stop a later toggle from restoring the
+    /// full capacity. Keep the raw limit when the sidecar value is exactly the cap for its
+    /// total. <paramref name="filesAtOuterRing"/> comes from the sidecar: the state still
+    /// holds the previous layout while adoption runs.</summary>
+    internal long ResolveAdoptedUsableSectors(OpticalDiscFamily family, long metadataTotal,
+        long? metadataUsable, bool filesAtOuterRing)
+    {
+        long effective = metadataUsable ?? metadataTotal;
+        if (metadataUsable is not { } incoming
+            || !filesAtOuterRing
+            || !BleedEnabled(family)
+            || incoming != OuterRingBleedCap(family, metadataTotal))
+        {
+            return effective;
+        }
+
+        try
+        {
+            long currentTotal = ParameterParser.ParsePositiveLong(TotalSectorsText(family), L.T("总扇区数"));
+            // A sidecar from a different disc still records that disc's capped output; keep
+            // the raw limit the metadata total implies instead of its bleed cap.
+            long raw = currentTotal == metadataTotal
+                ? GetUsableSectors(family, applyOuterRingBleed: false)
+                : ResolveUsableSectors(family, metadataTotal);
+            return raw > incoming ? raw : effective;
+        }
+        catch (Exception exception) when (exception is ArgumentException or FormatException or OverflowException)
+        {
+            return effective;
+        }
+    }
+
+    private bool BleedEnabled(OpticalDiscFamily family) => family switch
+    {
+        OpticalDiscFamily.Dvd => DvdOuterRingBleed,
+        OpticalDiscFamily.BluRay => BdOuterRingBleed,
+        _ => CdOuterRingBleed,
+    };
+
+    /// <summary>Bleed only concerns sidecar files written to the outer ring; a stale placement
+    /// flag with no folder, an inner-ring layout or pure artwork must keep the full capacity.</summary>
+    private bool ShouldApplyOuterRingBleed(OpticalDiscFamily family) => family switch
+    {
+        OpticalDiscFamily.Dvd => HasDvdFiles && DvdFilesAtOuterRing && DvdOuterRingBleed,
+        OpticalDiscFamily.BluRay => HasBluRayFiles && BdFilesAtOuterRing && BdOuterRingBleed,
+        _ => HasCdFiles && CdFilesAtOuterRing && CdOuterRingBleed,
+    };
+
+    internal const int OuterRingBleedPercent = 95;
+
+    /// <summary>95% of the standard capacity, rounded down to the family's write alignment.</summary>
+    internal static long OuterRingBleedCap(OpticalDiscFamily family, long total)
+    {
+        int alignment = family == OpticalDiscFamily.Dvd ? 16 : family == OpticalDiscFamily.BluRay ? 32 : 1;
+        long capped = total * OuterRingBleedPercent / 100;
+        return capped / alignment * alignment;
     }
 
     internal static long ParseUsableSectors(OpticalDiscFamily family, long total, string text)

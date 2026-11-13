@@ -1754,6 +1754,24 @@
     "es": "Zona exterior",
     "cs": "Vnější prstenec"
   },
+  "Xaml.OuterRingBleed": {
+    "zh-CN": "外缘出血",
+    "en": "Outer-edge bleed",
+    "zh-TW": "外緣出血",
+    "ja": "外縁マージン",
+    "tr": "Dış kenar payı",
+    "es": "Margen exterior",
+    "cs": "Vnější rezerva"
+  },
+  "Xaml.OuterRingBleedHint": {
+    "zh-CN": "将外圈数据区的末尾内移到介质标准容量的约 95%，避开刻录质量较差的最外缘。仅在外圈放置文件时生效。",
+    "en": "Moves the end of the outer-ring data area inward to about 95% of the medium's standard capacity, avoiding the poorer-quality outermost edge. Applies only when files are placed in the outer ring.",
+    "zh-TW": "將外圈資料區的末尾內移到介質標準容量的約 95%，避開燒錄品質較差的最外緣。僅在外圈放置檔案時生效。",
+    "ja": "外周データ領域の終端をメディア標準容量の約95%まで内側に移動し、記録品質が低下する最外周を避けます。外周にファイルを配置した場合のみ有効です。",
+    "tr": "Dış halka veri alanının sonunu, ortamın standart kapasitesinin yaklaşık %95'ine kadar içe taşır; böylece kayıt kalitesi düşük en dış kenar boş bırakılır. Yalnızca dosyalar dış halkaya yerleştirildiğinde geçerlidir.",
+    "es": "Mueve el final del área de datos del anillo exterior hacia dentro, hasta aproximadamente el 95 % de la capacidad estándar del medio, evitando el borde exterior de menor calidad de grabación. Solo se aplica cuando los archivos se colocan en el anillo exterior.",
+    "cs": "Konec datové oblasti vnějšího prstence se posune dovnitř na přibližně 95 % standardní kapacity média. Nejkrajnější okraj má horší kvalitu záznamu, proto zůstane nevyužitý. Platí pouze pro soubory umístěné ve vnějším prstenci."
+  },
   "Xaml.UsesAnAudioTrackWithoutFilesSwitchesToA": {
     "zh-CN": "不附文件时使用音轨；附文件时自动使用数据盘。",
     "en": "Uses an audio track without files; switches to a data disc when files are included.",
