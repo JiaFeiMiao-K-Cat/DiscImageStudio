@@ -240,6 +240,9 @@
                                                    Margin="6,0,0,0" VerticalAlignment="Center"
                                                    TextWrapping="Wrap" MaxWidth="260" />
                                     </StackPanel>
+                                    <TextBlock Style="{StaticResource HintText}" Margin="0,0,0,12"
+                                               Text="{Binding DataRegionNotice}" TextWrapping="Wrap"
+                                               Visibility="{Binding HasDataRegionNotice, Converter={StaticResource BoolToVisibility}}" />
                                     <controls:VisibilityGate IsOpen="{Binding IsCd}">
                                         <StackPanel>
                                             <controls:PathField Label="{loc:Text Xaml.Folder}" Compact="True"
@@ -247,7 +250,16 @@
                                                                 ToolTip="{Binding State.CdDataDirectory}"
                                                                 ButtonLabel="{loc:Text Xaml.Browse}"
                                                                 Command="{Binding BrowseDataCommand}" />
-                                            <controls:VisibilityGate IsOpen="{Binding State.HasCdFiles}">
+                                            <!-- ISO sources are experimental; see docs/RAW_ISO_SOURCES.md. -->
+                                            <controls:PathField Label="{loc:Text Xaml.CueOrExperimentalIsoSource}" Compact="True" Margin="0,12,0,0"
+                                                                Text="{Binding State.CdDataImagePath}"
+                                                                ToolTip="{Binding State.CdDataImagePath}"
+                                                                ButtonLabel="{loc:Text Xaml.Browse}"
+                                                                Command="{Binding BrowseDataImageCommand}" />
+                                            <TextBlock Style="{StaticResource HintText}" Margin="0,6,0,0"
+                                                       Text="{loc:Text Xaml.CdIsoSourceExperimentalHint}"
+                                                       TextWrapping="Wrap" />
+                                            <controls:VisibilityGate IsOpen="{Binding State.HasCdFolder}">
                                                 <StackPanel Margin="0,14,0,0">
                                                     <TextBlock Style="{StaticResource FieldLabel}"
                                                                Text="{loc:Text Xaml.FilePlacement}" Margin="0,0,0,6" />
@@ -275,7 +287,15 @@
                                                                 ToolTip="{Binding State.DvdDataDirectory}"
                                                                 ButtonLabel="{loc:Text Xaml.Browse}"
                                                                 Command="{Binding BrowseDataCommand}" />
-                                            <controls:VisibilityGate IsOpen="{Binding State.HasDvdFiles}">
+                                            <controls:PathField Label="{loc:Text Xaml.ExperimentalIsoSource}" Compact="True" Margin="0,12,0,0"
+                                                                Text="{Binding State.DvdDataImagePath}"
+                                                                ToolTip="{Binding State.DvdDataImagePath}"
+                                                                ButtonLabel="{loc:Text Xaml.Browse}"
+                                                                Command="{Binding BrowseDataImageCommand}" />
+                                            <TextBlock Style="{StaticResource HintText}" Margin="0,6,0,0"
+                                                       Text="{loc:Text Xaml.IsoSourceExperimentalHint}"
+                                                       TextWrapping="Wrap" />
+                                            <controls:VisibilityGate IsOpen="{Binding State.HasDvdFolder}">
                                                 <StackPanel Margin="0,14,0,0">
                                                     <TextBlock Style="{StaticResource FieldLabel}"
                                                                Text="{loc:Text Xaml.FilePlacement}" Margin="0,0,0,6" />
@@ -301,7 +321,15 @@
                                                                 ToolTip="{Binding State.BdDataDirectory}"
                                                                 ButtonLabel="{loc:Text Xaml.Browse}"
                                                                 Command="{Binding BrowseDataCommand}" />
-                                            <controls:VisibilityGate IsOpen="{Binding State.HasBluRayFiles}">
+                                            <controls:PathField Label="{loc:Text Xaml.ExperimentalIsoSource}" Compact="True" Margin="0,12,0,0"
+                                                                Text="{Binding State.BdDataImagePath}"
+                                                                ToolTip="{Binding State.BdDataImagePath}"
+                                                                ButtonLabel="{loc:Text Xaml.Browse}"
+                                                                Command="{Binding BrowseDataImageCommand}" />
+                                            <TextBlock Style="{StaticResource HintText}" Margin="0,6,0,0"
+                                                       Text="{loc:Text Xaml.IsoSourceExperimentalHint}"
+                                                       TextWrapping="Wrap" />
+                                            <controls:VisibilityGate IsOpen="{Binding State.HasBluRayFolder}">
                                                 <StackPanel Margin="0,14,0,0">
                                                     <TextBlock Style="{StaticResource FieldLabel}"
                                                                Text="{loc:Text Xaml.FilePlacement}" Margin="0,0,0,6" />

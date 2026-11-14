@@ -42,6 +42,12 @@ if (args is ["--test-dvd-read-compatibility"])
     return;
 }
 
+if (args is ["--test-dvd-typed-operations"])
+{
+    DvdTypedOperationTests.Run();
+    return;
+}
+
 if (args is ["--test-capacity-ui"])
 {
     DvdReadCompatibilityUiTests.Run();
@@ -71,6 +77,18 @@ if (args is ["--test-usable-sectors"])
 if (args is ["--test-data-region"])
 {
     DesignDataRegionTests.Run();
+    return;
+}
+
+if (args is ["--test-file-placement-preview"])
+{
+    FilePlacementPreviewTests.Run();
+    return;
+}
+
+if (args is ["--test-raw-iso-source"])
+{
+    RawIsoSourceTests.Run();
     return;
 }
 
@@ -151,6 +169,7 @@ BluRayPixelReuseTests.Run();
 BluRayCubicPitchTests.Run();
 BluRayCubicPreviewTests.Run();
 BluRayIsoTests.Run();
+RawIsoSourceTests.Run();
 BluRayDrawingModeTests.Run();
 BluRaySidecarTests.Run();
 BluRayFilePlacementTests.Run();

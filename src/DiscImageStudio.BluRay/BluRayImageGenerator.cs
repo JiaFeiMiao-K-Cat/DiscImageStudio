@@ -1,4 +1,5 @@
 using DiscImageStudio.Core;
+using DiscImageStudio.Iso;
 
 namespace DiscImageStudio.BluRay;
 
@@ -11,7 +12,8 @@ public sealed record BluRayImageRequest(
     bool InvertMapping = false,
     string? DataDirectory = null,
     string VolumeLabel = "BD_IMAGE",
-    bool FilesAtOuterRing = false);
+    bool FilesAtOuterRing = false,
+    string? DataImagePath = null);
 
 public sealed class BluRayImageGenerator
 {
@@ -46,8 +48,24 @@ public sealed class BluRayImageGenerator
                 $"BD {value.CompletedBytes}/{value.TotalBytes} bytes", value.Fraction,
                 value.CompletedBytes, value.TotalBytes, value.Elapsed));
         });
-        BluRayStreamingSummary summary = BluRayIsoGenerator.GenerateFile(request.OutputPath,
-            plan, mapping, report, cancellationToken);
+        BluRayStreamingSummary? generatedSummary = null;
+        if (plan.SourceImagePath is { } sourceImage)
+        {
+            BluRayOutputPublisher.Write(request.OutputPath, stream =>
+            {
+                using RawIsoPrefixOverlayStream overlay = RawIsoImage.OverlayPrefix(
+                    stream, sourceImage, plan.TotalSectors);
+                generatedSummary = BluRayIsoGenerator.GenerateToStream(overlay, plan, mapping, report, cancellationToken);
+                overlay.Complete();
+            }, cancellationToken);
+        }
+        else
+        {
+            generatedSummary = BluRayIsoGenerator.GenerateFile(request.OutputPath,
+                plan, mapping, report, cancellationToken);
+        }
+        BluRayStreamingSummary summary = generatedSummary
+            ?? throw new InvalidOperationException("Blu-ray image generation completed without a summary.");
         BluRayIsoMetadata.FromPlan(plan, request.SourceImage, request.OutputPath,
             request.InvertMapping, request.Tone, DateTimeOffset.Now).Save(request.OutputPath);
         cancellationToken.ThrowIfCancellationRequested();
@@ -70,8 +88,14 @@ public sealed class BluRayImageGenerator
         request.Tone.Validate("tone");
         if (request.Tone.Levels != ToneProfile.TwoLevels)
             throw new ArgumentException("BD image generation accepts only two tone levels.", nameof(request));
-        BluRayIsoPlan plan = BluRayIsoGenerator.PrepareDrawing(request.Parameters, request.DataDirectory,
-            request.VolumeLabel, filesAtOuterRing: request.FilesAtOuterRing);
+        string? dataDirectory = request.DataDirectory?.Trim();
+        string? dataImagePath = request.DataImagePath?.Trim();
+        if (!string.IsNullOrEmpty(dataDirectory) && !string.IsNullOrEmpty(dataImagePath))
+            throw new ArgumentException("Choose either a data folder or an image source, not both.", nameof(request));
+        BluRayIsoPlan plan = !string.IsNullOrEmpty(dataImagePath)
+            ? BluRayIsoGenerator.PrepareRawImage(request.Parameters, dataImagePath)
+            : BluRayIsoGenerator.PrepareDrawing(request.Parameters, dataDirectory,
+                request.VolumeLabel, filesAtOuterRing: request.FilesAtOuterRing);
         BluRayIsoGenerator.ValidateOutputPath(request.OutputPath, plan);
         return plan;
     }

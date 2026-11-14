@@ -9,6 +9,7 @@ using DiscImageStudio.Cd;
 using DiscImageStudio.Core;
 using DiscImageStudio.Core.Calibration;
 using DiscImageStudio.Dvd;
+using DiscImageStudio.Iso;
 using DiscImageStudio.Services;
 
 namespace DiscImageStudio.ViewModels;
@@ -124,9 +125,8 @@ public partial class BurnViewModel : ObservableObject
                 OnPropertyChanged(nameof(DvdReadCompatibility));
                 UpdateSourceSummary();
             }
-            if (args.PropertyName == nameof(DiscParametersState.CdDataDirectory)
-                && !UseCalibrationPattern
-                && _shell.CurrentProject?.Family == OpticalDiscFamily.CompactDisc)
+            if (!UseCalibrationPattern && _shell.CurrentProject is { } project
+                && IsDataSourcePropertyChanged(project.Family, args.PropertyName))
             {
                 OnFamilyInputsChanged();
             }
@@ -198,7 +198,8 @@ public partial class BurnViewModel : ObservableObject
         ? OpticalBurnMediaKind.BluRayData
         : IsDvdBurn
             ? OpticalBurnMediaKind.DvdData
-            : !UseCalibrationPattern && !string.IsNullOrWhiteSpace(_state.CdDataDirectory)
+            : !UseCalibrationPattern && (!string.IsNullOrWhiteSpace(_state.CdDataDirectory)
+                || !string.IsNullOrWhiteSpace(_state.CdDataImagePath))
                 ? OpticalBurnMediaKind.CdData : OpticalBurnMediaKind.CdAudio;
 
     /// <summary>Device→speeds→confirm gating: not busy, device chosen, checkbox ticked.</summary>
@@ -206,6 +207,8 @@ public partial class BurnViewModel : ObservableObject
         => !_shell.IsBusy
             && !_isPreparingBurn
             && SelectedDevice is not null
+            && (UseCalibrationPattern || _shell.CurrentProject?.Family != OpticalDiscFamily.CompactDisc
+                || !_state.IsCdCueSource)
             && ConfirmChecked;
 
     private void InvalidateConfirmation()
@@ -278,7 +281,9 @@ public partial class BurnViewModel : ObservableObject
         }
         else if (IsDvdBurn)
         {
-            string dataSuffix = string.IsNullOrWhiteSpace(_state.DvdDataDirectory)
+            string dataSuffix = !string.IsNullOrWhiteSpace(_state.DvdDataImagePath)
+                ? L.T("；ISO 扇区原样保留在 LBA 0")
+                : string.IsNullOrWhiteSpace(_state.DvdDataDirectory)
                 ? string.Empty
                 : _state.DvdFilesAtOuterRing ? L.T("；文件位于外圈，图案位于其内侧") : L.T("；文件位于内圈，图案位于其外侧");
             SourceTitle = _design.HasLayers
@@ -290,12 +295,14 @@ public partial class BurnViewModel : ObservableObject
             identity = string.Join("\u001f", "dvd", _design.CompositeRevision, _state.DvdTotalSectors, _state.DvdUsableSectors,
                 _state.DvdInnerRadius, _state.DvdOuterRadius,
                 _state.DvdPitchLinear, _state.DvdPitchQuadratic, _state.DvdPitchCubic,
-                _state.DvdDataDirectory, _state.DvdVolumeLabel, _state.DvdFilesAtOuterRing, _state.DvdOuterRingBleed, _state.DvdReadCompatibility,
+                _state.DvdDataDirectory, _state.DvdDataImagePath, _state.DvdVolumeLabel, _state.DvdFilesAtOuterRing, _state.DvdOuterRingBleed, _state.DvdReadCompatibility,
                 _state.ToneDitherStrength, _state.ToneBrightness, _state.ToneSrgbLinearization);
         }
         else if (IsBluRayBurn)
         {
-            string dataSuffix = string.IsNullOrWhiteSpace(_state.BdDataDirectory)
+            string dataSuffix = !string.IsNullOrWhiteSpace(_state.BdDataImagePath)
+                ? L.T("；ISO 扇区原样保留在 LBA 0")
+                : string.IsNullOrWhiteSpace(_state.BdDataDirectory)
                 ? string.Empty
                 : _state.BdFilesAtOuterRing ? L.T("；文件位于外圈，图案位于其内侧") : L.T("；文件位于内圈，图案位于其外侧");
             SourceTitle = _design.HasLayers
@@ -306,7 +313,7 @@ public partial class BurnViewModel : ObservableObject
                 ? L.F($"确保磁盘预留适量空间 · {polarity}") + dataSuffix
                 : L.F($"合成图会自动生成本页输入。 · {polarity}") + dataSuffix;
             identity = string.Join("\u001f", "bd", _design.CompositeRevision, _state.BdTotalSectors, _state.BdUsableSectors,
-                _state.BdInnerRadius, _state.BdOuterRadius, _state.BdDataDirectory,
+                _state.BdInnerRadius, _state.BdOuterRadius, _state.BdDataDirectory, _state.BdDataImagePath,
                 _state.BdPitchLinear, _state.BdPitchQuadratic, _state.BdPitchCubic,
                 _state.BdVolumeLabel, _state.BdInvertMapping, _state.BdFilesAtOuterRing, _state.BdOuterRingBleed,
                 _state.ToneDitherStrength, _state.ToneBrightness, _state.ToneSrgbLinearization);
@@ -318,7 +325,11 @@ public partial class BurnViewModel : ObservableObject
                 : L.T("请先在设计页导入图片");
             // The encoding is part of the material actually written, and the burn page has
             // no switch of its own: surfacing it here keeps the streamed bytes explainable.
-            string encoding = string.IsNullOrWhiteSpace(_state.CdDataDirectory)
+            string encoding = _state.IsCdCueSource
+                ? L.T("CUE/BIN 原始轨道：仅支持外部导出/刻录")
+                : !string.IsNullOrWhiteSpace(_state.CdDataImagePath)
+                    ? L.T("CD ISO 扇区原样保留在 LBA 0")
+                : string.IsNullOrWhiteSpace(_state.CdDataDirectory)
                 ? _state.CdInterleave ? L.T("CD 音轨 · 启用延迟交织") : L.T("CD 音轨 · 未交织")
                 : L.F($"CD 数据盘 · 文件位于{(_state.CdFilesAtOuterRing ? L.T("外圈") : L.T("内圈"))}");
             SourceDetails = _design.HasLayers
@@ -327,7 +338,7 @@ public partial class BurnViewModel : ObservableObject
             identity = string.Join("\u001f", "cd", _design.CompositeRevision, _state.CdSectors, _state.CdUsableSectors,
                 _state.CdInnerRadius, _state.CdOuterRadius, _state.CdInterleave,
                 _state.CdPitchLinear, _state.CdPitchQuadratic, _state.CdPitchCubic,
-                _state.CdDataDirectory, _state.CdVolumeLabel, _state.CdFilesAtOuterRing, _state.CdOuterRingBleed,
+                _state.CdDataDirectory, _state.CdDataImagePath, _state.CdVolumeLabel, _state.CdFilesAtOuterRing, _state.CdOuterRingBleed,
                 _state.ToneDitherStrength, _state.ToneLevels, _state.ToneBrightness,
                 _state.ToneSrgbLinearization);
         }
@@ -516,6 +527,18 @@ public partial class BurnViewModel : ObservableObject
             + $" · {speed.GetMegabytesPerSecond(mediaKind):0.0} MB/s{rotation}";
     }
 
+    private static bool IsDataSourcePropertyChanged(OpticalDiscFamily family, string? propertyName)
+        => family switch
+        {
+            OpticalDiscFamily.CompactDisc => propertyName is nameof(DiscParametersState.CdDataDirectory)
+                or nameof(DiscParametersState.CdDataImagePath),
+            OpticalDiscFamily.Dvd => propertyName is nameof(DiscParametersState.DvdDataDirectory)
+                or nameof(DiscParametersState.DvdDataImagePath),
+            OpticalDiscFamily.BluRay => propertyName is nameof(DiscParametersState.BdDataDirectory)
+                or nameof(DiscParametersState.BdDataImagePath),
+            _ => false,
+        };
+
     private async Task StartStreamBurnAsync()
     {
         if (_shell.IsBusy)
@@ -590,11 +613,14 @@ public partial class BurnViewModel : ObservableObject
                     double imageOuterRadiusMm = disc.OutputOuterRadiusMm;
                     disc = disc with { UsableSectors = checked((uint)StreamBurnCapacity.Resolve(disc.OutputSectors, capacity.WritableSectors, mediaKind)) };
                     string dataDirectory = _state.BdDataDirectory.Trim();
-                    BluRayIsoPlan plan = BluRayIsoGenerator.PrepareDrawing(
-                        disc,
-                        dataDirectory.Length == 0 ? null : dataDirectory,
-                        _state.ResolveVolumeLabel(OpticalDiscFamily.BluRay),
-                        filesAtOuterRing: dataDirectory.Length != 0 && _state.BdFilesAtOuterRing);
+                    string dataImagePath = _state.BdDataImagePath.Trim();
+                    BluRayIsoPlan plan = dataImagePath.Length > 0
+                        ? BluRayIsoGenerator.PrepareRawImage(disc, dataImagePath)
+                        : BluRayIsoGenerator.PrepareDrawing(
+                            disc,
+                            dataDirectory.Length == 0 ? null : dataDirectory,
+                            _state.ResolveVolumeLabel(OpticalDiscFamily.BluRay),
+                            filesAtOuterRing: dataDirectory.Length != 0 && _state.BdFilesAtOuterRing);
                     ToneProfile tone = _state.BluRayTone;
                     bool invert = _state.BdInvertMapping;
                     request = new OpticalBurnRequest(
@@ -607,8 +633,19 @@ public partial class BurnViewModel : ObservableObject
                                 compositePath, tone, cancellationToken);
                             BluRayImagePayloadMapping mapping = new(
                                 disc, raster, new BluRayRunLengthMapping(invert), imageOuterRadiusMm);
-                            BluRayIsoGenerator.GenerateToStream(
-                                output, plan, mapping, progress: null, cancellationToken);
+                            if (plan.SourceImagePath is { } sourceImage)
+                            {
+                                using RawIsoPrefixOverlayStream overlay = RawIsoImage.OverlayPrefix(
+                                    output, sourceImage, plan.TotalSectors);
+                                BluRayIsoGenerator.GenerateToStream(
+                                    overlay, plan, mapping, progress: null, cancellationToken);
+                                overlay.Complete();
+                            }
+                            else
+                            {
+                                BluRayIsoGenerator.GenerateToStream(
+                                    output, plan, mapping, progress: null, cancellationToken);
+                            }
                         },
                         selectedWriteSpeed.Speed);
                     contentDescription = L.F($"BD-R · {disc.OutputSectors} 扇区")
@@ -626,6 +663,7 @@ public partial class BurnViewModel : ObservableObject
                         UsableSectors = checked((uint)StreamBurnCapacity.Resolve(options.OutputSectors, capacity.WritableSectors, mediaKind)),
                     };
                     string dataDirectory = _state.DvdDataDirectory.Trim();
+                    string dataImagePath = _state.DvdDataImagePath.Trim();
                     DvdHybridStreamingPlan? hybridPlan = dataDirectory.Length == 0
                         ? null
                         : DvdStreamingGenerator.PrepareHybrid(
@@ -633,13 +671,26 @@ public partial class BurnViewModel : ObservableObject
                             options,
                             _state.ResolveVolumeLabel(OpticalDiscFamily.Dvd),
                             filesAtOuterRing: _state.DvdFilesAtOuterRing);
+                    if (dataImagePath.Length > 0)
+                        _ = RawIsoImage.Inspect(dataImagePath, options.OutputSectors);
                     request = new OpticalBurnRequest(
                         device.Id,
                         OpticalBurnMediaKind.DvdData,
                         options.ContentLength,
                         (output, cancellationToken) =>
                         {
-                            if (hybridPlan is null)
+                            if (dataImagePath.Length > 0)
+                            {
+                                using RawIsoPrefixOverlayStream overlay = RawIsoImage.OverlayPrefix(
+                                    output, dataImagePath, options.OutputSectors);
+                                DvdStreamingGenerator.Generate(
+                                    compositePath,
+                                    overlay,
+                                    options,
+                                    cancellationToken: cancellationToken);
+                                overlay.Complete();
+                            }
+                            else if (hybridPlan is null)
                             {
                                 DvdStreamingGenerator.Generate(
                                     compositePath,
@@ -659,7 +710,9 @@ public partial class BurnViewModel : ObservableObject
                         },
                         selectedWriteSpeed.Speed,
                         OverwriteRewritableMedia: AllowRewritableOverwrite);
-                    contentDescription = hybridPlan is null
+                    contentDescription = dataImagePath.Length > 0
+                        ? L.F($"DVD ISO 源扇区原样保留在 LBA 0 · {options.OutputSectors} 扇区")
+                        : hybridPlan is null
                         ? L.F($"DVD · {options.OutputSectors} 扇区 · {options.ContentLength / (1024.0 * 1024.0):F1} MiB")
                         : L.F($"DVD 混合盘 · {hybridPlan.FileCount} 个文件（{(_state.DvdFilesAtOuterRing ? L.T("外圈") : L.T("内圈"))}）")
                             + L.F($" · 绘图 LBA {hybridPlan.DrawingStartLba}–{hybridPlan.DrawingEndLbaExclusive - 1}")
@@ -682,9 +735,12 @@ public partial class BurnViewModel : ObservableObject
                         _state.CdInterleave,
                         _state.Tone,
                         device.Id,
-                        selectedWriteSpeed.Speed);
+                        selectedWriteSpeed.Speed,
+                        _state.CdDataImagePath);
                     contentDescription = request.MediaKind == OpticalBurnMediaKind.CdData
-                        ? L.F($"CD 数据盘（DAO） · 文件位于{(_state.CdFilesAtOuterRing ? L.T("外圈") : L.T("内圈"))}")
+                        ? !string.IsNullOrWhiteSpace(_state.CdDataImagePath)
+                            ? L.T("CD ISO 源扇区原样保留在 LBA 0")
+                            : L.F($"CD 数据盘（DAO） · 文件位于{(_state.CdFilesAtOuterRing ? L.T("外圈") : L.T("内圈"))}")
                         : L.T("CD 音轨");
                     contentDescription += L.F($" · {parameters.OutputSectors} 扇区 · {request.ContentLength / (1024.0 * 1024.0):F1} MiB");
                 }
@@ -787,11 +843,18 @@ public partial class BurnViewModel : ObservableObject
         bool interleave,
         ToneProfile tone,
         string deviceId,
-        OpticalWriteSpeed? writeSpeed)
+        OpticalWriteSpeed? writeSpeed,
+        string? dataImagePath = null)
     {
         parameters.Validate();
         ToneProfile capturedTone = tone.Normalized();
-        if (string.IsNullOrWhiteSpace(dataDirectory))
+        string? dataImagePathFull = dataImagePath?.Trim();
+        if (!string.IsNullOrWhiteSpace(dataDirectory) && !string.IsNullOrWhiteSpace(dataImagePathFull))
+            throw new ArgumentException("Choose either a data folder or an image source.");
+        if (dataImagePathFull is { Length: > 0 }
+            && Path.GetExtension(dataImagePathFull).Equals(".cue", StringComparison.OrdinalIgnoreCase))
+            throw new NotSupportedException("CUE/BIN raw tracks must be exported and burned with a multi-track authoring tool.");
+        if (string.IsNullOrWhiteSpace(dataDirectory) && string.IsNullOrWhiteSpace(dataImagePathFull))
         {
             return new OpticalBurnRequest(deviceId, OpticalBurnMediaKind.CdAudio, parameters.TotalBytes,
                 (output, token) => CdTrackGenerator.GenerateToStream(imagePath, output, parameters,
@@ -799,7 +862,9 @@ public partial class BurnViewModel : ObservableObject
                     tone: capturedTone), writeSpeed);
         }
 
-        CdDataLayoutPlan plan = CdDataImageGenerator.PrepareLayout(dataDirectory.Trim(), parameters,
+        CdDataLayoutPlan plan = !string.IsNullOrWhiteSpace(dataImagePathFull)
+        ? CdDataImageGenerator.PrepareRawImageLayout(dataImagePathFull, parameters)
+        : CdDataImageGenerator.PrepareLayout(dataDirectory!.Trim(), parameters,
             string.IsNullOrWhiteSpace(volumeLabel) ? "CD_IMAGE" : volumeLabel.Trim(), filesAtOuterRing);
         return new OpticalBurnRequest(deviceId, OpticalBurnMediaKind.CdData, checked(parameters.OutputSectors * 2048),
             (output, token) => CdDataImageGenerator.GenerateToStream(imagePath, output, parameters, plan,

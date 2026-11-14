@@ -1745,6 +1745,42 @@
     "es": "Carpeta",
     "cs": "Složka"
   },
+  "Xaml.ExperimentalIsoSource": {
+    "zh-CN": "ISO 镜像（实验性）",
+    "en": "ISO image (experimental)",
+    "zh-TW": "ISO 映像檔（實驗性）",
+    "ja": "ISO イメージ（実験的）",
+    "tr": "ISO görüntüsü (deneysel)",
+    "es": "Imagen ISO (experimental)",
+    "cs": "Obraz ISO (experimentální)"
+  },
+  "Xaml.CueOrExperimentalIsoSource": {
+    "zh-CN": "ISO / CUE 镜像（ISO 实验性）",
+    "en": "ISO / CUE image (ISO experimental)",
+    "zh-TW": "ISO / CUE 映像檔（ISO 實驗性）",
+    "ja": "ISO / CUE イメージ（ISO は実験的）",
+    "tr": "ISO / CUE görüntüsü (ISO deneysel)",
+    "es": "Imagen ISO / CUE (ISO experimental)",
+    "cs": "Obraz ISO / CUE (ISO experimentální)"
+  },
+  "Xaml.IsoSourceExperimentalHint": {
+    "zh-CN": "实验性功能：从 LBA 0 原样保留受支持 ISO 的逻辑扇区，剩余空间用于图案；不是实体光盘的完整克隆。",
+    "en": "Experimental: supported ISO logical sectors are preserved from LBA 0; artwork uses the remaining space. This is not a physical-disc clone.",
+    "zh-TW": "實驗性功能：從 LBA 0 原樣保留受支援 ISO 的邏輯磁區，其餘空間用於圖案；這不是實體光碟的完整複製。",
+    "ja": "実験的機能：対応する ISO の論理セクターを LBA 0 からそのまま保持し、残りの領域に図案を配置します。物理ディスクの完全な複製ではありません。",
+    "tr": "Deneysel: desteklenen ISO'nun mantıksal sektörleri LBA 0'dan itibaren korunur; kalan alan desen için kullanılır. Bu, fiziksel diskin tam kopyası değildir.",
+    "es": "Experimental: se conservan los sectores lógicos de ISO compatibles desde LBA 0; el espacio restante se usa para el diseño. No es una copia física completa del disco.",
+    "cs": "Experimentální: logické sektory podporovaného ISO se zachovají od LBA 0; zbývající prostor se použije pro obraz. Nejde o úplnou fyzickou kopii disku."
+  },
+  "Xaml.CdIsoSourceExperimentalHint": {
+    "zh-CN": "ISO 导入为实验性功能：逻辑扇区从 LBA 0 原样保留，剩余空间用于图案；这不是实体光盘克隆。CUE/BIN 是独立的 CD 音轨导出流程。",
+    "en": "ISO import is experimental: logical sectors are preserved from LBA 0 and the remaining space is used for artwork; this is not a physical-disc clone. CUE/BIN uses a separate CD track export path.",
+    "zh-TW": "ISO 匯入為實驗性功能：邏輯磁區從 LBA 0 原樣保留，其餘空間用於圖案；這不是實體光碟複製。CUE/BIN 使用獨立的 CD 音軌匯出流程。",
+    "ja": "ISO インポートは実験的機能です。論理セクターを LBA 0 から保持し、残りの領域に図案を配置します。物理ディスクの複製ではありません。CUE/BIN は別の CD トラック出力経路を使用します。",
+    "tr": "ISO içe aktarma deneyseldir: mantıksal sektörler LBA 0'dan itibaren korunur ve kalan alan desen için kullanılır; fiziksel diskin kopyası değildir. CUE/BIN ayrı bir CD parça dışa aktarma yolunu kullanır.",
+    "es": "La importación ISO es experimental: se conservan los sectores lógicos desde LBA 0 y el espacio restante se usa para el diseño; no es una copia física del disco. CUE/BIN sigue una ruta independiente de exportación de pistas de CD.",
+    "cs": "Import ISO je experimentální: logické sektory se zachovají od LBA 0 a zbývající prostor se použije pro obraz; nejde o fyzickou kopii disku. CUE/BIN používá samostatný exportní postup pro CD stopy."
+  },
   "Xaml.FilePlacement": {
     "zh-CN": "文件位置",
     "en": "File placement",

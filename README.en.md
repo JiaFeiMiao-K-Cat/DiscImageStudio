@@ -73,6 +73,7 @@ Live burning is experimental. Use only expendable test media.
 - **DVD support**: Supports any DVD. Export ISO images.
 - **Blu-ray support**: Supports any single-layer 25 GB BD-R, with drawing-only mode and UDF 2.01 files. See [ADDING_BLURAY.md](docs/ADDING_BLURAY.md).
 - **Files on disc**: For CD, DVD, and Blu-ray, select a folder and place its files on the inner or outer ring directly from the Design page, or adjust these options on the Export page. The settings are saved with the project.
+- **Raw ISO sources (experimental)**: Supported 2048-byte logical-sector ISO images can be preserved byte-for-byte from LBA 0; artwork uses only the remaining space. This is not a physical-disc clone. See [raw ISO and CUE/BIN source notes](docs/RAW_ISO_SOURCES.md).
 - **File region preview**: Hybrid-disc design projections and artifact readback highlight the file region, including the file system, in blue.
 - **Media grayscale schemes**: CD and DVD both use two black-and-white levels: `0D / AA` for CD and `A5 / 92` in the DVD scrambled domain. See [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md).
 - **Grayscale dithering tool**: A standalone program can also process a source image into a two-level `0/255` black-and-white PNG. It supports opening or dragging in source images, side-by-side previews, and lossless PNG export. See the [usage and build instructions](tools/FourLevelDither/README.md).

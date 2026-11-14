@@ -80,9 +80,13 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty] private string _cdSamplesPerSector = "16";
     [ObservableProperty] private bool _cdInterleave = true;
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasCdFiles), nameof(IsCdAudioMode), nameof(IsCdWaveOutput),
-        nameof(CdOutputLabel), nameof(CdOutputHint))]
+    [NotifyPropertyChangedFor(nameof(HasCdFiles), nameof(HasCdFolder), nameof(IsCdAudioMode), nameof(IsCdCueSource),
+        nameof(IsCdWaveOutput), nameof(CdOutputLabel), nameof(CdOutputHint))]
     private string _cdDataDirectory = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCdFiles), nameof(IsCdAudioMode), nameof(IsCdCueSource),
+        nameof(IsCdWaveOutput), nameof(CdOutputLabel), nameof(CdOutputHint))]
+    private string _cdDataImagePath = string.Empty;
     [ObservableProperty] private bool _cdFilesAtOuterRing;
     // Outer-ring bleed pulls the data area's outer edge inward to ~95% of the medium's
     // standard capacity, leaving the poorest-quality outermost ring unwritten (issue 312).
@@ -104,7 +108,9 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty] private string _dvdImagePath = string.Empty;
     [ObservableProperty] private string _dvdIsoPath = string.Empty;
     [ObservableProperty] private string _dvdOutputPath = string.Empty;
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDvdFiles))] private string _dvdDataDirectory = string.Empty;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDvdFiles), nameof(HasDvdFolder))] private string _dvdDataDirectory = string.Empty;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDvdFiles))]
+    private string _dvdDataImagePath = string.Empty;
     [ObservableProperty] private bool _dvdFilesAtOuterRing;
     [ObservableProperty] private bool _dvdOuterRingBleed;
     [ObservableProperty] private bool _dvdReadCompatibility;
@@ -131,7 +137,9 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty] private string _bdImagePath = string.Empty;
     [ObservableProperty] private string _bdIsoPath = string.Empty;
     [ObservableProperty] private string _bdOutputPath = string.Empty;
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasBluRayFiles))] private string _bdDataDirectory = string.Empty;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasBluRayFiles), nameof(HasBluRayFolder))] private string _bdDataDirectory = string.Empty;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasBluRayFiles))]
+    private string _bdDataImagePath = string.Empty;
     [ObservableProperty] private bool _bdFilesAtOuterRing;
     [ObservableProperty] private bool _bdOuterRingBleed;
     [ObservableProperty] private string _bdVolumeLabel = DefaultBluRayVolumeLabel;
@@ -218,29 +226,75 @@ public partial class DiscParametersState : ObservableObject
     public bool IsCdWaveOutput => IsCdAudioMode && Path.GetExtension(CdOutputPath.Trim())
         .Equals(".wav", StringComparison.OrdinalIgnoreCase);
 
-    public bool HasCdFiles => !string.IsNullOrWhiteSpace(CdDataDirectory);
+    public bool HasCdFiles => !string.IsNullOrWhiteSpace(CdDataDirectory)
+        || !string.IsNullOrWhiteSpace(CdDataImagePath);
+
+    public bool HasCdFolder => !string.IsNullOrWhiteSpace(CdDataDirectory);
+
+    public bool IsCdCueSource => Path.GetExtension(CdDataImagePath.Trim())
+        .Equals(".cue", StringComparison.OrdinalIgnoreCase);
 
     public bool IsCdAudioMode => !HasCdFiles;
 
     /// <summary>Label of the CD output the design page's pipeline card offers; the artifact
     /// switches between a data ISO and an audio track as the on-disc folder appears.</summary>
-    public string CdOutputLabel => HasCdFiles ? L.T("输出数据盘 (.iso)") : L.T("输出音轨 (.wav / .raw)");
+    public string CdOutputLabel => IsCdCueSource
+        ? L.T("导出原始轨道 (.cue/.bin)")
+        : HasCdFiles ? L.T("输出数据盘 (.iso)") : L.T("输出音轨 (.wav / .raw)");
 
-    public string CdOutputHint => HasCdFiles
+    public string CdOutputHint => IsCdCueSource
+        ? L.T("CUE/BIN 按独立 CD 轨道导出，不与图案合并。")
+        : !string.IsNullOrWhiteSpace(CdDataImagePath)
+        ? L.T("ISO 源扇区从 LBA 0 原样保留；图案只使用其后的空间。")
+        : HasCdFiles
         ? L.T("包含随盘文件，导出为 CD 数据盘 ISO。")
         : L.T("无随盘文件时生成音轨，推荐 WAV 格式。");
 
-    partial void OnCdDataDirectoryChanged(string value) => NormalizeCdOutputFormat();
+    partial void OnCdDataDirectoryChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) CdDataImagePath = string.Empty;
+        NormalizeCdOutputFormat();
+    }
+
+    partial void OnCdDataImagePathChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) CdDataDirectory = string.Empty;
+        NormalizeCdOutputFormat();
+    }
+
+    partial void OnDvdDataDirectoryChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) DvdDataImagePath = string.Empty;
+    }
+
+    partial void OnDvdDataImagePathChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) DvdDataDirectory = string.Empty;
+    }
+
+    partial void OnBdDataDirectoryChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) BdDataImagePath = string.Empty;
+    }
+
+    partial void OnBdDataImagePathChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) BdDataDirectory = string.Empty;
+    }
 
     internal void NormalizeCdOutputFormat()
     {
         string output = CdOutputPath.Trim();
         if (output.Length == 0) return;
         string extension = Path.GetExtension(output);
-        if (HasCdFiles && (extension.Equals(".wav", StringComparison.OrdinalIgnoreCase)
-            || extension.Equals(".raw", StringComparison.OrdinalIgnoreCase)))
+        string expectedImageExtension = IsCdCueSource ? ".cue" : ".iso";
+        if (HasCdFiles && !extension.Equals(expectedImageExtension, StringComparison.OrdinalIgnoreCase)
+            && (extension.Equals(".wav", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".raw", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".iso", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".cue", StringComparison.OrdinalIgnoreCase)))
         {
-            CdOutputPath = Path.ChangeExtension(output, ".iso");
+            CdOutputPath = Path.ChangeExtension(output, expectedImageExtension);
         }
         else if (!HasCdFiles && extension.Equals(".iso", StringComparison.OrdinalIgnoreCase))
         {
@@ -248,9 +302,15 @@ public partial class DiscParametersState : ObservableObject
         }
     }
 
-    public bool HasDvdFiles => !string.IsNullOrWhiteSpace(DvdDataDirectory);
+    public bool HasDvdFiles => !string.IsNullOrWhiteSpace(DvdDataDirectory)
+        || !string.IsNullOrWhiteSpace(DvdDataImagePath);
 
-    public bool HasBluRayFiles => !string.IsNullOrWhiteSpace(BdDataDirectory);
+    public bool HasDvdFolder => !string.IsNullOrWhiteSpace(DvdDataDirectory);
+
+    public bool HasBluRayFiles => !string.IsNullOrWhiteSpace(BdDataDirectory)
+        || !string.IsNullOrWhiteSpace(BdDataImagePath);
+
+    public bool HasBluRayFolder => !string.IsNullOrWhiteSpace(BdDataDirectory);
 
     public string DvdPitchSummary => PitchSummary(actual: false);
     public string DvdActualPitchSummary => PitchSummary(actual: true);

@@ -55,6 +55,20 @@ internal static class FileRegionPreviewOverlay
             throw new ArgumentOutOfRangeException(nameof(start), "Preview drawing range must lie inside the disc.");
     }
 
+    internal static void CreateBlank(string path, int size, CancellationToken token = default)
+    {
+        token.ThrowIfCancellationRequested();
+        int stride = checked(size * 4);
+        byte[] pixels = new byte[checked(stride * size)];
+        Array.Fill(pixels, byte.MaxValue);
+        BitmapSource bitmap = BitmapSource.Create(size, size, 96, 96,
+            PixelFormats.Bgra32, null, pixels, stride);
+        PngBitmapEncoder encoder = new();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using FileStream output = File.Create(path);
+        encoder.Save(output);
+    }
+
     private static void Apply(string path, double inner, double outer,
         double drawingInner, double drawingOuter, bool dvdPixelCoordinates, CancellationToken token,
         double? cdImageOuterRadius = null)

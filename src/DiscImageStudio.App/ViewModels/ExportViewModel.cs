@@ -32,6 +32,7 @@ public partial class ExportViewModel : ObservableObject
         _design = design;
         BrowseOutputCommand = new RelayCommand(BrowseOutput, () => !_shell.IsBusy);
         BrowseDataCommand = new RelayCommand(BrowseData, () => !_shell.IsBusy);
+        BrowseDataImageCommand = new RelayCommand(BrowseDataImage, () => !_shell.IsBusy);
         GenerateCommand = new AsyncRelayCommand(GenerateAsync, () => !_shell.IsBusy);
         _shell.BusyChanged += NotifyCommands;
         _shell.PropertyChanged += (_, args) =>
@@ -85,6 +86,8 @@ public partial class ExportViewModel : ObservableObject
 
     public RelayCommand BrowseDataCommand { get; }
 
+    public RelayCommand BrowseDataImageCommand { get; }
+
     public IAsyncRelayCommand GenerateCommand { get; }
 
     [ObservableProperty]
@@ -102,6 +105,7 @@ public partial class ExportViewModel : ObservableObject
     {
         BrowseOutputCommand.NotifyCanExecuteChanged();
         BrowseDataCommand.NotifyCanExecuteChanged();
+        BrowseDataImageCommand.NotifyCanExecuteChanged();
         GenerateCommand.NotifyCanExecuteChanged();
     }
 
@@ -121,6 +125,14 @@ public partial class ExportViewModel : ObservableObject
             if (iso is not null)
             {
                 _state.DvdOutputPath = iso;
+            }
+        }
+        else if (_state.IsCdCueSource)
+        {
+            string? cue = _shell.Dialogs?.PickSave(L.T("CUE 轨道镜像|*.cue|所有文件|*.*"), ".cue", "cd-tracks.cue");
+            if (cue is not null)
+            {
+                _state.CdOutputPath = cue;
             }
         }
         else if (_state.HasCdFiles)
@@ -150,7 +162,6 @@ public partial class ExportViewModel : ObservableObject
             {
                 _state.CdDataDirectory = picked;
             }
-
             return;
         }
 
@@ -170,6 +181,23 @@ public partial class ExportViewModel : ObservableObject
         {
             _state.DvdDataDirectory = dvdFolder;
         }
+    }
+
+    private void BrowseDataImage()
+    {
+        if (IsCd)
+        {
+            string? picked = _shell.Dialogs?.PickOpen(L.T("选择 CD ISO 或 CUE 轨道镜像"),
+                L.T("CD 镜像|*.iso;*.cue|ISO 镜像|*.iso|CUE 轨道镜像|*.cue|所有文件|*.*"));
+            if (picked is not null) _state.CdDataImagePath = picked;
+            return;
+        }
+
+        string title = IsBluRay ? L.T("选择要保留在蓝光盘上的 ISO") : L.T("选择要保留在 DVD 上的 ISO");
+        string? image = _shell.Dialogs?.PickOpen(title, L.T("ISO 镜像|*.iso|所有文件|*.*"));
+        if (image is null) return;
+        if (IsBluRay) _state.BdDataImagePath = image;
+        else _state.DvdDataImagePath = image;
     }
 
     private void UpdateSourceSummary()
@@ -193,7 +221,9 @@ public partial class ExportViewModel : ObservableObject
         {
             // The composite renders here at export quality even when the design page has not
             // been visited in this session, so a reopened project can generate immediately.
-            string compositePath = await _design.EnsureExportCompositeAsync();
+            string compositePath = IsCd && _state.IsCdCueSource
+                ? string.Empty
+                : await _design.EnsureExportCompositeAsync();
             if (IsBluRay)
             {
                 await GenerateBluRayAsync(compositePath);
@@ -220,7 +250,8 @@ public partial class ExportViewModel : ObservableObject
     private async Task GenerateCdAsync(string compositePath)
     {
         string output = RequirePath(_state.CdOutputPath,
-            _state.HasCdFiles ? L.T("请选择 CD ISO 输出位置。") : L.T("请选择 CD 音轨输出位置。"));
+            _state.IsCdCueSource ? L.T("请选择 CD CUE 输出位置。")
+                : _state.HasCdFiles ? L.T("请选择 CD ISO 输出位置。") : L.T("请选择 CD 音轨输出位置。"));
         CdDiscParameters parameters = new(
             ParameterParser.ParsePositiveDouble(_state.CdInnerRadius, L.T("内半径")),
             ParameterParser.ParsePositiveDouble(_state.CdOuterRadius, L.T("外半径")),
@@ -232,11 +263,14 @@ public partial class ExportViewModel : ObservableObject
         CdImageRequest request = new(compositePath, output, parameters, _state.Tone,
             _state.CdInterleave, _state.CdWriteCue, _state.CdDataDirectory.Trim(),
             _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc),
-            _state.CdFilesAtOuterRing);
+            _state.CdFilesAtOuterRing, _state.CdDataImagePath.Trim());
         if (await _shell.RunImageJobAsync(
-                _state.HasCdFiles ? L.T("正在生成 CD 数据盘 ISO…") : L.T("正在生成 CD 音轨…"),
+                _state.IsCdCueSource ? L.T("正在导出 CD 原始轨道…")
+                    : _state.HasCdFiles ? L.T("正在生成 CD 数据盘 ISO…") : L.T("正在生成 CD 音轨…"),
                 output, (progress, token) => CdImageGenerator.Generate(request, progress, token), request.ToString()))
-            _state.CdTrackPath = output;
+        {
+            if (!_state.IsCdCueSource) _state.CdTrackPath = output;
+        }
     }
 
     private async Task GenerateDvdAsync(string compositePath)
@@ -254,7 +288,8 @@ public partial class ExportViewModel : ObservableObject
             ReadCompatibility: _state.DvdReadCompatibility);
         DvdImageRequest request = new(compositePath, output, options, _state.DvdDataDirectory.Trim(),
             _state.ResolveVolumeLabel(OpticalDiscFamily.Dvd),
-            !string.IsNullOrWhiteSpace(_state.DvdDataDirectory) && _state.DvdFilesAtOuterRing);
+            !string.IsNullOrWhiteSpace(_state.DvdDataDirectory) && _state.DvdFilesAtOuterRing,
+            _state.DvdDataImagePath.Trim());
         if (await _shell.RunImageJobAsync(L.T("正在生成 DVD ISO…"), output,
                 (progress, token) => DvdImageGenerator.Generate(request, progress, token), request.ToString()))
             _state.DvdIsoPath = output;
@@ -274,7 +309,7 @@ public partial class ExportViewModel : ObservableObject
         BluRayImageRequest request = new(compositePath, output, parameters, _state.BluRayTone,
             _state.BdInvertMapping, _state.BdDataDirectory.Trim(),
             _state.ResolveVolumeLabel(OpticalDiscFamily.BluRay),
-            _state.BdFilesAtOuterRing);
+            _state.BdFilesAtOuterRing, _state.BdDataImagePath.Trim());
         BluRayImageGenerator generator = new(BluRayImageLoader.Load);
         if (await _shell.RunImageJobAsync(L.T("正在生成蓝光 ISO…"), output,
                 (progress, token) => generator.Generate(request, progress, token), request.ToString()))

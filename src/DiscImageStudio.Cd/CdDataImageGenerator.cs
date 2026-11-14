@@ -8,17 +8,32 @@ namespace DiscImageStudio.Cd;
 
 public sealed class CdDataLayoutPlan
 {
+    private readonly Iso9660ImageWriter.LayoutPlan? _isoLayout;
+
     internal CdDataLayoutPlan(Iso9660ImageWriter.LayoutPlan layout)
     {
-        IsoLayout = layout;
+        _isoLayout = layout;
+        TotalSectors = layout.VolumeSectors;
         DrawingStartLba = layout.FilesAtOuterRing ? layout.MetadataEndLbaExclusive : layout.DataEndLbaExclusive;
         DrawingEndLbaExclusive = layout.FilesAtOuterRing ? layout.FileDataStartLba : layout.VolumeSectors;
     }
 
-    internal Iso9660ImageWriter.LayoutPlan IsoLayout { get; }
-    public long TotalSectors => IsoLayout.VolumeSectors;
+    internal CdDataLayoutPlan(string sourceImagePath, uint sourceSectors, uint totalSectors)
+    {
+        SourceImagePath = sourceImagePath;
+        SourceSectors = sourceSectors;
+        TotalSectors = totalSectors;
+        DrawingStartLba = sourceSectors;
+        DrawingEndLbaExclusive = totalSectors;
+    }
+
+    internal Iso9660ImageWriter.LayoutPlan IsoLayout => _isoLayout
+        ?? throw new InvalidOperationException("This data layout does not contain a generated ISO filesystem.");
+    public long TotalSectors { get; }
     public long ContentLength => TotalSectors * CdDataImageGenerator.BytesPerSector;
-    public string SourceDirectory => IsoLayout.SourceDirectory;
+    public string? SourceDirectory => _isoLayout?.SourceDirectory;
+    public string? SourceImagePath { get; }
+    public uint SourceSectors { get; }
     public uint DrawingStartLba { get; }
     public uint DrawingEndLbaExclusive { get; }
     public uint DrawingSectors => DrawingEndLbaExclusive - DrawingStartLba;
@@ -26,14 +41,14 @@ public sealed class CdDataLayoutPlan
     /// <summary>Occupied regions, in LBAs: the filesystem metadata always starts at the
     /// inner edge, the file data sits at the chosen ring. The designer's data-region guide
     /// maps both to radii; the dispersion reserve is added by the caller.</summary>
-    public uint MetadataEndLbaExclusive => IsoLayout.MetadataEndLbaExclusive;
-    public uint FileDataStartLba => IsoLayout.FileDataStartLba;
-    public uint DataEndLbaExclusive => IsoLayout.DataEndLbaExclusive;
+    public uint MetadataEndLbaExclusive => _isoLayout?.MetadataEndLbaExclusive ?? 0;
+    public uint FileDataStartLba => _isoLayout?.FileDataStartLba ?? 0;
+    public uint DataEndLbaExclusive => _isoLayout?.DataEndLbaExclusive ?? SourceSectors;
 
-    public bool FilesAtOuterRing => IsoLayout.FilesAtOuterRing;
-    public int FileCount => IsoLayout.FileCount;
-    public int DirectoryCount => IsoLayout.DirectoryCount;
-    public long FileBytes => IsoLayout.FileBytes;
+    public bool FilesAtOuterRing => _isoLayout?.FilesAtOuterRing ?? false;
+    public int FileCount => _isoLayout?.FileCount ?? 0;
+    public int DirectoryCount => _isoLayout?.DirectoryCount ?? 0;
+    public long FileBytes => _isoLayout?.FileBytes ?? 0;
 }
 
 /// <summary>
@@ -60,6 +75,15 @@ public static class CdDataImageGenerator
         return plan;
     }
 
+    public static CdDataLayoutPlan PrepareRawImageLayout(string imagePath, CdDiscParameters parameters)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(imagePath);
+        parameters.Validate();
+        uint totalSectors = checked((uint)parameters.OutputSectors);
+        RawIsoImageInfo source = RawIsoImage.Inspect(imagePath, totalSectors);
+        return new CdDataLayoutPlan(source.Path, checked((uint)source.SectorCount), totalSectors);
+    }
+
     public static CdGenerationSummary Generate(string imagePath, string outputPath,
         CdDiscParameters parameters, CdDataLayoutPlan plan, Action<CdProgress>? progress = null,
         CancellationToken cancellationToken = default, ToneProfile? tone = null, bool useSimdSampling = true,
@@ -72,8 +96,11 @@ public static class CdDataImageGenerator
         if (!Path.GetExtension(target).Equals(".iso", StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("CD data output must be a Mode 1 .iso image.", nameof(outputPath));
         if (target.Equals(source, StringComparison.OrdinalIgnoreCase)
-            || target.StartsWith(Path.TrimEndingDirectorySeparator(plan.SourceDirectory)
-                + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            || (plan.SourceDirectory is { Length: > 0 } sourceDirectory
+                && target.StartsWith(Path.TrimEndingDirectorySeparator(sourceDirectory)
+                    + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            || (plan.SourceImagePath is { } sourceImage
+                && target.Equals(sourceImage, StringComparison.OrdinalIgnoreCase)))
             throw new ArgumentException("The output must be outside the source data folder and must not overwrite the source image.", nameof(outputPath));
         RasterImage image = RasterImage.Load(source);
         ToneProfile effectiveTone = (tone ?? ToneProfile.LegacyBinary).Normalized();
@@ -86,7 +113,7 @@ public static class CdDataImageGenerator
                 cancellationToken, effectiveTone, useSimdSampling, useParallelSampling) with { OutputTrack = target };
         }
         CdDataImageMetadata.Save(target, new(parameters, plan.DrawingStartLba,
-            plan.DrawingEndLbaExclusive, plan.FilesAtOuterRing, effectiveTone));
+            plan.DrawingEndLbaExclusive, plan.FilesAtOuterRing, effectiveTone, plan.SourceSectors));
         return result;
     }
 
@@ -113,10 +140,26 @@ public static class CdDataImageGenerator
         bool sampleFour = useSimdSampling && sampler.SupportsSimd;
         Stopwatch stopwatch = Stopwatch.StartNew();
         ProgressStream writer = new(output, plan.ContentLength, stopwatch, progress, cancellationToken);
-        if (plan.FilesAtOuterRing)
+        if (plan.SourceImagePath is { } rawImage)
+        {
+            using FileStream rawInput = new(rawImage, FileMode.Open, FileAccess.Read, FileShare.Read,
+                1024 * 1024, FileOptions.SequentialScan);
+            RawIsoImage.CopyExactly(rawInput, writer,
+                checked((long)plan.SourceSectors * BytesPerSector), cancellationToken);
+        }
+        else if (plan.FilesAtOuterRing)
             Iso9660ImageWriter.WriteOuterRingPrefix(plan.IsoLayout, writer, plan.DrawingStartLba, cancellationToken);
         else
             Iso9660ImageWriter.WriteSequentialPrefix(plan.IsoLayout, writer, plan.DrawingStartLba, cancellationToken);
+
+        if (plan.DrawingSectors == 0)
+        {
+            writer.Flush();
+            stopwatch.Stop();
+            progress?.Invoke(new CdProgress(writer.CompletedBytes, plan.ContentLength, stopwatch.Elapsed));
+            return new CdGenerationSummary(source, "direct-burn-stream", parameters.OutputSectors,
+                writer.CompletedBytes, false, stopwatch.Elapsed);
+        }
 
         if (useParallelSampling)
         {

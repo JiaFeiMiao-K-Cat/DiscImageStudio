@@ -46,6 +46,18 @@ public sealed class BluRayIsoPlan
         DrawingEndRadiusMm = geometry.AtSector(drawingEndSectorExclusive).RadiusMm;
     }
 
+    internal BluRayIsoPlan(BluRayDiscParameters disc, RawIsoImageInfo source)
+    {
+        Disc = disc;
+        SourceImagePath = source.Path;
+        SourceImageSectors = checked((uint)source.SectorCount);
+        DrawingStartSector = SourceImageSectors;
+        DrawingEndSectorExclusive = disc.OutputSectors;
+        BluRayTrackGeometry geometry = new(disc);
+        DrawingStartRadiusMm = geometry.AtSector(DrawingStartSector).RadiusMm;
+        DrawingEndRadiusMm = geometry.AtSector(DrawingEndSectorExclusive).RadiusMm;
+    }
+
     internal UdfImageWriter.LayoutPlan Filesystem => _filesystem
         ?? throw new InvalidOperationException("This drawing plan has no filesystem.");
     public bool HasFileSystem => _filesystem is not null;
@@ -54,6 +66,8 @@ public sealed class BluRayIsoPlan
     public uint TotalSectors => Disc.OutputSectors;
     public long ContentLength => Disc.ContentLength;
     public string? DataDirectory => _filesystem?.SourceDirectory is { Length: > 0 } source ? source : null;
+    public string? SourceImagePath { get; }
+    public uint SourceImageSectors { get; }
     public string? VolumeLabel => _filesystem?.VolumeLabel;
     public DateTimeOffset? UdfTimestamp => _filesystem?.Timestamp;
     public int FileCount => _filesystem?.FileCount ?? 0;
@@ -92,6 +106,15 @@ public static class BluRayIsoGenerator
         return string.IsNullOrWhiteSpace(dataDirectory)
             ? new BluRayIsoPlan(disc)
             : Prepare(disc, dataDirectory, volumeLabel, timestamp, filesAtOuterRing);
+    }
+
+    public static BluRayIsoPlan PrepareRawImage(BluRayDiscParameters disc, string imagePath)
+    {
+        ArgumentNullException.ThrowIfNull(disc);
+        ArgumentException.ThrowIfNullOrWhiteSpace(imagePath);
+        disc.Validate();
+        RawIsoImageInfo source = RawIsoImage.Inspect(imagePath, disc.OutputSectors);
+        return new BluRayIsoPlan(disc, source);
     }
 
     // Explicit UDF preparation remains available for existing saved calibration
@@ -158,6 +181,9 @@ public static class BluRayIsoGenerator
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(outputPath);
         ArgumentNullException.ThrowIfNull(plan);
+        if (plan.SourceImagePath is { } sourceImage
+            && Path.GetFullPath(outputPath).Equals(sourceImage, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("ISO output must not overwrite the source image.", nameof(outputPath));
         if (plan.DataDirectory is not { } source) return;
         string destination = Path.GetFullPath(outputPath);
         if (Iso9660ImageWriter.IsWithinDirectory(destination, source)

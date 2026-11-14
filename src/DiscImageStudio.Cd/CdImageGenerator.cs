@@ -1,4 +1,5 @@
 using DiscImageStudio.Core;
+using DiscImageStudio.Iso;
 
 namespace DiscImageStudio.Cd;
 
@@ -12,7 +13,8 @@ public sealed record CdImageRequest(
     bool WriteCue = true,
     string? DataDirectory = null,
     string VolumeLabel = "CD_IMAGE",
-    bool FilesAtOuterRing = false);
+    bool FilesAtOuterRing = false,
+    string? DataImagePath = null);
 
 public static class CdImageGenerator
 {
@@ -26,6 +28,30 @@ public static class CdImageGenerator
         cancellationToken.ThrowIfCancellationRequested();
         request.Tone.Validate();
         string? dataDirectory = request.DataDirectory?.Trim();
+        string? dataImagePath = request.DataImagePath?.Trim();
+        if (!string.IsNullOrEmpty(dataDirectory) && !string.IsNullOrEmpty(dataImagePath))
+            throw new ArgumentException("Choose either a data folder or an image source, not both.", nameof(request));
+        if (!string.IsNullOrEmpty(dataImagePath)
+            && Path.GetExtension(dataImagePath).Equals(".cue", StringComparison.OrdinalIgnoreCase))
+        {
+            string cueOutput = CueBinImage.Export(dataImagePath, request.OutputPath, cancellationToken);
+            return new DiscImageResult(cueOutput,
+                $"CD raw tracks exported from CUE/BIN: {cueOutput}. Track data is unchanged; artwork is not merged.");
+        }
+
+        if (!string.IsNullOrEmpty(dataImagePath))
+        {
+            CdDataLayoutPlan rawPlan = CdDataImageGenerator.PrepareRawImageLayout(dataImagePath, request.Parameters);
+            CdGenerationSummary rawSummary = CdDataImageGenerator.Generate(request.SourceImage,
+                request.OutputPath, request.Parameters, rawPlan,
+                value => progress?.Report(new DiscJobProgress(CdDiscModule.ModuleId, "generate",
+                    $"CD data progress {value.Fraction:P1}", value.Fraction, value.CompletedBytes,
+                    value.TotalBytes, value.Elapsed)), cancellationToken, request.Tone);
+            return new DiscImageResult(rawSummary.OutputTrack,
+                $"CD ISO source preserved at LBA 0: {rawPlan.SourceSectors} sectors; "
+                + $"{rawPlan.DrawingSectors} sectors remain for artwork.");
+        }
+
         if (!string.IsNullOrEmpty(dataDirectory))
         {
             CdDataLayoutPlan plan = CdDataImageGenerator.PrepareLayout(dataDirectory, request.Parameters,

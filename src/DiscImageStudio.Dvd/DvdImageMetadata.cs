@@ -24,7 +24,8 @@ public sealed record DvdImageMetadata(
     bool ReadCompatibility = false,
     uint? UsableSectors = null,
     double? SourceImageOuterRadiusMm = null,
-    string? ReadCompatibilityMode = null)
+    string? ReadCompatibilityMode = null,
+    uint SourceImageSectors = 0)
 {
     public uint OutputSectors => UsableSectors ?? TotalSectors;
 
@@ -72,7 +73,10 @@ public sealed record DvdImageMetadata(
                 || !TryGetOptionalUInt32(document.RootElement, "fillSectors",
                     totalSectors - Math.Min(totalSectors, drawingStart), out uint drawingSectors))
                 return null;
-            if ((ulong)drawingStart + drawingSectors > (usableSectors ?? totalSectors) || drawingSectors == 0)
+            if ((ulong)drawingStart + drawingSectors > (usableSectors ?? totalSectors)
+                || !TryGetOptionalUInt32(document.RootElement, "sourceImageSectors", 0, out uint sourceImageSectors)
+                || sourceImageSectors > drawingStart
+                || drawingSectors == 0 && sourceImageSectors == 0)
                 return null;
             bool filesAtOuterRing = document.RootElement.TryGetProperty("filesAtOuterRing", out JsonElement position)
                 && position.ValueKind == JsonValueKind.True;
@@ -89,7 +93,7 @@ public sealed record DvdImageMetadata(
                 && innerRadius > 0 && outerRadius > innerRadius
                 ? new DvdImageMetadata(totalSectors, innerRadius, outerRadius, linear, quadratic, cubic,
                     filesAtOuterRing, drawingStart, drawingStart + drawingSectors, hasFileSystem, readCompatibility,
-                    usableSectors, sourceImageOuterRadiusMm, readCompatibilityMode)
+                    usableSectors, sourceImageOuterRadiusMm, readCompatibilityMode, sourceImageSectors)
                 : null;
         }
         catch (Exception exception) when (exception is JsonException or IOException or ArgumentException)

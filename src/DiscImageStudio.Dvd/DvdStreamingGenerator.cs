@@ -424,6 +424,11 @@ public static class DvdStreamingGenerator
             ReadCompatibilityMode: options.ReadCompatibilityMode);
     }
 
+    /// <summary>Returns the first payload LBA after a raw ISO prefix that starts a complete
+    /// DVD ECC Block with this generator's physical-sector offset.</summary>
+    public static uint AlignRawImageStart(uint sourceSectors)
+        => AlignToEccBlock(sourceSectors, PsnOffset);
+
     private static uint AlignToEccBlock(uint lba, uint psnOffset)
     {
         uint remainder = (lba + psnOffset) & (DvdEccBlockEncoder.SectorCount - 1);
