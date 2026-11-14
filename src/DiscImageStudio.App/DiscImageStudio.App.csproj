@@ -31,6 +31,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DiscImageStudio.Core\DiscImageStudio.Core.csproj" />
+    <ProjectReference Include="..\DiscImageStudio.AutoCalibration\DiscImageStudio.AutoCalibration.csproj" />
+    <ProjectReference Include="..\DiscImageStudio.AutoCalibration.Drives\DiscImageStudio.AutoCalibration.Drives.csproj" />
     <ProjectReference Include="..\DiscImageStudio.ImageIO\DiscImageStudio.ImageIO.csproj" />
     <Compile Include="../Shared/BluRayImageLoader.cs" Link="Services/BluRayImageLoader.cs" />
     <Compile Include="../Shared/ConsoleModuleRunner.cs" Link="ConsoleModuleRunner.cs" />

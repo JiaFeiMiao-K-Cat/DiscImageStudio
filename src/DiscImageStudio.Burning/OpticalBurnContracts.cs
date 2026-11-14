@@ -31,7 +31,10 @@ public sealed record OpticalBurnDevice(
 /// The medium's geometry extent and the current write limit are separate values.
 /// WritableSectors is a payload limit, not a replacement for geometry or filesystem free space.
 /// </summary>
-public sealed record OpticalMediaCapacity(long TotalSectors, long WritableSectors);
+public sealed record OpticalMediaCapacity(long TotalSectors, long WritableSectors)
+{
+    public bool? IsBlank { get; init; }
+}
 
 public sealed record OpticalWriteSpeed(
     int SectorsPerSecond,

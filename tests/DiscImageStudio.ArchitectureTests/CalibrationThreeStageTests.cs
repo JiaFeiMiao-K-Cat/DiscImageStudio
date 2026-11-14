@@ -2,6 +2,7 @@ using System.IO;
 using System.Runtime.ExceptionServices;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using DiscImageStudio.AutoCalibration;
 using DiscImageStudio.Core.Calibration;
 using DiscImageStudio.Services;
 using DiscImageStudio.ViewModels;
@@ -109,6 +110,31 @@ internal static class CalibrationThreeStageTests
             await model.LoadSessionFromAsync(finePath);
             Require(model.IsFineMode && model.Target?.Id == fine.Id && model.GenerateImageCommand.CanExecute(null),
                 "a no-photo reference record restores fine mode");
+
+            var measured = new AutoCalibrationResult(
+                "dvd",
+                coarse.Parameters.InnerRadiusMm,
+                coarse.Parameters.OuterRadiusMm,
+                coarse.Parameters.Sectors,
+                coarse.Parameters.PitchLinear,
+                coarse.Parameters.PitchQuadratic,
+                coarse.Parameters.PitchCubic,
+                0.08);
+            model.ApplyAutoCalibrationSessions(CalibrationSessionExporter.CreateSessions(measured));
+            Require(model.IsCoarseMode && model.Target?.Artwork == CalibrationArtwork.AngleSweepBands,
+                "auto calibration installs the coarse record first");
+            model.SelectIntermediateModeCommand.Execute(null);
+            await WaitForCalibrationAsync(model);
+            Require(model.IsIntermediateMode && model.Target?.Artwork == CalibrationArtwork.WavyBoundary,
+                "stage selection installs the boundary record");
+            model.SelectFineModeCommand.Execute(null);
+            await WaitForCalibrationAsync(model);
+            Require(model.IsFineMode && model.Target?.Artwork == CalibrationArtwork.ReferenceCross,
+                "stage selection installs the fine record");
+            model.SelectCoarseModeCommand.Execute(null);
+            await WaitForCalibrationAsync(model);
+            Require(model.IsCoarseMode && model.Target?.Artwork == CalibrationArtwork.AngleSweepBands,
+                "returning to a stage restores its independent record");
         }
         finally { model.OnWindowClosed(); }
     }
@@ -126,6 +152,14 @@ internal static class CalibrationThreeStageTests
             (size - 1) / 2.0 + radius * size / (2 * canvas) * Math.Cos(i * Math.PI / 4),
             (size - 1) / 2.0 + radius * size / (2 * canvas) * Math.Sin(i * Math.PI / 4))).ToArray();
         return new(Convert.ToBase64String(stream.ToArray()), Boundary(60), Boundary(7.5), 60, true, []);
+    }
+
+    private static async Task WaitForCalibrationAsync(CalibrationViewModel model)
+    {
+        while (model.IsBusy)
+        {
+            await Task.Delay(10);
+        }
     }
 
     private static void Require(bool condition, string message)

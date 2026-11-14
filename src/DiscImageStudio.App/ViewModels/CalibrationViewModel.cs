@@ -463,6 +463,11 @@ public partial class CalibrationViewModel : ObservableObject
 
     private void InstallTarget(CalibrationTarget target, CalibrationFitOptions? options, bool interleave)
     {
+        if (!_installingAutoWizardSession)
+        {
+            _autoWizardSessions.Clear();
+        }
+
         _installing = true;
         try
         {

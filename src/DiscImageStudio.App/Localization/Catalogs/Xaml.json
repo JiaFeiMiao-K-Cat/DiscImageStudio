@@ -458,6 +458,33 @@
     "es": "Nombre del proyecto",
     "cs": "Název projektu"
   },
+  "Xaml.AutoCalibrationWizard": {
+    "zh-CN": "自动标定向导（测试性）",
+    "en": "Auto calibration wizard (test)",
+    "zh-TW": "自動標定向導（測試性）",
+    "ja": "自動キャリブレーション ウィザード（試験的）",
+    "tr": "Otomatik kalibrasyon sihirbazı (test)",
+    "es": "Asistente de calibración automática (prueba)",
+    "cs": "Průvodce automatickou kalibrací (test)"
+  },
+  "Xaml.AutoCalibrationWizardDetail": {
+    "zh-CN": "使用内置 C# 引擎读取标记盘，也支持导入 Discratcher 预设（测试性）",
+    "en": "Uses the built-in C# engine to read marker discs and imports Discratcher presets (test)",
+    "zh-TW": "使用內建 C# 引擎讀取標記盤，也支援匯入 Discratcher 預設（測試性）",
+    "ja": "内蔵 C# エンジンでマーカーディスクを読み取り、Discratcher のプリセットもインポートできます（試験的）",
+    "tr": "İşaretleme disklerini yerleşik C# altyapısıyla okur ve Discratcher önayarlarını içe aktarır (test)",
+    "es": "Lee discos de marcado con el motor C# integrado e importa ajustes preestablecidos de Discratcher (prueba)",
+    "cs": "Čte značicí disky vestavěným jádrem C# a importuje předvolby Discratcheru (test)"
+  },
+  "Xaml.AutoCalibrationWizardHint": {
+    "zh-CN": "选中后各几何预设字段将被清空并禁用，仅保留工程名与保存位置。向导使用内置 C# 引擎测量，也可从 Discratcher 导入预设；点击任一预设卡片可退出该模式。创建工程后启动向导。",
+    "en": "Selecting this clears and disables all geometry preset fields, keeping only the project name and save path. The wizard measures with its built-in C# engine and can import Discratcher presets. Click any preset card to leave this mode. The wizard starts after project creation.",
+    "zh-TW": "選取後各幾何預設欄位將被清空並禁用，僅保留工程名與儲存位置。向導使用內建 C# 引擎測量，也可從 Discratcher 匯入預設；點選任一預設卡片可退出此模式。建立專案後啟動向導。",
+    "ja": "選択すると、ジオメトリ欄がクリアされ無効になり、プロジェクト名と保存先のみが残ります。内蔵 C# エンジンで測定し、Discratcher のプリセットもインポートできます。プリセットカードをクリックすると終了します。プロジェクト作成後に起動します。",
+    "tr": "Seçildiğinde geometri alanları temizlenip devre dışı kalır; yalnızca proje adı ve kayıt yolu kalır. Sihirbaz yerleşik C# altyapısıyla ölçüm yapar ve Discratcher önayarlarını içe aktarabilir. Bu moddan çıkmak için bir önayar kartına tıklayın. Proje oluşturulunca sihirbaz başlar.",
+    "es": "Al seleccionarlo se borran y desactivan los campos geométricos, dejando el nombre y la ruta. El asistente mide con su motor C# integrado e importa ajustes de Discratcher. Haga clic en una tarjeta para salir del modo. Se inicia al crear el proyecto.",
+    "cs": "Výběr vymaže a zakáže geometrická pole a ponechá název projektu a cestu. Průvodce měří vestavěným jádrem C# a umí importovat předvolby Discratcheru. Kliknutím na kartu předvolby režim opustíte. Spustí se po vytvoření projektu."
+  },
   "Xaml.InnerR0Mm": {
     "zh-CN": "内半径 r0 (mm)",
     "en": "Inner r0 (mm)",

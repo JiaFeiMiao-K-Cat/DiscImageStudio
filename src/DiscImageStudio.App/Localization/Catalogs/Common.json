@@ -1169,6 +1169,33 @@
     "es": "Almacenamiento",
     "cs": "Úložiště"
   },
+  "Settings.AutoCalibration": {
+    "zh-CN": "自动标定",
+    "en": "Auto calibration",
+    "zh-TW": "自動標定",
+    "ja": "自動キャリブレーション",
+    "tr": "Otomatik kalibrasyon",
+    "es": "Calibración automática",
+    "cs": "Automatická kalibrace"
+  },
+  "Settings.AutoCalibrationDebug": {
+    "zh-CN": "自动向导调试模式",
+    "en": "Auto wizard debug mode",
+    "zh-TW": "自動向導偵錯模式",
+    "ja": "自動ウィザード デバッグ モード",
+    "tr": "Otomatik sihirbaz hata ayıklama modu",
+    "es": "Modo de depuración del asistente automático",
+    "cs": "Ladicí režim automatického průvodce"
+  },
+  "Settings.AutoCalibrationDebugHint": {
+    "zh-CN": "开启后用模拟光驱跑完整标定流程，无需真实刻录机或空白光盘，便于测试自动标定向导。",
+    "en": "When enabled the full calibration flow runs against a simulated drive, no recorder or blank disc needed, for testing the auto calibration wizard.",
+    "zh-TW": "開啟後以模擬光碟機跑完整標定流程，無需真實燒錄機或空白光碟，便於測試自動標定向導。",
+    "ja": "有効にすると、実際のレコーダーや空のディスクなしで、シミュレートされたドライブで完全なキャリブレーション フローが実行され、自動ウィザードのテストに便利です。",
+    "tr": "Etkinleştirildiğinde tam kalibrasyon akışı simüle edilmiş bir sürücüde çalışır; gerçek bir yazıcıya veya boş diske gerek yoktur, böylece otomatik kalibrasyon sihirbazı test edilebilir.",
+    "es": "Al activarlo, el flujo completo de calibración se ejecuta con una unidad simulada, sin grabadora ni disco en blanco, para probar el asistente de calibración automática.",
+    "cs": "Po zapnutí běží celý tok kalibrace na simulované jednotce; nepotřebujete žádnou vypalovačku ani prázdný disk, což usnadňuje testování průvodce automatickou kalibrací."
+  },
   "Settings.AppearanceAndLanguagePreferences": {
     "zh-CN": "界面外观与语言偏好。",
     "en": "Appearance and language preferences.",
