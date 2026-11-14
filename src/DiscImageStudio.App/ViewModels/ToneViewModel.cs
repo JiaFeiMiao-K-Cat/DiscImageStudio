@@ -361,13 +361,16 @@ public partial class ToneViewModel : ObservableObject
                             samplesPerSector,
                             cancellationToken,
                             drawingStartLba: sourceImage is not null
-                                ? checked((uint)sourceImage.SectorCount)
+                                ? DvdStreamingGenerator.AlignRawImageStart(
+                                    checked((uint)sourceImage.SectorCount))
                                 : plan?.DrawingStartLba ?? 0,
                             drawingEndLbaExclusive: plan?.DrawingEndLbaExclusive);
                     }
                     if (sourceImage is not null)
                         FileRegionPreviewOverlay.ApplyDvd(outputPath, options,
-                            0, checked((uint)sourceImage.SectorCount), cancellationToken);
+                            DvdStreamingGenerator.AlignRawImageStart(
+                                checked((uint)sourceImage.SectorCount)),
+                            options.OutputSectors, cancellationToken);
                     else if (plan is not null)
                         FileRegionPreviewOverlay.ApplyDvd(outputPath, options,
                             plan.DrawingStartLba, plan.DrawingEndLbaExclusive, cancellationToken);

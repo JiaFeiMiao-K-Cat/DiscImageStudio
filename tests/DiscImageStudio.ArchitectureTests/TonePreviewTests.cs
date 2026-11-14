@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -63,6 +64,20 @@ internal static class TonePreviewTests
                 Snapshot(tone, familyName + "-no-files");
                 string composite = SourcePath(shell.State, family);
                 byte[] originalComposite = SHA256.HashData(File.ReadAllBytes(composite));
+
+                if (family == OpticalDiscFamily.Dvd)
+                {
+                    string sourceIso = Path.Combine(directory, "dvd-source.iso");
+                    WriteRawIso(sourceIso, 1001);
+                    await Refresh(tone, () => shell.State.DvdDataImagePath = sourceIso,
+                        "dvd raw ISO data source");
+                    CheckImage(tone.TonePreviewImage!, family, 24, 58,
+                        RawImageDrawingRange(DvdStreamingGenerator.AlignRawImageStart(1001), 24, 58),
+                        "dvd raw ISO data source");
+                    Require(HasBothToneLevels(tone.TonePreviewImage!, 24, 58,
+                        RawImageDrawingRange(DvdStreamingGenerator.AlignRawImageStart(1001), 24, 58)),
+                        "dvd raw ISO tone preview retains black and white artwork outside the source range");
+                }
 
                 await Refresh(tone, () => SetFolder(shell.State, family, firstFolder), familyName + " folder change");
                 CheckImage(tone.TonePreviewImage!, family, 24, 58,
@@ -137,6 +152,59 @@ internal static class TonePreviewTests
         var bd = BluRayIsoGenerator.PrepareDrawing(new BluRayDiscParameters(Sectors, 1, innerRadius, outerRadius),
             directory, "TONE_TEST", filesAtOuterRing: outer);
         return (bd.DrawingStartRadiusMm, bd.DrawingEndRadiusMm);
+    }
+
+    private static (double Inner, double Outer) RawImageDrawingRange(uint sourceSectors,
+        double innerRadius, double outerRadius)
+    {
+        DvdStreamingOptions options = new(Sectors, innerRadius, outerRadius);
+        double length = Sectors * 38688.0 * options.ChannelBitLengthNm * 1e-6;
+        DvdTrackGeometry geometry = DvdTrackGeometry.Create(innerRadius, outerRadius, length);
+        uint drawingStart = DvdStreamingGenerator.AlignRawImageStart(sourceSectors);
+        return (geometry.RadiusAtArcLength(length * drawingStart / Sectors), outerRadius);
+    }
+
+    private static bool HasBothToneLevels(BitmapSource bitmap, double innerRadius, double outerRadius,
+        (double Inner, double Outer) drawing)
+    {
+        BitmapSource converted = new FormatConvertedBitmap(bitmap, PixelFormats.Bgra32, null, 0);
+        byte[] pixels = new byte[Size * Size * 4];
+        converted.CopyPixels(pixels, Size * 4, 0);
+        double mmPerPixel = outerRadius * 2 / (Size - 1);
+        bool hasBlack = false, hasWhite = false;
+        for (int y = 0; y < Size; y++)
+        for (int x = 0; x < Size; x++)
+        {
+            int offset = (y * Size + x) * 4;
+            if (pixels[offset + 3] != 255
+                || pixels[offset] == 0xFF && pixels[offset + 1] == 0x85 && pixels[offset + 2] == 0x33)
+                continue;
+            double dx = (x - (Size - 1) / 2.0) * mmPerPixel;
+            double dy = (y - (Size - 1) / 2.0) * mmPerPixel;
+            double radius = Math.Sqrt(dx * dx + dy * dy);
+            if (radius < drawing.Inner || radius >= drawing.Outer
+                || radius < innerRadius || radius >= outerRadius)
+                continue;
+            hasBlack |= pixels[offset] < 8;
+            hasWhite |= pixels[offset] > 247;
+        }
+        return hasBlack && hasWhite;
+    }
+
+    private static void WriteRawIso(string path, int sectors)
+    {
+        byte[] bytes = new byte[checked(sectors * 2048)];
+        Span<byte> primary = bytes.AsSpan(16 * 2048, 2048);
+        primary[0] = 1;
+        "CD001"u8.CopyTo(primary[1..]);
+        primary[6] = 1;
+        BinaryPrimitives.WriteUInt32LittleEndian(primary[80..], checked((uint)sectors));
+        BinaryPrimitives.WriteUInt32BigEndian(primary[84..], checked((uint)sectors));
+        Span<byte> terminator = bytes.AsSpan(17 * 2048, 2048);
+        terminator[0] = 255;
+        "CD001"u8.CopyTo(terminator[1..]);
+        terminator[6] = 1;
+        File.WriteAllBytes(path, bytes);
     }
 
     private static void CheckImage(BitmapSource bitmap, OpticalDiscFamily family, double inner, double outer,

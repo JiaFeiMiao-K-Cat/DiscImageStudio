@@ -80,6 +80,12 @@ if (args is ["--test-data-region"])
     return;
 }
 
+if (args is ["--test-file-placement-preview"])
+{
+    FilePlacementPreviewTests.Run();
+    return;
+}
+
 if (args is ["--test-raw-iso-source"])
 {
     RawIsoSourceTests.Run();

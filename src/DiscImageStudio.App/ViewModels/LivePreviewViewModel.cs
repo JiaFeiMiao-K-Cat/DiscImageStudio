@@ -925,7 +925,8 @@ public partial class LivePreviewViewModel : ObservableObject
                         options with { StartLba = range.StartLba, FillSectors = range.FillSectors }, cancellationToken);
                 if (metadata is { SourceImageSectors: > 0 } sourceMetadata)
                     FileRegionPreviewOverlay.ApplyDvd(outputPath, actual,
-                        0, sourceMetadata.SourceImageSectors, cancellationToken);
+                        sourceMetadata.DrawingStartLba, sourceMetadata.DrawingEndLbaExclusive,
+                        cancellationToken);
                 else if (metadata is { HasFileSystem: true })
                     FileRegionPreviewOverlay.ApplyDvd(outputPath, actual,
                         metadata!.DrawingStartLba, metadata.DrawingEndLbaExclusive, cancellationToken);

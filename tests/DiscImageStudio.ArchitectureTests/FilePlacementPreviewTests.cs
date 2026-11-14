@@ -1,4 +1,5 @@
 using DvdImageSolver.Solver;
+using System.Buffers.Binary;
 using System.IO;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
@@ -258,7 +259,32 @@ internal static class FilePlacementPreviewTests
             preview.IsCalibrationPreview = true;
         }
 
+        state.DvdDataImagePath = string.Empty;
         state.DvdDataDirectory = string.Empty;
+        string sourceIso = Path.Combine(directory, "dvd-raw-source.iso");
+        WriteRawIso(sourceIso, 80);
+        string rawOutput = Path.Combine(directory, "dvd-raw-source-output.iso");
+        DvdImageGenerator.Generate(new(source, rawOutput, disc, DataImagePath: sourceIso));
+        state.DvdIsoPath = rawOutput;
+        preview.IsCalibrationPreview = false;
+        RunPreview(preview);
+        RequirePreview(preview, true, "DVD raw ISO source readback");
+        BitmapSource rawReadback = preview.ResultImage!;
+        double trackLength = 256 * 38688.0 * disc.ChannelBitLengthNm * 1e-6;
+        DvdTrackGeometry rawGeometry = DvdTrackGeometry.Create(24, 58, trackLength,
+            disc.PitchLinear, disc.PitchQuadratic, disc.PitchCubic);
+        double sourceRadius = rawGeometry.RadiusAtArcLength(trackLength * 40 / 256.0);
+        double drawingRadius = rawGeometry.RadiusAtArcLength(trackLength * 160 / 256.0);
+        Require(SampleRadius(rawReadback, sourceRadius, dvd: true) == Blue,
+            "DVD readback colors the preserved ISO prefix blue");
+        Color drawingColor = SampleRadius(rawReadback, drawingRadius, dvd: true);
+        Require(drawingColor != Blue,
+            "DVD readback leaves the actual drawing visible instead of coloring it as file data: "
+            + drawingColor);
+
+        state.DvdDataImagePath = string.Empty;
+        state.DvdDataDirectory = string.Empty;
+        preview.IsCalibrationPreview = true;
         RunPreview(preview);
         RequirePreview(preview, false, "pure DVD drawing projection");
         state.DvdDataDirectory = Path.Combine(directory, "missing");
@@ -398,6 +424,22 @@ internal static class FilePlacementPreviewTests
             imageMapping = new { totalSectors = disc.TotalSectors, innerRadiusMm = disc.InnerRadiusMm,
                 outerRadiusMm = disc.OuterRadiusMm, pitchCubic = disc.PitchCubic },
         }));
+
+    private static void WriteRawIso(string path, int sectors)
+    {
+        byte[] bytes = new byte[checked(sectors * 2048)];
+        Span<byte> primary = bytes.AsSpan(16 * 2048, 2048);
+        primary[0] = 1;
+        "CD001"u8.CopyTo(primary[1..]);
+        primary[6] = 1;
+        BinaryPrimitives.WriteUInt32LittleEndian(primary[80..], checked((uint)sectors));
+        BinaryPrimitives.WriteUInt32BigEndian(primary[84..], checked((uint)sectors));
+        Span<byte> terminator = bytes.AsSpan(17 * 2048, 2048);
+        terminator[0] = 255;
+        "CD001"u8.CopyTo(terminator[1..]);
+        terminator[6] = 1;
+        File.WriteAllBytes(path, bytes);
+    }
 
     private static void RunPreview(LivePreviewViewModel preview)
     {
