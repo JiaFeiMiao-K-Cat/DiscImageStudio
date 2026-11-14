@@ -50,6 +50,10 @@ public sealed record CalibrationMeasurementResult(
     (double InnerRadiusMm, double OuterRadiusMm) MeasuredSpanMm,
     IReadOnlyList<CalibrationRungEvent> Rungs);
 
+/// <summary>
+/// Runs DiscImageStudio's C# measurement ladder against an optical drive and fits the collected
+/// timing samples. Its Discratcher-derived approach does not guarantee equivalent measurements.
+/// </summary>
 public static class CalibrationLadderRunner
 {
     private const double MinimumCoherence = 0.98;

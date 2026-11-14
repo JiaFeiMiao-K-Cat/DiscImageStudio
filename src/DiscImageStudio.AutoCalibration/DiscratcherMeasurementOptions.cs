@@ -1,5 +1,9 @@
 namespace DiscImageStudio.AutoCalibration;
 
+/// <summary>
+/// Validates the measurement option ranges shared with Discratcher. Matching these bounds does not
+/// imply identical measurement behavior or equivalent results from the C# implementation.
+/// </summary>
 public static class DiscratcherMeasurementOptions
 {
     public static bool IsValid(int maxTargets, int reps, double rangeLow, double rangeHigh) =>

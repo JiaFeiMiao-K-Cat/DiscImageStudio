@@ -4,9 +4,10 @@ using GeometryDiscKind = DiscImageStudio.Core.Calibration.CalibrationDiscKind;
 
 namespace DiscImageStudio.AutoCalibration;
 
-/// <summary>Result of the Discratcher auto-calibration pipeline, mapped onto DiscImageStudio's
-/// geometry vocabulary. <paramref name="MediaType"/> keeps Discratcher's own tokens
-/// ("dvd", "cd", …) so the converter stays a thin, explicit translation layer.</summary>
+/// <summary>Result produced by DiscImageStudio's C# auto-calibration implementation, mapped onto
+/// its geometry vocabulary. The implementation is derived from Discratcher but does not claim
+/// equivalent measurements or results. <paramref name="MediaType"/> keeps Discratcher's "dvd" /
+/// "cd" tokens for preset interchange.</summary>
 public sealed record AutoCalibrationResult(
     string MediaType,
     double InnerRadiusMm,
@@ -21,8 +22,8 @@ public sealed record AutoCalibrationWizardResult(
     AutoCalibrationResult Geometry,
     IReadOnlyList<CalibrationSession> Sessions);
 
-/// <summary>Maps Discratcher's raw tokens onto DiscImageStudio's calibration geometry and
-/// supplies the per-media physical constants that Discratcher treats as known priors.</summary>
+/// <summary>Maps the C# implementation's media tokens onto DiscImageStudio's calibration geometry
+/// and supplies the per-media physical constants used as known priors.</summary>
 public static class AutoCalibrationGeometry
 {
     public static GeometryDiscKind KindFor(string mediaType) => mediaType.ToLowerInvariant() switch

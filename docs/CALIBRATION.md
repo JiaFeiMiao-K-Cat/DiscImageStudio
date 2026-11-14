@@ -2,7 +2,7 @@
 
 第一次使用可结合 [DVD 标定实操教程：Verbatim AZO DVD-R](CALIBRATION_TUTORIAL.md)，查看三个阶段的真实记录、实际取点和精标后的盘面效果。本文先说明各阶段共用的照片矫正，再说明生成、测量、应用与再次精标。
 
-CD/DVD 工程也可从新建工程页面启动[自动标定向导](AUTO_CALIBRATION_WIZARD.md)，使用主仓库的 C# 核心测量或导入 Discratcher 几何预设。
+CD/DVD 工程也可从新建工程页面启动[自动标定向导](AUTO_CALIBRATION_WIZARD.md)，使用源自 Discratcher 的 C# 移植实现测量或导入 Discratcher 几何预设。该移植版的测量效果不代表 Discratcher 本体。
 
 从首页或工程侧栏打开**辅助标定**，按需要选择**粗标定、边界标定、精细标定**。已有可靠初值时，可以直接从边界标定或精细标定开始。每张盘都应使用生成时保存的 `.calibration.json` 和这张盘的实拍照片。
 

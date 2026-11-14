@@ -2,10 +2,10 @@ using DiscImageStudio.Core.Calibration;
 
 namespace DiscImageStudio.AutoCalibration;
 
-/// <summary>Writes a Discratcher measurement out as the three DiscImageStudio auxiliary
-/// calibration records (粗标定 / 边界标定 / 精细标定). Each record keeps only the measured
-/// geometry into a freshly generated target: there are no pixel observations and no photo,
-/// so opening it hands every stage a ready-to-edit base target without locking in any markings.</summary>
+/// <summary>Maps a result from DiscImageStudio's C# auto-calibration implementation to the three
+/// auxiliary calibration records (粗标定 / 边界标定 / 精细标定). Each record keeps only the
+/// measured geometry in a freshly generated target: there are no pixel observations or photo,
+/// so each stage receives a ready-to-edit base target without locking in any markings.</summary>
 public static class CalibrationSessionExporter
 {
     public const string FileExtension = ".calibration.json";

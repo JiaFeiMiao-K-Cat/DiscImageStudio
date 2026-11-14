@@ -18,6 +18,10 @@ public sealed record DiscDriveInfo(
 
 public sealed record CalibrationDiscCheck(uint Sectors, bool Foreign);
 
+/// <summary>
+/// Coordinates the C# auto-calibration engine with optical-drive access for the wizard. Debug mode
+/// substitutes simulated measurement data and must not be interpreted as hardware calibration.
+/// </summary>
 public sealed class AutoCalibrationService
 {
     private readonly IOpticalDriveProvider _driveProvider;

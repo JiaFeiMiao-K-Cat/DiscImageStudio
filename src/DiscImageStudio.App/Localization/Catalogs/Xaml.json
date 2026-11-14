@@ -468,13 +468,13 @@
     "cs": "Průvodce automatickou kalibrací (test)"
   },
   "Xaml.AutoCalibrationWizardDetail": {
-    "zh-CN": "使用内置 C# 引擎读取标记盘，也支持导入 Discratcher 预设（测试性）",
-    "en": "Uses the built-in C# engine to read marker discs and imports Discratcher presets (test)",
-    "zh-TW": "使用內建 C# 引擎讀取標記盤，也支援匯入 Discratcher 預設（測試性）",
-    "ja": "内蔵 C# エンジンでマーカーディスクを読み取り、Discratcher のプリセットもインポートできます（試験的）",
-    "tr": "İşaretleme disklerini yerleşik C# altyapısıyla okur ve Discratcher önayarlarını içe aktarır (test)",
-    "es": "Lee discos de marcado con el motor C# integrado e importa ajustes preestablecidos de Discratcher (prueba)",
-    "cs": "Čte značicí disky vestavěným jádrem C# a importuje předvolby Discratcheru (test)"
+    "zh-CN": "源自 Discratcher 的 C# 移植版；测量效果不代表 Discratcher 本体。",
+    "en": "A C# port derived from Discratcher; its results do not represent the original.",
+    "zh-TW": "源自 Discratcher 的 C# 移植版；測量效果不代表 Discratcher 本體。",
+    "ja": "Discratcher を基にした C# 移植版です。測定結果は Discratcher 本体の結果を示すものではありません。",
+    "tr": "Discratcher'dan uyarlanan bir C# sürümüdür; ölçüm sonuçları özgün Discratcher'ı temsil etmez.",
+    "es": "Es una adaptación en C# de Discratcher; sus resultados no representan al Discratcher original.",
+    "cs": "Jde o port Discratcheru do C#; výsledky měření nereprezentují původní Discratcher."
   },
   "Xaml.AutoCalibrationWizardHint": {
     "zh-CN": "选中后各几何预设字段将被清空并禁用，仅保留工程名与保存位置。向导使用内置 C# 引擎测量，也可从 Discratcher 导入预设；点击任一预设卡片可退出该模式。创建工程后启动向导。",
