@@ -103,9 +103,27 @@ internal static class AutoCalibrationSessionTests
                 == 359_785,
             "a detected blank CD uses its reported capacity");
         Require(CalibrationImageSizing.ResolveForExport(
-                "dvd", useManualParameters: true, manualDiscSectors: null, detectedBlankDiscSectors: null)
+                "dvd", useManualParameters: true, manualDiscSectors: 2_295_104, detectedBlankDiscSectors: null)
                 == CalibrationImageSizing.DefaultDvdImageSectors,
-            "manual DVD mode uses the standard single-layer image size");
+            "manual DVD capacity uses the standard single-layer image size");
+        try
+        {
+            CalibrationImageSizing.ResolveForExport(
+                "dvd", useManualParameters: true, manualDiscSectors: 2_295_103, detectedBlankDiscSectors: null);
+            throw new InvalidOperationException("DVD image sizing accepted a disc smaller than the marker image.");
+        }
+        catch (InvalidOperationException exception) when (exception.Message.Contains("扇区数不足"))
+        {
+        }
+        try
+        {
+            CalibrationImageSizing.ResolveForExport(
+                "dvd", useManualParameters: false, manualDiscSectors: null, detectedBlankDiscSectors: 2_295_103);
+            throw new InvalidOperationException("DVD image sizing accepted detected capacity below the marker image.");
+        }
+        catch (InvalidOperationException exception) when (exception.Message.Contains("扇区数不足"))
+        {
+        }
         Require(DiscratcherMeasurementOptions.IsValid(36, 32, 0.02, 0.96)
             && DiscratcherMeasurementOptions.IsValid(16, 16, 0.01, 0.80)
             && DiscratcherMeasurementOptions.IsValid(72, 60, 0.10, 0.98),

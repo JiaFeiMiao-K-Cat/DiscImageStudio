@@ -47,17 +47,7 @@ public sealed class WindowsSptiOpticalDriveProvider : IOpticalDriveProvider
             throw new ArgumentException(@"Expected a Windows optical-drive ID such as \\.\D:.", nameof(id));
         }
 
-        WindowsSptiTransport transport = WindowsSptiTransport.Open(id);
-        try
-        {
-            bool supportsForceUnitAccess = ScsiDriveMetadata.ProbeForceUnitAccess(transport, cancellationToken);
-            return new WindowsTimedOpticalDrive(transport, supportsForceUnitAccess);
-        }
-        catch
-        {
-            transport.Dispose();
-            throw;
-        }
+        return new WindowsTimedOpticalDrive(WindowsSptiTransport.Open(id));
     }
 
     private static bool IsDeviceId(string id) =>

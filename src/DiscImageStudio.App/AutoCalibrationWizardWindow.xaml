@@ -134,25 +134,38 @@
                                     </Grid>
                                     <TextBlock x:Name="BlankMediaInfoText" Style="{StaticResource CompactHint}"
                                                TextWrapping="Wrap" Margin="0,8,0,0" />
-                                    <CheckBox x:Name="ManualMediaParametersCheckBox"
-                                              Content="不读取空白盘，手动填写介质参数"
-                                              Margin="0,10,0,0"
-                                              Checked="ManualMediaParametersCheckBox_Changed"
-                                              Unchecked="ManualMediaParametersCheckBox_Changed" />
-                                    <Grid x:Name="ManualSectorsPanel" Visibility="Collapsed" Margin="0,6,0,0">
+                                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                        <CheckBox x:Name="ManualMediaParametersCheckBox"
+                                                  Content="不读取空白盘，手动填写介质参数"
+                                                  Checked="ManualMediaParametersCheckBox_Changed"
+                                                  Unchecked="ManualMediaParametersCheckBox_Changed" />
+                                        <controls:HelpHint Margin="6,0,0,0" VerticalAlignment="Center"
+                                                           Hint="勾选后可编辑下方的介质类型与总扇区数，供生成镜像使用。此设置不代表实体光盘为空白；流式刻录仍会检查实际盘片。" />
+                                    </StackPanel>
+                                    <Grid x:Name="ManualMediaParametersPanel" Margin="0,6,0,0">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="CD 总扇区数"
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="介质类型"
                                                    Style="{StaticResource FieldLabel}"
                                                    VerticalAlignment="Center" Margin="0,0,10,0" />
-                                        <TextBox x:Name="ManualSectorsText" Grid.Column="1" />
+                                        <TextBox x:Name="ManualMediaTypeText" Grid.Row="0" Grid.Column="1"
+                                                 Margin="0,3" IsReadOnly="True" />
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="总扇区数"
+                                                   Style="{StaticResource FieldLabel}"
+                                                   VerticalAlignment="Center" Margin="0,0,10,0" />
+                                        <TextBox x:Name="ManualSectorsText" Grid.Row="1" Grid.Column="1"
+                                                 Margin="0,3" IsReadOnly="True" />
                                     </Grid>
                                     <TextBlock x:Name="ManualMediaHintText" Style="{StaticResource CompactHint}"
                                                TextWrapping="Wrap" Margin="0,5,0,0"
                                                Visibility="Collapsed"
-                                               Text="CD 输入空白盘总扇区数；镜像按 Discratcher 规则取 min(总扇区数, 359849) − 64。DVD 使用标准单层 DVD 镜像大小。" />
+                                               Text="可输入 CD-R/CD-RW/DVD-R/DVD+R/DVD-RW/DVD+RW。CD 镜像扇区数为 min(总扇区数, 359849) − 64；DVD 使用标准单层镜像大小，输入容量须能容纳该镜像。" />
                                     <Border Style="{StaticResource WizardInset}" Margin="0,10,0,0" Padding="10,8">
                                         <ScrollViewer MaxHeight="90" VerticalScrollBarVisibility="Auto">
                                             <TextBlock x:Name="BlankMediaLogText" Style="{StaticResource CompactHint}"
@@ -184,9 +197,11 @@
                                 <Grid Margin="0,10,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="20" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="16" />
                                         <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="20" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
@@ -196,17 +211,25 @@
                                     </Grid.RowDefinitions>
                                     <TextBlock Grid.Row="0" Grid.Column="0" Text="最大目标点数"
                                                Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
-                                    <TextBox x:Name="MaxTargetsText" Grid.Row="0" Grid.Column="1" Text="56" Margin="0,4" />
-                                    <TextBlock Grid.Row="0" Grid.Column="3" Text="每点重复数"
+                                    <controls:HelpHint Grid.Row="0" Grid.Column="1" VerticalAlignment="Center"
+                                                       Hint="测量位置的数量。更多目标通常可改善拟合，但需要更多次光驱读取；允许 16–72，且必须为 4 的倍数。" />
+                                    <TextBox x:Name="MaxTargetsText" Grid.Row="0" Grid.Column="2" Text="56" Margin="0,4" />
+                                    <TextBlock Grid.Row="0" Grid.Column="4" Text="每点重复数"
                                                Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
-                                    <TextBox x:Name="RepsText" Grid.Row="0" Grid.Column="4" Text="40" Margin="0,4" />
+                                    <controls:HelpHint Grid.Row="0" Grid.Column="5" VerticalAlignment="Center"
+                                                       Hint="每个测量位置重复读取的次数，用于统计光驱旋转相位。重复越多抗抖动越好，但耗时越长；允许 16–60，步进为 4。" />
+                                    <TextBox x:Name="RepsText" Grid.Row="0" Grid.Column="6" Text="40" Margin="0,4" />
                                     <TextBlock Grid.Row="1" Grid.Column="0" Text="范围下限"
                                                Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
-                                    <TextBox x:Name="RangeLoText" Grid.Row="1" Grid.Column="1" Text="0.02" Margin="0,4" />
-                                    <TextBlock Grid.Row="1" Grid.Column="3" Text="范围上限"
+                                    <controls:HelpHint Grid.Row="1" Grid.Column="1" VerticalAlignment="Center"
+                                                       Hint="测量区域的起始位置，占盘片总扇区数的比例。0.02 表示从约 2% 处开始；允许 1%–10%，步进为 1%。" />
+                                    <TextBox x:Name="RangeLoText" Grid.Row="1" Grid.Column="2" Text="0.02" Margin="0,4" />
+                                    <TextBlock Grid.Row="1" Grid.Column="4" Text="范围上限"
                                                Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
-                                    <TextBox x:Name="RangeHiText" Grid.Row="1" Grid.Column="4" Text="0.96" Margin="0,4" />
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="5"
+                                    <controls:HelpHint Grid.Row="1" Grid.Column="5" VerticalAlignment="Center"
+                                                       Hint="测量区域的结束位置，占盘片总扇区数的比例。0.96 表示到约 96% 处结束；允许 80%–98%，步进为 1%。" />
+                                    <TextBox x:Name="RangeHiText" Grid.Row="1" Grid.Column="6" Text="0.96" Margin="0,4" />
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="7"
                                                Style="{StaticResource CompactHint}" TextWrapping="Wrap"
                                                Text="范围与 Discratcher 一致：目标点 16–72（步进 4），重复数 16–60（步进 4），下限 1–10%，上限 80–98%。" />
                                 </Grid>

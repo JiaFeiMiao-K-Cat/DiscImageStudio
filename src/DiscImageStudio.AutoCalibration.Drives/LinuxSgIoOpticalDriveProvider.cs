@@ -44,17 +44,7 @@ public sealed class LinuxSgIoOpticalDriveProvider : IOpticalDriveProvider
             throw new ArgumentException("Expected a Linux optical-drive device ID such as /dev/sr0.", nameof(id));
         }
 
-        LinuxSgIoTransport transport = LinuxSgIoTransport.Open(id);
-        try
-        {
-            bool supportsForceUnitAccess = ScsiDriveMetadata.ProbeForceUnitAccess(transport, cancellationToken);
-            return new LinuxTimedOpticalDrive(transport, supportsForceUnitAccess);
-        }
-        catch
-        {
-            transport.Dispose();
-            throw;
-        }
+        return new LinuxTimedOpticalDrive(LinuxSgIoTransport.Open(id));
     }
 
     private static bool IsOpticalDeviceId(string id) =>

@@ -8,7 +8,24 @@ internal static class AutoCalibrationDriveTests
     {
         CheckDiscInfo(blankStatus: 0, expectedBlank: true);
         CheckDiscInfo(blankStatus: 2, expectedBlank: false);
-        Console.WriteLine("auto-calibration drives: current-profile query and blank-disc status passed");
+        TimedReadsUseForceUnitAccess();
+        Console.WriteLine("auto-calibration drives: current-profile query, blank status, and FUA timing reads passed");
+    }
+
+    private static void TimedReadsUseForceUnitAccess()
+    {
+        using var transport = new ReadTransport();
+        using var drive = new WindowsTimedOpticalDrive(transport);
+        _ = drive.ReadTimed(123, forceUnitAccess: true, CancellationToken.None);
+        byte[]? command = transport.LastCommand;
+        if (!drive.SupportsForceUnitAccess
+            || command is null
+            || command.Length != 12
+            || command[0] != 0xA8
+            || (command[1] & 0x08) == 0)
+        {
+            throw new InvalidOperationException("The Windows timed read did not issue READ(12) with FUA.");
+        }
     }
 
     private static void CheckDiscInfo(byte blankStatus, bool expectedBlank)
@@ -61,6 +78,20 @@ internal static class AutoCalibrationDriveTests
             }
 
             return response;
+        }
+
+        public void Dispose() { }
+    }
+
+    private sealed class ReadTransport : IScsiTransport
+    {
+        public byte[]? LastCommand { get; private set; }
+
+        public byte[] Execute(ReadOnlySpan<byte> command, int transferLength, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            LastCommand = command.ToArray();
+            return new byte[transferLength];
         }
 
         public void Dispose() { }

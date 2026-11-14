@@ -29,26 +29,16 @@ internal interface IScsiTransport : IDisposable
 internal abstract class TimedScsiOpticalDrive : ITimedOpticalDrive
 {
     private readonly IScsiTransport _transport;
-    private readonly bool _supportsForceUnitAccess;
     private bool _disposed;
 
-    protected TimedScsiOpticalDrive(IScsiTransport transport, bool supportsForceUnitAccess)
-    {
-        _transport = transport;
-        _supportsForceUnitAccess = supportsForceUnitAccess;
-    }
+    protected TimedScsiOpticalDrive(IScsiTransport transport) => _transport = transport;
 
-    public bool SupportsForceUnitAccess => _supportsForceUnitAccess;
+    public bool SupportsForceUnitAccess => true;
 
     public TimedSectorRead ReadTimed(uint lba, bool forceUnitAccess, CancellationToken cancellationToken)
     {
         ThrowIfDisposed();
         cancellationToken.ThrowIfCancellationRequested();
-        if (forceUnitAccess && !SupportsForceUnitAccess)
-        {
-            throw new NotSupportedException("The drive does not report READ(12) FUA support.");
-        }
-
         _ = ExecuteExact(MmcCommandSet.Read12(lba, 1, forceUnitAccess), 2048, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         return new TimedSectorRead(ToNanoseconds(Stopwatch.GetTimestamp()));
@@ -147,14 +137,12 @@ internal abstract class TimedScsiOpticalDrive : ITimedOpticalDrive
 
 internal sealed class WindowsTimedOpticalDrive : TimedScsiOpticalDrive
 {
-    public WindowsTimedOpticalDrive(IScsiTransport transport, bool supportsForceUnitAccess)
-        : base(transport, supportsForceUnitAccess) { }
+    public WindowsTimedOpticalDrive(IScsiTransport transport) : base(transport) { }
 }
 
 internal sealed class LinuxTimedOpticalDrive : TimedScsiOpticalDrive
 {
-    public LinuxTimedOpticalDrive(IScsiTransport transport, bool supportsForceUnitAccess)
-        : base(transport, supportsForceUnitAccess) { }
+    public LinuxTimedOpticalDrive(IScsiTransport transport) : base(transport) { }
 }
 
 internal static class ScsiDriveMetadata
@@ -259,17 +247,4 @@ internal static class ScsiDriveMetadata
     public static CalibrationDriveInfo UnavailableForProvider(string id) =>
         new(id, string.Empty, string.Empty, string.Empty, false, "Unavailable", string.Empty, 0, false, false, false);
 
-    public static bool ProbeForceUnitAccess(IScsiTransport transport, CancellationToken token)
-    {
-        byte[] command = [0x5A, 0x08, 0x3F, 0, 0, 0, 0, 0, 64, 0];
-        try
-        {
-            byte[] response = transport.Execute(command, 64, token);
-            return response.Length >= 4 && (response[3] & 0x10) != 0;
-        }
-        catch (IOException)
-        {
-            return false;
-        }
-    }
 }

@@ -224,6 +224,10 @@ public partial class AutoCalibrationWizardWindow : Window
 
     private void UpdateBlankMediaInfo()
     {
+        UpdateManualMediaFields(
+            ParameterDriveCombo.SelectedIndex >= 0 && ParameterDriveCombo.SelectedIndex < _readDrives.Count
+                ? _readDrives[ParameterDriveCombo.SelectedIndex]
+                : null);
         if (ParameterDriveCombo.SelectedIndex < 0
             || ParameterDriveCombo.SelectedIndex >= _readDrives.Count)
         {
@@ -311,10 +315,33 @@ public partial class AutoCalibrationWizardWindow : Window
     private void ManualMediaParametersCheckBox_Changed(object sender, RoutedEventArgs e)
     {
         bool manual = ManualMediaParametersCheckBox.IsChecked == true;
-        ManualSectorsPanel.Visibility = manual && _mediaType == "cd"
-            ? Visibility.Visible
-            : Visibility.Collapsed;
+        ManualMediaTypeText.IsReadOnly = !manual;
+        ManualSectorsText.IsReadOnly = !manual;
         ManualMediaHintText.Visibility = manual ? Visibility.Visible : Visibility.Collapsed;
+        if (!manual)
+        {
+            UpdateBlankMediaInfo();
+        }
+    }
+
+    private void UpdateManualMediaFields(DiscDriveInfo? drive)
+    {
+        if (ManualMediaParametersCheckBox.IsChecked == true)
+        {
+            return;
+        }
+
+        if (drive is { MediaPresent: true })
+        {
+            ManualMediaTypeText.Text = drive.MediaType;
+            ManualSectorsText.Text = drive.TotalSectors > 0
+                ? drive.TotalSectors.ToString(CultureInfo.InvariantCulture)
+                : string.Empty;
+            return;
+        }
+
+        ManualMediaTypeText.Text = string.Empty;
+        ManualSectorsText.Text = string.Empty;
     }
 
     private void ImportDiscratcherPreset_Click(object sender, RoutedEventArgs e)
@@ -474,7 +501,7 @@ public partial class AutoCalibrationWizardWindow : Window
             return;
         }
 
-        if (!TryGetPreparedImageSectors(manualDiscSectors, out uint imageSectors, out string error))
+        if (!TryGetPreparedImageSectors(out uint imageSectors, out string error))
         {
             ShowPrepareError(error);
             return;
@@ -1073,14 +1100,9 @@ public partial class AutoCalibrationWizardWindow : Window
             return false;
         }
 
-        if (validateManualMediaParameters
-            && ManualMediaParametersCheckBox.IsChecked == true
-            && _mediaType == "cd")
+        if (validateManualMediaParameters && ManualMediaParametersCheckBox.IsChecked == true)
         {
-            if (!uint.TryParse(ManualSectorsText.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out uint sectors)
-                || sectors < CalibrationImageSizing.MinimumCdImageSectors
-                    + CalibrationImageSizing.CdLeadOutMarginSectors
-                || sectors > MaximumCdDiscSectors)
+            if (!TryParseManualMediaParameters(out uint sectors, out _))
             {
                 return false;
             }
@@ -1092,17 +1114,21 @@ public partial class AutoCalibrationWizardWindow : Window
         return true;
     }
 
-    private bool TryGetPreparedImageSectors(
-        uint? manualDiscSectors, out uint imageSectors, out string error)
+    private bool TryGetPreparedImageSectors(out uint imageSectors, out string error)
     {
         imageSectors = 0;
         error = string.Empty;
         if (ManualMediaParametersCheckBox.IsChecked == true)
         {
+            if (!TryParseManualMediaParameters(out uint sectors, out error))
+            {
+                return false;
+            }
+
             try
             {
                 imageSectors = CalibrationImageSizing.ResolveForExport(
-                    _mediaType, useManualParameters: true, manualDiscSectors, null);
+                    _mediaType, useManualParameters: true, sectors, null);
                 return true;
             }
             catch (InvalidOperationException exception)
@@ -1144,6 +1170,50 @@ public partial class AutoCalibrationWizardWindow : Window
         _mediaType == "cd"
             ? mediaType.Contains("CD", StringComparison.OrdinalIgnoreCase)
             : mediaType.Contains("DVD", StringComparison.OrdinalIgnoreCase);
+
+    private bool TryParseManualMediaParameters(out uint sectors, out string error)
+    {
+        sectors = 0;
+        error = string.Empty;
+        string mediaType = ManualMediaTypeText.Text.Trim().ToUpperInvariant();
+        bool writableType = mediaType is "CD-R" or "CD-RW" or "DVD-R" or "DVD+R" or "DVD-RW" or "DVD+RW";
+        if (!writableType)
+        {
+            error = "介质类型请输入 CD-R、CD-RW、DVD-R、DVD+R、DVD-RW 或 DVD+RW。";
+            return false;
+        }
+
+        bool isCd = mediaType.StartsWith("CD-", StringComparison.Ordinal);
+        if (isCd != (_mediaType == "cd"))
+        {
+            error = $"介质类型必须与当前 {_mediaType.ToUpperInvariant()} 工程一致。";
+            return false;
+        }
+
+        if (!uint.TryParse(ManualSectorsText.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out sectors))
+        {
+            error = "总扇区数必须是有效的正整数。";
+            return false;
+        }
+
+        if (isCd)
+        {
+            if (sectors < CalibrationImageSizing.MinimumCdImageSectors
+                    + CalibrationImageSizing.CdLeadOutMarginSectors
+                || sectors > MaximumCdDiscSectors)
+            {
+                error = $"CD 总扇区数必须在 {CalibrationImageSizing.MinimumCdImageSectors + CalibrationImageSizing.CdLeadOutMarginSectors:N0}–{MaximumCdDiscSectors:N0} 之间。";
+                return false;
+            }
+        }
+        else if (sectors < CalibrationImageSizing.DefaultDvdImageSectors)
+        {
+            error = $"DVD 总扇区数不足，至少需要 {CalibrationImageSizing.DefaultDvdImageSectors:N0} 个扇区。";
+            return false;
+        }
+
+        return true;
+    }
 
     private void AppendBlankMediaLog(string message)
     {

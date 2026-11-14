@@ -31,6 +31,12 @@ public static class CalibrationImageSizing
         switch (mediaType.ToLowerInvariant())
         {
             case "dvd":
+                if (discSectors < DefaultDvdImageSectors)
+                {
+                    throw new InvalidOperationException(
+                        $"DVD 总扇区数不足，至少需要 {DefaultDvdImageSectors:N0} 个扇区。");
+                }
+
                 return DefaultDvdImageSectors;
             case "cd":
                 if (discSectors < MinimumCdImageSectors + CdLeadOutMarginSectors)
