@@ -384,16 +384,25 @@ public partial class CalibrationViewModel : ObservableObject
 
     private CalibrationParameters ReadSetup()
     {
+        uint? split = SelectedDiscType == "DVD" && CalibrateDualLayerDvd
+            ? checked((uint)ParameterParser.ParsePositiveLong(CalibrationLayerBreak, L.T("换层点（L0 扇区数）"))) : null;
+        uint? minusTotal = split.HasValue && CalibrationDvdLayerFormat == DvdDualLayerDefaults.Minus
+            ? _dvdMinusRTotalSectors ?? DvdDualLayerDefaults.MinusTotalSectors : null;
+        if (minusTotal.HasValue && split != (_dvdMinusRLayerBreak ?? DvdDualLayerDefaults.MinusLayer0Sectors))
+            throw new ArgumentException(L.T("DVD-R DL 请使用默认换层点或重新从盘片读取。"));
         CalibrationParameters p = SelectedDiscType switch
         {
             "DVD" => new(CalibrationDiscKind.Dvd, Number(_state.DvdInnerRadius), Number(_state.DvdOuterRadius),
-                ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, L.T("DVD 扇区数")),
-                DvdStreamingOptions.StandardChannelBitLengthNm,
+                split.HasValue ? (minusTotal.HasValue ? split.Value : DvdImageGenerator.MaxDvdPlusRLayer0Sectors)
+                    : ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, L.T("DVD 扇区数")),
+                split.HasValue ? DvdDualLayerDefaults.ChannelBitLengthNm : DvdStreamingOptions.StandardChannelBitLengthNm,
                 ParameterParser.ParseDouble(_state.DvdPitchLinear, L.T("DVD 相对一次项")),
                 ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("DVD 相对二次项")),
                 ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("DVD 相对三次项")),
                 DvdReadCompatibility: _state.DvdReadCompatibility,
-                UsableSectors: _state.GetUsableSectors(OpticalDiscFamily.Dvd, applyOuterRingBleed: false)),
+                UsableSectors: split is uint layer0 ? layer0 : _state.GetUsableSectors(OpticalDiscFamily.Dvd, applyOuterRingBleed: false),
+                DrawingStartSector: split.HasValue ? DvdImageGenerator.DualLayerCalibrationStartLba : 0,
+                DrawingEndSectorExclusive: split ?? 0, DvdLayerBreakLba: split, DvdMinusRTotalSectors: minusTotal),
             "BD" => CreateBluRayParameters(),
             "CD" => new(CalibrationDiscKind.Cd, Number(_state.CdInnerRadius), Number(_state.CdOuterRadius),
                 ParameterParser.ParsePositiveLong(_state.CdSectors, L.T("CD 扇区数")),
@@ -483,6 +492,7 @@ public partial class CalibrationViewModel : ObservableObject
                     ?? BoundarySearchRangeChoices[1]
                 : ResolveSearchRange(savedRange, autoRange);
             SelectedDiscType = DiscTypeName(target.Parameters.Kind);
+            RestoreDualLayerSetup(target.Parameters);
             // The 60 mm canvas is a disc-preview background; the target itself maps its
             // reference pixels using the saved generation outer radius.
             CanvasOuterRadiusMm = Math.Max(CalibrationReferencePattern.CanvasRadiusMm, target.Parameters.OuterRadiusMm);
@@ -769,6 +779,7 @@ public partial class CalibrationViewModel : ObservableObject
     private void WriteSetupParameters(CalibrationParameters p)
     {
         WriteSetupRadii(p);
+        RestoreDualLayerSetup(p);
         switch (p.Kind)
         {
             case CalibrationDiscKind.Cd:
@@ -795,6 +806,16 @@ public partial class CalibrationViewModel : ObservableObject
                 _state.DvdReadCompatibility = p.DvdReadCompatibility;
                 break;
         }
+    }
+
+    private void RestoreDualLayerSetup(CalibrationParameters p)
+    {
+        CalibrateDualLayerDvd = p.DvdLayerBreakLba.HasValue;
+        CalibrationDvdLayerFormat = p.DvdMinusRTotalSectors.HasValue ? DvdDualLayerDefaults.Minus : DvdDualLayerDefaults.Plus;
+        _dvdMinusRTotalSectors = p.DvdMinusRTotalSectors;
+        _dvdMinusRLayerBreak = p.DvdMinusRTotalSectors.HasValue ? p.DvdLayerBreakLba : null;
+        if (p.DvdLayerBreakLba is uint split)
+            CalibrationLayerBreak = split.ToString(CultureInfo.InvariantCulture);
     }
 
     private void WriteSetupRadii(CalibrationParameters p)
@@ -989,7 +1010,18 @@ public partial class CalibrationViewModel : ObservableObject
                     }
                     else
                     {
-                        DvdImageGenerator.GenerateCalibration(target, stagedPath, DvdOptions(target), token);
+                        string? layer1 = null;
+                        if (target.Parameters.DvdLayerBreakLba.HasValue)
+                        {
+                            layer1 = Directory.CreateDirectory(Path.Combine(staging, "layer1")).FullName;
+                            CalibrationSessionJson.Save(Path.Combine(layer1, "TARGET.calibration.json"), new(target, []));
+                        }
+                        DvdImageGenerator.GenerateCalibration(target, stagedPath, DvdOptions(target), token, layer1);
+                        if (layer1 is not null)
+                        {
+                            File.Delete(Path.Combine(layer1, "TARGET.calibration.json"));
+                            Directory.Delete(layer1);
+                        }
                     }
                     token.ThrowIfCancellationRequested();
                     CalibrationSessionJson.Save(Path.ChangeExtension(stagedPath, ".calibration.json"), session);
@@ -997,7 +1029,11 @@ public partial class CalibrationViewModel : ObservableObject
                 token.ThrowIfCancellationRequested();
                 CalibrationOutputPublisher.Publish(staging, directory);
                 _sessionPath = Path.ChangeExtension(path, ".calibration.json");
-                _statusMessage = L.T("标定文件与同名标定记录已生成。刻录后打开记录、导入照片，即可矫正和描线。");
+                _statusMessage = target.Parameters is { DvdLayerBreakLba: uint minusSplit, DvdMinusRTotalSectors: not null }
+                    ? L.F($"DVD-R DL ISO 的换层点为 {minusSplit}。请用 DVD-R DL 顺序模式刻录。")
+                    : target.Parameters.DvdLayerBreakLba is uint split
+                    ? L.F($"DVD+R DL ISO 的换层点为 {split}。请在刻录工具中设置相同的值。")
+                    : L.T("标定文件与同名标定记录已生成。刻录后打开记录、导入照片，即可矫正和描线。");
             }
             finally
             {

@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Dynamic;
 using System.IO;
 using DiscImageStudio.Burning;
 
@@ -8,6 +9,30 @@ internal static class MediaSectorCountTests
     {
         IOpticalDiscBurner totalOnlyReader = new TotalOnlyReader();
         Throws<NotSupportedException>(() => totalOnlyReader.GetMediaCapacityAsync("reader", OpticalBurnMediaKind.DvdData).GetAwaiter().GetResult());
+        byte[] dvdBoundary = new byte[12];
+        BinaryPrimitives.WriteUInt16BigEndian(dvdBoundary, 10);
+        BinaryPrimitives.WriteUInt32BigEndian(dvdBoundary.AsSpan(8), 2_000_000);
+        var dvdReader = new ReadOnlyTransport([0xAD, 0, 0, 0, 0, 0, 0, 0x20, 0, 12, 0, 0], dvdBoundary, allocationOffset: 8);
+        Require(WindowsImapiBurner.ReadDvdPlusRLayerBoundary(dvdReader, "reader") is
+            { Layer0Sectors: 2_000_000, IsLocked: false });
+        dvdBoundary[4] = 0x80;
+        Require(WindowsImapiBurner.ReadDvdPlusRLayerBoundary(dvdReader, "reader").IsLocked);
+        dvdBoundary[11] |= 1;
+        Throws<IOException>(() => WindowsImapiBurner.ReadDvdPlusRLayerBoundary(dvdReader, "reader"));
+
+        byte[] minusPfi = new byte[20];
+        BinaryPrimitives.WriteUInt16BigEndian(minusPfi, 18);
+        minusPfi[6] = 0x31;
+        const uint endL0 = 0x30000 + 2_092_896 - 1;
+        BinaryPrimitives.WriteUInt32BigEndian(minusPfi.AsSpan(8), 0x30000);
+        BinaryPrimitives.WriteUInt32BigEndian(minusPfi.AsSpan(12), (0xFFFFFF ^ endL0) + 2_078_816 - 1);
+        BinaryPrimitives.WriteUInt32BigEndian(minusPfi.AsSpan(16), endL0);
+        var minusReader = new ReadOnlyTransport([0xAD, 0, 0, 0, 0, 0, 0, 0x10, 0, 20, 0, 0], minusPfi, allocationOffset: 8);
+        Require(WindowsImapiBurner.ReadDvdMinusRLayerBoundary(minusReader, "reader") is
+            { Layer0Sectors: 2_092_896, IsLocked: true, DvdMinusRTotalSectors: 4_171_712 });
+        minusPfi[6] = 0x01;
+        Throws<IOException>(() => WindowsImapiBurner.ReadDvdMinusRLayerBoundary(minusReader, "reader"));
+
         // 79:59:74 is the first sector of lead-out, with LBA 0 at 00:02:00.
         // Never add one as if this were the last readable data LBA.
         byte[] atip = new byte[28];
@@ -31,6 +56,19 @@ internal static class MediaSectorCountTests
         Throws<IOException>(() => WindowsImapiBurner.ReadCdMediaCapacity(2, physicallyBlank: true));
 
         Require(WindowsImapiBurner.ReadDvdSectorCount(0x9, 714_544) == 714_544);
+        Require(!WindowsImapiBurner.IsWritableMedia(OpticalBurnMediaKind.DvdData, 0x5, [0x12]));
+        Require(WindowsImapiBurner.IsWritableMedia(OpticalBurnMediaKind.DvdData, 0x7, [0x1A]));
+        Require(WindowsImapiBurner.IsWritableMedia(OpticalBurnMediaKind.DvdData, 0xA, [0x13]));
+        Require(WindowsImapiBurner.IsWritableMedia(OpticalBurnMediaKind.DvdData, 0xA, [0x14]));
+        dynamic dvdFormat = new ExpandoObject();
+        dvdFormat.CurrentPhysicalMediaType = 0xA;
+        dvdFormat.CurrentMediaStatus = 0x4000; // Finalized, without ERASE_REQUIRED.
+        Require(WindowsImapiBurner.DvdNeedsErase((object)dvdFormat));
+        dvdFormat.CurrentMediaStatus = 0x2;
+        Require(!WindowsImapiBurner.DvdNeedsErase((object)dvdFormat));
+        dvdFormat.CurrentPhysicalMediaType = 0x9;
+        dvdFormat.CurrentMediaStatus = 0x4000;
+        Require(!WindowsImapiBurner.DvdNeedsErase((object)dvdFormat));
         Require(WindowsImapiBurner.ReadDvdSectorCount(0x6, 2_295_104) == 2_295_104);
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadDvdSectorCount(0x9, 0));
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadDvdSectorCount(0xB, 4_171_712));
@@ -142,13 +180,13 @@ internal static class MediaSectorCountTests
         }
     }
 
-    private sealed class ReadOnlyTransport(byte[] expectedReadCommand, byte[] data) : IMmcCommandTransport
+    private sealed class ReadOnlyTransport(byte[] expectedReadCommand, byte[] data, int allocationOffset = 7) : IMmcCommandTransport
     {
         internal int HResult { get; set; }
         public MmcCommandResult Execute(byte[] cdb, int allocationLength, uint timeoutSeconds)
         {
             Require(cdb.SequenceEqual(expectedReadCommand)
-                && allocationLength == BinaryPrimitives.ReadUInt16BigEndian(cdb.AsSpan(7, 2)));
+                && allocationLength == BinaryPrimitives.ReadUInt16BigEndian(cdb.AsSpan(allocationOffset, 2)));
             return new(HResult, [], data);
         }
     }

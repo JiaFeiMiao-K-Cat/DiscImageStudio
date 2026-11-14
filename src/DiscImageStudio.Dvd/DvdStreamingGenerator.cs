@@ -171,7 +171,8 @@ public static class DvdStreamingGenerator
         string dataDirectory,
         DvdStreamingOptions options,
         string volumeLabel = "DVD_IMAGE",
-        bool filesAtOuterRing = false)
+        bool filesAtOuterRing = false,
+        bool filesInBothRings = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
         ArgumentNullException.ThrowIfNull(options);
@@ -180,10 +181,10 @@ public static class DvdStreamingGenerator
             dataDirectory,
             options.OutputSectors,
             volumeLabel,
-            filesAtOuterRing);
-        uint drawingStartLba = AlignToEccBlock(filesAtOuterRing
-            ? isoLayout.MetadataEndLbaExclusive : isoLayout.DataEndLbaExclusive, PsnOffset);
-        uint drawingEndLba = filesAtOuterRing ? isoLayout.FileDataStartLba / 16 * 16 : options.OutputSectors;
+            filesAtOuterRing,
+            filesInBothRings);
+        uint drawingStartLba = AlignToEccBlock(isoLayout.InnerDataEndLbaExclusive, PsnOffset);
+        uint drawingEndLba = isoLayout.FilesAtOuterRing ? isoLayout.FileDataStartLba / 16 * 16 : options.OutputSectors;
         if (drawingEndLba < drawingStartLba || drawingEndLba - drawingStartLba < DvdEccBlockEncoder.SectorCount)
         {
             throw new ArgumentException(
@@ -261,11 +262,12 @@ public static class DvdStreamingGenerator
             ReadCompatibility = target.Parameters.DvdReadCompatibility,
             ReadCompatibilityMode = target.EffectiveDvdReadCompatibilityMode,
         };
+        uint startLba = target.Parameters.DvdLayerBreakLba.HasValue ? checked((uint)target.Parameters.DrawingStartSector) : 0;
         if (target.UsesReferencePattern)
         {
             ArgumentNullException.ThrowIfNull(output);
             options.Validate();
-            MultiBlockSolveOptions solveOptions = CreateSolveOptions(options, 0, options.OutputSectors);
+            MultiBlockSolveOptions solveOptions = CreateSolveOptions(options, startLba, options.OutputSectors - startLba);
             FastDvdStreamSummary summary = FastDispersionImageWriter.WriteCalibrationReferenceStream(
                 target, output, solveOptions,
                 value => progress?.Invoke(new DvdStreamingProgress(value.BytesWritten, value.TotalBytes,
@@ -274,7 +276,7 @@ public static class DvdStreamingGenerator
                 summary.ControlledWords, summary.Elapsed, summary.CompatibilityChanges);
         }
         if (!target.HasWideAddressBands)
-            return GeneratePattern(target.Sample, output, options, progress, cancellationToken);
+            return GeneratePattern(target.Sample, null, output, options, progress, cancellationToken, startLba);
 
         var bands = target.WideBandSectorRanges;
         var angleSweep = target.HasAngleSweep ? new CalibrationAngleSweepSampler(target) : null;
@@ -287,21 +289,21 @@ public static class DvdStreamingGenerator
                     return 0;
             return 255;
         }
-        return GeneratePattern(target.Sample, SectorLuminance, output, options, progress, cancellationToken);
+        return GeneratePattern(target.Sample, SectorLuminance, output, options, progress, cancellationToken, startLba);
     }
 
     private static DvdStreamingSummary GeneratePattern(
         Func<double, double, byte> sampleGray, Func<uint, byte>? sectorLuminance,
         Stream output, DvdStreamingOptions options,
-        Action<DvdStreamingProgress>? progress, CancellationToken cancellationToken)
+        Action<DvdStreamingProgress>? progress, CancellationToken cancellationToken, uint startLba = 0)
     {
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(options);
         options.Validate();
         MultiBlockSolveOptions solveOptions = CreateSolveOptions(
             options,
-            startLba: 0,
-            fillSectors: options.OutputSectors);
+            startLba,
+            fillSectors: options.OutputSectors - startLba);
         void Report(FastDvdStreamProgress value) => progress?.Invoke(new DvdStreamingProgress(
             value.BytesWritten, value.TotalBytes, value.CompletedBlocks, value.TotalBlocks, value.Elapsed));
         FastDvdStreamSummary summary = sectorLuminance is null

@@ -56,12 +56,14 @@
           Condition="'$(InvariantGlobalization)' == 'true'">
     <Error Text="DiscImageStudio.App cannot use invariant globalization because WPF font rendering requires named cultures." />
   </Target>
-  <Target Name="ExcludeHostedSolverRuntimeConfiguration" BeforeTargets="_HandleFileConflictsForPublish">
-    <!-- The solver runs inside this app and uses its runtime configuration.
-         RID and non-RID references can otherwise publish the solver config twice. -->
+  <Target Name="ExcludeHostedSolverLauncherFiles" BeforeTargets="_HandleFileConflictsForPublish">
+    <!-- The solver runs inside this app. RID and non-RID references can both
+         publish standalone launcher files that the app never uses. -->
     <ItemGroup>
       <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
-          Condition="'%(ResolvedFileToPublish.Filename)%(ResolvedFileToPublish.Extension)' == 'DvdImageSolver.runtimeconfig.json'" />
+          Condition="'%(ResolvedFileToPublish.RelativePath)' == 'DvdImageSolver.exe'
+              Or '%(ResolvedFileToPublish.RelativePath)' == 'DvdImageSolver.deps.json'
+              Or '%(ResolvedFileToPublish.RelativePath)' == 'DvdImageSolver.runtimeconfig.json'" />
     </ItemGroup>
   </Target>
 </Project>

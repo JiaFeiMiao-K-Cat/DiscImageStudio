@@ -58,7 +58,8 @@ public static class FastDispersionImageWriter
         string isoOutputPath,
         MultiBlockSolveOptions options,
         Action<FastDispersionProgress>? progress,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        uint? existingIsoSectors = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
         Validate(options);
@@ -69,7 +70,7 @@ public static class FastDispersionImageWriter
             ? Environment.ProcessorCount
             : options.FastParallelism;
         uint isoSectors = options.PreserveExistingIso
-            ? options.ImageMapping.OutputSectors
+            ? existingIsoSectors ?? options.ImageMapping.OutputSectors
             : checked(options.StartLba + options.FillSectors);
         long controlledWords = 0;
         long compatibilityChanges = 0;

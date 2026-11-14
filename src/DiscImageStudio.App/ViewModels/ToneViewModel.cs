@@ -179,7 +179,8 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.DvdDataDirectory)
             or nameof(DiscParametersState.DvdVolumeLabel)
             or nameof(DiscParametersState.DvdFilesAtOuterRing)
-            or nameof(DiscParametersState.DvdOuterRingBleed))
+            or nameof(DiscParametersState.DvdOuterRingBleed)
+            or nameof(DiscParametersState.DvdFilesInBothRings))
         {
             ScheduleTonePreview();
         }
@@ -323,6 +324,7 @@ public partial class ToneViewModel : ObservableObject
                     ? _state.ResolveVolumeLabel(OpticalDiscFamily.Dvd)
                     : string.Empty;
                 bool filesAtOuterRing = _state.DvdFilesAtOuterRing;
+                bool filesInBothRings = _state.DvdFilesInBothRings;
                 hasFileRegionOverlay = dataDirectory.Length > 0;
                 samplesPerSector = TonePreviewDvdSamplesPerSector;
                 await StaWorker.RunAsync(() =>
@@ -330,7 +332,7 @@ public partial class ToneViewModel : ObservableObject
                     cancellationToken.ThrowIfCancellationRequested();
                     DvdHybridStreamingPlan? plan = dataDirectory.Length > 0
                         ? DvdStreamingGenerator.PrepareHybrid(dataDirectory, options,
-                            volumeLabel, filesAtOuterRing)
+                            volumeLabel, filesAtOuterRing, filesInBothRings)
                         : null;
                     cancellationToken.ThrowIfCancellationRequested();
                     DvdTonePreview.Render(

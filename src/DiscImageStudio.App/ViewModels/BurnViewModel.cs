@@ -124,6 +124,11 @@ public partial class BurnViewModel : ObservableObject
                 OnPropertyChanged(nameof(DvdReadCompatibility));
                 UpdateSourceSummary();
             }
+            if (!UseCalibrationPattern && (args.PropertyName is nameof(DiscParametersState.DvdFilesInBothRings)
+                or nameof(DiscParametersState.DvdFilesAtOuterRing)))
+            {
+                UpdateSourceSummary();
+            }
             if (args.PropertyName == nameof(DiscParametersState.CdDataDirectory)
                 && !UseCalibrationPattern
                 && _shell.CurrentProject?.Family == OpticalDiscFamily.CompactDisc)
@@ -280,6 +285,7 @@ public partial class BurnViewModel : ObservableObject
         {
             string dataSuffix = string.IsNullOrWhiteSpace(_state.DvdDataDirectory)
                 ? string.Empty
+                : _state.DvdFilesInBothRings ? L.T("；文件位于内外圈，图案位于两圈之间")
                 : _state.DvdFilesAtOuterRing ? L.T("；文件位于外圈，图案位于其内侧") : L.T("；文件位于内圈，图案位于其外侧");
             SourceTitle = _design.HasLayers
                 ? L.T("使用工程当前合成图与参数")
@@ -290,7 +296,8 @@ public partial class BurnViewModel : ObservableObject
             identity = string.Join("\u001f", "dvd", _design.CompositeRevision, _state.DvdTotalSectors, _state.DvdUsableSectors,
                 _state.DvdInnerRadius, _state.DvdOuterRadius,
                 _state.DvdPitchLinear, _state.DvdPitchQuadratic, _state.DvdPitchCubic,
-                _state.DvdDataDirectory, _state.DvdVolumeLabel, _state.DvdFilesAtOuterRing, _state.DvdOuterRingBleed, _state.DvdReadCompatibility,
+                _state.DvdDataDirectory, _state.DvdVolumeLabel, _state.DvdFilesAtOuterRing,
+                _state.DvdOuterRingBleed, _state.DvdFilesInBothRings, _state.DvdReadCompatibility,
                 _state.ToneDitherStrength, _state.ToneBrightness, _state.ToneSrgbLinearization);
         }
         else if (IsBluRayBurn)
@@ -381,7 +388,7 @@ public partial class BurnViewModel : ObservableObject
         {
             OpticalBurnMediaKind mediaKind = CurrentMediaKind;
             SpeedStatusText = supported.Count == 0
-                ? L.T("当前盘片未报告可选速度，将使用刻录接口的保守回退设置。")
+                ? GetUnavailableSpeedText(mediaKind)
                 : L.F($"当前盘片报告 {supported.Count} 种写入配置；自动模式将使用最低值 ")
                     + L.F($"{FormatBurnWriteSpeed(supported[0], mediaKind)}，最终以刻录机采用值为准。");
         }
@@ -483,7 +490,7 @@ public partial class BurnViewModel : ObservableObject
                 : options.FindIndex(option => option.Speed == previousSpeed);
             SelectedSpeed = selectedIndex < 0 ? options[0] : options[selectedIndex];
             SpeedStatusText = speeds.Count == 0
-                ? L.T("当前盘片未报告可选速度，将使用刻录接口的保守回退设置。")
+                ? GetUnavailableSpeedText(mediaKind)
                 : L.F($"当前盘片报告 {speeds.Count} 种写入配置；自动模式将使用最低值 ")
                     + L.F($"{FormatBurnWriteSpeed(speeds[0], mediaKind)}，最终以刻录机采用值为准。");
         }
@@ -506,6 +513,11 @@ public partial class BurnViewModel : ObservableObject
             }
         }
     }
+
+    private static string GetUnavailableSpeedText(OpticalBurnMediaKind mediaKind)
+        => mediaKind == OpticalBurnMediaKind.DvdData
+            ? L.T("当前盘片未提供可选速度，将自动选择。若需擦除盘片，擦除后会重新读取速度。")
+            : L.T("当前盘片未报告可选速度，将使用刻录接口的保守回退设置。");
 
     private static string FormatBurnWriteSpeed(
         OpticalWriteSpeed speed,
@@ -549,7 +561,17 @@ public partial class BurnViewModel : ObservableObject
             BurnWriteSpeedOption selectedWriteSpeed = SelectedSpeed ?? BurnWriteSpeedOption.Automatic;
             OpticalBurnRequest request;
             string contentDescription;
-            OpticalMediaCapacity capacity = await _opticalDiscBurner.GetMediaCapacityAsync(device.Id, mediaKind);
+            var dualLayerTarget = calibration ? _shell.Calibration.Target?.Parameters : null;
+            OpticalMediaCapacity capacity;
+            if (dualLayerTarget?.DvdLayerBreakLba is uint split)
+            {
+                long total = dualLayerTarget.DvdMinusRTotalSectors ?? 2L * split;
+                capacity = new OpticalMediaCapacity(total, total); // The burner validates the actual layout before writing.
+            }
+            else
+            {
+                capacity = await _opticalDiscBurner.GetMediaCapacityAsync(device.Id, mediaKind);
+            }
             if (preparationRevision != _burnPreparationRevision || !ConfirmChecked)
                 return;
             if (calibration)
@@ -632,7 +654,8 @@ public partial class BurnViewModel : ObservableObject
                             dataDirectory,
                             options,
                             _state.ResolveVolumeLabel(OpticalDiscFamily.Dvd),
-                            filesAtOuterRing: _state.DvdFilesAtOuterRing);
+                            filesAtOuterRing: _state.DvdFilesAtOuterRing,
+                            filesInBothRings: _state.DvdFilesInBothRings);
                     request = new OpticalBurnRequest(
                         device.Id,
                         OpticalBurnMediaKind.DvdData,
@@ -661,7 +684,7 @@ public partial class BurnViewModel : ObservableObject
                         OverwriteRewritableMedia: AllowRewritableOverwrite);
                     contentDescription = hybridPlan is null
                         ? L.F($"DVD · {options.OutputSectors} 扇区 · {options.ContentLength / (1024.0 * 1024.0):F1} MiB")
-                        : L.F($"DVD 混合盘 · {hybridPlan.FileCount} 个文件（{(_state.DvdFilesAtOuterRing ? L.T("外圈") : L.T("内圈"))}）")
+                        : L.F($"DVD 混合盘 · {hybridPlan.FileCount} 个文件（{(_state.DvdFilesInBothRings ? L.T("内外圈") : _state.DvdFilesAtOuterRing ? L.T("外圈") : L.T("内圈"))}）")
                             + L.F($" · 绘图 LBA {hybridPlan.DrawingStartLba}–{hybridPlan.DrawingEndLbaExclusive - 1}")
                             + $" · {options.ContentLength / (1024.0 * 1024.0):F1} MiB";
                 }
@@ -695,9 +718,11 @@ public partial class BurnViewModel : ObservableObject
                 L.T("确认开始流式刻录"),
                 L.F($"即将写入：{device.DisplayName}\n{contentDescription}\n")
                     + L.F($"请求速度：{selectedWriteSpeed.DisplayName}\n\n")
-                    + (dvd && AllowRewritableOverwrite
-                        ? L.T("已允许覆写 DVD±RW：非空白盘会被整盘擦除，空白盘照常写入。开始后取消或断电仍可能使盘片报废。是否继续？")
-                        : L.T("仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？")),
+                    + (capacity.RequiresErase
+                        ? L.T("擦除已有数据前会另行确认。开始后取消或断电可能使盘片报废。是否继续？")
+                        : dvd && AllowRewritableOverwrite
+                            ? L.T("已允许覆写 DVD±RW：非空白盘会被整盘擦除，空白盘照常写入。开始后取消或断电仍可能使盘片报废。是否继续？")
+                            : L.T("仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？")),
                 L.T("确认刻录"));
             if (!confirmed)
             {
@@ -715,6 +740,19 @@ public partial class BurnViewModel : ObservableObject
             IsBurnRunning = true;
             CancellationTokenSource burnCancellation = new();
             _burnCancellation = burnCancellation;
+            if (capacity.RequiresErase)
+            {
+                var dispatcher = System.Windows.Threading.Dispatcher.CurrentDispatcher;
+                request = request with
+                {
+                    ConfirmDvdDataLoss = media => dispatcher.InvokeAsync(() => _shell.ConfirmAsync(
+                        L.T("确认清除盘片数据"),
+                        L.F($"光驱：{device.DisplayName}\n盘片：{media}\n\n")
+                            + L.T("继续刻录将先擦除盘片，原有数据将丢失。是否继续？"),
+                        L.T("擦除并刻录")))
+                        .Task.Unwrap().GetAwaiter().GetResult(),
+                };
+            }
             _shell.BeginBurnDockJob(request.MediaKind, request.ContentLength);
             _shell.AppendLog(
                 L.F($"\n[{DateTime.Now:HH:mm:ss}] 开始流式刻录：{contentDescription}；")
@@ -817,6 +855,31 @@ public partial class BurnViewModel : ObservableObject
         bool overwriteRewritableMedia = false)
     {
         ArgumentNullException.ThrowIfNull(target);
+        if (target.Parameters.DvdLayerBreakLba is uint split)
+        {
+            long total = target.Parameters.DvdMinusRTotalSectors ?? 2L * split;
+            var options = CalibrationViewModel.DvdOptions(target);
+            return new OpticalBurnRequest(deviceId, OpticalBurnMediaKind.DvdData, total * 2048,
+                (output, token) =>
+                {
+                    var directory = Directory.CreateTempSubdirectory("discimage-calibration-");
+                    string record = Path.Combine(directory.FullName, "TARGET.calibration.json");
+                    try
+                    {
+                        CalibrationSessionJson.Save(record, new(target, []));
+                        DvdImageGenerator.GenerateDualLayerCalibrationToStream(target, options, directory.FullName, output, token);
+                    }
+                    finally
+                    {
+                        File.Delete(record);
+                        directory.Delete();
+                    }
+                }, writeSpeed)
+            {
+                DvdLayerBreakLba = split,
+                DvdMinusRDoubleLayer = target.Parameters.DvdMinusRTotalSectors.HasValue,
+            };
+        }
         if (target.Parameters.Kind == CalibrationDiscKind.BluRay)
         {
             BluRayDiscParameters disc = CalibrationViewModel.BluRayParameters(target.Parameters);

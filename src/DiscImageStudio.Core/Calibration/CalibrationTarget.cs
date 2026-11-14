@@ -25,7 +25,9 @@ public sealed record CalibrationParameters(
     bool BluRayInvertMapping = false, long DrawingStartSector = 0, DateTimeOffset? BluRayIsoTimestamp = null,
     long DrawingEndSectorExclusive = 0,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool DvdReadCompatibility = false,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? UsableSectors = null)
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? UsableSectors = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] uint? DvdLayerBreakLba = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] uint? DvdMinusRTotalSectors = null)
 {
     public const int DvdChannelBitsPerSector = 38_688;
     public const int BluRaySectorsPerCluster = 32;
@@ -72,11 +74,18 @@ public sealed record CalibrationParameters(
         if (OutputSectors <= 0 || OutputSectors > Sectors
             || (UsableSectors is not null && OutputSectors % alignment != 0))
             throw new ArgumentException("标定的可用扇区数必须为正数、不超过总扇区数，并符合介质写入对齐要求。");
+        if (DvdLayerBreakLba is uint split && (Kind != CalibrationDiscKind.Dvd || split != OutputSectors
+            || split % 16 != 0 || DrawingStartSector < 32 || DrawingStartSector % 16 != 0
+            || EffectiveDrawingEndSectorExclusive != split))
+            throw new ArgumentException("双层 DVD 标靶的换层点或绘图区无效。");
+        if (DvdMinusRTotalSectors is uint total && (DvdLayerBreakLba is not uint l0 || total <= l0
+            || total > 4_200_000 || total % 16 != 0 || Sectors != l0))
+            throw new ArgumentException("DVD-R DL 标靶的总扇区数无效。");
         if (DrawingStartSector < 0 || DrawingStartSector >= OutputSectors
             || DrawingEndSectorExclusive < 0 || DrawingEndSectorExclusive > OutputSectors
             || (DrawingEndSectorExclusive != 0 && DrawingEndSectorExclusive <= DrawingStartSector)
-            || (Kind != CalibrationDiscKind.BluRay && (DrawingStartSector != 0 || DrawingEndSectorExclusive != 0
-                || BluRayInvertMapping || BluRayIsoTimestamp is not null)))
+            || (Kind != CalibrationDiscKind.BluRay && (BluRayInvertMapping || BluRayIsoTimestamp is not null
+                || (DvdLayerBreakLba is null && (DrawingStartSector != 0 || DrawingEndSectorExclusive != 0)))))
             throw new ArgumentException("标定图案的可绘制扇区范围无效。");
         if (Kind == CalibrationDiscKind.BluRay && (Sectors > uint.MaxValue
             || Sectors % BluRaySectorsPerCluster != 0 || DrawingStartSector % BluRaySectorsPerCluster != 0

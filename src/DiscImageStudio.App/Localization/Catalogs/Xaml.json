@@ -1754,6 +1754,70 @@
     "es": "Ubicación de archivos",
     "cs": "Umístění souborů"
   },
+  "Xaml.CalibrateDualLayerDvd": {
+    "zh-CN": "标定 DVD±R DL 的 L0（实验性）",
+    "en": "Calibrate DVD±R DL Layer 0 (experimental)",
+    "zh-TW": "標定 DVD±R DL 的 L0（實驗性）"
+  },
+  "Xaml.CalibrateDualLayerDvdHint": {
+    "zh-CN": "DVD-R DL 用顺序模式刻录，建议先读盘核对默认参数。DVD+R DL 刻录时需使用同一换层点。",
+    "en": "For DVD-R DL, confirm the defaults by reading the disc and burn in sequential mode. For DVD+R DL, use the same layer break when burning.",
+    "zh-TW": "產生雙層 ISO 後，在燒錄工具填入相同換層點。"
+  },
+  "Xaml.DesignDualLayerDvd": {
+    "zh-CN": "双层 DVD（L0 图案，L1 文件）",
+    "en": "Dual-layer DVD (L0 artwork, L1 files)",
+    "zh-TW": "雙層 DVD（L0 圖案，L1 檔案）"
+  },
+  "Xaml.DvdLayerOccupancy": {
+    "zh-CN": "蓝色 · L1 文件占用",
+    "en": "Blue · L1 file usage",
+    "zh-TW": "藍色 · L1 檔案占用"
+  },
+  "Xaml.DvdLayerOccupancyUnavailable": {
+    "zh-CN": "无法计算，请检查数据文件夹和双层参数。",
+    "en": "Cannot calculate usage. Check the data folder and dual-layer settings.",
+    "zh-TW": "無法計算，請檢查資料檔案夾和雙層參數。"
+  },
+  "Xaml.ExportDualLayerDvd": {
+    "zh-CN": "导出 DVD±R DL 双层 ISO（实验性）",
+    "en": "Export dual-layer DVD±R DL ISO (experimental)",
+    "zh-TW": "匯出 DVD±R DL 雙層 ISO（實驗性）"
+  },
+  "Xaml.DvdDlDataFolder": {
+    "zh-CN": "L1 数据文件夹",
+    "en": "Layer 1 data folder",
+    "zh-TW": "L1 資料檔案夾"
+  },
+  "Xaml.DvdDlDefaults": {
+    "zh-CN": "双层盘默认参数",
+    "en": "Dual-layer disc defaults",
+    "zh-TW": "雙層光碟預設參數"
+  },
+  "Xaml.DvdDlLayerBreak": {
+    "zh-CN": "换层点（L0 扇区数）",
+    "en": "Layer break (Layer 0 sector count)",
+    "zh-TW": "換層點（L0 磁區數）"
+  },
+  "Xaml.ReadDvdDlLayerBreak": {
+    "zh-CN": "从盘片读取",
+    "en": "Read from disc",
+    "zh-TW": "從光碟讀取"
+  },
+  "Xaml.DvdDlLayerBreakHint": {
+    "zh-CN": "L0 放图案，L1 放文件。DVD-R DL 用顺序模式刻录，建议先读盘核对默认参数。DVD+R DL 刻录时使用相同换层点。",
+    "en": "Layer 0 holds the drawing and Layer 1 holds the files. For DVD-R DL, confirm the defaults by reading the disc and burn in sequential mode. For DVD+R DL, use the same layer break when burning.",
+    "zh-TW": "L0 放圖案，L1 放檔案。請使用支援手動設定換層點的燒錄工具，並填入相同數值。"
+  },
+  "Xaml.DvdFilesInBothRings": {
+    "zh-CN": "内外圈同时放文件",
+    "en": "Place files in both rings",
+    "zh-TW": "內外圈同時放檔案",
+    "ja": "内周と外周にファイルを配置",
+    "tr": "Dosyaları iki halkaya yerleştir",
+    "es": "Colocar archivos en ambas zonas",
+    "cs": "Umístit soubory do obou prstenců"
+  },
   "Xaml.InnerRing": {
     "zh-CN": "内圈",
     "en": "Inner ring",

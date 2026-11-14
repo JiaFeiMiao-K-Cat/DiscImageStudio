@@ -351,6 +351,8 @@ public partial class DesignViewModel : ObservableObject
             long usable = _state.GetUsableSectors(Family);
             ContentOuterRadiusMm = Family switch
             {
+                OpticalDiscFamily.Dvd when _dvdLayerOccupancyTimer is not null && ShowDvdLayerOccupancy
+                    => GetDvdDrawingOuterRadius(),
                 OpticalDiscFamily.Dvd => new DvdStreamingOptions(
                     checked((uint)ParameterParser.ParsePositiveLong(_state.DvdTotalSectors, "Total sectors")),
                     ContentInnerRadiusMm, ContentOuterRadiusMm,
@@ -379,6 +381,7 @@ public partial class DesignViewModel : ObservableObject
         }
         OnPropertyChanged(nameof(CanvasOuterRadiusMm));
         CanvasChanged?.Invoke();
+        ScheduleDvdLayerOccupancy();
         ScheduleComposite();
     }
 

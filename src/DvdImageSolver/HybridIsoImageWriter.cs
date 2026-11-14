@@ -16,11 +16,36 @@ internal sealed record HybridIsoWriteSummary(
     bool Joliet,
     bool FilesAtOuterRing = false,
     uint MetadataEndLbaExclusive = 0,
-    uint FileDataStartLba = 0);
+    uint FileDataStartLba = 0,
+    bool FilesInBothRings = false);
 
 /// <summary>Compatibility facade for the media-independent ISO9660/Joliet writer.</summary>
 public static class HybridIsoImageWriter
 {
+    // ECMA-364 maximum Layer 0 data zone for 120 mm DVD+R DL.
+    public const uint MaxDvdPlusRLayer0Sectors = 2_086_912;
+
+    public static LayoutPlan PlanDvdPlusRDoubleLayer(string sourceDirectory, uint layerBreakLba, string volumeLabel)
+        => PlanDvdDoubleLayer(sourceDirectory, layerBreakLba, volumeLabel);
+
+    public static LayoutPlan PlanDvdDoubleLayer(string sourceDirectory, uint layerBreakLba, string volumeLabel,
+        uint? dvdMinusRTotalSectors = null)
+    {
+        if (layerBreakLba == 0 || (!dvdMinusRTotalSectors.HasValue && layerBreakLba > MaxDvdPlusRLayer0Sectors)
+            || layerBreakLba % Encoding.DvdEccBlockEncoder.SectorCount != 0)
+            throw new ArgumentException("The DVD+R DL layer break must be a positive multiple of 16 up to 2086912.");
+
+        uint total = dvdMinusRTotalSectors ?? checked(layerBreakLba * 2);
+        if (total <= layerBreakLba || total > 4_200_000 || total % Encoding.DvdEccBlockEncoder.SectorCount != 0)
+            throw new ArgumentException("The DVD DL volume must contain aligned sectors on both layers.");
+        LayoutPlan plan = Plan(sourceDirectory, total, volumeLabel, filesAtOuterRing: true);
+        if (plan.FileBytes == 0)
+            throw new ArgumentException("DVD DL requires at least one nonempty data file.");
+        if (plan.FileDataStartLba < layerBreakLba)
+            throw new ArgumentException("DVD DL files exceed the Layer 1 capacity.");
+        return plan;
+    }
+
     public sealed class LayoutPlan
     {
         internal LayoutPlan(Iso9660ImageWriter.LayoutPlan layout) => Layout = layout;
@@ -34,14 +59,16 @@ public static class HybridIsoImageWriter
         public uint MetadataEndLbaExclusive => Layout.MetadataEndLbaExclusive;
         public uint FileDataStartLba => Layout.FileDataStartLba;
         public bool FilesAtOuterRing => Layout.FilesAtOuterRing;
+        public bool FilesInBothRings => Layout.FilesInBothRings;
+        public uint InnerDataEndLbaExclusive => Layout.InnerDataEndLbaExclusive;
     }
 
     public static LayoutPlan Plan(string sourceDirectory, uint volumeSectors, string volumeLabel,
-        bool filesAtOuterRing = false)
+        bool filesAtOuterRing = false, bool filesInBothRings = false)
     {
         ArgumentNullException.ThrowIfNull(sourceDirectory);
         return new(Iso9660ImageWriter.Plan(sourceDirectory, volumeSectors, volumeLabel,
-            filesAtOuterRing: filesAtOuterRing));
+            filesAtOuterRing: filesAtOuterRing, filesInBothRings: filesInBothRings));
     }
 
     public static void WriteOuterRingPrefix(LayoutPlan plan, Stream output, uint endLbaExclusive,
@@ -86,7 +113,7 @@ public static class HybridIsoImageWriter
                 output.SetLength(checked((long)volumeSectors * IsoImageWriter.LogicalSectorBytes));
                 if (plan.FilesAtOuterRing)
                 {
-                    WriteOuterRingPrefix(plan, output, plan.MetadataEndLbaExclusive, cancellationToken);
+                    WriteOuterRingPrefix(plan, output, plan.InnerDataEndLbaExclusive, cancellationToken);
                     output.Position = checked((long)plan.FileDataStartLba * IsoImageWriter.LogicalSectorBytes);
                     WriteOuterRingSuffix(plan, output, plan.FileDataStartLba, cancellationToken);
                 }
@@ -110,6 +137,6 @@ public static class HybridIsoImageWriter
         return new("hybrid-iso9660-joliet", volumeSectors, IsoImageWriter.LogicalSectorBytes,
             sourceFullPath, plan.FileCount, plan.DirectoryCount, plan.FileBytes,
             plan.DataEndLbaExclusive, sparse, Iso9660: true, Joliet: true,
-            plan.FilesAtOuterRing, plan.MetadataEndLbaExclusive, plan.FileDataStartLba);
+            plan.FilesAtOuterRing, plan.MetadataEndLbaExclusive, plan.FileDataStartLba, plan.FilesInBothRings);
     }
 }

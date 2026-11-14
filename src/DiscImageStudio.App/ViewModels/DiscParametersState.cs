@@ -107,6 +107,8 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDvdFiles))] private string _dvdDataDirectory = string.Empty;
     [ObservableProperty] private bool _dvdFilesAtOuterRing;
     [ObservableProperty] private bool _dvdOuterRingBleed;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(DvdUsesSingleFileRing))] private bool _dvdFilesInBothRings;
+    public bool DvdUsesSingleFileRing => !DvdFilesInBothRings;
     [ObservableProperty] private bool _dvdReadCompatibility;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(DvdPitchSummary), nameof(DvdActualPitchSummary))] private string _dvdTotalSectors = "2295104";
     [ObservableProperty] private string _dvdUsableSectors = string.Empty;

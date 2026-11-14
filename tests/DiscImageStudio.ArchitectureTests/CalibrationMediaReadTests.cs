@@ -77,6 +77,31 @@ internal static class CalibrationMediaReadTests
             && model.Parameters.GetUsableSectors(DiscImageStudio.Core.OpticalDiscFamily.Dvd) == 713952
             && !string.IsNullOrWhiteSpace(model.CapacityStatus),
             "a recorded disc still supplies geometry, clears a stale writable limit, and explicitly uses the default estimate");
+        model.SelectedDiscType = "CD";
+        backend.DetectedKind = OpticalBurnMediaKind.DvdData;
+        model.ReadDiscSectorsCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Require(model.SelectedDiscType == "DVD" && !model.CalibrateDualLayerDvd
+            && backend.Queries.Last() == ("a", OpticalBurnMediaKind.DvdData),
+            "physical DVD switches the selected family before querying capacity");
+        backend.Read = () => Task.FromException<OpticalMediaCapacity>(new DvdLayerBoundaryRequiredException());
+        model.ReadDiscSectorsCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Require(model.CalibrateDualLayerDvd && model.CalibrationLayerBreak == "2000000"
+            && backend.BoundaryDevice == "a", "DVD+R DL switches mode and reads the same recorder");
+        backend.DetectedKind = OpticalBurnMediaKind.CdAudio;
+        backend.Read = () => Task.FromResult(new OpticalMediaCapacity(360000, 359998));
+        model.ReadDiscSectorsCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Require(model.SelectedDiscType == "CD" && model.Parameters.CdSectors == "360000",
+            "the next disc switches the family back to CD");
+        model.SelectedDiscType = "DVD";
+        model.CalibrateDualLayerDvd = true;
+        model.CalibrationDvdLayerFormat = "DVD-R DL";
+        model.CreateTargetCommand.Execute(null);
+        Require(model.Target?.Parameters is { DvdLayerBreakLba: 2_092_896, DvdMinusRTotalSectors: 4_171_712 },
+            "DVD-R DL defaults create a sequential target without reading a drive");
+        model.CalibrationDvdLayerFormat = "DVD+R DL";
+        model.CreateTargetCommand.Execute(null);
+        Require(model.Target?.Parameters is { DvdLayerBreakLba: 2_086_912, DvdMinusRTotalSectors: null },
+            "switching to DVD+R DL discards the DVD-R DL layout");
         model.OnWindowClosed();
     }
 
@@ -88,6 +113,15 @@ internal static class CalibrationMediaReadTests
     private sealed class Reader : IOpticalDiscBurner
     {
         internal IReadOnlyList<OpticalBurnDevice> Devices = [];
+        internal OpticalBurnMediaKind? DetectedKind;
+        internal string? BoundaryDevice;
+        public Task<OpticalBurnMediaKind?> DetectCalibrationMediaKindAsync(string deviceId, CancellationToken cancellationToken = default)
+            => Task.FromResult(DetectedKind);
+        public Task<DvdLayerBoundary> ReadDvdLayerBoundaryAsync(string deviceId, CancellationToken cancellationToken = default)
+        {
+            BoundaryDevice = deviceId;
+            return Task.FromResult(new DvdLayerBoundary("Recorder A", 2_000_000, false));
+        }
         internal Func<Task<OpticalMediaCapacity>> Read = () => Task.FromResult(new OpticalMediaCapacity(714546, 713936));
         internal List<(string, OpticalBurnMediaKind)> Queries { get; } = [];
         public Task<IReadOnlyList<OpticalBurnDevice>> GetDevicesAsync(CancellationToken cancellationToken = default) =>

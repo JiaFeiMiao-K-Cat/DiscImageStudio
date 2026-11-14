@@ -296,12 +296,22 @@ public class DiscDesignCanvas : FrameworkElement
         DiscRenderCore.DrawGuideCircles(drawingContext, center, discRadius, outerRadius, innerRadius);
         DiscRenderCore.DrawOriginCross(drawingContext, center, 5);
 
+        if (_design.DvdLayerOccupiedRing is { } ring)
+        {
+            PathGeometry occupancy = new() { FillRule = FillRule.EvenOdd };
+            occupancy.Figures.Add(DiscRenderCore.CircleFigure(center, ScreenLength(ring.Outer)));
+            occupancy.Figures.Add(DiscRenderCore.CircleFigure(center, ScreenLength(ring.Inner)));
+            drawingContext.DrawGeometry(DiscTheme.Selection, null, occupancy);
+        }
+
+        drawingContext.PushOpacity(_design.ShowDvdLayerOccupancy ? 0.55 : 1.0);
         // Bottom-up: the layer list stores the panel order with index 0 on top, so painting
         // walks it backwards to match what the exporter composites and the hit test selects.
         for (int index = _design.Layers.Count - 1; index >= 0; index--)
         {
             DrawLayer(drawingContext, _design.Layers[index]);
         }
+        drawingContext.Pop();
 
         DrawDimMask(drawingContext, center, outerRadius, innerRadius);
 
@@ -316,7 +326,7 @@ public class DiscDesignCanvas : FrameworkElement
         }
 
         // Last, so no artwork or selection adorner can hide the guide.
-        if (_design.DataRegions is { } dataRegions)
+        if (!_design.ShowDvdLayerOccupancy && _design.DataRegions is { } dataRegions)
         {
             DrawDataRegions(drawingContext, center, dataRegions);
         }

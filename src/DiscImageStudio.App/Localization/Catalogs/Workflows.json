@@ -1,4 +1,90 @@
 {
+  "DVD-R DL 请使用默认换层点或重新从盘片读取。": {
+    "zh-CN": "DVD-R DL 请使用默认换层点或重新从盘片读取。",
+    "en": "Use the default DVD-R DL layer break or read it from the disc again."
+  },
+  "DVD-R DL 需要使用光驱读到的换层点。": {
+    "zh-CN": "DVD-R DL 需要使用光驱读到的换层点。",
+    "en": "DVD-R DL requires the layer break reported by the drive."
+  },
+  "DVD-R DL ISO 的换层点为 {0}。请用 DVD-R DL 顺序模式刻录。": {
+    "zh-CN": "DVD-R DL ISO 的换层点为 {0}。请用 DVD-R DL 顺序模式刻录。",
+    "en": "The DVD-R DL ISO uses layer break {0}. Burn in DVD-R DL sequential mode."
+  },
+  "未找到装有 DVD±R DL 盘片的光驱。": {
+    "zh-CN": "未找到装有 DVD±R DL 盘片的光驱。",
+    "en": "No drive with a dual-layer DVD±R disc was found."
+  },
+  "DVD-R DL 标定需要顺序刻录模式，当前光驱报告跳层刻录模式。": {
+    "zh-CN": "DVD-R DL 标定需要顺序刻录模式，当前光驱报告跳层刻录模式。",
+    "en": "DVD-R DL calibration requires sequential recording. The drive reports layer-jump recording mode."
+  },
+  "检测到 DVD-R DL（0x0B）。当前双层标定仅支持 DVD+R DL，请换用 DVD+R DL 盘片。": {
+    "zh-CN": "检测到 DVD-R DL（0x0B）。当前双层标定仅支持 DVD+R DL，请换用 DVD+R DL 盘片。",
+    "en": "Detected DVD-R DL (0x0B). Dual-layer calibration currently supports DVD+R DL discs."
+  },
+  "检测到 DVD+R DL（0x08）。请选择 DVD 并启用 DVD+R DL 标定，再从盘片读取换层点。": {
+    "zh-CN": "检测到 DVD+R DL（0x08）。请选择 DVD 并启用 DVD+R DL 标定，再从盘片读取换层点。",
+    "en": "Detected DVD+R DL (0x08). Select DVD and enable DVD+R DL calibration, then read the layer break from the disc."
+  },
+  "换层点（L0 扇区数）": {
+    "zh-CN": "换层点（L0 扇区数）",
+    "en": "Layer break (Layer 0 sector count)"
+  },
+  "已锁定": {
+    "zh-CN": "已锁定",
+    "en": "locked"
+  },
+  "可设置": {
+    "zh-CN": "可设置",
+    "en": "configurable"
+  },
+  "已读取换层点": {
+    "zh-CN": "已读取换层点",
+    "en": "Layer break read"
+  },
+  "未能读取换层点": {
+    "zh-CN": "未能读取换层点",
+    "en": "Could not read the layer break"
+  },
+  "未找到装有 DVD+R DL 盘片的光驱。": {
+    "zh-CN": "未找到装有 DVD+R DL 盘片的光驱。",
+    "en": "No drive with a DVD+R DL disc was found."
+  },
+  "光驱返回的 DVD+R DL 换层点无效。": {
+    "zh-CN": "光驱返回的 DVD+R DL 换层点无效。",
+    "en": "The drive reported an invalid DVD+R DL layer break."
+  },
+  "光驱返回的 DVD+R DL 换层信息不完整。": {
+    "zh-CN": "光驱返回的 DVD+R DL 换层信息不完整。",
+    "en": "The drive returned incomplete DVD+R DL layer information."
+  },
+  "从 {0} 读取换层点 {1}（{2}）。": {
+    "zh-CN": "从 {0} 读取换层点 {1}（{2}）。",
+    "en": "Read layer break {1} from {0} ({2})."
+  },
+  "DVD+R DL ISO 的换层点为 {0}。请在刻录工具中设置相同的值。": {
+    "zh-CN": "DVD+R DL ISO 的换层点为 {0}。请在刻录工具中设置相同的值。",
+    "en": "The DVD+R DL ISO uses layer break {0}. Set the same value in the burning tool."
+  },
+  "内外圈": {
+    "zh-CN": "内外圈",
+    "en": "both rings",
+    "zh-TW": "內外圈",
+    "ja": "内周と外周",
+    "tr": "iki halka",
+    "es": "ambas zonas",
+    "cs": "oba prstence"
+  },
+  "；文件位于内外圈，图案位于两圈之间": {
+    "zh-CN": "；文件位于内外圈，图案位于两圈之间",
+    "en": "; files occupy both rings, with the drawing between them",
+    "zh-TW": "；檔案位於內外圈，圖案位於兩圈之間",
+    "ja": "；ファイルは内周と外周、描画はその間",
+    "tr": "; dosyalar iki halkada, desen aralarında",
+    "es": "; archivos en ambas zonas y dibujo entre ellas",
+    "cs": "; soubory v obou prstencích, obraz mezi nimi"
+  },
   "\n\n如果写入已经开始，当前盘片可能无法继续使用。": {
     "zh-CN": "\n\n如果写入已经开始，当前盘片可能无法继续使用。",
     "en": "\n\nIf writing has started, the disc may no longer be usable.",
@@ -620,6 +706,31 @@
     "es": "{0}; la grabadora determina la velocidad real.",
     "cs": "{0}; skutečnou rychlost určí vypalovačka."
   },
+  "擦除已有数据前会另行确认。开始后取消或断电可能使盘片报废。是否继续？": {
+    "zh-CN": "擦除已有数据前会另行确认。开始后取消或断电可能使盘片报废。是否继续？",
+    "en": "You will be asked again before existing data is erased. Canceling or losing power after recording starts may render the disc unusable. Continue?",
+    "zh-TW": "抹除現有資料前會另行確認。開始後取消或斷電可能使光碟報廢。是否繼續？"
+  },
+  "确认清除盘片数据": {
+    "zh-CN": "确认清除盘片数据",
+    "en": "Confirm loss of disc data",
+    "zh-TW": "確認清除光碟資料"
+  },
+  "光驱：{0}\n盘片：{1}\n\n": {
+    "zh-CN": "光驱：{0}\n盘片：{1}\n\n",
+    "en": "Drive: {0}\nDisc: {1}\n\n",
+    "zh-TW": "光碟機：{0}\n光碟：{1}\n\n"
+  },
+  "继续刻录将先擦除盘片，原有数据将丢失。是否继续？": {
+    "zh-CN": "继续刻录将先擦除盘片，原有数据将丢失。是否继续？",
+    "en": "The disc will be erased before recording. Existing data will be lost. Continue?",
+    "zh-TW": "繼續燒錄將先抹除光碟，原有資料將遺失。是否繼續？"
+  },
+  "擦除并刻录": {
+    "zh-CN": "擦除并刻录",
+    "en": "Erase and record",
+    "zh-TW": "抹除並燒錄"
+  },
   "已允许覆写 DVD±RW：非空白盘会被整盘擦除，空白盘照常写入。开始后取消或断电仍可能使盘片报废。是否继续？": {
     "zh-CN": "已允许覆写 DVD±RW：非空白盘会被整盘擦除，空白盘照常写入。开始后取消或断电仍可能使盘片报废。是否继续？",
     "en": "DVD±RW overwrite is enabled: a non-blank disc will be erased completely and blank discs are written as usual. Canceling or losing power after writing starts may still ruin the disc. Continue?",
@@ -1132,6 +1243,11 @@
     "tr": "Disk {0} yazma yapılandırması bildiriyor; otomatik mod en düşük değeri kullanacaktır: ",
     "es": "El disco informa de {0} configuraciones de escritura. El modo automático usa el valor más bajo: ",
     "cs": "Disk hlásí konfigurace zápisu: {0}. Automatický režim použije nejnižší hodnotu: "
+  },
+  "当前盘片未提供可选速度，将自动选择。若需擦除盘片，擦除后会重新读取速度。": {
+    "zh-CN": "当前盘片未提供可选速度，将自动选择。若需擦除盘片，擦除后会重新读取速度。",
+    "en": "Selectable speeds are unavailable. Speed will be selected automatically. If the disc needs erasing, speeds will be queried again afterward.",
+    "zh-TW": "目前光碟片未提供可選速度，將自動選擇。若需抹除光碟片，抹除後會重新讀取速度。"
   },
   "当前盘片未报告可选速度，将使用刻录接口的保守回退设置。": {
     "zh-CN": "当前盘片未报告可选速度，将使用刻录接口的保守回退设置。",

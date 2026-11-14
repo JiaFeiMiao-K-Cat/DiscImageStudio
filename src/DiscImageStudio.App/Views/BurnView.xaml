@@ -43,7 +43,8 @@
                                  can only be written when the user accepts a full overwrite. -->
                             <CheckBox Content="{loc:Text Xaml.AllowRewritableDvdOverwrite}"
                                       IsChecked="{Binding AllowRewritableOverwrite}"
-                                      IsEnabled="{Binding IsSetupEnabled}" Margin="0,12,0,0" />
+                                      IsEnabled="{Binding IsSetupEnabled}" Margin="0,12,0,0"
+                                      Style="{StaticResource CompactCheckBox}" />
                             <TextBlock Text="{loc:Text Xaml.AllowRewritableDvdOverwriteHint}"
                                        Style="{StaticResource HintText}" Margin="0,4,0,0" />
                         </StackPanel>

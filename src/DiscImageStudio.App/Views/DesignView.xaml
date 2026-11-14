@@ -270,17 +270,29 @@
                                     </controls:VisibilityGate>
                                     <controls:VisibilityGate IsOpen="{Binding IsDvd}">
                                         <StackPanel>
+                                            <CheckBox Content="{loc:Text Xaml.DesignDualLayerDvd}"
+                                                      IsChecked="{Binding DvdExport.ExportDualLayerDvd}" Margin="0,0,0,8" />
+                                            <controls:VisibilityGate IsOpen="{Binding DvdExport.ExportDualLayerDvd}">
+                                                <ComboBox ItemsSource="{Binding DvdExport.DvdLayerFormats}"
+                                                          SelectedItem="{Binding DvdExport.DvdLayerFormat}"
+                                                          Style="{StaticResource CompactComboBox}" Margin="0,0,0,8" />
+                                            </controls:VisibilityGate>
                                             <controls:PathField Label="{loc:Text Xaml.FolderOptional}" Compact="True"
                                                                 Text="{Binding State.DvdDataDirectory}"
                                                                 ToolTip="{Binding State.DvdDataDirectory}"
                                                                 ButtonLabel="{loc:Text Xaml.Browse}"
                                                                 Command="{Binding BrowseDataCommand}" />
-                                            <controls:VisibilityGate IsOpen="{Binding State.HasDvdFiles}">
+                                            <controls:VisibilityGate IsOpen="{Binding DvdExport.ExportDualLayerDvd}" Inverted="True">
+                                              <controls:VisibilityGate IsOpen="{Binding State.HasDvdFiles}">
                                                 <StackPanel Margin="0,14,0,0">
                                                     <TextBlock Style="{StaticResource FieldLabel}"
                                                                Text="{loc:Text Xaml.FilePlacement}" Margin="0,0,0,6" />
                                                     <controls:SegmentedControl LabelA="{loc:Text Xaml.InnerRing}" LabelB="{loc:Text Xaml.OuterRing}"
+                                                                               IsEnabled="{Binding State.DvdUsesSingleFileRing}"
                                                                                IsSecondSelected="{Binding State.DvdFilesAtOuterRing}" />
+                                                    <CheckBox Content="{loc:Text Xaml.DvdFilesInBothRings}" Margin="0,6,0,0"
+                                                              IsChecked="{Binding State.DvdFilesInBothRings}"
+                                                              Style="{StaticResource CompactCheckBox}" />
                                                     <controls:VisibilityGate IsOpen="{Binding State.DvdFilesAtOuterRing}" Margin="0,10,0,0">
                                                         <StackPanel Orientation="Horizontal">
                                                             <CheckBox Content="{loc:Text Xaml.OuterRingBleed}"
@@ -291,6 +303,7 @@
                                                         </StackPanel>
                                                     </controls:VisibilityGate>
                                                 </StackPanel>
+                                              </controls:VisibilityGate>
                                             </controls:VisibilityGate>
                                         </StackPanel>
                                     </controls:VisibilityGate>
@@ -336,8 +349,8 @@
                         <controls:DiscDesignCanvas x:Name="DesignCanvas" />
                         <!-- The tone module's file-region legend sits in the canvas corner:
                              it describes the blue zones without taking rail height. -->
+                        <controls:VisibilityGate IsOpen="{Binding ShowDvdLayerOccupancy}" Inverted="True" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10,0,0,10">
                         <controls:VisibilityGate HorizontalAlignment="Left" VerticalAlignment="Bottom"
-                                                 Margin="10,0,0,10"
                                                  IsOpen="{Binding Tone.HasFileRegionOverlay}">
                             <Border Padding="8,4"
                                     Background="{DynamicResource Surface2Brush}"
@@ -348,6 +361,23 @@
                                                Margin="0,0,8,0" VerticalAlignment="Center" />
                                     <TextBlock Style="{StaticResource MicroText}" VerticalAlignment="Center"
                                                Text="{loc:Text Xaml.FileAreaIncludingFilesystem}" />
+                                </StackPanel>
+                            </Border>
+                        </controls:VisibilityGate>
+                        </controls:VisibilityGate>
+                        <controls:VisibilityGate IsOpen="{Binding ShowDvdLayerOccupancy}"
+                                                 HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                                                 Margin="10,0,0,10" IsHitTestVisible="False">
+                            <Border Padding="8,4" Background="{DynamicResource Surface2Brush}"
+                                    CornerRadius="{StaticResource RadiusChip}">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource MicroText}"
+                                               Text="{loc:Text Xaml.DvdLayerOccupancy}" />
+                                    <TextBlock Style="{StaticResource MicroText}" Text="{Binding DvdLayerOccupancyText}" />
+                                    <controls:VisibilityGate IsOpen="{Binding DvdLayerOccupancyUnavailable}">
+                                        <TextBlock Style="{StaticResource MicroText}"
+                                                   Text="{loc:Text Xaml.DvdLayerOccupancyUnavailable}" />
+                                    </controls:VisibilityGate>
                                 </StackPanel>
                             </Border>
                         </controls:VisibilityGate>

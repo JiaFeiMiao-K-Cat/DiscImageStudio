@@ -12,8 +12,22 @@ public partial class CalibrationViewModel
     private IReadOnlyList<OpticalBurnDevice> _capacityRecorders = [];
     [ObservableProperty] private OpticalBurnDevice? _selectedCapacityRecorder;
     [ObservableProperty] private string _capacityStatus = string.Empty;
+    [ObservableProperty] private bool _calibrateDualLayerDvd;
+    private uint? _dvdMinusRTotalSectors;
+    private uint? _dvdMinusRLayerBreak;
+    [ObservableProperty] private string _calibrationLayerBreak = Dvd.DvdImageGenerator.MaxDvdPlusRLayer0Sectors.ToString(CultureInfo.InvariantCulture);
     public bool HasRecorderChoice => CapacityRecorders.Count > 1;
     public IAsyncRelayCommand ReadDiscSectorsCommand { get; private set; } = null!;
+
+    [ObservableProperty] private string _calibrationDvdLayerFormat = DvdDualLayerDefaults.Plus;
+    public IReadOnlyList<string> DvdLayerFormats => DvdDualLayerDefaults.Formats;
+
+    partial void OnCalibrationDvdLayerFormatChanged(string value)
+    {
+        _dvdMinusRTotalSectors = null;
+        _dvdMinusRLayerBreak = null;
+        CalibrationLayerBreak = DvdDualLayerDefaults.Layer0Sectors(value).ToString(CultureInfo.InvariantCulture);
+    }
 
     partial void OnSelectedCapacityRecorderChanged(OpticalBurnDevice? value) => CapacityStatus = string.Empty;
 
@@ -22,9 +36,32 @@ public partial class CalibrationViewModel
 
     private void RefreshCapacityCommands() => ReadDiscSectorsCommand?.NotifyCanExecuteChanged();
 
+    private async Task ReadCalibrationLayerBreakAsync(string family, bool wasDualLayer, string deviceId, CancellationToken token)
+    {
+        DvdLayerBoundary boundary = await _shell.OpticalBurner.ReadDvdLayerBoundaryAsync(deviceId, token);
+        token.ThrowIfCancellationRequested();
+        if (SelectedDiscType != family || SelectedCapacityRecorder?.Id != deviceId
+            || (family == "DVD" && CalibrateDualLayerDvd != wasDualLayer))
+        {
+            _statusMessage = CapacityStatus = L.T("CalibrationMedia.SelectionChanged");
+            return;
+        }
+        if (!boundary.DvdMinusRTotalSectors.HasValue && boundary.Layer0Sectors > Dvd.DvdImageGenerator.MaxDvdPlusRLayer0Sectors)
+            throw new InvalidOperationException(L.T("光驱返回的 DVD+R DL 换层点无效。"));
+        SelectedDiscType = "DVD";
+        CalibrateDualLayerDvd = true;
+        CalibrationDvdLayerFormat = boundary.DvdMinusRTotalSectors.HasValue ? DvdDualLayerDefaults.Minus : DvdDualLayerDefaults.Plus;
+        _dvdMinusRTotalSectors = boundary.DvdMinusRTotalSectors;
+        _dvdMinusRLayerBreak = boundary.DvdMinusRTotalSectors.HasValue ? boundary.Layer0Sectors : null;
+        CalibrationLayerBreak = boundary.Layer0Sectors.ToString(CultureInfo.InvariantCulture);
+        string status = boundary.IsLocked ? L.T("已锁定") : L.T("可设置");
+        _statusMessage = CapacityStatus = L.F($"从 {boundary.DeviceName} 读取换层点 {boundary.Layer0Sectors}（{status}）。");
+    }
+
     private async Task ReadDiscSectorsAsync()
     {
         string family = SelectedDiscType;
+        bool dualLayer = family == "DVD" && CalibrateDualLayerDvd;
         var kind = family switch
         {
             "DVD" => OpticalBurnMediaKind.DvdData,
@@ -50,10 +87,53 @@ public partial class CalibrationViewModel
                     return;
                 }
 
-                OpticalMediaCapacity capacity = await _shell.OpticalBurner.GetMediaCapacityAsync(selected.Id, kind, token);
+                OpticalBurnMediaKind? detected = await _shell.OpticalBurner.DetectCalibrationMediaKindAsync(selected.Id, token);
+                token.ThrowIfCancellationRequested();
+                if (SelectedDiscType != family || SelectedCapacityRecorder?.Id != selected.Id
+                    || (family == "DVD" && CalibrateDualLayerDvd != dualLayer))
+                {
+                    _statusMessage = CapacityStatus = L.T("CalibrationMedia.SelectionChanged");
+                    return;
+                }
+                if (detected is { } actualKind)
+                {
+                    kind = actualKind;
+                    family = actualKind switch
+                    {
+                        OpticalBurnMediaKind.DvdData => "DVD",
+                        OpticalBurnMediaKind.BluRayData => "BD",
+                        _ => "CD",
+                    };
+                    SelectedDiscType = family;
+                    if (family == "DVD")
+                        CalibrateDualLayerDvd = false;
+                    dualLayer = false;
+                }
+                else if (dualLayer)
+                {
+                    await ReadCalibrationLayerBreakAsync(family, dualLayer, selected.Id, token);
+                    return;
+                }
+
+                OpticalMediaCapacity capacity;
+                try
+                {
+                    capacity = await _shell.OpticalBurner.GetMediaCapacityAsync(selected.Id, kind, token);
+                }
+                catch (DvdLayerBoundaryRequiredException)
+                {
+                    if (SelectedCapacityRecorder?.Id != selected.Id)
+                    {
+                        _statusMessage = CapacityStatus = L.T("CalibrationMedia.SelectionChanged");
+                        return;
+                    }
+                    await ReadCalibrationLayerBreakAsync(family, dualLayer, selected.Id, token);
+                    return;
+                }
                 long sectors = capacity.TotalSectors;
                 token.ThrowIfCancellationRequested();
-                if (family != SelectedDiscType || SelectedCapacityRecorder?.Id != selected.Id)
+                if (family != SelectedDiscType || SelectedCapacityRecorder?.Id != selected.Id
+                    || (family == "DVD" && CalibrateDualLayerDvd))
                 {
                     _statusMessage = CapacityStatus = L.T("CalibrationMedia.SelectionChanged");
                     return;
