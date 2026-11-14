@@ -2,6 +2,7 @@ using DiscImageStudio.BluRay;
 using DiscImageStudio.Burning;
 using DiscImageStudio.Cd;
 using DiscImageStudio.Core;
+using DiscImageStudio.AutoCalibration;
 using DiscImageStudio.Dvd;
 using DiscImageStudio.Imaging;
 using System.IO;
@@ -9,6 +10,15 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+
+if (args is ["--test-auto-calibration-core"])
+{
+    AutoCalibrationCoreTests.Run();
+    AutoCalibrationSessionTests.Run();
+    AutoCalibrationDriveTests.Run();
+    AutoCalibrationDebugServiceTests.Run();
+    return;
+}
 
 if (args is ["--test-image-drop"])
 {
@@ -54,6 +64,13 @@ if (args is ["--test-capacity-ui"])
     LocalizationTests.Run();
     RelocalizationTests.Run();
     BurnWriteSpeedSelectionTests.Run();
+    return;
+}
+
+if (args is ["--test-dvd-media-capacity"])
+{
+    MediaSectorCountTests.Run();
+    DvdRewritableOverwriteTests.Run();
     return;
 }
 

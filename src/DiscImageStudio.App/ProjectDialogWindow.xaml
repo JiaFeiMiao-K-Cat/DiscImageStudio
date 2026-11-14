@@ -121,16 +121,19 @@
 
                 <!-- Left: presets. Create mode shows category tabs over the card grid (最近
                      lists recently confirmed presets, the other tabs one per family); project
-                     settings keep the family fixed and list only that family's presets. -->
-                <Grid Grid.Column="0">
+                     settings keep the family fixed and list only that family's presets. The
+                     column paints the window background itself so no child control can leak
+                     a light surface through the transparent lists. -->
+                <Grid Grid.Column="0" Background="{DynamicResource BackgroundBrush}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <ListBox Grid.Row="0" ItemsSource="{Binding TemplateCategories}"
                              SelectedIndex="{Binding TemplateCategoryIndex}"
                              Visibility="{Binding TemplateTabsVisibility}"
-                             Background="Transparent" BorderThickness="0" Padding="0"
+                             Background="{DynamicResource BackgroundBrush}" BorderThickness="0" Padding="0"
                              ScrollViewer.VerticalScrollBarVisibility="Disabled"
                              ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                              KeyboardNavigation.TabNavigation="Once"
@@ -150,7 +153,7 @@
                     </StackPanel>
                     <ListBox Grid.Row="1" ItemsSource="{Binding VisibleTemplates}"
                              SelectedItem="{Binding SelectedTemplate}"
-                             Background="Transparent" BorderThickness="0" Padding="0,4,0,0"
+                             Background="{DynamicResource BackgroundBrush}" BorderThickness="0" Padding="0,4,0,0"
                              ScrollViewer.VerticalScrollBarVisibility="Auto"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                              KeyboardNavigation.TabNavigation="Once"
@@ -201,6 +204,67 @@
                     <TextBlock Grid.Row="1" Text="{Binding EmptyCategoryHint}" Style="{StaticResource HintText}"
                                HorizontalAlignment="Center" Margin="0,24,0,0"
                                Visibility="{Binding EmptyCategoryVisibility}" />
+
+                    <!-- Auto-calibration wizard (create mode only): a one-off card that blanks
+                         and disables the preset fields, leaving only the project name and save
+                         path. The wizard measures the calibration after the project is created. -->
+                    <StackPanel Grid.Row="2" Margin="0,8,0,0" Visibility="{Binding AutoWizardVisibility}">
+                        <Border Height="1" Background="{DynamicResource DividerBrush}" Margin="0,0,10,8" />
+                        <ToggleButton IsChecked="{Binding AutoWizardMode}"
+                                      Cursor="Hand" Focusable="True"
+                                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                            <ToggleButton.Style>
+                                <Style TargetType="ToggleButton">
+                                    <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
+                                    <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+                                    <Setter Property="BorderThickness" Value="1" />
+                                    <Setter Property="Padding" Value="10,8" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ToggleButton">
+                                                <Border x:Name="Card" Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="{StaticResource RadiusField}"
+                                                        Padding="{TemplateBinding Padding}">
+                                                    <StackPanel>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <iconPacks:PackIconLucide Kind="Ruler"
+                                                                                      Width="18" Height="18"
+                                                                                      VerticalAlignment="Center"
+                                                                                      Margin="0,0,8,0"
+                                                                                      Foreground="{DynamicResource PrimaryBrush}" />
+                                                            <TextBlock Text="{loc:Text Xaml.AutoCalibrationWizard}"
+                                                                       Style="{StaticResource RowText}"
+                                                                       FontWeight="Medium" />
+                                                        </StackPanel>
+                                                        <TextBlock Text="{loc:Text Xaml.AutoCalibrationWizardDetail}"
+                                                                   Style="{StaticResource CompactHint}"
+                                                                   TextWrapping="Wrap" Margin="0,3,0,0" />
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter TargetName="Card" Property="Opacity" Value="0.55" />
+                                                    </Trigger>
+                                                    <Trigger Property="IsChecked" Value="True">
+                                                        <Setter TargetName="Card" Property="BorderBrush"
+                                                                Value="{DynamicResource PrimaryBrush}" />
+                                                        <Setter TargetName="Card" Property="Background"
+                                                                Value="{DynamicResource Surface2Brush}" />
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ToggleButton.Style>
+                        </ToggleButton>
+                        <TextBlock Text="{loc:Text Xaml.AutoCalibrationWizardHint}"
+                                   Style="{StaticResource CompactHint}" TextWrapping="Wrap"
+                                   Margin="0,6,10,0"
+                                   Visibility="{Binding AutoWizardHintVisibility}" />
+                    </StackPanel>
                 </Grid>
 
                 <!-- Gutter between the preset column and the details pane. -->
@@ -225,7 +289,7 @@
                                 <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.ProjectName}" />
                                 <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
                                          MaxLength="80" />
-                                <WrapPanel Margin="0,16,0,0" VerticalAlignment="Top">
+                                <WrapPanel Margin="0,16,0,0" VerticalAlignment="Top" IsEnabled="{Binding GeometryFieldsEnabled}">
                                     <StackPanel Width="116" Margin="0,0,12,14">
                                         <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.InnerR0Mm}" />
                                         <TextBox Text="{Binding InnerRadiusText, UpdateSourceTrigger=PropertyChanged}" />

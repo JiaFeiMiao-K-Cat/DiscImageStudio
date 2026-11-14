@@ -31,7 +31,8 @@ public sealed record ProjectDialogResult(
     string SavePath,
     bool BluRayInvertMapping = false,
     long? UsableSectors = null,
-    bool SynchronizePreview = false);
+    bool SynchronizePreview = false,
+    bool AutoWizard = false);
 
 /// <summary>The name the user gave a preset in the save dialog. Null (from the handler)
 /// means the user cancelled.</summary>
@@ -132,7 +133,23 @@ public partial class ProjectDialogViewModel : ObservableObject
 
     public string DialogTitle => _editMode ? L.T("工程设置") : L.T("新建工程");
 
-    public string ConfirmLabel => _editMode ? L.T("确定") : L.T("创建工程");
+    public string ConfirmLabel => _editMode
+        ? L.T("确定")
+        : AutoWizardMode ? L.T("创建并进入向导") : L.T("创建工程");
+
+    /// <summary>Template cards stay interactive while the wizard entry is active: picking one
+    /// is the user's way back out of auto-wizard mode, so it applies the preset and clears the
+    /// flag instead of being blocked.</summary>
+    public bool GeometryFieldsEnabled => !AutoWizardMode;
+
+    public System.Windows.Visibility AutoWizardHintVisibility => AutoWizardMode
+        ? System.Windows.Visibility.Visible
+        : System.Windows.Visibility.Collapsed;
+
+    public System.Windows.Visibility AutoWizardVisibility => !_editMode
+        && TemplateCategoryIndex is 1 or 2
+        ? System.Windows.Visibility.Visible
+        : System.Windows.Visibility.Collapsed;
 
     /// <summary>Category tabs belong to the create path only; project settings keep the
     /// project's family and list just that family's presets.</summary>
@@ -227,6 +244,14 @@ public partial class ProjectDialogViewModel : ObservableObject
     [ObservableProperty]
     private string _saveDirectory;
 
+    /// <summary>Auto-calibration mode: clears and disables every geometry preset field so the
+    /// calibration is measured by the wizard after the project is created. Toggled by the
+    /// "自动标定向导（测试性）" card below the preset browser (create mode only).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(GeometryFieldsEnabled), nameof(AutoWizardHintVisibility),
+        nameof(ConfirmLabel))]
+    private bool _autoWizardMode;
+
     [ObservableProperty]
     private string _errorMessage = string.Empty;
 
@@ -301,6 +326,10 @@ public partial class ProjectDialogViewModel : ObservableObject
     /// user switches to one; the open project's own values are not a catalog preset.</summary>
     private ProjectTemplateTile? _appliedTemplate;
 
+    /// <summary>Card that was selected when the wizard entry was switched on, restored if the
+    /// user backs out without picking another preset.</summary>
+    private ProjectTemplateTile? _templateBeforeWizard;
+
     partial void OnTemplateCategoryIndexChanged(int value)
     {
         if (_editMode)
@@ -309,6 +338,21 @@ public partial class ProjectDialogViewModel : ObservableObject
         }
 
         BuildVisibleTemplates();
+        OnPropertyChanged(nameof(AutoWizardVisibility));
+        if (AutoWizardMode)
+        {
+            if (value is 1 or 2)
+            {
+                Family = value == 2 ? OpticalDiscFamily.Dvd : OpticalDiscFamily.CompactDisc;
+                _templateBeforeWizard = VisibleTemplates.FirstOrDefault();
+                ClearAutoWizardGeometry();
+                return;
+            }
+
+            _templateBeforeWizard = null;
+            AutoWizardMode = false;
+        }
+
         // Keep a selection that lives in the new tab; otherwise snap to its first card so
         // the parameter pane always shows the template the user is looking at.
         if (SelectedTemplate is null || !VisibleTemplates.Contains(SelectedTemplate))
@@ -342,6 +386,14 @@ public partial class ProjectDialogViewModel : ObservableObject
 
     private void ApplySelectedTemplate(ProjectTemplateTile? value)
     {
+        if (AutoWizardMode)
+        {
+            // Picking a preset is an explicit "I want the presets after all" answer, so the
+            // wizard flag drops before the geometry lands in the fields.
+            _templateBeforeWizard = null;
+            AutoWizardMode = false;
+        }
+
         if (value is not null && value.Family != Family)
         {
             // Selecting another family's template switches the form too, without letting
@@ -417,6 +469,57 @@ public partial class ProjectDialogViewModel : ObservableObject
     }
 
     partial void OnNameChanged(string value) => ConfirmCommand.NotifyCanExecuteChanged();
+
+    partial void OnAutoWizardModeChanged(bool value)
+    {
+        if (_editMode)
+        {
+            return;
+        }
+
+        if (value)
+        {
+            // The wizard (not a preset) supplies the calibration: blank the fields and lift
+            // the card selection so the parameter pane advertises the empty state.
+            ClearAutoWizardGeometry();
+            _suppressTemplateApply = true;
+            try
+            {
+                _templateBeforeWizard = SelectedTemplate;
+                SelectedTemplate = null;
+            }
+            finally
+            {
+                _suppressTemplateApply = false;
+            }
+        }
+        else if (SelectedTemplate is null && _templateBeforeWizard is not null)
+        {
+            // Leaving the wizard without picking a card restores the preset that was in force
+            // before it, so the parameter pane never sits empty on the create path.
+            ProjectTemplateTile? restore = _templateBeforeWizard;
+            if (restore.Family != Family || !VisibleTemplates.Contains(restore))
+            {
+                restore = VisibleTemplates.FirstOrDefault();
+            }
+
+            _templateBeforeWizard = null;
+            SelectedTemplate = restore;
+        }
+
+        ConfirmCommand.NotifyCanExecuteChanged();
+    }
+
+    private void ClearAutoWizardGeometry()
+    {
+        InnerRadiusText = string.Empty;
+        OuterRadiusText = string.Empty;
+        SectorsText = string.Empty;
+        UsableSectorsText = string.Empty;
+        PitchLinearText = string.Empty;
+        PitchQuadraticText = string.Empty;
+        PitchCubicText = string.Empty;
+    }
 
     private int CategoryForFamily(OpticalDiscFamily family) => family switch
     {
@@ -511,6 +614,13 @@ public partial class ProjectDialogViewModel : ObservableObject
     /// as the user typed it: a new project starts with an empty name.</summary>
     private void ApplyTemplate()
     {
+        // In auto-wizard mode the geometry is measured by the wizard, not copied from a
+        // preset; template switches must leave the blanked fields untouched.
+        if (AutoWizardMode)
+        {
+            return;
+        }
+
         ProjectTemplateTile? tile = SelectedTemplate;
         _templateInvertMapping = Family == OpticalDiscFamily.BluRay && _state.BdInvertMapping;
         if (tile?.PresetId is null)
@@ -641,8 +751,6 @@ public partial class ProjectDialogViewModel : ObservableObject
             throw new ArgumentException(L.T("请填写工程名。"));
         }
 
-        (double inner, double outer, long sectors, double pitchLinear, double pitchQuadratic, double pitchCubic)
-            = ParseGeometry();
         string directory = SaveDirectory.Trim();
         if (directory.Length == 0)
         {
@@ -651,6 +759,29 @@ public partial class ProjectDialogViewModel : ObservableObject
 
         string fileName = $"{SanitizeFileName(name)}{ProjectJsonStore.FileExtension}";
         string savePath = Path.Combine(directory, fileName);
+
+        if (AutoWizardMode)
+        {
+            // The wizard measures the geometry after creation; keep a valid family-specific
+            // seed in the project until a successful measurement replaces it.
+            bool isDvd = Family == OpticalDiscFamily.Dvd;
+            return new ProjectDialogResult(
+                name,
+                Family,
+                isDvd ? 24.0 : 24.5,
+                isDvd ? 58.0 : 56.8,
+                isDvd ? 2295104 : 359849,
+                0,
+                0,
+                0,
+                savePath,
+                UsableSectors: null,
+                SynchronizePreview: false,
+                AutoWizard: true);
+        }
+
+        (double inner, double outer, long sectors, double pitchLinear, double pitchQuadratic, double pitchCubic)
+            = ParseGeometry();
         return new ProjectDialogResult(
             name,
             Family,

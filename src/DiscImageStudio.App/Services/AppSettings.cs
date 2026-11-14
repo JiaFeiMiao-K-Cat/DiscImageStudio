@@ -31,6 +31,10 @@ public sealed record AppSettings
     /// the DiscImageStudio-cache folder beside the executable.</summary>
     public string CacheDirectory { get; init; } = string.Empty;
 
+    /// <summary>Auto-calibration wizard debug mode: drives and calibrations come from the
+    /// simulator, so the flow can be exercised without a recorder or a physical disc.</summary>
+    public bool AutoWizardDebugMode { get; init; }
+
     /// <summary>Drops values that cannot be represented on this machine: an unknown enum,
     /// relative paths, and paths with invalid characters. Hand-edited files therefore load
     /// without a crash.</summary>

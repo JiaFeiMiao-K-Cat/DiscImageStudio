@@ -1,3 +1,4 @@
+using DiscImageStudio.AutoCalibration;
 using DiscImageStudio.Localization;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -55,6 +56,7 @@ public partial class MainWindow : Window
         _shell.SaveConfirmationHandler = (title, message, confirmLabel, neutralLabel)
             => BurnConfirmModal.ShowThreeWayAsync(title, message, confirmLabel, neutralLabel);
         _shell.ShowProjectDialogHandler = ShowProjectDialog;
+        _shell.ShowAutoWizardHandler = OpenAutoCalibrationWizard;
         _shell.Calibration.ShowPresetSaveDialog = () => PresetSaveWindow.Show(this);
         _shell.ProjectSaved += PlayProjectSaveTrail;
         DataContext = _shell;
@@ -955,7 +957,32 @@ public partial class MainWindow : Window
 
         ProjectDialogWindow window = new(viewModel) { Owner = this };
         window.ShowDialog();
+        if (window.DialogResult == true && viewModel.Result is { AutoWizard: true } autoProject)
+        {
+            // The wizard must run after the shell has created and opened the project, so it is
+            // queued for the next dispatcher pass; by then the fresh document is live and the
+            // measured geometry can be written straight into its working state.
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+            {
+                _ = _shell.LaunchAutoCalibrationAsync(autoProject);
+            }));
+        }
         return window.DialogResult == true ? viewModel.Result : null;
+    }
+
+    /// <summary>Opens the modal auto-calibration wizard and hands back its measured geometry,
+    /// or null if the user cancelled the calibration wizard.</summary>
+    private AutoCalibrationWizardResult? OpenAutoCalibrationWizard(ProjectDialogResult project)
+    {
+        AutoCalibrationWizardWindow wizard = new(
+            project,
+            _settings,
+            _shell.OpticalBurner,
+            new FileDialogService(() => this))
+        {
+            Owner = this,
+        };
+        return wizard.ShowDialog() == true ? wizard.Result : null;
     }
 
     // ---- Navigation chrome: active states, page swap, entrance animation, scroll reset ----
