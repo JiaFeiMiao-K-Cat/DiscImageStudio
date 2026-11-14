@@ -42,6 +42,12 @@ if (args is ["--test-dvd-read-compatibility"])
     return;
 }
 
+if (args is ["--test-dvd-typed-operations"])
+{
+    DvdTypedOperationTests.Run();
+    return;
+}
+
 if (args is ["--test-capacity-ui"])
 {
     DvdReadCompatibilityUiTests.Run();

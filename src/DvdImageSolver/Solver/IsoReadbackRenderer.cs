@@ -235,9 +235,42 @@ public static class IsoReadbackRenderer
     {
         var summary = ReadSolveSummary(isoPath + ".json");
         long isoSectors = new FileInfo(isoPath).Length / DvdEccBlockEncoder.PayloadBytesPerSector;
+        uint sourceImageSectors = ReadSourceImageSectors(isoPath + ".json");
+        if (sourceImageSectors > 0)
+            return AlignToEccBlocks(sourceImageSectors, summary.FillSectors, isoSectors, totalSectors);
+
         uint fillSectors = summary.FillSectors != 0 ? summary.FillSectors
             : checked((uint)Math.Min(isoSectors, totalSectors) - summary.StartLba);
-        return (summary.StartLba, fillSectors);
+        return AlignToEccBlocks(summary.StartLba, fillSectors, isoSectors, totalSectors);
+    }
+
+    private static uint ReadSourceImageSectors(string sidecarPath)
+    {
+        if (!File.Exists(sidecarPath)) return 0;
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(sidecarPath));
+            return GetUInt(document.RootElement, "sourceImageSectors");
+        }
+        catch (JsonException)
+        {
+            return 0;
+        }
+    }
+
+    private static (uint StartLba, uint FillSectors) AlignToEccBlocks(
+        uint startLba, uint fillSectors, long isoSectors, uint totalSectors)
+    {
+        uint blockSectors = DvdEccBlockEncoder.SectorCount;
+        uint availableEnd = checked((uint)Math.Min(isoSectors, totalSectors)
+            / blockSectors * blockSectors);
+        uint alignedStart = startLba / blockSectors * blockSectors;
+        if (fillSectors == 0) return (alignedStart, 0);
+
+        ulong rawEnd = (ulong)startLba + fillSectors;
+        ulong alignedEnd = (rawEnd + blockSectors - 1) / blockSectors * blockSectors;
+        uint end = checked((uint)Math.Min(alignedEnd, availableEnd));
+        return (alignedStart, end > alignedStart ? end - alignedStart : 0);
     }
 
     internal static (uint StartLba, uint FillSectors, uint TotalSectors) ReadSolveSummary(string sidecarPath)

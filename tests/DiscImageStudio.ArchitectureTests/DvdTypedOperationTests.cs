@@ -164,6 +164,27 @@ internal static class DvdTypedOperationTests
         }
         File.WriteAllText(external + ".json", "{\"startLba\":32,\"fillSectors\":64}");
         Require(IsoReadbackRenderer.ReadDrawingRange(external, 256) == (32u, 64u), "range does not require imageMapping metadata");
+
+        File.WriteAllText(external + ".json", "{\"startLba\":101,\"fillSectors\":155}");
+        Require(IsoReadbackRenderer.ReadDrawingRange(external, 256) == (96u, 160u),
+            "legacy non-ECC-aligned ranges expand to complete blocks");
+        File.WriteAllText(external + ".json",
+            "{\"startLba\":101,\"fillSectors\":155,\"sourceImageSectors\":101}");
+        var sourceRange = IsoReadbackRenderer.ReadDrawingRange(external, 256);
+        Require(sourceRange == (96u, 160u), "raw ISO source range expands to complete DVD ECC blocks");
+        string sourceReadback = Path.Combine(directory, "source-readback.png");
+        WithoutConsole(() => IsoReadbackRenderer.Render(external, sourceReadback,
+            readback with { StartLba = sourceRange.StartLba, FillSectors = sourceRange.FillSectors }));
+        Require(File.Exists(sourceReadback), "non-ECC-aligned ISO prefix can be read back");
+
+        File.WriteAllText(external + ".json",
+            "{\"startLba\":255,\"fillSectors\":0,\"sourceImageSectors\":255}");
+        Require(IsoReadbackRenderer.ReadDrawingRange(external, 256) == (240u, 0u),
+            "an empty range still has an ECC-aligned start");
+        File.WriteAllText(external + ".json",
+            "{\"startLba\":256,\"fillSectors\":0,\"sourceImageSectors\":256}");
+        Require(IsoReadbackRenderer.ReadDrawingRange(external, 256) == (256u, 0u),
+            "a source ISO filling the disc has no artwork range");
     }
 
     private static bool SamePixels(string first, string second)
