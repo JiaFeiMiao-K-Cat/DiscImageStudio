@@ -381,7 +381,7 @@ public partial class BurnViewModel : ObservableObject
         {
             OpticalBurnMediaKind mediaKind = CurrentMediaKind;
             SpeedStatusText = supported.Count == 0
-                ? L.T("当前盘片未报告可选速度，将使用刻录接口的保守回退设置。")
+                ? GetUnavailableSpeedText(mediaKind)
                 : L.F($"当前盘片报告 {supported.Count} 种写入配置；自动模式将使用最低值 ")
                     + L.F($"{FormatBurnWriteSpeed(supported[0], mediaKind)}，最终以刻录机采用值为准。");
         }
@@ -483,7 +483,7 @@ public partial class BurnViewModel : ObservableObject
                 : options.FindIndex(option => option.Speed == previousSpeed);
             SelectedSpeed = selectedIndex < 0 ? options[0] : options[selectedIndex];
             SpeedStatusText = speeds.Count == 0
-                ? L.T("当前盘片未报告可选速度，将使用刻录接口的保守回退设置。")
+                ? GetUnavailableSpeedText(mediaKind)
                 : L.F($"当前盘片报告 {speeds.Count} 种写入配置；自动模式将使用最低值 ")
                     + L.F($"{FormatBurnWriteSpeed(speeds[0], mediaKind)}，最终以刻录机采用值为准。");
         }
@@ -506,6 +506,11 @@ public partial class BurnViewModel : ObservableObject
             }
         }
     }
+
+    private static string GetUnavailableSpeedText(OpticalBurnMediaKind mediaKind)
+        => mediaKind == OpticalBurnMediaKind.DvdData
+            ? L.T("当前盘片未提供可选速度，将自动选择。若需擦除盘片，擦除后会重新读取速度。")
+            : L.T("当前盘片未报告可选速度，将使用刻录接口的保守回退设置。");
 
     private static string FormatBurnWriteSpeed(
         OpticalWriteSpeed speed,
@@ -695,9 +700,11 @@ public partial class BurnViewModel : ObservableObject
                 L.T("确认开始流式刻录"),
                 L.F($"即将写入：{device.DisplayName}\n{contentDescription}\n")
                     + L.F($"请求速度：{selectedWriteSpeed.DisplayName}\n\n")
-                    + (dvd && AllowRewritableOverwrite
-                        ? L.T("已允许覆写 DVD±RW：非空白盘会被整盘擦除，空白盘照常写入。开始后取消或断电仍可能使盘片报废。是否继续？")
-                        : L.T("仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？")),
+                    + (capacity.RequiresErase
+                        ? L.T("擦除已有数据前会另行确认。开始后取消或断电可能使盘片报废。是否继续？")
+                        : dvd && AllowRewritableOverwrite
+                            ? L.T("已允许覆写 DVD±RW：非空白盘会被整盘擦除，空白盘照常写入。开始后取消或断电仍可能使盘片报废。是否继续？")
+                            : L.T("仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？")),
                 L.T("确认刻录"));
             if (!confirmed)
             {
@@ -715,6 +722,19 @@ public partial class BurnViewModel : ObservableObject
             IsBurnRunning = true;
             CancellationTokenSource burnCancellation = new();
             _burnCancellation = burnCancellation;
+            if (capacity.RequiresErase)
+            {
+                var dispatcher = System.Windows.Threading.Dispatcher.CurrentDispatcher;
+                request = request with
+                {
+                    ConfirmDvdDataLoss = media => dispatcher.InvokeAsync(() => _shell.ConfirmAsync(
+                        L.T("确认清除盘片数据"),
+                        L.F($"光驱：{device.DisplayName}\n盘片：{media}\n\n")
+                            + L.T("继续刻录将先擦除盘片，原有数据将丢失。是否继续？"),
+                        L.T("擦除并刻录")))
+                        .Task.Unwrap().GetAwaiter().GetResult(),
+                };
+            }
             _shell.BeginBurnDockJob(request.MediaKind, request.ContentLength);
             _shell.AppendLog(
                 L.F($"\n[{DateTime.Now:HH:mm:ss}] 开始流式刻录：{contentDescription}；")

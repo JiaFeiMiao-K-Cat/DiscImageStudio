@@ -34,6 +34,9 @@ public sealed record OpticalBurnDevice(
 public sealed record OpticalMediaCapacity(long TotalSectors, long WritableSectors)
 {
     public bool? IsBlank { get; init; }
+
+    /// <summary>Writing this medium requires a separate erase confirmation.</summary>
+    public bool RequiresErase { get; init; }
 }
 
 public sealed record OpticalWriteSpeed(
@@ -101,6 +104,9 @@ public sealed record OpticalBurnRequest(
     OpticalBurnBufferOptions? BufferOptions = null,
     bool OverwriteRewritableMedia = false)
 {
+    // Invoked on the burn worker immediately before modifying a nonblank rewritable DVD.
+    public Func<string, bool>? ConfirmDvdDataLoss { get; init; }
+
     public OpticalBurnBufferOptions EffectiveBufferOptions => BufferOptions
         ?? (MediaKind == OpticalBurnMediaKind.BluRayData
             ? OpticalBurnBufferOptions.BluRayDefault : OpticalBurnBufferOptions.Default);
