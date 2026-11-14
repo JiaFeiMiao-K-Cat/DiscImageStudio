@@ -11,7 +11,8 @@ public sealed record CdDataImageMetadata(
     uint DrawingStartLba,
     uint DrawingEndLbaExclusive,
     bool FilesAtOuterRing,
-    ToneProfile Tone)
+    ToneProfile Tone,
+    uint SourceImageSectors = 0)
 {
     [JsonRequired]
     public string Format { get; init; } = "cd-rom-mode1-v1";
@@ -25,7 +26,8 @@ public sealed record CdDataImageMetadata(
             if (metadata is not { Format: "cd-rom-mode1-v1", Parameters: not null }) return null;
             metadata.Parameters.Validate();
             metadata.Tone.Validate();
-            return metadata.DrawingStartLba < metadata.DrawingEndLbaExclusive
+            return metadata.DrawingStartLba <= metadata.DrawingEndLbaExclusive
+                && metadata.SourceImageSectors <= metadata.DrawingStartLba
                 && metadata.DrawingEndLbaExclusive <= metadata.Parameters.OutputSectors ? metadata : null;
         }
         catch (Exception exception) when (exception is IOException or JsonException or ArgumentException

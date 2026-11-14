@@ -74,6 +74,12 @@ if (args is ["--test-data-region"])
     return;
 }
 
+if (args is ["--test-raw-iso-source"])
+{
+    RawIsoSourceTests.Run();
+    return;
+}
+
 if (args is ["--test-hybrid-parity"])
 {
     HybridDrawingParityTests.Run();
@@ -151,6 +157,7 @@ BluRayPixelReuseTests.Run();
 BluRayCubicPitchTests.Run();
 BluRayCubicPreviewTests.Run();
 BluRayIsoTests.Run();
+RawIsoSourceTests.Run();
 BluRayDrawingModeTests.Run();
 BluRaySidecarTests.Run();
 BluRayFilePlacementTests.Run();

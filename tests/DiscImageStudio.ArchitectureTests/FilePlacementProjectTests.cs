@@ -33,6 +33,22 @@ internal static class FilePlacementProjectTests
                     && ProjectSession.CaptureOutputs(loaded, state).VolumeLabel == "FILES",
                     "saving retains the folder and volume label");
 
+                ProjectDocument imageDocument = loaded with
+                {
+                    Outputs = loaded.Outputs with
+                    {
+                        DataDirectory = string.Empty,
+                        DataImagePath = Path.Combine(directory, family + "-source.iso"),
+                    },
+                };
+                ProjectJsonStore.Save(path, imageDocument);
+                ProjectDocument imageLoaded = ProjectJsonStore.Load(path);
+                ProjectSession.ApplyToState(imageLoaded, state);
+                ProjectOutputs imageCaptured = ProjectSession.CaptureOutputs(imageLoaded, state);
+                Require(imageCaptured.DataImagePath == imageDocument.Outputs.DataImagePath
+                    && imageCaptured.DataDirectory.Length == 0,
+                    "raw ISO source survives save, load and state capture");
+
                 // Existing project files do not carry the optional position field. Opening one
                 // after an outer-ring project must reset that selection to the original inner mode.
                 JsonObject legacy = JsonNode.Parse(File.ReadAllText(path))!.AsObject();

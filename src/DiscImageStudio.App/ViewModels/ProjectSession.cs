@@ -51,6 +51,7 @@ internal static class ProjectSession
                 state.DvdActualPitchCubic = Format(geometry.PitchCubic);
                 state.DvdOutputPath = outputs.OutputPath;
                 state.DvdDataDirectory = outputs.DataDirectory;
+                state.DvdDataImagePath = outputs.DataImagePath ?? string.Empty;
                 state.DvdFilesAtOuterRing = outputs.FilesAtOuterRing;
                 state.DvdOuterRingBleed = outputs.OuterRingBleed;
                 state.DvdVolumeLabel = outputs.VolumeLabel;
@@ -68,6 +69,7 @@ internal static class ProjectSession
                 state.BdPitchCubic = state.BdActualPitchCubic = Format(geometry.PitchCubic);
                 state.BdOutputPath = outputs.OutputPath;
                 state.BdDataDirectory = outputs.DataDirectory;
+                state.BdDataImagePath = outputs.DataImagePath ?? string.Empty;
                 state.BdFilesAtOuterRing = outputs.FilesAtOuterRing;
                 state.BdOuterRingBleed = outputs.OuterRingBleed;
                 state.BdVolumeLabel = outputs.VolumeLabel;
@@ -87,6 +89,7 @@ internal static class ProjectSession
                 state.CdPitchQuadratic = state.CdActualPitchQuadratic = Format(geometry.PitchQuadratic);
                 state.CdPitchCubic = state.CdActualPitchCubic = Format(geometry.PitchCubic);
                 state.CdDataDirectory = outputs.DataDirectory;
+                state.CdDataImagePath = outputs.DataImagePath ?? string.Empty;
                 state.CdFilesAtOuterRing = outputs.FilesAtOuterRing;
                 state.CdOuterRingBleed = outputs.OuterRingBleed;
                 state.CdVolumeLabel = string.IsNullOrWhiteSpace(outputs.VolumeLabel) ? "CD_IMAGE" : outputs.VolumeLabel;
@@ -149,7 +152,8 @@ internal static class ProjectSession
                     Interleave: false,
                     FilesAtOuterRing: state.DvdFilesAtOuterRing,
                     DvdReadCompatibility: state.DvdReadCompatibility,
-                    OuterRingBleed: state.DvdOuterRingBleed);
+                    OuterRingBleed: state.DvdOuterRingBleed,
+                    DataImagePath: NonEmpty(state.DvdDataImagePath));
             case OpticalDiscFamily.BluRay:
                 return new ProjectOutputs(
                     RequireOutput(state.BdOutputPath, L.T("蓝光 ISO 输出位置")),
@@ -158,7 +162,8 @@ internal static class ProjectSession
                     state.BdVolumeLabel,
                     Interleave: false,
                     FilesAtOuterRing: state.BdFilesAtOuterRing,
-                    OuterRingBleed: state.BdOuterRingBleed);
+                    OuterRingBleed: state.BdOuterRingBleed,
+                    DataImagePath: NonEmpty(state.BdDataImagePath));
             default:
                 return new ProjectOutputs(
                     RequireOutput(state.CdOutputPath, state.HasCdFiles ? L.T("CD ISO 输出位置") : L.T("CD 音轨输出位置")),
@@ -167,7 +172,8 @@ internal static class ProjectSession
                     state.CdVolumeLabel,
                     state.CdInterleave,
                     FilesAtOuterRing: state.CdFilesAtOuterRing,
-                    OuterRingBleed: state.CdOuterRingBleed);
+                    OuterRingBleed: state.CdOuterRingBleed,
+                    DataImagePath: NonEmpty(state.CdDataImagePath));
         }
     }
 
@@ -196,4 +202,7 @@ internal static class ProjectSession
         string value = raw.Trim();
         return value.Length == 0 ? throw new ArgumentException(L.F($"请填写{field}。")) : value;
     }
+
+    private static string? NonEmpty(string value)
+        => string.IsNullOrWhiteSpace(value) ? null : value;
 }

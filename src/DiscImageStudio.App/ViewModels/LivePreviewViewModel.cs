@@ -750,8 +750,14 @@ public partial class LivePreviewViewModel : ObservableObject
                     CdDataImageGenerator.PreviewTrack(trackPath, outputPath, parameters,
                         outputSize, 2048 / samplesPerSector, cancellationToken);
                     if (overlay)
-                        FileRegionPreviewOverlay.ApplyCd(outputPath, parameters,
-                            metadata!.DrawingStartLba, metadata.DrawingEndLbaExclusive, cancellationToken);
+                    {
+                        if (metadata!.SourceImageSectors > 0)
+                            FileRegionPreviewOverlay.ApplyCd(outputPath, parameters,
+                                0, metadata.SourceImageSectors, cancellationToken);
+                        else
+                            FileRegionPreviewOverlay.ApplyCd(outputPath, parameters,
+                                metadata.DrawingStartLba, metadata.DrawingEndLbaExclusive, cancellationToken);
+                    }
                 }
                 else
                 {
@@ -908,13 +914,19 @@ public partial class LivePreviewViewModel : ObservableObject
             outputPath = TempFiles.GetCacheFilePath($"dvd-live-preview-{revision}.png");
             DvdImageMetadata? metadata = DvdImageMetadata.TryLoad(isoPath);
             DvdStreamingOptions actual = ReadDvdPreviewGeometry(calibration: false);
-            bool overlay = metadata is { HasFileSystem: true };
+            bool overlay = metadata is { HasFileSystem: true } || metadata is { SourceImageSectors: > 0 };
             await StaWorker.RunAsync(() =>
             {
                 var range = IsoReadbackRenderer.ReadDrawingRange(isoPath, options.TotalSectors);
-                IsoReadbackRenderer.Render(isoPath, outputPath,
-                    options with { StartLba = range.StartLba, FillSectors = range.FillSectors }, cancellationToken);
-                if (overlay)
+                if (range.FillSectors == 0)
+                    FileRegionPreviewOverlay.CreateBlank(outputPath, outputSize, cancellationToken);
+                else
+                    IsoReadbackRenderer.Render(isoPath, outputPath,
+                        options with { StartLba = range.StartLba, FillSectors = range.FillSectors }, cancellationToken);
+                if (metadata is { SourceImageSectors: > 0 } sourceMetadata)
+                    FileRegionPreviewOverlay.ApplyDvd(outputPath, actual,
+                        0, sourceMetadata.SourceImageSectors, cancellationToken);
+                else if (metadata is { HasFileSystem: true })
                     FileRegionPreviewOverlay.ApplyDvd(outputPath, actual,
                         metadata!.DrawingStartLba, metadata.DrawingEndLbaExclusive, cancellationToken);
                 return 0;
@@ -1161,13 +1173,16 @@ public partial class LivePreviewViewModel : ObservableObject
         {
             outputPath = TempFiles.GetCacheFilePath($"bd-live-readback-{revision}.png");
             BluRayIsoMetadata? metadata = BluRayIsoMetadata.TryLoad(isoPath);
-            bool overlay = metadata?.UdfTimestamp is not null;
+            bool overlay = metadata?.UdfTimestamp is not null || metadata?.SourceImageSectors > 0;
             await StaWorker.RunAsync(() =>
             {
                 BluRayPreviewRenderer.RenderReadback(
                     isoPath, outputPath, actual, outputSize, cancellationToken,
                     metadata?.DrawingStartSector ?? 0, metadata?.DrawingEndSectorExclusive);
-                if (overlay)
+                if (metadata is { SourceImageSectors: > 0 } sourceMetadata)
+                    FileRegionPreviewOverlay.ApplyBluRay(outputPath, actual,
+                        0, sourceMetadata.SourceImageSectors, cancellationToken);
+                else if (metadata?.UdfTimestamp is not null)
                     FileRegionPreviewOverlay.ApplyBluRay(outputPath, actual,
                         metadata!.DrawingStartSector, metadata.DrawingEndSectorExclusive, cancellationToken);
                 return 0;

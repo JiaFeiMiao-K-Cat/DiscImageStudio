@@ -13,6 +13,7 @@ using DiscImageStudio.Cd;
 using DiscImageStudio.Dvd;
 using DiscImageStudio.Core;
 using DiscImageStudio.Imaging;
+using DiscImageStudio.Iso;
 using DiscImageStudio.Services;
 
 namespace DiscImageStudio.ViewModels;
@@ -111,7 +112,14 @@ public partial class DesignViewModel : ObservableObject
     [ObservableProperty]
     private string _dataRegionOverflowText = string.Empty;
 
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDataRegionNotice))]
+    private string _dataRegionNotice = string.Empty;
+
+    public bool HasDataRegionNotice => DataRegionNotice.Length > 0;
+
     public RelayCommand BrowseDataCommand => _shell.Export.BrowseDataCommand;
+
+    public RelayCommand BrowseDataImageCommand => _shell.Export.BrowseDataImageCommand;
 
     public ObservableCollection<DesignLayerViewModel> Layers { get; } = [];
 
@@ -396,6 +404,7 @@ public partial class DesignViewModel : ObservableObject
         DataRegions = null;
         DataRegionOverflow = false;
         DataRegionOverflowText = string.Empty;
+        DataRegionNotice = string.Empty;
         RefreshGeometry();
         _dataRegionTimer.Stop();
         RecomputeDataRegion();
@@ -434,20 +443,23 @@ public partial class DesignViewModel : ObservableObject
     {
         if (e.PropertyName is
             nameof(DiscParametersState.CdDataDirectory) or nameof(DiscParametersState.CdVolumeLabel)
+            or nameof(DiscParametersState.CdDataImagePath)
             or nameof(DiscParametersState.CdFilesAtOuterRing)
             or nameof(DiscParametersState.CdOuterRingBleed)
             or nameof(DiscParametersState.CdInnerRadius) or nameof(DiscParametersState.CdOuterRadius)
             or nameof(DiscParametersState.CdSectors) or nameof(DiscParametersState.CdUsableSectors)
             or nameof(DiscParametersState.CdPitchLinear) or nameof(DiscParametersState.CdPitchQuadratic)
             or nameof(DiscParametersState.CdPitchCubic)
-            or nameof(DiscParametersState.DvdDataDirectory) or nameof(DiscParametersState.DvdVolumeLabel)
+            or nameof(DiscParametersState.DvdDataDirectory) or nameof(DiscParametersState.DvdDataImagePath)
+            or nameof(DiscParametersState.DvdVolumeLabel)
             or nameof(DiscParametersState.DvdFilesAtOuterRing)
             or nameof(DiscParametersState.DvdOuterRingBleed)
             or nameof(DiscParametersState.DvdTotalSectors) or nameof(DiscParametersState.DvdUsableSectors)
             or nameof(DiscParametersState.DvdInnerRadius) or nameof(DiscParametersState.DvdOuterRadius)
             or nameof(DiscParametersState.DvdPitchLinear) or nameof(DiscParametersState.DvdPitchQuadratic)
             or nameof(DiscParametersState.DvdPitchCubic)
-            or nameof(DiscParametersState.BdDataDirectory) or nameof(DiscParametersState.BdVolumeLabel)
+            or nameof(DiscParametersState.BdDataDirectory) or nameof(DiscParametersState.BdDataImagePath)
+            or nameof(DiscParametersState.BdVolumeLabel)
             or nameof(DiscParametersState.BdFilesAtOuterRing)
             or nameof(DiscParametersState.BdOuterRingBleed)
             or nameof(DiscParametersState.BdTotalSectors) or nameof(DiscParametersState.BdUsableSectors)
@@ -506,21 +518,33 @@ public partial class DesignViewModel : ObservableObject
 
                 IReadOnlyList<DataRegionMm>? regions = null;
                 bool overflow = false;
+                string overflowText = string.Empty;
+                string notice = string.Empty;
                 if (inputs is not null)
                 {
                     try
                     {
                         regions = await StaWorker.RunAsync(() => DataRegionPlanner.Compute(inputs));
                     }
-                    catch (DataRegionCapacityException)
+                    catch (DataRegionCapacityException exception)
                     {
                         overflow = true;
+                        overflowText = exception.InnerException?.Message ?? exception.Message;
                     }
-                    catch
+                    catch (Exception exception) when (inputs.ImagePath.Length > 0
+                        && exception is IOException or ArgumentException)
+                    {
+                        overflow = true;
+                        overflowText = exception.Message;
+                    }
+                    catch (Exception)
                     {
                         // A missing folder or invalid geometry hides the guide silently.
                     }
                 }
+
+                if (!overflow && inputs?.ImagePath is { Length: > 0 } sourcePath)
+                    notice = await StaWorker.RunAsync(() => DescribeImageSource(inputs, sourcePath));
 
                 if (revision != _dataRegionRevision)
                 {
@@ -530,7 +554,10 @@ public partial class DesignViewModel : ObservableObject
 
                 DataRegions = regions;
                 DataRegionOverflow = overflow;
-                DataRegionOverflowText = overflow ? L.T("Xaml.DataRegionOverflow") : string.Empty;
+                DataRegionOverflowText = overflow
+                    ? string.IsNullOrEmpty(overflowText) ? L.T("Xaml.DataRegionOverflow") : overflowText
+                    : string.Empty;
+                DataRegionNotice = notice;
                 CanvasChanged?.Invoke();
             }
             while (_dataRegionPending);
@@ -545,13 +572,14 @@ public partial class DesignViewModel : ObservableObject
     /// touches the parameter state.</summary>
     private DataRegionInputs CaptureDataRegionInputs()
     {
-        string directory, label, totalText, innerText, outerText;
+        string directory, imagePath, label, totalText, innerText, outerText;
         string pitchLinear, pitchQuadratic, pitchCubic;
         bool filesAtOuterRing;
         switch (Family)
         {
             case OpticalDiscFamily.Dvd:
                 directory = _state.DvdDataDirectory;
+                imagePath = _state.DvdDataImagePath;
                 label = _state.DvdVolumeLabel;
                 totalText = _state.DvdTotalSectors;
                 innerText = _state.DvdInnerRadius;
@@ -563,6 +591,7 @@ public partial class DesignViewModel : ObservableObject
                 break;
             case OpticalDiscFamily.BluRay:
                 directory = _state.BdDataDirectory;
+                imagePath = _state.BdDataImagePath;
                 label = _state.BdVolumeLabel;
                 totalText = _state.BdTotalSectors;
                 innerText = _state.BdInnerRadius;
@@ -574,6 +603,7 @@ public partial class DesignViewModel : ObservableObject
                 break;
             default:
                 directory = _state.CdDataDirectory;
+                imagePath = _state.CdDataImagePath;
                 label = _state.CdVolumeLabel;
                 totalText = _state.CdSectors;
                 innerText = _state.CdInnerRadius;
@@ -611,7 +641,19 @@ public partial class DesignViewModel : ObservableObject
             ParameterParser.ParsePositiveDouble(outerText, L.T(outerPrompt)),
             ParameterParser.ParseDouble(pitchLinear, L.T("相对一次项")),
             ParameterParser.ParseDouble(pitchQuadratic, L.T("相对二次项")),
-            ParameterParser.ParseDouble(pitchCubic, L.T("相对三次项")));
+            ParameterParser.ParseDouble(pitchCubic, L.T("相对三次项")),
+            imagePath.Trim());
+    }
+
+    private static string DescribeImageSource(DataRegionInputs inputs, string imagePath)
+    {
+        if (Path.GetExtension(imagePath).Equals(".cue", StringComparison.OrdinalIgnoreCase))
+            return L.T("CUE/BIN 将作为独立 CD 原始轨道导出，不与图案合并。");
+
+        RawIsoImageInfo source = RawIsoImage.Inspect(imagePath, inputs.UsableSectors);
+        return source.SectorCount >= inputs.UsableSectors
+            ? L.T("ISO 已占用全部可用扇区；源数据优先，图案将省略。")
+            : L.F($"ISO 的 {source.SectorCount:N0} 个源扇区从 LBA 0 原样保留；图案只能使用其后的扇区。");
     }
 
     private static double ParseMm(string raw, double fallback)

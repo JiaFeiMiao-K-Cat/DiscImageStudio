@@ -1,3 +1,4 @@
+using System.IO;
 using DiscImageStudio.BluRay;
 using DiscImageStudio.Cd;
 using DiscImageStudio.Core;
@@ -21,7 +22,8 @@ internal sealed record DataRegionInputs(
     double OuterRadiusMm,
     double PitchLinear,
     double PitchQuadratic,
-    double PitchCubic);
+    double PitchCubic,
+    string ImagePath = "");
 
 /// <summary>The layout planner rejected the data because it cannot fit the disc (or the
 /// family's format), as opposed to invalid geometry that hides the guide silently.</summary>
@@ -41,6 +43,8 @@ internal static class DataRegionPlanner
 {
     internal static IReadOnlyList<DesignViewModel.DataRegionMm>? Compute(DataRegionInputs inputs)
     {
+        if (inputs.ImagePath.Length > 0)
+            return ComputeRawImage(inputs);
         if (inputs.Directory.Length == 0)
         {
             return null;
@@ -59,6 +63,68 @@ internal static class DataRegionPlanner
         {
             throw new DataRegionCapacityException(exception.Message, exception);
         }
+    }
+
+    private static IReadOnlyList<DesignViewModel.DataRegionMm>? ComputeRawImage(DataRegionInputs inputs)
+    {
+        string extension = Path.GetExtension(inputs.ImagePath);
+        if (extension.Equals(".cue", StringComparison.OrdinalIgnoreCase))
+        {
+            if (inputs.Family != OpticalDiscFamily.CompactDisc)
+                throw new InvalidDataException("CUE/BIN track images are supported only for CD projects.");
+            _ = CueBinImage.Inspect(inputs.ImagePath);
+            return [new DesignViewModel.DataRegionMm(inputs.InnerRadiusMm, inputs.OuterRadiusMm)];
+        }
+
+        RawIsoImageInfo source = RawIsoImage.Inspect(inputs.ImagePath, inputs.UsableSectors);
+        return inputs.Family switch
+        {
+            OpticalDiscFamily.Dvd => RawIsoDataRegion(inputs, source.SectorCount, OpticalDiscFamily.Dvd),
+            OpticalDiscFamily.BluRay => RawIsoDataRegion(inputs, source.SectorCount, OpticalDiscFamily.BluRay),
+            _ => RawIsoDataRegion(inputs, source.SectorCount, OpticalDiscFamily.CompactDisc),
+        };
+    }
+
+    private static IReadOnlyList<DesignViewModel.DataRegionMm> RawIsoDataRegion(
+        DataRegionInputs inputs, long sourceSectors, OpticalDiscFamily family)
+    {
+        double sourceOuterRadius = family switch
+        {
+            OpticalDiscFamily.Dvd => DvdRawImageRadius(inputs, sourceSectors),
+            OpticalDiscFamily.BluRay => BluRayRawImageRadius(inputs, sourceSectors),
+            _ => CdRawImageRadius(inputs, sourceSectors),
+        };
+        double outer = Math.Clamp(sourceOuterRadius, inputs.InnerRadiusMm, inputs.OuterRadiusMm);
+        return outer > inputs.InnerRadiusMm
+            ? [new DesignViewModel.DataRegionMm(inputs.InnerRadiusMm, outer)]
+            : [];
+    }
+
+    private static double CdRawImageRadius(DataRegionInputs inputs, long sourceSectors)
+    {
+        CdDiscParameters parameters = new(inputs.InnerRadiusMm, inputs.OuterRadiusMm,
+            inputs.TotalSectors, PitchLinear: inputs.PitchLinear, PitchQuadratic: inputs.PitchQuadratic,
+            PitchCubic: inputs.PitchCubic, UsableSectors: inputs.UsableSectors);
+        return parameters.RadiusFromByte(checked(sourceSectors * CdDiscParameters.BytesPerSector));
+    }
+
+    private static double DvdRawImageRadius(DataRegionInputs inputs, long sourceSectors)
+    {
+        uint totalSectors = checked((uint)inputs.TotalSectors);
+        double length = totalSectors * (double)DvdEccBlockEncoder.ChannelBitsPerSector
+            * DvdStreamingOptions.StandardChannelBitLengthNm * 1e-6;
+        DvdTrackGeometry geometry = DvdTrackGeometry.Create(inputs.InnerRadiusMm,
+            inputs.OuterRadiusMm, length, inputs.PitchLinear, inputs.PitchQuadratic, inputs.PitchCubic);
+        return geometry.RadiusAtArcLength(length * sourceSectors / totalSectors);
+    }
+
+    private static double BluRayRawImageRadius(DataRegionInputs inputs, long sourceSectors)
+    {
+        BluRayDiscParameters disc = new(checked((uint)inputs.TotalSectors), 1,
+            inputs.InnerRadiusMm, inputs.OuterRadiusMm, PitchLinear: inputs.PitchLinear,
+            PitchQuadratic: inputs.PitchQuadratic, PitchCubic: inputs.PitchCubic,
+            UsableSectors: checked((uint)inputs.UsableSectors));
+        return new BluRayTrackGeometry(disc).AtSector(checked((uint)sourceSectors)).RadiusMm;
     }
 
     private static IReadOnlyList<DesignViewModel.DataRegionMm> ComputeCd(DataRegionInputs inputs)
@@ -199,6 +265,7 @@ internal static class DataRegionPlanner
             || exception.Message.Contains("no complete drawing cluster")
             || exception.Message.Contains("too small for filesystem metadata")
             || exception.Message.Contains("UDF drawing volumes need at least")
+            || exception.Message.Contains("ISO image needs")
             // A single file too large for the format (ISO9660's 4 GiB limit) can never be
             // placed on this disc family: report it as capacity, not as a geometry problem.
             || exception.Message.Contains("larger than 4 GiB"));

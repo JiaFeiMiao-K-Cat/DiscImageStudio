@@ -60,7 +60,7 @@ public static class BluRayPreviewRenderer
         ArgumentNullException.ThrowIfNull(generated);
         generated.Validate();
         Validate(actual, outputSize);
-        if (drawingStartSector >= drawingEndSectorExclusive || drawingEndSectorExclusive > generated.OutputSectors)
+        if (drawingStartSector > drawingEndSectorExclusive || drawingEndSectorExclusive > generated.OutputSectors)
             throw new ArgumentOutOfRangeException(nameof(drawingEndSectorExclusive), "The drawing range must lie inside the generated disc.");
         cancellationToken.ThrowIfCancellationRequested();
         BluRayGray8Raster source = BluRayImageLoader.Load(sourcePath, tone, cancellationToken);
@@ -98,7 +98,7 @@ public static class BluRayPreviewRenderer
         ArgumentException.ThrowIfNullOrWhiteSpace(isoPath);
         Validate(actual, outputSize);
         uint drawingEnd = drawingEndSectorExclusive ?? actual.OutputSectors;
-        if (drawingStartSector >= drawingEnd || drawingEnd > actual.OutputSectors)
+        if (drawingStartSector > drawingEnd || drawingEnd > actual.OutputSectors)
             throw new ArgumentOutOfRangeException(nameof(drawingEndSectorExclusive), "The drawing range must lie inside the disc.");
         cancellationToken.ThrowIfCancellationRequested();
         using FileStream source = new(Path.GetFullPath(isoPath), FileMode.Open, FileAccess.Read,

@@ -7,6 +7,7 @@ using DiscImageStudio.BluRay;
 using DiscImageStudio.Cd;
 using DiscImageStudio.Core;
 using DiscImageStudio.Dvd;
+using DiscImageStudio.Iso;
 using DiscImageStudio.Services;
 
 namespace DiscImageStudio.ViewModels;
@@ -155,6 +156,7 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.BdPitchCubic)
             or nameof(DiscParametersState.BdTotalSectors)
             or nameof(DiscParametersState.BdDataDirectory)
+            or nameof(DiscParametersState.BdDataImagePath)
             or nameof(DiscParametersState.BdVolumeLabel)
             or nameof(DiscParametersState.BdFilesAtOuterRing)
             or nameof(DiscParametersState.BdOuterRingBleed)
@@ -166,6 +168,7 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.CdPitchCubic)
             or nameof(DiscParametersState.CdSectors)
             or nameof(DiscParametersState.CdDataDirectory)
+            or nameof(DiscParametersState.CdDataImagePath)
             or nameof(DiscParametersState.CdVolumeLabel)
             or nameof(DiscParametersState.CdFilesAtOuterRing)
             or nameof(DiscParametersState.CdOuterRingBleed)
@@ -177,6 +180,7 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.DvdPitchQuadratic)
             or nameof(DiscParametersState.DvdPitchCubic)
             or nameof(DiscParametersState.DvdDataDirectory)
+            or nameof(DiscParametersState.DvdDataImagePath)
             or nameof(DiscParametersState.DvdVolumeLabel)
             or nameof(DiscParametersState.DvdFilesAtOuterRing)
             or nameof(DiscParametersState.DvdOuterRingBleed))
@@ -286,17 +290,20 @@ public partial class ToneViewModel : ObservableObject
                 bool invert = _state.BdInvertMapping;
                 ToneProfile tone = _state.BluRayTone;
                 string dataDirectory = _state.BdDataDirectory.Trim();
+                string dataImagePath = _state.BdDataImagePath.Trim();
                 string volumeLabel = _state.ResolveVolumeLabel(OpticalDiscFamily.BluRay);
                 bool filesAtOuterRing = dataDirectory.Length > 0 && _state.BdFilesAtOuterRing;
-                hasFileRegionOverlay = dataDirectory.Length > 0;
+                hasFileRegionOverlay = dataDirectory.Length > 0 || dataImagePath.Length > 0;
                 samplesPerSector = 0;
                 await StaWorker.RunAsync(() =>
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    BluRayIsoPlan plan = BluRayIsoGenerator.PrepareDrawing(parameters,
-                        dataDirectory.Length == 0 ? null : dataDirectory,
-                        volumeLabel,
-                        filesAtOuterRing: filesAtOuterRing);
+                    BluRayIsoPlan plan = dataImagePath.Length > 0
+                        ? BluRayIsoGenerator.PrepareRawImage(parameters, dataImagePath)
+                        : BluRayIsoGenerator.PrepareDrawing(parameters,
+                            dataDirectory.Length == 0 ? null : dataDirectory,
+                            volumeLabel,
+                            filesAtOuterRing: filesAtOuterRing);
                     cancellationToken.ThrowIfCancellationRequested();
                     BluRayPreviewRenderer.RenderCalibration(
                         sourcePath,
@@ -309,7 +316,10 @@ public partial class ToneViewModel : ObservableObject
                         invert,
                         cancellationToken,
                         tone);
-                    if (plan.HasFileSystem)
+                    if (plan.SourceImagePath is not null)
+                        FileRegionPreviewOverlay.ApplyBluRay(outputPath, parameters,
+                            0, plan.SourceImageSectors, cancellationToken);
+                    else if (plan.HasFileSystem)
                         FileRegionPreviewOverlay.ApplyBluRay(outputPath, parameters,
                             plan.DrawingStartSector, plan.DrawingEndSectorExclusive, cancellationToken);
                     return 0;
@@ -319,11 +329,12 @@ public partial class ToneViewModel : ObservableObject
             {
                 DvdStreamingOptions options = ReadDvdPreviewOptions();
                 string dataDirectory = _state.DvdDataDirectory.Trim();
+                string dataImagePath = _state.DvdDataImagePath.Trim();
                 string volumeLabel = dataDirectory.Length > 0
                     ? _state.ResolveVolumeLabel(OpticalDiscFamily.Dvd)
                     : string.Empty;
                 bool filesAtOuterRing = _state.DvdFilesAtOuterRing;
-                hasFileRegionOverlay = dataDirectory.Length > 0;
+                hasFileRegionOverlay = dataDirectory.Length > 0 || dataImagePath.Length > 0;
                 samplesPerSector = TonePreviewDvdSamplesPerSector;
                 await StaWorker.RunAsync(() =>
                 {
@@ -332,17 +343,32 @@ public partial class ToneViewModel : ObservableObject
                         ? DvdStreamingGenerator.PrepareHybrid(dataDirectory, options,
                             volumeLabel, filesAtOuterRing)
                         : null;
+                    RawIsoImageInfo? sourceImage = dataImagePath.Length > 0
+                        ? RawIsoImage.Inspect(dataImagePath, options.OutputSectors)
+                        : null;
                     cancellationToken.ThrowIfCancellationRequested();
-                    DvdTonePreview.Render(
-                        sourcePath,
-                        outputPath,
-                        options,
-                        TonePreviewSize,
-                        samplesPerSector,
-                        cancellationToken,
-                        drawingStartLba: plan?.DrawingStartLba ?? 0,
-                        drawingEndLbaExclusive: plan?.DrawingEndLbaExclusive);
-                    if (plan is not null)
+                    if (sourceImage is not null && sourceImage.SectorCount == options.OutputSectors)
+                    {
+                        FileRegionPreviewOverlay.CreateBlank(outputPath, TonePreviewSize, cancellationToken);
+                    }
+                    else
+                    {
+                        DvdTonePreview.Render(
+                            sourcePath,
+                            outputPath,
+                            options,
+                            TonePreviewSize,
+                            samplesPerSector,
+                            cancellationToken,
+                            drawingStartLba: sourceImage is not null
+                                ? checked((uint)sourceImage.SectorCount)
+                                : plan?.DrawingStartLba ?? 0,
+                            drawingEndLbaExclusive: plan?.DrawingEndLbaExclusive);
+                    }
+                    if (sourceImage is not null)
+                        FileRegionPreviewOverlay.ApplyDvd(outputPath, options,
+                            0, checked((uint)sourceImage.SectorCount), cancellationToken);
+                    else if (plan is not null)
                         FileRegionPreviewOverlay.ApplyDvd(outputPath, options,
                             plan.DrawingStartLba, plan.DrawingEndLbaExclusive, cancellationToken);
                     return 0;
@@ -357,24 +383,34 @@ public partial class ToneViewModel : ObservableObject
                 ToneProfile tone = _state.Tone;
                 samplesPerSector = TonePreviewSamplesPerSector;
                 string dataDirectory = _state.CdDataDirectory.Trim();
+                string dataImagePath = _state.CdDataImagePath.Trim();
+                bool isCueSource = Path.GetExtension(dataImagePath)
+                    .Equals(".cue", StringComparison.OrdinalIgnoreCase);
                 string volumeLabel = dataDirectory.Length > 0
                     ? _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc)
                     : string.Empty;
                 bool filesAtOuterRing = _state.CdFilesAtOuterRing;
-                hasFileRegionOverlay = dataDirectory.Length > 0;
+                hasFileRegionOverlay = dataDirectory.Length > 0
+                    || dataImagePath.Length > 0 && !isCueSource;
                 await StaWorker.RunAsync(() =>
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    CdDataLayoutPlan? plan = dataDirectory.Length > 0
-                        ? CdDataImageGenerator.PrepareLayout(dataDirectory, parameters, volumeLabel, filesAtOuterRing)
+                    CdDataLayoutPlan? plan = dataImagePath.Length > 0 && !isCueSource
+                        ? CdDataImageGenerator.PrepareRawImageLayout(dataImagePath, parameters)
+                        : dataDirectory.Length > 0
+                            ? CdDataImageGenerator.PrepareLayout(dataDirectory, parameters, volumeLabel, filesAtOuterRing)
                         : null;
                     cancellationToken.ThrowIfCancellationRequested();
                     if (plan is not null)
                     {
                         CdDataImageGenerator.PreviewWarp(sourcePath, outputPath, parameters, display,
                             TonePreviewSize, samplesPerSector, tone, plan, cancellationToken);
-                        FileRegionPreviewOverlay.ApplyCd(outputPath, display,
-                            plan.DrawingStartLba, plan.DrawingEndLbaExclusive, cancellationToken);
+                        if (plan.SourceImagePath is not null)
+                            FileRegionPreviewOverlay.ApplyCd(outputPath, display,
+                                0, plan.SourceSectors, cancellationToken);
+                        else
+                            FileRegionPreviewOverlay.ApplyCd(outputPath, display,
+                                plan.DrawingStartLba, plan.DrawingEndLbaExclusive, cancellationToken);
                     }
                     else
                     {
