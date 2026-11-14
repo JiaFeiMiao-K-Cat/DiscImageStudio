@@ -15,18 +15,50 @@ internal sealed class IsoTreeNode(string name, bool isDirectory, long dataLength
     public List<IsoByteExtent> Extents { get; } = [];
 }
 
+internal sealed record Iso9660DescriptorIdentifiers(
+    string SystemIdentifier,
+    string VolumeSetIdentifier,
+    string PublisherIdentifier,
+    string DataPreparerIdentifier,
+    string ApplicationIdentifier,
+    string CopyrightFileIdentifier,
+    string AbstractFileIdentifier,
+    string BibliographicFileIdentifier,
+    byte[]? CreationDateRaw,
+    byte[]? ModificationDateRaw,
+    byte[]? ExpirationDateRaw,
+    byte[]? EffectiveDateRaw);
+
+internal sealed record IsoVolumeMetadata(
+    bool HasIso9660Pvd,
+    bool HasJolietSvd,
+    bool HasRockRidge,
+    bool HasUdf,
+    string PrimaryVolumeLabel,
+    string JolietVolumeLabel,
+    string UdfVolumeLabel,
+    Iso9660DescriptorIdentifiers? PrimaryIdentifiers,
+    Iso9660DescriptorIdentifiers? JolietIdentifiers,
+    string UdfVolumeSetIdentifier,
+    string UdfLvInfo1,
+    string UdfLvInfo2,
+    string UdfLvInfo3,
+    DateTimeOffset? UdfRecordingTimestamp);
+
 internal sealed class IsoVolumeTree(
     string sourceIsoPath,
     long sourceIsoBytes,
     DateTimeOffset sourceIsoLastWriteUtc,
     string volumeLabel,
-    IsoTreeNode root)
+    IsoTreeNode root,
+    IsoVolumeMetadata metadata)
 {
     public string SourceIsoPath { get; } = sourceIsoPath;
     public long SourceIsoBytes { get; } = sourceIsoBytes;
     public DateTimeOffset SourceIsoLastWriteUtc { get; } = sourceIsoLastWriteUtc;
     public string VolumeLabel { get; } = volumeLabel;
     public IsoTreeNode Root { get; } = root;
+    public IsoVolumeMetadata Metadata { get; } = metadata;
 }
 
 internal static class IsoContentReader
@@ -58,11 +90,59 @@ internal static class IsoContentReader
 
         using FileStream stream = new(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, FileOptions.RandomAccess);
 
-        if (TryReadUdf(stream, fileLength, out string udfLabel, out IsoTreeNode? udfRoot) && udfRoot is not null)
-            return new IsoVolumeTree(fullPath, fileLength, lastWriteUtc, udfLabel, udfRoot);
+        bool hasIso9660Pvd = TryFindIso9660Descriptors(stream, fileLength, out byte[]? pvd, out byte[]? svdJoliet);
+        bool hasRockRidge = hasIso9660Pvd && DetectRockRidge(stream, fileLength, pvd!);
+        ExtractIso9660Metadata(
+            pvd,
+            svdJoliet,
+            out string primaryLabel,
+            out string jolietLabel,
+            out Iso9660DescriptorIdentifiers? primaryIds,
+            out Iso9660DescriptorIdentifiers? jolietIds);
 
-        if (TryReadIso9660(stream, fileLength, out string isoLabel, out IsoTreeNode? isoRoot) && isoRoot is not null)
-            return new IsoVolumeTree(fullPath, fileLength, lastWriteUtc, isoLabel, isoRoot);
+        if (TryReadUdf(stream, fileLength, out UdfVolumeInfo udfInfo, out IsoTreeNode? udfRoot) && udfRoot is not null)
+        {
+            IsoVolumeMetadata metadata = new(
+                HasIso9660Pvd: hasIso9660Pvd,
+                HasJolietSvd: svdJoliet is not null,
+                HasRockRidge: hasRockRidge,
+                HasUdf: true,
+                PrimaryVolumeLabel: primaryLabel,
+                JolietVolumeLabel: jolietLabel,
+                UdfVolumeLabel: udfInfo.VolumeLabel,
+                PrimaryIdentifiers: primaryIds,
+                JolietIdentifiers: jolietIds,
+                UdfVolumeSetIdentifier: udfInfo.VolumeSetIdentifier,
+                UdfLvInfo1: udfInfo.LvInfo1,
+                UdfLvInfo2: udfInfo.LvInfo2,
+                UdfLvInfo3: udfInfo.LvInfo3,
+                UdfRecordingTimestamp: udfInfo.RecordingTimestamp);
+            return new IsoVolumeTree(fullPath, fileLength, lastWriteUtc, udfInfo.VolumeLabel, udfRoot, metadata);
+        }
+
+        if (hasIso9660Pvd && TryReadIso9660Tree(stream, fileLength, pvd!, svdJoliet, hasRockRidge, out IsoTreeNode? isoRoot)
+            && isoRoot is not null)
+        {
+            string fallbackLabel = hasRockRidge || string.IsNullOrWhiteSpace(jolietLabel)
+                ? primaryLabel
+                : jolietLabel;
+            IsoVolumeMetadata metadata = new(
+                HasIso9660Pvd: true,
+                HasJolietSvd: svdJoliet is not null,
+                HasRockRidge: hasRockRidge,
+                HasUdf: false,
+                PrimaryVolumeLabel: primaryLabel,
+                JolietVolumeLabel: jolietLabel,
+                UdfVolumeLabel: string.Empty,
+                PrimaryIdentifiers: primaryIds,
+                JolietIdentifiers: jolietIds,
+                UdfVolumeSetIdentifier: string.Empty,
+                UdfLvInfo1: string.Empty,
+                UdfLvInfo2: string.Empty,
+                UdfLvInfo3: string.Empty,
+                UdfRecordingTimestamp: null);
+            return new IsoVolumeTree(fullPath, fileLength, lastWriteUtc, fallbackLabel, isoRoot, metadata);
+        }
 
         throw new InvalidDataException($"Source ISO '{fullPath}' does not contain a readable UDF or ISO-9660 filesystem.");
     }
@@ -140,9 +220,17 @@ internal static class IsoContentReader
         public Dictionary<int, UdfPartitionState> PartitionMap { get; } = [];
     }
 
-    private static bool TryReadUdf(FileStream stream, long fileLength, out string volumeLabel, out IsoTreeNode? root)
+    private readonly record struct UdfVolumeInfo(
+        string VolumeLabel,
+        string VolumeSetIdentifier,
+        string LvInfo1,
+        string LvInfo2,
+        string LvInfo3,
+        DateTimeOffset? RecordingTimestamp);
+
+    private static bool TryReadUdf(FileStream stream, long fileLength, out UdfVolumeInfo volumeInfo, out IsoTreeNode? root)
     {
-        volumeLabel = string.Empty;
+        volumeInfo = default;
         root = null;
 
         long totalSectors = fileLength / SectorSize;
@@ -161,9 +249,9 @@ internal static class IsoContentReader
             return false;
 
         UdfParseContext ctx = new(stream, fileLength);
-        if (!TryReadUdfVds(ctx, mainVdsLba, mainVdsLen, out volumeLabel, out uint fsdBlock, out int fsdPart, out uint fsdLen,
+        if (!TryReadUdfVds(ctx, mainVdsLba, mainVdsLen, out volumeInfo, out uint fsdBlock, out int fsdPart, out uint fsdLen,
                 out List<(int PartRef, uint MetaLoc, uint MirrorLoc)> pendingMetadata)
-            && !TryReadUdfVds(ctx, reserveVdsLba, reserveVdsLen, out volumeLabel, out fsdBlock, out fsdPart, out fsdLen,
+            && !TryReadUdfVds(ctx, reserveVdsLba, reserveVdsLen, out volumeInfo, out fsdBlock, out fsdPart, out fsdLen,
                 out pendingMetadata))
         {
             return false;
@@ -276,13 +364,13 @@ internal static class IsoContentReader
         UdfParseContext ctx,
         uint vdsLba,
         uint vdsBytes,
-        out string volumeLabel,
+        out UdfVolumeInfo volumeInfo,
         out uint fsdBlock,
         out int fsdPart,
         out uint fsdLen,
         out List<(int PartRef, uint MetaLoc, uint MirrorLoc)> pendingMetadata)
     {
-        volumeLabel = string.Empty;
+        volumeInfo = default;
         fsdBlock = 0;
         fsdPart = 0;
         fsdLen = 0;
@@ -297,6 +385,11 @@ internal static class IsoContentReader
         byte[] sector = new byte[SectorSize];
         string pvdLabel = string.Empty;
         string lvdLabel = string.Empty;
+        string volumeSetId = string.Empty;
+        string lvInfo1 = string.Empty;
+        string lvInfo2 = string.Empty;
+        string lvInfo3 = string.Empty;
+        DateTimeOffset? recordingTimestamp = null;
         List<(int MapIndex, int MapType, ushort PartNumber, uint MetaLoc, uint MirrorLoc)> maps = [];
 
         for (int i = 0; i < sectorCount; i++)
@@ -316,6 +409,19 @@ internal static class IsoContentReader
             if (tagId == 1)
             {
                 pvdLabel = DecodeDString(sector.AsSpan(24, 32));
+                volumeSetId = DecodeDString(sector.AsSpan(72, 128));
+                if (TryParseUdfTimestamp(sector.AsSpan(376, 12), out DateTimeOffset ts))
+                    recordingTimestamp = ts;
+            }
+            else if (tagId == 4)
+            {
+                string entityId = Encoding.ASCII.GetString(sector, 21, 23).TrimEnd('\0');
+                if (string.Equals(entityId, "*UDF LV Info", StringComparison.Ordinal))
+                {
+                    lvInfo1 = DecodeDString(sector.AsSpan(244, 36));
+                    lvInfo2 = DecodeDString(sector.AsSpan(280, 36));
+                    lvInfo3 = DecodeDString(sector.AsSpan(316, 36));
+                }
             }
             else if (tagId == 5)
             {
@@ -387,7 +493,8 @@ internal static class IsoContentReader
                 pendingMetadata.Add((mapIndex, metaLoc, mirrorLoc));
         }
 
-        volumeLabel = !string.IsNullOrWhiteSpace(lvdLabel) ? lvdLabel : pvdLabel;
+        string volumeLabel = !string.IsNullOrWhiteSpace(lvdLabel) ? lvdLabel : pvdLabel;
+        volumeInfo = new UdfVolumeInfo(volumeLabel, volumeSetId, lvInfo1, lvInfo2, lvInfo3, recordingTimestamp);
         return fsdLen > 0 && ctx.PartitionMap.ContainsKey(fsdPart);
     }
 
@@ -804,9 +911,13 @@ internal static class IsoContentReader
     }
 
     private static DateTimeOffset ParseUdfTimestamp(ReadOnlySpan<byte> bytes)
+        => TryParseUdfTimestamp(bytes, out DateTimeOffset timestamp) ? timestamp : DateTimeOffset.UnixEpoch;
+
+    private static bool TryParseUdfTimestamp(ReadOnlySpan<byte> bytes, out DateTimeOffset timestamp)
     {
+        timestamp = DateTimeOffset.UnixEpoch;
         if (bytes.Length < 12)
-            return DateTimeOffset.UnixEpoch;
+            return false;
 
         ushort typeAndTz = BinaryPrimitives.ReadUInt16LittleEndian(bytes.Slice(0, 2));
         int rawTz = typeAndTz & 0x0FFF;
@@ -823,10 +934,11 @@ internal static class IsoContentReader
         if (year is < 1 or > 9999 || month is < 1 or > 12 || day < 1 || day > DateTime.DaysInMonth(year, month)
             || hour > 23 || minute > 59 || second > 59)
         {
-            return DateTimeOffset.UnixEpoch;
+            return false;
         }
 
-        return new DateTimeOffset(year, month, day, hour, minute, second, offset);
+        timestamp = new DateTimeOffset(year, month, day, hour, minute, second, offset);
+        return true;
     }
 
     private static string DecodeDString(ReadOnlySpan<byte> field)
@@ -856,14 +968,15 @@ internal static class IsoContentReader
         return Encoding.UTF8.GetString(bytes).TrimEnd('\0');
     }
 
-    private static bool TryReadIso9660(FileStream stream, long fileLength, out string volumeLabel, out IsoTreeNode? root)
+    private static bool TryFindIso9660Descriptors(
+        FileStream stream,
+        long fileLength,
+        out byte[]? pvd,
+        out byte[]? svdJoliet)
     {
-        volumeLabel = string.Empty;
-        root = null;
-
+        pvd = null;
+        svdJoliet = null;
         byte[] sector = new byte[SectorSize];
-        byte[]? pvd = null;
-        byte[]? svdJoliet = null;
 
         for (int lba = 16; lba < 48; lba++)
         {
@@ -884,16 +997,108 @@ internal static class IsoContentReader
                 svdJoliet = (byte[])sector.Clone();
         }
 
-        if (pvd is null)
+        return pvd is not null;
+    }
+
+    private static void ExtractIso9660Metadata(
+        byte[]? pvd,
+        byte[]? svdJoliet,
+        out string primaryLabel,
+        out string jolietLabel,
+        out Iso9660DescriptorIdentifiers? primaryIds,
+        out Iso9660DescriptorIdentifiers? jolietIds)
+    {
+        primaryLabel = pvd is null ? string.Empty : DecodeIsoString(pvd, 40, 32, joliet: false);
+        jolietLabel = svdJoliet is null ? string.Empty : DecodeIsoString(svdJoliet, 40, 32, joliet: true);
+        primaryIds = pvd is null ? null : ReadIso9660Identifiers(pvd, joliet: false);
+        jolietIds = svdJoliet is null ? null : ReadIso9660Identifiers(svdJoliet, joliet: true);
+    }
+
+    private static Iso9660DescriptorIdentifiers ReadIso9660Identifiers(byte[] sector, bool joliet)
+        => new(
+            SystemIdentifier: DecodeIsoString(sector, 8, 32, joliet),
+            VolumeSetIdentifier: DecodeIsoString(sector, 190, 128, joliet),
+            PublisherIdentifier: DecodeIsoString(sector, 318, 128, joliet),
+            DataPreparerIdentifier: DecodeIsoString(sector, 446, 128, joliet),
+            ApplicationIdentifier: DecodeIsoString(sector, 574, 128, joliet),
+            CopyrightFileIdentifier: DecodeIsoString(sector, 702, 37, joliet),
+            AbstractFileIdentifier: DecodeIsoString(sector, 739, 37, joliet),
+            BibliographicFileIdentifier: DecodeIsoString(sector, 776, 37, joliet),
+            CreationDateRaw: ReadIsoDateBytes(sector.AsSpan(813, 17)),
+            ModificationDateRaw: ReadIsoDateBytes(sector.AsSpan(830, 17)),
+            ExpirationDateRaw: ReadIsoDateBytes(sector.AsSpan(847, 17)),
+            EffectiveDateRaw: ReadIsoDateBytes(sector.AsSpan(864, 17)));
+
+    private static string DecodeIsoString(byte[] sector, int offset, int byteLength, bool joliet)
+        => joliet
+            ? Encoding.BigEndianUnicode.GetString(sector, offset, byteLength & ~1).TrimEnd('\0', ' ')
+            : Encoding.ASCII.GetString(sector, offset, byteLength).TrimEnd('\0', ' ');
+
+    private static byte[]? ReadIsoDateBytes(ReadOnlySpan<byte> raw)
+    {
+        if (raw.Length != 17)
+            return null;
+
+        for (int i = 0; i < 16; i++)
+        {
+            if (raw[i] is < (byte)'0' or > (byte)'9')
+                return null;
+        }
+
+        return raw.ToArray();
+    }
+
+    internal static bool TryParseIsoVolumeDate(ReadOnlySpan<byte> bytes, out DateTimeOffset timestamp)
+    {
+        timestamp = default;
+        if (bytes.Length < 17)
             return false;
 
-        bool hasRockRidge = DetectRockRidge(stream, fileLength, pvd);
+        for (int i = 0; i < 16; i++)
+        {
+            if (bytes[i] is < (byte)'0' or > (byte)'9')
+                return false;
+        }
+
+        int year = ParseDigits(bytes.Slice(0, 4));
+        int month = ParseDigits(bytes.Slice(4, 2));
+        int day = ParseDigits(bytes.Slice(6, 2));
+        int hour = ParseDigits(bytes.Slice(8, 2));
+        int minute = ParseDigits(bytes.Slice(10, 2));
+        int second = ParseDigits(bytes.Slice(12, 2));
+        int centisecond = ParseDigits(bytes.Slice(14, 2));
+        int tzQuarter = unchecked((sbyte)bytes[16]);
+        TimeSpan offset = tzQuarter is >= -56 and <= 56 ? TimeSpan.FromMinutes(tzQuarter * 15) : TimeSpan.Zero;
+
+        if (year is < 1 or > 9999 || month is < 1 or > 12 || day < 1 || day > DateTime.DaysInMonth(year, month)
+            || hour > 23 || minute > 59 || second > 59)
+        {
+            return false;
+        }
+
+        timestamp = new DateTimeOffset(year, month, day, hour, minute, second, centisecond * 10, offset);
+        return true;
+    }
+
+    private static int ParseDigits(ReadOnlySpan<byte> digits)
+    {
+        int value = 0;
+        for (int i = 0; i < digits.Length; i++)
+            value = value * 10 + (digits[i] - '0');
+        return value;
+    }
+
+    private static bool TryReadIso9660Tree(
+        FileStream stream,
+        long fileLength,
+        byte[] pvd,
+        byte[]? svdJoliet,
+        bool hasRockRidge,
+        out IsoTreeNode? root)
+    {
+        root = null;
         byte[] selectedVd = (hasRockRidge || svdJoliet is null) ? pvd : svdJoliet;
         bool useJoliet = ReferenceEquals(selectedVd, svdJoliet);
-
-        volumeLabel = useJoliet
-            ? Encoding.BigEndianUnicode.GetString(selectedVd, 40, 32).TrimEnd('\0', ' ')
-            : Encoding.ASCII.GetString(selectedVd, 40, 32).TrimEnd('\0', ' ');
 
         uint rootLba = BinaryPrimitives.ReadUInt32LittleEndian(selectedVd.AsSpan(158, 4));
         uint rootLen = BinaryPrimitives.ReadUInt32LittleEndian(selectedVd.AsSpan(166, 4));

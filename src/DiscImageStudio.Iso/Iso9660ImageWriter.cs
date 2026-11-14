@@ -21,6 +21,10 @@ public static class Iso9660ImageWriter
     private const int MaximumPrimaryIdentifierCharacters = 31;
     private const int MaximumJolietIdentifierCharacters = 60;
 
+    internal sealed record IsoVolumeDescriptors(
+        Iso9660DescriptorIdentifiers Primary,
+        Iso9660DescriptorIdentifiers Joliet);
+
     public sealed class LayoutPlan
     {
         internal readonly IsoNode _root;
@@ -32,6 +36,7 @@ public static class Iso9660ImageWriter
         internal readonly string _sourceIsoPath;
         internal readonly long _sourceIsoBytes;
         internal readonly DateTimeOffset _sourceIsoLastWriteUtc;
+        internal readonly IsoVolumeDescriptors? _volumeDescriptors;
 
         internal LayoutPlan(
             string sourceDirectory,
@@ -44,7 +49,8 @@ public static class Iso9660ImageWriter
             DateTimeOffset timestamp,
             string sourceIsoPath = "",
             long sourceIsoBytes = 0,
-            DateTimeOffset sourceIsoLastWriteUtc = default)
+            DateTimeOffset sourceIsoLastWriteUtc = default,
+            IsoVolumeDescriptors? volumeDescriptors = null)
         {
             SourceDirectory = sourceDirectory;
             VolumeSectors = volumeSectors;
@@ -57,6 +63,7 @@ public static class Iso9660ImageWriter
             _sourceIsoPath = sourceIsoPath;
             _sourceIsoBytes = sourceIsoBytes;
             _sourceIsoLastWriteUtc = sourceIsoLastWriteUtc;
+            _volumeDescriptors = volumeDescriptors;
             List<IsoNode> files = EnumerateFiles(root).ToList();
             FileCount = files.Count;
             DirectoryCount = directories.Count;
@@ -139,13 +146,52 @@ public static class Iso9660ImageWriter
         }
 
         IsoVolumeTree tree = IsoContentReader.Read(inputIsoPath);
-        string requestedLabel = volumeLabel ?? (string.IsNullOrWhiteSpace(tree.VolumeLabel) ? "DVD_IMAGE" : tree.VolumeLabel);
-        string primaryVolumeLabel = NormalizePrimaryIdentifier(requestedLabel, 32, "DVD_IMAGE");
-        string jolietVolumeLabel = volumeLabel is null
-            ? NormalizeJolietIdentifier(requestedLabel.Trim(), MaximumJolietVolumeLabelCharacters, "DVD_IMAGE")
-            : ValidateJolietVolumeLabel(volumeLabel);
+        IsoVolumeMetadata meta = tree.Metadata;
 
-        DateTimeOffset recorded = timestamp ?? tree.Root.Timestamp;
+        string primaryVolumeLabel;
+        string jolietVolumeLabel;
+        if (volumeLabel is not null)
+        {
+            primaryVolumeLabel = NormalizePrimaryIdentifier(volumeLabel, 32, "DVD_IMAGE");
+            jolietVolumeLabel = ValidateJolietVolumeLabel(volumeLabel);
+        }
+        else
+        {
+            string? preservedPrimary = !string.IsNullOrWhiteSpace(meta.PrimaryVolumeLabel)
+                ? SanitizeAsciiField(meta.PrimaryVolumeLabel, 32)
+                : null;
+            if (!string.IsNullOrEmpty(preservedPrimary))
+            {
+                primaryVolumeLabel = preservedPrimary;
+            }
+            else
+            {
+                string primaryFallbackSource = !string.IsNullOrWhiteSpace(meta.UdfVolumeLabel)
+                    ? meta.UdfVolumeLabel
+                    : tree.VolumeLabel;
+                primaryVolumeLabel = string.IsNullOrWhiteSpace(primaryFallbackSource)
+                    ? "DVD_IMAGE"
+                    : NormalizePrimaryIdentifier(primaryFallbackSource, 32, "DVD_IMAGE");
+            }
+
+            string jolietSource = !string.IsNullOrWhiteSpace(meta.JolietVolumeLabel)
+                ? meta.JolietVolumeLabel
+                : !string.IsNullOrWhiteSpace(meta.UdfVolumeLabel)
+                    ? meta.UdfVolumeLabel
+                    : !string.IsNullOrWhiteSpace(meta.PrimaryVolumeLabel)
+                        ? meta.PrimaryVolumeLabel
+                        : tree.VolumeLabel;
+            jolietVolumeLabel = NormalizeJolietIdentifier(
+                jolietSource.Trim(),
+                MaximumJolietVolumeLabelCharacters,
+                "DVD_IMAGE");
+        }
+
+        DateTimeOffset recorded = timestamp
+            ?? meta.UdfRecordingTimestamp
+            ?? (IsoContentReader.TryParseIsoVolumeDate(meta.PrimaryIdentifiers?.CreationDateRaw, out DateTimeOffset isoCreated)
+                ? isoCreated
+                : tree.Root.Timestamp);
         IsoNode root = ConvertIsoNode(tree.Root, parent: null, recorded);
         List<IsoNode> directories = AssignDirectoryNumbers(root);
         AssignIdentifiers(directories);
@@ -161,8 +207,48 @@ public static class Iso9660ImageWriter
             recorded,
             tree.SourceIsoPath,
             tree.SourceIsoBytes,
-            tree.SourceIsoLastWriteUtc);
+            tree.SourceIsoLastWriteUtc,
+            BuildVolumeDescriptors(meta));
     }
+
+    private static IsoVolumeDescriptors BuildVolumeDescriptors(IsoVolumeMetadata meta)
+    {
+        Iso9660DescriptorIdentifiers primary = meta.PrimaryIdentifiers ?? new Iso9660DescriptorIdentifiers(
+            SystemIdentifier: string.Empty,
+            VolumeSetIdentifier: meta.UdfVolumeSetIdentifier,
+            PublisherIdentifier: meta.UdfLvInfo2,
+            DataPreparerIdentifier: meta.UdfLvInfo1,
+            ApplicationIdentifier: string.Empty,
+            CopyrightFileIdentifier: string.Empty,
+            AbstractFileIdentifier: string.Empty,
+            BibliographicFileIdentifier: string.Empty,
+            CreationDateRaw: null,
+            ModificationDateRaw: null,
+            ExpirationDateRaw: null,
+            EffectiveDateRaw: null);
+
+        Iso9660DescriptorIdentifiers? svd = meta.JolietIdentifiers;
+        Iso9660DescriptorIdentifiers joliet = svd is null
+            ? primary
+            : new Iso9660DescriptorIdentifiers(
+                SystemIdentifier: PickField(svd.SystemIdentifier, primary.SystemIdentifier),
+                VolumeSetIdentifier: PickField(svd.VolumeSetIdentifier, primary.VolumeSetIdentifier),
+                PublisherIdentifier: PickField(svd.PublisherIdentifier, primary.PublisherIdentifier),
+                DataPreparerIdentifier: PickField(svd.DataPreparerIdentifier, primary.DataPreparerIdentifier),
+                ApplicationIdentifier: PickField(svd.ApplicationIdentifier, primary.ApplicationIdentifier),
+                CopyrightFileIdentifier: PickField(svd.CopyrightFileIdentifier, primary.CopyrightFileIdentifier),
+                AbstractFileIdentifier: PickField(svd.AbstractFileIdentifier, primary.AbstractFileIdentifier),
+                BibliographicFileIdentifier: PickField(svd.BibliographicFileIdentifier, primary.BibliographicFileIdentifier),
+                CreationDateRaw: svd.CreationDateRaw ?? primary.CreationDateRaw,
+                ModificationDateRaw: svd.ModificationDateRaw ?? primary.ModificationDateRaw,
+                ExpirationDateRaw: svd.ExpirationDateRaw ?? primary.ExpirationDateRaw,
+                EffectiveDateRaw: svd.EffectiveDateRaw ?? primary.EffectiveDateRaw);
+
+        return new IsoVolumeDescriptors(primary, joliet);
+    }
+
+    private static string PickField(string primary, string fallback)
+        => primary.Length > 0 ? primary : fallback;
 
     public static void WriteSequentialPrefix(
         LayoutPlan plan,
@@ -257,7 +343,8 @@ public static class Iso9660ImageWriter
             plan._root.PrimaryDirectoryLba,
             plan._root.PrimaryDirectoryBytes,
             joliet: false,
-            plan._timestamp));
+            plan._timestamp,
+            plan._volumeDescriptors?.Primary));
         output.WriteAtLba(SupplementaryVolumeDescriptorLba, BuildVolumeDescriptor(
             type: 2,
             plan.VolumeSectors,
@@ -268,7 +355,8 @@ public static class Iso9660ImageWriter
             plan._root.JolietDirectoryLba,
             plan._root.JolietDirectoryBytes,
             joliet: true,
-            plan._timestamp));
+            plan._timestamp,
+            plan._volumeDescriptors?.Joliet));
         output.WriteAtLba(TerminatorLba, BuildTerminator());
         output.WriteAtLba(
             plan._layout.PrimaryLittlePathTableLba,
@@ -658,24 +746,20 @@ public static class Iso9660ImageWriter
         uint rootDirectoryLba,
         int rootDirectoryBytes,
         bool joliet,
-        DateTimeOffset timestamp)
+        DateTimeOffset timestamp,
+        Iso9660DescriptorIdentifiers? identifiers = null)
     {
         byte[] sector = new byte[LogicalSectorBytes];
         sector[0] = type;
         WriteAscii(sector, 1, "CD001");
         sector[6] = 1;
+        WriteDescriptorText(sector, 8, 32, identifiers is null ? "DVDIMAGE" : identifiers.SystemIdentifier, joliet);
+        WriteDescriptorText(sector, 40, 32, volumeLabel, joliet);
         if (joliet)
         {
-            WritePaddedJoliet(sector, 8, 32, "DVDIMAGE");
-            WritePaddedJoliet(sector, 40, 32, volumeLabel);
             sector[88] = (byte)'%';
             sector[89] = (byte)'/';
             sector[90] = (byte)'E';
-        }
-        else
-        {
-            WritePaddedAscii(sector, 8, 32, "DVDIMAGE");
-            WritePaddedAscii(sector, 40, 32, volumeLabel);
         }
 
         WriteBothEndian32(sector, 80, volumeSectors);
@@ -691,10 +775,21 @@ public static class Iso9660ImageWriter
             isDirectory: true,
             [0],
             timestamp).CopyTo(sector, 156);
-        WriteVolumeDate(sector.AsSpan(813, 17), timestamp);
-        WriteVolumeDate(sector.AsSpan(830, 17), timestamp);
-        WriteUnspecifiedVolumeDate(sector.AsSpan(847, 17));
-        WriteUnspecifiedVolumeDate(sector.AsSpan(864, 17));
+        if (identifiers is not null)
+        {
+            WriteDescriptorText(sector, 190, 128, identifiers.VolumeSetIdentifier, joliet);
+            WriteDescriptorText(sector, 318, 128, identifiers.PublisherIdentifier, joliet);
+            WriteDescriptorText(sector, 446, 128, identifiers.DataPreparerIdentifier, joliet);
+            WriteDescriptorText(sector, 574, 128, identifiers.ApplicationIdentifier, joliet);
+            WriteDescriptorText(sector, 702, 37, identifiers.CopyrightFileIdentifier, joliet);
+            WriteDescriptorText(sector, 739, 37, identifiers.AbstractFileIdentifier, joliet);
+            WriteDescriptorText(sector, 776, 37, identifiers.BibliographicFileIdentifier, joliet);
+        }
+
+        WriteVolumeDateOrDefault(sector.AsSpan(813, 17), identifiers?.CreationDateRaw, timestamp, specifyTimestamp: true);
+        WriteVolumeDateOrDefault(sector.AsSpan(830, 17), identifiers?.ModificationDateRaw, timestamp, specifyTimestamp: true);
+        WriteVolumeDateOrDefault(sector.AsSpan(847, 17), identifiers?.ExpirationDateRaw, timestamp, specifyTimestamp: false);
+        WriteVolumeDateOrDefault(sector.AsSpan(864, 17), identifiers?.EffectiveDateRaw, timestamp, specifyTimestamp: false);
         sector[881] = 1;
         return sector;
     }
@@ -905,6 +1000,46 @@ public static class Iso9660ImageWriter
         destination[16] = 0;
     }
 
+    private static void WriteVolumeDateOrDefault(
+        Span<byte> destination,
+        byte[]? preserved,
+        DateTimeOffset timestamp,
+        bool specifyTimestamp)
+    {
+        if (preserved is { Length: 17 })
+        {
+            preserved.CopyTo(destination);
+            return;
+        }
+
+        if (specifyTimestamp)
+            WriteVolumeDate(destination, timestamp);
+        else
+            WriteUnspecifiedVolumeDate(destination);
+    }
+
+    private static void WriteDescriptorText(Span<byte> destination, int offset, int length, string value, bool joliet)
+    {
+        if (joliet)
+            WritePaddedJoliet(destination, offset, length, value);
+        else
+            WritePaddedAscii(destination, offset, length, value);
+    }
+
+    private static string SanitizeAsciiField(string value, int maximumLength)
+    {
+        StringBuilder result = new(Math.Min(value.Length, maximumLength));
+        foreach (char character in value)
+        {
+            if (result.Length == maximumLength)
+                break;
+
+            result.Append(character is >= ' ' and <= '~' ? character : '_');
+        }
+
+        return result.ToString().TrimEnd(' ');
+    }
+
     private static void WriteAscii(Span<byte> destination, int offset, string value)
         => TextEncoding.ASCII.GetBytes(value, destination[offset..]);
 
@@ -912,19 +1047,28 @@ public static class Iso9660ImageWriter
     {
         Span<byte> field = destination.Slice(offset, length);
         field.Fill((byte)' ');
-        TextEncoding.ASCII.GetBytes(value, field);
+        if (value.Length == 0)
+            return;
+
+        string sanitized = SanitizeAsciiField(value, length);
+        TextEncoding.ASCII.GetBytes(sanitized, field);
     }
 
     private static void WritePaddedJoliet(Span<byte> destination, int offset, int length, string value)
     {
-        Span<byte> field = destination.Slice(offset, length);
-        for (int index = 0; index < field.Length; index += 2)
+        int evenLength = length & ~1;
+        Span<byte> field = destination.Slice(offset, evenLength);
+        for (int index = 0; index + 1 < field.Length; index += 2)
         {
             field[index] = 0;
             field[index + 1] = (byte)' ';
         }
 
-        TextEncoding.BigEndianUnicode.GetBytes(value, field);
+        if (value.Length == 0)
+            return;
+
+        string sanitized = Truncate(NormalizeJolietText(value), evenLength / 2);
+        TextEncoding.BigEndianUnicode.GetBytes(sanitized, field);
     }
 
     private sealed class SequentialIsoWriter : IDisposable

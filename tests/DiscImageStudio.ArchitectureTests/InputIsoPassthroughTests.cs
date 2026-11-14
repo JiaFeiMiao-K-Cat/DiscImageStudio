@@ -48,6 +48,7 @@ internal static class InputIsoPassthroughTests
 
             TestValidationGuards(directory, sourcePng, rawBootIso, bootableFsIso);
             TestIsoContentReaderFormats(directory);
+            TestOuterVolumeMetadataPreservation(directory);
             TestCdPassthrough(directory, sourcePng, rawBootIso, rawBootBytes, bootableFsIso, bootableFsBytes);
             TestDvdPassthrough(directory, sourcePng, rawBootIso, rawBootBytes, bootableFsIso, bootableFsBytes);
             TestBluRayPassthrough(directory, sourcePng, rawBootIso, rawBootBytes, bootableFsIso, bootableFsBytes);
@@ -354,6 +355,339 @@ internal static class InputIsoPassthroughTests
             && bdFiles["tiny.cfg"].SequenceEqual(tinyInline)
             && bdFiles["sources/sparse.bin"].SequenceEqual(expectedSparse),
             "BD outer reconstructs UDF 2.50 Metadata Partition + inline + sparse files and overrides ISO-9660 stub");
+    }
+
+    private static void TestOuterVolumeMetadataPreservation(string directory)
+    {
+        const string isoLabel = "TRUE_ELYSIA";
+        const string jolietAndUdfLabel = "致以无暇之人——真我之律者";
+        const string volumeSet = "HONKAI_IMPACT_3RD";
+        const string publisher = "HOYO-MIX";
+        const string dataPreparer = "THIRTEEN_FLAME_CHASERS";
+        const string copyright = "COPYRIGHT.TXT";
+        const string abstractFile = "ABSTRACT.TXT";
+        const string biblioFile = "BIBLIO.TXT";
+        const string lvInfo3 = "contact@elysia.invalid";
+        byte[] creationDate = [.. "2024091412345678"u8, 0x20];
+        byte[] modDate = [.. "2024091501020304"u8, 0x20];
+        byte[] expDate = [.. "0000000000000000"u8, 0x00];
+        byte[] effDate = [.. "2024091400000000"u8, 0x00];
+
+        string srcDir = Path.Combine(directory, "imgburn-meta-src");
+        Directory.CreateDirectory(srcDir);
+        byte[] trackData = CreatePatternBytes(3072, 11);
+        File.WriteAllBytes(Path.Combine(srcDir, "track.bin"), trackData);
+
+        // 1) ImgBurn-style Hybrid ISO (UDF + ISO-9660 PVD + Joliet SVD) with distinct labels and blank System/Application
+        string hybridIso = Path.Combine(directory, "imgburn-hybrid.iso");
+        DateTimeOffset udfRecordTs = new(2024, 9, 14, 12, 34, 56, TimeSpan.FromHours(8));
+        byte[] hybridBytes = BuildHybridUdfIso(srcDir, jolietAndUdfLabel, udfRecordTs);
+        // Move UDF VRS from LBA 16..18 -> 19..21 so ISO-9660 descriptors can live at LBA 16..18
+        Array.Copy(hybridBytes, 16 * SectorBytes, hybridBytes, 19 * SectorBytes, 3 * SectorBytes);
+        Array.Clear(hybridBytes, 16 * SectorBytes, 3 * SectorBytes);
+        StampIsoDescriptor(hybridBytes, 16, joliet: false, rootLba: 22, rootLen: SectorBytes, volumeSectors: 640,
+            volumeLabel: isoLabel, systemId: "", volumeSet: volumeSet, publisher: publisher, dataPreparer: dataPreparer,
+            applicationId: "", copyright: copyright, abstractFile: abstractFile, biblioFile: biblioFile,
+            creationDate: creationDate, modDate: modDate, expDate: expDate, effDate: effDate);
+        StampIsoDescriptor(hybridBytes, 17, joliet: true, rootLba: 22, rootLen: SectorBytes, volumeSectors: 640,
+            volumeLabel: jolietAndUdfLabel, systemId: "", volumeSet: volumeSet, publisher: publisher, dataPreparer: dataPreparer,
+            applicationId: "", copyright: copyright, abstractFile: abstractFile, biblioFile: biblioFile,
+            creationDate: creationDate, modDate: modDate, expDate: expDate, effDate: effDate);
+        StampIsoTerminator(hybridBytes, 18);
+        hybridBytes[22 * SectorBytes] = 0; // empty decoy ISO root dir (22*2048 cleared already, ensure explicit)
+        _ = WriteIsoDirRecord(hybridBytes.AsSpan(22 * SectorBytes), "\0", 22, SectorBytes, isDir: true);
+        // Stamp UDF PVD VolumeSet + IUVD LVInfo1..3 on both Main (32..35) and Reserve (384..387) VDS
+        foreach (int vdsBase in new[] { 32, 640 - 256 })
+        {
+            Span<byte> uPvd = hybridBytes.AsSpan(vdsBase * SectorBytes, SectorBytes);
+            WriteUdfCs0Dstring(uPvd.Slice(72, 128), "2024091404345600" + volumeSet);
+            StampUdfTag(uPvd, 1, (uint)vdsBase, 512);
+
+            Span<byte> uIuvd = hybridBytes.AsSpan((vdsBase + 1) * SectorBytes, SectorBytes);
+            WriteUdfCs0Dstring(uIuvd.Slice(244, 36), dataPreparer);
+            WriteUdfCs0Dstring(uIuvd.Slice(280, 36), publisher);
+            WriteUdfCs0Dstring(uIuvd.Slice(316, 36), lvInfo3);
+            StampUdfTag(uIuvd, 4, (uint)(vdsBase + 1), 512);
+        }
+        File.WriteAllBytes(hybridIso, hybridBytes);
+
+        // Verify CD outer ring preserves distinct ISO-9660 & Joliet labels + identifiers + empty System/App + dates
+        Iso9660ImageWriter.LayoutPlan cdOuterPlan = Iso9660ImageWriter.PlanFromIso(hybridIso, 700, filesAtOuterRing: true);
+        using MemoryStream cdOutStream = new();
+        Iso9660ImageWriter.WriteOuterRingPrefix(cdOuterPlan, cdOutStream, cdOuterPlan.MetadataEndLbaExclusive);
+        cdOutStream.Write(new byte[(cdOuterPlan.FileDataStartLba - cdOuterPlan.MetadataEndLbaExclusive) * SectorBytes]);
+        Iso9660ImageWriter.WriteOuterRingSuffix(cdOuterPlan, cdOutStream, cdOuterPlan.FileDataStartLba);
+        byte[] cdOutBytes = cdOutStream.ToArray();
+
+        VerifyIsoDescriptorMetadata(cdOutBytes, 16, joliet: false,
+            isoLabel, "", volumeSet, publisher, dataPreparer, "", copyright, abstractFile, biblioFile,
+            creationDate, modDate, expDate, effDate, "CD outer PVD");
+        VerifyIsoDescriptorMetadata(cdOutBytes, 17, joliet: true,
+            jolietAndUdfLabel, "", volumeSet, publisher, dataPreparer, "", copyright, abstractFile, biblioFile,
+            creationDate, modDate, expDate, effDate, "CD outer Joliet SVD");
+        Dictionary<string, IsoEntry> cdFiles = ReadJoliet(cdOutBytes);
+        Require(cdFiles.Count == 1 && cdFiles["track.bin"].Bytes.SequenceEqual(trackData),
+            "CD outer metadata-preserved image retains exact outer payload bytes");
+
+        // Verify DVD outer ring preserves same descriptors via HybridIsoImageWriter
+        HybridIsoImageWriter.LayoutPlan dvdOuterPlan = HybridIsoImageWriter.PlanFromIso(
+            hybridIso, 768, filesAtOuterRing: true);
+        using MemoryStream dvdOutStream = new();
+        HybridIsoImageWriter.WriteOuterRingPrefix(dvdOuterPlan, dvdOutStream, dvdOuterPlan.MetadataEndLbaExclusive);
+        dvdOutStream.Write(new byte[(dvdOuterPlan.FileDataStartLba - dvdOuterPlan.MetadataEndLbaExclusive) * SectorBytes]);
+        HybridIsoImageWriter.WriteOuterRingSuffix(dvdOuterPlan, dvdOutStream, dvdOuterPlan.FileDataStartLba);
+        byte[] dvdOutBytes = dvdOutStream.ToArray();
+        VerifyIsoDescriptorMetadata(dvdOutBytes, 16, joliet: false,
+            isoLabel, "", volumeSet, publisher, dataPreparer, "", copyright, abstractFile, biblioFile,
+            creationDate, modDate, expDate, effDate, "DVD outer PVD");
+        VerifyIsoDescriptorMetadata(dvdOutBytes, 17, joliet: true,
+            jolietAndUdfLabel, "", volumeSet, publisher, dataPreparer, "", copyright, abstractFile, biblioFile,
+            creationDate, modDate, expDate, effDate, "DVD outer Joliet SVD");
+
+        // Verify BD-R outer ring preserves UDF label, VolumeSet, LVInfo1..3, recording timestamp, and files
+        BluRayDiscParameters bdDisc = new(TotalSectors: 1024, UsableSectors: 960);
+        Dictionary<string, byte[]> bdFiles = RenderOuterBdUdf(hybridIso, bdDisc, out BluRayIsoPlan bdPlan);
+        Require(bdFiles.Count == 1 && bdFiles["track.bin"].SequenceEqual(trackData), "BD outer retains file data");
+        using MemoryStream bdStream = new();
+        BluRayIsoGenerator.GenerateToStream(bdStream, bdPlan, new RecordingPayloadMapping());
+        byte[] bdOutBytes = bdStream.ToArray();
+        UdfFilesystemTests.Inspect(bdOutBytes, bdDisc.OutputSectors, label: jolietAndUdfLabel);
+        VerifyUdfDescriptorMetadata(bdOutBytes, 32,
+            expectedVolumeSet: "2024091404345600" + volumeSet,
+            expectedLvInfo1: dataPreparer,
+            expectedLvInfo2: publisher,
+            expectedLvInfo3: lvInfo3,
+            expectedYear: 2024, expectedMonth: 9, expectedDay: 14, expectedHourUtc: 4,
+            "BD outer UDF from hybrid");
+
+        // 2) ISO-9660 + Joliet ONLY (no UDF) -> BD-R outer carries Unicode label + VolumeSet + Preparer/Publisher
+        string isoOnlyPath = Path.Combine(directory, "iso9660-joliet-only.iso");
+        byte[] isoOnly = new byte[32 * SectorBytes];
+        StampIsoDescriptor(isoOnly, 16, joliet: false, rootLba: 20, rootLen: SectorBytes, volumeSectors: 32,
+            volumeLabel: isoLabel, systemId: "LINUX", volumeSet: volumeSet, publisher: publisher,
+            dataPreparer: dataPreparer, applicationId: "MKISOFS", copyright: "", abstractFile: "", biblioFile: "",
+            creationDate: creationDate, modDate: modDate, expDate: expDate, effDate: effDate);
+        StampIsoDescriptor(isoOnly, 17, joliet: true, rootLba: 21, rootLen: SectorBytes, volumeSectors: 32,
+            volumeLabel: jolietAndUdfLabel, systemId: "LINUX", volumeSet: volumeSet, publisher: publisher,
+            dataPreparer: dataPreparer, applicationId: "MKISOFS", copyright: "", abstractFile: "", biblioFile: "",
+            creationDate: creationDate, modDate: modDate, expDate: expDate, effDate: effDate);
+        StampIsoTerminator(isoOnly, 18);
+        int rPvd = 20 * SectorBytes;
+        rPvd += WriteIsoDirRecord(isoOnly.AsSpan(rPvd), "\0", 20, SectorBytes, isDir: true);
+        rPvd += WriteIsoDirRecord(isoOnly.AsSpan(rPvd), "\x01", 20, SectorBytes, isDir: true);
+        _ = WriteIsoDirRecord(isoOnly.AsSpan(rPvd), "TRACK.BIN;1", 22, (uint)trackData.Length, isDir: false);
+        int rJol = 21 * SectorBytes;
+        rJol += WriteIsoDirRecord(isoOnly.AsSpan(rJol), "\0", 21, SectorBytes, isDir: true, joliet: true);
+        rJol += WriteIsoDirRecord(isoOnly.AsSpan(rJol), "\x01", 21, SectorBytes, isDir: true, joliet: true);
+        _ = WriteIsoDirRecord(isoOnly.AsSpan(rJol), "track.bin", 22, (uint)trackData.Length, isDir: false, joliet: true);
+        trackData.CopyTo(isoOnly.AsSpan(22 * SectorBytes));
+        File.WriteAllBytes(isoOnlyPath, isoOnly);
+
+        BluRayIsoPlan bdFromIsoOnlyPlan = BluRayIsoGenerator.PreparePassthroughIso(bdDisc, isoOnlyPath, filesAtOuterRing: true);
+        using MemoryStream bdFromIsoOnlyStream = new();
+        BluRayIsoGenerator.GenerateToStream(bdFromIsoOnlyStream, bdFromIsoOnlyPlan, new RecordingPayloadMapping());
+        byte[] bdFromIsoOnlyBytes = bdFromIsoOnlyStream.ToArray();
+        UdfFilesystemTests.Inspect(bdFromIsoOnlyBytes, bdDisc.OutputSectors, label: jolietAndUdfLabel);
+        VerifyUdfDescriptorMetadata(bdFromIsoOnlyBytes, 32,
+            expectedVolumeSet: volumeSet,
+            expectedLvInfo1: dataPreparer,
+            expectedLvInfo2: publisher,
+            expectedLvInfo3: "",
+            expectedYear: 2024, expectedMonth: 9, expectedDay: 14, expectedHourUtc: 4,
+            "BD outer UDF from ISO-9660/Joliet");
+
+        // Check non-empty System/Application also preserved on CD outer
+        CdDiscParameters cdParams = new(24.5, 56.8, 700);
+        Dictionary<string, IsoEntry> isoOnlyCdOut = RenderOuterCdJoliet(isoOnlyPath, cdParams, out Iso9660ImageWriter.LayoutPlan overridePlan);
+        Require(isoOnlyCdOut.Count == 1 && isoOnlyCdOut["track.bin"].Bytes.SequenceEqual(trackData),
+            "CD outer preserves files from ISO-9660/Joliet source");
+        using MemoryStream isoOnlyCdStream = new();
+        Iso9660ImageWriter.WriteOuterRingPrefix(overridePlan, isoOnlyCdStream, overridePlan.MetadataEndLbaExclusive);
+        isoOnlyCdStream.Write(new byte[(overridePlan.FileDataStartLba - overridePlan.MetadataEndLbaExclusive) * SectorBytes]);
+        Iso9660ImageWriter.WriteOuterRingSuffix(overridePlan, isoOnlyCdStream, overridePlan.FileDataStartLba);
+        VerifyIsoDescriptorMetadata(isoOnlyCdStream.ToArray(), 16, joliet: false,
+            isoLabel, "LINUX", volumeSet, publisher, dataPreparer, "MKISOFS", "", "", "",
+            creationDate, modDate, expDate, effDate, "CD outer non-empty System/App PVD");
+
+        // 3) Rock Ridge + truncated Joliet (>16 char PVD label) + explicit --volume-label override
+        string rrPath = Path.Combine(directory, "rr-long-label.iso");
+        const string fullRrLabel = "MY_DISTRO_2026_AMD64_1"; // 22 chars > 16
+        byte[] rrBytes = new byte[32 * SectorBytes];
+        StampIsoDescriptor(rrBytes, 16, joliet: false, rootLba: 20, rootLen: SectorBytes, volumeSectors: 32,
+            volumeLabel: fullRrLabel, systemId: "LINUX", volumeSet: volumeSet, publisher: publisher,
+            dataPreparer: dataPreparer, applicationId: "GENISOIMAGE", copyright: "", abstractFile: "", biblioFile: "",
+            creationDate: creationDate, modDate: modDate, expDate: expDate, effDate: effDate);
+        StampIsoDescriptor(rrBytes, 17, joliet: true, rootLba: 21, rootLen: SectorBytes, volumeSectors: 32,
+            volumeLabel: fullRrLabel[..16], systemId: "LINUX", volumeSet: volumeSet, publisher: publisher,
+            dataPreparer: dataPreparer, applicationId: "GENISOIMAGE", copyright: "", abstractFile: "", biblioFile: "",
+            creationDate: creationDate, modDate: modDate, expDate: expDate, effDate: effDate);
+        StampIsoTerminator(rrBytes, 18);
+        byte[] spEntry = [(byte)'S', (byte)'P', 7, 1, 0xBE, 0xEF, 0];
+        int rrDir = 20 * SectorBytes;
+        rrDir += WriteIsoDirRecord(rrBytes.AsSpan(rrDir), "\0", 20, SectorBytes, isDir: true, sysUse: spEntry);
+        rrDir += WriteIsoDirRecord(rrBytes.AsSpan(rrDir), "\x01", 20, SectorBytes, isDir: true);
+        _ = WriteIsoDirRecord(rrBytes.AsSpan(rrDir), "TRACK.BIN;1", 22, (uint)trackData.Length, isDir: false);
+        int rrJol = 21 * SectorBytes;
+        rrJol += WriteIsoDirRecord(rrBytes.AsSpan(rrJol), "\0", 21, SectorBytes, isDir: true, joliet: true);
+        rrJol += WriteIsoDirRecord(rrBytes.AsSpan(rrJol), "\x01", 21, SectorBytes, isDir: true, joliet: true);
+        _ = WriteIsoDirRecord(rrBytes.AsSpan(rrJol), "track.bin", 22, (uint)trackData.Length, isDir: false, joliet: true);
+        trackData.CopyTo(rrBytes.AsSpan(22 * SectorBytes));
+        File.WriteAllBytes(rrPath, rrBytes);
+
+        BluRayIsoPlan bdFromRr = BluRayIsoGenerator.PreparePassthroughIso(bdDisc, rrPath, filesAtOuterRing: true);
+        using MemoryStream bdRrStream = new();
+        BluRayIsoGenerator.GenerateToStream(bdRrStream, bdFromRr, new RecordingPayloadMapping());
+        UdfFilesystemTests.Inspect(bdRrStream.ToArray(), bdDisc.OutputSectors, label: fullRrLabel);
+
+        // Explicit --volume-label overrides volume label while still keeping volume identifiers
+        Iso9660ImageWriter.LayoutPlan explicitPlan = Iso9660ImageWriter.PlanFromIso(
+            rrPath, 700, volumeLabel: "CUSTOM_OUT", filesAtOuterRing: true);
+        using MemoryStream explicitStream = new();
+        Iso9660ImageWriter.WriteOuterRingPrefix(explicitPlan, explicitStream, explicitPlan.MetadataEndLbaExclusive);
+        explicitStream.Write(new byte[(explicitPlan.FileDataStartLba - explicitPlan.MetadataEndLbaExclusive) * SectorBytes]);
+        Iso9660ImageWriter.WriteOuterRingSuffix(explicitPlan, explicitStream, explicitPlan.FileDataStartLba);
+        byte[] explicitBytes = explicitStream.ToArray();
+        VerifyIsoDescriptorMetadata(explicitBytes, 16, joliet: false,
+            "CUSTOM_OUT", "LINUX", volumeSet, publisher, dataPreparer, "GENISOIMAGE", "", "", "",
+            creationDate, modDate, expDate, effDate, "Explicit --volume-label keeps source identifiers");
+    }
+
+    private static byte[] BuildHybridUdfIso(string srcDir, string volumeLabel, DateTimeOffset timestamp)
+    {
+        UdfImageWriter.LayoutPlan plan = UdfImageWriter.Plan(srcDir, 640, volumeLabel, timestamp);
+        using MemoryStream ms = new();
+        UdfImageWriter.WriteSequentialPrefix(plan, ms, plan.DrawingStartLba);
+        ms.Write(new byte[(plan.DrawingEndLbaExclusive - plan.DrawingStartLba) * SectorBytes]);
+        UdfImageWriter.WriteSequentialSuffix(plan, ms, plan.DrawingEndLbaExclusive);
+        return ms.ToArray();
+    }
+
+    private static void StampIsoDescriptor(
+        byte[] image, int lba, bool joliet, uint rootLba, uint rootLen, uint volumeSectors,
+        string volumeLabel, string systemId, string volumeSet, string publisher, string dataPreparer,
+        string applicationId, string copyright, string abstractFile, string biblioFile,
+        byte[] creationDate, byte[] modDate, byte[] expDate, byte[] effDate)
+    {
+        Span<byte> vd = image.AsSpan(lba * SectorBytes, SectorBytes);
+        vd.Clear();
+        vd[0] = (byte)(joliet ? 2 : 1);
+        "CD001"u8.CopyTo(vd.Slice(1));
+        vd[6] = 1;
+        WriteIsoField(vd.Slice(8, 32), systemId, joliet);
+        WriteIsoField(vd.Slice(40, 32), volumeLabel, joliet);
+        if (joliet)
+        {
+            vd[88] = 0x25; vd[89] = 0x2F; vd[90] = 0x45;
+        }
+        WriteBoth32(vd, 80, volumeSectors);
+        BinaryPrimitives.WriteUInt16LittleEndian(vd.Slice(128, 2), SectorBytes);
+        BinaryPrimitives.WriteUInt16BigEndian(vd.Slice(130, 2), SectorBytes);
+        _ = WriteIsoDirRecord(vd.Slice(156, 34), "\0", rootLba, rootLen, isDir: true);
+        WriteIsoField(vd.Slice(190, 128), volumeSet, joliet);
+        WriteIsoField(vd.Slice(318, 128), publisher, joliet);
+        WriteIsoField(vd.Slice(446, 128), dataPreparer, joliet);
+        WriteIsoField(vd.Slice(574, 128), applicationId, joliet);
+        WriteIsoField(vd.Slice(702, 37), copyright, joliet);
+        WriteIsoField(vd.Slice(739, 37), abstractFile, joliet);
+        WriteIsoField(vd.Slice(776, 37), biblioFile, joliet);
+        creationDate.CopyTo(vd.Slice(813, 17));
+        modDate.CopyTo(vd.Slice(830, 17));
+        expDate.CopyTo(vd.Slice(847, 17));
+        effDate.CopyTo(vd.Slice(864, 17));
+        vd[881] = 1;
+    }
+
+    private static void StampIsoTerminator(byte[] image, int lba)
+    {
+        Span<byte> vd = image.AsSpan(lba * SectorBytes, SectorBytes);
+        vd.Clear();
+        vd[0] = 255;
+        "CD001"u8.CopyTo(vd.Slice(1));
+        vd[6] = 1;
+    }
+
+    private static void WriteIsoField(Span<byte> dest, string value, bool joliet)
+    {
+        if (joliet)
+        {
+            int even = dest.Length & ~1;
+            for (int i = 0; i + 1 < even; i += 2) { dest[i] = 0; dest[i + 1] = (byte)' '; }
+            Encoding.BigEndianUnicode.GetBytes(value).AsSpan(0, Math.Min(even, value.Length * 2)).CopyTo(dest);
+            return;
+        }
+
+        dest.Fill((byte)' ');
+        Encoding.ASCII.GetBytes(value).AsSpan(0, Math.Min(dest.Length, value.Length)).CopyTo(dest);
+    }
+
+    private static void WriteUdfCs0Dstring(Span<byte> dest, string value)
+    {
+        dest.Clear();
+        bool narrow = value.All(c => c <= byte.MaxValue);
+        byte[] payload = narrow ? [8, .. Encoding.Latin1.GetBytes(value)] : [16, .. Encoding.BigEndianUnicode.GetBytes(value)];
+        int len = Math.Min(payload.Length, dest.Length - 1);
+        payload.AsSpan(0, len).CopyTo(dest);
+        dest[^1] = checked((byte)len);
+    }
+
+    private static string ReadIsoField(byte[] image, int lba, int offset, int length, bool joliet)
+    {
+        int start = lba * SectorBytes + offset;
+        return joliet
+            ? Encoding.BigEndianUnicode.GetString(image, start, length & ~1).TrimEnd('\0', ' ')
+            : Encoding.ASCII.GetString(image, start, length).TrimEnd('\0', ' ');
+    }
+
+    private static void VerifyIsoDescriptorMetadata(
+        byte[] image, int lba, bool joliet,
+        string expectedLabel, string expectedSystem, string expectedVolumeSet, string expectedPublisher,
+        string expectedPreparer, string expectedApp, string expectedCopyright, string expectedAbstract, string expectedBiblio,
+        byte[] expectedCreation, byte[] expectedMod, byte[] expectedExp, byte[] expectedEff,
+        string context)
+    {
+        Require(ReadIsoField(image, lba, 40, 32, joliet) == expectedLabel, $"{context}: VolumeLabel mismatch");
+        Require(ReadIsoField(image, lba, 8, 32, joliet) == expectedSystem, $"{context}: SystemIdentifier mismatch");
+        Require(ReadIsoField(image, lba, 190, 128, joliet) == expectedVolumeSet, $"{context}: VolumeSetIdentifier mismatch");
+        Require(ReadIsoField(image, lba, 318, 128, joliet) == expectedPublisher, $"{context}: PublisherIdentifier mismatch");
+        Require(ReadIsoField(image, lba, 446, 128, joliet) == expectedPreparer, $"{context}: DataPreparerIdentifier mismatch");
+        Require(ReadIsoField(image, lba, 574, 128, joliet) == expectedApp, $"{context}: ApplicationIdentifier mismatch");
+        Require(ReadIsoField(image, lba, 702, 37, joliet) == expectedCopyright, $"{context}: CopyrightFileIdentifier mismatch");
+        Require(ReadIsoField(image, lba, 739, 37, joliet) == expectedAbstract, $"{context}: AbstractFileIdentifier mismatch");
+        Require(ReadIsoField(image, lba, 776, 37, joliet) == expectedBiblio, $"{context}: BibliographicFileIdentifier mismatch");
+        int baseOffset = lba * SectorBytes;
+        Require(image.AsSpan(baseOffset + 813, 17).SequenceEqual(expectedCreation), $"{context}: CreationDate mismatch");
+        Require(image.AsSpan(baseOffset + 830, 17).SequenceEqual(expectedMod), $"{context}: ModificationDate mismatch");
+        Require(image.AsSpan(baseOffset + 847, 17).SequenceEqual(expectedExp), $"{context}: ExpirationDate mismatch");
+        Require(image.AsSpan(baseOffset + 864, 17).SequenceEqual(expectedEff), $"{context}: EffectiveDate mismatch");
+    }
+
+    private static void VerifyUdfDescriptorMetadata(
+        byte[] image, int pvdLba,
+        string expectedVolumeSet, string expectedLvInfo1, string expectedLvInfo2, string expectedLvInfo3,
+        int expectedYear, int expectedMonth, int expectedDay, int expectedHourUtc,
+        string context)
+    {
+        ReadOnlySpan<byte> pvd = image.AsSpan(pvdLba * SectorBytes, SectorBytes);
+        Require(DecodeUdfDstring(pvd.Slice(72, 128)) == expectedVolumeSet, $"{context}: UDF VolumeSetIdentifier mismatch");
+        Require(BinaryPrimitives.ReadUInt16LittleEndian(pvd.Slice(378, 2)) == expectedYear
+            && pvd[380] == expectedMonth && pvd[381] == expectedDay && pvd[382] == expectedHourUtc,
+            $"{context}: UDF PVD RecordingDateAndTime mismatch");
+
+        ReadOnlySpan<byte> iuvd = image.AsSpan((pvdLba + 1) * SectorBytes, SectorBytes);
+        Require(DecodeUdfDstring(iuvd.Slice(244, 36)) == expectedLvInfo1, $"{context}: UDF LVInfo1 mismatch");
+        Require(DecodeUdfDstring(iuvd.Slice(280, 36)) == expectedLvInfo2, $"{context}: UDF LVInfo2 mismatch");
+        Require(DecodeUdfDstring(iuvd.Slice(316, 36)) == expectedLvInfo3, $"{context}: UDF LVInfo3 mismatch");
+    }
+
+    private static string DecodeUdfDstring(ReadOnlySpan<byte> field)
+    {
+        int len = field[^1];
+        if (len <= 0 || len > field.Length - 1) return string.Empty;
+        byte cid = field[0];
+        ReadOnlySpan<byte> payload = field.Slice(1, len - 1);
+        return cid == 8
+            ? Encoding.Latin1.GetString(payload).TrimEnd('\0')
+            : Encoding.BigEndianUnicode.GetString(payload).TrimEnd('\0');
     }
 
     private static Dictionary<string, IsoEntry> RenderOuterCdJoliet(
