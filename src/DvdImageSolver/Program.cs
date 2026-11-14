@@ -1,5 +1,6 @@
 using System.Text.Json;
 using DiscImageStudio.Core;
+using DiscImageStudio.Iso;
 using DvdImageSolver.Encoding;
 using DvdImageSolver.Solver;
 
@@ -41,6 +42,7 @@ internal static class Program
         _ = ReadFilesAtOuterRing(arguments);
         uint fillSectors = arguments.GetUInt("fill-sectors", DvdEccBlockEncoder.SectorCount);
         if (arguments.Has("data-dir")
+            || arguments.Has("input-iso")
             || fillSectors != DvdEccBlockEncoder.SectorCount
             || ReadBoolean(arguments, "fast-output", fallback: false))
         {
@@ -387,7 +389,14 @@ internal static class Program
 
     private static int SolveMultipleBlocks(CliArguments arguments, uint fillSectors)
     {
-        bool hybridMode = arguments.Has("data-dir");
+        bool hasDataDir = arguments.Has("data-dir");
+        bool hasInputIso = arguments.Has("input-iso");
+        if (hasDataDir && hasInputIso)
+        {
+            throw new ArgumentException("Specify either --data-dir or --input-iso, not both.");
+        }
+
+        bool hybridMode = hasDataDir || hasInputIso;
         bool filesAtOuterRing = ReadFilesAtOuterRing(arguments);
         if (!arguments.Has("image") || arguments.Has("target"))
         {
@@ -413,13 +422,13 @@ internal static class Program
         if (hybridMode && (arguments.Has("lba") || arguments.Has("fill-sectors")))
         {
             throw new ArgumentException(
-                "Hybrid --data-dir mode calculates --lba and --fill-sectors automatically; "
+                "Hybrid --data-dir or --input-iso mode calculates --lba and --fill-sectors automatically; "
                 + "use --drawing-start-lba only when extra inner-ring space is required.");
         }
 
         if (!hybridMode && arguments.Has("drawing-start-lba"))
         {
-            throw new ArgumentException("--drawing-start-lba requires --data-dir.");
+            throw new ArgumentException("--drawing-start-lba requires --data-dir or --input-iso.");
         }
 
         uint psnOffset = arguments.GetUInt("psn-offset", 0x30000);
@@ -458,6 +467,7 @@ internal static class Program
         ModulationBoundary discInitialBoundary = ReadBoundary(arguments);
         ModulationBoundary drawingInitialBoundary = discInitialBoundary;
         HybridIsoWriteSummary? hybridIso = null;
+        RawIsoLayoutPlan? rawIso = null;
         uint lba;
         if (hybridMode)
         {
@@ -467,13 +477,40 @@ internal static class Program
                     "Hybrid mode requires --psn-offset to be aligned to a 16-sector ECC Block.");
             }
 
-            HybridIsoImageWriter.LayoutPlan isoLayout = HybridIsoImageWriter.Plan(
-                arguments.Require("data-dir"),
-                imageMapping.TotalSectors,
-                arguments.Get("volume-label", "DVD_IMAGE"),
-                filesAtOuterRing);
-            uint minimumDrawingLba = AlignToEccBlock(filesAtOuterRing
-                ? isoLayout.MetadataEndLbaExclusive : isoLayout.DataEndLbaExclusive, psnOffset);
+            HybridIsoImageWriter.LayoutPlan? isoLayout = null;
+            uint minimumDrawingLba;
+            uint drawingEndLba;
+            if (hasInputIso && !filesAtOuterRing)
+            {
+                rawIso = RawIsoPassthrough.Plan(
+                    arguments.Require("input-iso"),
+                    imageMapping.TotalSectors,
+                    DvdEccBlockEncoder.SectorCount,
+                    filesAtOuterRing: false,
+                    DvdEccBlockEncoder.SectorCount);
+                minimumDrawingLba = rawIso.DrawingStartLba;
+                drawingEndLba = rawIso.DrawingEndLbaExclusive;
+            }
+            else
+            {
+                isoLayout = hasInputIso
+                    ? HybridIsoImageWriter.PlanFromIso(
+                        arguments.Require("input-iso"),
+                        imageMapping.TotalSectors,
+                        arguments.Has("volume-label") ? arguments.Get("volume-label", "DVD_IMAGE") : null,
+                        filesAtOuterRing: true)
+                    : HybridIsoImageWriter.Plan(
+                        arguments.Require("data-dir"),
+                        imageMapping.TotalSectors,
+                        arguments.Get("volume-label", "DVD_IMAGE"),
+                        filesAtOuterRing);
+                minimumDrawingLba = AlignToEccBlock(filesAtOuterRing
+                    ? isoLayout.MetadataEndLbaExclusive : isoLayout.DataEndLbaExclusive, psnOffset);
+                drawingEndLba = filesAtOuterRing
+                    ? isoLayout.FileDataStartLba / DvdEccBlockEncoder.SectorCount * DvdEccBlockEncoder.SectorCount
+                    : imageMapping.TotalSectors;
+            }
+
             lba = arguments.Has("drawing-start-lba")
                 ? arguments.GetUInt("drawing-start-lba", 0)
                 : minimumDrawingLba;
@@ -497,9 +534,6 @@ internal static class Program
                     "--drawing-start-lba exceeds the reported disc size.");
             }
 
-            uint drawingEndLba = filesAtOuterRing
-                ? isoLayout.FileDataStartLba / DvdEccBlockEncoder.SectorCount * DvdEccBlockEncoder.SectorCount
-                : imageMapping.TotalSectors;
             if (drawingEndLba < lba)
                 throw new ArgumentException("The selected drawing range overlaps the outer-ring files.");
             fillSectors = checked((drawingEndLba - lba)
@@ -511,13 +545,25 @@ internal static class Program
                     "The filesystem leaves no complete ECC Block for drawing in the selected file layout.");
             }
 
-            hybridIso = HybridIsoImageWriter.Create(isoLayout, isoOutputPath);
+            if (rawIso is not null)
+            {
+                rawIso = rawIso with { DrawingStartLba = lba };
+                RawIsoPassthrough.WriteToFile(rawIso, isoOutputPath,
+                    handle => IsoImageWriter.TryMarkSparse(handle));
+                Console.WriteLine(
+                    $"passthrough ISO: source={rawIso.SourceIsoPath}, size={rawIso.SourceBytes} bytes ({rawIso.SourceSectors} sectors), "
+                    + $"iso={(filesAtOuterRing ? "outer" : "inner")}, drawing LBA {lba}..{lba + fillSectors - 1}");
+            }
+            else
+            {
+                hybridIso = HybridIsoImageWriter.Create(isoLayout!, isoOutputPath);
+                Console.WriteLine(
+                    $"hybrid ISO: files={hybridIso.FileCount}, directories={hybridIso.DirectoryCount}, "
+                    + $"data={hybridIso.FileBytes} bytes, filesystem end LBA={hybridIso.DataEndLbaExclusive}, "
+                    + $"files={(filesAtOuterRing ? "outer" : "inner")}, drawing LBA {lba}..{lba + fillSectors - 1}");
+            }
 
-            Console.WriteLine(
-                $"hybrid ISO: files={hybridIso.FileCount}, directories={hybridIso.DirectoryCount}, "
-                + $"data={hybridIso.FileBytes} bytes, filesystem end LBA={hybridIso.DataEndLbaExclusive}, "
-                + $"files={(filesAtOuterRing ? "outer" : "inner")}, drawing LBA {lba}..{lba + fillSectors - 1}");
-            if (!fastOutput)
+            if (!fastOutput && lba > 0)
             {
                 Console.WriteLine($"replaying inner-ring modulation boundary: 0..{lba - 1}");
                 drawingInitialBoundary = ReplayIsoBoundary(
@@ -567,7 +613,8 @@ internal static class Program
                 isoOutputPath,
                 options,
                 progressEvery,
-                hybridIso);
+                hybridIso,
+                rawIso);
         }
 
         Console.WriteLine(
@@ -617,7 +664,7 @@ internal static class Program
             sourceImage = Path.GetFullPath(arguments.Require("image")),
             isoOutput = Path.GetFullPath(isoOutputPath),
             startLba = lba,
-            filesAtOuterRing = hybridIso?.FilesAtOuterRing ?? false,
+            filesAtOuterRing = rawIso?.FilesAtOuterRing ?? hybridIso?.FilesAtOuterRing ?? false,
             fillSectors,
             totalSectors = imageMapping.TotalSectors,
             psnOffset = $"0x{psnOffset:X}",
@@ -657,7 +704,7 @@ internal static class Program
                 dsv = drawingInitialBoundary.Dsv,
                 level = drawingInitialBoundary.LevelName,
             },
-            discInitialBoundary = hybridIso is null
+            discInitialBoundary = hybridIso is null && rawIso is null
                 ? null
                 : (object)new
                 {
@@ -705,12 +752,22 @@ internal static class Program
             pitchPolynomial = DescribePitchPolynomial(imageMapping),
             iso = new
             {
-                mode = hybridIso?.Mode ?? "raw-sector-image",
+                mode = rawIso is not null ? "raw-input-iso" : hybridIso?.Mode ?? "raw-sector-image",
                 logicalSectorBytes = IsoImageWriter.LogicalSectorBytes,
                 imageSectors = result.IsoSectors,
                 sparseFile = result.SparseIso,
-                mountableFilesystem = hybridIso is not null,
+                mountableFilesystem = hybridIso is not null || (rawIso is not null && !rawIso.FilesAtOuterRing),
                 hybrid = hybridIso,
+                inputIso = rawIso is null ? null : new
+                {
+                    sourcePath = rawIso.SourceIsoPath,
+                    sourceBytes = rawIso.SourceBytes,
+                    sourceSectors = rawIso.SourceSectors,
+                    isoStartLba = rawIso.IsoStartLba,
+                    drawingStartLba = rawIso.DrawingStartLba,
+                    drawingEndLbaExclusive = rawIso.DrawingEndLbaExclusive,
+                    filesAtOuterRing = rawIso.FilesAtOuterRing,
+                },
             },
         };
         WriteJson(isoOutputPath + ".json", metadata);
@@ -741,8 +798,8 @@ internal static class Program
             "outer" => true,
             _ => throw new ArgumentException("--file-position must be 'inner' or 'outer'."),
         };
-        if (outer && !arguments.Has("data-dir"))
-            throw new ArgumentException("--file-position outer requires --data-dir.");
+        if (outer && !arguments.Has("data-dir") && !arguments.Has("input-iso"))
+            throw new ArgumentException("--file-position outer requires --data-dir or --input-iso.");
         return outer;
     }
 
@@ -751,7 +808,8 @@ internal static class Program
         string isoOutputPath,
         MultiBlockSolveOptions options,
         int progressEvery,
-        HybridIsoWriteSummary? hybridIso)
+        HybridIsoWriteSummary? hybridIso,
+        RawIsoLayoutPlan? rawIso)
     {
         Console.WriteLine(
             $"fast raw ISO fill: LBA {options.StartLba}.."
@@ -788,7 +846,8 @@ internal static class Program
                         + $"LBA={progress.BlockLba}, controlled={progress.ControlledWords}, "
                         + $"rate={rate:F2} MiB/s, elapsed={progress.Elapsed.TotalSeconds:F1}s");
                 }
-            });
+            },
+            rawIso: rawIso);
 
         double totalMebibytes = result.FilledSectors
             * (double)IsoImageWriter.LogicalSectorBytes
@@ -1393,7 +1452,8 @@ internal static class Program
               --constraint-step N       Constrain every Nth channel bit (single block default 1)
               --fill-sectors N          Fill N consecutive sectors; N must be a multiple of 16
               --data-dir DIR            Hybrid disc: store this directory together with the drawing
-              --file-position MODE      inner (default) or outer; outer requires --data-dir
+              --input-iso FILE          Hybrid disc: stream this pre-built ISO verbatim alongside the drawing
+              --file-position MODE      inner (default) or outer; outer requires --data-dir or --input-iso
               --drawing-start-lba N     Hybrid override; must follow all files and align to an ECC Block
               --fast-output true|false Direct dispersion ISO output without ECC/EFM replay
                                         (default false; true in hybrid mode)

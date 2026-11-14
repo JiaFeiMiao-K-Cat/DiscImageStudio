@@ -72,7 +72,7 @@ Live burning is experimental. Use only expendable test media.
 - **CD support**: Supports any CD. Export WAV audio tracks with format headers and accompanying CUE files, compatible with burning software such as cdrecord and ImgBurn; RAW audio track export is also available. See [CD burning compatibility](docs/CD_AUDIO_COMPATIBILITY.md).
 - **DVD support**: Supports any DVD. Export ISO images.
 - **Blu-ray support**: Supports any single-layer 25 GB BD-R, with drawing-only mode and UDF 2.01 files. See [ADDING_BLURAY.md](docs/ADDING_BLURAY.md).
-- **Files on disc**: For CD, DVD, and Blu-ray, select a folder and place its files on the inner or outer ring directly from the Design page, or adjust these options on the Export page. The settings are saved with the project.
+- **Files on disc**: For CD, DVD, and Blu-ray, choose either a folder or a pre-built `.iso` image and set inner or outer ring placement from the Design or Export page (saved with the project). On the inner ring, a pre-built ISO is streamed verbatim from LBA 0 to preserve boot records; on the outer ring, its UDF / ISO-9660 files are extracted without temp unpacking and rewritten into the outer-ring filesystem.
 - **File region preview**: Hybrid-disc design projections and artifact readback highlight the file region, including the file system, in blue.
 - **Media grayscale schemes**: CD and DVD both use two black-and-white levels: `0D / AA` for CD and `A5 / 92` in the DVD scrambled domain. See [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md).
 - **Grayscale dithering tool**: A standalone program can also process a source image into a two-level `0/255` black-and-white PNG. It supports opening or dragging in source images, side-by-side previews, and lossless PNG export. See the [usage and build instructions](tools/FourLevelDither/README.md).
@@ -141,10 +141,10 @@ The CLI reads PNG, JPEG, BMP and GIF, using the first frame of animated images. 
 | `calibrate` | Calibration projection: sample the DVD source image using the generation geometry and project it onto the disc using the measured geometry |
 | `simulate` | Simulate readback of a generated DVD ISO using measured radii |
 | `selftest` | Run deterministic regression self-tests for the DVD engine |
-| `cd-generate` | Generate WAV + CUE / RAW audio tracks when no files are included on the disc; generate a CD data disc ISO when `--data-dir` is specified |
+| `cd-generate` | Generate WAV + CUE / RAW audio tracks when no files are included on the disc; generate a CD data disc ISO when `--data-dir` or `--input-iso` is specified |
 | `cd-preview-warp` | Calibration projection: project the CD source image using measured geometry |
 | `cd-preview-track` | Render an existing WAV or RAW CD-DA audio track using calibrated geometry (readback simulation) |
-| `bd-generate` | Generate a complete BD-R ISO and write an `<iso>.json` sidecar |
+| `bd-generate` | Generate a complete BD-R ISO (with optional `--data-dir` or `--input-iso`) and write an `<iso>.json` sidecar |
 | `bd-info` / `bd-probe` / `bd-encode` | Export BD parameters, raw payload probes, or diagnostics for a single ECC cluster |
 
 See the corresponding documentation for each command’s complete parameters.
@@ -160,7 +160,7 @@ src/DiscImageStudio.Burning/ Windows IMAPI2 device enumeration, stream buffering
 src/DiscImageStudio.Cd/      CD-DA generation core and CD module
 src/DiscImageStudio.Dvd/     DVD engine adapter module
 src/DiscImageStudio.BluRay/  BD-R geometry, 17PP/ECC, 3T/6T mapping, streaming generation, and ISO
-src/DiscImageStudio.Iso/     UDF 2.01 / ISO9660 writers
+src/DiscImageStudio.Iso/     UDF 2.01 / ISO9660 read/write and raw ISO passthrough
 src/DiscImageStudio.App/     WPF GUI, unified command line, and Store assets
 src/DvdImageSolver/          Isolated DVD encoding/solving engine
 tests/                       Architecture regression tests without a third-party test framework

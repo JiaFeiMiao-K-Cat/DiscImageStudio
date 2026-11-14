@@ -80,10 +80,20 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty] private string _cdSamplesPerSector = "16";
     [ObservableProperty] private bool _cdInterleave = true;
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasCdFiles), nameof(IsCdAudioMode), nameof(IsCdWaveOutput),
-        nameof(CdOutputLabel), nameof(CdOutputHint))]
+    [NotifyPropertyChangedFor(nameof(HasCdFiles), nameof(HasCdDataDirectory), nameof(IsCdAudioMode),
+        nameof(IsCdWaveOutput), nameof(CdOutputLabel), nameof(CdOutputHint))]
     private string _cdDataDirectory = string.Empty;
-    [ObservableProperty] private bool _cdFilesAtOuterRing;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCdFiles), nameof(HasCdDataDirectory), nameof(IsCdAudioMode),
+        nameof(IsCdWaveOutput), nameof(CdOutputLabel), nameof(CdOutputHint), nameof(CdUseFolder), nameof(ShowCdOuterIsoWarning))]
+    private bool _cdUseInputIso;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCdFiles), nameof(HasCdDataDirectory), nameof(IsCdAudioMode),
+        nameof(IsCdWaveOutput), nameof(CdOutputLabel), nameof(CdOutputHint))]
+    private string _cdInputIsoPath = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowCdOuterIsoWarning))]
+    private bool _cdFilesAtOuterRing;
     // Outer-ring bleed pulls the data area's outer edge inward to ~95% of the medium's
     // standard capacity, leaving the poorest-quality outermost ring unwritten (issue 312).
     [ObservableProperty] private bool _cdOuterRingBleed;
@@ -105,7 +115,9 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty] private string _dvdIsoPath = string.Empty;
     [ObservableProperty] private string _dvdOutputPath = string.Empty;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDvdFiles))] private string _dvdDataDirectory = string.Empty;
-    [ObservableProperty] private bool _dvdFilesAtOuterRing;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDvdFiles), nameof(DvdUseFolder), nameof(ShowDvdVolumeLabel), nameof(ShowDvdOuterIsoWarning))] private bool _dvdUseInputIso;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasDvdFiles))] private string _dvdInputIsoPath = string.Empty;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowDvdOuterIsoWarning))] private bool _dvdFilesAtOuterRing;
     [ObservableProperty] private bool _dvdOuterRingBleed;
     [ObservableProperty] private bool _dvdReadCompatibility;
     [ObservableProperty] private string _dvdReadCompatibilityMode = DvdReadCompatibilityModes.Current;
@@ -133,7 +145,9 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty] private string _bdIsoPath = string.Empty;
     [ObservableProperty] private string _bdOutputPath = string.Empty;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasBluRayFiles))] private string _bdDataDirectory = string.Empty;
-    [ObservableProperty] private bool _bdFilesAtOuterRing;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasBluRayFiles), nameof(BdUseFolder), nameof(ShowBdVolumeLabel), nameof(ShowBdOuterIsoWarning))] private bool _bdUseInputIso;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(HasBluRayFiles))] private string _bdInputIsoPath = string.Empty;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ShowBdOuterIsoWarning))] private bool _bdFilesAtOuterRing;
     [ObservableProperty] private bool _bdOuterRingBleed;
     [ObservableProperty] private string _bdVolumeLabel = DefaultBluRayVolumeLabel;
     [ObservableProperty] private string _bdTotalSectors = "12219392";
@@ -219,7 +233,15 @@ public partial class DiscParametersState : ObservableObject
     public bool IsCdWaveOutput => IsCdAudioMode && Path.GetExtension(CdOutputPath.Trim())
         .Equals(".wav", StringComparison.OrdinalIgnoreCase);
 
-    public bool HasCdFiles => !string.IsNullOrWhiteSpace(CdDataDirectory);
+    public bool HasCdFiles => CdUseInputIso
+        ? !string.IsNullOrWhiteSpace(CdInputIsoPath)
+        : !string.IsNullOrWhiteSpace(CdDataDirectory);
+
+    public bool HasCdDataDirectory => !CdUseInputIso && !string.IsNullOrWhiteSpace(CdDataDirectory);
+
+    public bool CdUseFolder => !CdUseInputIso;
+
+    public bool ShowCdOuterIsoWarning => CdUseInputIso && CdFilesAtOuterRing;
 
     public bool IsCdAudioMode => !HasCdFiles;
 
@@ -231,7 +253,45 @@ public partial class DiscParametersState : ObservableObject
         ? L.T("包含随盘文件，导出为 CD 数据盘 ISO。")
         : L.T("无随盘文件时生成音轨，推荐 WAV 格式。");
 
-    partial void OnCdDataDirectoryChanged(string value) => NormalizeCdOutputFormat();
+    partial void OnCdDataDirectoryChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            CdUseInputIso = false;
+        NormalizeCdOutputFormat();
+    }
+
+    partial void OnCdUseInputIsoChanged(bool value) => NormalizeCdOutputFormat();
+
+    partial void OnCdInputIsoPathChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            CdUseInputIso = true;
+        NormalizeCdOutputFormat();
+    }
+
+    partial void OnDvdDataDirectoryChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            DvdUseInputIso = false;
+    }
+
+    partial void OnDvdInputIsoPathChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            DvdUseInputIso = true;
+    }
+
+    partial void OnBdDataDirectoryChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            BdUseInputIso = false;
+    }
+
+    partial void OnBdInputIsoPathChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            BdUseInputIso = true;
+    }
 
     // The audio format (.wav or .raw) last chosen for the CD output, restored when the
     // output returns from a data-disc ISO to an audio track.
@@ -267,9 +327,42 @@ public partial class DiscParametersState : ObservableObject
         }
     }
 
-    public bool HasDvdFiles => !string.IsNullOrWhiteSpace(DvdDataDirectory);
+    public bool HasDvdFiles => DvdUseInputIso
+        ? !string.IsNullOrWhiteSpace(DvdInputIsoPath)
+        : !string.IsNullOrWhiteSpace(DvdDataDirectory);
 
-    public bool HasBluRayFiles => !string.IsNullOrWhiteSpace(BdDataDirectory);
+    public bool DvdUseFolder => !DvdUseInputIso;
+
+    public bool ShowDvdVolumeLabel => !DvdUseInputIso;
+
+    public bool ShowDvdOuterIsoWarning => DvdUseInputIso && DvdFilesAtOuterRing;
+
+    public bool HasBluRayFiles => BdUseInputIso
+        ? !string.IsNullOrWhiteSpace(BdInputIsoPath)
+        : !string.IsNullOrWhiteSpace(BdDataDirectory);
+
+    public bool BdUseFolder => !BdUseInputIso;
+
+    public bool ShowBdVolumeLabel => !BdUseInputIso;
+
+    public bool ShowBdOuterIsoWarning => BdUseInputIso && BdFilesAtOuterRing;
+
+    internal (string DataDirectory, string InputIsoPath, bool FilesAtOuterRing) ResolveDiscContent(OpticalDiscFamily family)
+        => family switch
+        {
+            OpticalDiscFamily.Dvd => (
+                DvdUseInputIso ? string.Empty : DvdDataDirectory.Trim(),
+                DvdUseInputIso ? DvdInputIsoPath.Trim() : string.Empty,
+                DvdFilesAtOuterRing),
+            OpticalDiscFamily.BluRay => (
+                BdUseInputIso ? string.Empty : BdDataDirectory.Trim(),
+                BdUseInputIso ? BdInputIsoPath.Trim() : string.Empty,
+                BdFilesAtOuterRing),
+            _ => (
+                CdUseInputIso ? string.Empty : CdDataDirectory.Trim(),
+                CdUseInputIso ? CdInputIsoPath.Trim() : string.Empty,
+                CdFilesAtOuterRing),
+        };
 
     public string DvdPitchSummary => PitchSummary(actual: false);
     public string DvdActualPitchSummary => PitchSummary(actual: true);

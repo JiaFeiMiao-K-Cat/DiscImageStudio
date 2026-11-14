@@ -6,9 +6,9 @@
 
 蓝光不是第六个工作区，而是工程的第三种盘型（CD / DVD / BD）。打开 BD 工程后：
 
-- **设计**：画布与合成图按 BD 生成外半径布局；左栏“随盘文件”可选择文件夹及内圈／外圈位置，与导出页同步；右栏影调模块支持 2 级、sRGB 线性化、亮度与 3T/6T 极性。
+- **设计**：画布与合成图按 BD 生成外半径布局；左栏“随盘文件”可选择文件夹或现成 ISO（二选一）及内圈／外圈位置，与导出页同步；右栏影调模块支持 2 级、sRGB 线性化、亮度与 3T/6T 极性。
 - **预览**：设计投影按生成/实测几何、影调与极性渲染 3T/6T 类别图；成品读回直接分类 ISO 的 AA/44 负载字节，不套用极性，显示的是类别图而不是反射亮度。
-- **导出**：生成完整 BD ISO（纯绘图或 UDF 2.01 文件）；选择文件夹后可将文件放在内圈或外圈，默认内圈。位置随工程保存，并在同目录的 `<iso>.json` sidecar 中记录。
+- **导出**：生成完整 BD ISO（纯绘图、UDF 2.01 文件夹或现成 ISO 写入）；选择数据来源后可放置在内圈或外圈，默认内圈。位置随工程保存，并在同目录的 `<iso>.json` sidecar 中记录。
 - **刻录**：把同一 ISO 流直接送入 MMC 顺序写入，不保存完整镜像；任务坞支持进度与取消。
 - **标定**：BD 目标覆盖完整数据区，保存扇区、半径、极性、绘图起止与 ISO 时间戳；拟合使用恒定轨距并回到 BD 参数。
 
@@ -25,8 +25,9 @@ BD 预设与 CD/DVD 一起存放在 `disc-presets.json`（schema 4）的 `bluRay
 
 `BluRayIsoGenerator` 先规划 UDF 2.01 目录和文件 extent，再分配 32 扇区对齐的绘图范围。内圈模式将文件分区放在前部，外圈模式将文件分区放在盘尾保留区之前；前部识别信息、锚点以及尾部备份信息仍保留在规定位置。输出长度固定为 `TotalSectors × 2048`。
 
-- 未选择文件夹：完整数据区纯绘图，不含文件系统。该 `.iso` 可由本程序回读，但普通文件系统工具不能浏览。
-- 选择文件夹：写入 UDF 2.01，支持大于 4 GiB 的单文件；`--file-position inner|outer` 选择文件位置，缺省 `inner`，`outer` 必须配合 `--data-dir`。文件、填充、图案与盘尾元数据在同一前向流中写出。
+- 未选择文件夹或现成 ISO：完整数据区纯绘图，不含文件系统。该 `.iso` 可由本程序回读，但普通文件系统工具不能浏览。
+- 选择文件夹（`--data-dir`）：写入 UDF 2.01，支持大于 4 GiB 的单文件；`--file-position inner|outer` 选择文件位置，缺省 `inner`，`outer` 必须配合 `--data-dir` 或 `--input-iso`。文件、填充、图案与盘尾元数据在同一前向流中写出。
+- 选择现成 ISO（`--input-iso`，与 `--data-dir` 互斥）：`--file-position inner` 由 `RawIsoPassthrough` 从 LBA 0 原样流式直通源 ISO，完整保留引导及原有卷结构并对齐衔接绘图区；`--file-position outer` 由 `IsoContentReader` 无临时解包抽取源 ISO 内的 UDF 或 ISO-9660 / Joliet / Rock Ridge 文件并重构至外圈 UDF 2.01 分区（要求源 ISO 含可解析的文件系统）。
 - 输出路径必须在源文件夹之外，且不能覆盖源图片。取消或失败保留已有 ISO。
 - 生成成功后写出 `<iso>.json`（`format: bd-r-image-v1`）：总扇区、内外半径、绘图起止与半径、3T/6T 极性、`ToneProfile`、卷标、UDF 时间戳、源图与生成时间。预览选中该 ISO 时自动恢复这些参数；没有 sidecar 的外部 ISO 仍可按当前工程几何读回。
 
@@ -67,6 +68,9 @@ dotnet run --project src/DiscImageStudio.App -- bd-generate --input image.png --
 
 # 含 UDF 内圈文件的完整容量 ISO
 dotnet run --project src/DiscImageStudio.App -- bd-generate --input image.png --output bd-image.iso --data-dir C:\Files --volume-label BD_IMAGE
+
+# 或传入现成 ISO（内圈直通引导，或用 --file-position outer 重排至外圈 UDF）
+dotnet run --project src/DiscImageStudio.App -- bd-generate --input image.png --output bd-hybrid.iso --input-iso C:\boot.iso --file-position inner
 
 # 影调：抖动、亮度、sRGB 线性化
 dotnet run --project src/DiscImageStudio.App -- bd-generate --input image.png --output bd-tone.iso --tone-dither 0.75 --tone-gamma true --tone-brightness -4

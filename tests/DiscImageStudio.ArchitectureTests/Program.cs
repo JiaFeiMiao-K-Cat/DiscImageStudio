@@ -93,6 +93,12 @@ if (args is ["--test-design-composite-race"])
     return;
 }
 
+if (args is ["--test-input-iso"])
+{
+    InputIsoPassthroughTests.Run();
+    return;
+}
+
 if (args is ["--benchmark-cd-pitch"])
 {
     CdCubicPitchTests.Benchmark();
@@ -285,6 +291,7 @@ UpdateTests.Run();
 RelocalizationTests.Run();
 CalibrationReturnButtonTests.Run();
 BurnWriteSpeedSelectionTests.Run();
+InputIsoPassthroughTests.Run();
 
 Console.WriteLine("architecture-selftest: all checks passed");
 return;

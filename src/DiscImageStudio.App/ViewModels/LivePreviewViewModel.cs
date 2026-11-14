@@ -851,17 +851,20 @@ public partial class LivePreviewViewModel : ObservableObject
         try
         {
             outputPath = TempFiles.GetCacheFilePath($"cd-live-warp-{revision}.png");
-            string dataDirectory = _state.CdDataDirectory.Trim();
+            (string dataDirectory, string inputIsoPath, bool rawOuter) = _state.ResolveDiscContent(OpticalDiscFamily.CompactDisc);
             string volumeLabel = dataDirectory.Length > 0
                 ? _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc)
                 : string.Empty;
-            bool filesAtOuterRing = _state.CdFilesAtOuterRing;
+            bool hasContent = dataDirectory.Length > 0 || inputIsoPath.Length > 0;
+            bool filesAtOuterRing = hasContent && rawOuter;
             CdDataLayoutPlan? plan = await StaWorker.RunAsync(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                CdDataLayoutPlan? layout = dataDirectory.Length > 0
-                    ? CdDataImageGenerator.PrepareLayout(dataDirectory, generated, volumeLabel, filesAtOuterRing)
-                    : null;
+                CdDataLayoutPlan? layout = inputIsoPath.Length > 0
+                    ? CdDataImageGenerator.PreparePassthroughIsoLayout(inputIsoPath, generated, filesAtOuterRing)
+                    : dataDirectory.Length > 0
+                        ? CdDataImageGenerator.PrepareLayout(dataDirectory, generated, volumeLabel, filesAtOuterRing)
+                        : null;
                 cancellationToken.ThrowIfCancellationRequested();
                 if (layout is not null)
                 {
@@ -946,7 +949,7 @@ public partial class LivePreviewViewModel : ObservableObject
             outputPath = TempFiles.GetCacheFilePath($"dvd-live-preview-{revision}.png");
             DvdImageMetadata? metadata = DvdImageMetadata.TryLoad(isoPath);
             DvdStreamingOptions actual = ReadDvdPreviewGeometry(calibration: false);
-            bool overlay = metadata is { HasFileSystem: true };
+            bool overlay = metadata is { HasDataRegion: true };
             await StaWorker.RunAsync(() =>
             {
                 var range = IsoReadbackRenderer.ReadDrawingRange(isoPath, options.TotalSectors);
@@ -1125,7 +1128,7 @@ public partial class LivePreviewViewModel : ObservableObject
                     invert,
                     cancellationToken,
                     tone);
-                if (plan.HasFileSystem)
+                if (plan.HasDataRegion)
                     FileRegionPreviewOverlay.ApplyBluRay(outputPath, actual,
                         plan.DrawingStartSector, plan.DrawingEndSectorExclusive, cancellationToken);
                 return 0;
@@ -1136,7 +1139,7 @@ public partial class LivePreviewViewModel : ObservableObject
                 return;
             }
 
-            PublishPreview(outputPath, imagePath, "预览 - BD", plan.HasFileSystem);
+            PublishPreview(outputPath, imagePath, "预览 - BD", plan.HasDataRegion);
             keepOutput = true;
             SetReadyStatus(() => L.F($"已实时更新 · 设计投影 · 3T/6T 类别图")
                 + $" · {(invert ? L.T("反转 3T/6T") : L.T("标准 3T/6T"))}"
@@ -1199,7 +1202,8 @@ public partial class LivePreviewViewModel : ObservableObject
         {
             outputPath = TempFiles.GetCacheFilePath($"bd-live-readback-{revision}.png");
             BluRayIsoMetadata? metadata = BluRayIsoMetadata.TryLoad(isoPath);
-            bool overlay = metadata?.UdfTimestamp is not null;
+            bool overlay = metadata is not null
+                && (metadata.UdfTimestamp is not null || !string.IsNullOrEmpty(metadata.InputIsoPath));
             await StaWorker.RunAsync(() =>
             {
                 BluRayPreviewRenderer.RenderReadback(
@@ -1241,11 +1245,14 @@ public partial class LivePreviewViewModel : ObservableObject
     /// sidecar range belongs to its finished ISO and must not override later edits.</summary>
     internal BluRayIsoPlan PrepareBluRayProjectionPlan(BluRayDiscParameters generated)
     {
-        string dataDirectory = _state.BdDataDirectory.Trim();
+        (string dataDirectory, string inputIsoPath, bool rawOuter) = _state.ResolveDiscContent(OpticalDiscFamily.BluRay);
+        bool hasContent = dataDirectory.Length > 0 || inputIsoPath.Length > 0;
+        if (inputIsoPath.Length > 0)
+            return BluRayIsoGenerator.PreparePassthroughIso(generated, inputIsoPath, hasContent && rawOuter);
         return BluRayIsoGenerator.PrepareDrawing(generated,
             dataDirectory.Length == 0 ? null : dataDirectory,
             _state.ResolveVolumeLabel(OpticalDiscFamily.BluRay),
-            filesAtOuterRing: dataDirectory.Length > 0 && _state.BdFilesAtOuterRing);
+            filesAtOuterRing: hasContent && rawOuter);
     }
 
     private DvdStreamingOptions ReadDvdPreviewGeometry(bool calibration)
@@ -1553,13 +1560,15 @@ public partial class LivePreviewViewModel : ObservableObject
             ToneProfile tone = _state.DvdTone;
             uint drawingStart = 0;
             uint drawingSectors = checked((uint)_state.GetUsableSectors(OpticalDiscFamily.Dvd));
-            string dataDirectory = _state.DvdDataDirectory.Trim();
-            if (dataDirectory.Length > 0)
+            (string dataDirectory, string inputIsoPath, bool rawOuter) = _state.ResolveDiscContent(OpticalDiscFamily.Dvd);
+            if (inputIsoPath.Length > 0 || dataDirectory.Length > 0)
             {
                 DvdStreamingOptions generated = ReadDvdPreviewGeometry(calibration: false);
-                filePlan = DvdStreamingGenerator.PrepareHybrid(dataDirectory, generated,
-                    _state.ResolveVolumeLabel(OpticalDiscFamily.Dvd),
-                    filesAtOuterRing: _state.DvdFilesAtOuterRing);
+                filePlan = inputIsoPath.Length > 0
+                    ? DvdStreamingGenerator.PreparePassthroughIso(inputIsoPath, generated, filesAtOuterRing: rawOuter)
+                    : DvdStreamingGenerator.PrepareHybrid(dataDirectory, generated,
+                        _state.ResolveVolumeLabel(OpticalDiscFamily.Dvd),
+                        filesAtOuterRing: rawOuter);
                 drawingStart = filePlan.DrawingStartLba;
                 drawingSectors = filePlan.DrawingSectors;
             }
@@ -1579,7 +1588,8 @@ public partial class LivePreviewViewModel : ObservableObject
             return true;
         }
         catch (Exception exception) when (exception is FormatException or OverflowException
-                                              or ArgumentException or IOException or UnauthorizedAccessException)
+                                              or ArgumentException or InvalidOperationException
+                                              or IOException or UnauthorizedAccessException)
         {
             _shell.AppendLog(JobDiagnostics.FormatLog("DVD projection parameters · " + imagePath, exception));
             message = exception.Message;

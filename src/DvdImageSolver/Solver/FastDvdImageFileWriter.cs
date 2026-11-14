@@ -1,5 +1,6 @@
 using System.Text.Json;
 using DiscImageStudio.Core;
+using DiscImageStudio.Iso;
 using DvdImageSolver.Encoding;
 
 namespace DvdImageSolver.Solver;
@@ -12,22 +13,28 @@ public static class FastDvdImageFileWriter
         string imagePath, string outputPath, MultiBlockSolveOptions options,
         HybridIsoImageWriter.LayoutPlan? layout = null,
         Action<FastDispersionProgress>? progress = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        RawIsoLayoutPlan? rawIso = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
         ArgumentNullException.ThrowIfNull(options);
         FastDispersionImageWriter.Validate(options);
-        if (options.PreserveExistingIso != (layout is not null))
+        if (layout is not null && rawIso is not null)
+            throw new ArgumentException("Specify either a filesystem layout or an input ISO layout, not both.", nameof(layout));
+        bool hasExternalLayout = layout is not null || rawIso is not null;
+        if (options.PreserveExistingIso != hasExternalLayout)
             throw new ArgumentException("A hybrid file request must include its filesystem layout.", nameof(layout));
         HybridIsoWriteSummary? hybrid = layout is null ? null
             : HybridIsoImageWriter.Create(layout, outputPath, cancellationToken);
-        return WritePrepared(imagePath, outputPath, options, hybrid, progress, cancellationToken);
+        if (rawIso is not null)
+            RawIsoPassthrough.WriteToFile(rawIso, outputPath, handle => IsoImageWriter.TryMarkSparse(handle), cancellationToken);
+        return WritePrepared(imagePath, outputPath, options, hybrid, progress, cancellationToken, rawIso);
     }
 
     internal static FastDispersionWriteResult WritePrepared(
         string imagePath, string outputPath, MultiBlockSolveOptions options,
         HybridIsoWriteSummary? hybrid, Action<FastDispersionProgress>? progress = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, RawIsoLayoutPlan? rawIso = null)
     {
         FastDispersionWriteResult result = FastDispersionImageWriter.Write(
             imagePath, outputPath, options, progress, cancellationToken);
@@ -39,7 +46,7 @@ public static class FastDvdImageFileWriter
             sourceImage = Path.GetFullPath(imagePath),
             isoOutput = Path.GetFullPath(outputPath),
             startLba = options.StartLba,
-            filesAtOuterRing = hybrid?.FilesAtOuterRing ?? false,
+            filesAtOuterRing = rawIso?.FilesAtOuterRing ?? hybrid?.FilesAtOuterRing ?? false,
             fillSectors = options.FillSectors,
             totalSectors = imageMapping.TotalSectors,
             psnOffset = $"0x{options.PsnOffset:X}",
@@ -63,12 +70,22 @@ public static class FastDvdImageFileWriter
             pitchPolynomial = DescribePitchPolynomial(imageMapping),
             iso = new
             {
-                mode = hybrid?.Mode ?? "raw-sector-image",
+                mode = rawIso is not null ? "raw-input-iso" : hybrid?.Mode ?? "raw-sector-image",
                 logicalSectorBytes = IsoImageWriter.LogicalSectorBytes,
                 imageSectors = result.IsoSectors,
                 sparseFile = result.SparseIso,
-                mountableFilesystem = hybrid is not null,
+                mountableFilesystem = hybrid is not null || (rawIso is not null && !rawIso.FilesAtOuterRing),
                 hybrid,
+                inputIso = rawIso is null ? null : new
+                {
+                    sourcePath = rawIso.SourceIsoPath,
+                    sourceBytes = rawIso.SourceBytes,
+                    sourceSectors = rawIso.SourceSectors,
+                    isoStartLba = rawIso.IsoStartLba,
+                    drawingStartLba = rawIso.DrawingStartLba,
+                    drawingEndLbaExclusive = rawIso.DrawingEndLbaExclusive,
+                    filesAtOuterRing = rawIso.FilesAtOuterRing,
+                },
             },
         };
         File.WriteAllText(outputPath + ".json", JsonSerializer.Serialize(metadata, new JsonSerializerOptions

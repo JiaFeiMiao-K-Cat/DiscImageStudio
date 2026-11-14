@@ -34,6 +34,8 @@ internal static class ProjectSession
         state.DvdReadCompatibilityMode = document.IsDvd
             ? outputs.DvdReadCompatibilityMode ?? DvdReadCompatibilityModes.Current
             : DvdReadCompatibilityModes.Current;
+        string inputIsoPath = outputs.InputIsoPath?.Trim() ?? string.Empty;
+        bool useInputIso = inputIsoPath.Length > 0;
 
         switch (document.Family)
         {
@@ -53,7 +55,9 @@ internal static class ProjectSession
                 state.DvdActualPitchQuadratic = Format(geometry.PitchQuadratic);
                 state.DvdActualPitchCubic = Format(geometry.PitchCubic);
                 state.DvdOutputPath = outputs.OutputPath;
-                state.DvdDataDirectory = outputs.DataDirectory;
+                state.DvdDataDirectory = useInputIso ? string.Empty : outputs.DataDirectory;
+                state.DvdInputIsoPath = useInputIso ? inputIsoPath : string.Empty;
+                state.DvdUseInputIso = useInputIso;
                 state.DvdFilesAtOuterRing = outputs.FilesAtOuterRing;
                 state.DvdOuterRingBleed = outputs.OuterRingBleed;
                 state.DvdVolumeLabel = outputs.VolumeLabel;
@@ -70,7 +74,9 @@ internal static class ProjectSession
                 state.BdPitchQuadratic = state.BdActualPitchQuadratic = Format(geometry.PitchQuadratic);
                 state.BdPitchCubic = state.BdActualPitchCubic = Format(geometry.PitchCubic);
                 state.BdOutputPath = outputs.OutputPath;
-                state.BdDataDirectory = outputs.DataDirectory;
+                state.BdDataDirectory = useInputIso ? string.Empty : outputs.DataDirectory;
+                state.BdInputIsoPath = useInputIso ? inputIsoPath : string.Empty;
+                state.BdUseInputIso = useInputIso;
                 state.BdFilesAtOuterRing = outputs.FilesAtOuterRing;
                 state.BdOuterRingBleed = outputs.OuterRingBleed;
                 state.BdVolumeLabel = outputs.VolumeLabel;
@@ -91,7 +97,9 @@ internal static class ProjectSession
                 state.CdPitchCubic = state.CdActualPitchCubic = Format(geometry.PitchCubic);
                 // The previous project's .wav/.raw choice must not resurface in this one.
                 state.ResetCdAudioFormat(outputs.OutputPath);
-                state.CdDataDirectory = outputs.DataDirectory;
+                state.CdDataDirectory = useInputIso ? string.Empty : outputs.DataDirectory;
+                state.CdInputIsoPath = useInputIso ? inputIsoPath : string.Empty;
+                state.CdUseInputIso = useInputIso;
                 state.CdFilesAtOuterRing = outputs.FilesAtOuterRing;
                 state.CdOuterRingBleed = outputs.OuterRingBleed;
                 state.CdVolumeLabel = string.IsNullOrWhiteSpace(outputs.VolumeLabel) ? "CD_IMAGE" : outputs.VolumeLabel;
@@ -143,38 +151,43 @@ internal static class ProjectSession
 
     public static ProjectOutputs CaptureOutputs(ProjectDocument current, DiscParametersState state)
     {
+        (string dataDirectory, string inputIsoPath, bool filesAtOuterRing) = state.ResolveDiscContent(current.Family);
+        string? savedInputIso = inputIsoPath.Length > 0 ? inputIsoPath : null;
         switch (current.Family)
         {
             case OpticalDiscFamily.Dvd:
                 return new ProjectOutputs(
                     RequireOutput(state.DvdOutputPath, L.T("DVD ISO 输出位置")),
                     WriteCue: false,
-                    state.DvdDataDirectory,
+                    dataDirectory,
                     state.DvdVolumeLabel,
                     Interleave: false,
-                    FilesAtOuterRing: state.DvdFilesAtOuterRing,
+                    FilesAtOuterRing: filesAtOuterRing,
                     DvdReadCompatibility: state.DvdReadCompatibility,
                     OuterRingBleed: state.DvdOuterRingBleed,
                     DvdReadCompatibilityMode: state.DvdReadCompatibilityMode == DvdReadCompatibilityModes.Current
-                        ? null : state.DvdReadCompatibilityMode);
+                        ? null : state.DvdReadCompatibilityMode,
+                    InputIsoPath: savedInputIso);
             case OpticalDiscFamily.BluRay:
                 return new ProjectOutputs(
                     RequireOutput(state.BdOutputPath, L.T("蓝光 ISO 输出位置")),
                     WriteCue: false,
-                    state.BdDataDirectory,
+                    dataDirectory,
                     state.BdVolumeLabel,
                     Interleave: false,
-                    FilesAtOuterRing: state.BdFilesAtOuterRing,
-                    OuterRingBleed: state.BdOuterRingBleed);
+                    FilesAtOuterRing: filesAtOuterRing,
+                    OuterRingBleed: state.BdOuterRingBleed,
+                    InputIsoPath: savedInputIso);
             default:
                 return new ProjectOutputs(
                     RequireOutput(state.CdOutputPath, state.HasCdFiles ? L.T("CD ISO 输出位置") : L.T("CD 音轨输出位置")),
                     state.CdWriteCue,
-                    state.CdDataDirectory,
+                    dataDirectory,
                     state.CdVolumeLabel,
                     state.CdInterleave,
-                    FilesAtOuterRing: state.CdFilesAtOuterRing,
-                    OuterRingBleed: state.CdOuterRingBleed);
+                    FilesAtOuterRing: filesAtOuterRing,
+                    OuterRingBleed: state.CdOuterRingBleed,
+                    InputIsoPath: savedInputIso);
         }
     }
 

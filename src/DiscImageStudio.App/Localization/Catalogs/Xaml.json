@@ -2050,5 +2050,35 @@
     "tr": "Kalibrasyon",
     "es": "Calibración",
     "cs": "Kalibrace"
+  },
+  "Xaml.DiscContentSource": {
+    "zh-CN": "内容来源",
+    "en": "Data source",
+    "zh-TW": "內容來源"
+  },
+  "Xaml.DiscSourceFolder": {
+    "zh-CN": "文件夹",
+    "en": "Folder",
+    "zh-TW": "資料夾"
+  },
+  "Xaml.DiscSourceIso": {
+    "zh-CN": "现成 ISO",
+    "en": "Existing ISO",
+    "zh-TW": "現有 ISO"
+  },
+  "Xaml.InputIso": {
+    "zh-CN": "ISO 镜像",
+    "en": "ISO image",
+    "zh-TW": "ISO 映像檔"
+  },
+  "Xaml.InputIsoOptional": {
+    "zh-CN": "ISO 镜像（留空则整盘只绘图）",
+    "en": "ISO image (optional)",
+    "zh-TW": "ISO 映像檔（留空則整張僅繪圖）"
+  },
+  "Xaml.OuterRingIsoNotBootable": {
+    "zh-CN": "注意：将 ISO 内容放到外圈、画面刻在内圈时，文件仍可正常挂载读取，但无法用于系统引导。",
+    "en": "Note: placing ISO contents at the outer ring with artwork inside keeps the filesystem readable, but the disc will not be bootable.",
+    "zh-TW": "注意：將 ISO 內容放到外圈、畫面刻在內圈時，檔案仍可正常掛載讀取，但無法用於系統開機。"
   }
 }

@@ -382,7 +382,12 @@ dispersion模式始终在每个payload码字中心采样图片，忽略`--constr
 
 ## 文件与图案混合模式
 
-给出`--data-dir`即启用混合模式。程序把该目录及其子目录递归写成标准 ISO9660 + Joliet 文件系统。`--file-position inner`（默认）将文件放在内圈，图案位于其外侧；`--file-position outer` 将文件内容放到盘尾，图案位于前部元数据之后、文件之前。图案起止边界按 16-sector ECC Block 对齐，始终保留全盘几何，不把剩余绘图区拉伸到整盘。最终 ISO 在 Windows 等系统中可以像普通数据光盘一样打开，Joliet 目录保留中文文件名。
+给出`--data-dir`或`--input-iso`即启用混合模式（两者互斥）。选择`--data-dir`时，程序把该目录及其子目录递归写成标准 ISO9660 + Joliet 文件系统；选择`--input-iso`时：
+
+- `--file-position inner`（默认）：由 `RawIsoPassthrough` 从 LBA 0 原样流式直通源 ISO 扇区，保留原始引导记录（如 El Torito / 混合引导扇区）与卷描述符，图案区域按 16-sector ECC Block 对齐衔接其外侧。
+- `--file-position outer`：由 `IsoContentReader` 零临时解包读取源 ISO 内的可识别 UDF 或 ISO-9660 / Joliet / Rock Ridge 文件与目录，重新布局写入盘尾，图案位于前部元数据之后、文件之前（要求源 ISO 含可解析的 UDF 或 ISO-9660 文件系统）。
+
+在`--data-dir`模式下，`--file-position inner`（默认）将文件放在内圈，图案位于其外侧；`--file-position outer`将文件内容放到盘尾，图案位于前部元数据之后、文件之前。图案起止边界按 16-sector ECC Block 对齐，始终保留全盘几何，不把剩余绘图区拉伸到整盘。最终 ISO 在 Windows 等系统中可以像普通数据光盘一样打开，Joliet 目录保留中文文件名。
 
 ```powershell
 dotnet run --project src/DvdImageSolver --configuration Release -- solve `
@@ -394,13 +399,23 @@ dotnet run --project src/DvdImageSolver --configuration Release -- solve `
   --volume-label MY_DISC `
   --inner-radius-mm 24 `
   --outer-radius-mm 58
+
+# 或直接随盘放入现成 ISO（内圈 LBA 0 原样直通引导 / 外圈重排提取文件）
+dotnet run --project src/DvdImageSolver --configuration Release -- solve `
+  --image picture.png `
+  --input-iso ".\boot.iso" `
+  --file-position inner `
+  --iso-output bootable-hybrid.iso `
+  --total-sectors 2297888 `
+  --inner-radius-mm 24 `
+  --outer-radius-mm 58
 ```
 
 混合模式默认使用`--algorithm dispersion --fast-output true`，适合直接生成整个外圈。也可显式加`--fast-output false`：此时程序会先编码并回放内圈的所有数据块，求出进入外圈时的 EFMPlus state、DSV 和 pit/land，再用精确边界绘图。精确回放会随内圈数据量增加耗时。
 
-GUI 设计页的“随盘文件”区域可选择文件夹，并切换“文件位置：内圈／外圈”；导出页与之共享设置。该选项随工程保存，也用于流式刻录。流式路径固定使用快速 dispersion：先扫描目录并固定布局，按盘面顺序输出元数据、文件区和图案区，不创建完整临时 ISO；外圈模式先写图案，再写文件。布局完成后若源文件大小发生变化，流式写入会拒绝继续。预览用主题蓝色标出文件系统占用区，颜色不会进入写盘数据。
+GUI 设计页的“随盘文件”区域可在文件夹与现成 ISO 之间二选一，并切换“文件位置：内圈／外圈”；导出页与之共享设置。该选项随工程保存，也用于流式刻录。流式路径固定使用快速 dispersion：先扫描目录或读取源 ISO 布局并固定方案，按盘面顺序输出元数据、文件区或直通 ISO 与图案区，不创建完整临时 ISO；外圈模式先写图案，再写文件。布局完成后若源文件或源 ISO 大小发生变化，流式写入会拒绝继续。预览用主题蓝色标出文件系统或直通 ISO 占用区，颜色不会进入写盘数据。
 
-此模式不接受`--lba`或`--fill-sectors`，两者由文件布局和盘片容量自动计算。`--drawing-start-lba N` 可在默认绘图起点之后额外留空，但必须处于可绘图区内，并与`--psn-offset`一起对齐到16 sectors。`--file-position outer` 必须与 `--data-dir` 一起使用。
+此模式不接受`--lba`或`--fill-sectors`，两者由文件布局和盘片容量自动计算。`--drawing-start-lba N` 可在默认绘图起点之后额外留空，但必须处于可绘图区内，并与`--psn-offset`一起对齐到16 sectors。`--file-position outer` 必须与 `--data-dir` 或 `--input-iso` 一起使用。
 
 当前 ISO9660 写入器支持递归目录和 Joliet Unicode 名称；单个文件不能超过4 GiB，且为避免链接环和意外引用目录外数据，`--data-dir`中不接受重解析点/符号链接。
 

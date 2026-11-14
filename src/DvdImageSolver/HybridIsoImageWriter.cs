@@ -26,6 +26,7 @@ public static class HybridIsoImageWriter
         internal LayoutPlan(Iso9660ImageWriter.LayoutPlan layout) => Layout = layout;
         internal Iso9660ImageWriter.LayoutPlan Layout { get; }
         public string SourceDirectory => Layout.SourceDirectory;
+        public string SourceIsoPath => Layout.SourceIsoPath;
         public uint VolumeSectors => Layout.VolumeSectors;
         public int FileCount => Layout.FileCount;
         public int DirectoryCount => Layout.DirectoryCount;
@@ -41,6 +42,14 @@ public static class HybridIsoImageWriter
     {
         ArgumentNullException.ThrowIfNull(sourceDirectory);
         return new(Iso9660ImageWriter.Plan(sourceDirectory, volumeSectors, volumeLabel,
+            filesAtOuterRing: filesAtOuterRing));
+    }
+
+    public static LayoutPlan PlanFromIso(string inputIsoPath, uint volumeSectors, string? volumeLabel = null,
+        bool filesAtOuterRing = false)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(inputIsoPath);
+        return new(Iso9660ImageWriter.PlanFromIso(inputIsoPath, volumeSectors, volumeLabel,
             filesAtOuterRing: filesAtOuterRing));
     }
 
@@ -70,8 +79,10 @@ public static class HybridIsoImageWriter
         string sourceFullPath = plan.SourceDirectory;
         uint volumeSectors = plan.VolumeSectors;
         string outputFullPath = Path.GetFullPath(outputPath);
-        if (Iso9660ImageWriter.IsWithinDirectory(outputFullPath, sourceFullPath))
+        if (!string.IsNullOrEmpty(sourceFullPath) && Iso9660ImageWriter.IsWithinDirectory(outputFullPath, sourceFullPath))
             throw new ArgumentException("--iso-output must be outside --data-dir so the generated image cannot include itself.");
+        if (!string.IsNullOrEmpty(plan.SourceIsoPath))
+            RawIsoPassthrough.ValidateNotSameFile(plan.SourceIsoPath, outputFullPath);
         string outputDirectory = Path.GetDirectoryName(outputFullPath)
             ?? throw new ArgumentException("ISO output path has no parent directory.", nameof(outputPath));
         Directory.CreateDirectory(outputDirectory);

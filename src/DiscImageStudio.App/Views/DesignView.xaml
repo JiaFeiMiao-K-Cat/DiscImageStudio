@@ -242,11 +242,26 @@
                                     </StackPanel>
                                     <controls:VisibilityGate IsOpen="{Binding IsCd}">
                                         <StackPanel>
-                                            <controls:PathField Label="{loc:Text Xaml.Folder}" Compact="True"
-                                                                Text="{Binding State.CdDataDirectory}"
-                                                                ToolTip="{Binding State.CdDataDirectory}"
-                                                                ButtonLabel="{loc:Text Xaml.Browse}"
-                                                                Command="{Binding BrowseDataCommand}" />
+                                            <TextBlock Style="{StaticResource FieldLabel}"
+                                                       Text="{loc:Text Xaml.DiscContentSource}" Margin="0,0,0,6" />
+                                            <controls:SegmentedControl LabelA="{loc:Text Xaml.DiscSourceFolder}"
+                                                                       LabelB="{loc:Text Xaml.DiscSourceIso}"
+                                                                       IsSecondSelected="{Binding State.CdUseInputIso}"
+                                                                       Margin="0,0,0,12" />
+                                            <controls:VisibilityGate IsOpen="{Binding State.CdUseFolder}">
+                                                <controls:PathField Label="{loc:Text Xaml.Folder}" Compact="True"
+                                                                    Text="{Binding State.CdDataDirectory}"
+                                                                    ToolTip="{Binding State.CdDataDirectory}"
+                                                                    ButtonLabel="{loc:Text Xaml.Browse}"
+                                                                    Command="{Binding BrowseDataCommand}" />
+                                            </controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding State.CdUseInputIso}">
+                                                <controls:PathField Label="{loc:Text Xaml.InputIso}" Compact="True"
+                                                                    Text="{Binding State.CdInputIsoPath}"
+                                                                    ToolTip="{Binding State.CdInputIsoPath}"
+                                                                    ButtonLabel="{loc:Text Xaml.Browse}"
+                                                                    Command="{Binding BrowseInputIsoCommand}" />
+                                            </controls:VisibilityGate>
                                             <controls:VisibilityGate IsOpen="{Binding State.HasCdFiles}">
                                                 <StackPanel Margin="0,14,0,0">
                                                     <TextBlock Style="{StaticResource FieldLabel}"
@@ -262,6 +277,25 @@
                                                                                Margin="8,0,0,0" VerticalAlignment="Center" />
                                                         </StackPanel>
                                                     </controls:VisibilityGate>
+                                                    <controls:VisibilityGate IsOpen="{Binding State.ShowCdOuterIsoWarning}" Margin="0,10,0,0">
+                                                        <Border Background="{DynamicResource WarningSoftBrush}"
+                                                                BorderBrush="{DynamicResource WarningBorderBrush}"
+                                                                BorderThickness="1" CornerRadius="6" Padding="10,8">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                    <ColumnDefinition Width="*" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <iconPacks:PackIconLucide Kind="TriangleAlert" Width="14" Height="14"
+                                                                                          Foreground="{DynamicResource WarningBrush}"
+                                                                                          VerticalAlignment="Top" Margin="0,2,0,0" />
+                                                                <TextBlock Grid.Column="1" Text="{loc:Text Xaml.OuterRingIsoNotBootable}"
+                                                                           Style="{StaticResource CompactText}"
+                                                                           Foreground="{DynamicResource WarningTextBrush}"
+                                                                           Margin="6,0,0,0" />
+                                                            </Grid>
+                                                        </Border>
+                                                    </controls:VisibilityGate>
                                                 </StackPanel>
                                             </controls:VisibilityGate>
                                             <TextBlock Style="{StaticResource HintText}" Margin="0,12,0,0"
@@ -270,11 +304,26 @@
                                     </controls:VisibilityGate>
                                     <controls:VisibilityGate IsOpen="{Binding IsDvd}">
                                         <StackPanel>
-                                            <controls:PathField Label="{loc:Text Xaml.FolderOptional}" Compact="True"
-                                                                Text="{Binding State.DvdDataDirectory}"
-                                                                ToolTip="{Binding State.DvdDataDirectory}"
-                                                                ButtonLabel="{loc:Text Xaml.Browse}"
-                                                                Command="{Binding BrowseDataCommand}" />
+                                            <TextBlock Style="{StaticResource FieldLabel}"
+                                                       Text="{loc:Text Xaml.DiscContentSource}" Margin="0,0,0,6" />
+                                            <controls:SegmentedControl LabelA="{loc:Text Xaml.DiscSourceFolder}"
+                                                                       LabelB="{loc:Text Xaml.DiscSourceIso}"
+                                                                       IsSecondSelected="{Binding State.DvdUseInputIso}"
+                                                                       Margin="0,0,0,12" />
+                                            <controls:VisibilityGate IsOpen="{Binding State.DvdUseFolder}">
+                                                <controls:PathField Label="{loc:Text Xaml.FolderOptional}" Compact="True"
+                                                                    Text="{Binding State.DvdDataDirectory}"
+                                                                    ToolTip="{Binding State.DvdDataDirectory}"
+                                                                    ButtonLabel="{loc:Text Xaml.Browse}"
+                                                                    Command="{Binding BrowseDataCommand}" />
+                                            </controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding State.DvdUseInputIso}">
+                                                <controls:PathField Label="{loc:Text Xaml.InputIsoOptional}" Compact="True"
+                                                                    Text="{Binding State.DvdInputIsoPath}"
+                                                                    ToolTip="{Binding State.DvdInputIsoPath}"
+                                                                    ButtonLabel="{loc:Text Xaml.Browse}"
+                                                                    Command="{Binding BrowseInputIsoCommand}" />
+                                            </controls:VisibilityGate>
                                             <controls:VisibilityGate IsOpen="{Binding State.HasDvdFiles}">
                                                 <StackPanel Margin="0,14,0,0">
                                                     <TextBlock Style="{StaticResource FieldLabel}"
@@ -290,17 +339,51 @@
                                                                                Margin="8,0,0,0" VerticalAlignment="Center" />
                                                         </StackPanel>
                                                     </controls:VisibilityGate>
+                                                    <controls:VisibilityGate IsOpen="{Binding State.ShowDvdOuterIsoWarning}" Margin="0,10,0,0">
+                                                        <Border Background="{DynamicResource WarningSoftBrush}"
+                                                                BorderBrush="{DynamicResource WarningBorderBrush}"
+                                                                BorderThickness="1" CornerRadius="6" Padding="10,8">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                    <ColumnDefinition Width="*" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <iconPacks:PackIconLucide Kind="TriangleAlert" Width="14" Height="14"
+                                                                                          Foreground="{DynamicResource WarningBrush}"
+                                                                                          VerticalAlignment="Top" Margin="0,2,0,0" />
+                                                                <TextBlock Grid.Column="1" Text="{loc:Text Xaml.OuterRingIsoNotBootable}"
+                                                                           Style="{StaticResource CompactText}"
+                                                                           Foreground="{DynamicResource WarningTextBrush}"
+                                                                           Margin="6,0,0,0" />
+                                                            </Grid>
+                                                        </Border>
+                                                    </controls:VisibilityGate>
                                                 </StackPanel>
                                             </controls:VisibilityGate>
                                         </StackPanel>
                                     </controls:VisibilityGate>
                                     <controls:VisibilityGate IsOpen="{Binding IsBluRay}">
                                         <StackPanel>
-                                            <controls:PathField Label="{loc:Text Xaml.FolderOptional}" Compact="True"
-                                                                Text="{Binding State.BdDataDirectory}"
-                                                                ToolTip="{Binding State.BdDataDirectory}"
-                                                                ButtonLabel="{loc:Text Xaml.Browse}"
-                                                                Command="{Binding BrowseDataCommand}" />
+                                            <TextBlock Style="{StaticResource FieldLabel}"
+                                                       Text="{loc:Text Xaml.DiscContentSource}" Margin="0,0,0,6" />
+                                            <controls:SegmentedControl LabelA="{loc:Text Xaml.DiscSourceFolder}"
+                                                                       LabelB="{loc:Text Xaml.DiscSourceIso}"
+                                                                       IsSecondSelected="{Binding State.BdUseInputIso}"
+                                                                       Margin="0,0,0,12" />
+                                            <controls:VisibilityGate IsOpen="{Binding State.BdUseFolder}">
+                                                <controls:PathField Label="{loc:Text Xaml.FolderOptional}" Compact="True"
+                                                                    Text="{Binding State.BdDataDirectory}"
+                                                                    ToolTip="{Binding State.BdDataDirectory}"
+                                                                    ButtonLabel="{loc:Text Xaml.Browse}"
+                                                                    Command="{Binding BrowseDataCommand}" />
+                                            </controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding State.BdUseInputIso}">
+                                                <controls:PathField Label="{loc:Text Xaml.InputIsoOptional}" Compact="True"
+                                                                    Text="{Binding State.BdInputIsoPath}"
+                                                                    ToolTip="{Binding State.BdInputIsoPath}"
+                                                                    ButtonLabel="{loc:Text Xaml.Browse}"
+                                                                    Command="{Binding BrowseInputIsoCommand}" />
+                                            </controls:VisibilityGate>
                                             <controls:VisibilityGate IsOpen="{Binding State.HasBluRayFiles}">
                                                 <StackPanel Margin="0,14,0,0">
                                                     <TextBlock Style="{StaticResource FieldLabel}"
@@ -315,6 +398,25 @@
                                                             <controls:HelpHint Hint="{loc:Text Xaml.OuterRingBleedHint}"
                                                                                Margin="8,0,0,0" VerticalAlignment="Center" />
                                                         </StackPanel>
+                                                    </controls:VisibilityGate>
+                                                    <controls:VisibilityGate IsOpen="{Binding State.ShowBdOuterIsoWarning}" Margin="0,10,0,0">
+                                                        <Border Background="{DynamicResource WarningSoftBrush}"
+                                                                BorderBrush="{DynamicResource WarningBorderBrush}"
+                                                                BorderThickness="1" CornerRadius="6" Padding="10,8">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                    <ColumnDefinition Width="*" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <iconPacks:PackIconLucide Kind="TriangleAlert" Width="14" Height="14"
+                                                                                          Foreground="{DynamicResource WarningBrush}"
+                                                                                          VerticalAlignment="Top" Margin="0,2,0,0" />
+                                                                <TextBlock Grid.Column="1" Text="{loc:Text Xaml.OuterRingIsoNotBootable}"
+                                                                           Style="{StaticResource CompactText}"
+                                                                           Foreground="{DynamicResource WarningTextBrush}"
+                                                                           Margin="6,0,0,0" />
+                                                            </Grid>
+                                                        </Border>
                                                     </controls:VisibilityGate>
                                                 </StackPanel>
                                             </controls:VisibilityGate>

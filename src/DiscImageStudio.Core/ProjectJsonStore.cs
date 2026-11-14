@@ -40,7 +40,8 @@ public sealed record ProjectOutputs(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool FilesAtOuterRing = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool DvdReadCompatibility = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool OuterRingBleed = false,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? DvdReadCompatibilityMode = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? DvdReadCompatibilityMode = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] string? InputIsoPath = null);
 
 /// <summary>Generation settings that exist only for BD-R: the 3T/6T mapping polarity.
 /// This is deliberately separate from <see cref="ToneProfile"/>: polarity selects which
@@ -393,6 +394,12 @@ public static class ProjectJsonStore
             && (!document.IsDvd || !DvdReadCompatibilityModes.IsWriteSafe(mode)))
         {
             throw DiagnosticMessage.InvalidData($"outputs.dvdReadCompatibilityMode 必须是 DVD 支持的刻录兼容性模式。");
+        }
+
+        if (!string.IsNullOrWhiteSpace(outputs.DataDirectory)
+            && !string.IsNullOrWhiteSpace(outputs.InputIsoPath))
+        {
+            throw DiagnosticMessage.InvalidData($"outputs.dataDirectory 与 outputs.inputIsoPath 不能同时指定。");
         }
     }
 

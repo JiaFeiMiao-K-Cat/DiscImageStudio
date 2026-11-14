@@ -29,7 +29,8 @@ public sealed record BluRayIsoMetadata(
     double PitchLinear = 0,
     double PitchQuadratic = 0,
     double PitchCubic = 0,
-    uint? UsableSectors = null)
+    uint? UsableSectors = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? InputIsoPath = null)
 {
     public const string FormatName = "bd-r-image-v1";
 
@@ -62,7 +63,8 @@ public sealed record BluRayIsoMetadata(
             plan.UdfTimestamp,
             generatedUtc,
             plan.FilesAtOuterRing,
-            plan.Disc.PitchLinear, plan.Disc.PitchQuadratic, plan.Disc.PitchCubic, plan.Disc.UsableSectors);
+            plan.Disc.PitchLinear, plan.Disc.PitchQuadratic, plan.Disc.PitchCubic, plan.Disc.UsableSectors,
+            plan.InputIsoPath);
 
     public static string PathFor(string isoPath) => isoPath + ".json";
 

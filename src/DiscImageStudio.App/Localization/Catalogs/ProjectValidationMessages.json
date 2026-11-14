@@ -206,5 +206,9 @@
   "必须是大于 0 的有限数值": {
     "zh-CN": "必须是大于 0 的有限数值",
     "en": "must be a finite number greater than 0"
+  },
+  "outputs.dataDirectory 与 outputs.inputIsoPath 不能同时指定。": {
+    "zh-CN": "outputs.dataDirectory 与 outputs.inputIsoPath 不能同时指定。",
+    "en": "outputs.dataDirectory and outputs.inputIsoPath cannot both be set."
   }
 }

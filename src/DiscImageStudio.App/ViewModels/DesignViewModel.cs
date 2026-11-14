@@ -123,6 +123,8 @@ public partial class DesignViewModel : ObservableObject
 
     public RelayCommand BrowseDataCommand => _shell.Export.BrowseDataCommand;
 
+    public RelayCommand BrowseInputIsoCommand => _shell.Export.BrowseInputIsoCommand;
+
     public ObservableCollection<DesignLayerViewModel> Layers { get; } = [];
 
     [ObservableProperty]
@@ -488,21 +490,24 @@ public partial class DesignViewModel : ObservableObject
     private void State_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName is
-            nameof(DiscParametersState.CdDataDirectory) or nameof(DiscParametersState.CdVolumeLabel)
+            nameof(DiscParametersState.CdDataDirectory) or nameof(DiscParametersState.CdUseInputIso)
+            or nameof(DiscParametersState.CdInputIsoPath) or nameof(DiscParametersState.CdVolumeLabel)
             or nameof(DiscParametersState.CdFilesAtOuterRing)
             or nameof(DiscParametersState.CdOuterRingBleed)
             or nameof(DiscParametersState.CdInnerRadius) or nameof(DiscParametersState.CdOuterRadius)
             or nameof(DiscParametersState.CdSectors) or nameof(DiscParametersState.CdUsableSectors)
             or nameof(DiscParametersState.CdPitchLinear) or nameof(DiscParametersState.CdPitchQuadratic)
             or nameof(DiscParametersState.CdPitchCubic)
-            or nameof(DiscParametersState.DvdDataDirectory) or nameof(DiscParametersState.DvdVolumeLabel)
+            or nameof(DiscParametersState.DvdDataDirectory) or nameof(DiscParametersState.DvdUseInputIso)
+            or nameof(DiscParametersState.DvdInputIsoPath) or nameof(DiscParametersState.DvdVolumeLabel)
             or nameof(DiscParametersState.DvdFilesAtOuterRing)
             or nameof(DiscParametersState.DvdOuterRingBleed)
             or nameof(DiscParametersState.DvdTotalSectors) or nameof(DiscParametersState.DvdUsableSectors)
             or nameof(DiscParametersState.DvdInnerRadius) or nameof(DiscParametersState.DvdOuterRadius)
             or nameof(DiscParametersState.DvdPitchLinear) or nameof(DiscParametersState.DvdPitchQuadratic)
             or nameof(DiscParametersState.DvdPitchCubic)
-            or nameof(DiscParametersState.BdDataDirectory) or nameof(DiscParametersState.BdVolumeLabel)
+            or nameof(DiscParametersState.BdDataDirectory) or nameof(DiscParametersState.BdUseInputIso)
+            or nameof(DiscParametersState.BdInputIsoPath) or nameof(DiscParametersState.BdVolumeLabel)
             or nameof(DiscParametersState.BdFilesAtOuterRing)
             or nameof(DiscParametersState.BdOuterRingBleed)
             or nameof(DiscParametersState.BdTotalSectors) or nameof(DiscParametersState.BdUsableSectors)
@@ -615,13 +620,11 @@ public partial class DesignViewModel : ObservableObject
     /// touches the parameter state.</summary>
     private DataRegionInputs CaptureDataRegionInputs()
     {
-        string directory, label, totalText, innerText, outerText;
+        string label, totalText, innerText, outerText;
         string pitchLinear, pitchQuadratic, pitchCubic;
-        bool filesAtOuterRing;
         switch (Family)
         {
             case OpticalDiscFamily.Dvd:
-                directory = _state.DvdDataDirectory;
                 label = _state.DvdVolumeLabel;
                 totalText = _state.DvdTotalSectors;
                 innerText = _state.DvdInnerRadius;
@@ -629,10 +632,8 @@ public partial class DesignViewModel : ObservableObject
                 pitchLinear = _state.DvdPitchLinear;
                 pitchQuadratic = _state.DvdPitchQuadratic;
                 pitchCubic = _state.DvdPitchCubic;
-                filesAtOuterRing = _state.DvdFilesAtOuterRing;
                 break;
             case OpticalDiscFamily.BluRay:
-                directory = _state.BdDataDirectory;
                 label = _state.BdVolumeLabel;
                 totalText = _state.BdTotalSectors;
                 innerText = _state.BdInnerRadius;
@@ -640,10 +641,8 @@ public partial class DesignViewModel : ObservableObject
                 pitchLinear = _state.BdPitchLinear;
                 pitchQuadratic = _state.BdPitchQuadratic;
                 pitchCubic = _state.BdPitchCubic;
-                filesAtOuterRing = _state.BdFilesAtOuterRing;
                 break;
             default:
-                directory = _state.CdDataDirectory;
                 label = _state.CdVolumeLabel;
                 totalText = _state.CdSectors;
                 innerText = _state.CdInnerRadius;
@@ -651,7 +650,6 @@ public partial class DesignViewModel : ObservableObject
                 pitchLinear = _state.CdPitchLinear;
                 pitchQuadratic = _state.CdPitchQuadratic;
                 pitchCubic = _state.CdPitchCubic;
-                filesAtOuterRing = _state.CdFilesAtOuterRing;
                 break;
         }
 
@@ -661,7 +659,7 @@ public partial class DesignViewModel : ObservableObject
             OpticalDiscFamily.BluRay => ("蓝光内半径", "蓝光外半径"),
             _ => ("内半径", "外半径"),
         };
-        string directoryPath = directory.Trim();
+        (string directoryPath, string inputIsoPath, bool filesAtOuterRing) = _state.ResolveDiscContent(Family);
         long totalSectors = ParameterParser.ParsePositiveLong(totalText, L.T("总扇区数"));
         return new DataRegionInputs(
             Family,
@@ -672,7 +670,7 @@ public partial class DesignViewModel : ObservableObject
                 OpticalDiscFamily.BluRay => "BD_IMAGE",
                 _ => "CD_IMAGE",
             } : label.Trim(),
-            FilesAtOuterRing: directoryPath.Length > 0 && filesAtOuterRing,
+            FilesAtOuterRing: (directoryPath.Length > 0 || inputIsoPath.Length > 0) && filesAtOuterRing,
             totalSectors,
             // The guide must plan with the same capacity the export writes: the outer-ring
             // bleed cap is part of the resolved limit, not a separate drawing-only rule.
@@ -681,7 +679,8 @@ public partial class DesignViewModel : ObservableObject
             ParameterParser.ParsePositiveDouble(outerText, L.T(outerPrompt)),
             ParameterParser.ParseDouble(pitchLinear, L.T("相对一次项")),
             ParameterParser.ParseDouble(pitchQuadratic, L.T("相对二次项")),
-            ParameterParser.ParseDouble(pitchCubic, L.T("相对三次项")));
+            ParameterParser.ParseDouble(pitchCubic, L.T("相对三次项")),
+            inputIsoPath);
     }
 
     private static double ParseMm(string raw, double fallback)

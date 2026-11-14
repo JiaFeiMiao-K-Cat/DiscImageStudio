@@ -20,7 +20,9 @@ flowchart LR
     DVD --> Engine[DvdImageSolver]
     CD --> CdEngine[CD-DA core]
     BD --> BdEngine[BD encoder / 17PP / ECC]
-    BD --> Iso[DiscImageStudio.Iso / UDF 2.01]
+    CD --> Iso[DiscImageStudio.Iso / ISO9660 · UDF 2.01 · RawIso]
+    DVD --> Iso
+    BD --> Iso
 ```
 
 `DiscImageStudio.Cli` 和 Windows 桌面程序的命令行入口从同一份模块目录执行离线命令。GUI 导出直接构造 `CdImageRequest`、`DvdImageRequest` 或 `BluRayImageRequest` 并调用相应生成器，返回不含退出码的 `DiscImageResult`；DVD 预览直接调用类型化渲染器。内部调用通过进度对象和取消令牌协作，异常原样传至界面，命令行解析与控制台输出只在 CLI 适配边界发生。`DiscImageStudio.ImageIO` 在 Windows 桌面目标使用 WIC，在通用 `net10.0` 目标使用 StbImageSharp 读图、StbImageWriteSharp 写 PNG；两个后端都向生成器提供相同顺序的 BGRA 像素。`.svg` 矢量图导入由 WPF 层的 `DesignComposer` 通过 `SharpVectors.Wpf` 单独承担，CLI 与介质编码层只消费光栅结果。蓝光共用透明度合成和灰度转换代码，CD 和 DVD 也分别共用各自原有的采样算法。
@@ -93,9 +95,9 @@ CD 的 `OpticalBurnRequest.ProduceContent` 明确要求无头的 44.1 kHz、16 �
 
 `DiscImageStudio.Burning` 只负责 Windows IMAPI2 设备枚举、介质检查、COM `IStream` 适配、64 MiB 有界内存缓冲（开刻前预填充 32 MiB）和刻录生命周期。自动速度会在真正开始 CD/DVD 刻录时重新读取当前盘片的写入配置并选择最低值，手动选择仍保持原值；设备不报告速度时使用刻录接口的保守回退。CD/DVD 生成器仍拥有介质格式：CD 顺序产生 2352 字节音频扇区，DVD 快速算法顺序产生 2048 字节数据扇区。刻录器按需读取这些块，因此磁盘上不出现完整镜像。原文件输出入口不经过该层，失败时不会破坏原工作流。
 
-DVD 混合文件夹模式采用两阶段顺序生成：第一阶段扫描目录，确定 ISO9660/Joliet 元数据、文件 extent 及绘图起止 LBA；第二阶段按规划的盘面顺序输出，内圈模式为“元数据 → 文件 → 图案”，外圈模式为“元数据 → 图案 → 文件”。图案按 16 扇区 ECC Block 对齐。布局计划只保存元数据，不缓存文件内容，支持不可 Seek 的流。
+DVD 混合模式支持 `--data-dir` 与 `--input-iso`（互斥）：文件夹模式采用两阶段顺序生成——第一阶段扫描目录，确定 ISO9660/Joliet 元数据、文件 extent 及绘图起止 LBA；第二阶段按规划的盘面顺序输出，内圈模式为“元数据 → 文件 → 图案”，外圈模式为“元数据 → 图案 → 文件”。输入现成 ISO 时，内圈由 `RawIsoPassthrough` 从 LBA 0 原样流式直通并按 16 扇区 ECC Block 对齐衔接图案，外圈由 `IsoContentReader` 无临时解包读取 ISO9660 / Joliet / Rock Ridge / UDF 文件后重写入外圈文件系统。布局计划只保存元数据或源路径布局，不缓存文件内容，支持不可 Seek 的流。
 
-BD-R 复用同一刻录契约：`BluRayIsoGenerator` 在一个前向流里写入 UDF 2.01、图案区与盘尾备份元数据；外圈模式将完整文件分区移至尾部备份区前，图案始终保持 32 扇区对齐且位于分区之外。刻录页把该流直接喂给 MMC 顺序写入会话，不落盘完整 25 GB 镜像。BD 不提供备用区重映射；中断后盘片通常不可继续写入。
+BD-R 复用同一刻录契约：`BluRayIsoGenerator` 在一个前向流里写入 UDF 2.01、图案区与盘尾备份元数据；外圈模式将完整文件分区（来自文件夹或经 `IsoContentReader` 解析的源 ISO）移至尾部备份区前，图案始终保持 32 扇区对齐且位于分区之外。输入现成 ISO 且放在内圈时，`RawIsoPassthrough` 从 LBA 0 原样直通并对齐衔接绘图簇。刻录页把该流直接喂给 MMC 顺序写入会话，不落盘完整 25 GB 镜像。BD 不提供备用区重映射；中断后盘片通常不可继续写入。
 
 CD、DVD 和 BD 共用 `BurnDeviceDiagnostics` 的写前环境、固件及物理盘片类型／空白状态日志。物理类型按 IMAPI 返回值记录（如 DVD-R、DVD+R DL、BD-R、BD-RE），不由工程预设或光驱名称推断；识别类型不代表新增对该类型的写入支持。可选字段读取失败只记 `unavailable`，不阻止刻录。
 
@@ -103,9 +105,9 @@ DVD 的 `IDvdDataSession` 隔离现有 COM 调用，保留介质检查、缓冲�
 
 失败时在源流销毁与设备清理前保存 `Burn.DeviceContext`、对应介质的 `Burn.CdDaoContext`／`Burn.DvdContext`／`Burn.BluRayContext` 及 `Burn.ContentAtFailure`。上下文只使用已缓存的设备信息、现有事件和主机流计数，不再查询故障设备。生成量、源流读取量及主机队列量不等于实际落盘量；IMAPI 系统缓冲也不等于光驱物理缓存。CD／DVD 高层接口不暴露失败命令的 SCSI sense，日志明确标记不可用；BD MMC 异常已有的真实 sense 保持原样。CD 导入区事件节流与字段说明见 [CD 失败日志](CD_AUDIO_COMPATIBILITY.md#cd-dao-失败日志)。
 
-`ProjectOutputs.FilesAtOuterRing` 为可选字段，默认 `false`，DVD/BD 各自通过共享参数状态同步导出、预览与刻录。文件区在 GUI 预览中按绘图起止边界标黄，包含必要的文件系统保留区；该配色不进入生成器。已有成品依赖其 sidecar 的固定范围，不使用当前目录重新猜测布局。
+`ProjectOutputs.FilesAtOuterRing`（可选，默认 `false`）与 `ProjectOutputs.InputIsoPath`（可选，与 `DataDirectory` 互斥）通过共享参数状态在导出、预览与刻录间同步；已有成品继续依赖 sidecar，不重新猜测布局。
 
-设计页影调预览统一为 512×512，CD/DVD/BD 都以透明度表示记录环之外和中心孔，控件直接显示完整位图。CD 将预览输出坐标的外半径设为可用区域外半径；显式可用数的源图采样使用相同尺度，旧底层调用保留原有 57.5 mm 比例。影调预览复用各介质的文件布局计划与 GUI 主题蓝色覆盖层，包含内外圈文件及文件系统保留区；文件夹、卷标和位置变化会刷新。布局扫描与渲染在后台执行，每个影调模块同一时刻只运行一项，取消及版本检查阻止旧结果覆盖新参数，失败时清除过期图像。
+设计页影调预览统一为 512×512，CD/DVD/BD 都以透明度表示记录环之外和中心孔，控件直接显示完整位图。CD 将预览输出坐标的外半径设为可用区域外半径；显式可用数的源图采样使用相同尺度，旧底层调用保留原有 57.5 mm 比例。影调预览复用各介质的文件（含现成 ISO 内/外圈）布局计划与 GUI 主题蓝色覆盖层，包含内外圈文件/直通区及文件系统保留区；文件夹、源 ISO、卷标和位置变化会刷新。布局扫描与渲染在后台执行，每个影调模块同一时刻只运行一项，取消及版本检查阻止旧结果覆盖新参数，失败时清除过期图像。
 
 ## 模块边界
 

@@ -2188,5 +2188,20 @@
     "tr": "; dosyalar dış halkada, desen iç tarafta",
     "es": "; archivos en la zona exterior, dibujo por dentro",
     "cs": "; soubory na vnějším prstenci, kresba blíž ke středu"
+  },
+  "选择现成 ISO 镜像": {
+    "zh-CN": "选择现成 ISO 镜像",
+    "en": "Select existing ISO image",
+    "zh-TW": "選擇現有 ISO 映像檔"
+  },
+  "DVD 混合盘（现成 ISO · {0}）": {
+    "zh-CN": "DVD 混合盘（现成 ISO · {0}）",
+    "en": "DVD hybrid disc (existing ISO · {0})",
+    "zh-TW": "DVD 混合碟（現有 ISO · {0}）"
+  },
+  "\n\n注意：现成 ISO 的文件将放在外圈并保留可读文件系统，但画面刻在内圈时，刻录后的光盘无法从该镜像引导。": {
+    "zh-CN": "\n\n注意：现成 ISO 的文件将放在外圈并保留可读文件系统，但画面刻在内圈时，刻录后的光盘无法从该镜像引导。",
+    "en": "\n\nNote: placing the ISO contents at the outer ring with artwork inside keeps the filesystem readable, but the disc will not boot from the image.",
+    "zh-TW": "\n\n注意：現有 ISO 的檔案將放於外圈並保留可讀檔案系統，但畫面刻在內圈時，燒錄後的光碟無法從該映像檔開機。"
   }
 }

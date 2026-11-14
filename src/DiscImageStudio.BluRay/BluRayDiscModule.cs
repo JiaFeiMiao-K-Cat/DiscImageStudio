@@ -51,12 +51,13 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
                     new("output", "ECC cluster", DiscOptionValueType.OutputFile, Required: true),
                     new("psn", "First physical sector", DiscOptionValueType.String, DefaultValue: "0x100000")]),
             new("bd-generate", "BD-R picture generation",
-                "Draw the full user-data area; selecting a files directory adds a UDF 2.01 filesystem at the inner or outer ring.",
+                "Draw the full user-data area; selecting a files directory adds a UDF 2.01 filesystem or --input-iso streams a pre-built ISO at the inner or outer ring.",
                 DiscModuleCapabilities.DataImageGeneration,
                 [.. GeometryOptions, new("input", "Source image", DiscOptionValueType.InputFile, Required: true),
                     new("output", "ISO output", DiscOptionValueType.OutputFile, Required: true),
                     new("data-dir", "Files directory", DiscOptionValueType.InputFolder),
-                    new("file-position", "File placement", DiscOptionValueType.Choice, DefaultValue: "inner", Choices: ["inner", "outer"]),
+                    new("input-iso", "Pre-built ISO image to stream verbatim", DiscOptionValueType.InputFile),
+                    new("file-position", "File or ISO placement", DiscOptionValueType.Choice, DefaultValue: "inner", Choices: ["inner", "outer"]),
                     new("volume-label", "ISO volume label", DiscOptionValueType.String, DefaultValue: "BD_IMAGE"),
                     new("invert", "Swap 3T/6T assignment", DiscOptionValueType.Boolean, DefaultValue: "false"),
                     new("tone-dither", "Dither strength 0..1", DiscOptionValueType.Decimal, DefaultValue: "0"),
@@ -174,7 +175,7 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
                 throw new ArgumentException("bd-generate accepts only --tone-levels 2.");
             BluRayImageRequest image = new(options["input"], output!, disc, tone, invert,
                 options.GetValueOrDefault("data-dir"), options.GetValueOrDefault("volume-label", "BD_IMAGE"),
-                filesAtOuterRing);
+                filesAtOuterRing, options.GetValueOrDefault("input-iso"));
             if (_imageLoader is null)
             {
                 BluRayImageGenerator.Prepare(image);

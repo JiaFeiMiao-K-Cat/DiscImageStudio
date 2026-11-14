@@ -2,7 +2,7 @@ using DiscImageStudio.Core;
 
 namespace DiscImageStudio.BluRay;
 
-/// <summary>A full-area BD drawing, optionally including an inner or outer UDF filesystem.</summary>
+/// <summary>A full-area BD drawing, optionally including an inner or outer UDF filesystem or pre-built ISO.</summary>
 public sealed record BluRayImageRequest(
     string SourceImage,
     string OutputPath,
@@ -11,7 +11,8 @@ public sealed record BluRayImageRequest(
     bool InvertMapping = false,
     string? DataDirectory = null,
     string VolumeLabel = "BD_IMAGE",
-    bool FilesAtOuterRing = false);
+    bool FilesAtOuterRing = false,
+    string? InputIsoPath = null);
 
 public sealed class BluRayImageGenerator
 {
@@ -54,8 +55,13 @@ public sealed class BluRayImageGenerator
         string interpretation = request.InvertMapping
             ? "dark-to-6T / light-to-3T run-count bias"
             : "dark-to-3T / light-to-6T run-count bias";
+        string modeDescription = plan.HasExternalIso
+            ? (plan.HasFileSystem ? "UDF 2.01 (from ISO)" : "ISO passthrough")
+            : plan.HasFileSystem
+                ? "UDF 2.01"
+                : "full-area drawing, no filesystem";
         return new DiscImageResult(Path.GetFullPath(request.OutputPath),
-            $"BD {(plan.HasFileSystem ? "UDF 2.01" : "full-area drawing, no filesystem")}: {summary.BytesWritten} bytes, {request.Parameters.OutputSectors} sectors; {plan.FileCount} {(plan.FilesAtOuterRing ? "outer" : "inner")} files; drawing sectors {plan.DrawingStartSector}..{plan.DrawingEndSectorExclusive - 1}; {interpretation}.");
+            $"BD {modeDescription}: {summary.BytesWritten} bytes, {request.Parameters.OutputSectors} sectors; {plan.FileCount} {(plan.FilesAtOuterRing ? "outer" : "inner")} files; drawing sectors {plan.DrawingStartSector}..{plan.DrawingEndSectorExclusive - 1}; {interpretation}.");
     }
 
     internal static BluRayIsoPlan Prepare(BluRayImageRequest request)
@@ -70,8 +76,18 @@ public sealed class BluRayImageGenerator
         request.Tone.Validate("tone");
         if (request.Tone.Levels != ToneProfile.TwoLevels)
             throw new ArgumentException("BD image generation accepts only two tone levels.", nameof(request));
-        BluRayIsoPlan plan = BluRayIsoGenerator.PrepareDrawing(request.Parameters, request.DataDirectory,
-            request.VolumeLabel, filesAtOuterRing: request.FilesAtOuterRing);
+        string? dataDirectory = request.DataDirectory?.Trim();
+        string? inputIsoPath = request.InputIsoPath?.Trim();
+        bool hasDirectory = !string.IsNullOrEmpty(dataDirectory);
+        bool hasInputIso = !string.IsNullOrEmpty(inputIsoPath);
+        if (hasDirectory && hasInputIso)
+            throw new ArgumentException("Specify either DataDirectory or InputIsoPath, not both.", nameof(request));
+        if (!hasDirectory && !hasInputIso && request.FilesAtOuterRing)
+            throw new ArgumentException("Outer-ring file placement requires a data directory or input ISO.", nameof(request));
+        BluRayIsoPlan plan = hasInputIso
+            ? BluRayIsoGenerator.PreparePassthroughIso(request.Parameters, inputIsoPath!, request.FilesAtOuterRing)
+            : BluRayIsoGenerator.PrepareDrawing(request.Parameters, dataDirectory,
+                request.VolumeLabel, filesAtOuterRing: request.FilesAtOuterRing);
         BluRayIsoGenerator.ValidateOutputPath(request.OutputPath, plan);
         return plan;
     }

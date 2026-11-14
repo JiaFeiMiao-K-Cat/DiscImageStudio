@@ -29,6 +29,9 @@ public static class Iso9660ImageWriter
         internal readonly string _primaryVolumeLabel;
         internal readonly string _jolietVolumeLabel;
         internal readonly DateTimeOffset _timestamp;
+        internal readonly string _sourceIsoPath;
+        internal readonly long _sourceIsoBytes;
+        internal readonly DateTimeOffset _sourceIsoLastWriteUtc;
 
         internal LayoutPlan(
             string sourceDirectory,
@@ -38,7 +41,10 @@ public static class Iso9660ImageWriter
             Layout layout,
             string primaryVolumeLabel,
             string jolietVolumeLabel,
-            DateTimeOffset timestamp)
+            DateTimeOffset timestamp,
+            string sourceIsoPath = "",
+            long sourceIsoBytes = 0,
+            DateTimeOffset sourceIsoLastWriteUtc = default)
         {
             SourceDirectory = sourceDirectory;
             VolumeSectors = volumeSectors;
@@ -48,6 +54,9 @@ public static class Iso9660ImageWriter
             _primaryVolumeLabel = primaryVolumeLabel;
             _jolietVolumeLabel = jolietVolumeLabel;
             _timestamp = timestamp;
+            _sourceIsoPath = sourceIsoPath;
+            _sourceIsoBytes = sourceIsoBytes;
+            _sourceIsoLastWriteUtc = sourceIsoLastWriteUtc;
             List<IsoNode> files = EnumerateFiles(root).ToList();
             FileCount = files.Count;
             DirectoryCount = directories.Count;
@@ -55,6 +64,8 @@ public static class Iso9660ImageWriter
         }
 
         public string SourceDirectory { get; }
+
+        public string SourceIsoPath => _sourceIsoPath;
 
         public uint VolumeSectors { get; }
 
@@ -113,6 +124,46 @@ public static class Iso9660ImageWriter
             timestamp ?? DateTimeOffset.UtcNow);
     }
 
+    public static LayoutPlan PlanFromIso(
+        string inputIsoPath,
+        uint volumeSectors,
+        string? volumeLabel = null,
+        DateTimeOffset? timestamp = null,
+        bool filesAtOuterRing = false)
+    {
+        if (volumeSectors <= FirstMetadataLba)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(volumeSectors),
+                "Hybrid ISO volume is too small for filesystem metadata.");
+        }
+
+        IsoVolumeTree tree = IsoContentReader.Read(inputIsoPath);
+        string requestedLabel = volumeLabel ?? (string.IsNullOrWhiteSpace(tree.VolumeLabel) ? "DVD_IMAGE" : tree.VolumeLabel);
+        string primaryVolumeLabel = NormalizePrimaryIdentifier(requestedLabel, 32, "DVD_IMAGE");
+        string jolietVolumeLabel = volumeLabel is null
+            ? NormalizeJolietIdentifier(requestedLabel.Trim(), MaximumJolietVolumeLabelCharacters, "DVD_IMAGE")
+            : ValidateJolietVolumeLabel(volumeLabel);
+
+        DateTimeOffset recorded = timestamp ?? tree.Root.Timestamp;
+        IsoNode root = ConvertIsoNode(tree.Root, parent: null, recorded);
+        List<IsoNode> directories = AssignDirectoryNumbers(root);
+        AssignIdentifiers(directories);
+        Layout layout = BuildLayout(directories, volumeSectors, filesAtOuterRing);
+        return new LayoutPlan(
+            string.Empty,
+            volumeSectors,
+            root,
+            directories,
+            layout,
+            primaryVolumeLabel,
+            jolietVolumeLabel,
+            recorded,
+            tree.SourceIsoPath,
+            tree.SourceIsoBytes,
+            tree.SourceIsoLastWriteUtc);
+    }
+
     public static void WriteSequentialPrefix(
         LayoutPlan plan,
         Stream output,
@@ -133,13 +184,8 @@ public static class Iso9660ImageWriter
                 $"Sequential prefix must end between LBA {plan.DataEndLbaExclusive} and {plan.VolumeSectors}.");
         }
 
-        cancellationToken.ThrowIfCancellationRequested();
-        foreach (IsoNode file in EnumerateFiles(plan._root))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            ValidateSourceFile(file);
-        }
-        SequentialIsoWriter writer = new(output, cancellationToken);
+        ValidateSources(plan, cancellationToken);
+        using SequentialIsoWriter writer = new(plan, output, cancellationToken);
         WriteFilesystem(plan, writer);
         writer.PadToLba(endLbaExclusive);
     }
@@ -156,7 +202,7 @@ public static class Iso9660ImageWriter
     {
         ValidateOuterRange(plan, output, endLbaExclusive);
         ValidateSources(plan, cancellationToken);
-        SequentialIsoWriter writer = new(output, cancellationToken);
+        using SequentialIsoWriter writer = new(plan, output, cancellationToken);
         WriteMetadata(plan, writer);
         writer.PadToLba(endLbaExclusive);
     }
@@ -167,7 +213,7 @@ public static class Iso9660ImageWriter
     {
         ValidateOuterRange(plan, output, startLba);
         ValidateSources(plan, cancellationToken);
-        SequentialIsoWriter writer = new(output, cancellationToken, startLba);
+        using SequentialIsoWriter writer = new(plan, output, cancellationToken, startLba);
         WriteFiles(plan, writer);
         writer.PadToLba(plan.VolumeSectors);
     }
@@ -184,6 +230,14 @@ public static class Iso9660ImageWriter
     private static void ValidateSources(LayoutPlan plan, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        if (!string.IsNullOrEmpty(plan._sourceIsoPath))
+        {
+            (long length, DateTimeOffset lastWriteUtc) = IsoContentReader.ValidateSourceIso(plan._sourceIsoPath);
+            if (length != plan._sourceIsoBytes || lastWriteUtc != plan._sourceIsoLastWriteUtc)
+                throw new IOException($"Source ISO changed after ISO planning: {plan._sourceIsoPath}");
+            return;
+        }
+
         foreach (IsoNode file in EnumerateFiles(plan._root))
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -251,6 +305,35 @@ public static class Iso9660ImageWriter
         {
             output.WriteFileAtLba(file);
         }
+    }
+
+    private static IsoNode ConvertIsoNode(IsoTreeNode source, IsoNode? parent, DateTimeOffset fallbackTimestamp)
+    {
+        IsoNode node = new(string.Empty, source.Name, source.IsDirectory, parent)
+        {
+            DataLength = source.IsDirectory ? 0 : source.DataLength,
+            Timestamp = source.Timestamp == default ? fallbackTimestamp : source.Timestamp,
+            IsoExtents = source.IsDirectory ? null : source.Extents,
+        };
+
+        if (source.IsDirectory)
+        {
+            foreach (IsoTreeNode child in source.Children
+                         .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+                         .ThenBy(item => item.Name, StringComparer.Ordinal))
+            {
+                if (!child.IsDirectory && (ulong)child.DataLength > uint.MaxValue)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(source),
+                        $"ISO9660 files larger than 4 GiB minus 1 byte are not supported: {child.Name}");
+                }
+
+                node.Children.Add(ConvertIsoNode(child, node, fallbackTimestamp));
+            }
+        }
+
+        return node;
     }
 
     private static IsoNode ReadTree(string sourceFullPath)
@@ -844,21 +927,27 @@ public static class Iso9660ImageWriter
         TextEncoding.BigEndianUnicode.GetBytes(value, field);
     }
 
-    private sealed class SequentialIsoWriter
+    private sealed class SequentialIsoWriter : IDisposable
     {
         private const int CopyBufferBytes = 128 * 1024;
 
+        private readonly LayoutPlan _plan;
         private readonly Stream _output;
         private readonly CancellationToken _cancellationToken;
         private readonly byte[] _zeroBuffer = new byte[CopyBufferBytes];
+        private readonly byte[] _copyBuffer = new byte[CopyBufferBytes];
+        private FileStream? _isoStream;
         private long _position;
 
-        internal SequentialIsoWriter(Stream output, CancellationToken cancellationToken, uint startLba = 0)
+        internal SequentialIsoWriter(LayoutPlan plan, Stream output, CancellationToken cancellationToken, uint startLba = 0)
         {
+            _plan = plan;
             _output = output;
             _cancellationToken = cancellationToken;
             _position = checked((long)startLba * LogicalSectorBytes);
         }
+
+        public void Dispose() => _isoStream?.Dispose();
 
         internal void WriteAtLba(uint lba, ReadOnlySpan<byte> bytes)
         {
@@ -870,6 +959,24 @@ public static class Iso9660ImageWriter
 
         internal void WriteFileAtLba(IsoNode file)
         {
+            if (file.IsoExtents is { } extents)
+            {
+                if (file.DataLength == 0)
+                    return;
+
+                PadToPosition(checked((long)file.DataLba * LogicalSectorBytes));
+                _isoStream ??= new FileStream(
+                    _plan._sourceIsoPath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.Read,
+                    bufferSize: CopyBufferBytes,
+                    FileOptions.RandomAccess);
+                IsoContentReader.CopyExtents(_isoStream, extents, file.DataLength, _output, _copyBuffer, _cancellationToken);
+                _position = checked(_position + file.DataLength);
+                return;
+            }
+
             if (file.DataLength == 0)
             {
                 ValidateSourceFile(file);
@@ -889,20 +996,19 @@ public static class Iso9660ImageWriter
                 throw new IOException($"Source file size changed while streaming ISO: {file.SourcePath}");
             }
 
-            byte[] buffer = new byte[CopyBufferBytes];
             long remaining = file.DataLength;
             while (remaining > 0)
             {
                 _cancellationToken.ThrowIfCancellationRequested();
-                int requested = (int)Math.Min(buffer.Length, remaining);
-                int read = input.Read(buffer, 0, requested);
+                int requested = (int)Math.Min(_copyBuffer.Length, remaining);
+                int read = input.Read(_copyBuffer, 0, requested);
                 if (read == 0)
                 {
                     throw new EndOfStreamException(
                         $"Source file ended early while streaming ISO: {file.SourcePath}");
                 }
 
-                _output.Write(buffer, 0, read);
+                _output.Write(_copyBuffer, 0, read);
                 _position = checked(_position + read);
                 remaining -= read;
             }
@@ -955,6 +1061,7 @@ public static class Iso9660ImageWriter
         internal uint DataLba { get; set; }
         internal long DataLength { get; set; }
         internal DateTimeOffset Timestamp { get; set; }
+        internal IReadOnlyList<IsoByteExtent>? IsoExtents { get; init; }
     }
 
     internal sealed record Layout(
