@@ -73,6 +73,11 @@ public partial class BurnViewModel : ObservableObject
     [ObservableProperty]
     private bool _confirmChecked;
 
+    // A DVD+RW keeps its format after an erase and never reports BLANK again, so the
+    // user has to opt in explicitly before IMAPI is allowed to overwrite the disc.
+    [ObservableProperty]
+    private bool _allowRewritableOverwrite;
+
     [ObservableProperty]
     private bool _isBurnRunning;
 
@@ -586,7 +591,8 @@ public partial class BurnViewModel : ObservableObject
                     throw new InvalidOperationException(L.T("标定图案已变化，请重新保存记录并确认刻录。"));
                 }
 
-                request = CreateCalibrationBurnRequest(target, interleave, device.Id, selectedWriteSpeed.Speed, capacity.WritableSectors);
+                request = CreateCalibrationBurnRequest(target, interleave, device.Id, selectedWriteSpeed.Speed,
+                    capacity.WritableSectors, AllowRewritableOverwrite);
                 string family = target.Parameters.Kind switch
                 {
                     CalibrationDiscKind.Dvd => "DVD",
@@ -702,7 +708,8 @@ public partial class BurnViewModel : ObservableObject
                                     cancellationToken: cancellationToken);
                             }
                         },
-                        selectedWriteSpeed.Speed);
+                        selectedWriteSpeed.Speed,
+                        OverwriteRewritableMedia: AllowRewritableOverwrite);
                     contentDescription = dataImagePath.Length > 0
                         ? L.F($"DVD ISO 源扇区原样保留在 LBA 0 · {options.OutputSectors} 扇区")
                         : hybridPlan is null
@@ -744,7 +751,9 @@ public partial class BurnViewModel : ObservableObject
                 L.T("确认开始流式刻录"),
                 L.F($"即将写入：{device.DisplayName}\n{contentDescription}\n")
                     + L.F($"请求速度：{selectedWriteSpeed.DisplayName}\n\n")
-                    + L.T("仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？"),
+                    + (dvd && AllowRewritableOverwrite
+                        ? L.T("已允许覆写 DVD±RW：非空白盘会被整盘擦除，空白盘照常写入。开始后取消或断电仍可能使盘片报废。是否继续？")
+                        : L.T("仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？")),
                 L.T("确认刻录"));
             if (!confirmed)
             {
@@ -869,7 +878,8 @@ public partial class BurnViewModel : ObservableObject
         bool cdInterleave,
         string deviceId,
         OpticalWriteSpeed? writeSpeed,
-        long? writableSectors = null)
+        long? writableSectors = null,
+        bool overwriteRewritableMedia = false)
     {
         ArgumentNullException.ThrowIfNull(target);
         if (target.Parameters.Kind == CalibrationDiscKind.BluRay)
@@ -897,7 +907,8 @@ public partial class BurnViewModel : ObservableObject
             options.Validate();
             return new OpticalBurnRequest(deviceId, OpticalBurnMediaKind.DvdData, options.ContentLength,
                 (output, token) => DvdStreamingGenerator.GeneratePattern(target, output, options,
-                    cancellationToken: token), writeSpeed);
+                    cancellationToken: token), writeSpeed,
+                OverwriteRewritableMedia: overwriteRewritableMedia);
         }
 
         CdDiscParameters parameters = CdDiscParameters.FromCalibration(target);

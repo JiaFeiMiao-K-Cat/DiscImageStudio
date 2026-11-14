@@ -10,6 +10,10 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
     private readonly OpticalBurnOperationGate _operationGate = new();
     private const int CdDaoFallbackSpeedSectorsPerSecond = 1200;
     private const int BlankMediaState = 0x2;
+    // IMAPI_FORMAT2_DATA_MEDIA_STATE_OVERWRITE_ONLY / _RANDOMLY_WRITABLE (imapi2.h).
+    // A DVD+RW never returns to BLANK after its first format: erasing only replaces
+    // the contents, so the disc can only be written through ForceOverwrite.
+    private const int OverwriteOnlyMediaState = 0x1;
     // IMAPI_MEDIA_PHYSICAL_TYPE and IMAPI_PROFILE_TYPE (imapi2.h).
     // https://learn.microsoft.com/windows/win32/api/imapi2/ne-imapi2-imapi_media_physical_type
     // https://learn.microsoft.com/windows/win32/api/imapi2/ne-imapi2-imapi_profile_type
@@ -54,6 +58,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 // Keep the geometry extent. IMAPI's Free property already removes
                 // recording overhead; never apply the legacy 608-sector estimate again.
                 capacity = ReadDvdMediaCapacity(Convert.ToInt32(format.CurrentPhysicalMediaType),
+                    Convert.ToInt32(format.CurrentMediaStatus),
                     Convert.ToInt64(format.TotalSectorsOnMedia), Convert.ToInt64(format.FreeSectorsOnMedia));
             }
             else
@@ -151,13 +156,15 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         return new(atipSectors, physicallyBlank ? atipSectors - 2 : 0);
     }
 
-    internal static OpticalMediaCapacity ReadDvdMediaCapacity(int physicalMediaType,
+    internal static OpticalMediaCapacity ReadDvdMediaCapacity(int physicalMediaType, int mediaState,
         long totalSectorsOnMedia, long freeSectorsOnMedia)
     {
         long total = ReadDvdSectorCount(physicalMediaType, totalSectorsOnMedia);
         if (freeSectorsOnMedia < 0 || freeSectorsOnMedia > total)
             throw new IOException("光驱报告的 DVD 可写容量无效。");
-        return new(total, freeSectorsOnMedia);
+        // A formatted erasable disc is written again from LBA 0 once ForceOverwrite
+        // is set, so the free extent of its old track is not the writable payload.
+        return new(total, (mediaState & OverwriteOnlyMediaState) != 0 ? total : freeSectorsOnMedia);
     }
 
     internal static OpticalMediaCapacity ReadBluRayMediaCapacity(IMmcCommandTransport transport)
@@ -1047,6 +1054,8 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         TimeSpan operationStarted = burnTimer.Elapsed;
         int? mediaState = null;
         long? freeSectors = null;
+        long? totalSectors = null;
+        bool overwrite = false;
         long requiredSectors = request.ContentLength / 2048;
         string requestDiagnostic = "DVD 请求：RequestedSpeed=" + BurnDeviceDiagnostics.DescribeSpeed(request.WriteSpeed)
             + $"；ContentBytes={request.ContentLength}；SectorBytes=2048；RequiredSectors={requiredSectors}。";
@@ -1061,11 +1070,13 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             SetOperation("检查 DVD 介质状态和容量");
             mediaState = session.CurrentMediaStatus;
             freeSectors = session.FreeSectorsOnMedia;
+            totalSectors = session.TotalSectorsOnMedia;
+            overwrite = CanOverwriteMedia(request, mediaState.Value);
             Diagnose(DescribeCapacity);
-            ValidateDataMedia(request, mediaState.Value, freeSectors.Value);
+            ValidateDataMedia(request, mediaState.Value, freeSectors.Value, totalSectors.Value);
 
             SetOperation("设置 DVD 缓冲保护和封盘选项");
-            session.ConfigureMedia();
+            session.ConfigureMedia(overwrite);
             SetOperation("设置 DVD 刻后校验为 NONE");
             session.DisableVerification();
             SetOperation("DVD 刻后校验：已关闭（NONE）");
@@ -1137,7 +1148,9 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
 
         string DescribeCapacity()
             => $"DVD 容量：MediaState={(mediaState is int state ? $"0x{state:X8}" : "unavailable")}；"
-                + $"FreeSectors={freeSectors?.ToString() ?? "unavailable"}；RequiredSectors={requiredSectors}；"
+                + $"FreeSectors={freeSectors?.ToString() ?? "unavailable"}；"
+                + $"TotalSectors={totalSectors?.ToString() ?? "unavailable"}；"
+                + $"Overwrite={overwrite}；RequiredSectors={requiredSectors}；"
                 + $"MarginSectors={(freeSectors - requiredSectors)?.ToString() ?? "unavailable"}。";
 
         void SetOperation(string value)
@@ -1218,22 +1231,39 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             && currentProfiles.Contains(BluRaySequentialProfile);
     }
 
+    private static bool CanOverwriteMedia(OpticalBurnRequest request, int mediaState)
+        => request.MediaKind == OpticalBurnMediaKind.DvdData
+            && request.OverwriteRewritableMedia
+            && (mediaState & BlankMediaState) == 0;
+
     internal static void ValidateDataMedia(OpticalBurnRequest request, int mediaState, long freeSectors)
+        => ValidateDataMedia(request, mediaState, freeSectors, freeSectors);
+
+    internal static void ValidateDataMedia(OpticalBurnRequest request, int mediaState, long freeSectors,
+        long totalSectors)
     {
-        string mediaName = ValidateWritableDataCapacity(request.MediaKind, mediaState, freeSectors);
+        bool overwrite = CanOverwriteMedia(request, mediaState);
+        // Overwriting a formatted disc starts again at LBA 0, so the whole data area
+        // is available instead of the free tail behind the previous recording.
+        long writableSectors = overwrite ? totalSectors : freeSectors;
+        string mediaName = ValidateWritableDataCapacity(request.MediaKind, mediaState, writableSectors, overwrite);
         long requiredSectors = request.ContentLength / 2048;
-        if (freeSectors < requiredSectors)
+        if (writableSectors < requiredSectors)
         {
-            long deficit = requiredSectors - freeSectors;
+            long deficit = requiredSectors - writableSectors;
             throw new InvalidOperationException(
                 $"{mediaName} 剩余容量不足：需要 {requiredSectors:N0} 扇区（{requiredSectors / 512.0:F3} MiB），"
-                + $"实际可写 {freeSectors:N0} 扇区（{freeSectors / 512.0:F3} MiB），"
+                + $"实际可写 {writableSectors:N0} 扇区（{writableSectors / 512.0:F3} MiB），"
                 + $"超出 {deficit:N0} 扇区（{deficit / 512.0:F3} MiB）。");
         }
     }
 
     internal static string ValidateWritableDataCapacity(OpticalBurnMediaKind mediaKind,
         int mediaState, long freeSectors)
+        => ValidateWritableDataCapacity(mediaKind, mediaState, freeSectors, overwrite: false);
+
+    internal static string ValidateWritableDataCapacity(OpticalBurnMediaKind mediaKind,
+        int mediaState, long freeSectors, bool overwrite)
     {
         string mediaName = mediaKind switch
         {
@@ -1244,7 +1274,17 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         };
         if ((mediaState & BlankMediaState) == 0)
         {
-            throw new InvalidOperationException($"{mediaName} 不是空白盘，已取消刻录。");
+            if (!overwrite)
+            {
+                throw new InvalidOperationException($"{mediaName} 不是空白盘，已取消刻录。");
+            }
+
+            // ForceOverwrite only helps on erasable media that still carries a format.
+            if ((mediaState & OverwriteOnlyMediaState) == 0)
+            {
+                throw new InvalidOperationException(
+                    $"{mediaName} 不是可覆写的已格式化盘片（只有 DVD±RW 支持覆写），已取消刻录。");
+            }
         }
 
         if (freeSectors <= 0)
