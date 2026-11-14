@@ -34,8 +34,11 @@ public partial class DesignViewModel : ObservableObject
     private readonly DispatcherTimer _compositeTimer;
     private readonly DispatcherTimer _dataRegionTimer;
     private long _compositeRevision;
+    private long _previewRenderSequence;
     private long _previewRenderedRevision = -1;
     private long _exportRenderedRevision = -1;
+    private string? _lastPreviewCompositePath;
+    private string? _previousPreviewCompositePath;
     private bool _suppressLayerEvents;
     private long _dataRegionRevision;
     private bool _dataRegionRunning;
@@ -748,6 +751,17 @@ public partial class DesignViewModel : ObservableObject
         OnPropertyChanged(nameof(HasLayers));
         CanvasChanged?.Invoke();
         CompositeRendered?.Invoke(null);
+        AdoptPreviewCompositePath(null);
+    }
+
+    internal void OnWindowClosed()
+    {
+        _compositeTimer.Stop();
+        _dataRegionTimer.Stop();
+        TempFiles.TryDeleteTemporaryFile(_lastPreviewCompositePath);
+        TempFiles.TryDeleteTemporaryFile(_previousPreviewCompositePath);
+        _lastPreviewCompositePath = null;
+        _previousPreviewCompositePath = null;
     }
 
     /// <summary>Stored bottom-first; panel order is the reverse. Rebase each scale onto
@@ -799,43 +813,68 @@ public partial class DesignViewModel : ObservableObject
         return items;
     }
 
+    private static string GetFamilyCacheTag(OpticalDiscFamily family) => family switch
+    {
+        OpticalDiscFamily.Dvd => "dvd",
+        OpticalDiscFamily.BluRay => "bd",
+        _ => "cd",
+    };
+
+    private void AdoptPreviewCompositePath(string? nextPath)
+    {
+        string? expired = _previousPreviewCompositePath;
+        _previousPreviewCompositePath = _lastPreviewCompositePath;
+        _lastPreviewCompositePath = nextPath;
+        // Retain the prior composite across one publish cycle so an in-flight preview or tone
+        // worker reading it can finish or observe cancellation without hitting FileNotFoundException.
+        TempFiles.TryDeleteTemporaryFile(expired);
+    }
+
     private async Task RenderPreviewCompositeAsync()
     {
         long revision = _compositeRevision;
         List<DesignLayerRenderItem> items = BuildRenderItems();
         string? outputPath = null;
-        if (items.Count > 0)
+        bool keepOutput = false;
+        try
         {
-            try
+            if (items.Count > 0)
             {
-                outputPath = TempFiles.GetCacheFilePath(
-                    Family switch
-                    {
-                        OpticalDiscFamily.Dvd => "design-composite-dvd.png",
-                        OpticalDiscFamily.BluRay => "design-composite-bd.png",
-                        _ => "design-composite-cd.png",
-                    });
-                await StaWorker.RunAsync(() =>
+                try
                 {
-                    DesignComposer.Render(items, CanvasOuterRadiusMm, PreviewCompositeSize, outputPath);
-                    return 0;
-                });
+                    long sequence = ++_previewRenderSequence;
+                    outputPath = TempFiles.GetCacheFilePath($"design-composite-{GetFamilyCacheTag(Family)}-{sequence}.png");
+                    await StaWorker.RunAsync(() =>
+                    {
+                        DesignComposer.Render(items, CanvasOuterRadiusMm, PreviewCompositeSize, outputPath);
+                        return 0;
+                    });
+                }
+                catch (Exception exception)
+                {
+                    _shell.AppendLog(JobDiagnostics.FormatLog(L.T("设计合成失败"), exception));
+                    _shell.ShowToast(L.T("设计合成失败"), exception.Message, ToastKind.Error);
+                    return;
+                }
             }
-            catch (Exception exception)
+
+            if (revision != _compositeRevision)
             {
-                _shell.AppendLog(JobDiagnostics.FormatLog(L.T("设计合成失败"), exception));
-                _shell.ShowToast(L.T("设计合成失败"), exception.Message, ToastKind.Error);
                 return;
             }
-        }
 
-        if (revision != _compositeRevision)
+            _previewRenderedRevision = revision;
+            AdoptPreviewCompositePath(outputPath);
+            keepOutput = true;
+            CompositeRendered?.Invoke(outputPath);
+        }
+        finally
         {
-            return;
+            if (!keepOutput)
+            {
+                TempFiles.TryDeleteTemporaryFile(outputPath);
+            }
         }
-
-        _previewRenderedRevision = revision;
-        CompositeRendered?.Invoke(outputPath);
     }
 
     /// <summary>Renders (or reuses) the export-quality composite for a generation job.
@@ -853,13 +892,7 @@ public partial class DesignViewModel : ObservableObject
         }
 
         List<DesignLayerRenderItem> items = BuildRenderItems();
-        string outputPath = TempFiles.GetCacheFilePath(
-            Family switch
-            {
-                OpticalDiscFamily.Dvd => "design-composite-dvd-export.png",
-                OpticalDiscFamily.BluRay => "design-composite-bd-export.png",
-                _ => "design-composite-cd-export.png",
-            });
+        string outputPath = TempFiles.GetCacheFilePath($"design-composite-{GetFamilyCacheTag(Family)}-export.png");
         await StaWorker.RunAsync(() =>
         {
             DesignComposer.Render(items, CanvasOuterRadiusMm, RingImageQuality.GenerationSize, outputPath);

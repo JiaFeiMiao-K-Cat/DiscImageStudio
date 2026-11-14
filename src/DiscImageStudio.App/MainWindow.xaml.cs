@@ -446,6 +446,7 @@ public partial class MainWindow : Window
         _workArea.Dispose();
         _shell.Drive.OnWindowClosed();
         _shell.LivePreview.OnWindowClosed();
+        _shell.Design.OnWindowClosed();
         _shell.Calibration.OnWindowClosed();
     }
 
