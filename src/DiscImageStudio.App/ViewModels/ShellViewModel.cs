@@ -192,7 +192,18 @@ public partial class ShellViewModel : ObservableObject
     /// <summary>Title-bar text: the project name plus the unsaved dot.</summary>
     public string ProjectTitleDisplay => !IsProjectOpen
         ? string.Empty
-        : CurrentProject!.Name + (IsDirty ? " •" : string.Empty);
+        : CurrentProject!.Name + (IsDirty ? " •" : string.Empty) + WriteSafeTitleMarker;
+
+    // Shows which experimental DVD write-safe level is active. Self-contained:
+    // delete this field and its use above to drop the marker.
+    private static readonly string WriteSafeTitleMarker =
+        Environment.GetEnvironmentVariable("DISCIMAGESTUDIO_DVD_WRITE_SAFE") switch
+        {
+            "3" or "zone" => "  [WriteSafe ZONE]",
+            "2" or "strong" => "  [WriteSafe STRONG]",
+            "1" or "true" => "  [WriteSafe ON]",
+            _ => string.Empty,
+        };
 
     // The job dock's buttons rely on their commands' own CanExecute rather than a second
     // IsEnabled binding, so the enablement has to reach the commands.
