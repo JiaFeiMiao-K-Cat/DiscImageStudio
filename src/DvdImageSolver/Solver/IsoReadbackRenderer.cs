@@ -237,11 +237,27 @@ public static class IsoReadbackRenderer
         long isoSectors = new FileInfo(isoPath).Length / DvdEccBlockEncoder.PayloadBytesPerSector;
         uint sourceImageSectors = ReadSourceImageSectors(isoPath + ".json");
         if (sourceImageSectors > 0)
-            return AlignToEccBlocks(sourceImageSectors, summary.FillSectors, isoSectors, totalSectors);
+            return AlignSourceImageRange(sourceImageSectors, summary.StartLba,
+                summary.FillSectors, isoSectors, totalSectors);
 
         uint fillSectors = summary.FillSectors != 0 ? summary.FillSectors
             : checked((uint)Math.Min(isoSectors, totalSectors) - summary.StartLba);
         return AlignToEccBlocks(summary.StartLba, fillSectors, isoSectors, totalSectors);
+    }
+
+    private static (uint StartLba, uint FillSectors) AlignSourceImageRange(
+        uint sourceImageSectors, uint startLba, uint fillSectors, long isoSectors, uint totalSectors)
+    {
+        uint blockSectors = DvdEccBlockEncoder.SectorCount;
+        uint availableEnd = checked((uint)Math.Min(isoSectors, totalSectors));
+        ulong rawStart = Math.Min(Math.Max(sourceImageSectors, startLba), availableEnd);
+        ulong alignedStartValue = (rawStart + blockSectors - 1) / blockSectors * blockSectors;
+        uint alignedStart = checked((uint)Math.Min(alignedStartValue, (ulong)availableEnd));
+        ulong rawEnd = fillSectors == 0
+            ? availableEnd
+            : Math.Min((ulong)startLba + fillSectors, (ulong)availableEnd);
+        uint alignedEnd = checked((uint)(rawEnd / blockSectors * blockSectors));
+        return (alignedStart, alignedEnd > alignedStart ? alignedEnd - alignedStart : 0);
     }
 
     private static uint ReadSourceImageSectors(string sidecarPath)

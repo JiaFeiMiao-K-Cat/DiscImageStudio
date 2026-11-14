@@ -86,12 +86,23 @@ public static class DvdImageGenerator
             if (rawSource.Path.Equals(outputPath, StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException("The output must not overwrite the source ISO.", nameof(request));
         }
+        uint drawingStartLba = rawSource is { } sourceDetails
+            ? DvdStreamingGenerator.AlignRawImageStart(checked((uint)sourceDetails.SectorCount))
+            : 0;
+        if (rawSource is not null && drawingStartLba >= request.Options.OutputSectors)
+        {
+            throw new ArgumentException(
+                "The source ISO leaves no complete ECC Block for drawing.",
+                nameof(request));
+        }
+
         progress?.Report(new("dvd", "prepare", "Preparing DVD image…"));
         DvdHybridStreamingPlan? plan = hybrid ? DvdStreamingGenerator.PrepareHybrid(
             dataDirectory!, request.Options, request.VolumeLabel, request.FilesAtOuterRing) : null;
         cancellationToken.ThrowIfCancellationRequested();
         MultiBlockSolveOptions options = DvdStreamingGenerator.CreateSolveOptions(request.Options,
-            plan?.DrawingStartLba ?? 0, plan?.DrawingSectors ?? request.Options.OutputSectors);
+            plan?.DrawingStartLba ?? drawingStartLba,
+            plan?.DrawingSectors ?? checked(request.Options.OutputSectors - drawingStartLba));
         // The historical fast CLI records 64 even though this setting is not used
         // by dispersion. Keep the sidecar schema and values identical.
         options = options with
@@ -110,7 +121,8 @@ public static class DvdImageGenerator
         {
             RawIsoImage.CopyPrefixToFile(sourceImage.Path, outputPath, request.Options.OutputSectors,
                 cancellationToken);
-            UpdateRawImageMetadata(outputPath, checked((uint)sourceImage.SectorCount), request.Options.OutputSectors);
+            UpdateRawImageMetadata(outputPath, checked((uint)sourceImage.SectorCount),
+                drawingStartLba, request.Options.OutputSectors);
             cancellationToken.ThrowIfCancellationRequested();
         }
         string summary = $"DVD image completed: {result.CompletedBlocks} blocks, {result.ControlledWords} controlled words.";
@@ -123,13 +135,14 @@ public static class DvdImageGenerator
         return new DiscImageResult(outputPath, summary);
     }
 
-    private static void UpdateRawImageMetadata(string outputPath, uint sourceSectors, uint totalSectors)
+    private static void UpdateRawImageMetadata(
+        string outputPath, uint sourceSectors, uint drawingStartLba, uint totalSectors)
     {
         string metadataPath = outputPath + ".json";
         JsonObject metadata = JsonNode.Parse(File.ReadAllText(metadataPath))?.AsObject()
             ?? throw new InvalidDataException("DVD generator did not produce image metadata.");
-        metadata["startLba"] = sourceSectors;
-        metadata["fillSectors"] = totalSectors - sourceSectors;
+        metadata["startLba"] = drawingStartLba;
+        metadata["fillSectors"] = totalSectors - drawingStartLba;
         metadata["sourceImageSectors"] = sourceSectors;
         File.WriteAllText(metadataPath, metadata.ToJsonString(new JsonSerializerOptions
         {

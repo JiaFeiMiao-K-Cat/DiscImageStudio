@@ -6,7 +6,9 @@ using DiscImageStudio.BluRay;
 using DiscImageStudio.Cd;
 using DiscImageStudio.Core;
 using DiscImageStudio.Dvd;
+using DiscImageStudio.ImageIO;
 using DiscImageStudio.Iso;
+using DvdImageSolver.Solver;
 
 internal static class RawIsoSourceTests
 {
@@ -83,16 +85,37 @@ internal static class RawIsoSourceTests
     {
         string artwork = WritePng(root, "dvd-artwork.png");
         string output = Path.Combine(root, "dvd.iso");
-        DvdStreamingOptions options = new(32, 24, 58);
+        DvdStreamingOptions options = new(64, 24, 58, FastParallelism: 1);
         DvdImageGenerator.Generate(new(artwork, output, options, DataImagePath: source));
         byte[] result = File.ReadAllBytes(output);
-        Require(result.Length == 32 * RawIsoImage.LogicalSectorBytes, "DVD output has target capacity");
+        Require(result.Length == 64 * RawIsoImage.LogicalSectorBytes, "DVD output has target capacity");
         Require(result.AsSpan(0, sourceBytes.Length).SequenceEqual(sourceBytes), "DVD output retains the original ISO prefix");
+        Require(result.AsSpan(sourceBytes.Length, 8 * RawIsoImage.LogicalSectorBytes)
+            .ToArray().All(value => value == 0),
+            "DVD generation leaves the partial source ECC block untouched");
         DvdImageMetadata metadata = DvdImageMetadata.TryLoad(output)
             ?? throw new InvalidOperationException("DVD raw ISO sidecar is missing or invalid.");
-        Require(metadata.SourceImageSectors == 24 && metadata.DrawingStartLba == 24
-            && metadata.DrawingEndLbaExclusive == 32,
-            "DVD sidecar identifies the ISO prefix and remaining artwork range");
+        Require(metadata.SourceImageSectors == 24 && metadata.DrawingStartLba == 32
+            && metadata.DrawingEndLbaExclusive == 64,
+            "DVD artwork begins after the non-ECC-aligned ISO prefix");
+
+        var range = IsoReadbackRenderer.ReadDrawingRange(output, 64);
+        Require(range == (32u, 32u), "DVD readback excludes source ISO sectors and partial ECC block");
+        string preview = Path.Combine(root, "dvd-readback.png");
+        IsoReadbackSummary readback = IsoReadbackRenderer.Render(output, preview,
+            new IsoReadbackOptions(64, range.StartLba, range.FillSectors, 0x30000,
+                24, 58, 133.3, true, 128, 16));
+        Require(readback.ClassifiedSamples > 0, "DVD readback classifies generated artwork");
+        byte[] previewPixels = RasterCodec.LoadBgra32(preview).Pixels;
+        Require(Enumerable.Range(0, previewPixels.Length / 4)
+            .Any(index => previewPixels[index * 4] < 64 && previewPixels[index * 4 + 3] != 0),
+            "DVD readback visibly renders dark artwork pixels");
+
+        string insufficient = Path.Combine(root, "dvd-insufficient.iso");
+        Throws<ArgumentException>(() => DvdImageGenerator.Generate(
+            new(artwork, insufficient, new DvdStreamingOptions(32, 24, 58), DataImagePath: source)),
+            "a source ISO leaving no complete ECC block is rejected");
+        Require(!File.Exists(insufficient), "insufficient artwork space creates no output");
     }
 
     private static void VerifyBluRayGeneration(string root, string source, byte[] sourceBytes)

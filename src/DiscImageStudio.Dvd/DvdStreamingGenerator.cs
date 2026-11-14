@@ -424,6 +424,9 @@ public static class DvdStreamingGenerator
             ReadCompatibilityMode: options.ReadCompatibilityMode);
     }
 
+    internal static uint AlignRawImageStart(uint sourceSectors)
+        => AlignToEccBlock(sourceSectors, PsnOffset);
+
     private static uint AlignToEccBlock(uint lba, uint psnOffset)
     {
         uint remainder = (lba + psnOffset) & (DvdEccBlockEncoder.SectorCount - 1);
