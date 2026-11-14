@@ -35,13 +35,17 @@ internal static class MediaSectorCountTests
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadDvdSectorCount(0x9, 0));
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadDvdSectorCount(0xB, 4_171_712));
         // Neither the raw geometry nor an actual Free value receives the legacy estimate.
-        Require(WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 714546, 713936)
+        Require(WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 0x2, 714546, 713936)
             == new OpticalMediaCapacity(714546, 713936));
-        Require(WindowsImapiBurner.ReadDvdMediaCapacity(0x6, 2295104, 2295104)
+        Require(WindowsImapiBurner.ReadDvdMediaCapacity(0x6, 0x2, 2295104, 2295104)
             == new OpticalMediaCapacity(2295104, 2295104));
-        Require(WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 714546, 0).WritableSectors == 0);
-        Throws<IOException>(() => WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 714546, 714547));
-        Throws<IOException>(() => WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 714546, -1));
+        Require(WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 0x2, 714546, 0).WritableSectors == 0);
+        Throws<IOException>(() => WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 0x2, 714546, 714547));
+        Throws<IOException>(() => WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 0x2, 714546, -1));
+        // A formatted erasable disc is overwritten from LBA 0, so its old free
+        // extent no longer limits the writable payload.
+        Require(WindowsImapiBurner.ReadDvdMediaCapacity(0x7, 0x1, 2295104, 0)
+            == new OpticalMediaCapacity(2295104, 2295104));
 
         byte[] descriptor = new byte[12];
         descriptor[3] = 8;

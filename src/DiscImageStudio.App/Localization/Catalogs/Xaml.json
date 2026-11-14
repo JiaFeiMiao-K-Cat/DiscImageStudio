@@ -683,6 +683,24 @@
     "es": "He insertado el disco virgen correcto",
     "cs": "Potvrzuji, že je vložen správný prázdný disk"
   },
+  "Xaml.AllowRewritableDvdOverwrite": {
+    "zh-CN": "允许覆写已写入的 DVD±RW（整盘擦除）",
+    "en": "Allow overwriting a used DVD±RW (erases the whole disc)",
+    "zh-TW": "允許覆寫已寫入的 DVD±RW（整片抹除）",
+    "ja": "書き込み済みの DVD±RW への上書きを許可（ディスク全体を消去）",
+    "tr": "Kullanılmış bir DVD±RW'nin üzerine yazmaya izin ver (diskin tamamı silinir)",
+    "es": "Permitir sobrescribir un DVD±RW ya usado (borra todo el disco)",
+    "cs": "Povolit přepsání použitého DVD±RW (smaže celý disk)"
+  },
+  "Xaml.AllowRewritableDvdOverwriteHint": {
+    "zh-CN": "仅对已格式化或写入过的 DVD+RW／DVD-RW 生效；DVD-R 与 DVD+R 仍必须是空白盘。",
+    "en": "Applies to formatted or previously written DVD+RW/DVD-RW only; DVD-R and DVD+R must still be blank.",
+    "zh-TW": "僅對已格式化或寫入過的 DVD+RW／DVD-RW 生效；DVD-R 與 DVD+R 仍必須是空白光碟。",
+    "ja": "フォーマット済み、または書き込み済みの DVD+RW／DVD-RW にのみ適用されます。DVD-R と DVD+R は引き続き空のディスクが必要です。",
+    "tr": "Yalnızca biçimlendirilmiş veya daha önce yazılmış DVD+RW/DVD-RW için geçerlidir; DVD-R ve DVD+R hâlâ boş olmalıdır.",
+    "es": "Solo se aplica a DVD+RW/DVD-RW formateados o ya grabados; los DVD-R y DVD+R deben seguir estando vírgenes.",
+    "cs": "Platí jen pro naformátované nebo již zapsané DVD+RW/DVD-RW; DVD-R/DVD+R musí zůstat prázdné."
+  },
   "Xaml.StartStreamingBurn": {
     "zh-CN": "开始流式刻录",
     "en": "Start streaming burn",

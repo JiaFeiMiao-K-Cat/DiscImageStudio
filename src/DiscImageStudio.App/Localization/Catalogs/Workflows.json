@@ -620,6 +620,15 @@
     "es": "{0}; la grabadora determina la velocidad real.",
     "cs": "{0}; skutečnou rychlost určí vypalovačka."
   },
+  "已允许覆写 DVD±RW：非空白盘会被整盘擦除，空白盘照常写入。开始后取消或断电仍可能使盘片报废。是否继续？": {
+    "zh-CN": "已允许覆写 DVD±RW：非空白盘会被整盘擦除，空白盘照常写入。开始后取消或断电仍可能使盘片报废。是否继续？",
+    "en": "DVD±RW overwrite is enabled: a non-blank disc will be erased completely and blank discs are written as usual. Canceling or losing power after writing starts may still ruin the disc. Continue?",
+    "zh-TW": "已允許覆寫 DVD±RW：非空白光碟會被整片抹除，空白光碟照常寫入。開始後取消或斷電仍可能使光碟報廢。是否繼續？",
+    "ja": "DVD±RW の上書きを許可しました。空でないディスクは全体が消去され、空のディスクは通常どおり書き込まれます。開始後にキャンセルしたり電源が切れたりすると、ディスクが使用できなくなる可能性があります。続行しますか？",
+    "tr": "DVD±RW üzerine yazma etkin: boş olmayan disk tamamen silinir, boş diskler normal şekilde yazılır. Yazma başladıktan sonra iptal etmek veya elektriğin kesilmesi diski kullanılamaz hale getirebilir. Devam edilsin mi?",
+    "es": "Sobrescritura de DVD±RW activada: un disco no virgen se borrará por completo y los discos vírgenes se graban con normalidad. Cancelar o perder la alimentación tras comenzar la escritura puede inutilizar el disco. ¿Continuar?",
+    "cs": "Přepis DVD±RW je povolen: neprázdný disk bude zcela smazán, prázdné disky se zapíší obvyklým způsobem. Zrušení nebo výpadek napájení po začátku zápisu může disk zničit. Pokračovat?"
+  },
   "仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？": {
     "zh-CN": "仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？",
     "en": "Only blank discs are allowed. Canceling or losing power after writing starts may render the disc unusable. Continue?",
