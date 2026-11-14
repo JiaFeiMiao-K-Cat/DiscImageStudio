@@ -25,6 +25,8 @@ flowchart LR
 
 `DiscImageStudio.Cli` 和 Windows 桌面程序的命令行入口从同一份模块目录执行离线命令。GUI 导出直接构造 `CdImageRequest`、`DvdImageRequest` 或 `BluRayImageRequest` 并调用相应生成器，返回不含退出码的 `DiscImageResult`；DVD 预览直接调用类型化渲染器。内部调用通过进度对象和取消令牌协作，异常原样传至界面，命令行解析与控制台输出只在 CLI 适配边界发生。`DiscImageStudio.ImageIO` 在 Windows 桌面目标使用 WIC，在通用 `net10.0` 目标使用 StbImageSharp 读图、StbImageWriteSharp 写 PNG。两个后端都向生成器提供相同顺序的 BGRA 像素。蓝光共用透明度合成和灰度转换代码，CD 和 DVD 也分别共用各自原有的采样算法。
 
+原始 ISO 与 CUE/BIN 源处理集中在现有 `DiscImageStudio.Iso` 项目（`RawIsoImage`、`CueBinImage`），没有引入新的应用层或编码器抽象。桌面层负责选择与保存源路径，CD/DVD/BD 生成器分别规划介质布局；原始 ISO 的 2048 字节逻辑扇区从 LBA 0 原样写入，图案仅使用其后可用的完整区域。该功能目前标记为实验性：卷描述符识别不等同于完整文件系统校验，且普通 ISO 不保存实体盘的隐藏轨道、子通道及其他物理结构。具体支持范围与限制见[原始 ISO 与 CUE/BIN 源说明](RAW_ISO_SOURCES.md)。
+
 ## Core 契约
 
 `DiscImageStudio.Core` 不引用 WPF、CD、DVD 或任何具体编码器，并以 `net10.0` 为目标。

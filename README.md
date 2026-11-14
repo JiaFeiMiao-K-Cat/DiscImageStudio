@@ -73,7 +73,7 @@ Windows x64 下载以 `win-x64.exe` 结尾的文件；Windows 11 ARM64 下载以
 - **DVD 支持**：支持任何 DVD。您可导出 ISO 镜像。
 - **蓝光支持**：支持任何单层 BD-R 25 GB，支持纯绘图与 UDF 2.01 文件。详见 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。
 - **随盘文件**：CD／DVD／蓝光可在设计页直接选择要保存的文件夹及内圈／外圈位置，也可在导出页调整；设置随工程保存。
-- **原始 ISO 源**：可将有效的 2048 字节逻辑扇区 ISO 作为源数据；原始扇区从 LBA 0 原样保留，图案只使用其后的可用空间。ISO 已占满可用空间时，输出中不包含图案扇区。
+- **原始 ISO 源（实验性）**：可将受支持的 2048 字节逻辑扇区 ISO 作为源数据；原始扇区从 LBA 0 原样保留，图案只使用其后的可用空间。ISO 已占满可用空间时，输出中不包含图案扇区。详见[原始 ISO 与 CUE/BIN 源说明](docs/RAW_ISO_SOURCES.md)。
 - **CD CUE/BIN 源**：可将受支持的 BINARY CUE/BIN 轨道独立导出为重命名后的 CUE/BIN 文件组；这是单独的轨道导出路径，不与图案合并或走即时刻录。
 - **文件区域预览**：混合盘的设计投影和成品读回用蓝色标出文件区（含文件系统）。
 - **介质灰度方案**：CD 与 DVD 均使用黑白二阶，CD 使用 `0D / AA`，DVD 扰码域使用 `A5 / 92`。详见 [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md)。
