@@ -28,6 +28,7 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="MahApps.Metro.IconPacks.Lucide" Version="6.2.1" />
+    <PackageReference Include="SharpVectors.Wpf" Version="1.8.6" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DiscImageStudio.Core\DiscImageStudio.Core.csproj" />
@@ -52,18 +53,14 @@
     <EmbeddedResource Include="..\..\THIRD-PARTY-NOTICES.txt" LogicalName="DiscImageStudio.Licenses.ThirdParty" />
     <EmbeddedResource Include="Assets\Fonts\HarmonyOS-Sans-LICENSE.txt" LogicalName="DiscImageStudio.Licenses.HarmonyOS" />
   </ItemGroup>
-  <Target Name="RejectInvariantGlobalizationForWpf" BeforeTargets="PrepareForBuild"
-          Condition="'$(InvariantGlobalization)' == 'true'">
+  <Target Name="RejectInvariantGlobalizationForWpf" BeforeTargets="PrepareForBuild" Condition="'$(InvariantGlobalization)' == 'true'">
     <Error Text="DiscImageStudio.App cannot use invariant globalization because WPF font rendering requires named cultures." />
   </Target>
   <Target Name="ExcludeHostedSolverLauncherFiles" BeforeTargets="_HandleFileConflictsForPublish">
     <!-- The solver runs inside this app. RID and non-RID references can both
          publish standalone launcher files that the app never uses. -->
     <ItemGroup>
-      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
-          Condition="'%(ResolvedFileToPublish.RelativePath)' == 'DvdImageSolver.exe'
-              Or '%(ResolvedFileToPublish.RelativePath)' == 'DvdImageSolver.deps.json'
-              Or '%(ResolvedFileToPublish.RelativePath)' == 'DvdImageSolver.runtimeconfig.json'" />
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(ResolvedFileToPublish.RelativePath)' == 'DvdImageSolver.exe'&#xD;&#xA;              Or '%(ResolvedFileToPublish.RelativePath)' == 'DvdImageSolver.deps.json'&#xD;&#xA;              Or '%(ResolvedFileToPublish.RelativePath)' == 'DvdImageSolver.runtimeconfig.json'" />
     </ItemGroup>
   </Target>
 </Project>

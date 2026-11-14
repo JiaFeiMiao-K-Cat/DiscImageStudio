@@ -1,15 +1,20 @@
 using System.IO;
+using System.Security;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Xml;
+using SharpVectors.Converters;
+using SharpVectors.Dom;
+using SharpVectors.Renderers.Wpf;
 
 namespace DiscImageStudio.Services;
 
 /// <summary>One layer flattened for rendering: physical placement in millimetres relative to
-/// the disc centre plus the decoded bitmap. <paramref name="BaseWidthMm"/>/
+/// the disc centre plus the decoded image source. <paramref name="BaseWidthMm"/>/
 /// <paramref name="BaseHeightMm"/> are the layer's physical size at scale 1.</summary>
 public sealed record DesignLayerRenderItem(
-    BitmapSource Image,
+    ImageSource Image,
     double BaseWidthMm,
     double BaseHeightMm,
     double TranslateXMm,
@@ -79,11 +84,27 @@ internal static class DesignComposer
         encoder.Save(stream);
     }
 
-    /// <summary>Decodes an image frozen for cross-thread reads, capped at
-    /// <see cref="MaxDecodeWidth"/>. Any decode failure returns null; WPF reports damaged
+    /// <summary>Upper bound on imported SVG file size to guard XML parsing memory.</summary>
+    internal const long MaxSvgFileBytes = 32L * 1024 * 1024;
+
+    internal static bool IsSupportedImagePath(string path) =>
+        Path.GetExtension(path).ToLowerInvariant() is
+            ".png" or ".jpg" or ".jpeg" or ".bmp" or ".tif" or ".tiff" or ".gif" or ".svg";
+
+    internal static bool IsSvgPath(string path) =>
+        string.Equals(Path.GetExtension(path), ".svg", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Decodes an image frozen for cross-thread reads. Raster inputs are capped at
+    /// <see cref="MaxDecodeWidth"/>; SVG inputs decode to a frozen vector <see cref="DrawingImage"/>
+    /// without pre-rasterizing. Any decode failure returns null; WPF reports damaged
     /// image data as OutOfMemoryException, so that is caught on purpose.</summary>
-    public static BitmapSource? DecodeFrozenImage(string path)
+    public static ImageSource? DecodeFrozenImage(string path)
     {
+        if (IsSvgPath(path))
+        {
+            return DecodeFrozenSvg(path);
+        }
+
         try
         {
             using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -108,8 +129,13 @@ internal static class DesignComposer
 
     /// <summary>Small decode for the layer panel's list row. Kept next to the full decode so
     /// both can run on the same background thread while a project is opening.</summary>
-    public static BitmapSource? DecodeThumbnail(string path)
+    public static ImageSource? DecodeThumbnail(string path)
     {
+        if (IsSvgPath(path))
+        {
+            return DecodeFrozenSvg(path);
+        }
+
         try
         {
             using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -129,4 +155,85 @@ internal static class DesignComposer
             return null;
         }
     }
+
+    private static DrawingImage? DecodeFrozenSvg(string path)
+    {
+        try
+        {
+            using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            if (stream.Length <= 0 || stream.Length > MaxSvgFileBytes)
+            {
+                return null;
+            }
+
+            XmlReaderSettings xmlSettings = new()
+            {
+                DtdProcessing = DtdProcessing.Ignore,
+                XmlResolver = null,
+                IgnoreComments = true,
+                IgnoreProcessingInstructions = true,
+                MaxCharactersFromEntities = 1024,
+                MaxCharactersInDocument = MaxSvgFileBytes,
+            };
+
+            WpfDrawingSettings drawingSettings = new()
+            {
+                IncludeRuntime = false,
+                TextAsGeometry = true,
+                EnsureViewboxSize = true,
+                ExternalResourcesAccessMode = ExternalResourcesAccessModes.Ignore,
+                OptimizePath = true,
+            };
+
+            using XmlReader xmlReader = XmlReader.Create(stream, xmlSettings, string.Empty);
+            using FileSvgReader reader = new(drawingSettings);
+            DrawingGroup? drawing = reader.Read(xmlReader);
+            if (drawing is null)
+            {
+                return null;
+            }
+
+            Rect bounds = drawing.Bounds;
+            if (bounds.IsEmpty
+                || bounds.Width <= 0
+                || bounds.Height <= 0
+                || !double.IsFinite(bounds.Width)
+                || !double.IsFinite(bounds.Height)
+                || !HasVisibleDrawing(drawing))
+            {
+                return null;
+            }
+
+            DrawingImage image = new(drawing);
+            image.Freeze();
+            return image;
+        }
+        catch (Exception exception) when (exception is IOException
+                                              or UnauthorizedAccessException
+                                              or NotSupportedException
+                                              or OutOfMemoryException
+                                              or ArgumentException
+                                              or InvalidOperationException
+                                              or FormatException
+                                              or XmlException
+                                              or UriFormatException
+                                              or SecurityException
+                                              or DomException
+                                              || exception.GetType().FullName == "SharpVectors.Compressions.Brotli.BrotliRuntimeException")
+        {
+            return null;
+        }
+    }
+
+    // EnsureViewboxSize emits a transparent bounds spacer even when an SVG has no rendered geometry,
+    // so filter for at least one non-transparent drawing primitive before accepting the file.
+    private static bool HasVisibleDrawing(Drawing drawing) => drawing switch
+    {
+        DrawingGroup group => group.Children.Any(HasVisibleDrawing),
+        GeometryDrawing geometry =>
+            geometry.Brush is not (null or SolidColorBrush { Color.A: 0 })
+            || geometry.Pen is { Brush: not (null or SolidColorBrush { Color.A: 0 }) },
+        GlyphRunDrawing or ImageDrawing => true,
+        _ => false,
+    };
 }

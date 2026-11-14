@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -631,7 +632,7 @@ public partial class DesignViewModel : ObservableObject
     /// while opening. Distinct paths decode once, in parallel. The result belongs to the
     /// caller: keeping it off this view model means a superseded open cannot leak its images
     /// into the next project.</summary>
-    public async Task<Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)>> PreloadLayerImagesAsync(
+    public async Task<Dictionary<string, (ImageSource? Image, ImageSource? Thumbnail)>> PreloadLayerImagesAsync(
         IReadOnlyList<ProjectLayer> layers)
     {
         string[] paths = layers
@@ -646,7 +647,7 @@ public partial class DesignViewModel : ObservableObject
 
         return await Task.Run(() =>
         {
-            Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)> map =
+            Dictionary<string, (ImageSource? Image, ImageSource? Thumbnail)> map =
                 new(StringComparer.OrdinalIgnoreCase);
             object gate = new();
             Parallel.ForEach(
@@ -654,8 +655,11 @@ public partial class DesignViewModel : ObservableObject
                 new ParallelOptions { MaxDegreeOfParallelism = Math.Min(4, Environment.ProcessorCount) },
                 path =>
                 {
-                    (BitmapSource? Image, BitmapSource? Thumbnail) entry =
-                        (DesignComposer.DecodeFrozenImage(path), DesignComposer.DecodeThumbnail(path));
+                    ImageSource? image = DesignComposer.DecodeFrozenImage(path);
+                    ImageSource? thumbnail = image is DrawingImage
+                        ? image
+                        : DesignComposer.DecodeThumbnail(path);
+                    (ImageSource? Image, ImageSource? Thumbnail) entry = (image, thumbnail);
                     lock (gate)
                     {
                         map[path] = entry;
@@ -667,7 +671,7 @@ public partial class DesignViewModel : ObservableObject
 
     public void LoadLayers(
         IReadOnlyList<ProjectLayer> layers,
-        IReadOnlyDictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)>? preloadedImages = null)
+        IReadOnlyDictionary<string, (ImageSource? Image, ImageSource? Thumbnail)>? preloadedImages = null)
     {
         _suppressLayerEvents = true;
         try
@@ -689,10 +693,10 @@ public partial class DesignViewModel : ObservableObject
                     RotationDeg = layer.RotationDeg,
                     Scale = layer.Scale,
                 };
-                (BitmapSource? Image, BitmapSource? Thumbnail)? preloaded = null;
+                (ImageSource? Image, ImageSource? Thumbnail)? preloaded = null;
                 if (layer.ImagePath is { Length: > 0 } path
                     && preloadedImages is not null
-                    && preloadedImages.TryGetValue(path, out (BitmapSource? Image, BitmapSource? Thumbnail) cached))
+                    && preloadedImages.TryGetValue(path, out (ImageSource? Image, ImageSource? Thumbnail) cached))
                 {
                     preloaded = cached;
                 }

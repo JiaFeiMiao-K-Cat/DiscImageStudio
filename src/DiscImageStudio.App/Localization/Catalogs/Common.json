@@ -566,14 +566,14 @@
     "es": "Seleccionar imagen de origen",
     "cs": "Vybrat zdrojový obrázek"
   },
-  "图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|所有文件|*.*": {
-    "zh-CN": "图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|所有文件|*.*",
-    "en": "Image files|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|All files|*.*",
-    "zh-TW": "圖片檔案|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|所有檔案|*.*",
-    "ja": "画像ファイル|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|すべてのファイル|*.*",
-    "tr": "Görsel dosyaları|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|Tüm dosyalar|*.*",
-    "es": "Archivos de imagen|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|Todos los archivos|*.*",
-    "cs": "Obrázky|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|Všechny soubory|*.*"
+  "图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif;*.svg|所有文件|*.*": {
+    "zh-CN": "图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif;*.svg|所有文件|*.*",
+    "en": "Image files|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif;*.svg|All files|*.*",
+    "zh-TW": "圖片檔案|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif;*.svg|所有檔案|*.*",
+    "ja": "画像ファイル|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif;*.svg|すべてのファイル|*.*",
+    "tr": "Görsel dosyaları|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif;*.svg|Tüm dosyalar|*.*",
+    "es": "Archivos de imagen|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif;*.svg|Todos los archivos|*.*",
+    "cs": "Obrázky|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif;*.svg|Všechny soubory|*.*"
   },
   "导入图片": {
     "zh-CN": "导入图片",

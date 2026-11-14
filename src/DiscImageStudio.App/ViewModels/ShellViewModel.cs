@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -576,7 +577,7 @@ public partial class ShellViewModel : ObservableObject
         // open the only one that applies; the check below runs after the decode so those
         // edits are still seen by the unsaved-changes prompt.
         int generation = ++_openProjectGeneration;
-        Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)> preloadedImages =
+        Dictionary<string, (ImageSource? Image, ImageSource? Thumbnail)> preloadedImages =
             await Design.PreloadLayerImagesAsync(document.Layers);
         if (generation != _openProjectGeneration)
         {
@@ -609,7 +610,7 @@ public partial class ShellViewModel : ObservableObject
     private void OpenDocument(
         string path,
         ProjectDocument document,
-        IReadOnlyDictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)>? preloadedLayers = null)
+        IReadOnlyDictionary<string, (ImageSource? Image, ImageSource? Thumbnail)>? preloadedLayers = null)
     {
         _isApplyingProject = true;
         try
