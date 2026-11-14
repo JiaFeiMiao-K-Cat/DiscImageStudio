@@ -31,7 +31,11 @@ public sealed record OpticalBurnDevice(
 /// The medium's geometry extent and the current write limit are separate values.
 /// WritableSectors is a payload limit, not a replacement for geometry or filesystem free space.
 /// </summary>
-public sealed record OpticalMediaCapacity(long TotalSectors, long WritableSectors);
+public sealed record OpticalMediaCapacity(long TotalSectors, long WritableSectors)
+{
+    /// <summary>Writing this medium requires a separate erase confirmation.</summary>
+    public bool RequiresErase { get; init; }
+}
 
 public sealed record OpticalWriteSpeed(
     int SectorsPerSecond,
@@ -98,6 +102,9 @@ public sealed record OpticalBurnRequest(
     OpticalBurnBufferOptions? BufferOptions = null,
     bool OverwriteRewritableMedia = false)
 {
+    // Invoked on the burn worker immediately before modifying a nonblank rewritable DVD.
+    public Func<string, bool>? ConfirmDvdDataLoss { get; init; }
+
     public OpticalBurnBufferOptions EffectiveBufferOptions => BufferOptions
         ?? (MediaKind == OpticalBurnMediaKind.BluRayData
             ? OpticalBurnBufferOptions.BluRayDefault : OpticalBurnBufferOptions.Default);

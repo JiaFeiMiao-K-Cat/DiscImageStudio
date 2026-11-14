@@ -629,6 +629,31 @@
     "es": "Sobrescritura de DVD±RW activada: un disco no virgen se borrará por completo y los discos vírgenes se graban con normalidad. Cancelar o perder la alimentación tras comenzar la escritura puede inutilizar el disco. ¿Continuar?",
     "cs": "Přepis DVD±RW je povolen: neprázdný disk bude zcela smazán, prázdné disky se zapíší obvyklým způsobem. Zrušení nebo výpadek napájení po začátku zápisu může disk zničit. Pokračovat?"
   },
+  "擦除已有数据前会另行确认。开始后取消或断电可能使盘片报废。是否继续？": {
+    "zh-CN": "擦除已有数据前会另行确认。开始后取消或断电可能使盘片报废。是否继续？",
+    "en": "You will be asked again before existing data is erased. Canceling or losing power after recording starts may render the disc unusable. Continue?",
+    "zh-TW": "抹除現有資料前會另行確認。開始後取消或斷電可能使光碟報廢。是否繼續？"
+  },
+  "确认清除盘片数据": {
+    "zh-CN": "确认清除盘片数据",
+    "en": "Confirm loss of disc data",
+    "zh-TW": "確認清除光碟資料"
+  },
+  "光驱：{0}\n盘片：{1}\n\n": {
+    "zh-CN": "光驱：{0}\n盘片：{1}\n\n",
+    "en": "Drive: {0}\nDisc: {1}\n\n",
+    "zh-TW": "光碟機：{0}\n光碟：{1}\n\n"
+  },
+  "继续刻录将先擦除盘片，原有数据将丢失。是否继续？": {
+    "zh-CN": "继续刻录将先擦除盘片，原有数据将丢失。是否继续？",
+    "en": "The disc will be erased before recording. Existing data will be lost. Continue?",
+    "zh-TW": "繼續燒錄將先抹除光碟，原有資料將遺失。是否繼續？"
+  },
+  "擦除并刻录": {
+    "zh-CN": "擦除并刻录",
+    "en": "Erase and record",
+    "zh-TW": "抹除並燒錄"
+  },
   "仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？": {
     "zh-CN": "仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？",
     "en": "Only blank discs are allowed. Canceling or losing power after writing starts may render the disc unusable. Continue?",
@@ -1132,6 +1157,11 @@
     "tr": "Disk {0} yazma yapılandırması bildiriyor; otomatik mod en düşük değeri kullanacaktır: ",
     "es": "El disco informa de {0} configuraciones de escritura. El modo automático usa el valor más bajo: ",
     "cs": "Disk hlásí konfigurace zápisu: {0}. Automatický režim použije nejnižší hodnotu: "
+  },
+  "当前盘片未提供可选速度，将自动选择。若需擦除盘片，擦除后会重新读取速度。": {
+    "zh-CN": "当前盘片未提供可选速度，将自动选择。若需擦除盘片，擦除后会重新读取速度。",
+    "en": "Selectable speeds are unavailable. Speed will be selected automatically. If the disc needs erasing, speeds will be queried again afterward.",
+    "zh-TW": "目前光碟片未提供可選速度，將自動選擇。若需抹除光碟片，抹除後會重新讀取速度。"
   },
   "当前盘片未报告可选速度，将使用刻录接口的保守回退设置。": {
     "zh-CN": "当前盘片未报告可选速度，将使用刻录接口的保守回退设置。",
