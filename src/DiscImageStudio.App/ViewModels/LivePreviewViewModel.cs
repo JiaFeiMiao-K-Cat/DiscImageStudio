@@ -262,7 +262,10 @@ public partial class LivePreviewViewModel : ObservableObject
             CdDiscParameters parameters = dataMetadata.Parameters;
             ToneProfile dataTone = dataMetadata.Tone.Normalized();
             _state.CdSectors = parameters.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            _state.CdUsableSectors = parameters.OutputSectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            _state.CdUsableSectors = _state.ResolveAdoptedUsableSectors(
+                OpticalDiscFamily.CompactDisc, parameters.Sectors, parameters.OutputSectors,
+                dataMetadata.FilesAtOuterRing)
+                .ToString(System.Globalization.CultureInfo.InvariantCulture);
             _state.CdInnerRadius = FormatNumber(parameters.InnerRadiusMm);
             _state.CdOuterRadius = FormatNumber(parameters.OuterRadiusMm);
             _state.CdPitchLinear = FormatNumber(parameters.PitchLinear);
@@ -291,7 +294,11 @@ public partial class LivePreviewViewModel : ObservableObject
             metadata.ToneLevels,
             metadata.ToneBrightness,
             metadata.ToneSrgbLinearization).Normalized();
-        if (state.CdUsableSectors.Trim() == (metadata.UsableSectors ?? metadata.Sectors).ToString(System.Globalization.CultureInfo.InvariantCulture)
+        string adoptedUsable = state.ResolveAdoptedUsableSectors(
+            OpticalDiscFamily.CompactDisc, metadata.Sectors, metadata.UsableSectors,
+            filesAtOuterRing: false)
+            .ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (state.CdUsableSectors.Trim() == adoptedUsable
             && state.CdSectors.Trim() == sectors
             && state.CdInnerRadius.Trim() == innerRadius
             && state.CdOuterRadius.Trim() == outerRadius
@@ -308,7 +315,7 @@ public partial class LivePreviewViewModel : ObservableObject
         }
 
         state.CdSectors = sectors;
-        state.CdUsableSectors = (metadata.UsableSectors ?? metadata.Sectors).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        state.CdUsableSectors = adoptedUsable;
         state.CdInnerRadius = innerRadius;
         state.CdOuterRadius = outerRadius;
         state.CdPitchLinear = FormatNumber(metadata.PitchLinear);
@@ -345,7 +352,11 @@ public partial class LivePreviewViewModel : ObservableObject
             System.Globalization.CultureInfo.InvariantCulture);
         string innerRadius = FormatNumber(metadata.InnerRadiusMm);
         string outerRadius = FormatNumber(metadata.OuterRadiusMm);
-        if (state.DvdUsableSectors.Trim() == (metadata.UsableSectors ?? metadata.TotalSectors).ToString(System.Globalization.CultureInfo.InvariantCulture)
+        string adoptedUsable = state.ResolveAdoptedUsableSectors(
+            OpticalDiscFamily.Dvd, metadata.TotalSectors, metadata.UsableSectors,
+            metadata.FilesAtOuterRing)
+            .ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (state.DvdUsableSectors.Trim() == adoptedUsable
             && state.DvdTotalSectors.Trim() == totalSectors
             && state.DvdInnerRadius.Trim() == innerRadius
             && state.DvdOuterRadius.Trim() == outerRadius
@@ -359,7 +370,7 @@ public partial class LivePreviewViewModel : ObservableObject
         }
 
         state.DvdTotalSectors = totalSectors;
-        state.DvdUsableSectors = (metadata.UsableSectors ?? metadata.TotalSectors).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        state.DvdUsableSectors = adoptedUsable;
         state.DvdInnerRadius = innerRadius;
         state.DvdOuterRadius = outerRadius;
         state.DvdPitchLinear = FormatNumber(metadata.PitchLinear);
@@ -400,7 +411,10 @@ public partial class LivePreviewViewModel : ObservableObject
         string innerRadius = FormatNumber(metadata.InnerRadiusMm);
         string outerRadius = FormatNumber(metadata.OuterRadiusMm);
         state.BdTotalSectors = sectors;
-        state.BdUsableSectors = (metadata.UsableSectors ?? metadata.TotalSectors).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        state.BdUsableSectors = state.ResolveAdoptedUsableSectors(
+            OpticalDiscFamily.BluRay, metadata.TotalSectors, metadata.UsableSectors,
+            metadata.FilesAtOuterRing)
+            .ToString(System.Globalization.CultureInfo.InvariantCulture);
         state.BdInnerRadius = innerRadius;
         state.BdOuterRadius = outerRadius;
         state.BdPitchLinear = FormatNumber(metadata.PitchLinear);

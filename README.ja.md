@@ -15,15 +15,21 @@ Disc Image Studio は、あらゆる記録ドライブを使って、あらゆ�
 ![コントリビューション歓迎](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=flat-square)
 [![ライセンス：GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue?style=flat-square)](LICENSE)
 
+<a href="https://trendshift.io/repositories/332271?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-332271" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/332271" alt="JiaFeiMiao-K-Cat%2FDiscImageStudio | Trendshift" width="250" height="55"/></a>
+
+<a href="https://discord.gg/7nDs9H3r"><img alt="Disc Image Studio の Discord コミュニティに参加" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
+
 </div>
 
 ---
 
 ## 作例
 
-![](docs/images/case1.jpg)
-
-![](docs/images/case2.jpg)
+<p align="center">
+  <img src="docs/images/case1.jpg" alt="盤面の作例" height="300">
+  <a href="https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues/61"><img src="docs/images/case-community-61.jpg" alt="コミュニティ提供の盤面作例（Issue #61）" height="300"></a>
+  <img src="docs/images/case2.jpg" alt="盤面の作例" height="300">
+</p>
 
 ---
 
@@ -202,7 +208,7 @@ CD の共通エンコード部分については、[ECMA-130、第 2 版（CD-RO
 
 ## プライバシーとセキュリティ
 
-- Disc Image Studio はネットワークに接続せず、ファイルをアップロードせず、テレメトリも収集しません。詳しくは[プライバシーポリシー](PRIVACY.md)をご覧ください。
+- ユーザーが「バージョン情報」ページで手動で更新を確認する場合を除き、Disc Image Studio はネットワークに接続せず、ファイルをアップロードせず、テレメトリも収集しません。詳しくは[プライバシーポリシー](PRIVACY.md)をご覧ください。
 - セキュリティ上の問題を発見した場合は、公開 Issue で開示せず、[セキュリティポリシー](SECURITY.md)に従って GitHub のプライベート報告機能をご利用ください。
 
 ## コントリビューション

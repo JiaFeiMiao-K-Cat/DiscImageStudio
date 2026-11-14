@@ -39,6 +39,7 @@ public sealed record ProjectOutputs(
     bool Interleave,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool FilesAtOuterRing = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool DvdReadCompatibility = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool OuterRingBleed = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool DvdFilesInBothRings = false);
 
 /// <summary>Generation settings that exist only for BD-R: the 3T/6T mapping polarity.

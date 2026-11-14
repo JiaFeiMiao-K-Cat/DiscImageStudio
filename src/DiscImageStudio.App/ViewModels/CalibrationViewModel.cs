@@ -400,7 +400,7 @@ public partial class CalibrationViewModel : ObservableObject
                 ParameterParser.ParseDouble(_state.DvdPitchQuadratic, L.T("DVD 相对二次项")),
                 ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("DVD 相对三次项")),
                 DvdReadCompatibility: _state.DvdReadCompatibility,
-                UsableSectors: split is uint layer0 ? layer0 : _state.GetUsableSectors(OpticalDiscFamily.Dvd),
+                UsableSectors: split is uint layer0 ? layer0 : _state.GetUsableSectors(OpticalDiscFamily.Dvd, applyOuterRingBleed: false),
                 DrawingStartSector: split.HasValue ? DvdImageGenerator.DualLayerCalibrationStartLba : 0,
                 DrawingEndSectorExclusive: split ?? 0, DvdLayerBreakLba: split, DvdMinusRTotalSectors: minusTotal),
             "BD" => CreateBluRayParameters(),
@@ -410,7 +410,7 @@ public partial class CalibrationViewModel : ObservableObject
                 ParameterParser.ParseDouble(_state.CdPitchLinear, L.T("相对一次项")),
                 ParameterParser.ParseDouble(_state.CdPitchQuadratic, L.T("相对二次项")),
                 ParameterParser.ParseDouble(_state.CdPitchCubic, L.T("相对三次项")),
-                UsableSectors: _state.GetUsableSectors(OpticalDiscFamily.CompactDisc)),
+                UsableSectors: _state.GetUsableSectors(OpticalDiscFamily.CompactDisc, applyOuterRingBleed: false)),
             _ => throw new ArgumentException(L.T("CalibrationSetup.ChooseFamily")),
         };
         ValidateOutputParameters(p);
@@ -456,7 +456,7 @@ public partial class CalibrationViewModel : ObservableObject
             PitchLinear: ParameterParser.ParseDouble(_state.BdPitchLinear, L.T("相对一次项")),
             PitchQuadratic: ParameterParser.ParseDouble(_state.BdPitchQuadratic, L.T("相对二次项")),
             PitchCubic: ParameterParser.ParseDouble(_state.BdPitchCubic, L.T("相对三次项")),
-            UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.BluRay)));
+            UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.BluRay, applyOuterRingBleed: false)));
         disc.Validate();
         return new CalibrationParameters(
             CalibrationDiscKind.BluRay,

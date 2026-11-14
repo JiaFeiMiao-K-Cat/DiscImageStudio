@@ -15,6 +15,10 @@ Disc Image Studio je multiplatformní nástroj pro generování a vypalování 
 ![Příspěvky vítány](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=flat-square)
 [![Licence: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue?style=flat-square)](LICENSE)
 
+<a href="https://trendshift.io/repositories/332271?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-332271" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/332271" alt="JiaFeiMiao-K-Cat%2FDiscImageStudio | Trendshift" width="250" height="55"/></a>
+
+<a href="https://discord.gg/7nDs9H3r"><img alt="Připojte se ke komunitě Disc Image Studio na Discordu" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
+
 </div>
 
 > Český překlad README · [Originál](README.en.md). Podrobná dokumentace je dostupná v původních jazycích.
@@ -23,9 +27,11 @@ Disc Image Studio je multiplatformní nástroj pro generování a vypalování 
 
 ## Výsledky
 
-![](docs/images/case1.jpg)
-
-![](docs/images/case2.jpg)
+<p align="center">
+  <img src="docs/images/case1.jpg" alt="Ukázka potisku disku" height="300">
+  <a href="https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues/61"><img src="docs/images/case-community-61.jpg" alt="Ukázka potisku disku od komunity (Issue #61)" height="300"></a>
+  <img src="docs/images/case2.jpg" alt="Ukázka potisku disku" height="300">
+</p>
 
 ---
 
@@ -203,7 +209,7 @@ Společné komponenty kódování CD také vycházejí z [ECMA-130, 2. vydání
 
 ## Soukromí a bezpečnost
 
-- Disc Image Studio nepřistupuje k síti, nenahrává soubory ani neshromažďuje telemetrii. Viz [zásady ochrany soukromí](PRIVACY.md).
+- Kromě ruční kontroly aktualizací na stránce O aplikaci Disc Image Studio nepřistupuje k síti, nenahrává soubory ani neshromažďuje telemetrii. Viz [zásady ochrany soukromí](PRIVACY.md).
 - Bezpečnostní problémy nezveřejňujte ve veřejných issue. Postupujte podle [bezpečnostních zásad](SECURITY.md) a použijte soukromé hlášení na GitHubu.
 
 ## Přispívání

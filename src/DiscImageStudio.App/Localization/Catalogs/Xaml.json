@@ -251,6 +251,15 @@
     "es": "GitHub",
     "cs": "GitHub"
   },
+  "Xaml.CheckForUpdates": {
+    "zh-CN": "检查更新",
+    "en": "Check for updates",
+    "zh-TW": "檢查更新",
+    "ja": "アップデートを確認",
+    "tr": "Güncellemeleri denetle",
+    "es": "Buscar actualizaciones",
+    "cs": "Zkontrolovat aktualizace"
+  },
   "Xaml.OpenSourceComponents": {
     "zh-CN": "开源组件",
     "en": "Open-source components",
@@ -674,6 +683,24 @@
     "es": "He insertado el disco virgen correcto",
     "cs": "Potvrzuji, že je vložen správný prázdný disk"
   },
+  "Xaml.AllowRewritableDvdOverwrite": {
+    "zh-CN": "允许覆写已写入的 DVD±RW（整盘擦除）",
+    "en": "Allow overwriting a used DVD±RW (erases the whole disc)",
+    "zh-TW": "允許覆寫已寫入的 DVD±RW（整片抹除）",
+    "ja": "書き込み済みの DVD±RW への上書きを許可（ディスク全体を消去）",
+    "tr": "Kullanılmış bir DVD±RW'nin üzerine yazmaya izin ver (diskin tamamı silinir)",
+    "es": "Permitir sobrescribir un DVD±RW ya usado (borra todo el disco)",
+    "cs": "Povolit přepsání použitého DVD±RW (smaže celý disk)"
+  },
+  "Xaml.AllowRewritableDvdOverwriteHint": {
+    "zh-CN": "仅对已格式化或写入过的 DVD+RW／DVD-RW 生效；DVD-R 与 DVD+R 仍必须是空白盘。",
+    "en": "Applies to formatted or previously written DVD+RW/DVD-RW only; DVD-R and DVD+R must still be blank.",
+    "zh-TW": "僅對已格式化或寫入過的 DVD+RW／DVD-RW 生效；DVD-R 與 DVD+R 仍必須是空白光碟。",
+    "ja": "フォーマット済み、または書き込み済みの DVD+RW／DVD-RW にのみ適用されます。DVD-R と DVD+R は引き続き空のディスクが必要です。",
+    "tr": "Yalnızca biçimlendirilmiş veya daha önce yazılmış DVD+RW/DVD-RW için geçerlidir; DVD-R ve DVD+R hâlâ boş olmalıdır.",
+    "es": "Solo se aplica a DVD+RW/DVD-RW formateados o ya grabados; los DVD-R y DVD+R deben seguir estando vírgenes.",
+    "cs": "Platí jen pro naformátované nebo již zapsané DVD+RW/DVD-RW; DVD-R/DVD+R musí zůstat prázdné."
+  },
   "Xaml.StartStreamingBurn": {
     "zh-CN": "开始流式刻录",
     "en": "Start streaming burn",
@@ -790,15 +817,6 @@
     "tr": "Kalibrasyon",
     "es": "Calibrar",
     "cs": "Kalibrace"
-  },
-  "Xaml.CollapseSidebar": {
-    "zh-CN": "收起侧边栏",
-    "en": "Collapse sidebar",
-    "zh-TW": "收起側邊欄",
-    "ja": "サイドバーを折りたたむ",
-    "tr": "Kenar çubuğunu daralt",
-    "es": "Contraer barra lateral",
-    "cs": "Sbalit postranní panel"
   },
   "Xaml.ExportTheDesignCompositeAsABurnableImageAdjust": {
     "zh-CN": "导出设计页的合成图为可刻录的镜像。相关参数请在“工程设置”中修改",
@@ -1817,6 +1835,24 @@
     "tr": "Dış halka",
     "es": "Zona exterior",
     "cs": "Vnější prstenec"
+  },
+  "Xaml.OuterRingBleed": {
+    "zh-CN": "外缘出血",
+    "en": "Outer-edge bleed",
+    "zh-TW": "外緣出血",
+    "ja": "外縁マージン",
+    "tr": "Dış kenar payı",
+    "es": "Margen exterior",
+    "cs": "Vnější rezerva"
+  },
+  "Xaml.OuterRingBleedHint": {
+    "zh-CN": "将外圈数据区的末尾内移到介质标准容量的约 95%，避开刻录质量较差的最外缘。仅在外圈放置文件时生效。",
+    "en": "Moves the end of the outer-ring data area inward to about 95% of the medium's standard capacity, avoiding the poorer-quality outermost edge. Applies only when files are placed in the outer ring.",
+    "zh-TW": "將外圈資料區的末尾內移到介質標準容量的約 95%，避開燒錄品質較差的最外緣。僅在外圈放置檔案時生效。",
+    "ja": "外周データ領域の終端をメディア標準容量の約95%まで内側に移動し、記録品質が低下する最外周を避けます。外周にファイルを配置した場合のみ有効です。",
+    "tr": "Dış halka veri alanının sonunu, ortamın standart kapasitesinin yaklaşık %95'ine kadar içe taşır; böylece kayıt kalitesi düşük en dış kenar boş bırakılır. Yalnızca dosyalar dış halkaya yerleştirildiğinde geçerlidir.",
+    "es": "Mueve el final del área de datos del anillo exterior hacia dentro, hasta aproximadamente el 95 % de la capacidad estándar del medio, evitando el borde exterior de menor calidad de grabación. Solo se aplica cuando los archivos se colocan en el anillo exterior.",
+    "cs": "Konec datové oblasti vnějšího prstence se posune dovnitř na přibližně 95 % standardní kapacity média. Nejkrajnější okraj má horší kvalitu záznamu, proto zůstane nevyužitý. Platí pouze pro soubory umístěné ve vnějším prstenci."
   },
   "Xaml.UsesAnAudioTrackWithoutFilesSwitchesToA": {
     "zh-CN": "不附文件时使用音轨；附文件时自动使用数据盘。",

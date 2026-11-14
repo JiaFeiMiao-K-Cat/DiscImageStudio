@@ -74,6 +74,18 @@ if (args is ["--test-data-region"])
     return;
 }
 
+if (args is ["--test-hybrid-parity"])
+{
+    HybridDrawingParityTests.Run();
+    return;
+}
+
+if (args is ["--test-outer-ring-bleed"])
+{
+    OuterRingBleedTests.Run();
+    return;
+}
+
 if (args is ["--benchmark-cd-pitch"])
 {
     CdCubicPitchTests.Benchmark();
@@ -159,6 +171,7 @@ BurnStreamDiagnosticsTests.Run();
 BurnProgressDisplayTests.Run();
 OpticalBurnOperationGateTests.Run();
 MediaSectorCountTests.Run();
+OpticalDriveProbeTests.Run();
 BluRaySequentialBurnTests.Run();
 BluRayFlushDiagnosticsTests.Run();
 BluRaySequentialWriterTests.Run();
@@ -176,6 +189,7 @@ CalibrationConfirmedFitTests.Run();
 ProjectStoreTests.Run();
 ProjectSessionTests.Run();
 FilePlacementProjectTests.Run();
+OuterRingBleedTests.Run();
 FilePlacementPreviewTests.Run();
 DesignComposerTests.Run();
 CdAudioCompatibilityTests.Run();
@@ -184,6 +198,7 @@ CdDataImageTests.Run();
 VolumeLabelTests.Run();
 CdParallelDataTests.Run();
 CdDataBurnTests.Run();
+DvdRewritableOverwriteTests.Run();
 CdDataDaoWorkflowTests.Run();
 CdMode1SectorTests.Run();
 CdDataSubchannelPatchTests.Run();
@@ -208,6 +223,7 @@ TonePreviewTests.Run();
 SaveTrailTests.Run();
 DvdCubicPipelineTests.Run();
 DvdFilePlacementTests.Run();
+HybridDrawingParityTests.Run();
 DvdSimdSamplingTests.Run();
 DvdStableRegionTests.Run();
 DvdSampleReuseTests.Run();
@@ -256,6 +272,7 @@ DesignDataRegionTests.Run();
 LocalizationTests.Run();
 ThemePaletteTests.Run();
 TempFilesCacheTests.Run();
+UpdateTests.Run();
 RelocalizationTests.Run();
 CalibrationReturnButtonTests.Run();
 BurnWriteSpeedSelectionTests.Run();

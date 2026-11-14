@@ -15,15 +15,21 @@ Disc Image Studio 是一个多平台的光盘盘面图像生成与刻录工具�
 ![贡献欢迎](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=flat-square)
 [![许可证：GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue?style=flat-square)](LICENSE)
 
+<a href="https://trendshift.io/repositories/332271?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-332271" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/332271" alt="JiaFeiMiao-K-Cat%2FDiscImageStudio | Trendshift" width="250" height="55"/></a>
+
+<a href="https://discord.gg/7nDs9H3r"><img alt="加入 Disc Image Studio 的 Discord 社区" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
+
 </div>
 
 ---
 
 ## 效果预览
 
-![](docs/images/case1.jpg)
-
-![](docs/images/case2.jpg)
+<p align="center">
+  <img src="docs/images/case1.jpg" alt="盘面效果示例" height="300">
+  <a href="https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues/61"><img src="docs/images/case-community-61.jpg" alt="社区提供的盘面效果示例（Issue #61）" height="300"></a>
+  <img src="docs/images/case2.jpg" alt="盘面效果示例" height="300">
+</p>
 
 ---
 
@@ -203,7 +209,7 @@ CD 公共编码部分还参考了 [ECMA-130，第 2 版（CD-ROM，1996）](http
 
 ## 隐私与安全
 
-- Disc Image Studio 不联网、不上传文件、不收集遥测，详见[隐私政策](PRIVACY.md)。
+- Disc Image Studio 除您在关于页手动检查更新时访问 GitHub Releases 外，不联网、不上传文件、不收集遥测，详见[隐私政策](PRIVACY.md)。
 - 发现安全问题请不要在公开 Issue 中披露，按[安全政策](SECURITY.md)使用 GitHub 私密报告。
 
 ## 贡献

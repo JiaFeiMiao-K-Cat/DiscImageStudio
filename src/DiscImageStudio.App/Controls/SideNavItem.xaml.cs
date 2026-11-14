@@ -22,10 +22,6 @@ public partial class SideNavItem : UserControl
         nameof(IsActive), typeof(bool), typeof(SideNavItem),
         new PropertyMetadata(false, static (sender, _) => ((SideNavItem)sender).UpdateVisual()));
 
-    public static readonly DependencyProperty IsCollapsedProperty = DependencyProperty.Register(
-        nameof(IsCollapsed), typeof(bool), typeof(SideNavItem),
-        new PropertyMetadata(false, static (sender, _) => ((SideNavItem)sender).UpdateVisual()));
-
     public static readonly DependencyProperty IndentProperty = DependencyProperty.Register(
         nameof(Indent), typeof(double), typeof(SideNavItem),
         new PropertyMetadata(0.0, static (sender, _) => ((SideNavItem)sender).UpdateVisual(animate: false)));
@@ -73,12 +69,6 @@ public partial class SideNavItem : UserControl
         set => SetValue(IsActiveProperty, value);
     }
 
-    public bool IsCollapsed
-    {
-        get => (bool)GetValue(IsCollapsedProperty);
-        set => SetValue(IsCollapsedProperty, value);
-    }
-
     /// Extra left inset for nested entries; the label margin becomes 12 + Indent.
     public double Indent
     {
@@ -101,9 +91,6 @@ public partial class SideNavItem : UserControl
     public SideNavItem()
     {
         InitializeComponent();
-        // The ToolTip lives in its own popup visual tree, so FindAncestor back to this
-        // UserControl cannot resolve there; hand it this item as its DataContext instead.
-        NavToolTip.DataContext = this;
         _activeTextColor = ThemeValues.Color("TextPrimaryColor", Color.FromRgb(0xFA, 0xFA, 0xFA));
         _idleTextColor = ThemeValues.Color("TextSecondaryColor", Color.FromRgb(0xA1, 0xA1, 0xAA));
         _activeBackgroundColor = ThemeValues.Color("Surface2Color", Color.FromRgb(0x26, 0x26, 0x2B));
@@ -172,19 +159,8 @@ public partial class SideNavItem : UserControl
         }
 
         Icon.Visibility = iconKind is not null ? Visibility.Visible : Visibility.Collapsed;
-        LabelTextBlock.Visibility = iconKind is null || !IsCollapsed ? Visibility.Visible : Visibility.Collapsed;
-        NavToolTip.Visibility = IsCollapsed && iconKind is not null ? Visibility.Visible : Visibility.Collapsed;
-
-        if (IsCollapsed)
-        {
-            ItemContent.Margin = new Thickness(0);
-            ItemContent.HorizontalAlignment = HorizontalAlignment.Center;
-        }
-        else
-        {
-            ItemContent.Margin = new Thickness(12 + Indent, 0, 12, 0);
-            ItemContent.HorizontalAlignment = HorizontalAlignment.Left;
-        }
+        ItemContent.Margin = new Thickness(12 + Indent, 0, 12, 0);
+        ItemContent.HorizontalAlignment = HorizontalAlignment.Left;
     }
 
     private void AnimateBrush(SolidColorBrush brush, Color target, ref Color? playingTarget, bool animate)

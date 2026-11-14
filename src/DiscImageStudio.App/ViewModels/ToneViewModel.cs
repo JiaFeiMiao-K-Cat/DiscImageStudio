@@ -157,6 +157,7 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.BdDataDirectory)
             or nameof(DiscParametersState.BdVolumeLabel)
             or nameof(DiscParametersState.BdFilesAtOuterRing)
+            or nameof(DiscParametersState.BdOuterRingBleed)
             or nameof(DiscParametersState.CdInnerRadius)
             or nameof(DiscParametersState.CdOuterRadius)
             or nameof(DiscParametersState.CdUsableSectors)
@@ -167,6 +168,7 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.CdDataDirectory)
             or nameof(DiscParametersState.CdVolumeLabel)
             or nameof(DiscParametersState.CdFilesAtOuterRing)
+            or nameof(DiscParametersState.CdOuterRingBleed)
             or nameof(DiscParametersState.DvdInnerRadius)
             or nameof(DiscParametersState.DvdOuterRadius)
             or nameof(DiscParametersState.DvdUsableSectors)
@@ -177,6 +179,7 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.DvdDataDirectory)
             or nameof(DiscParametersState.DvdVolumeLabel)
             or nameof(DiscParametersState.DvdFilesAtOuterRing)
+            or nameof(DiscParametersState.DvdOuterRingBleed)
             or nameof(DiscParametersState.DvdFilesInBothRings))
         {
             ScheduleTonePreview();

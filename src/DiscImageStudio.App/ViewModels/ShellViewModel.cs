@@ -40,7 +40,8 @@ public partial class ShellViewModel : ObservableObject
     {
     }
 
-    internal ShellViewModel(Dispatcher dispatcher, IOpticalDiscBurner opticalDiscBurner)
+    internal ShellViewModel(Dispatcher dispatcher, IOpticalDiscBurner opticalDiscBurner,
+        IOpticalDriveProbe? driveProbe = null)
     {
         _dispatcher = dispatcher;
         OpticalBurner = opticalDiscBurner;
@@ -57,6 +58,7 @@ public partial class ShellViewModel : ObservableObject
         Calibration = new CalibrationViewModel(this, calibrationState);
         Burn = new BurnViewModel(this, State, Design, opticalDiscBurner);
         CalibrationBurn = new BurnViewModel(this, calibrationState, Design, opticalDiscBurner, useCalibrationPattern: true);
+        Drive = new OpticalDriveViewModel(this, _dispatcher, driveProbe ?? new ImapiOpticalDriveProbe());
         Export = new ExportViewModel(this, State, Design, opticalDiscBurner);
         Design.ConnectDvdLayerPreview(Export);
         Design.CompositeRendered += Design_CompositeRendered;
@@ -98,6 +100,9 @@ public partial class ShellViewModel : ObservableObject
 
     public BurnViewModel CalibrationBurn { get; }
     public CalibrationViewModel Calibration { get; }
+
+    /// <summary>Sidebar drive card: read-only drive and media information.</summary>
+    public OpticalDriveViewModel Drive { get; }
 
     public ObservableCollection<ToastItem> Toasts { get; } = [];
 
@@ -411,6 +416,7 @@ public partial class ShellViewModel : ObservableObject
         Design.Relocalize();
         Burn.Relocalize();
         CalibrationBurn.Relocalize();
+        Drive.Relocalize();
         Export.Relocalize();
         Calibration.Relocalize();
     }
@@ -865,6 +871,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.CdInterleave),
         nameof(DiscParametersState.CdDataDirectory),
         nameof(DiscParametersState.CdFilesAtOuterRing),
+        nameof(DiscParametersState.CdOuterRingBleed),
         nameof(DiscParametersState.CdVolumeLabel),
         nameof(DiscParametersState.DvdInnerRadius),
         nameof(DiscParametersState.DvdOuterRadius),
@@ -877,6 +884,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.DvdOutputPath),
         nameof(DiscParametersState.DvdDataDirectory),
         nameof(DiscParametersState.DvdFilesAtOuterRing),
+        nameof(DiscParametersState.DvdOuterRingBleed),
         nameof(DiscParametersState.DvdFilesInBothRings),
         nameof(DiscParametersState.DvdReadCompatibility),
         nameof(DiscParametersState.DvdVolumeLabel),
@@ -891,6 +899,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.BdOutputPath),
         nameof(DiscParametersState.BdDataDirectory),
         nameof(DiscParametersState.BdFilesAtOuterRing),
+        nameof(DiscParametersState.BdOuterRingBleed),
         nameof(DiscParametersState.BdVolumeLabel),
         nameof(DiscParametersState.BdInvertMapping),
         nameof(DiscParametersState.ToneDitherStrength),
@@ -950,6 +959,9 @@ public partial class ShellViewModel : ObservableObject
             or nameof(DiscParametersState.CdSectors) or nameof(DiscParametersState.CdUsableSectors)
             or nameof(DiscParametersState.DvdTotalSectors) or nameof(DiscParametersState.DvdUsableSectors)
             or nameof(DiscParametersState.BdTotalSectors) or nameof(DiscParametersState.BdUsableSectors)
+            or nameof(DiscParametersState.CdOuterRingBleed)
+            or nameof(DiscParametersState.DvdOuterRingBleed)
+            or nameof(DiscParametersState.BdOuterRingBleed)
             or nameof(DiscParametersState.CdPitchLinear) or nameof(DiscParametersState.CdPitchQuadratic) or nameof(DiscParametersState.CdPitchCubic)
             or nameof(DiscParametersState.DvdPitchLinear) or nameof(DiscParametersState.DvdPitchQuadratic) or nameof(DiscParametersState.DvdPitchCubic)
             or nameof(DiscParametersState.BdPitchLinear) or nameof(DiscParametersState.BdPitchQuadratic) or nameof(DiscParametersState.BdPitchCubic))

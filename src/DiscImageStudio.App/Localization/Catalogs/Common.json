@@ -764,24 +764,6 @@
     "es": "Se usará la carpeta de caché predeterminada.",
     "cs": "Používá se výchozí složka mezipaměti."
   },
-  "展开侧边栏": {
-    "zh-CN": "展开侧边栏",
-    "en": "Expand sidebar",
-    "zh-TW": "展開側邊欄",
-    "ja": "サイドバーを展開",
-    "tr": "Kenar çubuğunu genişlet",
-    "es": "Expandir barra lateral",
-    "cs": "Rozbalit postranní panel"
-  },
-  "收起侧边栏": {
-    "zh-CN": "收起侧边栏",
-    "en": "Collapse sidebar",
-    "zh-TW": "收起側邊欄",
-    "ja": "サイドバーを折りたたむ",
-    "tr": "Kenar çubuğunu daralt",
-    "es": "Contraer barra lateral",
-    "cs": "Sbalit postranní panel"
-  },
   "切换预设": {
     "zh-CN": "切换预设",
     "en": "Switch preset",

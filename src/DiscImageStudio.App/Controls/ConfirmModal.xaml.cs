@@ -47,6 +47,27 @@ public partial class ConfirmModal : UserControl
         return _pending.Task;
     }
 
+    /// <summary>Two-button confirmation for a constructive action that is not destructive,
+    /// such as downloading an application update.</summary>
+    public Task<bool> ShowPrimaryAsync(string title, string message, string confirmLabel)
+    {
+        if (_pending is not null || _pendingThreeWay is not null)
+        {
+            throw new InvalidOperationException("A confirmation is already pending.");
+        }
+
+        TitleText.Text = title;
+        MessageText.Text = message;
+        HeaderIcon.Kind = PackIconLucideKind.FileDown;
+        HeaderIcon.Foreground = (System.Windows.Media.Brush)FindResource("TextSecondaryBrush");
+        ConfirmButton.Content = confirmLabel;
+        ConfirmButton.Style = (Style)FindResource("PrimaryButton");
+        NeutralButton.Visibility = Visibility.Collapsed;
+        Root.Visibility = Visibility.Visible;
+        _pending = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        return _pending.Task;
+    }
+
     /// <summary>PR-style save dialog: confirm saves (true), the neutral button discards
     /// (false), cancel leaves the choice open (null).</summary>
     public Task<bool?> ShowThreeWayAsync(string title, string message, string confirmLabel, string neutralLabel)
@@ -81,6 +102,10 @@ public partial class ConfirmModal : UserControl
         pending?.TrySetResult(confirmed ?? false);
         threeWay?.TrySetResult(confirmed);
     }
+
+    /// Resolves an outstanding confirmation as refusal. The host window calls this when it
+    /// closes so an awaiting command can finish instead of leaking a pending task.
+    internal void CancelPending() => Complete(confirmed: null);
 
     /// Lets the host window route Escape to the open modal; returns false when hidden.
     /// Escape refuses the burn confirm and cancels the save dialog alike.

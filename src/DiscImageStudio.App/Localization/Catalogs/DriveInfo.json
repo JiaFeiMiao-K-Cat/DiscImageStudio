@@ -1,0 +1,272 @@
+{
+  "DriveInfo.Empty": {
+    "zh-CN": "未插入光盘",
+    "en": "No disc",
+    "zh-TW": "未插入光碟",
+    "ja": "ディスクなし",
+    "tr": "Disk yok",
+    "es": "Sin disco",
+    "cs": "Žádný disk"
+  },
+  "DriveInfo.StateBlank": {
+    "zh-CN": "空白",
+    "en": "Blank",
+    "zh-TW": "空白",
+    "ja": "ブランク",
+    "tr": "Boş",
+    "es": "En blanco",
+    "cs": "Prázdný"
+  },
+  "DriveInfo.StateIncomplete": {
+    "zh-CN": "未封闭",
+    "en": "Open",
+    "zh-TW": "未封閉",
+    "ja": "追記可能",
+    "tr": "Açık",
+    "es": "Abierto",
+    "cs": "Otevřený"
+  },
+  "DriveInfo.StateComplete": {
+    "zh-CN": "已封闭",
+    "en": "Closed",
+    "zh-TW": "已封閉",
+    "ja": "クローズ済み",
+    "tr": "Kapalı",
+    "es": "Cerrado",
+    "cs": "Uzavřený"
+  },
+  "DriveInfo.StateOther": {
+    "zh-CN": "其他",
+    "en": "Other",
+    "zh-TW": "其他",
+    "ja": "その他",
+    "tr": "Diğer",
+    "es": "Otro",
+    "cs": "Jiný"
+  },
+  "DriveInfo.Sectors": {
+    "zh-CN": "扇区",
+    "en": "Sectors",
+    "zh-TW": "磁區",
+    "ja": "セクター",
+    "tr": "Sektör",
+    "es": "Sectores",
+    "cs": "Sektory"
+  },
+  "DriveInfo.UsableSectors": {
+    "zh-CN": "可用扇区",
+    "en": "Usable sectors",
+    "zh-TW": "可用磁區",
+    "ja": "使用可能セクター",
+    "tr": "Kullanılabilir sektör",
+    "es": "Sectores utilizables",
+    "cs": "Použitelné sektory"
+  },
+  "DriveInfo.DetailsTitle": {
+    "zh-CN": "光驱信息",
+    "en": "Drive information",
+    "zh-TW": "光碟機資訊",
+    "ja": "ドライブ情報",
+    "tr": "Sürücü bilgileri",
+    "es": "Información de la unidad",
+    "cs": "Informace o\u00A0jednotce"
+  },
+  "DriveInfo.DetailsHint": {
+    "zh-CN": "查看光驱与光盘详情",
+    "en": "Show drive and disc details",
+    "zh-TW": "檢視光碟機與光碟詳情",
+    "ja": "ドライブとディスクの詳細を表示",
+    "tr": "Sürücü ve disk ayrıntılarını göster",
+    "es": "Mostrar detalles de la unidad y el disco",
+    "cs": "Zobrazit podrobnosti jednotky a\u00A0disku"
+  },
+  "DriveInfo.Drive": {
+    "zh-CN": "光驱",
+    "en": "Drive",
+    "zh-TW": "光碟機",
+    "ja": "ドライブ",
+    "tr": "Sürücü",
+    "es": "Unidad",
+    "cs": "Jednotka"
+  },
+  "DriveInfo.Model": {
+    "zh-CN": "型号",
+    "en": "Model",
+    "zh-TW": "型號",
+    "ja": "型番",
+    "tr": "Model",
+    "es": "Modelo",
+    "cs": "Model"
+  },
+  "DriveInfo.Firmware": {
+    "zh-CN": "固件",
+    "en": "Firmware",
+    "zh-TW": "韌體",
+    "ja": "ファームウェア",
+    "tr": "Ürün yazılımı",
+    "es": "Firmware",
+    "cs": "Firmware"
+  },
+  "DriveInfo.VolumePaths": {
+    "zh-CN": "盘符",
+    "en": "Drive letters",
+    "zh-TW": "磁碟機代號",
+    "ja": "ドライブ文字",
+    "tr": "Sürücü harfleri",
+    "es": "Letras de unidad",
+    "cs": "Písmena jednotky"
+  },
+  "DriveInfo.Profile": {
+    "zh-CN": "介质类型",
+    "en": "Media type",
+    "zh-TW": "媒體類型",
+    "ja": "メディア種別",
+    "tr": "Ortam türü",
+    "es": "Tipo de medio",
+    "cs": "Typ média"
+  },
+  "DriveInfo.State": {
+    "zh-CN": "状态",
+    "en": "State",
+    "zh-TW": "狀態",
+    "ja": "状態",
+    "tr": "Durum",
+    "es": "Estado",
+    "cs": "Stav"
+  },
+  "DriveInfo.Sessions": {
+    "zh-CN": "会话",
+    "en": "Sessions",
+    "zh-TW": "工作階段",
+    "ja": "セッション",
+    "tr": "Oturumlar",
+    "es": "Sesiones",
+    "cs": "Relace"
+  },
+  "DriveInfo.MediaId": {
+    "zh-CN": "媒体 ID",
+    "en": "Media ID",
+    "zh-TW": "媒體 ID",
+    "ja": "メディア ID",
+    "tr": "Ortam kimliği",
+    "es": "ID del medio",
+    "cs": "ID média"
+  },
+  "DriveInfo.Manufacturer": {
+    "zh-CN": "制造商",
+    "en": "Manufacturer",
+    "zh-TW": "製造商",
+    "ja": "製造元",
+    "tr": "Üretici",
+    "es": "Fabricante",
+    "cs": "Výrobce"
+  },
+  "DriveInfo.AtipLeadIn": {
+    "zh-CN": "ATIP 引入",
+    "en": "ATIP lead-in",
+    "zh-TW": "ATIP 引入",
+    "ja": "ATIP リードイン",
+    "tr": "ATIP lead-in",
+    "es": "Lead-in de ATIP",
+    "cs": "ATIP úvod"
+  },
+  "DriveInfo.AtipLeadOut": {
+    "zh-CN": "ATIP 引出",
+    "en": "ATIP lead-out",
+    "zh-TW": "ATIP 引出",
+    "ja": "ATIP リードアウト",
+    "tr": "ATIP lead-out",
+    "es": "Lead-out de ATIP",
+    "cs": "ATIP vývod"
+  },
+  "DriveInfo.AtipRewritable": {
+    "zh-CN": "可擦写",
+    "en": "Rewritable",
+    "zh-TW": "可覆寫",
+    "ja": "書き換え可能",
+    "tr": "Yeniden yazılabilir",
+    "es": "Regrabable",
+    "cs": "Přepisovatelný"
+  },
+  "DriveInfo.FreeSectors": {
+    "zh-CN": "光驱报告剩余扇区",
+    "en": "Drive-reported free sectors",
+    "zh-TW": "光碟機回報剩餘磁區",
+    "ja": "ドライブ報告の空きセクター",
+    "tr": "Sürücünün bildirdiği boş sektörler",
+    "es": "Sectores libres según la unidad",
+    "cs": "Volné sektory hlášené jednotkou"
+  },
+  "DriveInfo.NextWritable": {
+    "zh-CN": "下一可写地址",
+    "en": "Next writable address",
+    "zh-TW": "下一個可寫入位址",
+    "ja": "次回書き込み可能アドレス",
+    "tr": "Sonraki yazılabilir adres",
+    "es": "Siguiente dirección grabable",
+    "cs": "Další zapisovatelná adresa"
+  },
+  "DriveInfo.ReadSpeeds": {
+    "zh-CN": "读取速度",
+    "en": "Read speeds",
+    "zh-TW": "讀取速度",
+    "ja": "読み取り速度",
+    "tr": "Okuma hızları",
+    "es": "Velocidades de lectura",
+    "cs": "Rychlosti čtení"
+  },
+  "DriveInfo.WriteSpeeds": {
+    "zh-CN": "写入速度",
+    "en": "Write speeds",
+    "zh-TW": "寫入速度",
+    "ja": "書き込み速度",
+    "tr": "Yazma hızları",
+    "es": "Velocidades de escritura",
+    "cs": "Rychlosti zápisu"
+  },
+  "DriveInfo.Yes": {
+    "zh-CN": "是",
+    "en": "Yes",
+    "zh-TW": "是",
+    "ja": "はい",
+    "tr": "Evet",
+    "es": "Sí",
+    "cs": "Ano"
+  },
+  "DriveInfo.No": {
+    "zh-CN": "否",
+    "en": "No",
+    "zh-TW": "否",
+    "ja": "いいえ",
+    "tr": "Hayır",
+    "es": "No",
+    "cs": "Ne"
+  },
+  "DriveInfo.CapacityHint": {
+    "zh-CN": "容量按 2048 字节/扇区计数；可用扇区是应用可写入的上限。",
+    "en": "Counts are 2048-byte sectors; usable sectors is the application's writable limit.",
+    "zh-TW": "容量以每磁區 2048 位元組計算；可用磁區是應用程式可寫入的上限。",
+    "ja": "容量は 1 セクター 2048 バイトで数えます。使用可能セクターはアプリが書き込める上限です。",
+    "tr": "Kapasite 2048 baytlık sektörlerle sayılır; kullanılabilir sektörler uygulamanın yazma üst sınırıdır.",
+    "es": "La capacidad se cuenta en sectores de 2048 bytes; los sectores utilizables son el límite de escritura de la aplicación.",
+    "cs": "Kapacita se počítá v\u00A0sektorech po 2048 bajtech; použitelné sektory jsou limit zápisu aplikace."
+  },
+  "DriveInfo.ClickToCopy": {
+    "zh-CN": "点击复制",
+    "en": "Click to copy",
+    "zh-TW": "點擊複製",
+    "ja": "クリックしてコピー",
+    "tr": "Kopyalamak için tıklayın",
+    "es": "Clic para copiar",
+    "cs": "Kliknutím zkopírovat"
+  },
+  "DriveInfo.Copied": {
+    "zh-CN": "已复制",
+    "en": "Copied",
+    "zh-TW": "已複製",
+    "ja": "コピーしました",
+    "tr": "Kopyalandı",
+    "es": "Copiado",
+    "cs": "Zkopírováno"
+  }
+}
