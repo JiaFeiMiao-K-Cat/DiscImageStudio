@@ -67,6 +67,13 @@ if (args is ["--test-capacity-ui"])
     return;
 }
 
+if (args is ["--test-dvd-media-capacity"])
+{
+    MediaSectorCountTests.Run();
+    DvdRewritableOverwriteTests.Run();
+    return;
+}
+
 if (args is ["--test-usable-sectors"])
 {
     UsableSectorGenerationTests.Run();
@@ -208,6 +215,7 @@ CdDataImageTests.Run();
 VolumeLabelTests.Run();
 CdParallelDataTests.Run();
 CdDataBurnTests.Run();
+DvdRewritableOverwriteTests.Run();
 CdDataDaoWorkflowTests.Run();
 CdMode1SectorTests.Run();
 CdDataSubchannelPatchTests.Run();

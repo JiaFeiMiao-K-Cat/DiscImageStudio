@@ -35,13 +35,19 @@ internal static class MediaSectorCountTests
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadDvdSectorCount(0x9, 0));
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadDvdSectorCount(0xB, 4_171_712));
         // Neither the raw geometry nor an actual Free value receives the legacy estimate.
-        OpticalMediaCapacity blankDvd = WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 714546, 713936, isBlank: true);
+        OpticalMediaCapacity blankDvd = WindowsImapiBurner.ReadDvdMediaCapacity(
+            0x9, 0x2, 714546, 713936, isBlank: true);
         Require(blankDvd.TotalSectors == 714546 && blankDvd.WritableSectors == 713936 && blankDvd.IsBlank == true);
-        OpticalMediaCapacity recordedDvd = WindowsImapiBurner.ReadDvdMediaCapacity(0x6, 2295104, 2295104, isBlank: false);
+        OpticalMediaCapacity recordedDvd = WindowsImapiBurner.ReadDvdMediaCapacity(
+            0x6, 0x2, 2295104, 2295104, isBlank: false);
         Require(recordedDvd.TotalSectors == 2295104 && recordedDvd.WritableSectors == 2295104 && recordedDvd.IsBlank == false);
-        Require(WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 714546, 0).WritableSectors == 0);
-        Throws<IOException>(() => WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 714546, 714547));
-        Throws<IOException>(() => WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 714546, -1));
+        Require(WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 0x2, 714546, 0).WritableSectors == 0);
+        Throws<IOException>(() => WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 0x2, 714546, 714547));
+        Throws<IOException>(() => WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 0x2, 714546, -1));
+        OpticalMediaCapacity formattedDvdRw = WindowsImapiBurner.ReadDvdMediaCapacity(
+            0x7, 0x1, 2295104, 0, isBlank: false);
+        Require(formattedDvdRw.TotalSectors == 2295104
+            && formattedDvdRw.WritableSectors == 2295104 && formattedDvdRw.IsBlank == false);
 
         byte[] descriptor = new byte[12];
         descriptor[3] = 8;
