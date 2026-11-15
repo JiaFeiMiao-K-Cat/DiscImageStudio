@@ -119,9 +119,10 @@ public partial class BurnViewModel : ObservableObject
         };
         _state.PropertyChanged += (_, args) =>
         {
-            if (args.PropertyName == nameof(DiscParametersState.DvdReadCompatibility) && !UseCalibrationPattern)
+            if (!UseCalibrationPattern && args.PropertyName is
+                nameof(DiscParametersState.DvdReadCompatibility) or nameof(DiscParametersState.DvdReadCompatibilityMode))
             {
-                OnPropertyChanged(nameof(DvdReadCompatibility));
+                OnPropertyChanged(args.PropertyName);
                 UpdateSourceSummary();
             }
             if (args.PropertyName == nameof(DiscParametersState.CdDataDirectory)
@@ -164,6 +165,18 @@ public partial class BurnViewModel : ObservableObject
         set
         {
             if (!UseCalibrationPattern) _state.DvdReadCompatibility = value;
+        }
+    }
+
+    public string DvdReadCompatibilityMode
+    {
+        get => UseCalibrationPattern
+            ? _shell.Calibration.Target is { Parameters.DvdReadCompatibility: true } target
+                ? target.EffectiveDvdReadCompatibilityMode : DvdReadCompatibilityModes.Current
+            : _state.DvdReadCompatibilityMode;
+        set
+        {
+            if (!UseCalibrationPattern) _state.DvdReadCompatibilityMode = value;
         }
     }
 
@@ -237,6 +250,7 @@ public partial class BurnViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(IsDvdBurn));
         OnPropertyChanged(nameof(DvdReadCompatibility));
+        OnPropertyChanged(nameof(DvdReadCompatibilityMode));
         OnPropertyChanged(nameof(IsBluRayBurn));
         OnPropertyChanged(nameof(FamilyLabel));
         InvalidateConfirmation();
@@ -273,7 +287,7 @@ public partial class BurnViewModel : ObservableObject
                 SourceDetails = L.F($"绘图区 {p.InnerRadiusMm:0.######}–{p.OuterRadiusMm:0.######} mm")
                     + L.F($" · {p.Sectors} 扇区 · {encoding}\n")
                     + L.T("按标定图案记录的盘型与参数写入。");
-                identity = $"calibration:{target.Id}:{p}:{_shell.Calibration.CdInterleave}";
+                identity = $"calibration:{target.Id}:{p}:{target.EffectiveDvdReadCompatibilityMode}:{_shell.Calibration.CdInterleave}";
             }
         }
         else if (IsDvdBurn)
@@ -291,6 +305,7 @@ public partial class BurnViewModel : ObservableObject
                 _state.DvdInnerRadius, _state.DvdOuterRadius,
                 _state.DvdPitchLinear, _state.DvdPitchQuadratic, _state.DvdPitchCubic,
                 _state.DvdDataDirectory, _state.DvdVolumeLabel, _state.DvdFilesAtOuterRing, _state.DvdOuterRingBleed, _state.DvdReadCompatibility,
+                _state.DvdReadCompatibilityMode,
                 _state.ToneDitherStrength, _state.ToneBrightness, _state.ToneSrgbLinearization);
         }
         else if (IsBluRayBurn)
@@ -549,6 +564,8 @@ public partial class BurnViewModel : ObservableObject
             bool dvd = IsDvdBurn;
             bool bluRay = IsBluRayBurn;
             bool calibration = UseCalibrationPattern;
+            string? dvdCompatibilitySummary = dvd && DvdReadCompatibility
+                ? DvdReadCompatibilityText.Summary(true, DvdReadCompatibilityMode) : null;
             int preparationRevision = _burnPreparationRevision;
             OpticalBurnMediaKind mediaKind = CurrentMediaKind;
             BurnWriteSpeedOption selectedWriteSpeed = SelectedSpeed ?? BurnWriteSpeedOption.Automatic;
@@ -694,6 +711,9 @@ public partial class BurnViewModel : ObservableObject
                     contentDescription += L.F($" · {parameters.OutputSectors} 扇区 · {request.ContentLength / (1024.0 * 1024.0):F1} MiB");
                 }
             }
+
+            if (dvdCompatibilitySummary is not null)
+                contentDescription += Environment.NewLine + dvdCompatibilitySummary;
 
             // In-app danger modal; default focus sits on the refusing button.
             bool confirmed = await _shell.ConfirmAsync(
@@ -930,7 +950,8 @@ public partial class BurnViewModel : ObservableObject
             PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("DVD 轨距三次项")),
             UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.Dvd)),
             Tone: _state.DvdTone,
-            ReadCompatibility: _state.DvdReadCompatibility);
+            ReadCompatibility: _state.DvdReadCompatibility,
+            ReadCompatibilityMode: _state.DvdReadCompatibilityMode);
         options.Validate();
         return options;
     }

@@ -424,7 +424,7 @@ public sealed class CalibrationTarget
     }
 
     public static CalibrationTarget Create(CalibrationParameters parameters, CalibrationPatternOptions? options = null,
-        CalibrationArtwork artwork = CalibrationArtwork.SweptReference)
+        CalibrationArtwork artwork = CalibrationArtwork.SweptReference, string? dvdReadCompatibilityMode = null)
     {
         parameters.Validate();
         double scale = Math.Clamp((parameters.OuterRadiusMm - parameters.InnerRadiusMm) / 32.3, 0.5, 2);
@@ -451,7 +451,7 @@ public sealed class CalibrationTarget
         return new(version, Guid.NewGuid().ToString("N"), parameters, options,
             BuildCells(parameters), artwork,
             parameters.Kind == CalibrationDiscKind.Dvd && parameters.DvdReadCompatibility
-                ? DvdReadCompatibilityModes.Current : null);
+                ? dvdReadCompatibilityMode ?? DvdReadCompatibilityModes.Current : null);
     }
 
     public void Validate()
