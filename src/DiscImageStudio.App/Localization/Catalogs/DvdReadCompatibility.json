@@ -15,7 +15,7 @@
     "ja": "一部のドライブとメディアの組み合わせで書き込みの安定性が向上する場合があります。模様の質感とコントラストが変わることがあります。",
     "tr": "Bazı sürücü ve disk birleşimlerinde yazmayı iyileştirebilir. Desenin dokusu ve kontrastı değişebilir.",
     "es": "Puede mejorar la grabación con algunas combinaciones de unidad y disco. La textura y el contraste pueden cambiar.",
-    "cs": "U některých kombinací mechanik a disků může zlepšit zápis. Struktura a kontrast obrazu se mohou změnit."
+    "cs": "U některých kombinací mechanik a disků může zlepšit zápis. Struktura a kontrast obrazu se mohou změnit."
   },
   "DvdReadCompatibility.FrozenHint": {
     "zh-CN": "使用标靶记录中的设置和保护规则；如需更改，请创建新标靶。",
@@ -24,7 +24,7 @@
     "ja": "このターゲットに保存された設定と保護ルールを使用します。変更するには新しいターゲットを作成してください。",
     "tr": "Bu hedefle kaydedilen ayarlar ve koruma kuralı kullanılır. Değiştirmek için yeni bir hedef oluşturun.",
     "es": "Se usan los ajustes y la regla de protección guardados en este patrón. Crea un patrón nuevo para cambiarlos.",
-    "cs": "Použijí se nastavení a pravidlo ochrany uložené s tímto terčem. Chcete-li je změnit, vytvořte nový terč."
+    "cs": "Použijí se nastavení a pravidlo ochrany uložené s tímto terčem. Chcete-li je změnit, vytvořte nový terč."
   },
   "DvdReadCompatibility.Enabled": {
     "zh-CN": "DVD 兼容性（实验性）：{0}",
