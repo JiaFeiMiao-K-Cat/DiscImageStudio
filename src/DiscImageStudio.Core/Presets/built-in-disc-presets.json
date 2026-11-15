@@ -17,7 +17,7 @@
     {
       "id": "ritek-medical-aqua",
       "displayName": "铼德医疗水蓝盘（实测）",
-      "description": "实测参数：内半径 24.911275 mm、外半径 57.931155 mm、359,845 扇区；扫描速度采用 1200 mm/s。",
+      "description": "实测参数：内半径 24.911275 mm、外半径 57.931155 mm、359,845 扇区；扫描速度采用 1200 mm/s。MID 为 97m15s17f，圈码为 RSD80M-00009 80。",
       "sectors": 359845,
       "usableSectors": 359843,
       "innerRadiusMm": 24.911275,
@@ -29,7 +29,7 @@
     {
       "id": "verbatim-azo-43438",
       "displayName": "威宝 CD-R AZO (43438)（实测）",
-      "description": "实测参数：内半径 24.837775 mm、外半径 58.020875 mm、359,848 扇区；扫描速度采用 1200 mm/s。",
+      "description": "实测参数：内半径 24.837775 mm、外半径 58.020875 mm、359,848 扇区；扫描速度采用 1200 mm/s。MID 为 97m34s23f，圈码为 ZE6778-CDR-A80A AZO。",
       "sectors": 359848,
       "usableSectors": 359846,
       "innerRadiusMm": 24.837775,
@@ -67,7 +67,7 @@
     {
       "id": "verbatim-dvd-r-azo-43533",
       "displayName": "威宝 DVD-R AZO (43533)（实测）",
-      "description": "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
+      "description": "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。MID 为 MCC 03RG20，圈码为 ZE5788-DVR-J47F4。",
       "totalSectors": 2297888,
       "usableSectors": 2297888,
       "innerRadiusMm": 23.991460627731737,
@@ -186,7 +186,7 @@
     {
       "id": "bd-r-ritek-10x",
       "displayName": "铼德 BD-R 10x（实测）",
-      "description": "实测参数：内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 扇区。",
+      "description": "实测参数：内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 扇区。MID 为 RITEK-BR2，圈码为 RBD4R015D 001。",
       "totalSectors": 12219392,
       "usableSectors": 12219392,
       "innerRadiusMm": 23.98822105616562,
@@ -207,7 +207,7 @@
     {
       "id": "bd-r-verbatim-64099",
       "displayName": "威宝 BD-R (64099)（实测）",
-      "description": "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。",
+      "description": "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。MID 为 CMCMAG-BA5，圈码为 CMBR6DV5.3 S-0525 002。",
       "totalSectors": 12219392,
       "usableSectors": 12219392,
       "innerRadiusMm": 23.987042157339335,

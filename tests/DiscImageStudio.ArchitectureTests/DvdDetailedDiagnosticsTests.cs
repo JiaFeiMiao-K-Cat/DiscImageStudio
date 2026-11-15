@@ -228,13 +228,20 @@ public static class DvdDetailedDiagnosticsTests
     {
         DynamicFormat format = new();
         DynamicDvdDataSession session = new(format);
-        Require(session.CurrentMediaStatus == 2 && session.FreeSectorsOnMedia == 100,
-            "the adapter preserves the device media state and capacity");
-        session.ConfigureMedia();
+        Require(session.CurrentMediaStatus == 2 && session.FreeSectorsOnMedia == 100
+                && session.TotalSectorsOnMedia == 1000,
+            "the adapter preserves the device media state, capacity and total extent");
+        session.ConfigureMedia(forceOverwrite: false);
+        session.ConfigureMedia(forceOverwrite: true);
         session.SetWriteSpeed(new OpticalWriteSpeed(750, false));
-        Require(format.Calls.SequenceEqual(new[] { "buffer=False", "close=True", "overwrite=False", "speed=750,False" })
+        Require(format.Calls.SequenceEqual(new[]
+                {
+                    "buffer=False", "close=True", "overwrite=False",
+                    "buffer=False", "close=True", "overwrite=True",
+                    "speed=750,False",
+                })
             && session.CurrentWriteSpeed == new OpticalWriteSpeed(780, true),
-            "the adapter preserves setter ordering, values and actual speed");
+            "the adapter preserves setter ordering, overwrite selection, values and actual speed");
         OpticalBurnRequest request = Request();
         using GeneratedContentComStream content = Content(request);
         session.Write(content);
@@ -294,7 +301,8 @@ public static class DvdDetailedDiagnosticsTests
         internal bool WriteCleanupStarted { get; private set; }
         public int CurrentMediaStatus { get { Calls.Add("state"); return MediaState; } }
         public long FreeSectorsOnMedia { get { Calls.Add("capacity"); return Capacity; } }
-        public void ConfigureMedia() => Step("configure");
+        public long TotalSectorsOnMedia => 1000;
+        public void ConfigureMedia(bool forceOverwrite) => Step("configure");
         public void DisableVerification() => Step("verification");
         public void SetWriteSpeed(OpticalWriteSpeed speed) { Step("set-speed"); RequestedSpeed = speed; }
         public OpticalWriteSpeed CurrentWriteSpeed { get { Step("actual-speed"); return new(780, true); } }
@@ -329,6 +337,7 @@ public static class DvdDetailedDiagnosticsTests
         public COMException Failure { get; } = new("Unrecoverable device write error.", unchecked((int)0xC0AA0301));
         public int CurrentMediaStatus => 2;
         public long FreeSectorsOnMedia => 100;
+        public long TotalSectorsOnMedia => 1000;
         public bool BufferUnderrunFreeDisabled { set => Calls.Add($"buffer={value}"); }
         public bool ForceMediaToBeClosed { set => Calls.Add($"close={value}"); }
         public bool ForceOverwrite { set => Calls.Add($"overwrite={value}"); }

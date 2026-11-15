@@ -25,9 +25,11 @@ Disc Image Studio 是一个多平台的光盘盘面图像生成与刻录工具�
 
 ## 效果预览
 
-![](docs/images/case1.jpg)
-
-![](docs/images/case2.jpg)
+<p align="center">
+  <img src="docs/images/case1.jpg" alt="盘面效果示例" height="300">
+  <a href="https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues/61"><img src="docs/images/case-community-61.jpg" alt="社区提供的盘面效果示例（Issue #61）" height="300"></a>
+  <img src="docs/images/case2.jpg" alt="盘面效果示例" height="300">
+</p>
 
 ---
 
@@ -55,7 +57,7 @@ Windows x64 下载以 `win-x64.exe` 结尾的文件；Windows 11 ARM64 下载以
 
 ### 2. 设计盘面
 
-在设计页点击「导入图片」，或从资源管理器将单张／多张图片拖入设计页，用图层完成排版，并在右栏「影调」模块调整抖动、伽马、亮度与灰阶档位。
+在设计页点击「导入图片」，或从资源管理器将单张／多张图片（支持 PNG、JPEG、BMP、TIFF、GIF 及 ≤32 MiB 的 `.svg` 矢量图）拖入设计页，用图层完成排版，并在右栏「影调」模块调整抖动、伽马、亮度与灰阶档位。`.svg` 图层在编辑阶段保持矢量缩放与 `viewBox` 比例，导出与预览时按需高分辨率渲染；基于 `SharpVectors` 解析，忽略外部资源与脚本，`<filter>`、遮罩（`mask`）或复杂 CSS 类选择器可能会被降级或忽略，建议先导出为静态路径 SVG。
 
 ### 3. 预览与导出
 

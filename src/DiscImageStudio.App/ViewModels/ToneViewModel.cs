@@ -28,12 +28,14 @@ public partial class ToneViewModel : ObservableObject
     private readonly DiscParametersState _state;
     private readonly DesignViewModel _design;
     private readonly SemaphoreSlim _tonePreviewGate = new(1, 1);
+    private readonly InFlightTaskTracker _inFlightPreviews = new();
 
     private CancellationTokenSource? _tonePreviewCancellation;
     private int _tonePreviewRevision;
     private string? _compositePath;
     private string? _lastTonePreviewPath;
     private bool _tonePreviewReady;
+    private bool _windowClosed;
 
     // A language switch must re-word the status on screen, not replace a running render or a
     // failure with the idle hint, so the current phase is kept next to the ready flag.
@@ -157,6 +159,7 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.BdDataDirectory)
             or nameof(DiscParametersState.BdVolumeLabel)
             or nameof(DiscParametersState.BdFilesAtOuterRing)
+            or nameof(DiscParametersState.BdOuterRingBleed)
             or nameof(DiscParametersState.CdInnerRadius)
             or nameof(DiscParametersState.CdOuterRadius)
             or nameof(DiscParametersState.CdUsableSectors)
@@ -167,6 +170,7 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.CdDataDirectory)
             or nameof(DiscParametersState.CdVolumeLabel)
             or nameof(DiscParametersState.CdFilesAtOuterRing)
+            or nameof(DiscParametersState.CdOuterRingBleed)
             or nameof(DiscParametersState.DvdInnerRadius)
             or nameof(DiscParametersState.DvdOuterRadius)
             or nameof(DiscParametersState.DvdUsableSectors)
@@ -176,7 +180,8 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.DvdPitchCubic)
             or nameof(DiscParametersState.DvdDataDirectory)
             or nameof(DiscParametersState.DvdVolumeLabel)
-            or nameof(DiscParametersState.DvdFilesAtOuterRing))
+            or nameof(DiscParametersState.DvdFilesAtOuterRing)
+            or nameof(DiscParametersState.DvdOuterRingBleed))
         {
             ScheduleTonePreview();
         }
@@ -214,37 +219,45 @@ public partial class ToneViewModel : ObservableObject
 
     private void ScheduleTonePreview()
     {
-        if (!_shell.IsProjectOpen
+        if (_windowClosed
+            || !_shell.IsProjectOpen
             || _shell.CurrentWorkspace != Workspace.Design
             || _compositePath is null)
         {
             return;
         }
 
-        _tonePreviewCancellation?.Cancel();
-        _tonePreviewCancellation?.Dispose();
-        CancellationTokenSource cancellation = new();
-        _tonePreviewCancellation = cancellation;
-        int revision = ++_tonePreviewRevision;
-        BeginTonePreview();
-        _ = RenderTonePreviewAsync(revision, cancellation.Token);
+        StartTonePreview();
     }
 
     private void RefreshTonePreviewNow()
     {
-        if (_compositePath is null)
+        if (_windowClosed || _compositePath is null)
         {
             return;
         }
 
+        StartTonePreview();
+    }
+
+    private void StartTonePreview()
+    {
         _tonePreviewCancellation?.Cancel();
         _tonePreviewCancellation?.Dispose();
         CancellationTokenSource cancellation = new();
         _tonePreviewCancellation = cancellation;
         int revision = ++_tonePreviewRevision;
         BeginTonePreview();
-        _ = RenderTonePreviewAsync(revision, cancellation.Token);
+        _ = _inFlightPreviews.Track(RenderTonePreviewAsync(revision, cancellation.Token));
     }
+
+    internal void OnWindowClosed()
+    {
+        _windowClosed = true;
+        ClearTonePreview();
+    }
+
+    internal Task WaitForPendingRendersAsync() => _inFlightPreviews.WaitForAllAsync();
 
     private void BeginTonePreview()
     {
@@ -383,7 +396,7 @@ public partial class ToneViewModel : ObservableObject
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            if (revision != _tonePreviewRevision)
+            if (_windowClosed || revision != _tonePreviewRevision)
             {
                 return;
             }
@@ -420,7 +433,7 @@ public partial class ToneViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            if (revision == _tonePreviewRevision)
+            if (!_windowClosed && revision == _tonePreviewRevision)
             {
                 _tonePreviewRendering = false;
                 _tonePreviewError = exception.Message;
@@ -436,11 +449,17 @@ public partial class ToneViewModel : ObservableObject
         }
         finally
         {
-            if (enteredGate)
-                _tonePreviewGate.Release();
-            if (!keepOutput)
+            try
             {
-                TempFiles.TryDeleteTemporaryFile(outputPath);
+                if (!keepOutput)
+                {
+                    TempFiles.TryDeleteTemporaryFile(outputPath);
+                }
+            }
+            finally
+            {
+                if (enteredGate)
+                    _tonePreviewGate.Release();
             }
         }
     }

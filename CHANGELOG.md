@@ -4,16 +4,39 @@
 
 ### 中文
 
-- Windows 应用宿主设置 `CetCompat=false`，作为 #229 所报启动失败的兼容性处理；这会降低该应用进程的硬件影子栈保护，不修改系统级安全设置。受影响原机上的启动结果仍待验证。
-- 新增 Windows ARM64 自包含单文件 EXE；Windows x64 与 ARM64 分别在原生 runner 上构建并对最终发布文件执行自检、音轨生成和 GUI 截图检查，Release 复用这些已测试制品。ARM64 使用 Windows 11，CI 仅覆盖软件检查，尚未验证实盘刻录。
-- 设计页支持从资源管理器拖入单张或多张图片。
-- 设计页占用区引导改用 CD、DVD、BD 的真实布局规划器，并按可用（可写）容量计算，包含文件系统元数据、逐文件扇区取整与对齐；与 #96 的碎片化放置共用与图片无关的元数据预留。外圈放置文件时同时标出内圈元数据，支持多个环形区域。文件夹或盘片参数变化后延迟合并计算，图片编辑不再触发重算。
-- 生成 CD／DVD 数据盘 ISO 时校验卷标长度：超过 Joliet 的 16 个字符会在写入前报错，不再静默截断；导出页的卷标输入限制为 16 个字符并显示提示，蓝光 UDF 卷标不受影响。
-- 关于页在 GitHub 按钮左侧新增「检查更新」：从上游 GitHub Release 的 `latest.json` 获取正式版信息，按当前处理器架构下载便携 EXE，核对长度与 SHA-256 后替换并重启；替换失败或新版本启动即退出时恢复旧 EXE，应用目录不可写时提示手动下载。应用内更新器不验证 Release 附带的 PGP 分离签名，也不对 `latest.json` 本身进行 PGP 身份验证；SHA-256 只能发现文件与清单不一致，不能防止有权修改 Release 的一方同时替换文件和清单。
-- 为 GitHub Actions Release 流程新增可选 PGP 签名：配置 `RELEASE_SIGN_KEY` 后，CI 使用 Sequoia PGP 为 EXE、压缩包、SHA-256 校验文件和更新清单生成独立签名文件，并随 Release 发布公钥；未配置密钥时跳过签名。应用内自动更新暂不验证这些签名。
+- DVD 兼容性（实验性）改用 #188 的 WriteSafe，提供三档，启用时默认第 1 档。DVD 导出、流式刻录和新标定靶使用所选档位，已有标定靶和镜像继续识别各自的配方。较强的档位可能降低深色对比度或在区间边缘留下亮度变化。
 
 ### English
 
+- DVD compatibility (experimental) now uses WriteSafe from #188 with three selectable levels. Enabling the option defaults to level 1. DVD export, streaming burns and new calibration targets use the selection, while existing targets and images retain their original recipe. Stronger settings can reduce dark-area contrast or leave a brightness change at the zone boundaries.
+
+## [1.6.0] - 2026-11-15
+
+### 中文
+
+- Windows 设计页新增 `.svg` 矢量图导入（支持「导入图片」筛选器及资源管理器拖拽，单文件上限 32 MiB）。引入纯托管 IL 的 `SharpVectors.Wpf` `1.8.6`（`BSD-3-Clause` 及随包 MIT 声明已并入 `THIRD-PARTY-NOTICES.txt`），导入与工程打开均在后台线程解码并冻结为 WPF 矢量 `DrawingImage`，画布排版、缩略图与工程异步预加载均以 `ImageSource` 保留矢量表示并保持 `viewBox` 比例与留白，仅在 `DesignComposer.Render` 生成预览或导出 PNG 时一次性栅格化；解析器禁用 DTD、限制嵌套深度、图元数量、实体与文档长度、忽略外部资源引用，将文字转为几何路径并过滤无可见图元的空白画布。跨平台 CLI 与底层介质编码模块不变。
+- Windows 应用宿主设置 `CetCompat=false`，作为 #229 所报启动失败的兼容性处理；这会降低该应用进程的硬件影子栈保护，不修改系统级安全设置。受影响原机上的启动结果仍待验证。
+- 新增 Windows ARM64 自包含单文件 EXE；Windows x64 与 ARM64 分别在原生 runner 上构建并对最终发布文件执行自检、音轨生成和 GUI 截图检查，Release 复用这些已测试制品。ARM64 使用 Windows 11，CI 仅覆盖软件检查，尚未验证实盘刻录。
+- 设计页支持从资源管理器拖入单张或多张图片，沿用导入按钮的图层适配和错误提示。忙碌时禁用导入，文件夹和不支持的文件会被忽略。
+- 预览失败时清除上一张预览图及其导出入口，状态行和占位区保留失败原因。切换界面语言会翻译错误提示，失败画面保持清空。
+- 设计页占用区引导改用 CD、DVD、BD 的真实布局规划器，并按可用（可写）容量计算，包含文件系统元数据、逐文件扇区取整与对齐；与 #96 的碎片化放置共用与图片无关的元数据预留。外圈放置文件时同时标出内圈元数据，支持多个环形区域。文件夹或盘片参数变化后延迟合并计算，图片编辑不再触发重算。
+- 设计页的占用区引导改用主题蓝色，提高不透明度，并显示在图层和选择框上方，以便在浅色图片上辨认。
+- 影调和预览页的文件区域叠加层和图例也使用主题蓝色。影调页图例移至设计画布左下角，腾出右侧空间。
+- 设计页图层卡片移除上移、下移和删除按钮。可拖拽排序，通过行菜单或 Delete 键删除。随盘文件选择按钮改为「浏览…」。
+- 移除「显示数据占用区」开关，蓝色引导始终显示。
+- 项目侧边栏新增只读光驱与介质卡片，显示光驱型号、固件、介质类型、容量、写入状态和速度。连接多台光驱时可以切换查看，刻录期间暂停探测。光驱卡片取代侧边栏手动折叠按钮。
+- 随盘文件位于外圈时，可打开「外缘出血」，将有效容量限制在总扇区数约 95% 并按介质写入单位向下对齐。该设置适用于 CD、DVD 和 BD 的布局、预览、导出及刻录，工程和标定沿用原始容量。
+- 修复调整盘片参数时，设计合成与实时预览、影调预览并发访问同一个临时文件导致的共享冲突。
+- 生成 CD／DVD 数据盘 ISO 时校验卷标长度：超过 Joliet 的 16 个字符会在写入前报错，不再静默截断；导出页的卷标输入限制为 16 个字符并显示提示，蓝光 UDF 卷标不受影响。
+- 关于页在 GitHub 按钮左侧新增「检查更新」：从上游 GitHub Release 的 `latest.json` 获取正式版信息，按当前处理器架构下载便携 EXE，核对长度与 SHA-256 后替换并重启；替换失败或新版本启动即退出时恢复旧 EXE，应用目录不可写时提示手动下载。应用内更新器不验证 Release 附带的 PGP 分离签名，也不对 `latest.json` 本身进行 PGP 身份验证；SHA-256 只能发现文件与清单不一致，不能防止有权修改 Release 的一方同时替换文件和清单。
+- 为 GitHub Actions Release 流程新增可选 PGP 签名：配置 `RELEASE_SIGN_KEY` 后，CI 使用 Sequoia PGP 为 EXE、压缩包、SHA-256 校验文件和更新清单生成独立签名文件，并随 Release 发布公钥；未配置密钥时跳过签名。应用内自动更新暂不验证这些签名。
+- 新增默认关闭的「允许覆写已写入的 DVD±RW」刻录选项。确认后，已使用的 DVD-RW 会先快速擦除再按空白盘刻录，已使用的 DVD+RW 会复用现有格式直接覆写。DVD+RW 在首次格式化后不会再回到 IMAPI 的空白（`BLANK`）状态：擦除只替换盘上内容，`IDiscFormat2Data` 始终报告 `OVERWRITE_ONLY`，旧版本因此会一直以「DVD 不是空白盘」拒绝再次刻录。勾选后刻录请求设置 `IDiscFormat2Data::ForceOverwrite`，由 IMAPI 从 LBA 0 整盘覆写；容量检查改用盘片总扇区数，写入前仍要求盘片处于可覆写状态，一次性 DVD-R／DVD+R 继续只接受空白盘。确认对话框会说明覆写将清除旧内容。实盘验证：MATSHITA DVD+-RW UJ8B1（固件 D.03）配 RITEK DVD+RW，2,295,104 扇区，2.4×，事件流 `StartLba=0`、`LastWrittenLba=2,295,103`，写入 1,500,173 ms 后正常关闭会话，盘面图案可见；尚未执行读回比对，也没有其他设备或盘片的数据。
+- CD 音轨读回预览接受 WAVE_FORMAT_EXTENSIBLE 封装的 44.1 kHz、16 位立体声 PCM WAV（不少编辑软件这样导出）；浮点、24 位和多声道仍然拒绝。
+- CD 输出格式：加入随盘文件使输出变为 ISO 后，再去掉随盘文件时恢复为之前选择的 .raw 或 .wav，不再一律变成 .wav；打开工程时按该工程保存的输出路径决定，不沿用上一个工程的选择。
+
+### English
+
+- Added `.svg` vector artwork import to the Windows design workspace (supported in the artwork picker and drag-and-drop, capped at 32 MiB per file). Using pure managed IL `SharpVectors.Wpf` `1.8.6` (BSD 3-Clause and bundled MIT notices added to `THIRD-PARTY-NOTICES.txt`), SVGs decode off the UI thread into frozen WPF `DrawingImage` instances and flow through interactive import, layer state, thumbnails, and project background preloading as `ImageSource`, preserving vector edges and explicit `viewBox` whitespace until a single rasterization pass in `DesignComposer.Render` for preview or export PNGs. Parsing disallows DTDs and caps element nesting depth, element count, and entity and document sizes, ignores external resource references, converts text to geometry, and rejects blank SVGs with no visible drawing primitives. The cross-platform CLI and disc encoding modules remain unchanged.
 - Set `CetCompat=false` on the Windows application host as a compatibility workaround for the startup failure reported in #229. This reduces hardware shadow-stack protection for this application process without changing system-wide security settings. Startup on the affected original machine still needs verification.
 - Add a self-contained single-file Windows ARM64 EXE. Windows x64 and ARM64 builds run on native runners and check the final executables with self-tests, audio-track generation and GUI snapshots; releases reuse those tested artifacts. ARM64 uses Windows 11. CI covers software checks only; physical disc burning on ARM64 remains unverified.
 - Import one or multiple images by dragging files from Explorer onto the design page, using the same layer fitting and failure messages as the import button. Folders and unrelated files are ignored, and imports are disabled while a job is running.
@@ -23,9 +46,15 @@
 - The tone and preview pages now use the same theme blue for their file-region overlay and legend. The tone panel's legend moved to the design canvas bottom-left corner, so it no longer consumes right-rail height.
 - Removed the move-up, move-down, and delete buttons from the design layer card. Reordering stays on drag, and deletion remains available from the row menu and the Del key. The disc-file picker buttons now read "Browse…".
 - Removed the "Show data occupancy area" toggle; the blue guide is always visible.
+- Add a read-only drive and media card to the project sidebar with the recorder model, firmware, medium type, capacity, write state and speeds. Select a recorder when several are connected. Polling pauses during burning. The card replaces the manual sidebar collapse button.
+- Turn on outer-ring bleed when disc files are on the outer ring to cap usable capacity at approximately 95% of the total sectors, rounded down to the medium's write alignment. The setting applies to layout, preview, export and burning for CD, DVD and BD. Projects and calibration retain the original capacity.
+- Fix file-sharing failures when design compositing, live preview and tone preview access the same temporary file after disc parameters change.
 - Validate volume-label length when generating CD/DVD data ISOs: labels longer than Joliet's 16 characters now fail before writing instead of being silently truncated. The export page limits label input to 16 characters with a hint; Blu-ray UDF labels are unaffected.
-- Add "Check for updates" to the About page, left of the GitHub button. It reads the stable release manifest (`latest.json`) from upstream GitHub Releases, downloads the portable EXE for the current processor architecture, verifies its length and SHA-256, then replaces the running file and restarts. A failed replacement, or a new build that exits during startup, restores the old EXE; a non-writable application folder prompts a manual download. The updater does not verify the detached PGP signatures attached to the Release or authenticate `latest.json` itself; SHA-256 only detects a mismatch with the manifest and cannot protect against an actor who can replace both the files and the manifest.
+- Add "Check for updates" to the About page, left of the GitHub button. It reads the stable release manifest (`latest.json`) from upstream GitHub Releases, downloads the portable EXE for the current processor architecture, verifies its length and SHA-256, then replaces the running file and restarts. A failed replacement, or a new build that exits during startup, restores the old EXE; a non-writable application folder prompts a manual download. The in-app updater does not verify the detached PGP signatures attached to the Release or authenticate `latest.json` itself; SHA-256 only detects a mismatch with the manifest and cannot protect against an actor who can replace both the files and the manifest.
 - Added optional PGP signing to the GitHub Actions release workflow. When `RELEASE_SIGN_KEY` is configured, CI uses Sequoia PGP to generate detached signature files for EXEs, archives, the SHA-256 checksum file, and the update manifest, and publishes the public key with the release. Signing is skipped when the secret is not configured. The in-app updater does not yet verify these signatures.
+- Added an opt-in "allow overwriting a used DVD±RW" burn option. After confirmation, a used DVD-RW is quick-erased and burned as blank media, while a used DVD+RW is overwritten using its existing format. A DVD+RW never returns to IMAPI's `BLANK` state after its first format: erasing only replaces the disc contents, `IDiscFormat2Data` keeps reporting `OVERWRITE_ONLY`, and previous versions therefore always refused the disc with "DVD is not blank". With the option enabled, the burn request sets `IDiscFormat2Data::ForceOverwrite` so IMAPI rewrites the disc from LBA 0, the capacity check uses the disc's total sector count, and the write still requires an overwritable media state; write-once DVD-R/DVD+R remain blank-only. The confirmation dialog explains that overwriting erases the previous contents. Physical validation: MATSHITA DVD+-RW UJ8B1 (firmware D.03) with a RITEK DVD+RW, 2,295,104 sectors at 2.4×; the event stream reported `StartLba=0` and `LastWrittenLba=2,295,103`, the write returned after 1,500,173 ms and the session closed normally, with a visible drawing on the disc. Read-back comparison and data for other drives or media are still pending.
+- CD track read-back preview accepts WAVE_FORMAT_EXTENSIBLE 44.1 kHz 16-bit stereo PCM WAVs, as several editors export them; float, 24-bit and multichannel files are still rejected.
+- CD output format: removing the disc files after they turned the output into an ISO restores the previously selected .raw or .wav format instead of always switching to .wav; opening a project takes the format from that project's saved output path, not from the previous project.
 
 ## [1.5.0] - 2026-11-07
 

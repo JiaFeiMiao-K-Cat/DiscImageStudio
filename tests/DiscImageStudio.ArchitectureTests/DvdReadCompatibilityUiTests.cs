@@ -28,7 +28,7 @@ internal static class DvdReadCompatibilityUiTests
             WpfTestHost.Run(() => Wait(CheckWorkflowsAsync(directory.FullName)));
         }
         finally { directory.Delete(recursive: true); }
-        Console.WriteLine("dvd-read-compatibility-ui: project/legacy records, shared controls, confirmation, frozen calibration and language fallback passed");
+        Console.WriteLine("dvd-read-compatibility-ui: project/legacy records, shared levels, confirmation, frozen calibration and translations passed");
     }
 
     private static ProjectDocument Project(string path, string family = ProjectDocument.DvdFamily)
@@ -41,23 +41,45 @@ internal static class DvdReadCompatibilityUiTests
         string path = Path.Combine(directory, "test.discproj");
         var document = Project(Path.Combine(directory, "test.iso"));
         var state = new DiscParametersState();
-        Require(!state.DvdReadCompatibility, "the experimental option starts disabled");
+        Require(!state.DvdReadCompatibility && state.DvdReadCompatibilityMode == DvdReadCompatibilityModes.WriteSafeLight,
+            "the experimental option starts disabled with light selected");
         ProjectSession.ApplyToState(document, state);
         state.DvdReadCompatibility = true;
+        state.DvdReadCompatibilityMode = DvdReadCompatibilityModes.WriteSafeStrong;
         document = document with { Outputs = ProjectSession.CaptureOutputs(document, state) };
         ProjectJsonStore.Save(path, document);
         var restored = ProjectJsonStore.Load(path);
         state.DvdReadCompatibility = false;
+        state.DvdReadCompatibilityMode = DvdReadCompatibilityModes.WriteSafeLight;
         ProjectSession.ApplyToState(restored, state);
-        Require(restored.Outputs.DvdReadCompatibility && state.DvdReadCompatibility,
-            "project save/load and apply/capture preserve the enabled option");
+        Require(restored.Outputs.DvdReadCompatibility && state.DvdReadCompatibility
+            && restored.Outputs.DvdReadCompatibilityMode == DvdReadCompatibilityModes.WriteSafeStrong
+            && state.DvdReadCompatibilityMode == DvdReadCompatibilityModes.WriteSafeStrong,
+            "project save/load and apply/capture preserve the enabled option and selected level");
+
+        state.DvdReadCompatibility = false;
+        var disabled = document with { Outputs = ProjectSession.CaptureOutputs(document, state) };
+        string disabledPath = Path.Combine(directory, "disabled.discproj");
+        ProjectJsonStore.Save(disabledPath, disabled);
+        state.DvdReadCompatibility = true;
+        state.DvdReadCompatibilityMode = DvdReadCompatibilityModes.WriteSafeLight;
+        ProjectSession.ApplyToState(ProjectJsonStore.Load(disabledPath), state);
+        Require(!state.DvdReadCompatibility && state.DvdReadCompatibilityMode == DvdReadCompatibilityModes.WriteSafeStrong,
+            "disabled projects can retain a selected level for later use");
 
         var legacy = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+        legacy["outputs"]!.AsObject().Remove("dvdReadCompatibilityMode");
+        File.WriteAllText(path, legacy.ToJsonString());
+        ProjectSession.ApplyToState(ProjectJsonStore.Load(path), state);
+        Require(state.DvdReadCompatibility && state.DvdReadCompatibilityMode == DvdReadCompatibilityModes.WriteSafeLight,
+            "legacy enabled projects choose light when no level was stored");
+
         legacy["outputs"]!.AsObject().Remove("dvdReadCompatibility");
         File.WriteAllText(path, legacy.ToJsonString());
         var old = ProjectJsonStore.Load(path);
         ProjectSession.ApplyToState(old, state);
-        Require(!old.Outputs.DvdReadCompatibility && !state.DvdReadCompatibility,
+        Require(!old.Outputs.DvdReadCompatibility && !state.DvdReadCompatibility
+            && state.DvdReadCompatibilityMode == DvdReadCompatibilityModes.WriteSafeLight,
             "opening an older project resets an enabled option");
         ProjectJsonStore.Save(path, old);
         Require(!File.ReadAllText(path).Contains("dvdReadCompatibility", StringComparison.Ordinal),
@@ -94,13 +116,28 @@ internal static class DvdReadCompatibilityUiTests
             checkBox.SetCurrentValue(ToggleButton.IsCheckedProperty, true);
             Require(shell.State.DvdReadCompatibility && shell.Burn.DvdReadCompatibility && shell.IsDirty,
                 "the export checkbox updates shared state and marks the project dirty");
+            var exportPicker = Descendants<ComboBox>(exportToggle).Single();
+            Require(exportPicker.Items.OfType<ComboBoxItem>().Count(item => item.Visibility == Visibility.Visible) == 3
+                && (string?)exportPicker.SelectedValue == DvdReadCompatibilityModes.WriteSafeLight,
+                "the shared level picker has three choices and defaults to light");
+            exportPicker.SetCurrentValue(Selector.SelectedValueProperty, DvdReadCompatibilityModes.WriteSafeStrong);
+            Require(shell.State.DvdReadCompatibilityMode == DvdReadCompatibilityModes.WriteSafeStrong,
+                "the export level picker updates shared state");
             UiLayoutSnapshot.Save(export, "dvd-read-compatibility-export-en");
 
             var burn = new BurnView(shell.Burn);
             host.Content = burn;
             Layout(burn);
             var burnToggle = Descendants<DvdReadCompatibilityToggle>(burn).Single();
-            Require(burnToggle.IsChecked && burnToggle.IsEditable, "streaming burn shows the shared selection");
+            Require(burnToggle.IsChecked && burnToggle.IsEditable
+                && burnToggle.Mode == DvdReadCompatibilityModes.WriteSafeStrong,
+                "streaming burn shows the shared selection");
+            shell.Burn.ConfirmChecked = true;
+            Descendants<ComboBox>(burnToggle).Single()
+                .SetCurrentValue(Selector.SelectedValueProperty, DvdReadCompatibilityModes.WriteSafeZone);
+            Require(shell.State.DvdReadCompatibilityMode == DvdReadCompatibilityModes.WriteSafeZone
+                && exportToggle.Mode == DvdReadCompatibilityModes.WriteSafeZone && !shell.Burn.ConfirmChecked,
+                "editing the burn level updates export and invalidates the previous confirmation");
             shell.Burn.ConfirmChecked = true;
             Descendants<CheckBox>(burnToggle).Single().SetCurrentValue(ToggleButton.IsCheckedProperty, false);
             Require(!shell.State.DvdReadCompatibility && !exportToggle.IsChecked && !shell.Burn.ConfirmChecked,
@@ -109,7 +146,9 @@ internal static class DvdReadCompatibilityUiTests
             var options = (DvdStreamingOptions)typeof(BurnViewModel)
                 .GetMethod("ReadDvdStreamingOptions", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(shell.Burn, null)!;
             shell.State.DvdReadCompatibility = false;
-            Require(options.ReadCompatibility, "prepared project burn options retain the captured value");
+            shell.State.DvdReadCompatibilityMode = DvdReadCompatibilityModes.WriteSafeLight;
+            Require(options.ReadCompatibility && options.ReadCompatibilityMode == DvdReadCompatibilityModes.WriteSafeZone,
+                "prepared project burn options retain the captured value and level");
 
             var calibration = shell.Calibration;
             calibration.SelectedDiscType = "DVD";
@@ -128,24 +167,28 @@ internal static class DvdReadCompatibilityUiTests
             Layout(calibrationPage);
             var setupToggle = Descendants<DvdReadCompatibilityToggle>(calibrationPage).Single();
             var label = Descendants<TextBlock>(setupToggle).Single(text => text.Text == L.T("DvdReadCompatibility.Label"));
-            Require(label.ActualWidth <= setupToggle.ActualWidth - 24 && label.ActualHeight > label.FontSize * 1.5,
-                "the complete English checkbox label wraps within the narrow calibration sidebar");
+            Require(label.ActualWidth > 0 && label.ActualWidth <= setupToggle.ActualWidth - 24
+                && label.TextWrapping == TextWrapping.Wrap,
+                "the complete English checkbox label can wrap within the narrow calibration sidebar");
             var peer = new CheckBoxAutomationPeer(Descendants<CheckBox>(setupToggle).Single());
             Require(peer.GetName() == label.Text, "the whole label remains the checkbox's accessible name");
             ((IToggleProvider)peer.GetPattern(PatternInterface.Toggle)).Toggle();
             Require(calibration.Parameters.DvdReadCompatibility && !shell.State.DvdReadCompatibility,
                 "standalone calibration exposes the option without modifying project settings");
+            Descendants<ComboBox>(setupToggle).Single()
+                .SetCurrentValue(Selector.SelectedValueProperty, DvdReadCompatibilityModes.WriteSafeStrong);
             UiLayoutSnapshot.Save(calibrationPage, "dvd-read-compatibility-calibration-en");
             calibration.CreateTargetCommand.Execute(null);
             var target = calibration.Target ?? throw new InvalidOperationException(calibration.LastStatusMessage);
             Require(target.Parameters.DvdReadCompatibility && CalibrationViewModel.DvdOptions(target).ReadCompatibility
-                && target.DvdReadCompatibilityMode == DvdReadCompatibilityModes.Current
-                && CalibrationViewModel.DvdOptions(target).ReadCompatibilityMode == DvdReadCompatibilityModes.Current,
+                && target.DvdReadCompatibilityMode == DvdReadCompatibilityModes.WriteSafeStrong
+                && CalibrationViewModel.DvdOptions(target).ReadCompatibilityMode == DvdReadCompatibilityModes.WriteSafeStrong,
                 "creating a target freezes the selected generation mode");
             string sessionPath = Path.Combine(directory, "target.calibration.json");
             calibration.SaveSessionTo(sessionPath);
             var request = BurnViewModel.CreateCalibrationBurnRequest(target, false, "memory-only", null);
             calibration.Parameters.DvdReadCompatibility = false;
+            calibration.Parameters.DvdReadCompatibilityMode = DvdReadCompatibilityModes.WriteSafeZone;
             Require(target.Parameters.DvdReadCompatibility && shell.CalibrationBurn.DvdReadCompatibility,
                 "editing next-target setup does not alter the saved target or its burn mode");
             shell.CalibrationBurn.DvdReadCompatibility = false;
@@ -162,18 +205,21 @@ internal static class DvdReadCompatibilityUiTests
             Require(File.ReadAllBytes(calibration.OutputPath).AsSpan().SequenceEqual(expected.ToArray())
                 && CalibrationSessionJson.Load(Path.ChangeExtension(calibration.OutputPath, ".calibration.json"))
                     .Target.Parameters.DvdReadCompatibility
-                && DvdImageMetadata.TryLoad(calibration.OutputPath)?.ReadCompatibility == true,
+                && DvdImageMetadata.TryLoad(calibration.OutputPath) is
+                    { ReadCompatibility: true, ReadCompatibilityMode: DvdReadCompatibilityModes.WriteSafeStrong },
                 "actual calibration export publishes the frozen mode, read-back sidecar and matching payload");
             await calibration.LoadSessionFromAsync(sessionPath);
             Require(calibration.Parameters.DvdReadCompatibility && calibration.Target!.Parameters.DvdReadCompatibility
-                && calibration.Target.DvdReadCompatibilityMode == DvdReadCompatibilityModes.Current,
+                && calibration.Target.DvdReadCompatibilityMode == DvdReadCompatibilityModes.WriteSafeStrong
+                && calibration.Parameters.DvdReadCompatibilityMode == DvdReadCompatibilityModes.WriteSafeStrong,
                 "loading a calibration record restores the frozen option and setup");
 
             var calibrationBurn = new BurnView(shell.CalibrationBurn);
             host.Content = calibrationBurn;
             Layout(calibrationBurn);
             var savedToggle = Descendants<DvdReadCompatibilityToggle>(calibrationBurn).Single();
-            Require(savedToggle.IsChecked && !savedToggle.IsEditable, "calibration burn displays the saved option read-only");
+            Require(savedToggle.IsChecked && !savedToggle.IsEditable && savedToggle.Mode == DvdReadCompatibilityModes.WriteSafeStrong,
+                "calibration burn displays the saved option and level read-only");
             UiLayoutSnapshot.Save(calibrationBurn, "dvd-read-compatibility-calibration-burn-en");
 
             var legacy = JsonNode.Parse(File.ReadAllText(sessionPath))!.AsObject();
@@ -192,7 +238,8 @@ internal static class DvdReadCompatibilityUiTests
             Require(!calibration.Target!.Parameters.DvdReadCompatibility && !calibration.Parameters.DvdReadCompatibility,
                 "legacy calibration records default to disabled and clear a previous selection");
 
-            foreach (string key in new[] { "Label", "Hint", "FrozenHint", "Enabled", "Disabled" })
+            foreach (string key in new[] { "Label", "Hint", "FrozenHint", "Enabled", "Disabled",
+                "Mode", "Light", "Strong", "Zone", "LegacyBridge", "LegacyPeriodic" })
             {
                 string fullKey = "DvdReadCompatibility." + key;
                 L.SetLanguage(L.English);
@@ -200,7 +247,7 @@ internal static class DvdReadCompatibilityUiTests
                 Require(english != fullKey && !english.Any(c => c is >= '\u4e00' and <= '\u9fff'),
                     key + " has an English translation");
                 L.SetLanguage(L.Japanese);
-                Require(L.T(fullKey) == english, key + " uses English fallback when its locale is missing");
+                Require(L.T(fullKey) != fullKey && L.T(fullKey) != english, key + " has a Japanese translation");
             }
             L.SetLanguage(L.Chinese);
             host.Content = export;

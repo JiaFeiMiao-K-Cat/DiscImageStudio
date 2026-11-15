@@ -25,9 +25,11 @@ Disc Image Studio 是一個多平台的光碟表面圖像產生與燒錄工具�
 
 ## 效果預覽
 
-![](docs/images/case1.jpg)
-
-![](docs/images/case2.jpg)
+<p align="center">
+  <img src="docs/images/case1.jpg" alt="盤面效果範例" height="300">
+  <a href="https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues/61"><img src="docs/images/case-community-61.jpg" alt="社群提供的盤面效果範例（Issue #61）" height="300"></a>
+  <img src="docs/images/case2.jpg" alt="盤面效果範例" height="300">
+</p>
 
 ---
 

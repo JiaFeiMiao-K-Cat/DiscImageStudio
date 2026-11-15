@@ -27,9 +27,11 @@ Disc Image Studio je multiplatformní nástroj pro generování a vypalování 
 
 ## Výsledky
 
-![](docs/images/case1.jpg)
-
-![](docs/images/case2.jpg)
+<p align="center">
+  <img src="docs/images/case1.jpg" alt="Ukázka potisku disku" height="300">
+  <a href="https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues/61"><img src="docs/images/case-community-61.jpg" alt="Ukázka potisku disku od komunity (Issue #61)" height="300"></a>
+  <img src="docs/images/case2.jpg" alt="Ukázka potisku disku" height="300">
+</p>
 
 ---
 

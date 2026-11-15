@@ -1061,14 +1061,14 @@
     "es": "Ritek Medical Aqua (medido)",
     "cs": "Ritek Medical Aqua (naměřeno)"
   },
-  "实测参数：内半径 24.911275 mm、外半径 57.931155 mm、359,845 扇区；扫描速度采用 1200 mm/s。": {
-    "zh-CN": "实测参数：内半径 24.911275 mm、外半径 57.931155 mm、359,845 扇区；扫描速度采用 1200 mm/s。",
-    "en": "Measured parameters: inner radius 24.911275 mm, outer radius 57.931155 mm, 359,845 sectors; scanning speed 1200 mm/s.",
-    "zh-TW": "實測參數：內半徑 24.911275 mm、外半徑 57.931155 mm、359,845 磁區；掃描速度採用 1200 mm/s。",
-    "ja": "実測パラメーター: 内半径 24.911275 mm、外半径 57.931155 mm、359,845 セクター。スキャン速度は 1200 mm/s を使用。",
-    "tr": "Ölçülen parametreler: iç yarıçap 24,911275 mm, dış yarıçap 57,931155 mm, 359.845 sektör; tarama hızı 1200 mm/s.",
-    "es": "Parámetros medidos: radio interior 24,911275 mm, radio exterior 57,931155 mm, 359.845 sectores; velocidad de exploración 1200 mm/s.",
-    "cs": "Naměřené parametry: vnitřní poloměr 24,911275 mm, vnější poloměr 57,931155 mm, 359 845 sektorů; lineární rychlost 1200 mm/s."
+  "实测参数：内半径 24.911275 mm、外半径 57.931155 mm、359,845 扇区；扫描速度采用 1200 mm/s。MID 为 97m15s17f，圈码为 RSD80M-00009 80。": {
+    "zh-CN": "实测参数：内半径 24.911275 mm、外半径 57.931155 mm、359,845 扇区；扫描速度采用 1200 mm/s。MID 为 97m15s17f，圈码为 RSD80M-00009 80。",
+    "en": "Measured parameters: inner radius 24.911275 mm, outer radius 57.931155 mm, 359,845 sectors; scanning speed 1200 mm/s. MID: 97m15s17f. Ring code: RSD80M-00009 80.",
+    "zh-TW": "實測參數：內半徑 24.911275 mm、外半徑 57.931155 mm、359,845 磁區；掃描速度採用 1200 mm/s。MID 為 97m15s17f，圈碼為 RSD80M-00009 80。",
+    "ja": "実測パラメーター: 内半径 24.911275 mm、外半径 57.931155 mm、359,845 セクター。スキャン速度は 1200 mm/s を使用。MID は 97m15s17f、リングコードは RSD80M-00009 80。",
+    "tr": "Ölçülen parametreler: iç yarıçap 24,911275 mm, dış yarıçap 57,931155 mm, 359.845 sektör; tarama hızı 1200 mm/s. MID: 97m15s17f. Halka kodu: RSD80M-00009 80.",
+    "es": "Parámetros medidos: radio interior 24,911275 mm, radio exterior 57,931155 mm, 359.845 sectores; velocidad de exploración 1200 mm/s. MID: 97m15s17f. Código del anillo: RSD80M-00009 80.",
+    "cs": "Naměřené parametry: vnitřní poloměr 24,911275 mm, vnější poloměr 57,931155 mm, 359 845 sektorů; lineární rychlost 1200 mm/s. MID: 97m15s17f. Kód vnitřního prstence: RSD80M-00009 80."
   },
   "威宝 CD-R AZO (43438)（实测）": {
     "zh-CN": "威宝 CD-R AZO (43438)（实测）",
@@ -1079,14 +1079,14 @@
     "es": "Verbatim CD-R AZO (43438) (medido)",
     "cs": "Verbatim CD-R AZO (43438) (měřeno)"
   },
-  "实测参数：内半径 24.837775 mm、外半径 58.020875 mm、359,848 扇区；扫描速度采用 1200 mm/s。": {
-    "zh-CN": "实测参数：内半径 24.837775 mm、外半径 58.020875 mm、359,848 扇区；扫描速度采用 1200 mm/s。",
-    "en": "Measured parameters: inner radius 24.837775 mm, outer radius 58.020875 mm, 359,848 sectors; scanning speed 1200 mm/s.",
-    "zh-TW": "實測參數：內半徑 24.837775 mm、外半徑 58.020875 mm、359,848 磁區；掃描速度採用 1200 mm/s。",
-    "ja": "実測パラメーター: 内半径 24.837775 mm、外半径 58.020875 mm、359,848 セクター。スキャン速度は 1200 mm/s を使用。",
-    "tr": "Ölçülen parametreler: iç yarıçap 24,837775 mm, dış yarıçap 58,020875 mm, 359.848 sektör; tarama hızı 1200 mm/s.",
-    "es": "Parámetros medidos: radio interior 24,837775 mm, radio exterior 58,020875 mm, 359.848 sectores; velocidad de exploración 1200 mm/s.",
-    "cs": "Naměřené parametry: vnitřní poloměr 24,837775 mm, vnější poloměr 58,020875 mm, 359 848 sektorů; lineární rychlost 1200 mm/s."
+  "实测参数：内半径 24.837775 mm、外半径 58.020875 mm、359,848 扇区；扫描速度采用 1200 mm/s。MID 为 97m34s23f，圈码为 ZE6778-CDR-A80A AZO。": {
+    "zh-CN": "实测参数：内半径 24.837775 mm、外半径 58.020875 mm、359,848 扇区；扫描速度采用 1200 mm/s。MID 为 97m34s23f，圈码为 ZE6778-CDR-A80A AZO。",
+    "en": "Measured parameters: inner radius 24.837775 mm, outer radius 58.020875 mm, 359,848 sectors; scanning speed 1200 mm/s. MID: 97m34s23f. Ring code: ZE6778-CDR-A80A AZO.",
+    "zh-TW": "實測參數：內半徑 24.837775 mm、外半徑 58.020875 mm、359,848 磁區；掃描速度採用 1200 mm/s。MID 為 97m34s23f，圈碼為 ZE6778-CDR-A80A AZO。",
+    "ja": "実測パラメーター: 内半径 24.837775 mm、外半径 58.020875 mm、359,848 セクター。スキャン速度は 1200 mm/s を使用。MID は 97m34s23f、リングコードは ZE6778-CDR-A80A AZO。",
+    "tr": "Ölçülen parametreler: iç yarıçap 24,837775 mm, dış yarıçap 58,020875 mm, 359.848 sektör; tarama hızı 1200 mm/s. MID: 97m34s23f. Halka kodu: ZE6778-CDR-A80A AZO.",
+    "es": "Parámetros medidos: radio interior 24,837775 mm, radio exterior 58,020875 mm, 359.848 sectores; velocidad de exploración 1200 mm/s. MID: 97m34s23f. Código del anillo: ZE6778-CDR-A80A AZO.",
+    "cs": "Naměřené parametry: vnitřní poloměr 24,837775 mm, vnější poloměr 58,020875 mm, 359 848 sektorů; lineární rychlost 1200 mm/s. MID: 97m34s23f. Kód vnitřního prstence: ZE6778-CDR-A80A AZO."
   },
   "标准 74min CD": {
     "zh-CN": "标准 74min CD",
@@ -1133,14 +1133,14 @@
     "es": "Verbatim DVD-R AZO (43533) (medido)",
     "cs": "Verbatim DVD-R AZO (43533) (měřeno)"
   },
-  "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。": {
-    "zh-CN": "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
-    "en": "Verified Verbatim DVD-R AZO 43533 calibration: 23.9914606277–57.9648936579 mm, 2,297,888 sectors; cubic track pitch distribution.",
-    "zh-TW": "Verbatim DVD-R AZO 43533 已驗證校準參數：23.9914606277–57.9648936579 mm，共 2,297,888 個磁區；採用三次軌距分布。",
-    "ja": "Verbatim DVD-R AZO 43533 の検証済みキャリブレーション: 23.9914606277–57.9648936579 mm、2,297,888 セクター。3 次のトラック ピッチ分布を使用。",
-    "tr": "Doğrulanmış Verbatim DVD-R AZO 43533 kalibrasyonu: 23,9914606277–57,9648936579 mm, 2.297.888 sektör; üçüncü dereceden iz aralığı dağılımı.",
-    "es": "Calibración verificada de Verbatim DVD-R AZO 43533: 23,9914606277–57,9648936579 mm, 2.297.888 sectores; distribución cúbica del paso de pista.",
-    "cs": "Ověřená kalibrace Verbatim DVD-R AZO 43533: 23,9914606277–57,9648936579 mm, celkem 2 297 888 sektorů; kubické rozložení rozteče stop."
+  "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。MID 为 MCC 03RG20，圈码为 ZE5788-DVR-J47F4。": {
+    "zh-CN": "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。MID 为 MCC 03RG20，圈码为 ZE5788-DVR-J47F4。",
+    "en": "Verified Verbatim DVD-R AZO 43533 calibration: 23.9914606277–57.9648936579 mm, 2,297,888 sectors; cubic track pitch distribution. MID is MCC 03RG20 and the ring code is ZE5788-DVR-J47F4.",
+    "zh-TW": "Verbatim DVD-R AZO 43533 已驗證校準參數：23.9914606277–57.9648936579 mm，共 2,297,888 個磁區；採用三次軌距分布。MID 為 MCC 03RG20，圈碼為 ZE5788-DVR-J47F4。",
+    "ja": "Verbatim DVD-R AZO 43533 の検証済みキャリブレーション: 23.9914606277–57.9648936579 mm、2,297,888 セクター。3 次のトラック ピッチ分布を使用。MID は MCC 03RG20、リングコードは ZE5788-DVR-J47F4。",
+    "tr": "Doğrulanmış Verbatim DVD-R AZO 43533 kalibrasyonu: 23,9914606277–57,9648936579 mm, 2.297.888 sektör; üçüncü dereceden iz aralığı dağılımı. MID değeri MCC 03RG20, halka kodu ZE5788-DVR-J47F4.",
+    "es": "Calibración verificada de Verbatim DVD-R AZO 43533: 23,9914606277–57,9648936579 mm, 2.297.888 sectores; distribución cúbica del paso de pista. El MID es MCC 03RG20 y el código del anillo es ZE5788-DVR-J47F4.",
+    "cs": "Ověřená kalibrace Verbatim DVD-R AZO 43533: 23,9914606277–57,9648936579 mm, celkem 2 297 888 sektorů; kubické rozložení rozteče stop. MID je MCC 03RG20 a kód vnitřního prstence je ZE5788-DVR-J47F4."
   },
   "威宝 DVD-R AZO (43523)（实测）": {
     "zh-CN": "威宝 DVD-R AZO (43523)（实测）",
@@ -1277,14 +1277,14 @@
     "es": "Ritek BD-R 10x (medido)",
     "cs": "Ritek BD-R 10x (naměřeno)"
   },
-  "实测参数：内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 扇区。": {
-    "zh-CN": "实测参数：内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 扇区。",
-    "en": "Measured parameters: inner radius 23.988221 mm, outer radius 58.023235 mm, 12,219,392 sectors.",
-    "zh-TW": "實測參數：內半徑 23.988221 mm、外半徑 58.023235 mm、12,219,392 磁區。",
-    "ja": "実測パラメーター: 内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 セクター。",
-    "tr": "Ölçülen parametreler: iç yarıçap 23,988221 mm, dış yarıçap 58,023235 mm, 12.219.392 sektör.",
-    "es": "Parámetros medidos: radio interior 23,988221 mm, radio exterior 58,023235 mm, 12.219.392 sectores.",
-    "cs": "Naměřené parametry: vnitřní poloměr 23,988221 mm, vnější poloměr 58,023235 mm, 12 219 392 sektorů."
+  "实测参数：内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 扇区。MID 为 RITEK-BR2，圈码为 RBD4R015D 001。": {
+    "zh-CN": "实测参数：内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 扇区。MID 为 RITEK-BR2，圈码为 RBD4R015D 001。",
+    "en": "Measured parameters: inner radius 23.988221 mm, outer radius 58.023235 mm, 12,219,392 sectors. MID: RITEK-BR2. Ring code: RBD4R015D 001.",
+    "zh-TW": "實測參數：內半徑 23.988221 mm、外半徑 58.023235 mm、12,219,392 磁區。MID 為 RITEK-BR2，圈碼為 RBD4R015D 001。",
+    "ja": "実測パラメーター: 内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 セクター。MID は RITEK-BR2、リングコードは RBD4R015D 001。",
+    "tr": "Ölçülen parametreler: iç yarıçap 23,988221 mm, dış yarıçap 58,023235 mm, 12.219.392 sektör. MID: RITEK-BR2. Halka kodu: RBD4R015D 001.",
+    "es": "Parámetros medidos: radio interior 23,988221 mm, radio exterior 58,023235 mm, 12.219.392 sectores. MID: RITEK-BR2. Código del anillo: RBD4R015D 001.",
+    "cs": "Naměřené parametry: vnitřní poloměr 23,988221 mm, vnější poloměr 58,023235 mm, 12 219 392 sektorů. MID: RITEK-BR2. Kód vnitřního prstence: RBD4R015D 001."
   },
   "铼德 BD-R 12x（实测）": {
     "zh-CN": "铼德 BD-R 12x（实测）",
@@ -1313,14 +1313,14 @@
     "es": "Verbatim BD-R (64099) (medido)",
     "cs": "Verbatim BD-R (64099) (měřeno)"
   },
-  "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。": {
-    "zh-CN": "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。",
-    "en": "Measured parameters: inner radius 23.987042 mm, outer radius 57.987960 mm, 12,219,392 sectors.",
-    "zh-TW": "實測參數：內半徑 23.987042 mm、外半徑 57.987960 mm、12,219,392 磁區。",
-    "ja": "実測パラメーター: 内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 セクター。",
-    "tr": "Ölçülen parametreler: iç yarıçap 23,987042 mm, dış yarıçap 57,987960 mm, 12.219.392 sektör.",
-    "es": "Parámetros medidos: radio interior 23,987042 mm, radio exterior 57,987960 mm, 12.219.392 sectores.",
-    "cs": "Naměřené parametry: vnitřní poloměr 23,987042 mm, vnější poloměr 57,987960 mm, 12 219 392 sektorů."
+  "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。MID 为 CMCMAG-BA5，圈码为 CMBR6DV5.3 S-0525 002。": {
+    "zh-CN": "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。MID 为 CMCMAG-BA5，圈码为 CMBR6DV5.3 S-0525 002。",
+    "en": "Measured parameters: inner radius 23.987042 mm, outer radius 57.987960 mm, 12,219,392 sectors. MID: CMCMAG-BA5. Ring code: CMBR6DV5.3 S-0525 002.",
+    "zh-TW": "實測參數：內半徑 23.987042 mm、外半徑 57.987960 mm、12,219,392 磁區。MID 為 CMCMAG-BA5，圈碼為 CMBR6DV5.3 S-0525 002。",
+    "ja": "実測パラメーター: 内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 セクター。MID は CMCMAG-BA5、リングコードは CMBR6DV5.3 S-0525 002。",
+    "tr": "Ölçülen parametreler: iç yarıçap 23,987042 mm, dış yarıçap 57,987960 mm, 12.219.392 sektör. MID: CMCMAG-BA5. Halka kodu: CMBR6DV5.3 S-0525 002.",
+    "es": "Parámetros medidos: radio interior 23,987042 mm, radio exterior 57,987960 mm, 12.219.392 sectores. MID: CMCMAG-BA5. Código del anillo: CMBR6DV5.3 S-0525 002.",
+    "cs": "Naměřené parametry: vnitřní poloměr 23,987042 mm, vnější poloměr 57,987960 mm, 12 219 392 sektorů. MID: CMCMAG-BA5. Kód vnitřního prstence: CMBR6DV5.3 S-0525 002."
   },
   "威宝 BD-R (64293)（实测）": {
     "zh-CN": "威宝 BD-R (64293)（实测）",

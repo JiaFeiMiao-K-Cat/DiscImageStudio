@@ -32,6 +32,7 @@ public partial class LivePreviewViewModel : ObservableObject
     private readonly DispatcherTimer _livePreviewTimer;
     private readonly DiscParametersState _state;
     private readonly ShellViewModel _shell;
+    private readonly InFlightTaskTracker _inFlightRefreshes = new();
 
     /// <summary>Exposed for the view's two-way bindings to the shared parameters.</summary>
     public DiscParametersState State => _state;
@@ -60,6 +61,7 @@ public partial class LivePreviewViewModel : ObservableObject
     private bool _livePreviewRefreshRunning;
     private bool _livePreviewRefreshPending;
     private bool _isLivePreviewReady;
+    private bool _windowClosed;
     private bool _suppressDiscTypeAutoUpdate;
     private bool _suppressPreviewModeAutoUpdate;
     private int _livePreviewRevision;
@@ -262,7 +264,10 @@ public partial class LivePreviewViewModel : ObservableObject
             CdDiscParameters parameters = dataMetadata.Parameters;
             ToneProfile dataTone = dataMetadata.Tone.Normalized();
             _state.CdSectors = parameters.Sectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            _state.CdUsableSectors = parameters.OutputSectors.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            _state.CdUsableSectors = _state.ResolveAdoptedUsableSectors(
+                OpticalDiscFamily.CompactDisc, parameters.Sectors, parameters.OutputSectors,
+                dataMetadata.FilesAtOuterRing)
+                .ToString(System.Globalization.CultureInfo.InvariantCulture);
             _state.CdInnerRadius = FormatNumber(parameters.InnerRadiusMm);
             _state.CdOuterRadius = FormatNumber(parameters.OuterRadiusMm);
             _state.CdPitchLinear = FormatNumber(parameters.PitchLinear);
@@ -291,7 +296,11 @@ public partial class LivePreviewViewModel : ObservableObject
             metadata.ToneLevels,
             metadata.ToneBrightness,
             metadata.ToneSrgbLinearization).Normalized();
-        if (state.CdUsableSectors.Trim() == (metadata.UsableSectors ?? metadata.Sectors).ToString(System.Globalization.CultureInfo.InvariantCulture)
+        string adoptedUsable = state.ResolveAdoptedUsableSectors(
+            OpticalDiscFamily.CompactDisc, metadata.Sectors, metadata.UsableSectors,
+            filesAtOuterRing: false)
+            .ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (state.CdUsableSectors.Trim() == adoptedUsable
             && state.CdSectors.Trim() == sectors
             && state.CdInnerRadius.Trim() == innerRadius
             && state.CdOuterRadius.Trim() == outerRadius
@@ -308,7 +317,7 @@ public partial class LivePreviewViewModel : ObservableObject
         }
 
         state.CdSectors = sectors;
-        state.CdUsableSectors = (metadata.UsableSectors ?? metadata.Sectors).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        state.CdUsableSectors = adoptedUsable;
         state.CdInnerRadius = innerRadius;
         state.CdOuterRadius = outerRadius;
         state.CdPitchLinear = FormatNumber(metadata.PitchLinear);
@@ -345,7 +354,11 @@ public partial class LivePreviewViewModel : ObservableObject
             System.Globalization.CultureInfo.InvariantCulture);
         string innerRadius = FormatNumber(metadata.InnerRadiusMm);
         string outerRadius = FormatNumber(metadata.OuterRadiusMm);
-        if (state.DvdUsableSectors.Trim() == (metadata.UsableSectors ?? metadata.TotalSectors).ToString(System.Globalization.CultureInfo.InvariantCulture)
+        string adoptedUsable = state.ResolveAdoptedUsableSectors(
+            OpticalDiscFamily.Dvd, metadata.TotalSectors, metadata.UsableSectors,
+            metadata.FilesAtOuterRing)
+            .ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (state.DvdUsableSectors.Trim() == adoptedUsable
             && state.DvdTotalSectors.Trim() == totalSectors
             && state.DvdInnerRadius.Trim() == innerRadius
             && state.DvdOuterRadius.Trim() == outerRadius
@@ -358,7 +371,7 @@ public partial class LivePreviewViewModel : ObservableObject
         }
 
         state.DvdTotalSectors = totalSectors;
-        state.DvdUsableSectors = (metadata.UsableSectors ?? metadata.TotalSectors).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        state.DvdUsableSectors = adoptedUsable;
         state.DvdInnerRadius = innerRadius;
         state.DvdOuterRadius = outerRadius;
         state.DvdPitchLinear = FormatNumber(metadata.PitchLinear);
@@ -397,7 +410,10 @@ public partial class LivePreviewViewModel : ObservableObject
         string innerRadius = FormatNumber(metadata.InnerRadiusMm);
         string outerRadius = FormatNumber(metadata.OuterRadiusMm);
         state.BdTotalSectors = sectors;
-        state.BdUsableSectors = (metadata.UsableSectors ?? metadata.TotalSectors).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        state.BdUsableSectors = state.ResolveAdoptedUsableSectors(
+            OpticalDiscFamily.BluRay, metadata.TotalSectors, metadata.UsableSectors,
+            metadata.FilesAtOuterRing)
+            .ToString(System.Globalization.CultureInfo.InvariantCulture);
         state.BdInnerRadius = innerRadius;
         state.BdOuterRadius = outerRadius;
         state.BdPitchLinear = FormatNumber(metadata.PitchLinear);
@@ -595,6 +611,18 @@ public partial class LivePreviewViewModel : ObservableObject
         ResultPreviewPlaceholderText = StatusText;
     }
 
+    private void ReportPreviewFailure(int revision, CancellationToken cancellationToken,
+        Exception exception, Func<string> formatLog)
+    {
+        if (_windowClosed || cancellationToken.IsCancellationRequested || revision != _livePreviewRevision)
+        {
+            return;
+        }
+
+        SetLivePreviewFailure(exception);
+        _shell.AppendLog(formatLog());
+    }
+
     /// <summary>An input problem detected before rendering starts (missing artifact, invalid
     /// geometry). It clears the picture exactly like a thrown failure, but the message is not
     /// kept for a language switch: it names the missing input rather than a broken pipeline.</summary>
@@ -610,7 +638,7 @@ public partial class LivePreviewViewModel : ObservableObject
         HasFileRegionOverlay = false;
         _readyStatus = null;
         _livePreviewFailure = null;
-        if (!_shell.IsWindowLoaded)
+        if (!_shell.IsWindowLoaded || _windowClosed)
         {
             return;
         }
@@ -625,6 +653,11 @@ public partial class LivePreviewViewModel : ObservableObject
 
     internal void RefreshNow()
     {
+        if (_windowClosed)
+        {
+            return;
+        }
+
         HasFileRegionOverlay = false;
         _readyStatus = null;
         _livePreviewFailure = null;
@@ -634,8 +667,17 @@ public partial class LivePreviewViewModel : ObservableObject
         _ = RefreshAsync();
     }
 
-    private async Task RefreshAsync()
+    internal Task WaitForPendingRefreshesAsync() => _inFlightRefreshes.WaitForAllAsync();
+
+    private Task RefreshAsync() => _inFlightRefreshes.Track(RefreshCoreAsync());
+
+    private async Task RefreshCoreAsync()
     {
+        if (_windowClosed)
+        {
+            return;
+        }
+
         if (_livePreviewRefreshRunning)
         {
             _livePreviewRefreshPending = true;
@@ -647,6 +689,11 @@ public partial class LivePreviewViewModel : ObservableObject
         {
             do
             {
+                if (_windowClosed)
+                {
+                    return;
+                }
+
                 HasFileRegionOverlay = false;
                 _readyStatus = null;
                 _livePreviewFailure = null;
@@ -665,12 +712,17 @@ public partial class LivePreviewViewModel : ObservableObject
                         break;
                 }
 
+                if (_windowClosed)
+                {
+                    return;
+                }
+
                 if (revision != _livePreviewRevision)
                 {
                     _livePreviewRefreshPending = true;
                 }
             }
-            while (_livePreviewRefreshPending && _shell.IsWindowLoaded);
+            while (_livePreviewRefreshPending && _shell.IsWindowLoaded && !_windowClosed);
         }
         finally
         {
@@ -763,8 +815,8 @@ public partial class LivePreviewViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            SetLivePreviewFailure(exception);
-            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 实时预览失败：{exception}\n"));
+            ReportPreviewFailure(revision, cancellationToken, exception,
+                () => L.F($"[{DateTime.Now:HH:mm:ss}] 实时预览失败：{exception}\n"));
         }
         finally
         {
@@ -842,8 +894,8 @@ public partial class LivePreviewViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            SetLivePreviewFailure(exception);
-            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 实时预览失败：{exception}\n"));
+            ReportPreviewFailure(revision, cancellationToken, exception,
+                () => L.F($"[{DateTime.Now:HH:mm:ss}] 实时预览失败：{exception}\n"));
         }
         finally
         {
@@ -921,8 +973,8 @@ public partial class LivePreviewViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            SetLivePreviewFailure(exception);
-            _shell.AppendLog(JobDiagnostics.FormatLog($"DVD preview · {options}", exception));
+            ReportPreviewFailure(revision, cancellationToken, exception,
+                () => JobDiagnostics.FormatLog($"DVD preview · {options}", exception));
         }
         finally
         {
@@ -981,8 +1033,8 @@ public partial class LivePreviewViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            SetLivePreviewFailure(exception);
-            _shell.AppendLog(JobDiagnostics.FormatLog($"DVD preview · {options}", exception));
+            ReportPreviewFailure(revision, cancellationToken, exception,
+                () => JobDiagnostics.FormatLog($"DVD preview · {options}", exception));
         }
         finally
         {
@@ -1095,8 +1147,8 @@ public partial class LivePreviewViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            SetLivePreviewFailure(exception);
-            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 蓝光实时预览失败：{exception}\n"));
+            ReportPreviewFailure(revision, cancellationToken, exception,
+                () => L.F($"[{DateTime.Now:HH:mm:ss}] 蓝光实时预览失败：{exception}\n"));
         }
         finally
         {
@@ -1173,8 +1225,8 @@ public partial class LivePreviewViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            SetLivePreviewFailure(exception);
-            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 蓝光成品读回失败：{exception}\n"));
+            ReportPreviewFailure(revision, cancellationToken, exception,
+                () => L.F($"[{DateTime.Now:HH:mm:ss}] 蓝光成品读回失败：{exception}\n"));
         }
         finally
         {
@@ -1585,10 +1637,15 @@ public partial class LivePreviewViewModel : ObservableObject
 
     internal void OnWindowClosed()
     {
+        _windowClosed = true;
         _livePreviewTimer.Stop();
+        _livePreviewRefreshPending = false;
+        _livePreviewRevision++;
         _livePreviewCancellation?.Cancel();
         _livePreviewCancellation?.Dispose();
+        _livePreviewCancellation = null;
         TempFiles.TryDeleteTemporaryFile(_lastLivePreviewPath);
+        _lastLivePreviewPath = null;
     }
 
     partial void OnHasResultImageChanged(bool value)

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -576,7 +577,7 @@ public partial class ShellViewModel : ObservableObject
         // open the only one that applies; the check below runs after the decode so those
         // edits are still seen by the unsaved-changes prompt.
         int generation = ++_openProjectGeneration;
-        Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)> preloadedImages =
+        Dictionary<string, (ImageSource? Image, ImageSource? Thumbnail)> preloadedImages =
             await Design.PreloadLayerImagesAsync(document.Layers);
         if (generation != _openProjectGeneration)
         {
@@ -609,7 +610,7 @@ public partial class ShellViewModel : ObservableObject
     private void OpenDocument(
         string path,
         ProjectDocument document,
-        IReadOnlyDictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)>? preloadedLayers = null)
+        IReadOnlyDictionary<string, (ImageSource? Image, ImageSource? Thumbnail)>? preloadedLayers = null)
     {
         _isApplyingProject = true;
         try
@@ -870,6 +871,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.CdInterleave),
         nameof(DiscParametersState.CdDataDirectory),
         nameof(DiscParametersState.CdFilesAtOuterRing),
+        nameof(DiscParametersState.CdOuterRingBleed),
         nameof(DiscParametersState.CdVolumeLabel),
         nameof(DiscParametersState.DvdInnerRadius),
         nameof(DiscParametersState.DvdOuterRadius),
@@ -882,7 +884,9 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.DvdOutputPath),
         nameof(DiscParametersState.DvdDataDirectory),
         nameof(DiscParametersState.DvdFilesAtOuterRing),
+        nameof(DiscParametersState.DvdOuterRingBleed),
         nameof(DiscParametersState.DvdReadCompatibility),
+        nameof(DiscParametersState.DvdReadCompatibilityMode),
         nameof(DiscParametersState.DvdVolumeLabel),
         nameof(DiscParametersState.BdInnerRadius),
         nameof(DiscParametersState.BdOuterRadius),
@@ -895,6 +899,7 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.BdOutputPath),
         nameof(DiscParametersState.BdDataDirectory),
         nameof(DiscParametersState.BdFilesAtOuterRing),
+        nameof(DiscParametersState.BdOuterRingBleed),
         nameof(DiscParametersState.BdVolumeLabel),
         nameof(DiscParametersState.BdInvertMapping),
         nameof(DiscParametersState.ToneDitherStrength),
@@ -954,6 +959,9 @@ public partial class ShellViewModel : ObservableObject
             or nameof(DiscParametersState.CdSectors) or nameof(DiscParametersState.CdUsableSectors)
             or nameof(DiscParametersState.DvdTotalSectors) or nameof(DiscParametersState.DvdUsableSectors)
             or nameof(DiscParametersState.BdTotalSectors) or nameof(DiscParametersState.BdUsableSectors)
+            or nameof(DiscParametersState.CdOuterRingBleed)
+            or nameof(DiscParametersState.DvdOuterRingBleed)
+            or nameof(DiscParametersState.BdOuterRingBleed)
             or nameof(DiscParametersState.CdPitchLinear) or nameof(DiscParametersState.CdPitchQuadratic) or nameof(DiscParametersState.CdPitchCubic)
             or nameof(DiscParametersState.DvdPitchLinear) or nameof(DiscParametersState.DvdPitchQuadratic) or nameof(DiscParametersState.DvdPitchCubic)
             or nameof(DiscParametersState.BdPitchLinear) or nameof(DiscParametersState.BdPitchQuadratic) or nameof(DiscParametersState.BdPitchCubic))

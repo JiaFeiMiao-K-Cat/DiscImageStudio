@@ -25,9 +25,11 @@ Disc Image Studio は、あらゆる記録ドライブを使って、あらゆ�
 
 ## 作例
 
-![](docs/images/case1.jpg)
-
-![](docs/images/case2.jpg)
+<p align="center">
+  <img src="docs/images/case1.jpg" alt="盤面の作例" height="300">
+  <a href="https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues/61"><img src="docs/images/case-community-61.jpg" alt="コミュニティ提供の盤面作例（Issue #61）" height="300"></a>
+  <img src="docs/images/case2.jpg" alt="盤面の作例" height="300">
+</p>
 
 ---
 

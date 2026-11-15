@@ -265,7 +265,8 @@ public static class FastDispersionImageWriter
                 DvdDataFrameBuilder.TransformPayloadScrambling(payload, sector + options.PsnOffset);
                 if (options.ReadCompatibility)
                     compatibilityChanges += ApplyReadCompatibility(payload,
-                        DvdDataFrameBuilder.PayloadScramblerMask(sector + options.PsnOffset), ownership, options);
+                        DvdDataFrameBuilder.PayloadScramblerMask(sector + options.PsnOffset), ownership,
+                        sector, options.ReadCompatibilityMode);
             }
             return new GeneratedBlock(lba, buffer, buffer.Length, compatibilityChanges);
         }
@@ -468,17 +469,21 @@ public static class FastDispersionImageWriter
                 }
             }
             if (options.ReadCompatibility)
-                compatibilityChanges += ApplyReadCompatibility(sectorPayload, scrambler, ownership, options);
+                compatibilityChanges += ApplyReadCompatibility(sectorPayload, scrambler, ownership,
+                    lba + (uint)sector, options.ReadCompatibilityMode);
         }
 
         return new GeneratedBlock(lba, payloads, controlledWords, compatibilityChanges);
     }
 
     private static int ApplyReadCompatibility(Span<byte> payload, ReadOnlySpan<byte> mask,
-        ReadOnlySpan<byte> ownership, MultiBlockSolveOptions options)
-        => options.ReadCompatibilityMode == DvdReadCompatibilityModes.LegacyBridge
-            ? DvdReadCompatibilityGuard.ApplyLegacySector(payload, mask, ownership)
-            : DvdReadCompatibilityGuard.ApplySector(payload, mask, ownership);
+        ReadOnlySpan<byte> ownership, uint lba, string mode)
+        => mode switch
+        {
+            DvdReadCompatibilityModes.LegacyBridge => DvdReadCompatibilityGuard.ApplyLegacySector(payload, mask, ownership),
+            DvdReadCompatibilityModes.Periodic9B16 => DvdReadCompatibilityGuard.ApplySector(payload, mask, ownership),
+            _ => DvdReadCompatibilityGuard.ApplyWriteSafeSector(payload, mask, ownership, lba, mode),
+        };
 
     private static int[] BuildPayloadChannelCenters()
     {
