@@ -57,7 +57,7 @@ Choose CD, DVD, or Blu-ray on the home page, specify an output location, and cre
 
 ### 2. Design the Disc Surface
 
-Click **Import images** on the Design page, or drag one or multiple images (PNG, JPEG, BMP, TIFF, GIF, and `.svg` vector artwork up to 32 MiB) from Explorer onto the page. Arrange them using layers, and adjust dithering, gamma, brightness, and grayscale levels in the **Tone** panel on the right. Vector `.svg` layers retain sharp vector rendering and `viewBox` proportions while editing and rasterize on demand for preview and export.
+Click **Import images** on the Design page, or drag one or multiple images (PNG, JPEG, BMP, TIFF, GIF, and `.svg` vector artwork up to 32 MiB) from Explorer onto the page. Arrange them using layers, and adjust dithering, gamma, brightness, and grayscale levels in the **Tone** panel on the right. Vector `.svg` layers retain sharp vector rendering and `viewBox` proportions while editing and rasterize on demand for preview and export; SVG parsing uses `SharpVectors` with external resources and scripts ignored, and complex `<filter>` effects, masks, or advanced CSS class selectors may degrade or be ignored (flattened static-path SVGs are recommended).
 
 ### 3. Preview and Export
 

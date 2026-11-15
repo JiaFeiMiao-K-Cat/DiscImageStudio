@@ -51,7 +51,8 @@ public partial class DesignLayerViewModel : ObservableObject
         double contentOuterRadiusMm,
         (ImageSource? Image, ImageSource? Thumbnail)? preloaded = null)
     {
-        Image = preloaded?.Image ?? DesignComposer.DecodeFrozenImage(ImagePath);
+        // When preloaded already ran on a background worker, do not fall back to synchronous UI decoding on failure.
+        Image = preloaded.HasValue ? preloaded.Value.Image : DesignComposer.DecodeFrozenImage(ImagePath);
         if (Image is null)
         {
             return false;
@@ -83,8 +84,9 @@ public partial class DesignLayerViewModel : ObservableObject
 
         if (Thumbnail is null)
         {
-            Thumbnail = preloaded?.Thumbnail
-                ?? (Image is DrawingImage ? Image : DesignComposer.DecodeThumbnail(ImagePath));
+            Thumbnail = preloaded.HasValue
+                ? preloaded.Value.Thumbnail ?? (Image is DrawingImage ? Image : null)
+                : (Image is DrawingImage ? Image : DesignComposer.DecodeThumbnail(ImagePath));
         }
 
         return true;

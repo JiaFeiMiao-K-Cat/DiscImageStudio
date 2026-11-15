@@ -121,7 +121,7 @@ public partial class DesignView : UserControl
             return;
         }
 
-        _viewModel.ImportImages(images);
+        _ = _viewModel.ImportImagesAsync(images);
         e.Effects = DragDropEffects.Copy;
     }
 

@@ -1,5 +1,4 @@
 using System.IO;
-using System.Security;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -86,6 +85,10 @@ internal static class DesignComposer
 
     /// <summary>Upper bound on imported SVG file size to guard XML parsing memory.</summary>
     internal const long MaxSvgFileBytes = 32L * 1024 * 1024;
+
+    /// <summary>Maximum XML element nesting depth allowed in SVG inputs to guard against
+    /// recursive DOM/drawing-group traversal stack overflows.</summary>
+    internal const int MaxSvgElementDepth = 256;
 
     internal static bool IsSupportedImagePath(string path) =>
         Path.GetExtension(path).ToLowerInvariant() is
@@ -185,6 +188,19 @@ internal static class DesignComposer
                 OptimizePath = true,
             };
 
+            using (XmlReader depthProbe = XmlReader.Create(stream, xmlSettings, string.Empty))
+            {
+                while (depthProbe.Read())
+                {
+                    if (depthProbe.Depth > MaxSvgElementDepth)
+                    {
+                        return null;
+                    }
+                }
+            }
+
+            stream.Position = 0;
+
             using XmlReader xmlReader = XmlReader.Create(stream, xmlSettings, string.Empty);
             using FileSvgReader reader = new(drawingSettings);
             DrawingGroup? drawing = reader.Read(xmlReader);
@@ -208,19 +224,10 @@ internal static class DesignComposer
             image.Freeze();
             return image;
         }
-        catch (Exception exception) when (exception is IOException
-                                              or UnauthorizedAccessException
-                                              or NotSupportedException
-                                              or OutOfMemoryException
-                                              or ArgumentException
-                                              or InvalidOperationException
-                                              or FormatException
-                                              or XmlException
-                                              or UriFormatException
-                                              or SecurityException
-                                              or DomException
-                                              || exception.GetType().FullName == "SharpVectors.Compressions.Brotli.BrotliRuntimeException")
+        catch (Exception)
         {
+            // SharpVectors can throw a wide surface of internal exceptions on malformed or edge-case
+            // SVGs; treat any decode failure cleanly at this boundary so the caller reports a toast.
             return null;
         }
     }

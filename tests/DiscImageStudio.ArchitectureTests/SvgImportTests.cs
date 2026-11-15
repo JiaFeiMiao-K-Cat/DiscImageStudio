@@ -93,6 +93,15 @@ internal static class SvgImportTests
             File.WriteAllText(malformedSvgPath, "<svg><rect");
             Require(DesignComposer.DecodeFrozenImage(malformedSvgPath) is null, "malformed xml svg returns null");
 
+            string deepNestSvgPath = Path.Combine(root, "deep-nest.svg");
+            int overflowDepth = DesignComposer.MaxSvgElementDepth + 16;
+            string openGroups = string.Concat(Enumerable.Repeat("<g>", overflowDepth));
+            string closeGroups = string.Concat(Enumerable.Repeat("</g>", overflowDepth));
+            File.WriteAllText(deepNestSvgPath,
+                $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\">{openGroups}<rect x=\"10\" y=\"10\" width=\"20\" height=\"20\" fill=\"#000\"/>{closeGroups}</svg>");
+            Require(DesignComposer.DecodeFrozenImage(deepNestSvgPath) is null,
+                "excessively nested svg groups fail cleanly instead of overflowing the stack");
+
             string filter = L.T("图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif;*.svg|所有文件|*.*");
             Require(filter.Contains("*.svg", StringComparison.OrdinalIgnoreCase),
                 "localized artwork filter includes *.svg");
@@ -167,6 +176,13 @@ internal static class SvgImportTests
                     DragEventArgs drop = Raise(view, files, DragDrop.PreviewDropEvent);
                     Require(drop.Handled && drop.Effects == DragDropEffects.Copy,
                         "drop handles mixed SVG + PNG payload");
+                    Require(!shell.Design.ImportImagesCommand.CanExecute(null),
+                        "async drop decode disables concurrent import command until completion");
+                    Require(Raise(view, files, DragDrop.PreviewDragOverEvent).Effects == DragDropEffects.None,
+                        "concurrent drag hover is rejected while async import is active");
+                    Wait(shell.Design.ActiveImportTask);
+                    Require(shell.Design.ImportImagesCommand.CanExecute(null),
+                        "import command re-enables once async decode completes");
                     Require(shell.Design.Layers.Select(layer => layer.ImagePath).SequenceEqual([pngPath, svgUpper]),
                         "valid PNG and uppercase .SVG become layers in picker stacking order");
 
@@ -177,6 +193,13 @@ internal static class SvgImportTests
                         "imported .SVG layer retains exact 2:1 physical aspect ratio");
                     Require(shell.Toasts.Count == 1 && shell.Toasts[0].Message.Contains(brokenSvg),
                         "broken .svg displays failure toast without blocking valid SVG/PNG layers");
+
+                    // Clearing layers while a background import is decoding discards stale layers cleanly.
+                    Task supersededImport = shell.Design.ImportImagesAsync([svgUpper]);
+                    shell.Design.ClearLayers();
+                    Wait(supersededImport);
+                    Require(shell.Design.Layers.Count == 0,
+                        "ClearLayers cancels application of superseded async image imports");
                 }
                 finally
                 {
@@ -221,7 +244,7 @@ internal static class SvgImportTests
             {
                 shell = new(Dispatcher.CurrentDispatcher);
                 DesignViewModel design = shell.Design;
-                design.ImportImages([svgPath]);
+                Wait(design.ImportImagesAsync([svgPath]));
                 Require(design.Layers.Count == 1, "svg imports for roundtrip");
                 DesignLayerViewModel layer = design.Layers[0];
                 layer.TranslateXMm = 3.5;
@@ -367,6 +390,28 @@ internal static class SvgImportTests
         args.RoutedEvent = routedEvent;
         target.RaiseEvent(args);
         return args;
+    }
+
+    private static void Wait(Task task)
+    {
+        if (task.IsCompleted)
+        {
+            task.GetAwaiter().GetResult();
+            return;
+        }
+
+        DispatcherFrame frame = new();
+        task.ContinueWith(
+            _ => frame.Continue = false,
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+        if (!task.IsCompleted)
+        {
+            Dispatcher.PushFrame(frame);
+        }
+
+        task.GetAwaiter().GetResult();
     }
 
     private static string CreateTempDirectory()
