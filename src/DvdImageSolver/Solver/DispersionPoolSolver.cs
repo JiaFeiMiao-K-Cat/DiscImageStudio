@@ -59,11 +59,9 @@ internal sealed class DispersionPoolSolver
                     continue;
                 }
 
-                byte anchor = grayscaleTargets.IsEmpty
+                sectorPayload[byteIndex] = grayscaleTargets.IsEmpty
                     ? target < 8 ? BlackScrambledByte : WhiteScrambledByte
                     : DvdGrayscalePalette.GetScrambledByteForLevel(target);
-                sectorPayload[byteIndex] = DvdGrayscalePalette.ApplyWriteSafe(
-                    anchor, (long)initialLba * DvdEccBlockEncoder.PayloadBytesPerSector + payloadIndex);
                 controlledWords++;
             }
 

@@ -176,7 +176,8 @@ public partial class CalibrationViewModel : ObservableObject
         ? L.Format("CalibrationSetup.Target", DiscTypeName(p.Kind), p.Sectors, p.InnerRadiusMm, p.OuterRadiusMm)
             + Environment.NewLine + DescribeArtwork(_target)
             + (p.Kind == CalibrationDiscKind.Dvd ? Environment.NewLine
-                + L.T(p.DvdReadCompatibility ? "DvdReadCompatibility.Enabled" : "DvdReadCompatibility.Disabled") : string.Empty)
+                + DvdReadCompatibilityText.Summary(p.DvdReadCompatibility, _target.EffectiveDvdReadCompatibilityMode)
+                : string.Empty)
         : L.T("CalibrationSetup.NoTarget");
 
     private static string DescribeArtwork(CalibrationTarget target)
@@ -373,7 +374,8 @@ public partial class CalibrationViewModel : ObservableObject
                 CalibrationStage.Fine => CalibrationArtwork.ReferenceCross,
                 _ => throw new InvalidOperationException(),
             };
-            InstallTarget(CalibrationTarget.Create(parameters, artwork: artwork),
+            InstallTarget(CalibrationTarget.Create(parameters, artwork: artwork,
+                dvdReadCompatibilityMode: _state.DvdReadCompatibilityMode),
                 new(RadiusRangeMm: artwork == CalibrationArtwork.WavyBoundary ? .01 : .02,
                     AutoRange: artwork == CalibrationArtwork.WavyBoundary ? false : null), _state.CdInterleave);
             _sessionPath = null;
@@ -793,6 +795,9 @@ public partial class CalibrationViewModel : ObservableObject
                 _state.DvdTotalSectors = p.Sectors.ToString(CultureInfo.InvariantCulture);
                 _state.DvdUsableSectors = p.OutputSectors.ToString(CultureInfo.InvariantCulture);
                 _state.DvdReadCompatibility = p.DvdReadCompatibility;
+                string? mode = _target?.EffectiveDvdReadCompatibilityMode;
+                _state.DvdReadCompatibilityMode = mode is not null && DvdReadCompatibilityModes.IsWriteSafe(mode)
+                    ? mode : DvdReadCompatibilityModes.Current;
                 break;
         }
     }

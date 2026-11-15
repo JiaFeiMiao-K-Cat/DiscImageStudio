@@ -108,6 +108,7 @@ public partial class DiscParametersState : ObservableObject
     [ObservableProperty] private bool _dvdFilesAtOuterRing;
     [ObservableProperty] private bool _dvdOuterRingBleed;
     [ObservableProperty] private bool _dvdReadCompatibility;
+    [ObservableProperty] private string _dvdReadCompatibilityMode = DvdReadCompatibilityModes.Current;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(DvdPitchSummary), nameof(DvdActualPitchSummary))] private string _dvdTotalSectors = "2295104";
     [ObservableProperty] private string _dvdUsableSectors = string.Empty;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(DvdPitchSummary))] private string _dvdInnerRadius = "24.0";

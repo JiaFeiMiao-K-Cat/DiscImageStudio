@@ -18,21 +18,31 @@ SYNC 码表以 [ECMA-267 第三版 Table 4（印刷页码 30）](https://ecma-in
 
 独立[灰阶实验工具](../tools/DvdGrayProbe/README.md)使用 `FastDispersionImageWriter.WriteScrambledCodewordPatternStream`，在同一 payload 码字中心坐标系下直接指定扰码 Q，再写出 `P = Q XOR mask`。该接口不经过固定灰度分档，适合测试 `64/E4` 等候选码字和离散抖动图集；普通图片生成的调色板不受影响。快速生成不回放全盘 ECC/EFM，也不预测光学亮度。回归测试对混合码字执行完整 ECC/EFM 小样本回放，另验证实际 payload、几何、并行一致性和取消。
 
-## DVD 读取兼容性（实验性） / DVD read compatibility (experimental)
+## DVD 兼容性（实验性） / DVD compatibility (experimental)
 
-针对 [#90](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues/90)，提供默认关闭的实验性输出选项；GUI 在 DVD 导出、流式刻录及标定标靶设置中提供，CLI 使用 `--read-compatibility true`（仅支持 fast dispersion）。工程仍只保存开启／关闭选项，不增加配方档位；开启时使用 `periodic-9b-16-v1`。它只改写属于绘图的 payload，不改变文件系统、文件内容、透明度阈值排除的字节或绘图范围之外的字节。
+DVD 导出、流式刻录和新建 DVD 标定靶可启用 [#188 的 WriteSafe](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/pull/188)。选项默认关闭，启用时默认第 1 档。CLI 的 `--read-compatibility true` 同样默认第 1 档，可用 `--read-compatibility-mode 1|2|3` 选择档位（仅支持 fast dispersion）。
 
-新规则依据 [bczhc 的 every16 实现](https://github.com/bczhc/dvd-tools/blob/master/src/bin/dvd-guard-every16.rs)：每个 2048-byte 扇区在固定偏移 `0, 16, …, 2032` 检查原始扰码域 `Q = payload XOR mask(PSN)`；只有 `owned && Q != A5 && Q != 9B` 才将 Q 改为 `9B`，并写回 `payload = 9B XOR mask(PSN)`。生成器额外使用逐字节归属信息保护非绘图内容。已有 `9B` 不重复计数，黑色 `A5` 保持不变；常规绘图的 owned 字节仅为 `A5/92`，因此实际改写的是选中位置的白色 `92`。完全归属于绘图的纯白扇区改变 128 字节，即 6.25%。周期固定在扇区偏移上，不受白色段起点、输入分块或并行 worker 数量影响；不叠加旧版段首 bridge，也不使用原来的 64-byte／58-byte 窗口条件。刻录机仍负责 EDC、ECC 和物理调制。
+| 档位 | 扰码域替换 | 适用范围 |
+| --- | --- | --- |
+| 1 | 每 4 字节轮换白色 `90 94 98 9D` 和黑色 `3B 3C 63 64` | 整个绘图区 |
+| 2 | 白色同第 1 档。黑色每 2 字节轮换 `58 5D B0 B7` | 整个绘图区 |
+| 3 | LBA 100,000 至 299,999 用第 2 档，其余用第 1 档 | 区间按盘片绝对 LBA 定位 |
 
-普通 ISO、流式图片、解析图案、宽地址环带和固定参考图共用新规则；精确指定 Q 的实验 API 拒绝该选项以保留实验输入。新输出的 sidecar 记录 `readCompatibility: "periodic-9b-16-v1"` 与实际 `compatibilityChanges`；关闭时为 `"off"` 和 0。读回预览继续识别旧 `bridge-9b-v1` sidecar，并对两种已知配方将保护用的 `9B` 显示为原来的白色意图；这不是保护字节的光学亮度预测。缺失或未知版本沿用原分类。开启后不再声称 transition-class error 为零，未经全编码回放的分数为 null。
+替换仅应用到绘图区的 `A5/92` 字节。普通 ISO、流式图片、解析图案、宽地址环带和固定参考图共用该规则。精确指定 Q 的实验接口仍要求关闭该选项。第 2 档会进一步降低深色区域的对比度。第 3 档的区间边缘可能出现可见的亮度变化。
 
-标定记录冻结生成标靶时的开关和配方：新建且开启保护的标靶保存 `periodic-9b-16-v1`；旧记录若没有配方字段但已开启保护，继续按 `bridge-9b-v1` 复现原标靶。该旧算法仅为已有标靶复现保留，不在普通工程输出中提供新档位。原本关闭或没有开启标记的记录仍关闭；如需采用新规则，应创建新标靶，不能用升级后的规则悄悄重写既有标靶。
+新镜像的 sidecar 记录 `readCompatibility` 配方 ID（`write-safe-light-v1`、`write-safe-strong-v1` 或 `write-safe-zone-v1`）和实际 `compatibilityChanges`。读回预览根据配方、扇区内位置和 LBA 判断哪些替换值属于黑色或白色。缺失或未知配方沿用基础调色板。旧 `periodic-9b-16-v1` 和 `bridge-9b-v1` 镜像仍按各自配方读回。
 
-[#90 的实盘反馈](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues/90#issuecomment-6693099737) 报告：未经处理的镜像起始即出现 medium error，采用每 16 字节替换或另一种段首方案后均能完整读回。这支持在该测试环境采用新规则，不代表所有盘片和光驱均已解决；该反馈使用外部脚本，也不能替代本程序 ownership 与集成路径的验证。盘面纹理和对比度可能变化，需继续比较关闭／开启后的画面、全盘读回与读速，并记录盘片 MID、刻录机／读取机型号、固件及倍速。SY6/EDC 模型修正与这个 payload 缓解措施属于不同层面；CD 和 BD 的编码与输出保持不变。
+已有标定记录按保存时的配方生成。旧记录启用了兼容性但未保存配方 ID 时沿用 `bridge-9b-v1`，显式的周期保护记录沿用 `periodic-9b-16-v1`。要测试新档位，请创建新的标定靶。早期项目文件只保存开关，启用时使用第 1 档。
 
-English: the experimental option remains off by default, with no additional GUI recipe selector. Enabled project output uses `periodic-9b-16-v1`: at sector offsets `0, 16, …, 2032`, replace the original scrambled Q with `9B` only when the byte is owned by drawing and Q is neither `A5` nor an existing `9B`. Normal owned drawing bytes are `A5/92`; an entirely owned white sector therefore changes 128 bytes (6.25%). Files, alpha-excluded bytes and bytes outside the drawing range remain untouched. Positions do not depend on white-run starts, chunking or worker count. The old run-start bridge is not added, and exact-Q experiments still reject the option.
+[#188 的实盘结果](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/pull/188) 覆盖特定刻录机、介质批次和速度。比较兼容性时，保持图案参数、光驱、盘片批次和倍速一致，分别记录刻录结果、重插识别、全盘读回和对比度。[旧周期配方的实盘记录](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/issues/90#issuecomment-6693099737)
 
-New sidecars record `periodic-9b-16-v1` and the actual change count. Readback previews continue to recognize `bridge-9b-v1` as well, showing intended white without predicting optical equivalence. New protected calibration targets save the periodic recipe; legacy enabled targets without a recipe field retain the old bridge solely to reproduce their original output. Disabled legacy targets stay disabled. Create a new target to adopt the new recipe. The linked #90 report describes successful full-disc reads after external-script treatment where untreated input failed, not universal drive/media support or a validation of this application's integration. Texture and contrast may change. CD and BD are unchanged.
+### English
+
+DVD export, streaming burns and new DVD calibration targets can use [the WriteSafe patterns from #188](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/pull/188). The option defaults to off and selects level 1 when first enabled. The fast dispersion CLI also defaults to level 1 with `--read-compatibility true`. Use `--read-compatibility-mode 1|2|3` to select a level.
+
+Level 1 rotates near-tone bytes at every fourth artwork byte. Level 2 keeps the same white pattern and replaces every second black byte. Level 3 uses level 2 from absolute LBA 100,000 through 299,999 and level 1 elsewhere. Level 2 can lighten dark areas. Level 3 can leave a visible change in brightness at the zone boundaries. Replacement affects only drawing-owned `A5/92` bytes. Disable the option for exact-Q experiments.
+
+New ISO sidecars record the selected recipe ID and the actual replacement count. Readback checks the recipe and substitution position, then displays the intended tone. Old periodic and bridge sidecars remain readable. Saved calibration targets retain their original recipe. Create a new target to use a new level. Projects that only saved an enabled checkbox use level 1.
 
 ## 构建和自检
 

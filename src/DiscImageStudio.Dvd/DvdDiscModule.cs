@@ -27,7 +27,8 @@ public sealed class DvdDiscModule : IOpticalDiscModule
                     new("iso-output", "Output ISO", DiscOptionValueType.OutputFile),
                     new("data-dir", "Hybrid data folder", DiscOptionValueType.InputFolder),
                     new("file-position", "File placement", DiscOptionValueType.Choice, DefaultValue: "inner", Choices: ["inner", "outer"]),
-                    new("read-compatibility", "DVD read compatibility (experimental)", DiscOptionValueType.Boolean, DefaultValue: "false"),
+                    new("read-compatibility", "DVD write compatibility (experimental)", DiscOptionValueType.Boolean, DefaultValue: "false"),
+                    new("read-compatibility-mode", "DVD write compatibility level", DiscOptionValueType.Choice, Choices: ["1", "2", "3"]),
                 ]),
             new DiscCommandDescriptor(
                 "encode",

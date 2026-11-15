@@ -261,18 +261,12 @@ public static class FastDispersionImageWriter
                 uint sector = lba + offset;
                 var payload = buffer.AsSpan((int)offset * DvdEccBlockEncoder.PayloadBytesPerSector,
                     DvdEccBlockEncoder.PayloadBytesPerSector);
-                byte anchor = DvdGrayscalePalette.GetScrambledByte(sectorLuminance(sector));
-                payload.Fill(anchor);
-                if (DvdGrayscalePalette.WriteSafeEnabled)
-                {
-                    long toneBase = (long)sector * DvdEccBlockEncoder.PayloadBytesPerSector;
-                    for (int i = 0; i < payload.Length; i++)
-                        payload[i] = DvdGrayscalePalette.ApplyWriteSafe(anchor, toneBase + i);
-                }
+                payload.Fill(DvdGrayscalePalette.GetScrambledByte(sectorLuminance(sector)));
                 DvdDataFrameBuilder.TransformPayloadScrambling(payload, sector + options.PsnOffset);
                 if (options.ReadCompatibility)
                     compatibilityChanges += ApplyReadCompatibility(payload,
-                        DvdDataFrameBuilder.PayloadScramblerMask(sector + options.PsnOffset), ownership, options);
+                        DvdDataFrameBuilder.PayloadScramblerMask(sector + options.PsnOffset), ownership,
+                        sector, options.ReadCompatibilityMode);
             }
             return new GeneratedBlock(lba, buffer, buffer.Length, compatibilityChanges);
         }
@@ -475,17 +469,21 @@ public static class FastDispersionImageWriter
                 }
             }
             if (options.ReadCompatibility)
-                compatibilityChanges += ApplyReadCompatibility(sectorPayload, scrambler, ownership, options);
+                compatibilityChanges += ApplyReadCompatibility(sectorPayload, scrambler, ownership,
+                    lba + (uint)sector, options.ReadCompatibilityMode);
         }
 
         return new GeneratedBlock(lba, payloads, controlledWords, compatibilityChanges);
     }
 
     private static int ApplyReadCompatibility(Span<byte> payload, ReadOnlySpan<byte> mask,
-        ReadOnlySpan<byte> ownership, MultiBlockSolveOptions options)
-        => options.ReadCompatibilityMode == DvdReadCompatibilityModes.LegacyBridge
-            ? DvdReadCompatibilityGuard.ApplyLegacySector(payload, mask, ownership)
-            : DvdReadCompatibilityGuard.ApplySector(payload, mask, ownership);
+        ReadOnlySpan<byte> ownership, uint lba, string mode)
+        => mode switch
+        {
+            DvdReadCompatibilityModes.LegacyBridge => DvdReadCompatibilityGuard.ApplyLegacySector(payload, mask, ownership),
+            DvdReadCompatibilityModes.Periodic9B16 => DvdReadCompatibilityGuard.ApplySector(payload, mask, ownership),
+            _ => DvdReadCompatibilityGuard.ApplyWriteSafeSector(payload, mask, ownership, lba, mode),
+        };
 
     private static int[] BuildPayloadChannelCenters()
     {
@@ -706,9 +704,9 @@ public static class FastDispersionImageWriter
                 return new PayloadTarget(_sampleScrambledCodeword(new DvdCodewordSample(
                     xMm, -yMm, globalChannelBit / 16, trackAngle)), 255);
             if (_sampleCodeword is not null)
-                return new PayloadTarget(DvdGrayscalePalette.ApplyWriteSafe(
-                    DvdGrayscalePalette.GetScrambledByte(_sampleCodeword(new DvdCodewordSample(
-                        xMm, -yMm, globalChannelBit / 16, trackAngle))), toneIndex), 255);
+                return new PayloadTarget(DvdGrayscalePalette.GetScrambledByte(
+                    _sampleCodeword(new DvdCodewordSample(
+                        xMm, -yMm, globalChannelBit / 16, trackAngle))), 255);
             // RasterImage.SampleDisc flips mathematical y-up into image y-down.
             // Apply that same flip for analytic patterns, including the start angle.
             PixelSample sample = _sampleGray is not null
@@ -719,20 +717,15 @@ public static class FastDispersionImageWriter
 
         private byte ScrambledForLuminance(byte luminance, long toneIndex)
         {
-            byte anchor;
             if (_options.Tone is { IsLegacyBinary: false } tone)
             {
-                anchor = DvdToneMapping.UseWhite(
+                return DvdToneMapping.UseWhite(
                     luminance, _options.LuminanceThreshold, tone, toneIndex)
                     ? DvdGrayscalePalette.WhiteScrambledByte
                     : DvdGrayscalePalette.BlackScrambledByte;
             }
-            else
-            {
-                anchor = DvdGrayscalePalette.GetScrambledByte(luminance);
-            }
 
-            return DvdGrayscalePalette.ApplyWriteSafe(anchor, toneIndex);
+            return DvdGrayscalePalette.GetScrambledByte(luminance);
         }
 
         internal void SampleFour(ulong blockFirstGlobalBit, ReadOnlySpan<int> centres,

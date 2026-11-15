@@ -31,6 +31,9 @@ internal static class ProjectSession
         state.ToneBrightness = tone.Brightness;
         state.ToneSrgbLinearization = tone.SrgbLinearization;
         state.DvdReadCompatibility = document.IsDvd && outputs.DvdReadCompatibility;
+        state.DvdReadCompatibilityMode = document.IsDvd
+            ? outputs.DvdReadCompatibilityMode ?? DvdReadCompatibilityModes.Current
+            : DvdReadCompatibilityModes.Current;
 
         switch (document.Family)
         {
@@ -151,7 +154,9 @@ internal static class ProjectSession
                     Interleave: false,
                     FilesAtOuterRing: state.DvdFilesAtOuterRing,
                     DvdReadCompatibility: state.DvdReadCompatibility,
-                    OuterRingBleed: state.DvdOuterRingBleed);
+                    OuterRingBleed: state.DvdOuterRingBleed,
+                    DvdReadCompatibilityMode: state.DvdReadCompatibilityMode == DvdReadCompatibilityModes.Current
+                        ? null : state.DvdReadCompatibilityMode);
             case OpticalDiscFamily.BluRay:
                 return new ProjectOutputs(
                     RequireOutput(state.BdOutputPath, L.T("蓝光 ISO 输出位置")),
