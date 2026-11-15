@@ -8,6 +8,8 @@ namespace DiscImageStudio.Services;
 /// supplied by the host so the dialogs stay modal to the main window.
 internal sealed class FileDialogService
 {
+    private const string ArtworkImageFilterKey = "图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif;*.svg|所有文件|*.*";
+
     private readonly Func<System.Windows.Window> _ownerProvider;
 
     internal FileDialogService(Func<System.Windows.Window> ownerProvider)
@@ -20,7 +22,7 @@ internal sealed class FileDialogService
         OpenFileDialog dialog = new()
         {
             Title = L.T("选择源图片"),
-            Filter = L.T("图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|所有文件|*.*"),
+            Filter = L.T(ArtworkImageFilterKey),
             CheckFileExists = true,
         };
         return dialog.ShowDialog(_ownerProvider()) == true ? dialog.FileName : null;
@@ -32,7 +34,7 @@ internal sealed class FileDialogService
         OpenFileDialog dialog = new()
         {
             Title = L.T("导入图片"),
-            Filter = L.T("图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif|所有文件|*.*"),
+            Filter = L.T(ArtworkImageFilterKey),
             CheckFileExists = true,
             Multiselect = true,
         };

@@ -32,6 +32,7 @@ public partial class LivePreviewViewModel : ObservableObject
     private readonly DispatcherTimer _livePreviewTimer;
     private readonly DiscParametersState _state;
     private readonly ShellViewModel _shell;
+    private readonly InFlightTaskTracker _inFlightRefreshes = new();
 
     /// <summary>Exposed for the view's two-way bindings to the shared parameters.</summary>
     public DiscParametersState State => _state;
@@ -60,6 +61,7 @@ public partial class LivePreviewViewModel : ObservableObject
     private bool _livePreviewRefreshRunning;
     private bool _livePreviewRefreshPending;
     private bool _isLivePreviewReady;
+    private bool _windowClosed;
     private bool _suppressDiscTypeAutoUpdate;
     private bool _suppressPreviewModeAutoUpdate;
     private int _livePreviewRevision;
@@ -609,6 +611,18 @@ public partial class LivePreviewViewModel : ObservableObject
         ResultPreviewPlaceholderText = StatusText;
     }
 
+    private void ReportPreviewFailure(int revision, CancellationToken cancellationToken,
+        Exception exception, Func<string> formatLog)
+    {
+        if (_windowClosed || cancellationToken.IsCancellationRequested || revision != _livePreviewRevision)
+        {
+            return;
+        }
+
+        SetLivePreviewFailure(exception);
+        _shell.AppendLog(formatLog());
+    }
+
     /// <summary>An input problem detected before rendering starts (missing artifact, invalid
     /// geometry). It clears the picture exactly like a thrown failure, but the message is not
     /// kept for a language switch: it names the missing input rather than a broken pipeline.</summary>
@@ -624,7 +638,7 @@ public partial class LivePreviewViewModel : ObservableObject
         HasFileRegionOverlay = false;
         _readyStatus = null;
         _livePreviewFailure = null;
-        if (!_shell.IsWindowLoaded)
+        if (!_shell.IsWindowLoaded || _windowClosed)
         {
             return;
         }
@@ -639,6 +653,11 @@ public partial class LivePreviewViewModel : ObservableObject
 
     internal void RefreshNow()
     {
+        if (_windowClosed)
+        {
+            return;
+        }
+
         HasFileRegionOverlay = false;
         _readyStatus = null;
         _livePreviewFailure = null;
@@ -648,8 +667,17 @@ public partial class LivePreviewViewModel : ObservableObject
         _ = RefreshAsync();
     }
 
-    private async Task RefreshAsync()
+    internal Task WaitForPendingRefreshesAsync() => _inFlightRefreshes.WaitForAllAsync();
+
+    private Task RefreshAsync() => _inFlightRefreshes.Track(RefreshCoreAsync());
+
+    private async Task RefreshCoreAsync()
     {
+        if (_windowClosed)
+        {
+            return;
+        }
+
         if (_livePreviewRefreshRunning)
         {
             _livePreviewRefreshPending = true;
@@ -661,6 +689,11 @@ public partial class LivePreviewViewModel : ObservableObject
         {
             do
             {
+                if (_windowClosed)
+                {
+                    return;
+                }
+
                 HasFileRegionOverlay = false;
                 _readyStatus = null;
                 _livePreviewFailure = null;
@@ -679,12 +712,17 @@ public partial class LivePreviewViewModel : ObservableObject
                         break;
                 }
 
+                if (_windowClosed)
+                {
+                    return;
+                }
+
                 if (revision != _livePreviewRevision)
                 {
                     _livePreviewRefreshPending = true;
                 }
             }
-            while (_livePreviewRefreshPending && _shell.IsWindowLoaded);
+            while (_livePreviewRefreshPending && _shell.IsWindowLoaded && !_windowClosed);
         }
         finally
         {
@@ -777,8 +815,8 @@ public partial class LivePreviewViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            SetLivePreviewFailure(exception);
-            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 实时预览失败：{exception}\n"));
+            ReportPreviewFailure(revision, cancellationToken, exception,
+                () => L.F($"[{DateTime.Now:HH:mm:ss}] 实时预览失败：{exception}\n"));
         }
         finally
         {
@@ -856,8 +894,8 @@ public partial class LivePreviewViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            SetLivePreviewFailure(exception);
-            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 实时预览失败：{exception}\n"));
+            ReportPreviewFailure(revision, cancellationToken, exception,
+                () => L.F($"[{DateTime.Now:HH:mm:ss}] 实时预览失败：{exception}\n"));
         }
         finally
         {
@@ -935,8 +973,8 @@ public partial class LivePreviewViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            SetLivePreviewFailure(exception);
-            _shell.AppendLog(JobDiagnostics.FormatLog($"DVD preview · {options}", exception));
+            ReportPreviewFailure(revision, cancellationToken, exception,
+                () => JobDiagnostics.FormatLog($"DVD preview · {options}", exception));
         }
         finally
         {
@@ -995,8 +1033,8 @@ public partial class LivePreviewViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            SetLivePreviewFailure(exception);
-            _shell.AppendLog(JobDiagnostics.FormatLog($"DVD preview · {options}", exception));
+            ReportPreviewFailure(revision, cancellationToken, exception,
+                () => JobDiagnostics.FormatLog($"DVD preview · {options}", exception));
         }
         finally
         {
@@ -1109,8 +1147,8 @@ public partial class LivePreviewViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            SetLivePreviewFailure(exception);
-            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 蓝光实时预览失败：{exception}\n"));
+            ReportPreviewFailure(revision, cancellationToken, exception,
+                () => L.F($"[{DateTime.Now:HH:mm:ss}] 蓝光实时预览失败：{exception}\n"));
         }
         finally
         {
@@ -1187,8 +1225,8 @@ public partial class LivePreviewViewModel : ObservableObject
         }
         catch (Exception exception)
         {
-            SetLivePreviewFailure(exception);
-            _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 蓝光成品读回失败：{exception}\n"));
+            ReportPreviewFailure(revision, cancellationToken, exception,
+                () => L.F($"[{DateTime.Now:HH:mm:ss}] 蓝光成品读回失败：{exception}\n"));
         }
         finally
         {
@@ -1599,10 +1637,15 @@ public partial class LivePreviewViewModel : ObservableObject
 
     internal void OnWindowClosed()
     {
+        _windowClosed = true;
         _livePreviewTimer.Stop();
+        _livePreviewRefreshPending = false;
+        _livePreviewRevision++;
         _livePreviewCancellation?.Cancel();
         _livePreviewCancellation?.Dispose();
+        _livePreviewCancellation = null;
         TempFiles.TryDeleteTemporaryFile(_lastLivePreviewPath);
+        _lastLivePreviewPath = null;
     }
 
     partial void OnHasResultImageChanged(bool value)

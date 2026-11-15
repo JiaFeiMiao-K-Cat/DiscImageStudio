@@ -1,3 +1,4 @@
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using DiscImageStudio.Services;
@@ -20,10 +21,10 @@ public partial class DesignLayerViewModel : ObservableObject
     [ObservableProperty] private double _rotationDeg;
     [ObservableProperty] private double _scale = 1.0;
 
-    public BitmapSource? Image { get; private set; }
+    public ImageSource? Image { get; private set; }
 
-    /// <summary>Small decode for the layer panel's list row.</summary>
-    public BitmapSource? Thumbnail { get; private set; }
+    /// <summary>Small decode or vector drawing for the layer panel's list row.</summary>
+    public ImageSource? Thumbnail { get; private set; }
 
     /// <summary>Physical size at scale 1.0, derived once from the image aspect and the
     /// project's content ring; rendering multiplies by <see cref="Scale"/>.</summary>
@@ -48,17 +49,21 @@ public partial class DesignLayerViewModel : ObservableObject
     /// for it on the UI thread.</summary>
     public bool LoadImage(
         double contentOuterRadiusMm,
-        (BitmapSource? Image, BitmapSource? Thumbnail)? preloaded = null)
+        (ImageSource? Image, ImageSource? Thumbnail)? preloaded = null)
     {
-        Image = preloaded?.Image ?? DesignComposer.DecodeFrozenImage(ImagePath);
+        // When preloaded already ran on a background worker, do not fall back to synchronous UI decoding on failure.
+        Image = preloaded.HasValue ? preloaded.Value.Image : DesignComposer.DecodeFrozenImage(ImagePath);
         if (Image is null)
         {
             return false;
         }
 
-        double width = Image.PixelWidth;
-        double height = Image.PixelHeight;
-        if (width <= 0 || height <= 0)
+        (double width, double height) = Image switch
+        {
+            BitmapSource bitmap => ((double)bitmap.PixelWidth, (double)bitmap.PixelHeight),
+            _ => (Image.Width, Image.Height),
+        };
+        if (width <= 0 || height <= 0 || !double.IsFinite(width) || !double.IsFinite(height))
         {
             Image = null;
             return false;
@@ -79,7 +84,9 @@ public partial class DesignLayerViewModel : ObservableObject
 
         if (Thumbnail is null)
         {
-            Thumbnail = preloaded?.Thumbnail ?? DesignComposer.DecodeThumbnail(ImagePath);
+            Thumbnail = preloaded.HasValue
+                ? preloaded.Value.Thumbnail ?? (Image is DrawingImage ? Image : null)
+                : (Image is DrawingImage ? Image : DesignComposer.DecodeThumbnail(ImagePath));
         }
 
         return true;

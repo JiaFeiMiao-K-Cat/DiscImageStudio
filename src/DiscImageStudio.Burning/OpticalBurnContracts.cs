@@ -31,7 +31,11 @@ public sealed record OpticalBurnDevice(
 /// The medium's geometry extent and the current write limit are separate values.
 /// WritableSectors is a payload limit, not a replacement for geometry or filesystem free space.
 /// </summary>
-public sealed record OpticalMediaCapacity(long TotalSectors, long WritableSectors);
+public sealed record OpticalMediaCapacity(long TotalSectors, long WritableSectors)
+{
+    /// <summary>Writing this medium requires a separate erase confirmation.</summary>
+    public bool RequiresErase { get; init; }
+}
 
 public sealed record OpticalWriteSpeed(
     int SectorsPerSecond,
@@ -82,6 +86,12 @@ public sealed record OpticalBurnProgress(
 /// as required by IMAPI_CD_SECTOR_AUDIO. ContentLength excludes any WAV header.
 /// CD data, DVD and Blu-ray producers supply complete 2048-byte logical data sectors.
 /// The recording backend adds physical encoding and error correction.
+/// OverwriteRewritableMedia lets a DVD data burn repurpose a formatted erasable disc.
+/// A DVD+RW never returns to IMAPI's blank state after its first format: erasing only
+/// replaces the contents, and IDiscFormat2Data reports IMAPI_FORMAT2_DATA_MEDIA_STATE_
+/// OVERWRITE_ONLY instead of BLANK. IMAPI refuses such a disc with
+/// E_IMAPI_DF2DATA_MEDIA_NOT_BLANK unless ForceOverwrite is enabled, so the request
+/// carries the user's explicit permission to erase and rewrite the whole disc.
 /// </summary>
 public sealed record OpticalBurnRequest(
     string DeviceId,
@@ -89,8 +99,12 @@ public sealed record OpticalBurnRequest(
     long ContentLength,
     Action<Stream, CancellationToken> ProduceContent,
     OpticalWriteSpeed? WriteSpeed = null,
-    OpticalBurnBufferOptions? BufferOptions = null)
+    OpticalBurnBufferOptions? BufferOptions = null,
+    bool OverwriteRewritableMedia = false)
 {
+    // Invoked on the burn worker immediately before modifying a nonblank rewritable DVD.
+    public Func<string, bool>? ConfirmDvdDataLoss { get; init; }
+
     public OpticalBurnBufferOptions EffectiveBufferOptions => BufferOptions
         ?? (MediaKind == OpticalBurnMediaKind.BluRayData
             ? OpticalBurnBufferOptions.BluRayDefault : OpticalBurnBufferOptions.Default);

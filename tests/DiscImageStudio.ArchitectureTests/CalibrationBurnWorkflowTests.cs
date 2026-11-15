@@ -195,7 +195,8 @@ internal static class CalibrationBurnWorkflowTests
         MethodInfo factory = typeof(BurnViewModel).GetMethod("CreateCalibrationBurnRequest",
             BindingFlags.NonPublic | BindingFlags.Static)
             ?? throw new InvalidOperationException("Calibration burn request factory was not found.");
-        return (OpticalBurnRequest)(factory.Invoke(null, [target, interleave, "memory-only-test-device", speed, null])
+        return (OpticalBurnRequest)(factory.Invoke(null,
+                [target, interleave, "memory-only-test-device", speed, null, false])
             ?? throw new InvalidOperationException("Calibration burn request factory returned no request."));
     }
 
