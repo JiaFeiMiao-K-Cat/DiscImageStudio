@@ -86,6 +86,12 @@ if (args is ["--test-outer-ring-bleed"])
     return;
 }
 
+if (args is ["--test-design-composite-race"])
+{
+    DesignCompositeConcurrencyTests.Run();
+    return;
+}
+
 if (args is ["--benchmark-cd-pitch"])
 {
     CdCubicPitchTests.Benchmark();
@@ -260,6 +266,7 @@ DiscImageGenerationApiTests.Run();
 DvdTypedOperationTests.Run();
 JobDiagnosticsTests.Run();
 ViewModelFailureDiagnosticsTests.Run();
+DesignCompositeConcurrencyTests.Run();
 CalibrationOutputPublisherTests.Run();
 CalibrationPhotoViewModelTests.Run();
 CalibrationThreeStageTests.Run();

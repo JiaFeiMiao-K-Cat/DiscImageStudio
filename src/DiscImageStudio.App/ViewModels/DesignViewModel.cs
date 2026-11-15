@@ -26,6 +26,7 @@ public partial class DesignViewModel : ObservableObject
     public const double DiscRadiusMm = 60.0;
     public const double HubRadiusMm = 15.0;
     private const int PreviewCompositeSize = 2048;
+    private const int MaxPendingCompositeDeletes = 64;
     private static readonly TimeSpan CompositeDebounce = TimeSpan.FromMilliseconds(450);
     private static readonly TimeSpan DataRegionDebounce = TimeSpan.FromMilliseconds(300);
 
@@ -33,10 +34,15 @@ public partial class DesignViewModel : ObservableObject
     private readonly DiscParametersState _state;
     private readonly DispatcherTimer _compositeTimer;
     private readonly DispatcherTimer _dataRegionTimer;
+    private readonly List<string> _pendingDeleteCompositePaths = [];
+    private readonly InFlightTaskTracker _inFlightWork = new();
     private long _compositeRevision;
-    private long _previewRenderedRevision = -1;
+    private long _previewRenderSequence;
     private long _exportRenderedRevision = -1;
+    private string? _lastPreviewCompositePath;
+    private string? _previousPreviewCompositePath;
     private bool _suppressLayerEvents;
+    private bool _windowClosed;
     private long _dataRegionRevision;
     private bool _dataRegionRunning;
     private bool _dataRegionPending;
@@ -463,6 +469,11 @@ public partial class DesignViewModel : ObservableObject
     /// inputs only: picture edits never retrigger the guide.</summary>
     private void ScheduleDataRegion()
     {
+        if (_windowClosed)
+        {
+            return;
+        }
+
         _dataRegionTimer.Stop();
         _dataRegionTimer.Start();
     }
@@ -473,6 +484,11 @@ public partial class DesignViewModel : ObservableObject
     /// verdict, and is never drawn into the composite.</summary>
     private void RecomputeDataRegion()
     {
+        if (_windowClosed)
+        {
+            return;
+        }
+
         _dataRegionRevision++;
         if (_dataRegionRunning)
         {
@@ -480,7 +496,7 @@ public partial class DesignViewModel : ObservableObject
             return;
         }
 
-        _ = RunDataRegionAsync();
+        _ = _inFlightWork.Track(RunDataRegionAsync());
     }
 
     private async Task RunDataRegionAsync()
@@ -522,6 +538,11 @@ public partial class DesignViewModel : ObservableObject
                     }
                 }
 
+                if (_windowClosed)
+                {
+                    return;
+                }
+
                 if (revision != _dataRegionRevision)
                 {
                     _dataRegionPending = true;
@@ -533,7 +554,7 @@ public partial class DesignViewModel : ObservableObject
                 DataRegionOverflowText = overflow ? L.T("Xaml.DataRegionOverflow") : string.Empty;
                 CanvasChanged?.Invoke();
             }
-            while (_dataRegionPending);
+            while (_dataRegionPending && !_windowClosed);
         }
         finally
         {
@@ -743,12 +764,32 @@ public partial class DesignViewModel : ObservableObject
         }
 
         _compositeRevision++;
-        _previewRenderedRevision = -1;
         _exportRenderedRevision = -1;
+        _compositeTimer.Stop();
         OnPropertyChanged(nameof(HasLayers));
         CanvasChanged?.Invoke();
         CompositeRendered?.Invoke(null);
+        AdoptPreviewCompositePath(null);
     }
+
+    internal void OnWindowClosed()
+    {
+        _windowClosed = true;
+        _compositeRevision++;
+        _dataRegionRevision++;
+        _dataRegionPending = false;
+        _compositeTimer.Stop();
+        _dataRegionTimer.Stop();
+        Tone.OnWindowClosed();
+        RetryPendingCompositeDeletes();
+        TryDeleteOrEnqueueComposite(_lastPreviewCompositePath);
+        TryDeleteOrEnqueueComposite(_previousPreviewCompositePath);
+        _lastPreviewCompositePath = null;
+        _previousPreviewCompositePath = null;
+    }
+
+    internal Task WaitForPendingWorkAsync()
+        => Task.WhenAll(_inFlightWork.WaitForAllAsync(), Tone.WaitForPendingRendersAsync());
 
     /// <summary>Stored bottom-first; panel order is the reverse. Rebase each scale onto
     /// the current canvas diameter so reopening preserves its physical size after
@@ -773,6 +814,11 @@ public partial class DesignViewModel : ObservableObject
     /// <summary>Schedules the debounced preview composite.</summary>
     public void ScheduleComposite()
     {
+        if (_windowClosed)
+        {
+            return;
+        }
+
         _compositeRevision++;
         _compositeTimer.Stop();
         _compositeTimer.Start();
@@ -799,43 +845,110 @@ public partial class DesignViewModel : ObservableObject
         return items;
     }
 
-    private async Task RenderPreviewCompositeAsync()
+    private static string GetFamilyCacheTag(OpticalDiscFamily family) => family switch
     {
-        long revision = _compositeRevision;
-        List<DesignLayerRenderItem> items = BuildRenderItems();
-        string? outputPath = null;
-        if (items.Count > 0)
-        {
-            try
-            {
-                outputPath = TempFiles.GetCacheFilePath(
-                    Family switch
-                    {
-                        OpticalDiscFamily.Dvd => "design-composite-dvd.png",
-                        OpticalDiscFamily.BluRay => "design-composite-bd.png",
-                        _ => "design-composite-cd.png",
-                    });
-                await StaWorker.RunAsync(() =>
-                {
-                    DesignComposer.Render(items, CanvasOuterRadiusMm, PreviewCompositeSize, outputPath);
-                    return 0;
-                });
-            }
-            catch (Exception exception)
-            {
-                _shell.AppendLog(JobDiagnostics.FormatLog(L.T("设计合成失败"), exception));
-                _shell.ShowToast(L.T("设计合成失败"), exception.Message, ToastKind.Error);
-                return;
-            }
-        }
+        OpticalDiscFamily.Dvd => "dvd",
+        OpticalDiscFamily.BluRay => "bd",
+        _ => "cd",
+    };
 
-        if (revision != _compositeRevision)
+    private void AdoptPreviewCompositePath(string? nextPath)
+    {
+        string? expired = _previousPreviewCompositePath;
+        _previousPreviewCompositePath = _lastPreviewCompositePath;
+        _lastPreviewCompositePath = nextPath;
+        // Retry previously locked files first, then retire the expired composite while keeping
+        // any still-locked file in a bounded pending list instead of leaking it on disk.
+        RetryPendingCompositeDeletes();
+        TryDeleteOrEnqueueComposite(expired);
+    }
+
+    private void TryDeleteOrEnqueueComposite(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || TempFiles.TryDeleteTemporaryFile(path))
         {
             return;
         }
 
-        _previewRenderedRevision = revision;
-        CompositeRendered?.Invoke(outputPath);
+        if (_pendingDeleteCompositePaths.Contains(path, StringComparer.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (_pendingDeleteCompositePaths.Count >= MaxPendingCompositeDeletes)
+        {
+            _pendingDeleteCompositePaths.RemoveAt(0);
+        }
+
+        _pendingDeleteCompositePaths.Add(path);
+    }
+
+    private void RetryPendingCompositeDeletes()
+    {
+        for (int index = _pendingDeleteCompositePaths.Count - 1; index >= 0; index--)
+        {
+            if (TempFiles.TryDeleteTemporaryFile(_pendingDeleteCompositePaths[index]))
+            {
+                _pendingDeleteCompositePaths.RemoveAt(index);
+            }
+        }
+    }
+
+    private Task RenderPreviewCompositeAsync()
+        => _inFlightWork.Track(RenderPreviewCompositeCoreAsync());
+
+    private async Task RenderPreviewCompositeCoreAsync()
+    {
+        if (_windowClosed)
+        {
+            return;
+        }
+
+        long revision = _compositeRevision;
+        List<DesignLayerRenderItem> items = BuildRenderItems();
+        string? outputPath = null;
+        bool keepOutput = false;
+        try
+        {
+            if (items.Count > 0)
+            {
+                try
+                {
+                    long sequence = ++_previewRenderSequence;
+                    outputPath = TempFiles.GetCacheFilePath($"design-composite-{GetFamilyCacheTag(Family)}-{sequence}.png");
+                    await StaWorker.RunAsync(() =>
+                    {
+                        DesignComposer.Render(items, CanvasOuterRadiusMm, PreviewCompositeSize, outputPath);
+                        return 0;
+                    });
+                }
+                catch (Exception exception)
+                {
+                    if (!_windowClosed)
+                    {
+                        _shell.AppendLog(JobDiagnostics.FormatLog(L.T("设计合成失败"), exception));
+                        _shell.ShowToast(L.T("设计合成失败"), exception.Message, ToastKind.Error);
+                    }
+                    return;
+                }
+            }
+
+            if (_windowClosed || revision != _compositeRevision)
+            {
+                return;
+            }
+
+            AdoptPreviewCompositePath(outputPath);
+            keepOutput = true;
+            CompositeRendered?.Invoke(outputPath);
+        }
+        finally
+        {
+            if (!keepOutput)
+            {
+                TryDeleteOrEnqueueComposite(outputPath);
+            }
+        }
     }
 
     /// <summary>Renders (or reuses) the export-quality composite for a generation job.
@@ -853,13 +966,7 @@ public partial class DesignViewModel : ObservableObject
         }
 
         List<DesignLayerRenderItem> items = BuildRenderItems();
-        string outputPath = TempFiles.GetCacheFilePath(
-            Family switch
-            {
-                OpticalDiscFamily.Dvd => "design-composite-dvd-export.png",
-                OpticalDiscFamily.BluRay => "design-composite-bd-export.png",
-                _ => "design-composite-cd-export.png",
-            });
+        string outputPath = TempFiles.GetCacheFilePath($"design-composite-{GetFamilyCacheTag(Family)}-export.png");
         await StaWorker.RunAsync(() =>
         {
             DesignComposer.Render(items, CanvasOuterRadiusMm, RingImageQuality.GenerationSize, outputPath);
