@@ -26,7 +26,7 @@ internal static class DesignCompositeConcurrencyTests
         thread.Start();
         thread.Join();
         if (failure is not null) ExceptionDispatchInfo.Capture(failure).Throw();
-        Console.WriteLine("design-composite-concurrency: passed (versioned composite paths, grace retention, concurrent render/read, canceled failure guard)");
+        Console.WriteLine("design-composite-concurrency: passed (versioned composite paths, grace retention, pending-delete retry, ClearLayers timer stop, concurrent render/read, canceled failure guard)");
     }
 
     private static void RunOnSta()
@@ -91,6 +91,23 @@ internal static class DesignCompositeConcurrencyTests
             Require(!string.Equals(secondPath, thirdPath, StringComparison.Ordinal)
                 && File.Exists(thirdPath) && File.Exists(secondPath) && !File.Exists(firstPath),
                 $"third publish keeps second revision and retires the oldest file (1:{File.Exists(firstPath)}, 2:{File.Exists(secondPath)}, 3:{File.Exists(thirdPath)})");
+
+            // 1b. Expired file held open via FileShare.Read is queued for retry and deleted on the next publish once unlocked.
+            FieldInfo pendingDeletesField = typeof(DesignViewModel).GetField(
+                "_pendingDeleteCompositePaths", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            using (FileStream readLock = File.OpenRead(secondPath))
+            {
+                Wait(InvokeRenderPreviewCompositeAsync(shell.Design));
+                Require(File.Exists(secondPath), "locked retired composite remains on disk while reader holds FileShare.Read");
+                var queued = (IReadOnlyList<string>)pendingDeletesField.GetValue(shell.Design)!;
+                Require(queued.Contains(secondPath, StringComparer.OrdinalIgnoreCase),
+                    "locked retired composite is recorded in pending-delete retry queue");
+            }
+
+            Wait(InvokeRenderPreviewCompositeAsync(shell.Design));
+            Require(!File.Exists(secondPath)
+                && ((IReadOnlyList<string>)pendingDeletesField.GetValue(shell.Design)!).Count == 0,
+                "subsequent publish retries and deletes previously locked composite once reader closes");
             StopTimers(shell);
 
             // 2. Toggle DvdOuterRingBleed and run overlapping composite writes concurrently
@@ -150,7 +167,7 @@ internal static class DesignCompositeConcurrencyTests
             Require(!shell.LogText.Contains("[ERROR]", StringComparison.Ordinal),
                 "canceled preview worker does not log stale error diagnostics");
 
-            // 4. ClearLayers + OnWindowClosed clean up retained temporary composite files.
+            // 4. ClearLayers stops pending composite timers and queues/retains files; OnWindowClosed retries and removes all of them.
             string latestCompositeBeforeClear = (string?)typeof(DesignViewModel)
                 .GetField("_lastPreviewCompositePath", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .GetValue(shell.Design) ?? string.Empty;
@@ -158,14 +175,35 @@ internal static class DesignCompositeConcurrencyTests
                 .GetField("_previousPreviewCompositePath", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .GetValue(shell.Design) ?? string.Empty;
 
-            shell.Design.ClearLayers();
-            Require(shell.State.DvdImagePath.Length == 0, "ClearLayers clears State.DvdImagePath");
+            DispatcherTimer compositeTimer = (DispatcherTimer)typeof(DesignViewModel)
+                .GetField("_compositeTimer", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .GetValue(shell.Design)!;
+            shell.Design.ScheduleComposite();
+            Require(compositeTimer.IsEnabled, "ScheduleComposite enables _compositeTimer");
+
+            using (FileStream? clearLock = previousCompositeBeforeClear.Length > 0 && File.Exists(previousCompositeBeforeClear)
+                ? File.OpenRead(previousCompositeBeforeClear)
+                : null)
+            {
+                shell.Design.ClearLayers();
+                Require(!compositeTimer.IsEnabled, "ClearLayers stops pending _compositeTimer");
+                Require(shell.State.DvdImagePath.Length == 0, "ClearLayers clears State.DvdImagePath");
+                if (clearLock is not null)
+                {
+                    Require(File.Exists(previousCompositeBeforeClear)
+                        && ((IReadOnlyList<string>)pendingDeletesField.GetValue(shell.Design)!).Contains(
+                            previousCompositeBeforeClear, StringComparer.OrdinalIgnoreCase),
+                        "ClearLayers retains locked retired composite in pending-delete queue");
+                }
+            }
+
             shell.LivePreview.OnWindowClosed();
             shell.Design.OnWindowClosed();
             shell.Calibration.OnWindowClosed();
             Require((latestCompositeBeforeClear.Length == 0 || !File.Exists(latestCompositeBeforeClear))
-                && (previousCompositeBeforeClear.Length == 0 || !File.Exists(previousCompositeBeforeClear)),
-                "OnWindowClosed deletes retained preview composite files");
+                && (previousCompositeBeforeClear.Length == 0 || !File.Exists(previousCompositeBeforeClear))
+                && ((IReadOnlyList<string>)pendingDeletesField.GetValue(shell.Design)!).Count == 0,
+                "OnWindowClosed deletes retained and pending preview composite files");
         }
         finally
         {

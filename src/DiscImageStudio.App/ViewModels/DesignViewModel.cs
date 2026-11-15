@@ -26,6 +26,7 @@ public partial class DesignViewModel : ObservableObject
     public const double DiscRadiusMm = 60.0;
     public const double HubRadiusMm = 15.0;
     private const int PreviewCompositeSize = 2048;
+    private const int MaxPendingCompositeDeletes = 64;
     private static readonly TimeSpan CompositeDebounce = TimeSpan.FromMilliseconds(450);
     private static readonly TimeSpan DataRegionDebounce = TimeSpan.FromMilliseconds(300);
 
@@ -33,9 +34,9 @@ public partial class DesignViewModel : ObservableObject
     private readonly DiscParametersState _state;
     private readonly DispatcherTimer _compositeTimer;
     private readonly DispatcherTimer _dataRegionTimer;
+    private readonly List<string> _pendingDeleteCompositePaths = [];
     private long _compositeRevision;
     private long _previewRenderSequence;
-    private long _previewRenderedRevision = -1;
     private long _exportRenderedRevision = -1;
     private string? _lastPreviewCompositePath;
     private string? _previousPreviewCompositePath;
@@ -746,8 +747,8 @@ public partial class DesignViewModel : ObservableObject
         }
 
         _compositeRevision++;
-        _previewRenderedRevision = -1;
         _exportRenderedRevision = -1;
+        _compositeTimer.Stop();
         OnPropertyChanged(nameof(HasLayers));
         CanvasChanged?.Invoke();
         CompositeRendered?.Invoke(null);
@@ -758,8 +759,9 @@ public partial class DesignViewModel : ObservableObject
     {
         _compositeTimer.Stop();
         _dataRegionTimer.Stop();
-        TempFiles.TryDeleteTemporaryFile(_lastPreviewCompositePath);
-        TempFiles.TryDeleteTemporaryFile(_previousPreviewCompositePath);
+        RetryPendingCompositeDeletes();
+        TryDeleteOrEnqueueComposite(_lastPreviewCompositePath);
+        TryDeleteOrEnqueueComposite(_previousPreviewCompositePath);
         _lastPreviewCompositePath = null;
         _previousPreviewCompositePath = null;
     }
@@ -825,9 +827,41 @@ public partial class DesignViewModel : ObservableObject
         string? expired = _previousPreviewCompositePath;
         _previousPreviewCompositePath = _lastPreviewCompositePath;
         _lastPreviewCompositePath = nextPath;
-        // Retain the prior composite across one publish cycle so an in-flight preview or tone
-        // worker reading it can finish or observe cancellation without hitting FileNotFoundException.
-        TempFiles.TryDeleteTemporaryFile(expired);
+        // Retry previously locked files first, then retire the expired composite while keeping
+        // any still-locked file in a bounded pending list instead of leaking it on disk.
+        RetryPendingCompositeDeletes();
+        TryDeleteOrEnqueueComposite(expired);
+    }
+
+    private void TryDeleteOrEnqueueComposite(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || TempFiles.TryDeleteTemporaryFile(path))
+        {
+            return;
+        }
+
+        if (_pendingDeleteCompositePaths.Contains(path, StringComparer.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (_pendingDeleteCompositePaths.Count >= MaxPendingCompositeDeletes)
+        {
+            _pendingDeleteCompositePaths.RemoveAt(0);
+        }
+
+        _pendingDeleteCompositePaths.Add(path);
+    }
+
+    private void RetryPendingCompositeDeletes()
+    {
+        for (int index = _pendingDeleteCompositePaths.Count - 1; index >= 0; index--)
+        {
+            if (TempFiles.TryDeleteTemporaryFile(_pendingDeleteCompositePaths[index]))
+            {
+                _pendingDeleteCompositePaths.RemoveAt(index);
+            }
+        }
     }
 
     private async Task RenderPreviewCompositeAsync()
@@ -863,7 +897,6 @@ public partial class DesignViewModel : ObservableObject
                 return;
             }
 
-            _previewRenderedRevision = revision;
             AdoptPreviewCompositePath(outputPath);
             keepOutput = true;
             CompositeRendered?.Invoke(outputPath);
@@ -872,7 +905,7 @@ public partial class DesignViewModel : ObservableObject
         {
             if (!keepOutput)
             {
-                TempFiles.TryDeleteTemporaryFile(outputPath);
+                TryDeleteOrEnqueueComposite(outputPath);
             }
         }
     }
