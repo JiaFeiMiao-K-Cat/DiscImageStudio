@@ -207,8 +207,13 @@ internal static class DesignCompositeConcurrencyTests
 
             Wait(Task.WhenAll(shell.Design.WaitForPendingWorkAsync(), shell.LivePreview.WaitForPendingRefreshesAsync()));
             shell.Design.OnWindowClosed();
-            Require(Directory.GetFiles(cacheDir).Length == 0,
-                $"closing and draining background workers removes all composite, tone, and live-preview files (remaining: {string.Join(", ", Directory.GetFiles(cacheDir).Select(Path.GetFileName))})");
+            // Cache files live under the per-process session directory, so enumerate recursively
+            // and count only app-managed artifacts (the session lease lock is not one).
+            string[] drainedLeftovers = Directory.EnumerateFiles(cacheDir, "*", SearchOption.AllDirectories)
+                .Where(TempFiles.IsManagedCacheFile)
+                .ToArray();
+            Require(drainedLeftovers.Length == 0,
+                $"closing and draining background workers removes all composite, tone, and live-preview files (remaining: {string.Join(", ", drainedLeftovers.Select(Path.GetFileName))})");
 
             // 5. Closing the window directly while preview composite, tone, and live preview work is in flight
             // invalidates publication and leaves zero stale cache files after background tasks finish.
@@ -233,8 +238,11 @@ internal static class DesignCompositeConcurrencyTests
                     midCloseShell.LivePreview.WaitForPendingRefreshesAsync()));
                 midCloseShell.Design.OnWindowClosed();
 
-                Require(Directory.GetFiles(cacheDir).Length == 0,
-                    $"mid-render OnWindowClosed prevents post-close cache leaks (remaining: {string.Join(", ", Directory.GetFiles(cacheDir).Select(Path.GetFileName))})");
+                string[] midCloseLeftovers = Directory.EnumerateFiles(cacheDir, "*", SearchOption.AllDirectories)
+                    .Where(TempFiles.IsManagedCacheFile)
+                    .ToArray();
+                Require(midCloseLeftovers.Length == 0,
+                    $"mid-render OnWindowClosed prevents post-close cache leaks (remaining: {string.Join(", ", midCloseLeftovers.Select(Path.GetFileName))})");
             }
             finally
             {
