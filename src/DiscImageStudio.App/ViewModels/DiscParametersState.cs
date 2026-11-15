@@ -232,6 +232,24 @@ public partial class DiscParametersState : ObservableObject
 
     partial void OnCdDataDirectoryChanged(string value) => NormalizeCdOutputFormat();
 
+    // The audio format (.wav or .raw) last chosen for the CD output, restored when the
+    // output returns from a data-disc ISO to an audio track.
+    private string _cdAudioExtension = ".wav";
+
+    /// <summary>Takes the audio format from the project being opened (its saved output path),
+    /// so neither the previous project's choice nor an unchanged path string leaks through.</summary>
+    internal void ResetCdAudioFormat(string? projectOutputPath)
+        => _cdAudioExtension = Path.GetExtension(projectOutputPath?.Trim() ?? string.Empty)
+            .Equals(".raw", StringComparison.OrdinalIgnoreCase) ? ".raw" : ".wav";
+
+    partial void OnCdOutputPathChanged(string value)
+    {
+        string extension = Path.GetExtension(value.Trim());
+        if (extension.Equals(".wav", StringComparison.OrdinalIgnoreCase)
+            || extension.Equals(".raw", StringComparison.OrdinalIgnoreCase))
+            _cdAudioExtension = extension.ToLowerInvariant();
+    }
+
     internal void NormalizeCdOutputFormat()
     {
         string output = CdOutputPath.Trim();
@@ -244,7 +262,7 @@ public partial class DiscParametersState : ObservableObject
         }
         else if (!HasCdFiles && extension.Equals(".iso", StringComparison.OrdinalIgnoreCase))
         {
-            CdOutputPath = Path.ChangeExtension(output, ".wav");
+            CdOutputPath = Path.ChangeExtension(output, _cdAudioExtension);
         }
     }
 

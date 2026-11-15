@@ -13,6 +13,8 @@
 - 生成 CD／DVD 数据盘 ISO 时校验卷标长度：超过 Joliet 的 16 个字符会在写入前报错，不再静默截断；导出页的卷标输入限制为 16 个字符并显示提示，蓝光 UDF 卷标不受影响。
 - 关于页在 GitHub 按钮左侧新增「检查更新」：从上游 GitHub Release 的 `latest.json` 获取正式版信息，按当前处理器架构下载便携 EXE，核对长度与 SHA-256 后替换并重启；替换失败或新版本启动即退出时恢复旧 EXE，应用目录不可写时提示手动下载。更新包与清单未签名，完整性只相对发布清单有意义。
 - 新增「允许覆写已写入的 DVD±RW」刻录选项。DVD+RW 在首次格式化后不会再回到 IMAPI 的空白（`BLANK`）状态：擦除只替换盘上内容，`IDiscFormat2Data` 始终报告 `OVERWRITE_ONLY`，旧版本因此会一直以「DVD 不是空白盘」拒绝再次刻录。勾选后刻录请求设置 `IDiscFormat2Data::ForceOverwrite`，由 IMAPI 从 LBA 0 整盘覆写；容量检查改用盘片总扇区数，写入前仍要求盘片处于可覆写状态，一次性 DVD-R／DVD+R 继续只接受空白盘。该选项默认关闭，确认对话框会说明旧内容将被整盘擦除。实盘验证：MATSHITA DVD+-RW UJ8B1（固件 D.03）配 RITEK DVD+RW，2,295,104 扇区，2.4×，事件流 `StartLba=0`、`LastWrittenLba=2,295,103`，写入 1,500,173 ms 后正常关闭会话，盘面图案可见；尚未执行读回比对，也没有其他设备或盘片的数据。
+- CD 音轨读回预览接受 WAVE_FORMAT_EXTENSIBLE 封装的 44.1 kHz、16 位立体声 PCM WAV（不少编辑软件这样导出）；浮点、24 位和多声道仍然拒绝。
+- CD 输出格式：加入随盘文件使输出变为 ISO 后，再去掉随盘文件时恢复为之前选择的 .raw 或 .wav，不再一律变成 .wav；打开工程时按该工程保存的输出路径决定，不沿用上一个工程的选择。
 
 ### English
 
@@ -30,6 +32,8 @@
 - Validate volume-label length when generating CD/DVD data ISOs: labels longer than Joliet's 16 characters now fail before writing instead of being silently truncated. The export page limits label input to 16 characters with a hint; Blu-ray UDF labels are unaffected.
 - Add "Check for updates" to the About page, left of the GitHub button. It reads the stable release manifest (`latest.json`) from upstream GitHub Releases, downloads the portable EXE for the current processor architecture, verifies its length and SHA-256, then replaces the running file and restarts. A failed replacement, or a new build that exits during startup, restores the old EXE; a non-writable application folder prompts a manual download. The manifest and EXE remain unsigned, so integrity only holds relative to the published manifest.
 - Added an "allow overwriting a used DVD±RW" burn option. A DVD+RW never returns to IMAPI's `BLANK` state after its first format: erasing only replaces the disc contents, `IDiscFormat2Data` keeps reporting `OVERWRITE_ONLY`, and previous versions therefore always refused the disc with "DVD is not blank". With the option enabled the burn request sets `IDiscFormat2Data::ForceOverwrite` so IMAPI rewrites the disc from LBA 0, the capacity check uses the disc's total sector count, and the write still requires an overwritable media state; write-once DVD-R/DVD+R remain blank-only. The option is off by default and the confirmation dialog states that the previous contents are erased. Physical validation: MATSHITA DVD+-RW UJ8B1 (firmware D.03) with a RITEK DVD+RW, 2,295,104 sectors at 2.4×; the event stream reported `StartLba=0` and `LastWrittenLba=2,295,103`, the write returned after 1,500,173 ms and the session closed normally, with a visible drawing on the disc. Read-back comparison and data for other drives or media are still pending.
+- CD track read-back preview accepts WAVE_FORMAT_EXTENSIBLE 44.1 kHz 16-bit stereo PCM WAVs, as several editors export them; float, 24-bit and multichannel files are still rejected.
+- CD output format: removing the disc files after they turned the output into an ISO restores the .raw or .wav chosen before instead of always .wav; opening a project takes the format from that project's saved output path, not from the previous project.
 
 ## [1.5.0] - 2026-11-07
 
