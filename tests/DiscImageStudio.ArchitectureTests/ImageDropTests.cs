@@ -46,6 +46,7 @@ internal static class ImageDropTests
             view.Content = child;
             DragEventArgs drop = Raise(child, files, DragDrop.PreviewDropEvent);
             Require(drop.Handled && drop.Effects == DragDropEffects.Copy, "child drop reaches page");
+            Wait(shell.Design.ActiveImportTask);
             Require(shell.Design.Layers.Select(layer => layer.ImagePath).SequenceEqual([second, first]),
                 "only decoded images become layers, in the picker's stacking order");
             Require(shell.Design.SelectedLayer?.ImagePath == first, "first imported image is selected");
@@ -89,7 +90,8 @@ internal static class ImageDropTests
             Require(Raise(view, files, DragDrop.PreviewDragOverEvent).Effects == DragDropEffects.None,
                 "busy hover rejects import");
             Raise(view, files, DragDrop.PreviewDropEvent);
-            shell.Design.ImportImages([first]);
+            Wait(shell.Design.ActiveImportTask);
+            Wait(shell.Design.ImportImagesAsync([first]));
             Require(shell.Design.Layers.Count == 2, "busy drop and shared import leave layers unchanged");
         }
         finally
@@ -97,6 +99,28 @@ internal static class ImageDropTests
             shell.Design.ClearLayers();
             Directory.Delete(root, recursive: true);
         }
+    }
+
+    private static void Wait(Task task)
+    {
+        if (task.IsCompleted)
+        {
+            task.GetAwaiter().GetResult();
+            return;
+        }
+
+        DispatcherFrame frame = new();
+        task.ContinueWith(
+            _ => frame.Continue = false,
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+        if (!task.IsCompleted)
+        {
+            Dispatcher.PushFrame(frame);
+        }
+
+        task.GetAwaiter().GetResult();
     }
 
     // WPF creates these arguments internally during an OLE drag session.

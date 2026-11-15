@@ -8,6 +8,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
+using DiscImageStudio.Services;
 using DiscImageStudio.ViewModels;
 
 namespace DiscImageStudio.Views;
@@ -120,7 +121,7 @@ public partial class DesignView : UserControl
             return;
         }
 
-        _viewModel.ImportImages(images);
+        _ = _viewModel.ImportImagesAsync(images);
         e.Effects = DragDropEffects.Copy;
     }
 
@@ -136,9 +137,7 @@ public partial class DesignView : UserControl
 
     // Match the image picker's formats; directories and unrelated files are dropped by
     // the File.Exists check at drop time.
-    private static bool IsImagePath(string path) =>
-        Path.GetExtension(path).ToLowerInvariant() is
-            ".png" or ".jpg" or ".jpeg" or ".bmp" or ".tif" or ".tiff" or ".gif";
+    private static bool IsImagePath(string path) => DesignComposer.IsSupportedImagePath(path);
 
     // ---- Layer list drag-reorder ----
 

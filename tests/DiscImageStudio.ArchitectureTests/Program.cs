@@ -14,6 +14,7 @@ if (args is ["--test-image-drop"])
 {
     ImageDropTests.Run();
     LayerPanelTests.Run();
+    SvgImportTests.Run();
     return;
 }
 
@@ -258,6 +259,7 @@ CalibrationPhotoCanvasTests.Run();
 DesignCanvasZoomTests.Run();
 LayerPanelTests.Run();
 ImageDropTests.Run();
+SvgImportTests.Run();
 CalibrationBurnWorkflowTests.Run();
 CalibrationBurnSourceTests.Run();
 BurnJobDockTests.Run();

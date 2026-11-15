@@ -28,6 +28,7 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="MahApps.Metro.IconPacks.Lucide" Version="6.2.1" />
+    <PackageReference Include="SharpVectors.Wpf" Version="1.8.6" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DiscImageStudio.Core\DiscImageStudio.Core.csproj" />
