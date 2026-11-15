@@ -102,6 +102,15 @@ internal static class SvgImportTests
             Require(DesignComposer.DecodeFrozenImage(deepNestSvgPath) is null,
                 "excessively nested svg groups fail cleanly instead of overflowing the stack");
 
+            string wideNestSvgPath = Path.Combine(root, "wide-nest.svg");
+            int overflowCount = DesignComposer.MaxSvgElementCount + 1;
+            string tinyRects = string.Concat(Enumerable.Repeat(
+                "<rect x=\"0\" y=\"0\" width=\"1\" height=\"1\" fill=\"#000\"/>", overflowCount));
+            File.WriteAllText(wideNestSvgPath,
+                $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\">{tinyRects}</svg>");
+            Require(DesignComposer.DecodeFrozenImage(wideNestSvgPath) is null,
+                "excessively many svg elements fail cleanly before expanding a huge drawing tree");
+
             string filter = L.T("图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif;*.svg|所有文件|*.*");
             Require(filter.Contains("*.svg", StringComparison.OrdinalIgnoreCase),
                 "localized artwork filter includes *.svg");

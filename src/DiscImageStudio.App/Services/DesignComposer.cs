@@ -90,6 +90,10 @@ internal static class DesignComposer
     /// recursive DOM/drawing-group traversal stack overflows.</summary>
     internal const int MaxSvgElementDepth = 256;
 
+    /// <summary>Maximum XML element count allowed in SVG inputs to bound drawing-tree
+    /// expansion from many tiny elements (the file-size cap alone does not).</summary>
+    internal const int MaxSvgElementCount = 100_000;
+
     internal static bool IsSupportedImagePath(string path) =>
         Path.GetExtension(path).ToLowerInvariant() is
             ".png" or ".jpg" or ".jpeg" or ".bmp" or ".tif" or ".tiff" or ".gif" or ".svg";
@@ -190,11 +194,16 @@ internal static class DesignComposer
 
             using (XmlReader depthProbe = XmlReader.Create(stream, xmlSettings, string.Empty))
             {
+                int elementCount = 0;
                 while (depthProbe.Read())
                 {
-                    if (depthProbe.Depth > MaxSvgElementDepth)
+                    if (depthProbe.NodeType == XmlNodeType.Element)
                     {
-                        return null;
+                        elementCount++;
+                        if (depthProbe.Depth > MaxSvgElementDepth || elementCount > MaxSvgElementCount)
+                        {
+                            return null;
+                        }
                     }
                 }
             }
