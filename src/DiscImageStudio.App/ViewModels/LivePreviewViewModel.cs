@@ -32,6 +32,7 @@ public partial class LivePreviewViewModel : ObservableObject
     private readonly DispatcherTimer _livePreviewTimer;
     private readonly DiscParametersState _state;
     private readonly ShellViewModel _shell;
+    private readonly InFlightTaskTracker _inFlightRefreshes = new();
 
     /// <summary>Exposed for the view's two-way bindings to the shared parameters.</summary>
     public DiscParametersState State => _state;
@@ -60,6 +61,7 @@ public partial class LivePreviewViewModel : ObservableObject
     private bool _livePreviewRefreshRunning;
     private bool _livePreviewRefreshPending;
     private bool _isLivePreviewReady;
+    private bool _windowClosed;
     private bool _suppressDiscTypeAutoUpdate;
     private bool _suppressPreviewModeAutoUpdate;
     private int _livePreviewRevision;
@@ -612,7 +614,7 @@ public partial class LivePreviewViewModel : ObservableObject
     private void ReportPreviewFailure(int revision, CancellationToken cancellationToken,
         Exception exception, Func<string> formatLog)
     {
-        if (cancellationToken.IsCancellationRequested || revision != _livePreviewRevision)
+        if (_windowClosed || cancellationToken.IsCancellationRequested || revision != _livePreviewRevision)
         {
             return;
         }
@@ -636,7 +638,7 @@ public partial class LivePreviewViewModel : ObservableObject
         HasFileRegionOverlay = false;
         _readyStatus = null;
         _livePreviewFailure = null;
-        if (!_shell.IsWindowLoaded)
+        if (!_shell.IsWindowLoaded || _windowClosed)
         {
             return;
         }
@@ -651,6 +653,11 @@ public partial class LivePreviewViewModel : ObservableObject
 
     internal void RefreshNow()
     {
+        if (_windowClosed)
+        {
+            return;
+        }
+
         HasFileRegionOverlay = false;
         _readyStatus = null;
         _livePreviewFailure = null;
@@ -660,8 +667,17 @@ public partial class LivePreviewViewModel : ObservableObject
         _ = RefreshAsync();
     }
 
-    private async Task RefreshAsync()
+    internal Task WaitForPendingRefreshesAsync() => _inFlightRefreshes.WaitForAllAsync();
+
+    private Task RefreshAsync() => _inFlightRefreshes.Track(RefreshCoreAsync());
+
+    private async Task RefreshCoreAsync()
     {
+        if (_windowClosed)
+        {
+            return;
+        }
+
         if (_livePreviewRefreshRunning)
         {
             _livePreviewRefreshPending = true;
@@ -673,6 +689,11 @@ public partial class LivePreviewViewModel : ObservableObject
         {
             do
             {
+                if (_windowClosed)
+                {
+                    return;
+                }
+
                 HasFileRegionOverlay = false;
                 _readyStatus = null;
                 _livePreviewFailure = null;
@@ -691,12 +712,17 @@ public partial class LivePreviewViewModel : ObservableObject
                         break;
                 }
 
+                if (_windowClosed)
+                {
+                    return;
+                }
+
                 if (revision != _livePreviewRevision)
                 {
                     _livePreviewRefreshPending = true;
                 }
             }
-            while (_livePreviewRefreshPending && _shell.IsWindowLoaded);
+            while (_livePreviewRefreshPending && _shell.IsWindowLoaded && !_windowClosed);
         }
         finally
         {
@@ -1611,7 +1637,10 @@ public partial class LivePreviewViewModel : ObservableObject
 
     internal void OnWindowClosed()
     {
+        _windowClosed = true;
         _livePreviewTimer.Stop();
+        _livePreviewRefreshPending = false;
+        _livePreviewRevision++;
         _livePreviewCancellation?.Cancel();
         _livePreviewCancellation?.Dispose();
         _livePreviewCancellation = null;

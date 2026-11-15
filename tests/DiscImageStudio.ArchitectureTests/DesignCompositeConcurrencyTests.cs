@@ -26,7 +26,7 @@ internal static class DesignCompositeConcurrencyTests
         thread.Start();
         thread.Join();
         if (failure is not null) ExceptionDispatchInfo.Capture(failure).Throw();
-        Console.WriteLine("design-composite-concurrency: passed (versioned composite paths, grace retention, pending-delete retry, ClearLayers timer stop, concurrent render/read, canceled failure guard)");
+        Console.WriteLine("design-composite-concurrency: passed (versioned composite paths, grace retention, pending-delete retry, ClearLayers timer stop, mid-render OnWindowClosed drain, concurrent render/read, canceled failure guard)");
     }
 
     private static void RunOnSta()
@@ -204,12 +204,54 @@ internal static class DesignCompositeConcurrencyTests
                 && (previousCompositeBeforeClear.Length == 0 || !File.Exists(previousCompositeBeforeClear))
                 && ((IReadOnlyList<string>)pendingDeletesField.GetValue(shell.Design)!).Count == 0,
                 "OnWindowClosed deletes retained and pending preview composite files");
+
+            Wait(Task.WhenAll(shell.Design.WaitForPendingWorkAsync(), shell.LivePreview.WaitForPendingRefreshesAsync()));
+            shell.Design.OnWindowClosed();
+            Require(Directory.GetFiles(cacheDir).Length == 0,
+                $"closing and draining background workers removes all composite, tone, and live-preview files (remaining: {string.Join(", ", Directory.GetFiles(cacheDir).Select(Path.GetFileName))})");
+
+            // 5. Closing the window directly while preview composite, tone, and live preview work is in flight
+            // invalidates publication and leaves zero stale cache files after background tasks finish.
+            ShellViewModel midCloseShell = new(Dispatcher.CurrentDispatcher, new NoRecorder());
+            try
+            {
+                midCloseShell.OpenProjectForSnapshot(projectPath);
+                midCloseShell.MarkWindowLoaded();
+                StopTimers(midCloseShell);
+                midCloseShell.State.DvdPreviewSize = "256";
+                midCloseShell.State.DvdSamplesPerSector = "1";
+
+                Task inFlightComposite = InvokeRenderPreviewCompositeAsync(midCloseShell.Design);
+                midCloseShell.LivePreview.RefreshNow();
+                midCloseShell.LivePreview.OnWindowClosed();
+                midCloseShell.Design.OnWindowClosed();
+                midCloseShell.Calibration.OnWindowClosed();
+
+                Wait(Task.WhenAll(
+                    inFlightComposite,
+                    midCloseShell.Design.WaitForPendingWorkAsync(),
+                    midCloseShell.LivePreview.WaitForPendingRefreshesAsync()));
+                midCloseShell.Design.OnWindowClosed();
+
+                Require(Directory.GetFiles(cacheDir).Length == 0,
+                    $"mid-render OnWindowClosed prevents post-close cache leaks (remaining: {string.Join(", ", Directory.GetFiles(cacheDir).Select(Path.GetFileName))})");
+            }
+            finally
+            {
+                midCloseShell.LivePreview.OnWindowClosed();
+                midCloseShell.Design.OnWindowClosed();
+                midCloseShell.Calibration.OnWindowClosed();
+                Wait(Task.WhenAll(midCloseShell.Design.WaitForPendingWorkAsync(), midCloseShell.LivePreview.WaitForPendingRefreshesAsync()));
+                foreach (ToastItem toast in midCloseShell.Toasts.ToArray()) toast.Close();
+            }
         }
         finally
         {
             shell.LivePreview.OnWindowClosed();
             shell.Design.OnWindowClosed();
             shell.Calibration.OnWindowClosed();
+            Wait(Task.WhenAll(shell.Design.WaitForPendingWorkAsync(), shell.LivePreview.WaitForPendingRefreshesAsync()));
+            shell.Design.OnWindowClosed();
             foreach (ToastItem toast in shell.Toasts.ToArray()) toast.Close();
             TempFiles.TryConfigureCacheDirectory(previousCache);
             SynchronizationContext.SetSynchronizationContext(previousContext);

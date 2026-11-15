@@ -35,12 +35,14 @@ public partial class DesignViewModel : ObservableObject
     private readonly DispatcherTimer _compositeTimer;
     private readonly DispatcherTimer _dataRegionTimer;
     private readonly List<string> _pendingDeleteCompositePaths = [];
+    private readonly InFlightTaskTracker _inFlightWork = new();
     private long _compositeRevision;
     private long _previewRenderSequence;
     private long _exportRenderedRevision = -1;
     private string? _lastPreviewCompositePath;
     private string? _previousPreviewCompositePath;
     private bool _suppressLayerEvents;
+    private bool _windowClosed;
     private long _dataRegionRevision;
     private bool _dataRegionRunning;
     private bool _dataRegionPending;
@@ -467,6 +469,11 @@ public partial class DesignViewModel : ObservableObject
     /// inputs only: picture edits never retrigger the guide.</summary>
     private void ScheduleDataRegion()
     {
+        if (_windowClosed)
+        {
+            return;
+        }
+
         _dataRegionTimer.Stop();
         _dataRegionTimer.Start();
     }
@@ -477,6 +484,11 @@ public partial class DesignViewModel : ObservableObject
     /// verdict, and is never drawn into the composite.</summary>
     private void RecomputeDataRegion()
     {
+        if (_windowClosed)
+        {
+            return;
+        }
+
         _dataRegionRevision++;
         if (_dataRegionRunning)
         {
@@ -484,7 +496,7 @@ public partial class DesignViewModel : ObservableObject
             return;
         }
 
-        _ = RunDataRegionAsync();
+        _ = _inFlightWork.Track(RunDataRegionAsync());
     }
 
     private async Task RunDataRegionAsync()
@@ -526,6 +538,11 @@ public partial class DesignViewModel : ObservableObject
                     }
                 }
 
+                if (_windowClosed)
+                {
+                    return;
+                }
+
                 if (revision != _dataRegionRevision)
                 {
                     _dataRegionPending = true;
@@ -537,7 +554,7 @@ public partial class DesignViewModel : ObservableObject
                 DataRegionOverflowText = overflow ? L.T("Xaml.DataRegionOverflow") : string.Empty;
                 CanvasChanged?.Invoke();
             }
-            while (_dataRegionPending);
+            while (_dataRegionPending && !_windowClosed);
         }
         finally
         {
@@ -757,14 +774,22 @@ public partial class DesignViewModel : ObservableObject
 
     internal void OnWindowClosed()
     {
+        _windowClosed = true;
+        _compositeRevision++;
+        _dataRegionRevision++;
+        _dataRegionPending = false;
         _compositeTimer.Stop();
         _dataRegionTimer.Stop();
+        Tone.OnWindowClosed();
         RetryPendingCompositeDeletes();
         TryDeleteOrEnqueueComposite(_lastPreviewCompositePath);
         TryDeleteOrEnqueueComposite(_previousPreviewCompositePath);
         _lastPreviewCompositePath = null;
         _previousPreviewCompositePath = null;
     }
+
+    internal Task WaitForPendingWorkAsync()
+        => Task.WhenAll(_inFlightWork.WaitForAllAsync(), Tone.WaitForPendingRendersAsync());
 
     /// <summary>Stored bottom-first; panel order is the reverse. Rebase each scale onto
     /// the current canvas diameter so reopening preserves its physical size after
@@ -789,6 +814,11 @@ public partial class DesignViewModel : ObservableObject
     /// <summary>Schedules the debounced preview composite.</summary>
     public void ScheduleComposite()
     {
+        if (_windowClosed)
+        {
+            return;
+        }
+
         _compositeRevision++;
         _compositeTimer.Stop();
         _compositeTimer.Start();
@@ -864,8 +894,16 @@ public partial class DesignViewModel : ObservableObject
         }
     }
 
-    private async Task RenderPreviewCompositeAsync()
+    private Task RenderPreviewCompositeAsync()
+        => _inFlightWork.Track(RenderPreviewCompositeCoreAsync());
+
+    private async Task RenderPreviewCompositeCoreAsync()
     {
+        if (_windowClosed)
+        {
+            return;
+        }
+
         long revision = _compositeRevision;
         List<DesignLayerRenderItem> items = BuildRenderItems();
         string? outputPath = null;
@@ -886,13 +924,16 @@ public partial class DesignViewModel : ObservableObject
                 }
                 catch (Exception exception)
                 {
-                    _shell.AppendLog(JobDiagnostics.FormatLog(L.T("设计合成失败"), exception));
-                    _shell.ShowToast(L.T("设计合成失败"), exception.Message, ToastKind.Error);
+                    if (!_windowClosed)
+                    {
+                        _shell.AppendLog(JobDiagnostics.FormatLog(L.T("设计合成失败"), exception));
+                        _shell.ShowToast(L.T("设计合成失败"), exception.Message, ToastKind.Error);
+                    }
                     return;
                 }
             }
 
-            if (revision != _compositeRevision)
+            if (_windowClosed || revision != _compositeRevision)
             {
                 return;
             }
