@@ -112,6 +112,21 @@
       "contributor": "Disappear9"
     },
     {
+      "id": "verbatim-dvd-plus-rw-94520-95043",
+      "displayName": "威宝 DVD+RW (94520 / 95043)（实测）",
+      "description": "威宝 DVD+RW 94520 / 95043 实测标定参数：23.980218–57.992243 mm，共 2,295,104 个扇区；采用三次轨距分布。MID 为 MKM A02，圈码为 CC5410-DVRW-Q47H。",
+      "totalSectors": 2295104,
+      "usableSectors": 2295104,
+      "innerRadiusMm": 23.980218014466367,
+      "outerRadiusMm": 57.992242964473164,
+      "channelBitLengthNm": 133.3,
+      "pitchLinear": -1.1634886202119528E-05,
+      "pitchQuadratic": -3.3979833896105916E-07,
+      "pitchCubic": 4.091381687648905E-06,
+      "displayNameResourceKey": "DiscPreset_VerbatimDvdPlusRw94520And95043_DisplayName",
+      "descriptionResourceKey": "DiscPreset_VerbatimDvdPlusRw94520And95043_Description"
+    },
+    {
       "id": "philips-dvd-plus-r",
       "displayName": "PHILIPS DVD+R（实测）",
       "description": "PHILIPS DVD+R 实测标定参数：24.157724–57.881039 mm，共 2,295,104 个扇区；采用三次轨距分布。",

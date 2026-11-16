@@ -342,7 +342,7 @@ static void TestDiscPresets()
 {
     DiscPresetJsonDocument builtIn = DiscPresetJsonStore.LoadBuiltIn();
     Equal(4, builtIn.CdPresets.Count, "built-in CD preset count");
-    Equal(8, builtIn.DvdPresets.Count, "built-in DVD preset count");
+    Equal(9, builtIn.DvdPresets.Count, "built-in DVD preset count");
     Equal(5, builtIn.BluRayPresets!.Count, "built-in Blu-ray preset count");
     Equal("zh-CN", builtIn.FallbackLanguage!, "built-in preset fallback language");
     True(
@@ -557,7 +557,7 @@ static void TestDiscPresetJson()
 
         DiscPresetJsonDocument merged = DiscPresetJsonStore.Merge(builtIn, created);
         Equal(5, merged.CdPresets.Count, "merged CD preset count");
-        Equal(9, merged.DvdPresets.Count, "merged DVD preset count");
+        Equal(10, merged.DvdPresets.Count, "merged DVD preset count");
         Equal(6, merged.BluRayPresets!.Count, "merged Blu-ray preset count");
         DvdDiscPresetDefinition verbatim = merged.DvdPresets.Single(
             value => value.Id == "verbatim-dvd-r-azo-43533");

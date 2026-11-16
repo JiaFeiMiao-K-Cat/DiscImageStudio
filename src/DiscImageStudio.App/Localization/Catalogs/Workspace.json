@@ -1178,6 +1178,24 @@
     "es": "Calibración medida de Verbatim DVD+R AZO (43498): 23,954070–57,981456 mm, 2.295.104 sectores; distribución cúbica del paso de pista.",
     "cs": "Naměřená kalibrace Verbatim DVD+R AZO (43498): 23,954070–57,981456 mm, celkem 2 295 104 sektorů; kubické rozložení rozteče stop."
   },
+  "威宝 DVD+RW (94520 / 95043)（实测）": {
+    "zh-CN": "威宝 DVD+RW (94520 / 95043)（实测）",
+    "en": "Verbatim DVD+RW (94520 / 95043) (measured)",
+    "zh-TW": "Verbatim DVD+RW (94520 / 95043)（實測）",
+    "ja": "Verbatim DVD+RW (94520 / 95043) (実測)",
+    "tr": "Verbatim DVD+RW (94520 / 95043) (ölçülen)",
+    "es": "Verbatim DVD+RW (94520 / 95043) (medido)",
+    "cs": "Verbatim DVD+RW (94520 / 95043) (měřeno)"
+  },
+  "威宝 DVD+RW 94520 / 95043 实测标定参数：23.980218–57.992243 mm，共 2,295,104 个扇区；采用三次轨距分布。MID 为 MKM A02，圈码为 CC5410-DVRW-Q47H。": {
+    "zh-CN": "威宝 DVD+RW 94520 / 95043 实测标定参数：23.980218–57.992243 mm，共 2,295,104 个扇区；采用三次轨距分布。MID 为 MKM A02，圈码为 CC5410-DVRW-Q47H。",
+    "en": "Measured Verbatim DVD+RW 94520 / 95043 calibration: 23.980218–57.992243 mm, 2,295,104 sectors, cubic track pitch distribution. MID: MKM A02. Ring code: CC5410-DVRW-Q47H.",
+    "zh-TW": "Verbatim DVD+RW 94520 / 95043 實測校準參數：23.980218–57.992243 mm，共 2,295,104 個磁區；採用三次軌距分布。MID 為 MKM A02，圈碼為 CC5410-DVRW-Q47H。",
+    "ja": "Verbatim DVD+RW 94520 / 95043 の実測キャリブレーション: 23.980218–57.992243 mm、2,295,104 セクター。3 次のトラック ピッチ分布を使用。MID は MKM A02、リングコードは CC5410-DVRW-Q47H。",
+    "tr": "Ölçülen Verbatim DVD+RW 94520 / 95043 kalibrasyonu: 23,980218–57,992243 mm, 2.295.104 sektör, üçüncü dereceden iz aralığı dağılımı. MID: MKM A02. Halka kodu: CC5410-DVRW-Q47H.",
+    "es": "Calibración medida de Verbatim DVD+RW 94520 / 95043: 23,980218–57,992243 mm, 2.295.104 sectores, distribución cúbica del paso de pista. MID: MKM A02. Código del anillo: CC5410-DVRW-Q47H.",
+    "cs": "Naměřená kalibrace Verbatim DVD+RW 94520 / 95043: 23,980218–57,992243 mm, celkem 2 295 104 sektorů, kubické rozložení rozteče stop. MID: MKM A02. Kód vnitřního prstence: CC5410-DVRW-Q47H."
+  },
   "PHILIPS DVD+R（实测）": {
     "zh-CN": "PHILIPS DVD+R（实测）",
     "en": "PHILIPS DVD+R (measured)",
