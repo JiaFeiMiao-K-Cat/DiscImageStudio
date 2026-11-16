@@ -33,6 +33,8 @@ public sealed record OpticalBurnDevice(
 /// </summary>
 public sealed record OpticalMediaCapacity(long TotalSectors, long WritableSectors)
 {
+    public bool? IsBlank { get; init; }
+
     /// <summary>Writing this medium requires a separate erase confirmation.</summary>
     public bool RequiresErase { get; init; }
 }

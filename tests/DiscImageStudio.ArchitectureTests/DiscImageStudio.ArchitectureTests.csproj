@@ -11,6 +11,8 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <ProjectReference Include="..\..\src\DiscImageStudio.Burning\DiscImageStudio.Burning.csproj" />
     <ProjectReference Include="..\..\src\DiscImageStudio.Core\DiscImageStudio.Core.csproj" />
+    <ProjectReference Include="..\..\src\DiscImageStudio.AutoCalibration\DiscImageStudio.AutoCalibration.csproj" />
+    <ProjectReference Include="..\..\src\DiscImageStudio.AutoCalibration.Drives\DiscImageStudio.AutoCalibration.Drives.csproj" />
     <ProjectReference Include="..\..\src\DiscImageStudio.Imaging\DiscImageStudio.Imaging.csproj" />
     <ProjectReference Include="..\..\src\DiscImageStudio.Cd\DiscImageStudio.Cd.csproj" />
     <ProjectReference Include="..\..\src\DiscImageStudio.Dvd\DiscImageStudio.Dvd.csproj" />

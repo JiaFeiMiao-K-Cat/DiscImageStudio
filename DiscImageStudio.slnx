@@ -1,6 +1,8 @@
 <Solution>
   <Project Path="src/DiscImageStudio.Iso/DiscImageStudio.Iso.csproj" />
   <Project Path="src/DiscImageStudio.Core/DiscImageStudio.Core.csproj" />
+  <Project Path="src/DiscImageStudio.AutoCalibration/DiscImageStudio.AutoCalibration.csproj" />
+  <Project Path="src/DiscImageStudio.AutoCalibration.Drives/DiscImageStudio.AutoCalibration.Drives.csproj" />
   <Project Path="src/DiscImageStudio.Cli/DiscImageStudio.Cli.csproj" />
   <Project Path="src/DiscImageStudio.ImageIO/DiscImageStudio.ImageIO.csproj" />
   <Project Path="src/DiscImageStudio.Imaging/DiscImageStudio.Imaging.csproj" />

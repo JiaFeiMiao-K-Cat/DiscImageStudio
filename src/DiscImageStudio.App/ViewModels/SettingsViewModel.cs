@@ -57,6 +57,9 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _isCheckingForUpdates;
 
+    [ObservableProperty]
+    private bool _autoWizardDebugMode;
+
     public SettingsViewModel(AppSettings settings, AppSettingsStore store)
     {
         _store = store;
@@ -81,6 +84,7 @@ public partial class SettingsViewModel : ObservableObject
         };
         DefaultProjectDirectory = normalized.DefaultProjectDirectory;
         CacheDirectory = normalized.CacheDirectory;
+        AutoWizardDebugMode = normalized.AutoWizardDebugMode;
         RefreshCacheUsage();
     }
 
@@ -190,6 +194,7 @@ public partial class SettingsViewModel : ObservableObject
             },
             DefaultProjectDirectory = projectDirectory,
             CacheDirectory = cacheDirectory,
+            AutoWizardDebugMode = AutoWizardDebugMode,
         };
 
         try

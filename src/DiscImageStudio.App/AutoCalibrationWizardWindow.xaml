@@ -1,0 +1,378 @@
+<Window x:Class="DiscImageStudio.AutoCalibrationWizardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:DiscImageStudio.Controls"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        Title="自动标定向导"
+        Width="940" Height="680"
+        MinWidth="860" MinHeight="620"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None" ResizeMode="CanResize"
+        Background="{DynamicResource BackgroundBrush}"
+        FontFamily="{StaticResource AppFontFamily}"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        ShowInTaskbar="False" Closing="Window_Closing">
+    <WindowChrome.WindowChrome>
+        <WindowChrome GlassFrameThickness="0" CaptionHeight="32" CornerRadius="0"
+                      ResizeBorderThickness="6" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <Style x:Key="WizardStepLabel" TargetType="TextBlock" BasedOn="{StaticResource FieldLabel}">
+            <Setter Property="Margin" Value="0,7" />
+            <Style.Triggers>
+                <Trigger Property="FontWeight" Value="Bold">
+                    <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="WizardInset" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource Surface2Brush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusField}" />
+            <Setter Property="Padding" Value="14,12" />
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="32" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <controls:TitleBar Grid.Row="0" ProjectTitle="自动标定向导" ShowMaximizeButton="False" />
+
+        <Grid Grid.Row="1" Margin="24,16,24,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="190" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="14">
+                <StackPanel>
+                    <TextBlock Text="标定流程" Style="{StaticResource MicroText}" Margin="0,0,0,4" />
+                    <TextBlock x:Name="StepWelcomeLabel" Text="1. 欢迎" Style="{StaticResource WizardStepLabel}" />
+                    <TextBlock x:Name="StepPrepareLabel" Text="2. 准备标记盘" Style="{StaticResource WizardStepLabel}" />
+                    <TextBlock x:Name="StepBurnLabel" Text="3. 流式刻录" Style="{StaticResource WizardStepLabel}" />
+                    <TextBlock x:Name="StepReadPrepareLabel" Text="4. 准备读取" Style="{StaticResource WizardStepLabel}" />
+                    <TextBlock x:Name="StepReadLabel" Text="5. 读取标定" Style="{StaticResource WizardStepLabel}" />
+                    <Border Height="1" Background="{DynamicResource DividerBrush}" Margin="0,12" />
+                    <TextBlock Style="{StaticResource CompactHint}" TextWrapping="Wrap"
+                               Text="只在最后一步成功后应用测量结果。取消或失败不会改写工程几何参数。" />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1" Style="{StaticResource CardStyle}" Margin="12,0,0,0" Padding="24,20">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <Grid>
+                        <StackPanel x:Name="WelcomePanel">
+                            <Border Width="44" Height="44" CornerRadius="22" HorizontalAlignment="Left"
+                                    Background="{DynamicResource PrimarySoftBrush}">
+                                <iconPacks:PackIconLucide Kind="Ruler" Width="22" Height="22"
+                                                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                          Foreground="{DynamicResource PrimaryBrush}" />
+                            </Border>
+                            <TextBlock Text="欢迎使用自动标定向导" Style="{StaticResource CardTitle}"
+                                       FontSize="20" Margin="0,16,0,0" />
+                            <TextBlock Style="{StaticResource BodyText}" Margin="0,10,0,0"
+                                       TextWrapping="Wrap"
+                                       Text="本向导源自 Discratcher，是 DiscImageStudio 内置的 C# 移植实现，并非调用 Discratcher 本体；测量效果不代表 Discratcher 原版。本向导读取标记盘时序，估算光盘内外半径、总扇区数与螺距系数；也可导入 Discratcher 预设。你可以让程序流式刻录，也可以导出镜像后使用外部软件刻录。测量完成后，结果会应用到新工程，并可导出为三份辅助标定记录。" />
+                            <Border Style="{StaticResource WizardInset}" Margin="0,20,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="开始前请准备" Style="{StaticResource RowText}" FontWeight="Medium" />
+                                    <TextBlock Style="{StaticResource CompactHint}" Margin="0,8,0,0"
+                                               Text="• 一台支持读取时序的 CD/DVD 光驱；刻录机与读取机可以是不同设备。" />
+                                    <TextBlock Style="{StaticResource CompactHint}" Margin="0,4,0,0"
+                                               Text="• 流式刻录需要兼容的空白盘；外部刻录可以在其他软件中完成。" />
+                                    <TextBlock Style="{StaticResource CompactHint}" Margin="0,4,0,0"
+                                               Text="• 设置页的调试模式可模拟整个过程，不会访问或写入真实光驱。" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource WizardInset}" Margin="0,12,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="已有 Discratcher 几何预设？" Style="{StaticResource RowText}"
+                                               FontWeight="Medium" />
+                                    <TextBlock Style="{StaticResource CompactHint}" Margin="0,5,0,0"
+                                               TextWrapping="Wrap"
+                                               Text="可导入 presets.json、单个导出的预设 JSON，或包含预设的 calibrations.json。Windows 默认位置通常为 %APPDATA%\dev.popcornboom.discratcher\。" />
+                                    <Button x:Name="ImportDiscratcherPresetButton" Content="从 Discratcher 导入…"
+                                            Style="{StaticResource SecondaryButton}" HorizontalAlignment="Left"
+                                            Margin="0,10,0,0" Click="ImportDiscratcherPreset_Click" />
+                                    <ComboBox x:Name="ImportedPresetCombo" Margin="0,8,0,0"
+                                              Visibility="Collapsed"
+                                              SelectionChanged="ImportedPresetCombo_SelectionChanged" />
+                                    <TextBlock x:Name="ImportedPresetInfoText" Style="{StaticResource CompactHint}"
+                                               TextWrapping="Wrap" Margin="0,6,0,0" />
+                                    <TextBlock x:Name="ImportErrorText" TextWrapping="Wrap" Margin="0,6,0,0"
+                                               Foreground="{DynamicResource DangerBrush}" Visibility="Collapsed" />
+                                    <Button x:Name="UseImportedPresetButton"
+                                            Content="使用导入参数并跳过光盘读取"
+                                            Style="{StaticResource PrimaryButton}" HorizontalAlignment="Right"
+                                            Margin="0,10,0,0" IsEnabled="False"
+                                            Click="UseImportedPreset_Click" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel x:Name="PreparePanel" Visibility="Collapsed">
+                            <TextBlock Text="准备标记盘" Style="{StaticResource CardTitle}" FontSize="20" />
+                            <TextBlock x:Name="MediaTypeText" Style="{StaticResource BodyText}" Margin="0,8,0,0" />
+                            <Border Style="{StaticResource WizardInset}" Margin="0,14,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="空白盘参数" Style="{StaticResource FieldLabel}" />
+                                    <Grid Margin="0,4,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="ParameterDriveCombo" Grid.Column="0"
+                                                  SelectionChanged="ParameterDriveCombo_SelectionChanged" />
+                                        <Button x:Name="RefreshBlankMediaButton" Grid.Column="1"
+                                                Content="重读光盘参数" Style="{StaticResource CompactButton}"
+                                                Margin="8,0,0,0" Click="RefreshBlankMedia_Click" />
+                                    </Grid>
+                                    <TextBlock x:Name="BlankMediaInfoText" Style="{StaticResource CompactHint}"
+                                               TextWrapping="Wrap" Margin="0,8,0,0" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                        <CheckBox x:Name="ManualMediaParametersCheckBox"
+                                                  Content="不读取空白盘，手动填写介质参数"
+                                                  Checked="ManualMediaParametersCheckBox_Changed"
+                                                  Unchecked="ManualMediaParametersCheckBox_Changed" />
+                                        <controls:HelpHint Margin="6,0,0,0" VerticalAlignment="Center"
+                                                           Hint="勾选后可编辑下方的介质类型与总扇区数，供生成镜像使用。此设置不代表实体光盘为空白；流式刻录仍会检查实际盘片。" />
+                                    </StackPanel>
+                                    <Grid x:Name="ManualMediaParametersPanel" Margin="0,6,0,0">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="介质类型"
+                                                   Style="{StaticResource FieldLabel}"
+                                                   VerticalAlignment="Center" Margin="0,0,10,0" />
+                                        <TextBox x:Name="ManualMediaTypeText" Grid.Row="0" Grid.Column="1"
+                                                 Margin="0,3" IsReadOnly="True" />
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="总扇区数"
+                                                   Style="{StaticResource FieldLabel}"
+                                                   VerticalAlignment="Center" Margin="0,0,10,0" />
+                                        <TextBox x:Name="ManualSectorsText" Grid.Row="1" Grid.Column="1"
+                                                 Margin="0,3" IsReadOnly="True" />
+                                    </Grid>
+                                    <TextBlock x:Name="ManualMediaHintText" Style="{StaticResource CompactHint}"
+                                               TextWrapping="Wrap" Margin="0,5,0,0"
+                                               Visibility="Collapsed"
+                                               Text="可输入 CD-R/CD-RW/DVD-R/DVD+R/DVD-RW/DVD+RW。CD 镜像扇区数为 min(总扇区数, 359849) − 64；DVD 使用标准单层镜像大小，输入容量须能容纳该镜像。" />
+                                    <Border Style="{StaticResource WizardInset}" Margin="0,10,0,0" Padding="10,8">
+                                        <ScrollViewer MaxHeight="90" VerticalScrollBarVisibility="Auto">
+                                            <TextBlock x:Name="BlankMediaLogText" Style="{StaticResource CompactHint}"
+                                                       TextWrapping="Wrap"
+                                                       FontFamily="{StaticResource MonoFontFamily}" />
+                                        </ScrollViewer>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource WizardInset}" Margin="0,16,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="流式刻录设备" Style="{StaticResource FieldLabel}" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="BurnDriveCombo" Grid.Column="0" />
+                                        <Button x:Name="RefreshBurnDrivesButton" Grid.Column="1" Content="刷新"
+                                                Style="{StaticResource CompactButton}" Margin="8,0,0,0"
+                                                Click="RefreshBurnDrives_Click" />
+                                    </Grid>
+                                    <TextBlock x:Name="BurnDriveStatusText" Style="{StaticResource CompactHint}"
+                                               TextWrapping="Wrap" Margin="0,8,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <Expander Header="高级选项" Margin="0,14,0,0">
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="最大目标点数"
+                                               Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+                                    <controls:HelpHint Grid.Row="0" Grid.Column="1" VerticalAlignment="Center"
+                                                       Hint="测量位置的数量。更多目标通常可改善拟合，但需要更多次光驱读取；允许 16–72，且必须为 4 的倍数。" />
+                                    <TextBox x:Name="MaxTargetsText" Grid.Row="0" Grid.Column="2" Text="56" Margin="0,4" />
+                                    <TextBlock Grid.Row="0" Grid.Column="4" Text="每点重复数"
+                                               Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+                                    <controls:HelpHint Grid.Row="0" Grid.Column="5" VerticalAlignment="Center"
+                                                       Hint="每个测量位置重复读取的次数，用于统计光驱旋转相位。重复越多抗抖动越好，但耗时越长；允许 16–60，步进为 4。" />
+                                    <TextBox x:Name="RepsText" Grid.Row="0" Grid.Column="6" Text="40" Margin="0,4" />
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="范围下限"
+                                               Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+                                    <controls:HelpHint Grid.Row="1" Grid.Column="1" VerticalAlignment="Center"
+                                                       Hint="测量区域的起始位置，占盘片总扇区数的比例。0.02 表示从约 2% 处开始；允许 1%–10%，步进为 1%。" />
+                                    <TextBox x:Name="RangeLoText" Grid.Row="1" Grid.Column="2" Text="0.02" Margin="0,4" />
+                                    <TextBlock Grid.Row="1" Grid.Column="4" Text="范围上限"
+                                               Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+                                    <controls:HelpHint Grid.Row="1" Grid.Column="5" VerticalAlignment="Center"
+                                                       Hint="测量区域的结束位置，占盘片总扇区数的比例。0.96 表示到约 96% 处结束；允许 80%–98%，步进为 1%。" />
+                                    <TextBox x:Name="RangeHiText" Grid.Row="1" Grid.Column="6" Text="0.96" Margin="0,4" />
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="7"
+                                               Style="{StaticResource CompactHint}" TextWrapping="Wrap"
+                                               Text="范围与 Discratcher 一致：目标点 16–72（步进 4），重复数 16–60（步进 4），下限 1–10%，上限 80–98%。" />
+                                </Grid>
+                            </Expander>
+
+                            <Border Margin="0,12,0,0" Padding="10,8"
+                                    Background="{DynamicResource DangerSoftBrush}"
+                                    BorderBrush="{DynamicResource DangerBorderBrush}" BorderThickness="1"
+                                    CornerRadius="{StaticResource RadiusField}"
+                                    Visibility="{Binding Visibility, ElementName=RunErrorText}">
+                                <TextBlock x:Name="RunErrorText" TextWrapping="Wrap" FontSize="13"
+                                           Foreground="{DynamicResource DangerBrush}" Visibility="Collapsed" />
+                            </Border>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+                                <Button x:Name="ExportIsoButton" Content="导出镜像供外部刻录"
+                                        Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                                        Click="ExportIso_Click" />
+                                <Button x:Name="ExternalReadButton" Content="我已外部刻录完毕，直接读取校准"
+                                        Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                                        Click="ExternalRead_Click" />
+                                <Button x:Name="BurnButton" Content="前往流式刻录"
+                                        Style="{StaticResource PrimaryButton}" Click="BurnAndCalibrate_Click" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel x:Name="BurnPanel" Visibility="Collapsed">
+                            <TextBlock Text="正在刻录标记盘" Style="{StaticResource CardTitle}" FontSize="20" />
+                            <TextBlock x:Name="BurnStatusText" Style="{StaticResource BodyText}" Margin="0,8,0,0" />
+                            <ProgressBar x:Name="BurnProgress" Height="8" Margin="0,18,0,0" />
+                            <UniformGrid Columns="3" Margin="0,14,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="已用时" Style="{StaticResource FieldLabel}" />
+                                    <TextBlock x:Name="BurnElapsedText" Style="{StaticResource RowText}" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="预计剩余" Style="{StaticResource FieldLabel}" />
+                                    <TextBlock x:Name="BurnEstimateText" Style="{StaticResource RowText}" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="当前速度" Style="{StaticResource FieldLabel}" />
+                                    <TextBlock x:Name="BurnSpeedText" Style="{StaticResource RowText}" />
+                                </StackPanel>
+                            </UniformGrid>
+                            <Border Style="{StaticResource WizardInset}" Margin="0,14,0,0" Padding="12,10">
+                                <ScrollViewer MaxHeight="270" VerticalScrollBarVisibility="Auto">
+                                    <TextBlock x:Name="BurnLogText" Style="{StaticResource CompactHint}"
+                                               TextWrapping="Wrap" FontFamily="{StaticResource MonoFontFamily}" />
+                                </ScrollViewer>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel x:Name="ReadPreparePanel" Visibility="Collapsed">
+                            <TextBlock Text="准备读取标定盘" Style="{StaticResource CardTitle}" FontSize="20" />
+                            <TextBlock Style="{StaticResource BodyText}" Margin="0,8,0,0"
+                                       TextWrapping="Wrap"
+                                       Text="请插入本向导生成并已刻录完成的标记盘。读取前会检查卷标、镜像长度和盘面采样点，避免对错误或未刻完的盘片进行测量。" />
+                            <Border Style="{StaticResource WizardInset}" Margin="0,16,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="读取光驱" Style="{StaticResource FieldLabel}" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="ReadDriveCombo" Grid.Column="0" />
+                                        <Button x:Name="RefreshReadDrivesButton" Grid.Column="1" Content="刷新"
+                                                Style="{StaticResource CompactButton}"
+                                                Margin="8,0,0,0" Click="RefreshReadDrives_Click" />
+                                    </Grid>
+                                    <TextBlock x:Name="ReadDriveStatusText" Style="{StaticResource CompactHint}"
+                                               TextWrapping="Wrap" Margin="0,8,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <TextBlock x:Name="ReadPrepareErrorText" TextWrapping="Wrap" Margin="0,12,0,0"
+                                       Foreground="{DynamicResource DangerBrush}" Visibility="Collapsed" />
+                            <Button x:Name="ReadStartButton" Content="开始读取并标定"
+                                    Style="{StaticResource PrimaryButton}" HorizontalAlignment="Right"
+                                    Margin="0,20,0,0" Click="ReadStart_Click" />
+                        </StackPanel>
+
+                        <StackPanel x:Name="RunPanel" Visibility="Collapsed">
+                            <TextBlock Text="读取与标定" Style="{StaticResource CardTitle}" FontSize="20" />
+                            <TextBlock x:Name="RunStatusText" Style="{StaticResource BodyText}" Margin="0,8,0,0" />
+                            <ProgressBar x:Name="RunProgress" Height="8" Margin="0,18,0,0" />
+                            <UniformGrid Columns="4" Margin="0,14,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="已用时" Style="{StaticResource FieldLabel}" />
+                                    <TextBlock x:Name="ReadElapsedText" Style="{StaticResource RowText}" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="预计剩余" Style="{StaticResource FieldLabel}" />
+                                    <TextBlock x:Name="ReadEstimateText" Style="{StaticResource RowText}" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="测量速率" Style="{StaticResource FieldLabel}" />
+                                    <TextBlock x:Name="ReadSpeedText" Style="{StaticResource RowText}" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="当前测量点" Style="{StaticResource FieldLabel}" />
+                                    <TextBlock x:Name="ReadCurrentText" Style="{StaticResource RowText}" />
+                                </StackPanel>
+                            </UniformGrid>
+                            <Border Style="{StaticResource WizardInset}" Margin="0,14,0,0" Padding="12,10">
+                                <ScrollViewer MaxHeight="250" VerticalScrollBarVisibility="Auto">
+                                    <TextBlock x:Name="RunLogText" Style="{StaticResource CompactHint}"
+                                               TextWrapping="Wrap" FontFamily="{StaticResource MonoFontFamily}" />
+                                </ScrollViewer>
+                            </Border>
+                            <TextBlock x:Name="DoneSummaryText" Style="{StaticResource BodyText}"
+                                       TextWrapping="Wrap" Margin="0,12,0,0" Visibility="Collapsed" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                                <Button x:Name="ExportMarkersButton" Content="导出标记信息…"
+                                        Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                                        IsEnabled="False" Click="ExportMarkers_Click" />
+                                <Button x:Name="FinishButton" Content="完成，应用到工程"
+                                        Style="{StaticResource PrimaryButton}" IsEnabled="False"
+                                        Click="Finish_Click" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0"
+                Padding="24,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Style="{StaticResource CompactHint}" VerticalAlignment="Center"
+                           Margin="0,0,16,0" TextTrimming="CharacterEllipsis"
+                           Text="只有成功完成测量并点击“完成，应用到工程”后，几何参数才会写入工程。" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button x:Name="CancelButton" Content="取消" Style="{StaticResource GhostButton}"
+                            Click="Cancel_Click" />
+                    <Button x:Name="BackButton" Content="‹ 上一步" Style="{StaticResource GhostButton}"
+                            Margin="8,0,0,0" Visibility="Collapsed" Click="Back_Click" />
+                    <Button x:Name="WelcomeNextButton" Content="下一步 ›" Style="{StaticResource PrimaryButton}"
+                            Margin="8,0,0,0" Click="WelcomeNext_Click" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

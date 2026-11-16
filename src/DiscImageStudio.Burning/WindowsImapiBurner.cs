@@ -64,18 +64,21 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 int mediaState = Convert.ToInt32(format.CurrentMediaStatus);
                 long totalSectors = Convert.ToInt64(format.TotalSectorsOnMedia);
                 long freeSectors = Convert.ToInt64(format.FreeSectorsOnMedia);
+                bool physicallyBlank = Convert.ToBoolean((object)format.MediaPhysicallyBlank);
                 // Keep the geometry extent. IMAPI's Free property already removes
                 // recording overhead; never apply the legacy 608-sector estimate again.
                 // A used rewritable disc is rewritten from LBA 0 once the user approves,
                 // so its occupied tail is not the writable limit.
-                capacity = ReadDvdMediaCapacity(mediaType, mediaState, totalSectors, freeSectors)
-                    with { RequiresErase = DvdNeedsErase((object)format, mediaType) };
+                capacity = ReadDvdMediaCapacity(
+                    mediaType, mediaState, totalSectors, freeSectors, physicallyBlank)
+                    with { RequiresErase = DvdNeedsErase((object)format, mediaType, mediaState) };
             }
             else
             {
                 var transport = new ImapiMmcCommandTransport((object)recorder);
                 capacity = OpticalBurnMedia.UsesCdDao(mediaKind)
-                    ? ReadCdMediaCapacity(ReadCdAtipSectorCount(transport), Convert.ToBoolean(format.MediaPhysicallyBlank))
+                    ? ReadCdMediaCapacity(ReadCdAtipSectorCount(transport),
+                        Convert.ToBoolean((object)format.MediaPhysicallyBlank))
                     : ReadBluRayMediaCapacity(transport);
             }
             token.ThrowIfCancellationRequested();
@@ -163,18 +166,20 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         // A conservative single-track payload limit shared with TAO. The actual
         // recorder remains DAO and independently checks its lead-out before writing.
         // A used CD is not writable by this application's blank-disc DAO workflow.
-        return new(atipSectors, physicallyBlank ? atipSectors - 2 : 0);
+        return new(atipSectors, physicallyBlank ? atipSectors - 2 : 0) { IsBlank = physicallyBlank };
     }
 
     internal static OpticalMediaCapacity ReadDvdMediaCapacity(int physicalMediaType, int mediaState,
-        long totalSectorsOnMedia, long freeSectorsOnMedia)
+        long totalSectorsOnMedia, long freeSectorsOnMedia, bool? isBlank = null)
     {
         long total = ReadDvdSectorCount(physicalMediaType, totalSectorsOnMedia);
         if (freeSectorsOnMedia < 0 || freeSectorsOnMedia > total)
             throw new IOException("光驱报告的 DVD 可写容量无效。");
         // A formatted erasable disc is written again from LBA 0 once ForceOverwrite
         // is set, so the free extent of its old track is not the writable payload.
-        return new(total, (mediaState & OverwriteOnlyMediaState) != 0 ? total : freeSectorsOnMedia);
+        long writableSectors = (mediaState & OverwriteOnlyMediaState) != 0
+            ? total : freeSectorsOnMedia;
+        return new(total, writableSectors) { IsBlank = isBlank };
     }
 
     internal static OpticalMediaCapacity ReadBluRayMediaCapacity(IMmcCommandTransport transport)
@@ -184,9 +189,9 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         // A recorded no-spare disc can still supply its geometry, but is not an
         // available destination for our blank-disc sequential recording workflow.
         if (media.FormatStatus != 1 || !media.DiscIsBlank)
-            return new(total, 0);
+            return new(total, 0) { IsBlank = false };
         ValidateBluRaySequentialLayout(media);
-        return new(total, media.FreeBlocks);
+        return new(total, media.FreeBlocks) { IsBlank = true };
     }
 
     internal static long ReadDvdSectorCount(int physicalMediaType, long totalSectorsOnMedia)

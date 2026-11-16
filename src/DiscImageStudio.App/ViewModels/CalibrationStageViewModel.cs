@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
 using DiscImageStudio.Core.Calibration;
 using DiscImageStudio.Localization;
@@ -8,6 +11,8 @@ public partial class CalibrationViewModel
 {
     private enum CalibrationStage { Coarse, SingleLine, Fine }
     private CalibrationStage _stage = CalibrationStage.Coarse;
+    private readonly Dictionary<CalibrationStage, CalibrationSession> _autoWizardSessions = [];
+    private bool _installingAutoWizardSession;
     public bool IsCoarseMode => _stage == CalibrationStage.Coarse;
     public bool IsIntermediateMode => _stage == CalibrationStage.SingleLine;
     public bool IsFineMode => _stage == CalibrationStage.Fine;
@@ -36,7 +41,112 @@ public partial class CalibrationViewModel
     private void SelectStage(CalibrationStage stage)
     {
         if (_stage == stage) return;
+        if (!_installingAutoWizardSession && _autoWizardSessions.TryGetValue(stage, out CalibrationSession? savedSession))
+        {
+            if (_target is not null)
+            {
+                _autoWizardSessions[_stage] = Session();
+            }
+
+            _ = LoadAutoWizardStageAsync(savedSession);
+            return;
+        }
+
         _stage = stage;
+        NotifyStageProperties();
+        ShowTargetPreview = false;
+        if (NeedsStageTarget) StepOneExpanded = true;
+        else if (IsTraceStep) StepThreeExpanded = true;
+        else if (_target is not null) StepTwoExpanded = true;
+        RefreshCommands();
+    }
+
+    internal void ApplyAutoCalibrationSessions(IReadOnlyList<CalibrationSession> sessions)
+    {
+        ArgumentNullException.ThrowIfNull(sessions);
+        Dictionary<CalibrationStage, CalibrationSession> stageSessions = [];
+        foreach (CalibrationSession session in sessions)
+        {
+            ArgumentNullException.ThrowIfNull(session);
+            CalibrationStage stage = GetStage(session);
+            if (!stageSessions.TryAdd(stage, session))
+            {
+                throw new ArgumentException($"自动标定记录中包含重复的{StageName(stage)}阶段。", nameof(sessions));
+            }
+        }
+
+        if (stageSessions.Count != 3)
+        {
+            throw new ArgumentException("自动标定必须为粗标定、边界标定和精细标定各提供一份记录。", nameof(sessions));
+        }
+
+        _autoWizardSessions.Clear();
+        foreach ((CalibrationStage stage, CalibrationSession session) in stageSessions)
+        {
+            _autoWizardSessions.Add(stage, session);
+        }
+
+        InstallAutoWizardStage(CalibrationStage.Coarse, stageSessions[CalibrationStage.Coarse]);
+    }
+
+    private static CalibrationStage GetStage(CalibrationSession session)
+    {
+        if (session.Target.HasBoundaryPattern || session.Target.HasSingleRadialLine)
+        {
+            return CalibrationStage.SingleLine;
+        }
+
+        return session.Target.HasCrossArms ? CalibrationStage.Fine : CalibrationStage.Coarse;
+    }
+
+    private static string StageName(CalibrationStage stage) => stage switch
+    {
+        CalibrationStage.Coarse => "粗标定",
+        CalibrationStage.SingleLine => "边界标定",
+        CalibrationStage.Fine => "精细标定",
+        _ => throw new ArgumentOutOfRangeException(nameof(stage), stage, null),
+    };
+
+    private void InstallAutoWizardStage(CalibrationStage stage, CalibrationSession session)
+    {
+        _installingAutoWizardSession = true;
+        try
+        {
+            _stage = stage;
+            InstallTarget(session.Target, session.FitOptions, session.CdInterleave);
+            WriteSetupParameters(session.Target.Parameters);
+            if (session.Target.Parameters.Kind == CalibrationDiscKind.Cd)
+            {
+                _state.CdInterleave = session.CdInterleave;
+            }
+
+            _sessionPath = null;
+            OutputPath = string.Empty;
+            _statusMessage = L.T("自动标定数据已载入，可继续编辑当前阶段。");
+            NotifyStageProperties();
+            RefreshCommands();
+        }
+        finally
+        {
+            _installingAutoWizardSession = false;
+        }
+    }
+
+    private async Task LoadAutoWizardStageAsync(CalibrationSession session)
+    {
+        _installingAutoWizardSession = true;
+        try
+        {
+            await LoadSessionAsync(session);
+        }
+        finally
+        {
+            _installingAutoWizardSession = false;
+        }
+    }
+
+    private void NotifyStageProperties()
+    {
         OnPropertyChanged(nameof(IsCoarseMode));
         OnPropertyChanged(nameof(IsIntermediateMode));
         OnPropertyChanged(nameof(IsFineMode));
@@ -44,11 +154,6 @@ public partial class CalibrationViewModel
         OnPropertyChanged(nameof(IsRadialArcStep));
         OnPropertyChanged(nameof(IsClockStep));
         NotifyTraceStage();
-        ShowTargetPreview = false;
-        if (NeedsStageTarget) StepOneExpanded = true;
-        else if (IsTraceStep) StepThreeExpanded = true;
-        else if (_target is not null) StepTwoExpanded = true;
-        RefreshCommands();
     }
 
     private void NotifyTraceStage()

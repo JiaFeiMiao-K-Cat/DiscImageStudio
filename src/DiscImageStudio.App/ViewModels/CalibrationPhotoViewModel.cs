@@ -383,85 +383,95 @@ public partial class CalibrationViewModel
     {
         await RunAsync(L.T("正在恢复标定照片与记录…"), async token =>
         {
-            var prepared = await Task.Run(() =>
-            {
-                var session = CalibrationSessionJson.Load(path);
-                ValidateOutputParameters(session.Target.Parameters);
-                BitmapSource? image = null, rectified = null;
-                CalibrationPhotoFitResult? fit = null;
-                CalibrationFitResult? ringFit = null;
-                if (session.Photo is { } photo)
-                {
-                    image = DecodePhoto(photo.ImagePngBase64);
-                    if (photo.OuterBoundary.Concat(photo.HoleBoundary).Any(p => p.X >= image.PixelWidth || p.Y >= image.PixelHeight))
-                        throw new ArgumentException(L.T("标定轮廓超出照片范围。"));
-                    if (photo.RectificationConfirmed)
-                    {
-                        fit = CalibrationPhotoRectifier.Fit(photo.OuterBoundary, photo.HoleBoundary, photo.PhysicalOuterRadiusMm, 7.5, token);
-                        if (!fit.Succeeded || fit.Transform is null) throw PhotoFitError(fit);
-                        rectified = CalibrationPhotoService.Rectify(image, fit.Transform, photo.PhysicalOuterRadiusMm + 3, cancellationToken: token);
-                        if (photo.UseRingSeed)
-                        {
-                            ringFit = CalibrationRingFitter.Fit(session.Target, photo.RingObservations ?? [], token);
-                            if (!RingEstimateAccepted(ringFit, photo.PhysicalOuterRadiusMm))
-                                throw new ArgumentException(L.T("Rings.InvalidSavedSeed"));
-                        }
-                    }
-                }
-                return (Session: session, Image: image, Rectified: rectified, Fit: fit, RingFit: ringFit);
-            }, token);
-            token.ThrowIfCancellationRequested();
-            var session = prepared.Session;
-            InstallTarget(session.Target, session.FitOptions, session.CdInterleave);
-            RestoreStage(session);
-            WriteSetupParameters(session.Target.Parameters);
-            if (session.Target.Parameters.Kind == CalibrationDiscKind.Cd)
-                _state.CdInterleave = session.CdInterleave;
+            CalibrationSession session = await Task.Run(() => CalibrationSessionJson.Load(path), token);
+            await RestoreSessionAsync(session, path, token);
+        });
+    }
+
+    internal async Task LoadSessionAsync(CalibrationSession session)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        await RunAsync(L.T("正在恢复标定照片与记录…"), token => RestoreSessionAsync(session, null, token));
+    }
+
+    private async Task RestoreSessionAsync(CalibrationSession session, string? path, CancellationToken token)
+    {
+        var prepared = await Task.Run(() =>
+        {
+            ValidateOutputParameters(session.Target.Parameters);
+            BitmapSource? image = null, rectified = null;
+            CalibrationPhotoFitResult? fit = null;
+            CalibrationFitResult? ringFit = null;
             if (session.Photo is { } photo)
             {
-                _restoringPhoto = true;
-                try { SelectedPhysicalDiscSize = PhysicalDiscSizeChoices.Single(s => s.OuterRadiusMm == photo.PhysicalOuterRadiusMm); }
-                finally { _restoringPhoto = false; }
-                PhotoImage = prepared.Image; RectifiedPhoto = prepared.Rectified; _photoPng = photo.ImagePngBase64;
-                _photoTransform = prepared.Fit?.Transform;
-                _rectificationFit = prepared.Fit;
-                SetBoundaryPoints(photo.OuterBoundary, photo.HoleBoundary);
-                IsRectificationReady = _photoTransform is not null;
-                if (_photoTransform is not null) PhotoBoundaryContours = BoundaryContours(_photoTransform, photo.PhysicalOuterRadiusMm);
-                if (HasBoundarySegments) RestoreBoundarySegments(photo.BoundarySegments);
-                else TracePoints = photo.Traces.SelectMany(t => t.Points).Select((p, i) => new CalibrationTracePoint(0, i, p.X, p.Y))
-                    .OrderBy(p => p.XMm * p.XMm + p.YMm * p.YMm).ToArray();
-                SetRingObservations(photo.RingObservations);
-                if (photo.BandRaySelection is int selectedEdge)
-                    SelectedRingIndex = selectedEdge;
-                SetPreferredClockAngle(photo.PreferredClockAngleDegrees);
-                SetArcLengthMarks(photo.RadialArcLengths);
-                if (photo.ArcDraft is { } draft)
+                image = DecodePhoto(photo.ImagePngBase64);
+                if (photo.OuterBoundary.Concat(photo.HoleBoundary).Any(p => p.X >= image.PixelWidth || p.Y >= image.PixelHeight))
+                    throw new ArgumentException(L.T("标定轮廓超出照片范围。"));
+                if (photo.RectificationConfirmed)
                 {
-                    SelectedRingIndex = draft.RingIndex;
-                    if (HasWideBandTarget) _oldWideBandDraft = draft;
-                    else
+                    fit = CalibrationPhotoRectifier.Fit(photo.OuterBoundary, photo.HoleBoundary, photo.PhysicalOuterRadiusMm, 7.5, token);
+                    if (!fit.Succeeded || fit.Transform is null) throw PhotoFitError(fit);
+                    rectified = CalibrationPhotoService.Rectify(image, fit.Transform, photo.PhysicalOuterRadiusMm + 3, cancellationToken: token);
+                    if (photo.UseRingSeed)
                     {
-                        ThreePointMode = true;
-                        if (draft.Points.Count > 0) SetRingMarkers(draft.Points);
+                        ringFit = CalibrationRingFitter.Fit(session.Target, photo.RingObservations ?? [], token);
+                        if (!RingEstimateAccepted(ringFit, photo.PhysicalOuterRadiusMm))
+                            throw new ArgumentException(L.T("Rings.InvalidSavedSeed"));
                     }
                 }
-                _ringFit = prepared.RingFit;
-                _acceptedRingSeed = _ringFit?.BestParameters;
-                NotifyRingResult();
-                UpdateFitAssessment();
-                IsPhotoStep = !photo.RectificationConfirmed;
-                RectificationSummary = prepared.Fit is { } restoredFit
-                    ? L.F($"外缘偏差 {restoredFit.OuterRmsPixels:0.0} 像素 · 内缘偏差 {restoredFit.HoleRmsPixels:0.0} 像素")
-                    : string.Empty;
             }
-            if (session.ConfirmedFit is { } confirmedFit)
-                await RestoreConfirmedFitAsync(confirmedFit, token);
-            token.ThrowIfCancellationRequested();
-            _sessionPath = path; OutputPath = string.Empty;
-            _statusMessage = L.T("已恢复标定图案、照片和曲线点，可继续编辑或重新反推。");
-            RefreshCommands();
-        });
+            return (Image: image, Rectified: rectified, Fit: fit, RingFit: ringFit);
+        }, token);
+        token.ThrowIfCancellationRequested();
+        InstallTarget(session.Target, session.FitOptions, session.CdInterleave);
+        RestoreStage(session);
+        WriteSetupParameters(session.Target.Parameters);
+        if (session.Target.Parameters.Kind == CalibrationDiscKind.Cd)
+            _state.CdInterleave = session.CdInterleave;
+        if (session.Photo is { } photo)
+        {
+            _restoringPhoto = true;
+            try { SelectedPhysicalDiscSize = PhysicalDiscSizeChoices.Single(s => s.OuterRadiusMm == photo.PhysicalOuterRadiusMm); }
+            finally { _restoringPhoto = false; }
+            PhotoImage = prepared.Image; RectifiedPhoto = prepared.Rectified; _photoPng = photo.ImagePngBase64;
+            _photoTransform = prepared.Fit?.Transform;
+            _rectificationFit = prepared.Fit;
+            SetBoundaryPoints(photo.OuterBoundary, photo.HoleBoundary);
+            IsRectificationReady = _photoTransform is not null;
+            if (_photoTransform is not null) PhotoBoundaryContours = BoundaryContours(_photoTransform, photo.PhysicalOuterRadiusMm);
+            if (HasBoundarySegments) RestoreBoundarySegments(photo.BoundarySegments);
+            else TracePoints = photo.Traces.SelectMany(t => t.Points).Select((p, i) => new CalibrationTracePoint(0, i, p.X, p.Y))
+                .OrderBy(p => p.XMm * p.XMm + p.YMm * p.YMm).ToArray();
+            SetRingObservations(photo.RingObservations);
+            if (photo.BandRaySelection is int selectedEdge)
+                SelectedRingIndex = selectedEdge;
+            SetPreferredClockAngle(photo.PreferredClockAngleDegrees);
+            SetArcLengthMarks(photo.RadialArcLengths);
+            if (photo.ArcDraft is { } draft)
+            {
+                SelectedRingIndex = draft.RingIndex;
+                if (HasWideBandTarget) _oldWideBandDraft = draft;
+                else
+                {
+                    ThreePointMode = true;
+                    if (draft.Points.Count > 0) SetRingMarkers(draft.Points);
+                }
+            }
+            _ringFit = prepared.RingFit;
+            _acceptedRingSeed = _ringFit?.BestParameters;
+            NotifyRingResult();
+            UpdateFitAssessment();
+            IsPhotoStep = !photo.RectificationConfirmed;
+            RectificationSummary = prepared.Fit is { } restoredFit
+                ? L.F($"外缘偏差 {restoredFit.OuterRmsPixels:0.0} 像素 · 内缘偏差 {restoredFit.HoleRmsPixels:0.0} 像素")
+                : string.Empty;
+        }
+        if (session.ConfirmedFit is { } confirmedFit)
+            await RestoreConfirmedFitAsync(confirmedFit, token);
+        token.ThrowIfCancellationRequested();
+        _sessionPath = path; OutputPath = string.Empty;
+        _statusMessage = L.T("已恢复标定图案、照片和曲线点，可继续编辑或重新反推。");
+        RefreshCommands();
     }
 
     /// <summary>Physical disc size choice for the photo step. The label is computed from the

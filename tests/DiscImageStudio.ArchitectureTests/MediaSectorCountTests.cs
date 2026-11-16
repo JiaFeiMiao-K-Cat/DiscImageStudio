@@ -25,10 +25,10 @@ internal static class MediaSectorCountTests
         cd.HResult = BluRayMmcCommands.CommandHasSenseData;
         Throws<MmcCommandException>(() => WindowsImapiBurner.ReadCdAtipSectorCount(cd));
 
-        Require(WindowsImapiBurner.ReadCdMediaCapacity(359845, physicallyBlank: true)
-            == new OpticalMediaCapacity(359845, 359843));
-        Require(WindowsImapiBurner.ReadCdMediaCapacity(359845, physicallyBlank: false)
-            == new OpticalMediaCapacity(359845, 0));
+        OpticalMediaCapacity blankCd = WindowsImapiBurner.ReadCdMediaCapacity(359845, physicallyBlank: true);
+        Require(blankCd.TotalSectors == 359845 && blankCd.WritableSectors == 359843 && blankCd.IsBlank == true);
+        OpticalMediaCapacity recordedCd = WindowsImapiBurner.ReadCdMediaCapacity(359845, physicallyBlank: false);
+        Require(recordedCd.TotalSectors == 359845 && recordedCd.WritableSectors == 0 && recordedCd.IsBlank == false);
         Throws<IOException>(() => WindowsImapiBurner.ReadCdMediaCapacity(2, physicallyBlank: true));
 
         Require(WindowsImapiBurner.ReadDvdSectorCount(0x9, 714_544) == 714_544);
@@ -49,17 +49,19 @@ internal static class MediaSectorCountTests
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadDvdSectorCount(0x9, 0));
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadDvdSectorCount(0xB, 4_171_712));
         // Neither the raw geometry nor an actual Free value receives the legacy estimate.
-        Require(WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 0x2, 714546, 713936)
-            == new OpticalMediaCapacity(714546, 713936));
-        Require(WindowsImapiBurner.ReadDvdMediaCapacity(0x6, 0x2, 2295104, 2295104)
-            == new OpticalMediaCapacity(2295104, 2295104));
+        OpticalMediaCapacity blankDvd = WindowsImapiBurner.ReadDvdMediaCapacity(
+            0x9, 0x2, 714546, 713936, isBlank: true);
+        Require(blankDvd.TotalSectors == 714546 && blankDvd.WritableSectors == 713936 && blankDvd.IsBlank == true);
+        OpticalMediaCapacity recordedDvd = WindowsImapiBurner.ReadDvdMediaCapacity(
+            0x6, 0x2, 2295104, 2295104, isBlank: false);
+        Require(recordedDvd.TotalSectors == 2295104 && recordedDvd.WritableSectors == 2295104 && recordedDvd.IsBlank == false);
         Require(WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 0x2, 714546, 0).WritableSectors == 0);
         Throws<IOException>(() => WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 0x2, 714546, 714547));
         Throws<IOException>(() => WindowsImapiBurner.ReadDvdMediaCapacity(0x9, 0x2, 714546, -1));
-        // A formatted erasable disc is overwritten from LBA 0, so its old free
-        // extent no longer limits the writable payload.
-        Require(WindowsImapiBurner.ReadDvdMediaCapacity(0x7, 0x1, 2295104, 0)
-            == new OpticalMediaCapacity(2295104, 2295104));
+        OpticalMediaCapacity formattedDvdRw = WindowsImapiBurner.ReadDvdMediaCapacity(
+            0x7, 0x1, 2295104, 0, isBlank: false);
+        Require(formattedDvdRw.TotalSectors == 2295104
+            && formattedDvdRw.WritableSectors == 2295104 && formattedDvdRw.IsBlank == false);
 
         byte[] descriptor = new byte[12];
         descriptor[3] = 8;
@@ -79,16 +81,16 @@ internal static class MediaSectorCountTests
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadBluRaySectorCount(bd));
 
         var bdMedia = new BluRayReadOnlyTransport();
-        Require(WindowsImapiBurner.ReadBluRayMediaCapacity(bdMedia)
-            == new OpticalMediaCapacity(12_219_392, 12_219_392));
+        OpticalMediaCapacity blankBd = WindowsImapiBurner.ReadBluRayMediaCapacity(bdMedia);
+        Require(blankBd.TotalSectors == 12_219_392 && blankBd.WritableSectors == 12_219_392 && blankBd.IsBlank == true);
         Require(bdMedia.Commands.SequenceEqual(new byte[] { 0x46, 0x51, 0x23, 0x52 }));
         bdMedia.FreeBlocks -= 32;
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadBluRayMediaCapacity(bdMedia));
         bdMedia.FreeBlocks += 32;
         bdMedia.FormatStatus = 2;
         bdMedia.SpareClusters = 0;
-        Require(WindowsImapiBurner.ReadBluRayMediaCapacity(bdMedia)
-            == new OpticalMediaCapacity(12_219_392, 0));
+        OpticalMediaCapacity recordedBd = WindowsImapiBurner.ReadBluRayMediaCapacity(bdMedia);
+        Require(recordedBd.TotalSectors == 12_219_392 && recordedBd.WritableSectors == 0 && recordedBd.IsBlank == false);
         bdMedia.SpareClusters = 4096;
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadBluRayMediaCapacity(bdMedia));
         Console.WriteLine("calibration-media-capacity: separate geometry/payload limits, CD reservation, direct DVD Free, strict BD layout and read-only queries passed");

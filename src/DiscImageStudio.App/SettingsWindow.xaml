@@ -40,6 +40,8 @@
                                           Activated="GeneralNav_Activated" />
                     <controls:SideNavItem x:Name="StorageNav" LabelText="{loc:Text Settings.Storage}"
                                           IconKind="HardDrive" Activated="StorageNav_Activated" />
+                    <controls:SideNavItem x:Name="AutoCalNav" LabelText="{loc:Text Settings.AutoCalibration}"
+                                          IconKind="Wand" Activated="AutoCalNav_Activated" />
                     <controls:SideNavItem x:Name="AboutNav" LabelText="{loc:Text Xaml.About}"
                                           IconKind="Info" Activated="AboutNav_Activated" />
                 </StackPanel>
@@ -133,10 +135,22 @@
                         </controls:SectionCard>
                     </StackPanel>
 
-                    <!-- About: the old standalone dialog folded in, in its own plain layout —
-                         app icon, version, description, the open-source component list and
-                         the three embedded license texts behind expanders. No cards: this is
-                         a colophon, not a settings form. -->
+                    <StackPanel x:Name="AutoCalPanel" Visibility="Collapsed">
+                        <TextBlock Text="{loc:Text Settings.AutoCalibration}" Style="{StaticResource H1Title}" />
+                        <TextBlock Text="{loc:Text Settings.AutoCalibrationDebugHint}"
+                                   Style="{StaticResource PageSubtitle}" Margin="0,4,0,0" />
+
+                        <controls:SectionCard Header="{loc:Text Settings.AutoCalibration}" IconKind="Wand" Margin="0,20,0,0">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                    <TextBlock Text="{loc:Text Settings.AutoCalibrationDebug}"
+                                               Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+                                    <CheckBox IsChecked="{Binding AutoWizardDebugMode, Mode=TwoWay}"
+                                              Margin="12,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
+                        </controls:SectionCard>
+                    </StackPanel>
                     <StackPanel x:Name="AboutPanel" Visibility="Collapsed">
                         <TextBlock Text="{loc:Text Xaml.About}" Style="{StaticResource H1Title}" />
 
