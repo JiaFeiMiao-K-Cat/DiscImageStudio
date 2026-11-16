@@ -12,7 +12,8 @@ public sealed record CdImageRequest(
     bool WriteCue = true,
     string? DataDirectory = null,
     string VolumeLabel = "CD_IMAGE",
-    bool FilesAtOuterRing = false);
+    bool FilesAtOuterRing = false,
+    string? InputIsoPath = null);
 
 public static class CdImageGenerator
 {
@@ -26,18 +27,26 @@ public static class CdImageGenerator
         cancellationToken.ThrowIfCancellationRequested();
         request.Tone.Validate();
         string? dataDirectory = request.DataDirectory?.Trim();
-        if (!string.IsNullOrEmpty(dataDirectory))
+        string? inputIsoPath = request.InputIsoPath?.Trim();
+        if (!string.IsNullOrEmpty(dataDirectory) && !string.IsNullOrEmpty(inputIsoPath))
+            throw new ArgumentException("Specify either DataDirectory or InputIsoPath, not both.", nameof(request));
+        if (!string.IsNullOrEmpty(dataDirectory) || !string.IsNullOrEmpty(inputIsoPath))
         {
-            CdDataLayoutPlan plan = CdDataImageGenerator.PrepareLayout(dataDirectory, request.Parameters,
-                request.VolumeLabel, request.FilesAtOuterRing);
+            CdDataLayoutPlan plan = !string.IsNullOrEmpty(inputIsoPath)
+                ? CdDataImageGenerator.PreparePassthroughIsoLayout(inputIsoPath, request.Parameters, request.FilesAtOuterRing)
+                : CdDataImageGenerator.PrepareLayout(dataDirectory!, request.Parameters,
+                    request.VolumeLabel, request.FilesAtOuterRing);
             CdGenerationSummary dataSummary = CdDataImageGenerator.Generate(request.SourceImage,
                 request.OutputPath, request.Parameters, plan,
                 value => progress?.Report(new DiscJobProgress(CdDiscModule.ModuleId, "generate",
                     $"CD data progress {value.Fraction:P1}", value.Fraction, value.CompletedBytes,
                     value.TotalBytes, value.Elapsed)), cancellationToken, request.Tone);
-            return new DiscImageResult(dataSummary.OutputTrack,
-                $"CD data image complete: {plan.FileCount} files, {plan.TotalSectors} sectors, "
-                + $"files={(request.FilesAtOuterRing ? "outer" : "inner")}, output={dataSummary.OutputTrack}");
+            string dataSummaryText = plan.HasExternalIso
+                ? $"CD ISO image complete: {plan.FileBytes} bytes, {plan.TotalSectors} sectors, "
+                    + $"iso={(request.FilesAtOuterRing ? "outer" : "inner")}, output={dataSummary.OutputTrack}"
+                : $"CD data image complete: {plan.FileCount} files, {plan.TotalSectors} sectors, "
+                    + $"files={(request.FilesAtOuterRing ? "outer" : "inner")}, output={dataSummary.OutputTrack}";
+            return new DiscImageResult(dataSummary.OutputTrack, dataSummaryText);
         }
 
         CdGenerationSummary summary = CdTrackGenerator.Generate(request.SourceImage, request.OutputPath,

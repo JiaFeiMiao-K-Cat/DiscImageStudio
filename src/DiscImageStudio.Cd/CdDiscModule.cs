@@ -54,14 +54,15 @@ public sealed class CdDiscModule : IOpticalDiscModule
             new DiscCommandDescriptor(
                 "cd-generate",
                 "Generate CD audio or data image",
-                "Without files, writes WAV/CUE or RAW audio; with --data-dir, writes a Mode 1 ISO with inner/outer-ring files.",
+                "Without files, writes WAV/CUE or RAW audio; with --data-dir or --input-iso, writes a Mode 1 ISO with inner/outer-ring data.",
                 DiscModuleCapabilities.RawTrackGeneration | DiscModuleCapabilities.DataImageGeneration | DiscModuleCapabilities.HybridFilesystem,
                 [
                     new("input", "Source image", DiscOptionValueType.InputFile, Required: true),
                     new("output", "Audio track (.wav/.raw) or data image (.iso)", DiscOptionValueType.OutputFile, Required: true),
-                    new("data-dir", "Files to include; omitted for audio", DiscOptionValueType.InputFolder),
+                    new("data-dir", "Files to include; omitted for audio or --input-iso", DiscOptionValueType.InputFolder),
+                    new("input-iso", "Pre-built ISO image to stream verbatim; omitted for audio or --data-dir", DiscOptionValueType.InputFile),
                     new("volume-label", "Data volume label", DiscOptionValueType.String, DefaultValue: "CD_IMAGE"),
-                    new("file-position", "File position", DiscOptionValueType.Choice, DefaultValue: "inner", Choices: ["inner", "outer"]),
+                    new("file-position", "File or ISO position", DiscOptionValueType.Choice, DefaultValue: "inner", Choices: ["inner", "outer"]),
                     .. GeometryOptions,
                     new("interleave", "CD-DA delay interleave", DiscOptionValueType.Boolean, DefaultValue: "true"),
                     new("cue", "Write a CUE sheet next to the WAV track", DiscOptionValueType.Boolean, DefaultValue: "true"),
@@ -79,8 +80,9 @@ public sealed class CdDiscModule : IOpticalDiscModule
                     .. MeasuredGeometryOptions,
                     .. ToneOptions,
                     new("data-dir", "Data files for drawing-range preview", DiscOptionValueType.InputFolder),
+                    new("input-iso", "Pre-built ISO image for drawing-range preview", DiscOptionValueType.InputFile),
                     new("volume-label", "Data volume label", DiscOptionValueType.String, DefaultValue: "CD_IMAGE"),
-                    new("file-position", "File position", DiscOptionValueType.Choice, DefaultValue: "inner", Choices: ["inner", "outer"]),
+                    new("file-position", "File or ISO position", DiscOptionValueType.Choice, DefaultValue: "inner", Choices: ["inner", "outer"]),
                     new("size", "Preview size", DiscOptionValueType.Integer, DefaultValue: "1600", Unit: "px"),
                     new("samples-per-sector", "Samples per sector", DiscOptionValueType.Integer, DefaultValue: "16"),
                 ]),
@@ -136,7 +138,8 @@ public sealed class CdDiscModule : IOpticalDiscModule
             options.GetBoolean("cue", true),
             options.GetString("data-dir", string.Empty),
             options.GetString("volume-label", "CD_IMAGE"),
-            ReadFilePosition(options));
+            ReadFilePosition(options),
+            options.GetString("input-iso", string.Empty));
         DiscImageResult result = CdImageGenerator.Generate(image, progress, cancellationToken);
         return new DiscJobResult(ModuleId, request.Command, 0, result.Summary, result.OutputPath);
     }
@@ -151,11 +154,16 @@ public sealed class CdDiscModule : IOpticalDiscModule
         progress?.Report(new DiscJobProgress(ModuleId, "preview", "Rendering CD geometry preview…"));
         CdDiscParameters generated = ReadParameters(options);
         string dataDirectory = options.GetString("data-dir", string.Empty).Trim();
+        string inputIsoPath = options.GetString("input-iso", string.Empty).Trim();
+        if (dataDirectory.Length > 0 && inputIsoPath.Length > 0)
+            throw new ArgumentException("Specify either --data-dir or --input-iso, not both.");
         bool outer = ReadFilePosition(options);
-        if (dataDirectory.Length > 0)
+        if (dataDirectory.Length > 0 || inputIsoPath.Length > 0)
         {
-            CdDataLayoutPlan plan = CdDataImageGenerator.PrepareLayout(dataDirectory, generated,
-                options.GetString("volume-label", "CD_IMAGE"), outer);
+            CdDataLayoutPlan plan = inputIsoPath.Length > 0
+                ? CdDataImageGenerator.PreparePassthroughIsoLayout(inputIsoPath, generated, outer)
+                : CdDataImageGenerator.PrepareLayout(dataDirectory, generated,
+                    options.GetString("volume-label", "CD_IMAGE"), outer);
             CdDataImageGenerator.PreviewWarp(options.Require("input"), output, generated,
                 ReadMeasuredParameters(options, generated), options.GetInt("size", 1600),
                 options.GetInt("samples-per-sector", 16), ReadTone(options), plan, cancellationToken);

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using DiscImageStudio.Core;
 using DiscImageStudio.Core.Calibration;
+using DiscImageStudio.Iso;
 using DvdImageSolver;
 using DvdImageSolver.Encoding;
 using DvdImageSolver.Solver;
@@ -134,33 +135,51 @@ public sealed class DvdHybridStreamingPlan
         DrawingEndLbaExclusive = drawingEndLbaExclusive;
     }
 
-    internal HybridIsoImageWriter.LayoutPlan IsoLayout { get; }
+    internal DvdHybridStreamingPlan(
+        RawIsoLayoutPlan rawIsoLayout,
+        uint drawingStartLba,
+        uint drawingEndLbaExclusive)
+    {
+        RawIsoLayout = rawIsoLayout;
+        DrawingStartLba = drawingStartLba;
+        DrawingEndLbaExclusive = drawingEndLbaExclusive;
+    }
 
-    public string SourceDirectory => IsoLayout.SourceDirectory;
+    internal HybridIsoImageWriter.LayoutPlan? IsoLayout { get; }
 
-    public uint TotalSectors => IsoLayout.VolumeSectors;
+    internal RawIsoLayoutPlan? RawIsoLayout { get; }
 
-    public uint FilesystemEndLbaExclusive => IsoLayout.DataEndLbaExclusive;
+    public bool HasExternalIso => RawIsoLayout is not null || !string.IsNullOrEmpty(IsoLayout?.SourceIsoPath);
+
+    public string InputIsoPath => RawIsoLayout?.SourceIsoPath ?? IsoLayout?.SourceIsoPath ?? string.Empty;
+
+    public string SourceDirectory => IsoLayout?.SourceDirectory ?? string.Empty;
+
+    public uint TotalSectors => IsoLayout?.VolumeSectors ?? RawIsoLayout!.VolumeSectors;
+
+    public uint FilesystemEndLbaExclusive => IsoLayout?.DataEndLbaExclusive
+        ?? (RawIsoLayout!.FilesAtOuterRing ? 0u : RawIsoLayout.DrawingStartLba);
 
     /// <summary>Where the filesystem metadata ends and where file data begins: the design
     /// guide maps both to annuli so outer-ring files still mark their inner metadata.</summary>
-    public uint MetadataEndLbaExclusive => IsoLayout.MetadataEndLbaExclusive;
+    public uint MetadataEndLbaExclusive => IsoLayout?.MetadataEndLbaExclusive
+        ?? (RawIsoLayout!.FilesAtOuterRing ? 0u : RawIsoLayout.DrawingStartLba);
 
-    public uint FileDataStartLba => IsoLayout.FileDataStartLba;
+    public uint FileDataStartLba => IsoLayout?.FileDataStartLba ?? RawIsoLayout!.IsoStartLba;
 
     public uint DrawingStartLba { get; }
 
     public uint DrawingEndLbaExclusive { get; }
 
-    public bool FilesAtOuterRing => IsoLayout.FilesAtOuterRing;
+    public bool FilesAtOuterRing => IsoLayout?.FilesAtOuterRing ?? RawIsoLayout!.FilesAtOuterRing;
 
     public uint DrawingSectors => checked(DrawingEndLbaExclusive - DrawingStartLba);
 
-    public int FileCount => IsoLayout.FileCount;
+    public int FileCount => IsoLayout?.FileCount ?? 0;
 
-    public int DirectoryCount => IsoLayout.DirectoryCount;
+    public int DirectoryCount => IsoLayout?.DirectoryCount ?? 0;
 
-    public long FileBytes => IsoLayout.FileBytes;
+    public long FileBytes => IsoLayout?.FileBytes ?? RawIsoLayout!.SourceBytes;
 }
 
 public static class DvdStreamingGenerator
@@ -181,6 +200,43 @@ public static class DvdStreamingGenerator
             options.OutputSectors,
             volumeLabel,
             filesAtOuterRing);
+        return BuildHybridPlan(isoLayout, options, filesAtOuterRing, nameof(dataDirectory));
+    }
+
+    public static DvdHybridStreamingPlan PreparePassthroughIso(
+        string inputIsoPath,
+        DvdStreamingOptions options,
+        bool filesAtOuterRing = false,
+        string? volumeLabel = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(inputIsoPath);
+        ArgumentNullException.ThrowIfNull(options);
+        options.Validate();
+        if (filesAtOuterRing)
+        {
+            HybridIsoImageWriter.LayoutPlan isoLayout = HybridIsoImageWriter.PlanFromIso(
+                inputIsoPath,
+                options.OutputSectors,
+                volumeLabel,
+                filesAtOuterRing: true);
+            return BuildHybridPlan(isoLayout, options, filesAtOuterRing: true, nameof(inputIsoPath));
+        }
+
+        RawIsoLayoutPlan rawIso = RawIsoPassthrough.Plan(
+            inputIsoPath,
+            options.OutputSectors,
+            DvdEccBlockEncoder.SectorCount,
+            filesAtOuterRing: false,
+            DvdEccBlockEncoder.SectorCount);
+        return new DvdHybridStreamingPlan(rawIso, rawIso.DrawingStartLba, rawIso.DrawingEndLbaExclusive);
+    }
+
+    private static DvdHybridStreamingPlan BuildHybridPlan(
+        HybridIsoImageWriter.LayoutPlan isoLayout,
+        DvdStreamingOptions options,
+        bool filesAtOuterRing,
+        string paramName)
+    {
         uint drawingStartLba = AlignToEccBlock(filesAtOuterRing
             ? isoLayout.MetadataEndLbaExclusive : isoLayout.DataEndLbaExclusive, PsnOffset);
         uint drawingEndLba = filesAtOuterRing ? isoLayout.FileDataStartLba / 16 * 16 : options.OutputSectors;
@@ -188,7 +244,7 @@ public static class DvdStreamingGenerator
         {
             throw new ArgumentException(
                 "The filesystem leaves no complete ECC Block for drawing in the selected file layout.",
-                nameof(dataDirectory));
+                paramName);
         }
 
         return new DvdHybridStreamingPlan(isoLayout, drawingStartLba, drawingEndLba);
@@ -338,13 +394,29 @@ public static class DvdStreamingGenerator
 
         string sourceFullPath = Path.GetFullPath(imagePath);
         Stopwatch stopwatch = Stopwatch.StartNew();
-        if (plan.FilesAtOuterRing)
-            HybridIsoImageWriter.WriteOuterRingPrefix(plan.IsoLayout, output, plan.DrawingStartLba, cancellationToken);
+        int totalBlocks = checked((int)(options.OutputSectors / DvdEccBlockEncoder.SectorCount));
+        if (plan.RawIsoLayout is { } rawPrefix)
+        {
+            if (!rawPrefix.FilesAtOuterRing)
+            {
+                RawIsoPassthrough.CopyFileToStream(rawPrefix.SourceIsoPath, rawPrefix.SourceBytes, output,
+                    bytes => progress?.Invoke(new DvdStreamingProgress(
+                        bytes,
+                        options.ContentLength,
+                        checked((int)(bytes / DvdEccBlockEncoder.PayloadBytesPerBlock)),
+                        totalBlocks,
+                        stopwatch.Elapsed)),
+                    cancellationToken);
+                RawIsoPassthrough.WriteZeroSectors(output, rawPrefix.DrawingStartLba - rawPrefix.SourceSectors,
+                    cancellationToken);
+            }
+        }
+        else if (plan.FilesAtOuterRing)
+            HybridIsoImageWriter.WriteOuterRingPrefix(plan.IsoLayout!, output, plan.DrawingStartLba, cancellationToken);
         else
-            HybridIsoImageWriter.WriteSequentialPrefix(plan.IsoLayout, output, plan.DrawingStartLba, cancellationToken);
+            HybridIsoImageWriter.WriteSequentialPrefix(plan.IsoLayout!, output, plan.DrawingStartLba, cancellationToken);
         long prefixBytes = checked(
             (long)plan.DrawingStartLba * DvdEccBlockEncoder.PayloadBytesPerSector);
-        int totalBlocks = checked((int)(options.OutputSectors / DvdEccBlockEncoder.SectorCount));
         progress?.Invoke(new DvdStreamingProgress(
             prefixBytes,
             options.ContentLength,
@@ -368,9 +440,32 @@ public static class DvdStreamingGenerator
                 totalBlocks,
                 stopwatch.Elapsed)),
             cancellationToken);
-        if (plan.FilesAtOuterRing)
+        if (plan.RawIsoLayout is { } rawSuffix)
         {
-            HybridIsoImageWriter.WriteOuterRingSuffix(plan.IsoLayout, output, plan.DrawingEndLbaExclusive, cancellationToken);
+            if (rawSuffix.FilesAtOuterRing)
+            {
+                RawIsoPassthrough.WriteZeroSectors(output, rawSuffix.IsoStartLba - rawSuffix.DrawingEndLbaExclusive,
+                    cancellationToken);
+                long beforeSuffixBytes = checked((long)rawSuffix.IsoStartLba * DvdEccBlockEncoder.PayloadBytesPerSector);
+                RawIsoPassthrough.CopyFileToStream(rawSuffix.SourceIsoPath, rawSuffix.SourceBytes, output,
+                    bytes =>
+                    {
+                        long total = checked(beforeSuffixBytes + bytes);
+                        progress?.Invoke(new DvdStreamingProgress(
+                            total,
+                            options.ContentLength,
+                            checked((int)(total / DvdEccBlockEncoder.PayloadBytesPerBlock)),
+                            totalBlocks,
+                            stopwatch.Elapsed));
+                    },
+                    cancellationToken);
+                progress?.Invoke(new DvdStreamingProgress(options.ContentLength, options.ContentLength,
+                    totalBlocks, totalBlocks, stopwatch.Elapsed));
+            }
+        }
+        else if (plan.FilesAtOuterRing)
+        {
+            HybridIsoImageWriter.WriteOuterRingSuffix(plan.IsoLayout!, output, plan.DrawingEndLbaExclusive, cancellationToken);
             progress?.Invoke(new DvdStreamingProgress(options.ContentLength, options.ContentLength,
                 totalBlocks, totalBlocks, stopwatch.Elapsed));
         }

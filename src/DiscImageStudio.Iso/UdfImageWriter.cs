@@ -20,11 +20,19 @@ public static class UdfImageWriter
     private const uint MaximumExtentBytes = 0x3ffff800;
     private const string ImplementationId = "*DiscImageStudio";
 
+    internal sealed record UdfVolumeMetadata(
+        string VolumeSetIdentifier,
+        string LvInfo1,
+        string LvInfo2,
+        string LvInfo3);
+
     public sealed class LayoutPlan
     {
         internal LayoutPlan(string sourceDirectory, uint volumeSectors, string volumeLabel,
             DateTimeOffset timestamp, List<Node> nodes, uint partitionStart, uint dataEnd,
-            uint drawingStart, uint drawingEnd, bool filesAtOuterRing)
+            uint drawingStart, uint drawingEnd, bool filesAtOuterRing,
+            string sourceIsoPath = "", long sourceIsoBytes = 0, DateTimeOffset sourceIsoLastWriteUtc = default,
+            UdfVolumeMetadata? volumeMetadata = null)
         {
             SourceDirectory = sourceDirectory;
             VolumeSectors = volumeSectors;
@@ -36,12 +44,20 @@ public static class UdfImageWriter
             DrawingStartLba = drawingStart;
             DrawingEndLbaExclusive = drawingEnd;
             FilesAtOuterRing = filesAtOuterRing;
+            SourceIsoPath = sourceIsoPath;
+            SourceIsoBytes = sourceIsoBytes;
+            SourceIsoLastWriteUtc = sourceIsoLastWriteUtc;
+            VolumeMetadata = volumeMetadata;
             FileCount = nodes.Count(node => !node.IsDirectory);
             DirectoryCount = nodes.Count - FileCount;
             FileBytes = nodes.Where(node => !node.IsDirectory).Sum(node => node.DataLength);
         }
 
         public string SourceDirectory { get; }
+        public string SourceIsoPath { get; }
+        internal long SourceIsoBytes { get; }
+        internal DateTimeOffset SourceIsoLastWriteUtc { get; }
+        internal UdfVolumeMetadata? VolumeMetadata { get; }
         public uint VolumeSectors { get; }
         public int FileCount { get; }
         public int DirectoryCount { get; }
@@ -64,9 +80,7 @@ public static class UdfImageWriter
     public static LayoutPlan Plan(string? sourceDirectory, uint volumeSectors, string volumeLabel,
         DateTimeOffset? timestamp = null, bool filesAtOuterRing = false)
     {
-        if (volumeSectors < MinimumVolumeSectors || volumeSectors % 32 != 0)
-            throw new ArgumentOutOfRangeException(nameof(volumeSectors),
-                $"UDF drawing volumes need at least {MinimumVolumeSectors} sectors and a multiple of 32 sectors.");
+        ValidateVolumeSectors(volumeSectors);
         ArgumentNullException.ThrowIfNull(volumeLabel);
         DateTimeOffset recorded = timestamp ?? DateTimeOffset.UtcNow;
         string sourcePath = sourceDirectory is null ? string.Empty : Path.GetFullPath(sourceDirectory);
@@ -103,6 +117,111 @@ public static class UdfImageWriter
             }
         }
 
+        return BuildPlan(nodes, sourcePath, volumeSectors, volumeLabel, recorded, filesAtOuterRing);
+    }
+
+    public static LayoutPlan PlanFromIso(string inputIsoPath, uint volumeSectors, string? volumeLabel = null,
+        DateTimeOffset? timestamp = null, bool filesAtOuterRing = false)
+    {
+        ValidateVolumeSectors(volumeSectors);
+        IsoVolumeTree tree = IsoContentReader.Read(inputIsoPath);
+        IsoVolumeMetadata meta = tree.Metadata;
+        DateTimeOffset recorded = timestamp
+            ?? meta.UdfRecordingTimestamp
+            ?? (IsoContentReader.TryParseIsoVolumeDate(meta.PrimaryIdentifiers?.CreationDateRaw, out DateTimeOffset isoCreated)
+                ? isoCreated
+                : tree.Root.Timestamp);
+        if (recorded == default)
+            recorded = DateTimeOffset.UtcNow;
+
+        Node root = new(string.Empty, string.Empty, true, null)
+        {
+            Timestamp = tree.Root.Timestamp == default ? recorded : tree.Root.Timestamp,
+        };
+        List<Node> nodes = [root];
+        List<(IsoTreeNode Source, Node Target)> queue = [(tree.Root, root)];
+        for (int index = 0; index < queue.Count; index++)
+        {
+            (IsoTreeNode sourceDir, Node targetDir) = queue[index];
+            foreach (IsoTreeNode entry in sourceDir.Children.OrderBy(item => item.Name, StringComparer.Ordinal))
+            {
+                Node child = new(string.Empty, entry.Name, entry.IsDirectory, targetDir)
+                {
+                    Timestamp = entry.Timestamp == default ? recorded : entry.Timestamp,
+                    Identifier = EncodeIdentifier(entry.Name),
+                    DataLength = entry.IsDirectory ? 0 : entry.DataLength,
+                    UniqueId = checked((ulong)nodes.Count + 15),
+                    IsoExtents = entry.IsDirectory ? null : entry.Extents,
+                };
+                targetDir.Children.Add(child);
+                nodes.Add(child);
+                if (entry.IsDirectory)
+                    queue.Add((entry, child));
+            }
+        }
+
+        string resolvedLabel;
+        if (volumeLabel is not null)
+        {
+            resolvedLabel = volumeLabel;
+        }
+        else
+        {
+            bool preferPrimaryOverTruncatedJoliet = meta.HasRockRidge
+                && !string.IsNullOrWhiteSpace(meta.PrimaryVolumeLabel)
+                && !string.IsNullOrWhiteSpace(meta.JolietVolumeLabel)
+                && meta.PrimaryVolumeLabel.StartsWith(meta.JolietVolumeLabel, StringComparison.Ordinal);
+
+            string rawLabel = !string.IsNullOrWhiteSpace(meta.UdfVolumeLabel)
+                ? meta.UdfVolumeLabel
+                : !string.IsNullOrWhiteSpace(meta.JolietVolumeLabel) && !preferPrimaryOverTruncatedJoliet
+                    ? meta.JolietVolumeLabel
+                    : !string.IsNullOrWhiteSpace(meta.PrimaryVolumeLabel)
+                        ? meta.PrimaryVolumeLabel
+                        : tree.VolumeLabel;
+            resolvedLabel = SanitizeUdfText(rawLabel);
+            if (string.IsNullOrWhiteSpace(resolvedLabel))
+                resolvedLabel = "BD_IMAGE";
+        }
+
+        UdfVolumeMetadata volumeMetadata = new(
+            VolumeSetIdentifier: FirstNonEmpty(
+                meta.UdfVolumeSetIdentifier,
+                meta.JolietIdentifiers?.VolumeSetIdentifier,
+                meta.PrimaryIdentifiers?.VolumeSetIdentifier),
+            LvInfo1: FirstNonEmpty(
+                meta.UdfLvInfo1,
+                meta.JolietIdentifiers?.DataPreparerIdentifier,
+                meta.PrimaryIdentifiers?.DataPreparerIdentifier),
+            LvInfo2: FirstNonEmpty(
+                meta.UdfLvInfo2,
+                meta.JolietIdentifiers?.PublisherIdentifier,
+                meta.PrimaryIdentifiers?.PublisherIdentifier),
+            LvInfo3: meta.UdfLvInfo3);
+
+        return BuildPlan(nodes, string.Empty, volumeSectors, resolvedLabel, recorded, filesAtOuterRing,
+            tree.SourceIsoPath, tree.SourceIsoBytes, tree.SourceIsoLastWriteUtc, volumeMetadata);
+    }
+
+    private static void ValidateVolumeSectors(uint volumeSectors)
+    {
+        if (volumeSectors < MinimumVolumeSectors || volumeSectors % 32 != 0)
+            throw new ArgumentOutOfRangeException(nameof(volumeSectors),
+                $"UDF drawing volumes need at least {MinimumVolumeSectors} sectors and a multiple of 32 sectors.");
+    }
+
+    private static LayoutPlan BuildPlan(
+        List<Node> nodes,
+        string sourcePath,
+        uint volumeSectors,
+        string volumeLabel,
+        DateTimeOffset recorded,
+        bool filesAtOuterRing,
+        string sourceIsoPath = "",
+        long sourceIsoBytes = 0,
+        DateTimeOffset sourceIsoLastWriteUtc = default,
+        UdfVolumeMetadata? volumeMetadata = null)
+    {
         uint cursor = checked(FirstPartitionLba + 2);
         foreach (Node node in nodes)
         {
@@ -114,13 +233,14 @@ public static class UdfImageWriter
                     node.DataLength = checked(node.DataLength
                         + FileIdentifierLength(child.Identifier.Length, node.DataLength));
             }
+            string displayName = node.SourcePath.Length > 0 ? node.SourcePath : node.Name;
             // A single-layer Blu-ray needs at most 24 descriptors. Fail explicitly if this
             // generic writer is ever used beyond one FE's capacity instead of truncating it.
             if ((node.DataLength + MaximumExtentBytes - 1) / MaximumExtentBytes
                 > (LogicalSectorBytes - 176) / 8)
-                throw new ArgumentException($"File needs more allocation descriptors than one UDF file entry supports: {node.SourcePath}");
+                throw new ArgumentException($"File needs more allocation descriptors than one UDF file entry supports: {displayName}");
             if (node.Children.Count(child => child.IsDirectory) >= ushort.MaxValue)
-                throw new ArgumentException($"Too many child directories for a UDF link count: {node.SourcePath}");
+                throw new ArgumentException($"Too many child directories for a UDF link count: {displayName}");
         }
         foreach (Node node in nodes.Where(node => node.IsDirectory))
         {
@@ -158,7 +278,8 @@ public static class UdfImageWriter
         // All descriptors use precisely the same logical volume identifier.
         label = FitDstring(label, 128);
         return new LayoutPlan(sourcePath, volumeSectors, label, recorded, nodes, partitionStart,
-            cursor, drawingStart, drawingEnd, filesAtOuterRing);
+            cursor, drawingStart, drawingEnd, filesAtOuterRing, sourceIsoPath, sourceIsoBytes, sourceIsoLastWriteUtc,
+            volumeMetadata);
     }
 
     public static void WriteSequentialPrefix(LayoutPlan plan, Stream output, uint endLbaExclusive,
@@ -169,7 +290,7 @@ public static class UdfImageWriter
         if (endLbaExclusive < minimumEnd || endLbaExclusive > plan.DrawingEndLbaExclusive)
             throw new ArgumentOutOfRangeException(nameof(endLbaExclusive));
         ValidateSources(plan, cancellationToken);
-        SequentialWriter writer = new(output, 0, cancellationToken);
+        using SequentialWriter writer = new(plan, output, 0, cancellationToken);
         writer.WriteAtLba(16, VolumeRecognition("BEA01"));
         writer.WriteAtLba(17, VolumeRecognition("NSR03"));
         writer.WriteAtLba(18, VolumeRecognition("TEA01"));
@@ -218,7 +339,7 @@ public static class UdfImageWriter
         if (startLba != plan.DrawingEndLbaExclusive)
             throw new ArgumentOutOfRangeException(nameof(startLba), "The UDF suffix must start at DrawingEndLbaExclusive.");
         cancellationToken.ThrowIfCancellationRequested();
-        SequentialWriter writer = new(output, startLba, cancellationToken);
+        using SequentialWriter writer = new(plan, output, startLba, cancellationToken);
         if (plan.FilesAtOuterRing)
         {
             ValidateSources(plan, cancellationToken);
@@ -265,8 +386,11 @@ public static class UdfImageWriter
         U16(data, 62, 3);
         U32(data, 64, 1);
         U32(data, 68, 1);
-        string volumeSet = unchecked((uint)plan.Timestamp.ToUnixTimeSeconds()).ToString("X8", CultureInfo.InvariantCulture)
-            + "00000000";
+        string rawVolumeSet = SanitizeUdfText(plan.VolumeMetadata?.VolumeSetIdentifier ?? string.Empty);
+        string volumeSet = !string.IsNullOrWhiteSpace(rawVolumeSet)
+            ? FitDstring(rawVolumeSet, 128)
+            : unchecked((uint)plan.Timestamp.ToUnixTimeSeconds()).ToString("X8", CultureInfo.InvariantCulture)
+                + "00000000";
         Dstring(data.AsSpan(72, 128), volumeSet);
         Charspec(data.AsSpan(200, 64));
         Charspec(data.AsSpan(264, 64));
@@ -285,6 +409,12 @@ public static class UdfImageWriter
         Entity(data.AsSpan(20, 32), "*UDF LV Info", udfRevision: true);
         Charspec(data.AsSpan(52, 64));
         Dstring(data.AsSpan(116, 128), plan.VolumeLabel);
+        if (plan.VolumeMetadata is { } volumeMetadata)
+        {
+            WriteOptionalDstring(data.AsSpan(244, 36), volumeMetadata.LvInfo1, 36);
+            WriteOptionalDstring(data.AsSpan(280, 36), volumeMetadata.LvInfo2, 36);
+            WriteOptionalDstring(data.AsSpan(316, 36), volumeMetadata.LvInfo3, 36);
+        }
         Entity(data.AsSpan(352, 32), ImplementationId);
         SetTag(data, 4, location, 512);
         return data;
@@ -480,6 +610,47 @@ public static class UdfImageWriter
     private static bool IsUnsupportedCharacter(char character)
         => char.IsSurrogate(character) || character is '\0' or '\uFEFF' or '\uFFFE';
 
+    private static void WriteOptionalDstring(Span<byte> field, string value, int fieldBytes)
+    {
+        string sanitized = SanitizeUdfText(value);
+        if (!string.IsNullOrWhiteSpace(sanitized))
+            Dstring(field, FitDstring(sanitized, fieldBytes));
+    }
+
+    private static string SanitizeUdfText(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return string.Empty;
+
+        StringBuilder? clean = null;
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            if (IsUnsupportedCharacter(c))
+            {
+                clean ??= new StringBuilder(text, 0, i, text.Length);
+                clean.Append('_');
+            }
+            else if (clean is not null)
+            {
+                clean.Append(c);
+            }
+        }
+
+        return clean?.ToString() ?? text;
+    }
+
+    private static string FirstNonEmpty(params string?[] candidates)
+    {
+        for (int i = 0; i < candidates.Length; i++)
+        {
+            if (!string.IsNullOrWhiteSpace(candidates[i]))
+                return candidates[i]!;
+        }
+
+        return string.Empty;
+    }
+
     private static void Charspec(Span<byte> field)
         => Encoding.ASCII.GetBytes("OSTA Compressed Unicode", field[1..]);
 
@@ -563,6 +734,15 @@ public static class UdfImageWriter
 
     private static void ValidateSources(LayoutPlan plan, CancellationToken cancellationToken)
     {
+        if (!string.IsNullOrEmpty(plan.SourceIsoPath))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            (long length, DateTimeOffset lastWriteUtc) = IsoContentReader.ValidateSourceIso(plan.SourceIsoPath);
+            if (length != plan.SourceIsoBytes || lastWriteUtc != plan.SourceIsoLastWriteUtc)
+                throw new IOException($"Source ISO changed after UDF planning: {plan.SourceIsoPath}");
+            return;
+        }
+
         foreach (Node node in plan.Nodes)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -604,11 +784,14 @@ public static class UdfImageWriter
             throw new IOException($"Source file changed after UDF planning: {file.SourcePath}");
     }
 
-    private sealed class SequentialWriter(Stream output, uint startLba, CancellationToken cancellationToken)
+    private sealed class SequentialWriter(LayoutPlan plan, Stream output, uint startLba, CancellationToken cancellationToken) : IDisposable
     {
         private readonly byte[] _buffer = new byte[128 * 1024];
         private readonly byte[] _zeroBuffer = new byte[128 * 1024];
+        private FileStream? _isoStream;
         private long _position = checked((long)startLba * LogicalSectorBytes);
+
+        public void Dispose() => _isoStream?.Dispose();
 
         internal void WriteAtLba(uint lba, ReadOnlySpan<byte> data)
         {
@@ -626,6 +809,18 @@ public static class UdfImageWriter
         internal void WriteFile(Node file)
         {
             PadToLba(file.DataLba);
+            if (file.IsoExtents is { } extents)
+            {
+                if (file.DataLength == 0)
+                    return;
+
+                _isoStream ??= new FileStream(plan.SourceIsoPath, FileMode.Open, FileAccess.Read,
+                    FileShare.Read, _buffer.Length, FileOptions.RandomAccess);
+                IsoContentReader.CopyExtents(_isoStream, extents, file.DataLength, output, _buffer, cancellationToken);
+                _position = checked(_position + file.DataLength);
+                return;
+            }
+
             ValidateFile(file);
             using FileStream input = new(file.SourcePath, FileMode.Open, FileAccess.Read,
                 FileShare.Read, _buffer.Length, FileOptions.SequentialScan);
@@ -669,5 +864,6 @@ public static class UdfImageWriter
         internal uint EntryLba { get; set; }
         internal uint DataLba { get; set; }
         internal long DataLength { get; set; }
+        internal IReadOnlyList<IsoByteExtent>? IsoExtents { get; init; }
     }
 }

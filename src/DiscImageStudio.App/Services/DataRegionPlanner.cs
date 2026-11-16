@@ -21,7 +21,8 @@ internal sealed record DataRegionInputs(
     double OuterRadiusMm,
     double PitchLinear,
     double PitchQuadratic,
-    double PitchCubic);
+    double PitchCubic,
+    string InputIsoPath = "");
 
 /// <summary>The layout planner rejected the data because it cannot fit the disc (or the
 /// family's format), as opposed to invalid geometry that hides the guide silently.</summary>
@@ -41,7 +42,7 @@ internal static class DataRegionPlanner
 {
     internal static IReadOnlyList<DesignViewModel.DataRegionMm>? Compute(DataRegionInputs inputs)
     {
-        if (inputs.Directory.Length == 0)
+        if (inputs.Directory.Length == 0 && inputs.InputIsoPath.Length == 0)
         {
             return null;
         }
@@ -71,12 +72,22 @@ internal static class DataRegionPlanner
             PitchQuadratic: inputs.PitchQuadratic,
             PitchCubic: inputs.PitchCubic,
             UsableSectors: inputs.UsableSectors);
-        CdDataLayoutPlan plan = CdDataImageGenerator.PrepareLayout(
-            inputs.Directory, parameters, inputs.VolumeLabel, inputs.FilesAtOuterRing);
+        Func<uint, double> radiusAtLba = lba => parameters.RadiusFromByte((long)lba * CdDiscParameters.BytesPerSector);
+        CdDataLayoutPlan plan = inputs.InputIsoPath.Length > 0
+            ? CdDataImageGenerator.PreparePassthroughIsoLayout(
+                inputs.InputIsoPath, parameters, inputs.FilesAtOuterRing)
+            : CdDataImageGenerator.PrepareLayout(
+                inputs.Directory, parameters, inputs.VolumeLabel, inputs.FilesAtOuterRing);
+        if (inputs.InputIsoPath.Length > 0 && !inputs.FilesAtOuterRing)
+        {
+            return RawIsoRegion(parameters.InnerRadiusMm, parameters.OuterRadiusMm,
+                checked((uint)inputs.UsableSectors), plan.DrawingStartLba, plan.DrawingEndLbaExclusive,
+                filesAtOuterRing: false, radiusAtLba);
+        }
+
         return IsoDataRegions(parameters.InnerRadiusMm, parameters.OuterRadiusMm,
             plan.MetadataEndLbaExclusive, plan.FileDataStartLba, plan.DataEndLbaExclusive,
-            FilesystemMetadataBudget.ReserveSectors(plan.FileCount),
-            lba => parameters.RadiusFromByte((long)lba * CdDiscParameters.BytesPerSector));
+            FilesystemMetadataBudget.ReserveSectors(plan.FileCount), radiusAtLba);
     }
 
     private static IReadOnlyList<DesignViewModel.DataRegionMm> ComputeDvd(DataRegionInputs inputs)
@@ -89,8 +100,6 @@ internal static class DataRegionPlanner
             PitchQuadratic: inputs.PitchQuadratic,
             PitchCubic: inputs.PitchCubic,
             UsableSectors: checked((uint)inputs.UsableSectors));
-        DvdHybridStreamingPlan plan = DvdStreamingGenerator.PrepareHybrid(
-            inputs.Directory, options, inputs.VolumeLabel, inputs.FilesAtOuterRing);
 
         // The solver maps sector positions over the physical track, not over the usable
         // capacity: unused writable sectors remain at the outer edge of the same spiral.
@@ -99,10 +108,22 @@ internal static class DataRegionPlanner
         DvdTrackGeometry geometry = DvdTrackGeometry.Create(
             inputs.InnerRadiusMm, inputs.OuterRadiusMm, length,
             inputs.PitchLinear, inputs.PitchQuadratic, inputs.PitchCubic);
+        Func<uint, double> radiusAtLba = lba => geometry.RadiusAtArcLength(length * lba / inputs.TotalSectors);
+        DvdHybridStreamingPlan plan = inputs.InputIsoPath.Length > 0
+            ? DvdStreamingGenerator.PreparePassthroughIso(
+                inputs.InputIsoPath, options, inputs.FilesAtOuterRing)
+            : DvdStreamingGenerator.PrepareHybrid(
+                inputs.Directory, options, inputs.VolumeLabel, inputs.FilesAtOuterRing);
+        if (inputs.InputIsoPath.Length > 0 && !inputs.FilesAtOuterRing)
+        {
+            return RawIsoRegion(inputs.InnerRadiusMm, inputs.OuterRadiusMm,
+                checked((uint)inputs.UsableSectors), plan.DrawingStartLba, plan.DrawingEndLbaExclusive,
+                filesAtOuterRing: false, radiusAtLba);
+        }
+
         return IsoDataRegions(inputs.InnerRadiusMm, inputs.OuterRadiusMm,
             plan.MetadataEndLbaExclusive, plan.FileDataStartLba, plan.FilesystemEndLbaExclusive,
-            FilesystemMetadataBudget.ReserveSectors(plan.FileCount),
-            lba => geometry.RadiusAtArcLength(length * lba / inputs.TotalSectors));
+            FilesystemMetadataBudget.ReserveSectors(plan.FileCount), radiusAtLba);
     }
 
     private static IReadOnlyList<DesignViewModel.DataRegionMm> ComputeBluRay(DataRegionInputs inputs)
@@ -116,9 +137,21 @@ internal static class DataRegionPlanner
             PitchQuadratic: inputs.PitchQuadratic,
             PitchCubic: inputs.PitchCubic,
             UsableSectors: checked((uint)inputs.UsableSectors));
-        BluRayIsoPlan plan = BluRayIsoGenerator.PrepareDrawing(
-            disc, inputs.Directory, inputs.VolumeLabel,
-            filesAtOuterRing: inputs.FilesAtOuterRing);
+        BluRayTrackGeometry geometry = new(disc);
+        if (inputs.InputIsoPath.Length > 0 && !inputs.FilesAtOuterRing)
+        {
+            BluRayIsoPlan isoPlan = BluRayIsoGenerator.PreparePassthroughIso(
+                disc, inputs.InputIsoPath, filesAtOuterRing: false);
+            return RawIsoRegion(disc.InnerRadiusMm, disc.OuterRadiusMm,
+                disc.OutputSectors, isoPlan.DrawingStartSector, isoPlan.DrawingEndSectorExclusive,
+                filesAtOuterRing: false, sector => geometry.AtSector(sector).RadiusMm);
+        }
+
+        BluRayIsoPlan plan = inputs.InputIsoPath.Length > 0
+            ? BluRayIsoGenerator.PreparePassthroughIso(disc, inputs.InputIsoPath, filesAtOuterRing: true)
+            : BluRayIsoGenerator.PrepareDrawing(
+                disc, inputs.Directory, inputs.VolumeLabel,
+                filesAtOuterRing: inputs.FilesAtOuterRing);
 
         // UDF relocates the whole partition (metadata and file data together), so the
         // occupied span stays one annulus at whichever ring was chosen. The shared reserve
@@ -131,12 +164,25 @@ internal static class DataRegionPlanner
         double endSector = inputs.FilesAtOuterRing
             ? plan.DataEndSectorExclusive
             : Math.Min(plan.DataEndSectorExclusive + (double)reserve, disc.OutputSectors);
-        BluRayTrackGeometry geometry = new(disc);
         double innerMm = geometry.AtSector(startSector).RadiusMm;
         double outerMm = geometry.AtSector(endSector).RadiusMm;
         return outerMm > innerMm
             ? [new DesignViewModel.DataRegionMm(innerMm, Math.Min(outerMm, disc.OuterRadiusMm))]
             : [];
+    }
+
+    private static IReadOnlyList<DesignViewModel.DataRegionMm> RawIsoRegion(
+        double discInnerMm, double discOuterMm, uint usableSectors,
+        uint drawingStartLba, uint drawingEndLbaExclusive, bool filesAtOuterRing,
+        Func<uint, double> radiusAtLba)
+    {
+        uint startLba = filesAtOuterRing ? drawingEndLbaExclusive : 0u;
+        uint endLba = filesAtOuterRing ? usableSectors : drawingStartLba;
+        if (endLba <= startLba)
+            return [];
+        double innerMm = Math.Clamp(radiusAtLba(startLba), discInnerMm, discOuterMm);
+        double outerMm = Math.Clamp(radiusAtLba(endLba), discInnerMm, discOuterMm);
+        return outerMm > innerMm ? [new DesignViewModel.DataRegionMm(innerMm, outerMm)] : [];
     }
 
     /// <summary>Maps a filesystem plan's occupied LBAs to mm annuli: metadata (plus the
@@ -190,7 +236,7 @@ internal static class DataRegionPlanner
     /// the guide without the capacity warning. If a planner changes its wording the guide
     /// degrades to hidden, never to a false warning.</summary>
     private static bool IsCapacityExceeded(Exception exception) =>
-        exception is ArgumentException
+        exception is (ArgumentException or InvalidOperationException)
         && (exception.Message.Contains("leaves no CD sectors for drawing")
             || exception.Message.Contains("no complete ECC Block for drawing")
             || exception.Message.Contains("must leave at least")
@@ -199,6 +245,8 @@ internal static class DataRegionPlanner
             || exception.Message.Contains("no complete drawing cluster")
             || exception.Message.Contains("too small for filesystem metadata")
             || exception.Message.Contains("UDF drawing volumes need at least")
+            || exception.Message.Contains("fills or exceeds")
+            || exception.Message.Contains("leaves fewer than")
             // A single file too large for the format (ISO9660's 4 GiB limit) can never be
             // placed on this disc family: report it as capacity, not as a geometry problem.
             || exception.Message.Contains("larger than 4 GiB"));

@@ -72,7 +72,7 @@ Windows x64 下载以 `win-x64.exe` 结尾的文件；Windows 11 ARM64 下载以
 - **CD 支持**：支持任何 CD 。您可导出带格式头的 WAV 音轨及配套 CUE，兼容 cdrecord, ImgBurn等刻录软件；也允许导出 RAW 音轨。详见 [CD 刻录兼容说明](docs/CD_AUDIO_COMPATIBILITY.md)。
 - **DVD 支持**：支持任何 DVD。您可导出 ISO 镜像。
 - **蓝光支持**：支持任何单层 BD-R 25 GB，支持纯绘图与 UDF 2.01 文件。详见 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。
-- **随盘文件**：CD／DVD／蓝光可在设计页直接选择要保存的文件夹及内圈／外圈位置，也可在导出页调整；设置随工程保存。
+- **随盘文件**：CD／DVD／蓝光可在设计页直接选择要保存的文件夹或现成 `.iso` 镜像及内圈／外圈位置，也可在导出页调整（设置随工程保存）。现成 ISO 放在内圈时从 LBA 0 原样流式直通以保留引导记录，放在外圈时直接提取其中的 UDF / ISO-9660 文件并重排写入外圈文件系统。
 - **文件区域预览**：混合盘的设计投影和成品读回用蓝色标出文件区（含文件系统）。
 - **介质灰度方案**：CD 与 DVD 均使用黑白二阶，CD 使用 `0D / AA`，DVD 扰码域使用 `A5 / 92`。详见 [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md)。
 - **灰度抖动工具**：独立程序也可将原图处理为 `0/255` 黑白二阶 PNG；支持打开或拖入原图、并排预览及无损 PNG 导出。详见[使用与构建说明](tools/FourLevelDither/README.md)。
@@ -141,10 +141,10 @@ CLI 可读取 PNG、JPEG、BMP 和 GIF，使用动画图片的第一帧。下面
 | `calibrate` | 标定投影：按生成几何从 DVD 源图片取样，按实测几何投到盘面 |
 | `simulate` | 按实测半径对生成的 DVD ISO 做读回模拟 |
 | `selftest` | 运行 DVD 引擎的确定性回归自检 |
-| `cd-generate` | 无随盘文件时生成 WAV + CUE / RAW 音轨；指定 `--data-dir` 时生成 CD 数据盘 ISO |
+| `cd-generate` | 无随盘数据时生成 WAV + CUE / RAW 音轨；指定 `--data-dir` 或 `--input-iso` 时生成 CD 数据盘 ISO |
 | `cd-preview-warp` | 标定投影：按实测几何投影 CD 源图片 |
 | `cd-preview-track` | 按标定几何渲染已有的 WAV 或 RAW CD-DA 音轨（读回模拟） |
-| `bd-generate` | 生成完整 BD-R ISO，并写出 `<iso>.json` sidecar |
+| `bd-generate` | 生成完整 BD-R ISO（支持 `--data-dir` 或 `--input-iso`），并写出 `<iso>.json` sidecar |
 | `bd-info` / `bd-probe` / `bd-encode` | 导出 BD 参数、原始负载探针或单个 ECC 簇诊断 |
 
 各命令的完整参数见对应文档。
@@ -160,7 +160,7 @@ src/DiscImageStudio.Burning/ Windows IMAPI2 设备枚举、流缓冲与安全刻
 src/DiscImageStudio.Cd/      CD-DA 生成核心与 CD 模块
 src/DiscImageStudio.Dvd/     DVD 引擎适配模块
 src/DiscImageStudio.BluRay/  BD-R 几何、17PP/ECC、3T/6T 映射、流式生成与 ISO
-src/DiscImageStudio.Iso/     UDF 2.01 / ISO9660 写入器
+src/DiscImageStudio.Iso/     UDF 2.01 / ISO9660 读写与现成 ISO 扇区直通
 src/DiscImageStudio.App/     WPF GUI、统一命令行与商店资源
 src/DvdImageSolver/          保持隔离的 DVD 编码/求解引擎
 tests/                       无第三方测试框架的架构回归测试

@@ -7,6 +7,7 @@ namespace DiscImageStudio.BluRay;
 public sealed class BluRayIsoPlan
 {
     private readonly UdfImageWriter.LayoutPlan? _filesystem;
+    private readonly RawIsoLayoutPlan? _rawIso;
 
     internal BluRayIsoPlan(BluRayDiscParameters disc, UdfImageWriter.LayoutPlan filesystem, uint drawingStartSector)
     {
@@ -16,6 +17,17 @@ public sealed class BluRayIsoPlan
         BluRayTrackGeometry geometry = new(disc);
         DrawingStartRadiusMm = geometry.AtSector(drawingStartSector).RadiusMm;
         DrawingEndSectorExclusive = filesystem.DrawingEndLbaExclusive;
+        DrawingEndRadiusMm = geometry.AtSector(DrawingEndSectorExclusive).RadiusMm;
+    }
+
+    internal BluRayIsoPlan(BluRayDiscParameters disc, RawIsoLayoutPlan rawIso)
+    {
+        Disc = disc;
+        _rawIso = rawIso;
+        DrawingStartSector = rawIso.DrawingStartLba;
+        DrawingEndSectorExclusive = rawIso.DrawingEndLbaExclusive;
+        BluRayTrackGeometry geometry = new(disc);
+        DrawingStartRadiusMm = geometry.AtSector(DrawingStartSector).RadiusMm;
         DrawingEndRadiusMm = geometry.AtSector(DrawingEndSectorExclusive).RadiusMm;
     }
 
@@ -48,17 +60,22 @@ public sealed class BluRayIsoPlan
 
     internal UdfImageWriter.LayoutPlan Filesystem => _filesystem
         ?? throw new InvalidOperationException("This drawing plan has no filesystem.");
+    internal RawIsoLayoutPlan? RawIso => _rawIso;
     public bool HasFileSystem => _filesystem is not null;
-    public bool FilesAtOuterRing => _filesystem?.FilesAtOuterRing ?? false;
+    public bool HasExternalIso => _rawIso is not null || !string.IsNullOrEmpty(_filesystem?.SourceIsoPath);
+    public bool HasDataRegion => HasFileSystem || HasExternalIso;
+    public bool FilesAtOuterRing => _filesystem?.FilesAtOuterRing ?? _rawIso?.FilesAtOuterRing ?? false;
     public BluRayDiscParameters Disc { get; }
     public uint TotalSectors => Disc.OutputSectors;
     public long ContentLength => Disc.ContentLength;
     public string? DataDirectory => _filesystem?.SourceDirectory is { Length: > 0 } source ? source : null;
+    public string? InputIsoPath => _rawIso?.SourceIsoPath
+        ?? (_filesystem?.SourceIsoPath is { Length: > 0 } iso ? iso : null);
     public string? VolumeLabel => _filesystem?.VolumeLabel;
     public DateTimeOffset? UdfTimestamp => _filesystem?.Timestamp;
     public int FileCount => _filesystem?.FileCount ?? 0;
     public int DirectoryCount => _filesystem?.DirectoryCount ?? 0;
-    public long FileBytes => _filesystem?.FileBytes ?? 0;
+    public long FileBytes => _filesystem?.FileBytes ?? _rawIso?.SourceBytes ?? 0;
     public uint DrawingStartSector { get; }
     public double DrawingStartRadiusMm { get; }
     public uint DrawingEndSectorExclusive { get; }
@@ -66,8 +83,9 @@ public sealed class BluRayIsoPlan
 
     /// <summary>First sector of the UDF partition (metadata plus file data) and the end of
     /// its data area. The partition moves as a whole, so the design guide marks their span.</summary>
-    public uint PartitionStartSector => _filesystem?.PartitionStartLba ?? 0;
-    public uint DataEndSectorExclusive => _filesystem?.DataEndLbaExclusive ?? DrawingEndSectorExclusive;
+    public uint PartitionStartSector => _filesystem?.PartitionStartLba ?? _rawIso?.IsoStartLba ?? 0;
+    public uint DataEndSectorExclusive => _filesystem?.DataEndLbaExclusive
+        ?? (_rawIso is { FilesAtOuterRing: false } ? _rawIso.DrawingStartLba : DrawingEndSectorExclusive);
 }
 
 /// <summary>Writes a UDF filesystem at the selected end, image payload in the remaining
@@ -81,6 +99,34 @@ public static class BluRayIsoGenerator
     public static BluRayIsoPlan PrepareRaw(BluRayDiscParameters disc,
         uint drawingStartSector, uint drawingEndSectorExclusive)
         => new(disc, drawingStartSector, drawingEndSectorExclusive);
+
+    public static BluRayIsoPlan PreparePassthroughIso(BluRayDiscParameters disc, string inputIsoPath,
+        bool filesAtOuterRing = false, string? volumeLabel = null)
+    {
+        ArgumentNullException.ThrowIfNull(disc);
+        ArgumentException.ThrowIfNullOrWhiteSpace(inputIsoPath);
+        disc.Validate();
+        if (filesAtOuterRing)
+        {
+            UdfImageWriter.LayoutPlan filesystem = UdfImageWriter.PlanFromIso(
+                inputIsoPath,
+                disc.OutputSectors,
+                volumeLabel,
+                filesAtOuterRing: true);
+            uint drawingStart = filesystem.DrawingStartLba;
+            if (drawingStart >= filesystem.DrawingEndLbaExclusive)
+                throw new ArgumentException("UDF metadata and files must leave at least 32 sectors for drawing.", nameof(inputIsoPath));
+            return new(disc, filesystem, drawingStart);
+        }
+
+        RawIsoLayoutPlan rawIso = RawIsoPassthrough.Plan(
+            inputIsoPath,
+            disc.OutputSectors,
+            BluRayDiscParameters.SectorsPerCluster,
+            filesAtOuterRing: false,
+            BluRayDiscParameters.SectorsPerCluster);
+        return new BluRayIsoPlan(disc, rawIso);
+    }
 
     public static BluRayIsoPlan PrepareDrawing(BluRayDiscParameters disc, string? dataDirectory = null,
         string volumeLabel = "BD_IMAGE", DateTimeOffset? timestamp = null, bool filesAtOuterRing = false)
@@ -121,17 +167,54 @@ public static class BluRayIsoGenerator
         ArgumentNullException.ThrowIfNull(mapping);
         if (!output.CanWrite) throw new ArgumentException("A writable output stream is required.", nameof(output));
         cancellationToken.ThrowIfCancellationRequested();
+        if (plan.RawIso is { } rawIso)
+        {
+            return GenerateSegmentedToStream(
+                output, plan, mapping,
+                (destination, token) =>
+                {
+                    if (rawIso.FilesAtOuterRing)
+                        return;
+                    RawIsoPassthrough.CopyFileToStream(rawIso.SourceIsoPath, rawIso.SourceBytes, destination, cancellationToken: token);
+                    RawIsoPassthrough.WriteZeroSectors(destination, rawIso.DrawingStartLba - rawIso.SourceSectors, token);
+                },
+                (destination, token) =>
+                {
+                    if (!rawIso.FilesAtOuterRing)
+                        return;
+                    RawIsoPassthrough.WriteZeroSectors(destination, rawIso.IsoStartLba - rawIso.DrawingEndLbaExclusive, token);
+                    RawIsoPassthrough.CopyFileToStream(rawIso.SourceIsoPath, rawIso.SourceBytes, destination, cancellationToken: token);
+                },
+                progress, cancellationToken);
+        }
+
         if (!plan.HasFileSystem)
             return BluRayStreamingGenerator.GenerateToStream(output,
                 new(plan.Disc, 0, plan.TotalSectors), mapping, progress, cancellationToken);
+        return GenerateSegmentedToStream(
+            output, plan, mapping,
+            (destination, token) => UdfImageWriter.WriteSequentialPrefix(plan.Filesystem, destination, plan.DrawingStartSector, token),
+            (destination, token) => UdfImageWriter.WriteSequentialSuffix(plan.Filesystem, destination, plan.DrawingEndSectorExclusive, token),
+            progress, cancellationToken);
+    }
+
+    private static BluRayStreamingSummary GenerateSegmentedToStream(
+        Stream output,
+        BluRayIsoPlan plan,
+        IBluRayPayloadMapping mapping,
+        Action<Stream, CancellationToken> writePrefix,
+        Action<Stream, CancellationToken> writeSuffix,
+        IProgress<BluRayStreamingProgress>? progress,
+        CancellationToken cancellationToken)
+    {
         Stopwatch stopwatch = Stopwatch.StartNew();
         progress?.Report(new(0, plan.ContentLength, stopwatch.Elapsed));
         using ProgressStream destination = new(output, plan.ContentLength, stopwatch, progress, cancellationToken);
-        UdfImageWriter.WriteSequentialPrefix(plan.Filesystem, destination, plan.DrawingStartSector, cancellationToken);
+        writePrefix(destination, cancellationToken);
         BluRayStreamingGenerator.GenerateToStream(destination,
             new(plan.Disc, plan.DrawingStartSector, plan.DrawingEndSectorExclusive - plan.DrawingStartSector), mapping,
             cancellationToken: cancellationToken);
-        UdfImageWriter.WriteSequentialSuffix(plan.Filesystem, destination, plan.DrawingEndSectorExclusive, cancellationToken);
+        writeSuffix(destination, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         if (destination.BytesWritten != plan.ContentLength)
             throw new IOException("Blu-ray ISO generation did not produce the planned byte length.");
@@ -158,6 +241,8 @@ public static class BluRayIsoGenerator
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(outputPath);
         ArgumentNullException.ThrowIfNull(plan);
+        if (plan.InputIsoPath is { } inputIso)
+            RawIsoPassthrough.ValidateNotSameFile(inputIso, outputPath);
         if (plan.DataDirectory is not { } source) return;
         string destination = Path.GetFullPath(outputPath);
         if (Iso9660ImageWriter.IsWithinDirectory(destination, source)

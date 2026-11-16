@@ -24,9 +24,11 @@ public sealed record DvdImageMetadata(
     bool ReadCompatibility = false,
     uint? UsableSectors = null,
     double? SourceImageOuterRadiusMm = null,
-    string? ReadCompatibilityMode = null)
+    string? ReadCompatibilityMode = null,
+    bool HasRawIso = false)
 {
     public uint OutputSectors => UsableSectors ?? TotalSectors;
+    public bool HasDataRegion => HasFileSystem || HasRawIso;
 
     /// <summary>Reads the sidecar of an ISO, or null when it is absent or unreadable.</summary>
     public static DvdImageMetadata? TryLoad(string isoPath)
@@ -76,10 +78,14 @@ public sealed record DvdImageMetadata(
                 return null;
             bool filesAtOuterRing = document.RootElement.TryGetProperty("filesAtOuterRing", out JsonElement position)
                 && position.ValueKind == JsonValueKind.True;
-            bool hasFileSystem = document.RootElement.TryGetProperty("iso", out JsonElement iso)
-                && iso.ValueKind == JsonValueKind.Object
+            bool hasIso = document.RootElement.TryGetProperty("iso", out JsonElement iso)
+                && iso.ValueKind == JsonValueKind.Object;
+            bool hasFileSystem = hasIso
                 && iso.TryGetProperty("mountableFilesystem", out JsonElement mountable)
                 && mountable.ValueKind == JsonValueKind.True;
+            bool hasRawIso = hasIso
+                && iso.TryGetProperty("mode", out JsonElement isoMode)
+                && string.Equals(isoMode.GetString(), "raw-input-iso", StringComparison.Ordinal);
             DvdTrackGeometry.ValidatePitchCoefficients(linear, quadratic, cubic);
             string? readCompatibilityMode = document.RootElement.TryGetProperty("readCompatibility", out JsonElement mode)
                 && mode.ValueKind == JsonValueKind.String && DvdReadCompatibilityModes.IsSupported(mode.GetString())
@@ -89,7 +95,7 @@ public sealed record DvdImageMetadata(
                 && innerRadius > 0 && outerRadius > innerRadius
                 ? new DvdImageMetadata(totalSectors, innerRadius, outerRadius, linear, quadratic, cubic,
                     filesAtOuterRing, drawingStart, drawingStart + drawingSectors, hasFileSystem, readCompatibility,
-                    usableSectors, sourceImageOuterRadiusMm, readCompatibilityMode)
+                    usableSectors, sourceImageOuterRadiusMm, readCompatibilityMode, hasRawIso)
                 : null;
         }
         catch (Exception exception) when (exception is JsonException or IOException or ArgumentException)

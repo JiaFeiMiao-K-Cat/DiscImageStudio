@@ -870,6 +870,8 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.CdWriteCue),
         nameof(DiscParametersState.CdInterleave),
         nameof(DiscParametersState.CdDataDirectory),
+        nameof(DiscParametersState.CdUseInputIso),
+        nameof(DiscParametersState.CdInputIsoPath),
         nameof(DiscParametersState.CdFilesAtOuterRing),
         nameof(DiscParametersState.CdOuterRingBleed),
         nameof(DiscParametersState.CdVolumeLabel),
@@ -883,6 +885,8 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.DvdImagePath),
         nameof(DiscParametersState.DvdOutputPath),
         nameof(DiscParametersState.DvdDataDirectory),
+        nameof(DiscParametersState.DvdUseInputIso),
+        nameof(DiscParametersState.DvdInputIsoPath),
         nameof(DiscParametersState.DvdFilesAtOuterRing),
         nameof(DiscParametersState.DvdOuterRingBleed),
         nameof(DiscParametersState.DvdReadCompatibility),
@@ -898,6 +902,8 @@ public partial class ShellViewModel : ObservableObject
         nameof(DiscParametersState.BdImagePath),
         nameof(DiscParametersState.BdOutputPath),
         nameof(DiscParametersState.BdDataDirectory),
+        nameof(DiscParametersState.BdUseInputIso),
+        nameof(DiscParametersState.BdInputIsoPath),
         nameof(DiscParametersState.BdFilesAtOuterRing),
         nameof(DiscParametersState.BdOuterRingBleed),
         nameof(DiscParametersState.BdVolumeLabel),
@@ -959,9 +965,12 @@ public partial class ShellViewModel : ObservableObject
             or nameof(DiscParametersState.CdSectors) or nameof(DiscParametersState.CdUsableSectors)
             or nameof(DiscParametersState.DvdTotalSectors) or nameof(DiscParametersState.DvdUsableSectors)
             or nameof(DiscParametersState.BdTotalSectors) or nameof(DiscParametersState.BdUsableSectors)
-            or nameof(DiscParametersState.CdOuterRingBleed)
-            or nameof(DiscParametersState.DvdOuterRingBleed)
-            or nameof(DiscParametersState.BdOuterRingBleed)
+            or nameof(DiscParametersState.CdOuterRingBleed) or nameof(DiscParametersState.CdFilesAtOuterRing)
+            or nameof(DiscParametersState.CdDataDirectory) or nameof(DiscParametersState.CdUseInputIso) or nameof(DiscParametersState.CdInputIsoPath)
+            or nameof(DiscParametersState.DvdOuterRingBleed) or nameof(DiscParametersState.DvdFilesAtOuterRing)
+            or nameof(DiscParametersState.DvdDataDirectory) or nameof(DiscParametersState.DvdUseInputIso) or nameof(DiscParametersState.DvdInputIsoPath)
+            or nameof(DiscParametersState.BdOuterRingBleed) or nameof(DiscParametersState.BdFilesAtOuterRing)
+            or nameof(DiscParametersState.BdDataDirectory) or nameof(DiscParametersState.BdUseInputIso) or nameof(DiscParametersState.BdInputIsoPath)
             or nameof(DiscParametersState.CdPitchLinear) or nameof(DiscParametersState.CdPitchQuadratic) or nameof(DiscParametersState.CdPitchCubic)
             or nameof(DiscParametersState.DvdPitchLinear) or nameof(DiscParametersState.DvdPitchQuadratic) or nameof(DiscParametersState.DvdPitchCubic)
             or nameof(DiscParametersState.BdPitchLinear) or nameof(DiscParametersState.BdPitchQuadratic) or nameof(DiscParametersState.BdPitchCubic))

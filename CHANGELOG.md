@@ -4,10 +4,12 @@
 
 ### 中文
 
+- 随盘文件支持直接选择现成 `.iso` 镜像（与文件夹 `--data-dir` 互斥，支持 `--input-iso` 与工程 `outputs.inputIsoPath`），按内圈/外圈切换两种处理：内圈由 `RawIsoPassthrough` 从 LBA 0 原样流式直通，保留引导扇区与原始文件系统描述符，随后衔接盘面绘制扇区；外圈由 `IsoContentReader` 零临时解包直读 UDF 或 ISO-9660 / Joliet / Rock Ridge 文件内容并重写至外圈文件系统，继续保留内圈完整盘面图案区。外圈模式要求源 ISO 含可解析的 UDF 或 ISO-9660 文件系统，已覆盖 CD、DVD、BD 导出与流式刻录。已通过 DVD 实盘验证内圈直通（含实机 UEFI 引导识别）与外圈重建刻录读写正常；CD 与 BD 实盘刻录尚未在硬件上实测。
 - DVD 兼容性（实验性）改用 #188 的 WriteSafe，提供三档，启用时默认第 1 档。DVD 导出、流式刻录和新标定靶使用所选档位，已有标定靶和镜像继续识别各自的配方。较强的档位可能降低深色对比度或在区间边缘留下亮度变化。
 
 ### English
 
+- Disc payloads now support selecting a pre-built `.iso` image directly (mutually exclusive with `--data-dir` / folder selection, persisted as `outputs.inputIsoPath`), switching behavior by ring placement: inner-ring mode uses `RawIsoPassthrough` to stream the source ISO verbatim from LBA 0 so boot records and original filesystem descriptors stay intact before the artwork sectors; outer-ring mode uses `IsoContentReader` to read UDF or ISO-9660 / Joliet / Rock Ridge entries without temp extraction and rewrite them into the outer-ring filesystem while keeping inner artwork sectors uninterrupted. Outer-ring placement requires a readable UDF or ISO-9660 filesystem inside the source ISO; supported across CD, DVD, and BD export and streaming burns. Physical disc burning on DVD has been verified for both inner-ring passthrough (including UEFI boot recognition) and outer-ring rebuild; physical disc burning on CD and BD remains unverified.
 - DVD compatibility (experimental) now uses WriteSafe from #188 with three selectable levels. Enabling the option defaults to level 1. DVD export, streaming burns and new calibration targets use the selection, while existing targets and images retain their original recipe. Stronger settings can reduce dark-area contrast or leave a brightness change at the zone boundaries.
 
 ## [1.6.0] - 2026-11-15
