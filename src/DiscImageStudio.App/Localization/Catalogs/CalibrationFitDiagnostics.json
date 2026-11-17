@@ -1,290 +1,650 @@
 {
   "半盘边界片段不能超过 64 段。": {
     "zh-CN": "半盘边界片段不能超过 64 段。",
-    "en": "A half-disc target supports at most 64 boundary segments."
+    "en": "A half-disc target supports at most 64 boundary segments.",
+    "zh-TW": "半盤邊界片段不能超過 64 段。",
+    "ja": "ハーフディスク ターゲットでサポートされる境界区間は最大 64 個です。",
+    "tr": "Yarım disk hedefi en fazla 64 sınır bölümünü destekler.",
+    "es": "Un patrón de medio disco admite como máximo 64 tramos de límite.",
+    "cs": "Terč polovičního disku podporuje nejvýše 64 hraničních úseků."
   },
   "边界片段编号无效或重复。": {
     "zh-CN": "边界片段编号无效或重复。",
-    "en": "A boundary segment ID is invalid or duplicated."
+    "en": "A boundary segment ID is invalid or duplicated.",
+    "zh-TW": "邊界片段編號無效或重複。",
+    "ja": "境界区間の ID が無効か重複しています。",
+    "tr": "Bir sınır bölümü kimliği geçersiz veya yinelenmiş.",
+    "es": "El identificador de un tramo de límite no es válido o está duplicado.",
+    "cs": "ID hraničního úseku je neplatné nebo duplicitní."
   },
   "此记录不是半黑半白中标图，不能加入边界片段。": {
     "zh-CN": "此记录不是半黑半白中标图，不能加入边界片段。",
-    "en": "This record is not a half-disc boundary calibration target and cannot contain boundary segments."
+    "en": "This record is not a half-disc boundary calibration target and cannot contain boundary segments.",
+    "zh-TW": "此記錄不是半黑半白邊界校準圖，不能加入邊界片段。",
+    "ja": "この記録は半黒半白の境界校正ターゲットではないため、境界区間を追加できません。",
+    "tr": "Bu kayıt, yarım diskli sınır kalibrasyonu hedefi değildir ve sınır bölümü içeremez.",
+    "es": "Este registro no es un patrón de calibración por límites de medio disco y no puede contener tramos de límite.",
+    "cs": "Tento záznam není terčem kalibrace podle hranic polovičního disku a nemůže obsahovat hraniční úseky."
   },
   "边界片段的点数不能超过 4000。": {
     "zh-CN": "边界片段的点数不能超过 4000。",
-    "en": "Boundary segments support at most 4,000 points in total."
+    "en": "Boundary segments support at most 4,000 points in total.",
+    "zh-TW": "邊界片段的點數不能超過 4000。",
+    "ja": "境界区間の点数は合計で最大 4000 点です。",
+    "tr": "Sınır bölümleri toplamda en fazla 4000 nokta destekler.",
+    "es": "Los tramos de límite admiten como máximo 4000 puntos en total.",
+    "cs": "Hraniční úseky podporují celkem nejvýše 4000 bodů."
   },
   "边界点坐标无效，请使用矫正后以盘心为原点的坐标。": {
     "zh-CN": "边界点坐标无效，请使用矫正后以盘心为原点的坐标。",
-    "en": "Invalid boundary point coordinates. Use rectified coordinates with the disc center as the origin."
+    "en": "Invalid boundary point coordinates. Use rectified coordinates with the disc center as the origin.",
+    "zh-TW": "邊界點座標無效，請使用以盤心為原點的校正後座標。",
+    "ja": "境界点の座標が無効です。ディスク中心を原点とする補正後の座標を使用してください。",
+    "tr": "Sınır noktası koordinatları geçersiz. Disk merkezini orijin alan düzeltilmiş koordinatları kullanın.",
+    "es": "Coordenadas de punto de límite no válidas. Use coordenadas rectificadas con el centro del disco como origen.",
+    "cs": "Souřadnice hraničního bodu jsou neplatné. Použijte narovnané souřadnice se středem disku jako počátkem."
   },
   "边界拟合需要对应的中标图案记录。": {
     "zh-CN": "边界拟合需要对应的中标图案记录。",
-    "en": "Boundary fitting requires the matching boundary calibration target record."
+    "en": "Boundary fitting requires the matching boundary calibration target record.",
+    "zh-TW": "邊界擬合需要對應的邊界校準圖案記錄。",
+    "ja": "境界フィットには、対応する境界校正ターゲットの記録が必要です。",
+    "tr": "Sınır uydurma, eşleşen sınır kalibrasyonu hedefi kaydını gerektirir.",
+    "es": "El ajuste por límites requiere el registro del patrón de calibración por límites correspondiente.",
+    "cs": "Proložení podle hranic vyžaduje odpovídající záznam hraničního kalibračního terče."
   },
   "分段中标的半径搜索范围不能超过 ±0.05 mm，请先完成 v13 粗标。": {
     "zh-CN": "分段中标的半径搜索范围不能超过 ±0.05 mm，请先完成 v13 粗标。",
-    "en": "Segmented boundary fitting supports a radius search range of at most ±0.05 mm. Complete v13 coarse calibration first."
+    "en": "Segmented boundary fitting supports a radius search range of at most ±0.05 mm. Complete v13 coarse calibration first.",
+    "zh-TW": "分段邊界校準的半徑搜尋範圍不能超過 ±0.05 mm，請先完成 v13 粗校準。",
+    "ja": "分割境界フィットでサポートされる半径検索範囲は最大 ±0.05 mm です。先に v13 の概略校正を完了してください。",
+    "tr": "Bölümlenmiş sınır uydurması en fazla ±0,05 mm yarıçap arama aralığını destekler. Önce v13 kaba kalibrasyonunu tamamlayın.",
+    "es": "El ajuste por límites por segmentos admite un intervalo de búsqueda de radio de como máximo ±0,05 mm. Complete antes la calibración inicial v13.",
+    "cs": "Segmentované proložení podle hranic podporuje rozsah hledání poloměru nejvýše ±0,05 mm. Nejprve dokončete hrubou kalibraci v13."
   },
   "边界片段需覆盖至少 55% 的绘图半径范围，请在更靠内、靠外的位置各补一段。": {
     "zh-CN": "边界片段需覆盖至少 55% 的绘图半径范围，请在更靠内、靠外的位置各补一段。",
-    "en": "Boundary segments must cover at least 55% of the drawing radius range. Add segments closer to the inner and outer edges."
+    "en": "Boundary segments must cover at least 55% of the drawing radius range. Add segments closer to the inner and outer edges.",
+    "zh-TW": "邊界片段需覆蓋至少 55% 的繪圖半徑範圍，請在更靠內、靠外的位置各補一段。",
+    "ja": "境界区間は描画半径範囲の 55% 以上を覆う必要があります。より内側と外側の位置にそれぞれ区間を追加してください。",
+    "tr": "Sınır bölümleri, çizim yarıçap aralığının en az %55'ini kapsamalıdır. Daha içteki ve dıştaki konumlara birer bölüm ekleyin.",
+    "es": "Los tramos de límite deben cubrir al menos el 55 % del intervalo de radios de dibujo. Añada un tramo más cerca de los bordes interior y exterior.",
+    "cs": "Hraniční úseky musí pokrývat nejméně 55 % rozsahu kreslicích poloměrů. Přidejte úsek blíž ke vnitřnímu a vnějšímu okraji."
   },
   "片段集中在少数相近半径，请选至少 4 个不同半径位置的边界，避免重复描同一小段。": {
     "zh-CN": "片段集中在少数相近半径，请选至少 4 个不同半径位置的边界，避免重复描同一小段。",
-    "en": "The segments are clustered at similar radii. Trace boundaries at four or more distinct radial positions instead of tracing the same short section repeatedly."
+    "en": "The segments are clustered at similar radii. Trace boundaries at four or more distinct radial positions instead of tracing the same short section repeatedly.",
+    "zh-TW": "片段集中在少數相近半徑，請選至少 4 個不同半徑位置的邊界，避免重複描同一小段。",
+    "ja": "区間が近い半径に集中しています。同じ短い区間を繰り返しなぞらず、4 か所以上の異なる半径位置で境界を選んでください。",
+    "tr": "Bölümler benzer yarıçaplarda kümelenmiş. Aynı kısa bölümü tekrar tekrar çizmek yerine dört veya daha fazla farklı yarıçap konumunda sınır seçin.",
+    "es": "Los tramos están agrupados en pocos radios parecidos. Elija límites en al menos 4 posiciones radiales distintas en lugar de trazar repetidamente la misma sección corta.",
+    "cs": "Úseky jsou soustředěné na několika podobných poloměrech. Vyberte hranice alespoň na 4 různých poloměrech a neopakujte obtahování téže krátké části."
   },
   "多段边界覆盖的是相同的半径范围，请在至少 4 处互不重叠的半径位置选段。": {
     "zh-CN": "多段边界覆盖的是相同的半径范围，请在至少 4 处互不重叠的半径位置选段。",
-    "en": "The boundary segments cover the same radius range. Choose segments at four or more non-overlapping radial positions."
+    "en": "The boundary segments cover the same radius range. Choose segments at four or more non-overlapping radial positions.",
+    "zh-TW": "多段邊界覆蓋的是相同的半徑範圍，請在至少 4 處互不重疊的半徑位置選段。",
+    "ja": "複数の境界区間が同じ半径範囲を覆っています。重なり合わない 4 か所以上の半径位置で区間を選んでください。",
+    "tr": "Birden çok sınır bölümü aynı yarıçap aralığını kapsıyor. Çakışmayan en az 4 yarıçap konumunda bölüm seçin.",
+    "es": "Varios tramos de límite cubren el mismo intervalo de radios. Elija tramos en al menos 4 posiciones radiales que no se solapen.",
+    "cs": "Více hraničních úseků pokrývá stejný rozsah poloměrů. Vyberte úseky alespoň na 4 nepřekrývajících se poloměrech."
   },
   "当前半径范围没有有效的盘面模型，请检查生成记录和照片轮廓。": {
     "zh-CN": "当前半径范围没有有效的盘面模型，请检查生成记录和照片轮廓。",
-    "en": "No valid disc model exists within this radius range. Check the generation record and photographed outline."
+    "en": "No valid disc model exists within this radius range. Check the generation record and photographed outline.",
+    "zh-TW": "目前半徑範圍內沒有有效的碟面模型，請檢查產生記錄和相片輪廓。",
+    "ja": "この半径範囲には有効なディスク モデルがありません。生成記録と撮影した輪郭を確認してください。",
+    "tr": "Bu yarıçap aralığında geçerli bir disk modeli yok. Oluşturma kaydını ve fotoğraflanan konturu kontrol edin.",
+    "es": "En este intervalo de radios no hay un modelo de disco válido. Compruebe el registro de generación y el contorno fotografiado.",
+    "cs": "V tomto rozsahu poloměrů neexistuje žádný platný model disku. Zkontrolujte záznam generování a vyfotografovanou konturu."
   },
   "搜索边界超出有效盘面模型，请缩小中标半径搜索范围。": {
     "zh-CN": "搜索边界超出有效盘面模型，请缩小中标半径搜索范围。",
-    "en": "The search bounds exceed the valid disc model. Narrow the radius search range for boundary calibration."
+    "en": "The search bounds exceed the valid disc model. Narrow the radius search range for boundary calibration.",
+    "zh-TW": "搜尋邊界超出有效碟面模型，請縮小邊界校準的半徑搜尋範圍。",
+    "ja": "検索境界が有効なディスク モデルを超えています。境界校正の半径検索範囲を狭めてください。",
+    "tr": "Arama sınırları geçerli disk modelini aşıyor. Sınır kalibrasyonu için yarıçap arama aralığını daraltın.",
+    "es": "Los límites de búsqueda superan el modelo de disco válido. Reduzca el intervalo de búsqueda de radio para la calibración por límites.",
+    "cs": "Meze hledání přesahují platný model disku. Zúžte rozsah hledání poloměru pro kalibraci podle hranic."
   },
   "当前范围的角度变化过大，无法可靠穷举绕圈候选，请缩小中标半径搜索范围。": {
     "zh-CN": "当前范围的角度变化过大，无法可靠穷举绕圈候选，请缩小中标半径搜索范围。",
-    "en": "The angular variation is too large to enumerate winding candidates reliably. Narrow the radius search range for boundary calibration."
+    "en": "The angular variation is too large to enumerate winding candidates reliably. Narrow the radius search range for boundary calibration.",
+    "zh-TW": "目前範圍的角度變化過大，無法可靠窮舉繞圈候選，請縮小邊界校準的半徑搜尋範圍。",
+    "ja": "この範囲は角度の変化が大きすぎて、周回候補を確実に列挙できません。境界校正の半径検索範囲を狭めてください。",
+    "tr": "Bu aralıktaki açı değişimi, tur adaylarını güvenilir biçimde sıralamak için fazla büyük. Sınır kalibrasyonu için yarıçap arama aralığını daraltın.",
+    "es": "La variación angular de este intervalo es demasiado grande para enumerar candidatos de vueltas de forma fiable. Reduzca el intervalo de búsqueda de radio para la calibración por límites.",
+    "cs": "Úhlová změna v tomto rozsahu je příliš velká na spolehlivé vyčtení kandidátů závitů. Zúžte rozsah hledání poloměru pro kalibraci podle hranic."
   },
   "当前范围包含过多绕圈候选，请缩小中标半径搜索范围后再算。": {
     "zh-CN": "当前范围包含过多绕圈候选，请缩小中标半径搜索范围后再算。",
-    "en": "This range contains too many winding candidates. Narrow the radius search range for boundary calibration and calculate again."
+    "en": "This range contains too many winding candidates. Narrow the radius search range for boundary calibration and calculate again.",
+    "zh-TW": "目前範圍包含過多繞圈候選，請縮小邊界校準的半徑搜尋範圍後再計算。",
+    "ja": "この範囲には周回候補が多すぎます。境界校正の半径検索範囲を狭めてから、もう一度計算してください。",
+    "tr": "Bu aralık çok fazla tur adayı içeriyor. Sınır kalibrasyonu için yarıçap arama aralığını daraltıp yeniden hesaplayın.",
+    "es": "Este intervalo contiene demasiados candidatos de vueltas. Reduzca el intervalo de búsqueda de radio para la calibración por límites y vuelva a calcular.",
+    "cs": "Tento rozsah obsahuje příliš mnoho kandidátů závitů. Zúžte rozsah hledání poloměru pro kalibraci podle hranic a spočítejte znovu."
   },
   "当前搜索范围有过多可行绕圈区间，尚未排除歧义，请缩小半径范围或补充较长的边界片段。": {
     "zh-CN": "当前搜索范围有过多可行绕圈区间，尚未排除歧义，请缩小半径范围或补充较长的边界片段。",
-    "en": "Too many feasible winding intervals remain in this search range. Narrow the radius range or trace longer boundary segments to resolve the ambiguity."
+    "en": "Too many feasible winding intervals remain in this search range. Narrow the radius range or trace longer boundary segments to resolve the ambiguity.",
+    "zh-TW": "目前搜尋範圍內仍有過多可行繞圈區間，尚未排除歧義，請縮小半徑範圍或補充較長的邊界片段。",
+    "ja": "この検索範囲には実行可能な周回区間が多すぎます。あいまいさを解消するには、半径範囲を狭めるか、より長い境界区間を追加してください。",
+    "tr": "Bu arama aralığında hâlâ çok fazla uygun tur aralığı var; belirsizlik giderilemedi. Yarıçap aralığını daraltın veya daha uzun sınır bölümleri ekleyin.",
+    "es": "En este intervalo de búsqueda quedan demasiados intervalos de vueltas posibles y la ambigüedad no está resuelta. Reduzca el intervalo de radios o añada tramos de límite más largos.",
+    "cs": "V tomto rozsahu hledání zůstává příliš mnoho možných intervalů závitů a nejednoznačnost není vyřešena. Zúžte rozsah poloměrů nebo přidejte delší hraniční úseky."
   },
   "这些边界片段没有得到有效参数，请检查点是否位于黑白交界。": {
     "zh-CN": "这些边界片段没有得到有效参数，请检查点是否位于黑白交界。",
-    "en": "These boundary segments did not produce valid parameters. Check that the points lie on the black-white boundary."
+    "en": "These boundary segments did not produce valid parameters. Check that the points lie on the black-white boundary.",
+    "zh-TW": "這些邊界片段沒有得到有效參數，請檢查點是否位於黑白交界。",
+    "ja": "これらの境界区間から有効なパラメーターが得られませんでした。点が白黒の境界上にあるか確認してください。",
+    "tr": "Bu sınır bölümleri geçerli parametreler üretmedi. Noktaların siyah-beyaz sınırı üzerinde olup olmadığını kontrol edin.",
+    "es": "Estos tramos de límite no produjeron parámetros válidos. Compruebe que los puntos están en el límite entre el blanco y el negro.",
+    "cs": "Tyto hraniční úseky neposkytly platné parametry. Zkontrolujte, zda body leží na hranici mezi černou a bílou."
   },
   "最佳候选落在搜索边界，尚不能确认绕圈数，请复核粗标结果或适当调整搜索范围。": {
     "zh-CN": "最佳候选落在搜索边界，尚不能确认绕圈数，请复核粗标结果或适当调整搜索范围。",
-    "en": "The best candidate lies on a search bound, leaving the winding count unresolved. Check the coarse calibration result or adjust the search range."
+    "en": "The best candidate lies on a search bound, leaving the winding count unresolved. Check the coarse calibration result or adjust the search range.",
+    "zh-TW": "最佳候選落在搜尋邊界，尚不能確認繞圈數，請複核粗校準結果或適當調整搜尋範圍。",
+    "ja": "最良の候補が検索境界上にあり、周回数をまだ確定できません。概略校正の結果を再確認するか、検索範囲を適切に調整してください。",
+    "tr": "En iyi aday arama sınırının üzerinde; tur sayısı henüz doğrulanamadı. Kaba kalibrasyon sonucunu denetleyin veya arama aralığını uygun biçimde ayarlayın.",
+    "es": "El mejor candidato está en un límite de búsqueda y aún no se puede confirmar el número de vueltas. Compruebe el resultado de la calibración inicial o ajuste el intervalo de búsqueda.",
+    "cs": "Nejlepší kandidát leží na mezi hledání, takže počet závitů zatím nelze potvrdit. Zkontrolujte výsledek hrubé kalibrace nebo rozsah hledání odpovídajícím způsobem upravte."
   },
   "边界片段与同一个盘面模型不一致，请检查误点、照片矫正和片段是否跨过了另一条边界。": {
     "zh-CN": "边界片段与同一个盘面模型不一致，请检查误点、照片矫正和片段是否跨过了另一条边界。",
-    "en": "The boundary segments do not match a single disc model. Check for misplaced points, photo rectification errors, or segments crossing another boundary."
+    "en": "The boundary segments do not match a single disc model. Check for misplaced points, photo rectification errors, or segments crossing another boundary.",
+    "zh-TW": "邊界片段與同一個碟面模型不一致，請檢查誤點、相片校正，以及片段是否跨過了另一條邊界。",
+    "ja": "境界区間が単一のディスク モデルと一致しません。誤った点、写真の補正、区間が別の境界をまたいでいないかを確認してください。",
+    "tr": "Sınır bölümleri tek bir disk modeliyle uyuşmuyor. Yanlış noktaları, fotoğraf düzeltmesini ve bölümlerin başka bir sınırı geçip geçmediğini kontrol edin.",
+    "es": "Los tramos de límite no coinciden con un mismo modelo de disco. Compruebe los puntos erróneos, la rectificación de la foto y si algún tramo cruza otro límite.",
+    "cs": "Hraniční úseky neodpovídají jedinému modelu disku. Zkontrolujte chybné body, narovnání fotografie a zda některý úsek nepřekračuje jinou hranici."
   },
   "仍有不同绕圈数的候选能解释这些片段，请在不同半径补一段更长的清楚边界后再算。": {
     "zh-CN": "仍有不同绕圈数的候选能解释这些片段，请在不同半径补一段更长的清楚边界后再算。",
-    "en": "Candidates with different winding counts still fit these segments. Trace a longer, clear boundary at another radius and calculate again."
+    "en": "Candidates with different winding counts still fit these segments. Trace a longer, clear boundary at another radius and calculate again.",
+    "zh-TW": "仍有不同繞圈數的候選能解釋這些片段，請在不同半徑補一段更長、更清楚的邊界後再計算。",
+    "ja": "異なる周回数の候補がまだこれらの区間を説明できます。別の半径でより長く明瞭な境界を追加してから、もう一度計算してください。",
+    "tr": "Farklı tur sayılarına sahip adaylar hâlâ bu bölümleri açıklıyor. Başka bir yarıçapta daha uzun ve net bir sınır bölümü ekleyip yeniden hesaplayın.",
+    "es": "Aún hay candidatos con distintos números de vueltas que explican estos tramos. Añada en otro radio un tramo de límite más largo y nítido y vuelva a calcular.",
+    "cs": "Tyto úseky stále vysvětlují kandidáti s různým počtem závitů. Přidejte na jiném poloměru delší a zřetelnější hraniční úsek a spočítejte znovu."
   },
   "边界连续可见时，沿同一条边界至少描 6 点并覆盖 55% 半径范围；也可描两段各覆盖 10% 半径范围的长边界，每段至少 6 点。只有短片段时需至少 4 段，每段至少 3 点。": {
     "zh-CN": "边界连续可见时，沿同一条边界至少描 6 点并覆盖 55% 半径范围；也可描两段各覆盖 10% 半径范围的长边界，每段至少 6 点。只有短片段时需至少 4 段，每段至少 3 点。",
-    "en": "For a continuously visible boundary, trace at least 6 points along the same boundary covering 55% of the radius range. Alternatively, trace two long segments, each with at least 6 points covering 10% of the radius range. If only short segments are visible, trace at least 4 segments with at least 3 points each."
+    "en": "For a continuously visible boundary, trace at least 6 points along the same boundary covering 55% of the radius range. Alternatively, trace two long segments, each with at least 6 points covering 10% of the radius range. If only short segments are visible, trace at least 4 segments with at least 3 points each.",
+    "zh-TW": "邊界連續可見時，沿同一條邊界至少描 6 點並涵蓋 55% 半徑範圍；也可描兩段各涵蓋 10% 半徑範圍的長邊界，每段至少 6 點。只有短片段時需至少 4 段，每段至少 3 點。",
+    "ja": "境界が連続して見える場合は、同じ境界に沿って少なくとも 6 点をなぞり、半径範囲の 55% をカバーしてください。または、それぞれが半径範囲の 10% をカバーする長い区間を 2 本なぞり、各区間に少なくとも 6 点取ってください。短い区間しかない場合は、少なくとも 4 区間、各区間 3 点以上が必要です。",
+    "tr": "Sınır sürekli görünüyorsa, aynı sınır boyunca en az 6 nokta çizin ve yarıçap aralığının %55'ini kapsayın. Alternatif olarak, her biri yarıçap aralığının %10'unu kapsayan iki uzun bölüm çizin ve her bölüme en az 6 nokta koyun. Yalnızca kısa bölümler varsa en az 4 bölüm, her bölümde en az 3 nokta gerekir.",
+    "es": "Si el límite se ve de forma continua, trace al menos 6 puntos a lo largo del mismo límite cubriendo el 55 % del intervalo de radios. También puede trazar dos tramos largos que cubran cada uno el 10 % del intervalo de radios, con al menos 6 puntos por tramo. Si solo hay tramos cortos, se necesitan al menos 4 tramos con 3 puntos cada uno.",
+    "cs": "Je-li hranice souvisle viditelná, obtažte podél téže hranice alespoň 6 bodů pokrývajících 55 % rozsahu poloměrů. Případně obtáhněte dva dlouhé úseky, každý pokrývající 10 % rozsahu poloměrů, s nejméně 6 body na úsek. Jsou-li jen krátké úseky, potřebujete nejméně 4 úseky po 3 bodech."
   },
   "每段至少需要 3 个不同位置的点，请沿同一小段边界分散点选。": {
     "zh-CN": "每段至少需要 3 个不同位置的点，请沿同一小段边界分散点选。",
-    "en": "Each segment needs at least 3 distinct points. Spread the points along the same short boundary section."
+    "en": "Each segment needs at least 3 distinct points. Spread the points along the same short boundary section.",
+    "zh-TW": "每段至少需要 3 個不同位置的點，請沿同一小段邊界分散點選。",
+    "ja": "各区間には少なくとも 3 つの異なる位置の点が必要です。同じ短い境界区間に沿って点を分散させて選んでください。",
+    "tr": "Her bölüm en az 3 farklı konumda nokta gerektirir. Noktaları aynı kısa sınır bölümü boyunca dağıtarak seçin.",
+    "es": "Cada tramo necesita al menos 3 puntos en posiciones distintas. Selecciónelos repartidos a lo largo de la misma sección corta del límite.",
+    "cs": "Každý úsek potřebuje nejméně 3 body na různých místech. Vyberte je rozprostřené podél téže krátké části hranice."
   },
   "边界上存在接近半圈的点间空隙，请在看得清的同一段交界上补点，看不清连接时请新建片段。": {
     "zh-CN": "边界上存在接近半圈的点间空隙，请在看得清的同一段交界上补点，看不清连接时请新建片段。",
-    "en": "Adjacent boundary points are nearly half a turn apart. Add points along the same visible section, or start a new segment if the connection is not visible."
+    "en": "Adjacent boundary points are nearly half a turn apart. Add points along the same visible section, or start a new segment if the connection is not visible.",
+    "zh-TW": "邊界上存在接近半圈的點間空隙，請在看得清的同一段交界上補點，看不清連接時請新建片段。",
+    "ja": "境界上に半回転近い点間の隙間があります。見える同じ区間の境界に点を追加するか、つながりが見えない場合は新しい区間を作成してください。",
+    "tr": "Sınırda yarım turu yaklaşan nokta aralıkları var. Görülebilen aynı bölüm üzerine nokta ekleyin; bağlantı görünmüyorsa yeni bir bölüm başlatın.",
+    "es": "En el límite hay huecos entre puntos de casi media vuelta. Añada puntos en la misma sección visible del límite o cree un nuevo tramo si la conexión no se ve.",
+    "cs": "Na hranici jsou mezery mezi body blížící se půl otáčky. Přidejte body na téže viditelné části rozhraní, nebo založte nový úsek, pokud spojení není vidět."
   },
   "有片段太短，无法判断边界的局部走向，请把这一段的点拉开一些。": {
     "zh-CN": "有片段太短，无法判断边界的局部走向，请把这一段的点拉开一些。",
-    "en": "A segment is too short to determine its local boundary direction. Spread its points farther apart."
+    "en": "A segment is too short to determine its local boundary direction. Spread its points farther apart.",
+    "zh-TW": "有片段太短，無法判斷邊界的局部走向，請把這一段的點拉開一些。",
+    "ja": "区間が短すぎて境界の局所的な向きを判断できません。この区間の点をもう少し離してください。",
+    "tr": "Bir bölüm, sınırın yerel yönelimini belirlemek için çok kısa. Bu bölümün noktalarını biraz daha açın.",
+    "es": "Hay un tramo demasiado corto para determinar la dirección local del límite. Separe un poco los puntos de este tramo.",
+    "cs": "Některý úsek je příliš krátký na určení místního směru hranice. Roztáhněte body tohoto úseku více od sebe."
   },
   "有相邻曲线点的转角接近半圈，绕圈判断可能不可靠；请补点后复核。": {
     "zh-CN": "有相邻曲线点的转角接近半圈，绕圈判断可能不可靠；请补点后复核。",
-    "en": "Adjacent curve points are nearly half a turn apart. Add points and check the winding count again."
+    "en": "Adjacent curve points are nearly half a turn apart. Add points and check the winding count again.",
+    "zh-TW": "有相鄰曲線點的轉角接近半圈，繞圈判斷可能不可靠；請補點後複核。",
+    "ja": "隣接する曲線点の転角が半回転に近く、周回の判定が信頼できない可能性があります。点を追加してから再確認してください。",
+    "tr": "Bitişik eğri noktalarının dönüş açısı neredeyse yarım tur; tur sayımı güvenilir olmayabilir. Nokta ekleyip yeniden denetleyin.",
+    "es": "Hay puntos de curva adyacentes cuyo ángulo de giro ronda media vuelta; el recuento de vueltas puede no ser fiable. Añada puntos y vuelva a comprobarlo.",
+    "cs": "Některé sousední body křivky se otáčí skoro o půl otáčky; počet závitů nemusí být spolehlivý. Přidejte body a znovu zkontrolujte."
   },
   "边界中标请使用边界描点，不能把不相连的交界拼成十字线的连续曲线。": {
     "zh-CN": "边界中标请使用边界描点，不能把不相连的交界拼成十字线的连续曲线。",
-    "en": "Use boundary segments for boundary calibration. Disconnected edges cannot be combined into a continuous cross-arm trace."
+    "en": "Use boundary segments for boundary calibration. Disconnected edges cannot be combined into a continuous cross-arm trace.",
+    "zh-TW": "邊界校準請使用邊界描點，不能把不相連的交界拼成十字線的連續曲線。",
+    "ja": "境界校正には境界点を使用してください。つながっていない境界をつないで十字線の連続曲線にすることはできません。",
+    "tr": "Sınır kalibrasyonu için sınır noktalarını kullanın. Bağlantısız sınırlar, artı çizgisinin sürekli eğrisi olarak birleştirilemez.",
+    "es": "Para la calibración por límites use puntos de límite. Los límites no conectados no se pueden unir en una curva continua del brazo de la cruz.",
+    "cs": "Pro kalibraci podle hranic použijte hraniční body. Nesouvislé rozhraní nelze spojit do souvislé křivky ramene kříže."
   },
   "十字线最多包含四条臂。": {
     "zh-CN": "十字线最多包含四条臂。",
-    "en": "A cross has at most four arms."
+    "en": "A cross has at most four arms.",
+    "zh-TW": "十字線最多包含四條臂。",
+    "ja": "十字線に含められる腕は最大 4 本です。",
+    "tr": "Artı çizgisi en fazla dört kol içerir.",
+    "es": "La cruz contiene como máximo cuatro brazos.",
+    "cs": "Kříž obsahuje nejvýše čtyři ramena."
   },
   "曲线编号无效或重复。": {
     "zh-CN": "曲线编号无效或重复。",
-    "en": "A curve ID is invalid or duplicated."
+    "en": "A curve ID is invalid or duplicated.",
+    "zh-TW": "曲線編號無效或重複。",
+    "ja": "曲線の ID が無効か重複しています。",
+    "tr": "Bir eğri kimliği geçersiz veya yinelenmiş.",
+    "es": "El identificador de una curva no es válido o está duplicado.",
+    "cs": "ID křivky je neplatné nebo duplicitní."
   },
   "此标靶没有十字臂，请使用精标盘照片描线。": {
     "zh-CN": "此标靶没有十字臂，请使用精标盘照片描线。",
-    "en": "This target has no cross arms. Trace curves on a fine calibration disc photo."
+    "en": "This target has no cross arms. Trace curves on a fine calibration disc photo.",
+    "zh-TW": "此標靶沒有十字臂，請在精細校準碟的相片上描線。",
+    "ja": "このターゲットには十字の腕がありません。精密校正ディスクの写真で線をなぞってください。",
+    "tr": "Bu hedefte artı kolları yok. Hassas kalibrasyon diski fotoğrafı üzerinde çizim yapın.",
+    "es": "Este patrón no tiene brazos de cruz. Trace las líneas sobre la foto de un disco de calibración fina.",
+    "cs": "Tento terč nemá ramena kříže. Obkreslete křivky na fotografii disku pro jemnou kalibraci."
   },
   "曲线点数量超出限制。": {
     "zh-CN": "曲线点数量超出限制。",
-    "en": "The number of curve points exceeds the limit."
+    "en": "The number of curve points exceeds the limit.",
+    "zh-TW": "曲線點數量超出限制。",
+    "ja": "曲線点の数が上限を超えています。",
+    "tr": "Eğri noktası sayısı sınırı aşıyor.",
+    "es": "El número de puntos de la curva supera el límite.",
+    "cs": "Počet bodů křivky překračuje limit."
   },
   "曲线点坐标无效，请使用矫正后以盘心为原点的坐标。": {
     "zh-CN": "曲线点坐标无效，请使用矫正后以盘心为原点的坐标。",
-    "en": "Invalid curve point coordinates. Use rectified coordinates with the disc center as the origin."
+    "en": "Invalid curve point coordinates. Use rectified coordinates with the disc center as the origin.",
+    "zh-TW": "曲線點座標無效，請使用以盤心為原點的校正後座標。",
+    "ja": "曲線点の座標が無効です。ディスク中心を原点とする補正後の座標を使用してください。",
+    "tr": "Eğri noktası koordinatları geçersiz. Disk merkezini orijin alan düzeltilmiş koordinatları kullanın.",
+    "es": "Coordenadas de punto de la curva no válidas. Use coordenadas rectificadas con el centro del disco como origen.",
+    "cs": "Souřadnice bodu křivky jsou neplatné. Použijte narovnané souřadnice se středem disku jako počátkem."
   },
   "请沿同一条曲线从内到外至少标出 6 个点，覆盖靠内、中间和靠外的位置。": {
     "zh-CN": "请沿同一条曲线从内到外至少标出 6 个点，覆盖靠内、中间和靠外的位置。",
-    "en": "Mark at least 6 points along the same curve from inside to outside, covering inner, middle, and outer positions."
+    "en": "Mark at least 6 points along the same curve from inside to outside, covering inner, middle, and outer positions.",
+    "zh-TW": "請沿同一條曲線從內到外標出至少 6 個點，涵蓋靠內、中間和靠外的位置。",
+    "ja": "同じ曲線に沿って内側から外側へ少なくとも 6 点を取り、内側・中央・外側の位置をカバーしてください。",
+    "tr": "Aynı eğri boyunca içeriden dışarıya en az 6 nokta işaretleyin; iç, orta ve dış konumları kapsayın.",
+    "es": "Marque al menos 6 puntos a lo largo de la misma curva, de dentro a fuera, cubriendo las posiciones interior, central y exterior.",
+    "cs": "Podél téže křivky označte od středu ven nejméně 6 bodů pokrývajících vnitřní, střední i vnější polohy."
   },
   "曲线覆盖范围太窄，无法稳定分离内外半径；请继续标出更靠内、外的曲线。": {
     "zh-CN": "曲线覆盖范围太窄，无法稳定分离内外半径；请继续标出更靠内、外的曲线。",
-    "en": "The curve covers too narrow a range to distinguish the inner and outer radii reliably. Extend the trace farther inward and outward."
+    "en": "The curve covers too narrow a range to distinguish the inner and outer radii reliably. Extend the trace farther inward and outward.",
+    "zh-TW": "曲線覆蓋範圍太窄，無法穩定分離內外半徑；請繼續標出更靠內、外的曲線。",
+    "ja": "曲線のカバー範囲が狭すぎて、内半径と外半径を安定して分離できません。より内側と外側の曲線も引き続き取ってください。",
+    "tr": "Eğri çok dar bir aralığı kapsıyor; iç ve dış yarıçaplar güvenilir biçimde ayrılamıyor. Daha içteki ve dıştaki eğrileri de işaretlemeye devam edin.",
+    "es": "La curva cubre un intervalo demasiado estrecho para separar con estabilidad los radios interior y exterior. Siga marcando curvas más hacia dentro y hacia fuera.",
+    "cs": "Křivka pokrývá příliš úzký rozsah na stabilní oddělení vnitřního a vnějšího poloměru; pokračujte v označování křivek blíž ke středu i k okraji."
   },
   "搜索范围内没有能覆盖全部观测点的有效正半径曲线延拓，请检查照片尺度、盘心或参数范围。": {
     "zh-CN": "搜索范围内没有能覆盖全部观测点的有效正半径曲线延拓，请检查照片尺度、盘心或参数范围。",
-    "en": "No valid positive-radius curve in the search range covers all observed points. Check the photo scale, disc center, and parameter range."
+    "en": "No valid positive-radius curve in the search range covers all observed points. Check the photo scale, disc center, and parameter range.",
+    "zh-TW": "搜尋範圍內沒有能覆蓋全部觀測點的有效正半徑曲線延拓，請檢查相片尺度、盤心或參數範圍。",
+    "ja": "検索範囲内にすべての観測点を覆う有効な正の半径の曲線延長がありません。写真の縮尺、ディスク中心、パラメーター範囲を確認してください。",
+    "tr": "Arama aralığında tüm gözlenen noktaları kapsayan geçerli bir pozitif yarıçaplı eğri uzantısı yok. Fotoğraf ölçeğini, disk merkezini veya parametre aralığını kontrol edin.",
+    "es": "En el intervalo de búsqueda no hay ninguna curva válida de radio positivo que cubra todos los puntos observados. Compruebe la escala de la foto, el centro del disco o el intervalo de parámetros.",
+    "cs": "V rozsahu hledání není žádná platná prolongace křivky s kladným poloměrem, která by pokryla všechny pozorované body. Zkontrolujte měřítko fotografie, střed disku nebo rozsah parametrů."
   },
   "部分描点在候选模型下超出原图案环带，已按连续曲线保留；请复核照片尺度、盘心及端点是否沿同一条可见曲线。": {
     "zh-CN": "部分描点在候选模型下超出原图案环带，已按连续曲线保留；请复核照片尺度、盘心及端点是否沿同一条可见曲线。",
-    "en": "Some traced points fall outside the original pattern band in the candidate model and are retained as part of the continuous curve. Check the photo scale, disc center, and whether the endpoints follow the same visible curve."
+    "en": "Some traced points fall outside the original pattern band in the candidate model and are retained as part of the continuous curve. Check the photo scale, disc center, and whether the endpoints follow the same visible curve.",
+    "zh-TW": "部分描點在候選模型下超出原圖案環帶，已按連續曲線保留；請複核相片尺度、盤心及端點是否沿同一條可見曲線。",
+    "ja": "一部のトレース点が候補モデルでは元のパターン帯の外に出るため、連続曲線の一部として保持しました。写真の縮尺、ディスク中心、および両端点が同じ見える曲線に沿っているか再確認してください。",
+    "tr": "Bazı çizim noktaları aday modelde özgün desen bandının dışına taşıyor; bunlar sürekli eğrinin parçası olarak korundu. Fotoğraf ölçeğini, disk merkezini ve uç noktaların aynı görünür eğriyi izleyip izlemediğini yeniden denetleyin.",
+    "es": "Algunos puntos trazados quedan fuera de la banda del patrón original en el modelo candidato y se conservan como parte de la curva continua. Revise la escala de la foto, el centro del disco y si los extremos siguen la misma curva visible.",
+    "cs": "Některé vyznačené body spadají v kandidátním modelu mimo původní pás vzoru; ponechaly se jako součást souvislé křivky. Znovu zkontrolujte měřítko fotografie, střed disku a zda koncové body leží na téže viditelné křivce."
   },
   "曲线覆盖的内外范围偏窄，参数可能互相补偿；请补充更靠内、外的点。": {
     "zh-CN": "曲线覆盖的内外范围偏窄，参数可能互相补偿；请补充更靠内、外的点。",
-    "en": "The curve covers a narrow radial range, allowing parameters to compensate for each other. Add points farther inward and outward."
+    "en": "The curve covers a narrow radial range, allowing parameters to compensate for each other. Add points farther inward and outward.",
+    "zh-TW": "曲線覆蓋的內外範圍偏窄，參數可能互相補償；請補充更靠內、外的點。",
+    "ja": "曲線がカバーする内外の範囲が狭く、パラメーター同士が補償し合う可能性があります。より内側と外側の点を追加してください。",
+    "tr": "Eğrinin kapsadığı iç-dış aralık dar; parametreler birbirini telafi edebilir. Daha içteki ve dıştaki noktaları ekleyin.",
+    "es": "La curva cubre un intervalo interior-exterior estrecho, por lo que los parámetros pueden compensarse. Añada puntos más hacia dentro y hacia fuera.",
+    "cs": "Křivka pokrývá úzký rozsah dovnitř i ven, takže si parametry mohou navzájem kompenzovat; přidejte body blíž ke středu i k okraji."
   },
   "曲线偏差较大，请检查照片矫正、点位和是否始终沿同一条线标点。": {
     "zh-CN": "曲线偏差较大，请检查照片矫正、点位和是否始终沿同一条线标点。",
-    "en": "The curve deviation is large. Check photo rectification, point positions, and whether all points follow the same line."
+    "en": "The curve deviation is large. Check photo rectification, point positions, and whether all points follow the same line.",
+    "zh-TW": "曲線偏差較大，請檢查相片校正、點位，以及是否始終沿同一條線標點。",
+    "ja": "曲線のずれが大きいです。写真の補正、点の位置、すべての点が同じ線に沿って取られているかを確認してください。",
+    "tr": "Eğrinin sapması büyük. Fotoğraf düzeltmesini, nokta konumlarını ve tüm noktaların hep aynı çizgiyi izleyip izlemediğini kontrol edin.",
+    "es": "La desviación de la curva es grande. Compruebe la rectificación de la foto, las posiciones de los puntos y si todos se marcaron siempre sobre la misma línea.",
+    "cs": "Odchylka křivky je velká. Zkontrolujte narovnání fotografie, polohy bodů a zda byly body vždy značeny podél téže linie."
   },
   "最佳结果靠近搜索边界，建议扩大搜索范围并补充曲线点复核。": {
     "zh-CN": "最佳结果靠近搜索边界，建议扩大搜索范围并补充曲线点复核。",
-    "en": "The best result is near a search bound. Expand the search range and add curve points to check the fit."
+    "en": "The best result is near a search bound. Expand the search range and add curve points to check the fit.",
+    "zh-TW": "最佳結果靠近搜尋邊界，建議擴大搜尋範圍並補充曲線點複核。",
+    "ja": "最良の結果が検索境界付近にあります。検索範囲を広げ、曲線点を追加して確認することをお勧めします。",
+    "tr": "En iyi sonuç arama sınırına yakın. Arama aralığını genişletmeniz ve kontrol için eğri noktaları eklemeniz önerilir.",
+    "es": "El mejor resultado está cerca de un límite de búsqueda. Se recomienda ampliar el intervalo de búsqueda y añadir puntos de curva para comprobarlo.",
+    "cs": "Nejlepší výsledek je u meze hledání. Doporučujeme rozšířit rozsah hledání a přidat body křivky k ověření."
   },
   "当前曲线对两个半径的约束较相似，暂不能仅凭低残差判断参数唯一；请扩大径向覆盖并检查点位精度。": {
     "zh-CN": "当前曲线对两个半径的约束较相似，暂不能仅凭低残差判断参数唯一；请扩大径向覆盖并检查点位精度。",
-    "en": "This curve constrains the two radii similarly, so a low residual does not establish a unique fit. Extend the radial coverage and check point accuracy."
+    "en": "This curve constrains the two radii similarly, so a low residual does not establish a unique fit. Extend the radial coverage and check point accuracy.",
+    "zh-TW": "目前曲線對兩個半徑的約束較相似，暫不能僅憑低殘差判斷參數唯一；請擴大徑向覆蓋並檢查點位精度。",
+    "ja": "現在の曲線は 2 つの半径を似たようにしか拘束せず、残差が小さくてもパラメーターが一意とは判断できません。半径方向のカバー範囲を広げ、点の精度を確認してください。",
+    "tr": "Geçerli eğri iki yarıçapı benzer biçimde kısıtlıyor; düşük artık tek başına parametrelerin tek olduğunu göstermez. Radyal kapsamı genişletin ve nokta doğruluğunu kontrol edin.",
+    "es": "La curva actual restringe los dos radios de forma parecida, así que un residuo bajo no permite por sí solo establecer la unicidad de los parámetros. Amplíe la cobertura radial y compruebe la precisión de los puntos.",
+    "cs": "Aktuální křivka omezuje oba poloměry podobně, takže z malé odchylky samotné nelze usoudit na jedinečnost parametrů; rozšiřte radiální pokrytí a zkontrolujte přesnost bodů."
   },
   "存在形状接近的参数候选，请对照整条曲线后再应用。": {
     "zh-CN": "存在形状接近的参数候选，请对照整条曲线后再应用。",
-    "en": "Several parameter candidates produce similar shapes. Compare the full curve before applying a candidate."
+    "en": "Several parameter candidates produce similar shapes. Compare the full curve before applying a candidate.",
+    "zh-TW": "存在形狀接近的參數候選，請對照整條曲線後再套用。",
+    "ja": "形状が近いパラメーター候補が複数あります。適用する前に曲線全体と照らし合わせてください。",
+    "tr": "Şekilleri yakın parametre adayları var. Uygulamadan önce tüm eğriyle karşılaştırın.",
+    "es": "Hay candidatos de parámetros con formas parecidas. Compare la curva completa antes de aplicar.",
+    "cs": "Existují kandidáti parametrů s podobným tvarem. Před použitím porovnejte celou křivku."
   },
   "宽范围只进行了有限多起点搜索，候选列表不代表穷尽所有可能参数。": {
     "zh-CN": "宽范围只进行了有限多起点搜索，候选列表不代表穷尽所有可能参数。",
-    "en": "The wide range was searched from a limited number of starting points; the candidate list is not exhaustive."
+    "en": "The wide range was searched from a limited number of starting points; the candidate list is not exhaustive.",
+    "zh-TW": "寬範圍只進行了有限多起點搜尋，候選清單不代表窮盡所有可能參數。",
+    "ja": "広い範囲は限られた開始点でのみ探索されており、候補一覧がすべての可能なパラメーターを網羅するわけではありません。",
+    "tr": "Geniş aralıkta yalnızca sınırlı sayıda başlangıç noktasıyla arama yapıldı; aday listesi tüm olası parametreleri kapsamaz.",
+    "es": "En el intervalo amplio solo se buscó desde un número limitado de puntos de partida; la lista de candidatos no agota todos los parámetros posibles.",
+    "cs": "Široký rozsah byl prohledán jen z omezeného počtu výchozích bodů; seznam kandidátů nezahrnuje všechny možné parametry."
   },
   "角度展开以相邻点之间没有遗漏整圈为前提；请对照完整曲线，在弯曲或绕行处补点后确认。": {
     "zh-CN": "角度展开以相邻点之间没有遗漏整圈为前提；请对照完整曲线，在弯曲或绕行处补点后确认。",
-    "en": "Angle unwrapping assumes no full turn is skipped between adjacent points. Check the full curve and add points around bends and turns before confirming."
+    "en": "Angle unwrapping assumes no full turn is skipped between adjacent points. Check the full curve and add points around bends and turns before confirming.",
+    "zh-TW": "角度展開以相鄰點之間沒有遺漏整圈為前提；請對照完整曲線，在彎曲或繞行處補點後確認。",
+    "ja": "角度の展開は、隣接する点の間で完全な1回転の欠落がないことを前提とします。完全な曲線と照らし合わせ、曲がりや周回の箇所に点を追加してから確定してください。",
+    "tr": "Açı açılımı, bitişik noktalar arasında tam tur atlanmadığını varsayar. Tam eğriyle karşılaştırın, kıvrım ve dönüş yerlerine nokta ekleyip onaylayın.",
+    "es": "El desenrollado angular presupone que entre puntos adyacentes no se omite ninguna vuelta completa. Coteje la curva completa, añada puntos en curvas y giros y confirme después.",
+    "cs": "Rozvinutí úhlu předpokládá, že mezi sousedními body nebyla vynechána celá otočka; porovnejte úplnou křivku, přidejte body v ohybech a závitech a pak potvrďte."
   },
   "曲线出现明显向内回退，请按内到外的顺序沿同一条线标点。": {
     "zh-CN": "曲线出现明显向内回退，请按内到外的顺序沿同一条线标点。",
-    "en": "The curve doubles back inward. Mark points along the same line in order from inside to outside."
+    "en": "The curve doubles back inward. Mark points along the same line in order from inside to outside.",
+    "zh-TW": "曲線出現明顯向內回折，請按內到外的順序沿同一條線標點。",
+    "ja": "曲線が明らかに内側へ折り返しています。同じ線上に内側から外側への順で点を取ってください。",
+    "tr": "Eğri belirgin biçimde içeri geri dönüyor. Aynı çizgi üzerinde içeriden dışarıya sırayla nokta işaretleyin.",
+    "es": "La curva retrocede claramente hacia dentro. Marque los puntos sobre la misma línea en orden de dentro a fuera.",
+    "cs": "Křivka se výrazně vrací dovnitř. Označujte body podél téže linie v pořadí od středu ven."
   },
   "相邻曲线点转角接近半圈，无法判断是否漏掉整圈；请在这两点之间沿实际曲线补点。": {
     "zh-CN": "相邻曲线点转角接近半圈，无法判断是否漏掉整圈；请在这两点之间沿实际曲线补点。",
-    "en": "Adjacent curve points are nearly half a turn apart, so skipped full turns cannot be determined. Add points along the actual curve between them."
+    "en": "Adjacent curve points are nearly half a turn apart, so skipped full turns cannot be determined. Add points along the actual curve between them.",
+    "zh-TW": "相鄰曲線點轉角接近半圈，無法判斷是否漏掉整圈；請在這兩點之間沿實際曲線補點。",
+    "ja": "隣接する曲線点の転角が半回転に近く、1 回転の欠落を判断できません。この 2 点の間の実際の曲線に沿って点を追加してください。",
+    "tr": "Bitişik eğri noktalarının dönüş açısı neredeyse yarım tur; tam turun atlanıp atlanmadığı belirlenemiyor. Bu iki nokta arasındaki gerçek eğri boyunca nokta ekleyin.",
+    "es": "Los puntos de la curva adyacentes giran casi media vuelta, por lo que no se puede saber si se omite una vuelta completa. Añada puntos a lo largo de la curva real entre esos dos puntos.",
+    "cs": "Sousední body křivky se otáčí skoro o půl otáčky, takže nelze posoudit, zda nebyla vynechána celá otočka; přidejte body podél skutečné křivky mezi nimi."
   },
   "曲线点较多，拟合使用均匀抽取的点；完整顺序仍用于角度展开。": {
     "zh-CN": "曲线点较多，拟合使用均匀抽取的点；完整顺序仍用于角度展开。",
-    "en": "The fit uses an evenly spaced subset of the many curve points. Angle unwrapping still uses the complete sequence."
+    "en": "The fit uses an evenly spaced subset of the many curve points. Angle unwrapping still uses the complete sequence.",
+    "zh-TW": "曲線點較多，擬合使用均勻抽取的點；完整順序仍用於角度展開。",
+    "ja": "曲線点が多いため、フィットには均等に抽出した点を使用します。角度の展開には引き続き完全な順序を使用します。",
+    "tr": "Eğri noktaları çok olduğundan uydurmada eşit aralıklarla seçilmiş noktalar kullanılır; açı açılımında yine tam sıra kullanılır.",
+    "es": "Hay muchos puntos de curva; el ajuste usa puntos extraídos de manera uniforme. La secuencia completa se sigue usando para el desenrollado angular.",
+    "cs": "Body křivky jsou početné, proložení používá rovnoměrně vybrané body; úplné pořadí se stále používá pro rozvinutí úhlu."
   },
   "三次轨距拟合需要至少 12 个不同半径的点且覆盖至少 60% 绘图区；本次保持轨距系数，只拟合内外半径。": {
     "zh-CN": "三次轨距拟合需要至少 12 个不同半径的点且覆盖至少 60% 绘图区；本次保持轨距系数，只拟合内外半径。",
-    "en": "Cubic track-pitch fitting needs at least 12 points at distinct radii covering at least 60% of the drawing region. This fit keeps the pitch coefficients and fits only the inner and outer radii."
+    "en": "Cubic track-pitch fitting needs at least 12 points at distinct radii covering at least 60% of the drawing region. This fit keeps the pitch coefficients and fits only the inner and outer radii.",
+    "zh-TW": "三次軌距擬合需要至少 12 個不同半徑的點，且涵蓋繪圖區至少 60%；本次保持軌距係數，只擬合內外半徑。",
+    "ja": "3 次トラックピッチのフィットには、異なる半径の点が 12 点以上あり、描画領域の 60% 以上をカバーする必要があります。今回はトラックピッチ係数を固定し、内外半径のみをフィットします。",
+    "tr": "Kübik iz aralığı uydurması, farklı yarıçaplarda en az 12 nokta ve çizim bölgesinin en az %60'ını kapsama gerektirir; bu sefer iz aralığı katsayıları sabit tutuldu, yalnızca iç ve dış yarıçaplar uyduruldu.",
+    "es": "El ajuste del paso de pista cúbico necesita al menos 12 puntos en radios distintos y cubrir al menos el 60 % de la zona de dibujo; en esta ocasión se mantienen los coeficientes del paso y solo se ajustan los radios interior y exterior.",
+    "cs": "Kubické proložení rozteče stop potřebuje nejméně 12 bodů na různých poloměrech pokrývajících nejméně 60 % kreslicí oblasti; tentokrát zůstávají koeficienty rozteče pevné a prolažují se jen vnitřní a vnější poloměr."
   },
   "三次轨距没有带来稳定改善，保留原轨距系数；可增加内、中、外圈点位后重试。": {
     "zh-CN": "三次轨距没有带来稳定改善，保留原轨距系数；可增加内、中、外圈点位后重试。",
-    "en": "Cubic track-pitch fitting did not produce a stable improvement, so the original coefficients were retained. Add inner, middle, and outer points and try again."
+    "en": "Cubic track-pitch fitting did not produce a stable improvement, so the original coefficients were retained. Add inner, middle, and outer points and try again.",
+    "zh-TW": "三次軌距沒有帶來穩定改善，保留原軌距係數；可增加內、中、外圈點位後重試。",
+    "ja": "3 次トラックピッチによる安定した改善は得られなかったため、元のトラックピッチ係数を保持します。内側・中央・外側の点を追加してから再試行できます。",
+    "tr": "Kübik iz aralığı kararlı bir iyileştirme sağlamadı; özgün iz aralığı katsayıları korundu. İç, orta ve dış halkalara nokta ekleyip yeniden deneyebilirsiniz.",
+    "es": "El paso de pista cúbico no aportó una mejora estable; se conservan los coeficientes originales. Puede añadir puntos en los anillos interior, central y exterior y reintentar.",
+    "cs": "Kubická rozteč stop nepřinesla stabilní zlepšení; původní koeficienty rozteče zůstávají. Body můžete přidat ve vnitřním, středním i vnějším kruhu a zkusit to znovu."
   },
   "当前点位无法稳定区分三个轨距系数与内外半径，本次保留原轨距系数；请扩大径向覆盖并提高点位精度。": {
     "zh-CN": "当前点位无法稳定区分三个轨距系数与内外半径，本次保留原轨距系数；请扩大径向覆盖并提高点位精度。",
-    "en": "These points cannot reliably distinguish the three pitch coefficients from the inner and outer radii. The original coefficients were retained; extend the radial coverage and improve point accuracy."
+    "en": "These points cannot reliably distinguish the three pitch coefficients from the inner and outer radii. The original coefficients were retained; extend the radial coverage and improve point accuracy.",
+    "zh-TW": "目前點位無法穩定區分三個軌距係數與內外半徑，本次保留原軌距係數；請擴大徑向覆蓋並提高點位精度。",
+    "ja": "現在の点では、3 つのトラックピッチ係数と内外半径を安定して区別できません。今回は元のトラックピッチ係数を保持します。半径方向のカバー範囲を広げ、点の精度を高めてください。",
+    "tr": "Geçerli noktalar üç iz aralığı katsayısını iç ve dış yarıçaplardan güvenilir biçimde ayırt edemiyor; bu sefer özgün iz aralığı katsayıları korundu. Radyal kapsamı genişletin ve nokta doğruluğunu artırın.",
+    "es": "Los puntos actuales no distinguen con estabilidad los tres coeficientes del paso de los radios interior y exterior; en esta ocasión se conservan los coeficientes originales. Amplíe la cobertura radial y mejore la precisión de los puntos.",
+    "cs": "Aktuální body nedokáží stabilně rozlišit tři koeficienty rozteče od vnitřního a vnějšího poloměru; tentokrát zůstávají původní koeficienty. Rozšiřte radiální pokrytí a zvyšte přesnost bodů."
   },
   "已拟合三次轨距；三个形状系数与内外半径可能互相补偿，低残差不表示参数唯一，应用前请核对整条预测曲线。": {
     "zh-CN": "已拟合三次轨距；三个形状系数与内外半径可能互相补偿，低残差不表示参数唯一，应用前请核对整条预测曲线。",
-    "en": "Cubic track pitch was fitted. Its three coefficients and the two radii can compensate for each other, so a low residual does not establish unique parameters. Check the full predicted curve before applying."
+    "en": "Cubic track pitch was fitted. Its three coefficients and the two radii can compensate for each other, so a low residual does not establish unique parameters. Check the full predicted curve before applying.",
+    "zh-TW": "已擬合三次軌距；三個形狀係數與內外半徑可能互相補償，低殘差不表示參數唯一，套用前請核對整條預測曲線。",
+    "ja": "3 次トラックピッチをフィットしました。3 つの形状係数と内外半径は互いに補償し合う可能性があり、残差が小さくてもパラメーターが一意とは限りません。適用前に予測曲線全体を確認してください。",
+    "tr": "Kübik iz aralığı uyduruldu. Üç şekil katsayısı ile iç ve dış yarıçap birbirini telafi edebilir; düşük artık parametrelerin tek olduğunu göstermez. Uygulamadan önce tahmin edilen eğrinin tamamını denetleyin.",
+    "es": "Se ajustó el paso de pista cúbico. Sus tres coeficientes de forma y los radios interior y exterior pueden compensarse, por lo que un residuo bajo no indica parámetros únicos. Compruebe la curva prevista completa antes de aplicar.",
+    "cs": "Kubická rozteč stop byla proložena. Tři koeficienty tvaru a vnitřní či vnější poloměr se mohou vzájemně kompenzovat, takže malá odchylka neznamená jedinečné parametry. Před použitím zkontrolujte celou předpovězenou křivku."
   },
   "轨距系数接近搜索边界，请复核点位，必要时扩大系数搜索范围。": {
     "zh-CN": "轨距系数接近搜索边界，请复核点位，必要时扩大系数搜索范围。",
-    "en": "The pitch coefficients are near a search bound. Check the points and expand the coefficient search range if needed."
+    "en": "The pitch coefficients are near a search bound. Check the points and expand the coefficient search range if needed.",
+    "zh-TW": "軌距係數接近搜尋邊界，請複核點位，必要時擴大係數搜尋範圍。",
+    "ja": "トラックピッチ係数が検索境界付近にあります。点の位置を確認し、必要に応じて係数の検索範囲を広げてください。",
+    "tr": "İz aralığı katsayıları arama sınırına yakın. Noktaları yeniden denetleyin, gerekirse katsayı arama aralığını genişletin.",
+    "es": "Los coeficientes del paso están cerca de un límite de búsqueda. Revise los puntos y, si es necesario, amplíe el intervalo de búsqueda de coeficientes.",
+    "cs": "Koeficienty rozteče jsou blízko meze hledání. Přehleďte polohy bodů a v případě potřeby rozšiřte rozsah hledání koeficientů."
   },
   "搜索半径范围应在 0–5 mm 内，控制点容差应在 0–10 mm 内，轨距系数搜索范围应在 0–10 内。": {
     "zh-CN": "搜索半径范围应在 0–5 mm 内，控制点容差应在 0–10 mm 内，轨距系数搜索范围应在 0–10 内。",
-    "en": "The radius search range must be within 0–5 mm, the control-point tolerance within 0–10 mm, and the pitch-coefficient search range within 0–10."
+    "en": "The radius search range must be within 0–5 mm, the control-point tolerance within 0–10 mm, and the pitch-coefficient search range within 0–10.",
+    "zh-TW": "半徑搜尋範圍應在 0–5 mm 內，控制點容差應在 0–10 mm 內，軌距係數搜尋範圍應在 0–10 內。",
+    "ja": "半径の検索範囲は 0–5 mm 以内、制御点の許容誤差は 0–10 mm 以内、トラックピッチ係数の検索範囲は 0–10 以内にしてください。",
+    "tr": "Yarıçap arama aralığı 0–5 mm içinde, denetim noktası toleransı 0–10 mm içinde ve iz aralığı katsayısı arama aralığı 0–10 içinde olmalıdır.",
+    "es": "El intervalo de búsqueda de radio debe estar entre 0 y 5 mm, la tolerancia de los puntos de control entre 0 y 10 mm y el intervalo de búsqueda de los coeficientes del paso entre 0 y 10.",
+    "cs": "Rozsah hledání poloměru má být do 0–5 mm, tolerance řídicích bodů do 0–10 mm a rozsah hledání koeficientů rozteče do 0–10."
   },
   "至少确认 4 个用于拟合的角点，并选择分布在不同半径的控制块；验证组与未确认角点不参与拟合。": {
     "zh-CN": "至少确认 4 个用于拟合的角点，并选择分布在不同半径的控制块；验证组与未确认角点不参与拟合。",
-    "en": "Confirm at least 4 fitting corners from control blocks at different radii. Validation groups and unconfirmed corners are excluded from fitting."
+    "en": "Confirm at least 4 fitting corners from control blocks at different radii. Validation groups and unconfirmed corners are excluded from fitting.",
+    "zh-TW": "至少確認 4 個用於擬合的角點，並選擇分佈在不同半徑的控制塊；驗證組與未確認角點不參與擬合。",
+    "ja": "フィットに使用する角点を少なくとも 4 つ確認し、異なる半径に分布する制御ブロックを選んでください。検証グループと未確認の角点はフィットに参加しません。",
+    "tr": "Uydurma için en az 4 köşe noktasını onaylayın ve farklı yarıçaplara dağılmış denetim blokları seçin; doğrulama grupları ile onaylanmamış köşeler uydurmaya katılmaz.",
+    "es": "Confirme al menos 4 esquinas para el ajuste y elija bloques de control distribuidos en radios distintos; los grupos de validación y las esquinas sin confirmar no participan en el ajuste.",
+    "cs": "Potvrďte nejméně 4 rohové body pro proložení a vyberte řídicí bloky rozložené po různých poloměrech; validační skupiny a nepotvrzené rohové body se proložení neúčastní."
   },
   "控制点集中在相近半径，无法稳定区分内外半径；请补选靠内圈或外圈的角点。": {
     "zh-CN": "控制点集中在相近半径，无法稳定区分内外半径；请补选靠内圈或外圈的角点。",
-    "en": "The control points are clustered at similar radii and cannot reliably distinguish the inner and outer radii. Add corners closer to the inner or outer edge."
+    "en": "The control points are clustered at similar radii and cannot reliably distinguish the inner and outer radii. Add corners closer to the inner or outer edge.",
+    "zh-TW": "控制點集中在相近半徑，無法穩定區分內外半徑；請補選靠內圈或外圈的角點。",
+    "ja": "制御点が近い半径に集中しており、内半径と外半径を安定して区別できません。内側の輪または外側の輪に近い角点を追加してください。",
+    "tr": "Denetim noktaları yakın yarıçaplarda kümelenmiş; iç ve dış yarıçaplar stabil ayrılamıyor. İç halkaya ya da dış halkaya yakın köşe noktaları ekleyin.",
+    "es": "Los puntos de control están concentrados en radios parecidos y no se pueden separar con estabilidad los radios interior y exterior; añada esquinas junto al anillo interior o al exterior.",
+    "cs": "Řídicí body jsou soustředěné na blízkých poloměrech a nedokáží stabilně rozlišit vnitřní a vnější poloměr; přidejte rohové body u vnitřního nebo vnějšího kruhu."
   },
   "搜索范围内没有有效模型，请检查控制点对应关系或扩大搜索范围。": {
     "zh-CN": "搜索范围内没有有效模型，请检查控制点对应关系或扩大搜索范围。",
-    "en": "No valid model was found in the search range. Check the control-point correspondences or expand the range."
+    "en": "No valid model was found in the search range. Check the control-point correspondences or expand the range.",
+    "zh-TW": "搜尋範圍內沒有有效模型，請檢查控制點對應關係或擴大搜尋範圍。",
+    "ja": "検索範囲内に有効なモデルがありません。制御点の対応関係を確認するか、検索範囲を広げてください。",
+    "tr": "Arama aralığında geçerli bir model yok. Denetim noktalarının eşleşmelerini kontrol edin veya arama aralığını genişletin.",
+    "es": "No hay un modelo válido en el intervalo de búsqueda. Compruebe las correspondencias de los puntos de control o amplíe el intervalo de búsqueda.",
+    "cs": "V rozsahu hledání není žádný platný model. Zkontrolujte odpovídání řídicích bodů nebo rozšiřte rozsah hledání."
   },
   "控制点覆盖的径向范围偏窄，建议补选更靠内、外的角点复核。": {
     "zh-CN": "控制点覆盖的径向范围偏窄，建议补选更靠内、外的角点复核。",
-    "en": "The control points cover a narrow radial range. Add corners farther inward and outward to check the fit."
+    "en": "The control points cover a narrow radial range. Add corners farther inward and outward to check the fit.",
+    "zh-TW": "控制點覆蓋的徑向範圍偏窄，建議補選更靠內、外的角點複核。",
+    "ja": "制御点がカバーする半径方向の範囲が狭めです。より内側と外側の角点を追加して確認することをお勧めします。",
+    "tr": "Denetim noktalarının kapsadığı radyal aralık dar. Daha içteki ve dıştaki köşe noktalarını ekleyerek denetlemeniz önerilir.",
+    "es": "Los puntos de control cubren un intervalo radial estrecho. Se recomienda añadir esquinas más hacia dentro y hacia fuera para comprobarlo.",
+    "cs": "Řídicí body pokrývají úzký radiální rozsah. Doporučujeme přidat rohové body blíž ke středu i k okraji a výsledek ověřit."
   },
   "控制点与预测图形偏差较大，请检查分组与弧片身份、控制点对应关系和显示尺度。": {
     "zh-CN": "控制点与预测图形偏差较大，请检查分组与弧片身份、控制点对应关系和显示尺度。",
-    "en": "The control points differ substantially from the predicted pattern. Check group and arc identities, point correspondences, and display scale."
+    "en": "The control points differ substantially from the predicted pattern. Check group and arc identities, point correspondences, and display scale.",
+    "zh-TW": "控制點與預測圖形偏差較大，請檢查分組與弧片身份、控制點對應關係和顯示尺度。",
+    "ja": "制御点が予測図形と大きくずれています。グループと円弧の識別、制御点の対応関係、表示縮尺を確認してください。",
+    "tr": "Denetim noktaları öngörülen şekilden büyük ölçüde sapıyor. Grup ve yay kimliklerini, denetim noktası eşleşmelerini ve görüntüleme ölçeğini kontrol edin.",
+    "es": "Los puntos de control se desvían bastante de la figura prevista. Compruebe la identidad de grupos y arcos, las correspondencias de los puntos de control y la escala de visualización.",
+    "cs": "Řídicí body se výrazně odchylují od předpovězeného obrazce. Zkontrolujte identitu skupin a oblouků, odpovídání řídicích bodů a měřítko zobrazení."
   },
   "最佳结果靠近搜索边界，建议扩大搜索范围并补充控制点复核。": {
     "zh-CN": "最佳结果靠近搜索边界，建议扩大搜索范围并补充控制点复核。",
-    "en": "The best result is near a search bound. Expand the search range and add control points to check the fit."
+    "en": "The best result is near a search bound. Expand the search range and add control points to check the fit.",
+    "zh-TW": "最佳結果靠近搜尋邊界，建議擴大搜尋範圍並補充控制點複核。",
+    "ja": "最良の結果が検索境界付近にあります。検索範囲を広げ、制御点を追加して確認することをお勧めします。",
+    "tr": "En iyi sonuç arama sınırına yakın. Arama aralığını genişletmeniz ve kontrol için denetim noktaları eklemeniz önerilir.",
+    "es": "El mejor resultado está cerca de un límite de búsqueda. Se recomienda ampliar el intervalo de búsqueda y añadir puntos de control para comprobarlo.",
+    "cs": "Nejlepší výsledek je u meze hledání. Doporučujeme rozšířit rozsah hledání a přidat řídicí body k ověření."
   },
   "存在拟合程度接近的绕圈候选，暂不能唯一确定参数；请在预测差异明显的另一半径补选角点。": {
     "zh-CN": "存在拟合程度接近的绕圈候选，暂不能唯一确定参数；请在预测差异明显的另一半径补选角点。",
-    "en": "Several winding candidates fit similarly, leaving the parameters ambiguous. Add corners at another radius where their predictions differ clearly."
+    "en": "Several winding candidates fit similarly, leaving the parameters ambiguous. Add corners at another radius where their predictions differ clearly.",
+    "zh-TW": "存在擬合程度接近的繞圈候選，暫不能唯一確定參數；請在預測差異明顯的另一半徑補選角點。",
+    "ja": "フィットの程度が近い周回候補が複数あり、パラメーターを一意に確定できません。予測の差がはっきり現れる別の半径で角点を追加してください。",
+    "tr": "Uyum derecesi yakın tur adayları var; parametreler şimdilik tek olarak belirlenemiyor. Tahminlerin belirgin biçimde farklılaştığı başka bir yarıçapta köşe noktası ekleyin.",
+    "es": "Hay candidatos de vueltas con un ajuste parecido y los parámetros aún no se pueden determinar de forma única. Añada esquinas en otro radio donde las previsiones difieran claramente.",
+    "cs": "Existují kandidáti závitů s podobnou kvalitou proložení a parametry zatím nelze určit jednoznačně; přidejte rohové body na jiném poloměru, kde se předpovědi zřetelně liší."
   },
   "搜索范围包含过多绕圈组合，已进行有限多起点搜索；请缩小范围或增加分散的控制点后复核。": {
     "zh-CN": "搜索范围包含过多绕圈组合，已进行有限多起点搜索；请缩小范围或增加分散的控制点后复核。",
-    "en": "The range contains too many winding combinations and was searched from a limited number of starting points. Narrow the range or add well-separated control points and check again."
+    "en": "The range contains too many winding combinations and was searched from a limited number of starting points. Narrow the range or add well-separated control points and check again.",
+    "zh-TW": "搜尋範圍包含過多繞圈組合，已進行有限多起點搜尋；請縮小範圍或增加分散的控制點後複核。",
+    "ja": "検索範囲に周回の組み合わせが多すぎるため、限られた開始点で探索しました。範囲を狭めるか、分散した制御点を追加してから再確認してください。",
+    "tr": "Arama aralığı çok fazla tur bileşimi içeriyor ve sınırlı sayıda başlangıç noktasıyla arama yapıldı; aralığı daraltın veya dağıtılmış denetim noktaları ekleyip yeniden denetleyin.",
+    "es": "El intervalo de búsqueda contiene demasiadas combinaciones de vueltas y solo se buscó desde un número limitado de puntos de partida. Reduzca el intervalo o añada puntos de control dispersos y vuelva a comprobar.",
+    "cs": "Rozsah hledání obsahuje příliš mnoho kombinací závitů a prohledávání proběhlo jen z omezeného počtu výchozích bodů; zúžte rozsah nebo přidejte rozložené řídicí body a znovu zkontrolujte."
   },
   "控制点数量超出限制。": {
     "zh-CN": "控制点数量超出限制。",
-    "en": "The number of control points exceeds the limit."
+    "en": "The number of control points exceeds the limit.",
+    "zh-TW": "控制點數量超出限制。",
+    "ja": "制御点の数が上限を超えています。",
+    "tr": "Denetim noktası sayısı sınırı aşıyor.",
+    "es": "El número de puntos de control supera el límite.",
+    "cs": "Počet řídicích bodů překračuje limit."
   },
   "控制点坐标或权重无效。": {
     "zh-CN": "控制点坐标或权重无效。",
-    "en": "Invalid control-point coordinates or weights."
+    "en": "Invalid control-point coordinates or weights.",
+    "zh-TW": "控制點座標或權重無效。",
+    "ja": "制御点の座標または重みが無効です。",
+    "tr": "Denetim noktası koordinatları veya ağırlıkları geçersiz.",
+    "es": "Las coordenadas o los pesos de los puntos de control no son válidos.",
+    "cs": "Souřadnice nebo váhy řídicích bodů jsou neplatné."
   },
   "同一角点或共享角点不能重复录入。": {
     "zh-CN": "同一角点或共享角点不能重复录入。",
-    "en": "The same corner or a shared corner cannot be entered more than once."
+    "en": "The same corner or a shared corner cannot be entered more than once.",
+    "zh-TW": "同一角點或共享角點不能重複錄入。",
+    "ja": "同じ角点または共有される角点を重複して入力することはできません。",
+    "tr": "Aynı köşe noktası veya paylaşılan köşe noktası birden fazla girilemez.",
+    "es": "La misma esquina o una esquina compartida no se puede registrar más de una vez.",
+    "cs": "Týž rohový bod nebo sdílený rohový bod nelze zadat opakovaně."
   },
   "已自动扩大搜索至 ±{0:0.###} mm。": {
     "zh-CN": "已自动扩大搜索至 ±{0:0.###} mm。",
-    "en": "Search range automatically expanded to ±{0:0.###} mm."
+    "en": "Search range automatically expanded to ±{0:0.###} mm.",
+    "zh-TW": "已自動擴大搜尋至 ±{0:0.###} mm。",
+    "ja": "検索範囲を自動的に ±{0:0.###} mm まで拡大しました。",
+    "tr": "Arama otomatik olarak ±{0:0.###} mm değerine genişletildi.",
+    "es": "Se amplió automáticamente la búsqueda a ±{0:0.###} mm.",
+    "cs": "Hledání se automaticky rozšířilo na ±{0:0.###} mm."
   },
   "已标记 {0} 个偏离较大的点。": {
     "zh-CN": "已标记 {0} 个偏离较大的点。",
-    "en": "Marked {0} points with large deviations."
+    "en": "Marked {0} points with large deviations.",
+    "zh-TW": "已標記 {0} 個偏差較大的點。",
+    "ja": "大きく外れている {0} 点をマークしました。",
+    "tr": "Büyük sapmalı {0} nokta işaretlendi.",
+    "es": "Se han marcado {0} puntos con una desviación grande.",
+    "cs": "Označeno {0} bodů s velkou odchylkou."
   },
   "时钟标尺需要矫正后的正方形照片。": {
     "zh-CN": "时钟标尺需要矫正后的正方形照片。",
-    "en": "The clock scale requires a rectified square photo."
+    "en": "The clock scale requires a rectified square photo.",
+    "zh-TW": "時鐘標尺需要校正後的正方形相片。",
+    "ja": "クロック スケールには補正済みの正方形の写真が必要です。",
+    "tr": "Saat ölçeği, düzeltilmiş kare bir fotoğraf gerektirir.",
+    "es": "La escala de reloj requiere una foto cuadrada rectificada.",
+    "cs": "Hodinová stupnice vyžaduje narovnanou čtvercovou fotografii."
   },
   "扇区校验需要矫正后的正方形照片。": {
     "zh-CN": "扇区校验需要矫正后的正方形照片。",
-    "en": "Sector verification requires a rectified square photo."
+    "en": "Sector verification requires a rectified square photo.",
+    "zh-TW": "磁區校驗需要校正後的正方形相片。",
+    "ja": "セクター検証には補正済みの正方形の写真が必要です。",
+    "tr": "Sektör doğrulaması, düzeltilmiş kare bir fotoğraf gerektirir.",
+    "es": "La verificación de sectores requiere una foto cuadrada rectificada.",
+    "cs": "Ověření sektorů vyžaduje narovnanou čtvercovou fotografii."
   },
   "时钟尺预览是示意图。请从标定页生成 CD 音轨或直接刻录。": {
     "zh-CN": "时钟尺预览是示意图。请从标定页生成 CD 音轨或直接刻录。",
-    "en": "The clock-scale preview is schematic. Generate a CD audio track or burn it directly from the calibration page."
+    "en": "The clock-scale preview is schematic. Generate a CD audio track or burn it directly from the calibration page.",
+    "zh-TW": "時鐘尺預覽是示意圖。請從校準頁產生 CD 音軌或直接燒錄。",
+    "ja": "クロック定規のプレビューは概念図です。校正ページから CD オーディオ トラックを生成するか、直接書き込んでください。",
+    "tr": "Saat cetveli önizlemesi şematiktir. Kalibrasyon sayfasından CD ses izi oluşturun veya doğrudan diske yazın.",
+    "es": "La vista previa de la regla de reloj es esquemática. Genere una pista de audio CD o grábela directamente desde la página de calibración.",
+    "cs": "Náhled hodinového pravítka je pouze schéma. Vygenerujte zvukovou stopu CD na stránce kalibrace nebo ji rovnou vypalte."
   },
   "标定操作": {
     "zh-CN": "标定操作",
-    "en": "Calibration operation"
+    "en": "Calibration operation",
+    "zh-TW": "校準操作",
+    "ja": "校正操作",
+    "tr": "Kalibrasyon işlemi",
+    "es": "Operación de calibración",
+    "cs": "Kalibrační operace"
   },
   "标定轮廓预览": {
     "zh-CN": "标定轮廓预览",
-    "en": "Calibration contour preview"
+    "en": "Calibration contour preview",
+    "zh-TW": "校準輪廓預覽",
+    "ja": "校正輪郭プレビュー",
+    "tr": "Kalibrasyon konturu önizlemesi",
+    "es": "Vista previa del contorno de calibración",
+    "cs": "Náhled kalibrační kontury"
   },
   "预测曲线需要有限、递增且大于零的观测半径区间。": {
     "zh-CN": "预测曲线需要有限、递增且大于零的观测半径区间。",
-    "en": "Curve prediction requires a finite, increasing observed radius range above zero."
+    "en": "Curve prediction requires a finite, increasing observed radius range above zero.",
+    "zh-TW": "預測曲線需要有限、遞增且大於零的觀測半徑區間。",
+    "ja": "曲線の予測には、有限で増加する、ゼロより大きい観測半径の範囲が必要です。",
+    "tr": "Eğri tahmini, sonlu, artan ve sıfırdan büyük gözlenen yarıçap aralığı gerektirir.",
+    "es": "La predicción de la curva requiere un intervalo de radios observados finito, creciente y mayor que cero.",
+    "cs": "Předpověď křivky vyžaduje konečný, rostoucí a kladný rozsah pozorovaných poloměrů."
   },
   "曲线旋转或臂编号无效。": {
     "zh-CN": "曲线旋转或臂编号无效。",
-    "en": "Invalid curve rotation or arm index."
+    "en": "Invalid curve rotation or arm index.",
+    "zh-TW": "曲線旋轉或臂編號無效。",
+    "ja": "曲線の回転または腕の番号が無効です。",
+    "tr": "Eğri döndürmesi veya kol dizini geçersiz.",
+    "es": "La rotación de la curva o el índice del brazo no son válidos.",
+    "cs": "Otočení křivky nebo index ramene je neplatné."
   },
   "该观测半径在当前参数下没有有效的正半径曲线延拓，请检查照片尺度、盘心或参数范围。": {
     "zh-CN": "该观测半径在当前参数下没有有效的正半径曲线延拓，请检查照片尺度、盘心或参数范围。",
-    "en": "The current parameters do not yield a valid positive-radius curve at this observed radius. Check the photo scale, disc center, and parameter range."
+    "en": "The current parameters do not yield a valid positive-radius curve at this observed radius. Check the photo scale, disc center, and parameter range.",
+    "zh-TW": "該觀測半徑在目前參數下沒有有效的正半徑曲線延拓，請檢查相片尺度、盤心或參數範圍。",
+    "ja": "この観測半径では、現在のパラメーターで有効な正の半径の曲線延長が得られません。写真の縮尺、ディスク中心、パラメーター範囲を確認してください。",
+    "tr": "Bu gözlenen yarıçapta geçerli parametrelerle geçerli bir pozitif yarıçaplı eğri uzantısı yok. Fotoğraf ölçeğini, disk merkezini veya parametre aralığını kontrol edin.",
+    "es": "Este radio observado no tiene una prolongación de curva válida de radio positivo con los parámetros actuales. Compruebe la escala de la foto, el centro del disco o el intervalo de parámetros.",
+    "cs": "Pro tento pozorovaný poloměr neexistuje při aktuálních parametrech platná prolongace křivky s kladným poloměrem. Zkontrolujte měřítko fotografie, střed disku nebo rozsah parametrů."
   },
   "完整曲线采样超出点数上限；请缩小预测范围或提高采样上限后再确认形状。": {
     "zh-CN": "完整曲线采样超出点数上限；请缩小预测范围或提高采样上限后再确认形状。",
-    "en": "Full-curve sampling exceeds the point limit. Narrow the prediction range or raise the sampling limit before confirming the shape."
+    "en": "Full-curve sampling exceeds the point limit. Narrow the prediction range or raise the sampling limit before confirming the shape.",
+    "zh-TW": "完整曲線取樣超出點數上限；請縮小預測範圍或提高取樣上限後再確認形狀。",
+    "ja": "曲線全体のサンプリングが点数の上限を超えました。形状を確認する前に、予測範囲を狭めるかサンプリング上限を上げてください。",
+    "tr": "Tam eğrinin örneklenmesi nokta sınırını aşıyor. Şekli onaylamadan önce tahmin aralığını daraltın veya örnekleme sınırını yükseltin.",
+    "es": "El muestreo de la curva completa supera el límite de puntos. Reduzca el intervalo de predicción o aumente el límite de muestreo antes de confirmar la forma.",
+    "cs": "Vzorkování celé křivky překračuje limit bodů. Před potvrzením tvaru zúžte rozsah předpovědi nebo zvýšte limit vzorkování."
   }
 }

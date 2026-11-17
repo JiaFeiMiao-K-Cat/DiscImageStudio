@@ -104,7 +104,7 @@ public partial class BurnViewModel : ObservableObject
             OnPropertyChanged(nameof(CanEditDvdReadCompatibility));
             RefreshDevicesCommand.NotifyCanExecuteChanged();
             RefreshSpeedsCommand.NotifyCanExecuteChanged();
-            StartBurnCommand.NotifyCanExecuteChanged();
+            UpdateActionState();
             CancelBurnCommand.NotifyCanExecuteChanged();
         };
         // The disc family is derived from the burn source (project family, or the calibration
@@ -220,6 +220,20 @@ public partial class BurnViewModel : ObservableObject
             && !_isPreparingBurn
             && SelectedDevice is not null
             && ConfirmChecked;
+
+    /// <summary>Explains the disabled start button on itself: the tooltip names the missing
+    /// precondition instead of leaving a dead button unexplained. Null while enabled.</summary>
+    public string? StartBurnDisabledReason
+    {
+        get
+        {
+            if (_shell.IsBusy) return L.T("已有任务正在运行。");
+            if (_isPreparingBurn) return L.T("正在准备刻录…");
+            if (SelectedDevice is null) return L.T("请先选择刻录机。");
+            if (!ConfirmChecked) return L.T("请先勾选刻录确认。");
+            return null;
+        }
+    }
 
     private void InvalidateConfirmation()
     {
@@ -409,7 +423,11 @@ public partial class BurnViewModel : ObservableObject
         UpdateActionState();
     }
 
-    private void UpdateActionState() => StartBurnCommand.NotifyCanExecuteChanged();
+    private void UpdateActionState()
+    {
+        StartBurnCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(StartBurnDisabledReason));
+    }
 
     internal async Task RefreshDevicesAsync()
     {

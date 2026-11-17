@@ -1018,9 +1018,14 @@ public partial class ShellViewModel : ObservableObject
     }
 
     public void ShowToast(string title, string message, ToastKind kind)
-        => ShowToast(title, message, kind, kind is ToastKind.Error or ToastKind.Warning
-            ? TimeSpan.FromSeconds(6)
-            : TimeSpan.FromSeconds(2));
+        // Errors and warnings often carry multi-line details; they stay visible long enough
+        // to be read, while info notices stay brief.
+        => ShowToast(title, message, kind, kind switch
+        {
+            ToastKind.Error => TimeSpan.FromSeconds(15),
+            ToastKind.Warning => TimeSpan.FromSeconds(10),
+            _ => TimeSpan.FromSeconds(2),
+        });
 
     public void ShowToast(string title, string message, ToastKind kind, TimeSpan timeout)
     {

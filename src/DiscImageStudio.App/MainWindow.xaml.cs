@@ -1,3 +1,4 @@
+using System;
 using DiscImageStudio.Localization;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -104,6 +105,17 @@ public partial class MainWindow : Window
     }
 
     // ---- Snapshot hooks (used by UiPreviewRenderer / CLI ui-snapshot) ----
+
+    /// <summary>Last-resort fault reporting for exceptions that escaped every command's own
+    /// handling: details land in the job log and an error toast, so a discarded task
+    /// exception cannot disappear silently and a dispatcher fault does not kill the process.</summary>
+    internal void ReportUnhandledFault(Exception exception)
+    {
+        _shell.AppendLog(
+            $"[{DateTime.Now:HH:mm:ss}] " + L.T("发生未处理的异常：") + L.Error(exception) + "\n"
+            + exception.StackTrace + "\n");
+        _shell.ShowToast(L.T("发生内部错误"), L.Error(exception), ToastKind.Error);
+    }
 
     internal bool IsLivePreviewReady => _shell.LivePreview.IsLivePreviewReady;
 

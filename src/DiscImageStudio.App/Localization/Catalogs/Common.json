@@ -1,4 +1,49 @@
 {
+  "清空最近工程": {
+    "zh-CN": "清空最近工程",
+    "en": "Clear recent projects",
+    "zh-TW": "清空最近專案",
+    "ja": "最近使ったプロジェクトをクリア",
+    "tr": "Son projeleri temizle",
+    "es": "Vaciar proyectos recientes",
+    "cs": "Vymazat nedávné projekty"
+  },
+  "将移除全部最近工程记录，工程文件不受影响。是否继续？": {
+    "zh-CN": "将移除全部最近工程记录，工程文件不受影响。是否继续？",
+    "en": "This removes every recent-project entry. The project files themselves are not affected. Continue?",
+    "zh-TW": "將移除全部最近專案記錄，專案檔案不受影響。是否繼續？",
+    "ja": "最近使ったプロジェクトの記録をすべて削除します。プロジェクト ファイル自体は影響を受けません。続行しますか？",
+    "tr": "Tüm son proje kayıtları kaldırılır. Proje dosyaları etkilenmez. Devam edilsin mi?",
+    "es": "Se eliminarán todos los registros de proyectos recientes. Los archivos de proyecto no se verán afectados. ¿Continuar?",
+    "cs": "Odstraní všechny záznamy nedávných projektů. Samotné projektové soubory zůstanou nedotčeny. Pokračovat?"
+  },
+  "正在准备刻录…": {
+    "zh-CN": "正在准备刻录…",
+    "en": "Preparing to burn…",
+    "zh-TW": "正在準備燒錄…",
+    "ja": "書き込みを準備しています…",
+    "tr": "Yazma hazırlanıyor…",
+    "es": "Preparando la grabación…",
+    "cs": "Příprava vypalování…"
+  },
+  "发生内部错误": {
+    "zh-CN": "发生内部错误",
+    "en": "Internal error",
+    "zh-TW": "發生內部錯誤",
+    "ja": "内部エラーが発生しました",
+    "tr": "İç hata oluştu",
+    "es": "Error interno",
+    "cs": "Vnitřní chyba"
+  },
+  "发生未处理的异常：": {
+    "zh-CN": "发生未处理的异常：",
+    "en": "Unhandled exception: ",
+    "zh-TW": "發生未處理的例外狀況：",
+    "ja": "未処理の例外が発生しました:",
+    "tr": "İşlenmemiş özel durum oluştu: ",
+    "es": "Excepción no controlada: ",
+    "cs": "Neošetřená výjimka: "
+  },
   "滚轮缩放，右键平移；拖动控制点贴合边缘。": {
     "zh-CN": "滚轮缩放，右键平移；拖动控制点贴合边缘。",
     "en": "Scroll to zoom, right-drag to pan; drag control points to fit the edge.",

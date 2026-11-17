@@ -4,9 +4,17 @@
 
 ### 中文
 
+- 修复两类静默失败：应用宿主捕获调度器未处理异常与未观察的任务异常，写入任务日志并以错误 toast 提示，单个操作失败不再可能直接退出进程；「清空最近工程」现在需要确认，避免一次点击清掉全部记录。
+- 刻录按钮禁用时在按钮上直接说明原因（任务运行中／正在准备／未选刻录机／未勾选确认）；错误与警告 toast 分别停留 15 与 10 秒（原为 6 秒）；「?」帮助提示支持键盘聚焦并在聚焦时显示同一提示，同时写入 `AutomationProperties.HelpText` 供读屏使用。
+- 补齐 7 个本地化目录（标定校验错误、工程校验信息、标定拟合诊断、可用扇区、标定弹窗、工作流、标定介质）缺失的繁体中文、日语、西班牙语、土耳其语与捷克语译文共约 990 条；这些语言在相应页面不再回退到英文。
+
 - DVD 兼容性（实验性）改用 #188 的 WriteSafe，提供三档，启用时默认第 1 档。DVD 导出、流式刻录和新标定靶使用所选档位，已有标定靶和镜像继续识别各自的配方。较强的档位可能降低深色对比度或在区间边缘留下亮度变化。
 
 ### English
+
+- Fix two classes of silent failure: the application host catches unhandled dispatcher exceptions and unobserved task exceptions, writes them to the job log and shows an error toast, so one failing operation can no longer take down the process; clearing the recent-projects list now asks for confirmation.
+- The disabled burn button explains its missing precondition on itself (job running / preparing / no recorder selected / confirmation unchecked); error and warning toasts stay visible for 15 and 10 seconds respectively (previously 6); the "?" help hint is keyboard-focusable, shows the same tooltip on focus and exposes `AutomationProperties.HelpText` for screen readers.
+- Filled about 990 missing Traditional Chinese, Japanese, Spanish, Turkish and Czech translations in seven localization catalogs (calibration validation errors, project validation messages, calibration fit diagnostics, usable sectors, calibration popups, workflows, calibration media); those languages no longer fall back to English on the affected pages.
 
 - DVD compatibility (experimental) now uses WriteSafe from #188 with three selectable levels. Enabling the option defaults to level 1. DVD export, streaming burns and new calibration targets use the selection, while existing targets and images retain their original recipe. Stronger settings can reduce dark-area contrast or leave a brightness change at the zone boundaries.
 
