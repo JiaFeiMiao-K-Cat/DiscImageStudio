@@ -251,6 +251,7 @@ ToneTests.Run();
 TonePreviewTests.Run();
 SaveTrailTests.Run();
 DvdCubicPipelineTests.Run();
+DvdTrackGeometryTests.Run();
 DvdFilePlacementTests.Run();
 HybridDrawingParityTests.Run();
 DvdSimdSamplingTests.Run();
