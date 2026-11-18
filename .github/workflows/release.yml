@@ -163,11 +163,11 @@ jobs:
             '### 下载与运行 / Download and run'
             ''
             'Windows 桌面版请按处理器选择：Intel / AMD x64 使用 win-x64.exe（Windows 10 2004+ / Windows 11 x64）；ARM64 使用 win-arm64.exe（Windows 11 ARM64）。两个版本均内置 .NET 运行时，下载后可直接运行。'
-            '这些便携 EXE 未进行代码签名。即时流式刻录仍为实验性功能；硬件实测范围以仓库验证记录为准。'
+            '这些便携 EXE 未进行 Windows Authenticode 代码签名；启用可选 PGP 签名时，Release 会另行提供分离签名文件。即时流式刻录仍为实验性功能；硬件实测范围以仓库验证记录为准。'
             '**Linux 和 macOS 命令行版为实验性功能。** 按系统和处理器选择自包含的 tar.gz，解压后运行 `./disc-image-studio --help`。macOS 的 arm64 对应 Apple 芯片，x64 对应 Intel。'
             ''
             'Choose the Windows desktop package for your CPU: win-x64.exe for Intel / AMD x64 (Windows 10 2004+ / Windows 11 x64), or win-arm64.exe for ARM64 (Windows 11 ARM64). Both include the .NET runtime and run directly after download.'
-            'These portable EXEs are unsigned. Live streaming burn remains experimental; see the repository validation records for tested hardware coverage.'
+            'These portable EXEs are not Authenticode-signed. Optional detached PGP signatures may be provided as separate release assets. Live streaming burn remains experimental; see the repository validation records for tested hardware coverage.'
             '**The Linux and macOS CLIs are experimental.** Extract the self-contained tar.gz matching your OS and CPU, then run `./disc-image-studio --help` in that directory. On macOS, arm64 is Apple silicon and x64 is Intel.'
             ''
             '### SHA-256'
@@ -226,7 +226,7 @@ jobs:
 
   draft:
     needs: [metadata, package]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: write
@@ -247,6 +247,86 @@ jobs:
         shell: bash
         run: sha256sum --strict --check SHA256SUMS.txt
 
+      - name: Cache sequoia sq
+        uses: actions/cache@v4
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
+        if: ${{ env.SIGN_PRIVATE_KEY != '' }}
+        id: cache_sq
+        with:
+          path: |
+            ./sequoia/bin
+          key: sequoia-sq-binary-cache
+      - name: Build Sequoia SQ with OpenSSL
+        shell: bash
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
+        if: ${{ env.SIGN_PRIVATE_KEY != '' && steps.cache_sq.outputs.cache-hit !='true'}}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang nettle-dev pkg-config libssl-dev capnproto libsqlite3-dev
+          cargo install sequoia-sq \
+            --locked \
+            --no-default-features \
+            --features crypto-openssl \
+            --root "./sequoia"
+      - name: Append sequoia to path
+        shell: bash
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
+        if: ${{ env.SIGN_PRIVATE_KEY != '' }}
+        run: echo "$PWD/sequoia/bin" >> "$GITHUB_PATH"
+      - name: Sign release artifacts
+        shell: bash
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
+        if: ${{ env.SIGN_PRIVATE_KEY != '' }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          trap 'shred -n 32 -u private_key.pgp; echo "Cleaned up private key."' EXIT
+          umask 077
+          ## No PQC support (sequoia pgp with nettle)
+          # sudo apt-get update
+          # sudo apt-get install -y sq
+          printf '%s\n' "$SIGN_PRIVATE_KEY" >private_key.pgp
+          files=(release/*.exe release/*.tar.gz release/SHA256SUMS.txt release/latest.json)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No files found to sign"
+            exit 1
+          fi
+          
+          for file in "${files[@]}"; do
+            # Sign file with sequoia sq
+            sq sign --signer-file private_key.pgp --signature-file="${file}.sig" "${file}"
+          done
+          # Export Public Key
+          sq key delete \
+            --cert-file private_key.pgp \
+            --output release/public_key.asc
+      - name: Verify release artifacts with public key
+        shell: bash
+        env:
+          SIGN_PRIVATE_KEY: ${{ secrets.RELEASE_SIGN_KEY }}
+        if: ${{ env.SIGN_PRIVATE_KEY != '' }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          umask 077
+          files=(release/*.exe release/*.tar.gz release/SHA256SUMS.txt release/latest.json)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No files found to verify"
+            exit 1
+          fi
+          for file in "${files[@]}"; do
+            # Check if file exists 
+            if [ ! -f "${file}.sig" ]; then
+              echo "Signature file doesn't exist"
+              exit 1
+            fi
+            # Verify file with sequoia sq
+            sq verify --signer-file release/public_key.asc --signature-file="${file}.sig" "${file}"
+          done
       - name: Create or refresh draft with all release attachments
         run: |
           # Never replace assets on an already published release.
@@ -280,7 +360,7 @@ jobs:
             throw 'The release tag already points to a different commit. Use a new version.'
           }
 
-          $assets = @(Get-ChildItem -Path 'release/*.exe','release/*.tar.gz' -File | ForEach-Object FullName)
+          $assets = @(Get-ChildItem -Path 'release/*.exe','release/*.tar.gz','release/*.sig','release/*.asc' -File | ForEach-Object FullName)
           $assets += 'release/latest.json'
           $assets += 'release/SHA256SUMS.txt'
           $options = @('--title', "Disc Image Studio $env:RELEASE_TAG", '--notes-file', 'release/release-notes.md')
