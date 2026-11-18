@@ -79,6 +79,9 @@ public partial class LivePreviewViewModel : ObservableObject
     // Failure line of the most recent refresh, kept for the same reason: a switch must
     // re-word the error rather than replace it with the idle hint.
     private string? _livePreviewFailure;
+    // Message the failure toast last carried: refreshes re-run on every parameter
+    // change, so the same broken input must not stack identical notices.
+    private string? _toastedPreviewFailure;
     private string? _calibratedTrackPath;
     private string? _calibratedIsoPath;
     private string? _calibratedBluRayPath;
@@ -621,6 +624,21 @@ public partial class LivePreviewViewModel : ObservableObject
 
         SetLivePreviewFailure(exception);
         _shell.AppendLog(formatLog());
+        ToastPreviewFailureOnce(exception.Message, ToastKind.Warning);
+    }
+
+    /// <summary>The failure also lands on the monitor card's status line, which a user
+    /// watching the picture misses; the toast makes it loud. A new message may toast
+    /// again — a success resets the dedupe so an intermittent breakage stays visible.</summary>
+    private void ToastPreviewFailureOnce(string message, ToastKind kind)
+    {
+        if (_toastedPreviewFailure == message)
+        {
+            return;
+        }
+
+        _toastedPreviewFailure = message;
+        _shell.ShowToast(L.T("实时预览失败"), message, kind);
     }
 
     /// <summary>An input problem detected before rendering starts (missing artifact, invalid
@@ -1299,6 +1317,9 @@ public partial class LivePreviewViewModel : ObservableObject
         _resultTitleKey = titleKey;
         ResultPreviewTitle = L.T(titleKey);
         ResultPreviewPath = Path.GetFileName(inputPath);
+        // A success re-arms the failure toast: an intermittent breakage must be
+        // announced again instead of being silenced by the first notice.
+        _toastedPreviewFailure = null;
         TempFiles.TryDeleteTemporaryFile(previousPath);
     }
 
@@ -1683,7 +1704,7 @@ public partial class LivePreviewViewModel : ObservableObject
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            _shell.ShowToast(L.T("导出失败"), exception.Message, ToastKind.Error);
+            _shell.ShowToast(L.T("导出失败"), L.Error(exception), ToastKind.Error);
             _shell.AppendLog(JobDiagnostics.FormatLog(L.T("导出失败") + " · " + destination, exception));
             return;
         }

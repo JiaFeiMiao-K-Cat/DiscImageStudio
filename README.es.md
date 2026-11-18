@@ -17,7 +17,7 @@ Disc Image Studio es una herramienta multiplataforma de generación y grabación
 
 <a href="https://trendshift.io/repositories/332271?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-332271" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/332271" alt="JiaFeiMiao-K-Cat%2FDiscImageStudio | Trendshift" width="250" height="55"/></a>
 
-<a href="https://discord.gg/7nDs9H3r"><img alt="Únete a la comunidad de Discord de Disc Image Studio" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
+<a href="https://discord.gg/rHkD2g7ufH"><img alt="Únete a la comunidad de Discord de Disc Image Studio" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
 
 </div>
 

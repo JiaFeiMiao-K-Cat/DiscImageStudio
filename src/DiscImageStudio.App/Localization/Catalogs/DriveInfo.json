@@ -252,13 +252,13 @@
     "cs": "Kapacita se počítá v\u00A0sektorech po 2048 bajtech; použitelné sektory jsou limit zápisu aplikace."
   },
   "DriveInfo.ClickToCopy": {
-    "zh-CN": "点击复制",
-    "en": "Click to copy",
-    "zh-TW": "點擊複製",
-    "ja": "クリックしてコピー",
-    "tr": "Kopyalamak için tıklayın",
-    "es": "Clic para copiar",
-    "cs": "Kliknutím zkopírovat"
+    "zh-CN": "点击或按 Enter 复制",
+    "en": "Click or press Enter to copy",
+    "zh-TW": "點擊或按 Enter 複製",
+    "ja": "クリックまたは Enter キーでコピー",
+    "tr": "Kopyalamak için tıklayın veya Enter tuşuna basın",
+    "es": "Haga clic o pulse Intro para copiar",
+    "cs": "Zkopírujte kliknutím nebo stisknutím Enter"
   },
   "DriveInfo.Copied": {
     "zh-CN": "已复制",

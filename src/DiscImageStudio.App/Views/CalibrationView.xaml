@@ -15,7 +15,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <controls:PageHeader Grid.Row="0" Title="{loc:Text Xaml.Calibration2}" Workspace="Calibration"
+        <controls:PageHeader Grid.Row="0" Title="{loc:Text Xaml.Calibration}" Workspace="Calibration"
                              ShowStages="{Binding DataContext.IsProjectMode, RelativeSource={RelativeSource AncestorType=Window}, FallbackValue=False}"
                              Hint="{loc:Text Xaml.UseDiscImageStudioSBuiltInAlgorithmsTo}">
             <controls:PageHeader.Actions>

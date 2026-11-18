@@ -104,7 +104,7 @@ public partial class BurnViewModel : ObservableObject
             OnPropertyChanged(nameof(CanEditDvdReadCompatibility));
             RefreshDevicesCommand.NotifyCanExecuteChanged();
             RefreshSpeedsCommand.NotifyCanExecuteChanged();
-            StartBurnCommand.NotifyCanExecuteChanged();
+            UpdateActionState();
             CancelBurnCommand.NotifyCanExecuteChanged();
         };
         // The disc family is derived from the burn source (project family, or the calibration
@@ -221,6 +221,20 @@ public partial class BurnViewModel : ObservableObject
             && SelectedDevice is not null
             && ConfirmChecked;
 
+    /// <summary>Explains the disabled start button on itself: the tooltip names the missing
+    /// precondition instead of leaving a dead button unexplained. Null while enabled.</summary>
+    public string? StartBurnDisabledReason
+    {
+        get
+        {
+            if (_shell.IsBusy) return L.T("已有任务正在运行。");
+            if (_isPreparingBurn) return L.T("正在准备刻录…");
+            if (SelectedDevice is null) return L.T("请先选择刻录机。");
+            if (!ConfirmChecked) return L.T("请先勾选刻录确认。");
+            return null;
+        }
+    }
+
     private void InvalidateConfirmation()
     {
         _burnPreparationRevision++;
@@ -268,7 +282,7 @@ public partial class BurnViewModel : ObservableObject
             if (target is null)
             {
                 SourceTitle = L.T("尚未创建标定图案");
-                SourceDetails = L.T("请先在辅助标定工作区创建图案，再回到这里刻录。");
+                SourceDetails = L.T("请先在标定工作区创建图案，再回到这里刻录。");
                 identity = "calibration:none";
             }
             else
@@ -368,7 +382,7 @@ public partial class BurnViewModel : ObservableObject
         else if (Devices is { } devices)
         {
             DeviceStatusText = devices.Count == 0
-                ? L.T("未检测到支持 IMAPI2 的 CD/DVD/BD 刻录机。")
+                ? L.T("未检测到可用的光盘刻录机。请连接刻录机后点按「刷新」。")
                 : L.F($"检测到 {devices.Count} 台刻录机");
         }
         else
@@ -409,7 +423,11 @@ public partial class BurnViewModel : ObservableObject
         UpdateActionState();
     }
 
-    private void UpdateActionState() => StartBurnCommand.NotifyCanExecuteChanged();
+    private void UpdateActionState()
+    {
+        StartBurnCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(StartBurnDisabledReason));
+    }
 
     internal async Task RefreshDevicesAsync()
     {
@@ -429,7 +447,7 @@ public partial class BurnViewModel : ObservableObject
             Devices = devices;
             SelectedDevice = devices.Count == 0 ? null : devices[0];
             DeviceStatusText = devices.Count == 0
-                ? L.T("未检测到支持 IMAPI2 的 CD/DVD/BD 刻录机。")
+                ? L.T("未检测到可用的光盘刻录机。请连接刻录机后点按「刷新」。")
                 : L.F($"检测到 {devices.Count} 台刻录机");
         }
         catch (Exception exception)
@@ -577,7 +595,7 @@ public partial class BurnViewModel : ObservableObject
             if (calibration)
             {
                 CalibrationTarget target = _shell.Calibration.Target
-                    ?? throw new ArgumentException(L.T("请先在辅助标定工作区创建图案。"));
+                    ?? throw new ArgumentException(L.T("请先在标定工作区创建图案。"));
                 bool interleave = _shell.Calibration.CdInterleave;
                 if (!_shell.Calibration.EnsureSessionSavedForBurn())
                 {
@@ -794,7 +812,7 @@ public partial class BurnViewModel : ObservableObject
             if (ownsBusyState) _shell.AbortDockJob(L.T("失败：流式刻录"), expandLog: true);
             _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 流式刻录失败：{exception.Message}\n"));
             _shell.AppendLog(OpticalBurnDiagnostics.FormatException(exception) + "\n");
-            _shell.ShowToast(
+            _shell.ShowLogToast(
                 L.T("流式刻录未完成"),
                 L.T("详情见窗口底部的任务日志。") + L.T("\n\n如果写入已经开始，当前盘片可能无法继续使用。"),
                 ToastKind.Error);

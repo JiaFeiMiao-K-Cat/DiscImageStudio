@@ -8,10 +8,11 @@ using System.Windows.Media.Animation;
 
 namespace DiscImageStudio.Controls;
 
-/// <summary>Text that copies itself on click. The hover underline and hand cursor are the
-/// only affordances, so values can be copied without a button reserving layout space. The
-/// hit test also swallows the click: the drive card is itself a button, and copying a value
-/// must not toggle the details flyout.</summary>
+/// <summary>Text that copies itself on click or with Enter/Space once focused. The hover
+/// underline and hand cursor are the only affordances, so values can be copied without a
+/// button reserving layout space; keyboard focus reuses the underline. The hit test also
+/// swallows the click: the drive card is itself a button, and copying a value must not
+/// toggle the details flyout.</summary>
 public partial class CopyableText : UserControl
 {
     public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
@@ -38,14 +39,31 @@ public partial class CopyableText : UserControl
             e.Handled = true;
             Copy();
         };
-        MouseEnter += (_, _) => ValueText.TextDecorations = TextDecorations.Underline;
-        MouseLeave += (_, _) => ValueText.TextDecorations = null;
+        MouseEnter += (_, _) => UpdateUnderline();
+        MouseLeave += (_, _) => UpdateUnderline();
+        GotKeyboardFocus += (_, _) => UpdateUnderline();
+        LostKeyboardFocus += (_, _) => UpdateUnderline();
+        // Enter and Space are the keyboard equivalents of the click; marking the key
+        // handled also stops Space from activating an enclosing button (drive card).
+        KeyDown += (_, e) =>
+        {
+            if (e.Key is Key.Enter or Key.Space)
+            {
+                e.Handled = true;
+                Copy();
+            }
+        };
         Unloaded += (_, _) =>
         {
             CopiedChip.BeginAnimation(OpacityProperty, null);
             CopiedPopup.IsOpen = false;
         };
     }
+
+    private void UpdateUnderline()
+        => ValueText.TextDecorations = IsMouseOver || IsKeyboardFocusWithin
+            ? TextDecorations.Underline
+            : null;
 
     public string Text
     {

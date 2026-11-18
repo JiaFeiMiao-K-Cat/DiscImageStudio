@@ -4,9 +4,29 @@
 
 ### 中文
 
+- 键盘可达性补全：阶段条、标定步骤手风琴、标题栏窗口按钮、侧边栏导航项与返回／工程头按钮现在可以获得键盘焦点；侧边栏项支持 Enter／空格激活；新增 Ctrl+1..5 按侧栏顺序切换工作区（设计／导出／刻录／预览／标定）。
+- 术语统一：标定工作区在侧边栏、页头、阶段条与相关提示中统一为「标定」（原页头作「辅助标定」）；删除 Xaml.Calibration2／ProjectSettings2／FitToWindow2 三个重复文案键。
+- 设置窗口在有未保存修改时关闭会先弹出保存／放弃／取消确认，不再因 Esc 或关闭按钮静默丢弃修改。
+- 修复右上角信息弹窗（toast）无法手动关闭的问题：toast 宿主此前整体命中测试不可见，而 WPF 会把命中测试不可见元素的全部后代强制为不可见，导致关闭按钮收不到点击；现在点击关闭按钮可立即关闭弹窗，不必等待自动过期。
+- 统一键盘焦点指示：新增 FocusRingBrush 令牌与共享焦点环，按钮、复选框、单选框、下拉项、滑杆、侧边栏导航项、阶段条与标题栏按钮在键盘聚焦时显示同一主色圆角环；文本框／下拉框保留自身聚焦光晕并停用系统虚线框，不再混用两套焦点样式。
+
+- 修复两类静默失败：应用宿主捕获调度器未处理异常与未观察的任务异常，写入任务日志并以错误 toast 提示，单个操作失败不再可能直接退出进程；「清空最近工程」现在需要确认，避免一次点击清掉全部记录。
+- 刻录按钮禁用时在按钮上直接说明原因（任务运行中／正在准备／未选刻录机／未勾选确认）；错误与警告 toast 分别停留 15 与 10 秒（原为 6 秒）；「?」帮助提示支持键盘聚焦并在聚焦时显示同一提示，同时写入 `AutomationProperties.HelpText` 供读屏使用。
+- 补齐 7 个本地化目录（标定校验错误、工程校验信息、标定拟合诊断、可用扇区、标定弹窗、工作流、标定介质）缺失的繁体中文、日语、西班牙语、土耳其语与捷克语译文共约 990 条；这些语言在相应页面不再回退到英文。
+
 - DVD 兼容性（实验性）改用 #188 的 WriteSafe，提供三档，启用时默认第 1 档。DVD 导出、流式刻录和新标定靶使用所选档位，已有标定靶和镜像继续识别各自的配方。较强的档位可能降低深色对比度或在区间边缘留下亮度变化。
 
 ### English
+
+- Keyboard accessibility: the stage rail, the calibration step accordion, the title-bar window buttons, the sidebar navigation items and the back/project-header buttons now take keyboard focus; sidebar items activate with Enter/Space; Ctrl+1..5 switches workspaces in sidebar order (design, export, burn, preview, calibration).
+- Terminology: the calibration workspace is now consistently called "Calibration" across the sidebar, page header, stage rail and related hints (the page header previously read "auxiliary calibration"); removed the duplicated Xaml.Calibration2/ProjectSettings2/FitToWindow2 catalog keys.
+- The settings window now shows a save/discard/cancel confirmation before closing with unsaved edits instead of silently discarding them on Escape or the close button.
+- Fixed the top-right toast notifications not being dismissible by hand: the toast host was hit-test-invisible, and WPF forces IsHitTestVisible=false onto every descendant of a hit-test-invisible element, so the close button never received clicks; clicking the close button now dismisses the toast immediately instead of waiting for the timeout.
+- Unified keyboard focus indication: a new FocusRingBrush token and a shared focus ring now appear around buttons, check boxes, radio buttons, combo items, sliders, sidebar navigation items, the stage rail and the title-bar buttons on keyboard focus; text boxes and combo boxes keep their own focus glow and opt out of the system dotted rectangle, so two focus styles no longer mix.
+
+- Fix two classes of silent failure: the application host catches unhandled dispatcher exceptions and unobserved task exceptions, writes them to the job log and shows an error toast, so one failing operation can no longer take down the process; clearing the recent-projects list now asks for confirmation.
+- The disabled burn button explains its missing precondition on itself (job running / preparing / no recorder selected / confirmation unchecked); error and warning toasts stay visible for 15 and 10 seconds respectively (previously 6); the "?" help hint is keyboard-focusable, shows the same tooltip on focus and exposes `AutomationProperties.HelpText` for screen readers.
+- Filled about 990 missing Traditional Chinese, Japanese, Spanish, Turkish and Czech translations in seven localization catalogs (calibration validation errors, project validation messages, calibration fit diagnostics, usable sectors, calibration popups, workflows, calibration media); those languages no longer fall back to English on the affected pages.
 
 - DVD compatibility (experimental) now uses WriteSafe from #188 with three selectable levels. Enabling the option defaults to level 1. DVD export, streaming burns and new calibration targets use the selection, while existing targets and images retain their original recipe. Stronger settings can reduce dark-area contrast or leave a brightness change at the zone boundaries.
 

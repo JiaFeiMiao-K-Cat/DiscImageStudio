@@ -1,22 +1,47 @@
 {
   "两条实体轮廓无法同时吻合：外缘误差 {0:0.##} px，内缘误差 {1:0.##} px。请检查内缘、外缘与盘片尺寸。": {
     "zh-CN": "两条实体轮廓无法同时吻合：外缘误差 {0:0.##} px，内缘误差 {1:0.##} px。请检查内缘、外缘与盘片尺寸。",
-    "en": "The physical edges cannot be fitted together: outer edge error {0:0.##} px, center-hole edge error {1:0.##} px. Check the center-hole edge, outer edge, and disc dimensions."
+    "en": "The physical edges cannot be fitted together: outer edge error {0:0.##} px, center-hole edge error {1:0.##} px. Check the center-hole edge, outer edge, and disc dimensions.",
+    "zh-TW": "兩條實體輪廓無法同時吻合：外緣誤差 {0:0.##} px，內緣誤差 {1:0.##} px。請檢查內緣、外緣與光碟尺寸。",
+    "ja": "2 つの実体輪郭を同時に一致させられません：外縁の誤差 {0:0.##} px、中心穴の縁の誤差 {1:0.##} px。中心穴の縁、外縁、ディスクの寸法を確認してください。",
+    "tr": "Fiziksel kenarlar birlikte eşleştirilemiyor: dış kenar hatası {0:0.##} px, merkez delik kenarı hatası {1:0.##} px. Merkez delik kenarını, dış kenarı ve disk ölçülerini kontrol edin.",
+    "es": "Los bordes físicos no se pueden ajustar a la vez: error del borde exterior {0:0.##} px, error del borde del orificio central {1:0.##} px. Compruebe el orificio central, el borde exterior y las dimensiones del disco.",
+    "cs": "Fyzické okraje nejde společně vyrovnat: chyba vnějšího okraje {0:0.##} px, chyba okraje středového otvoru {1:0.##} px. Zkontrolujte středový otvor, vnější okraj a rozměry disku."
   },
   "已联合校正外缘与内缘。轮廓误差：外缘 {0:0.##} px，内缘 {1:0.##} px。请继续核对两条轮廓。": {
     "zh-CN": "已联合校正外缘与内缘。轮廓误差：外缘 {0:0.##} px，内缘 {1:0.##} px。请继续核对两条轮廓。",
-    "en": "The outer and center-hole edges have been rectified together. Outline errors: outer edge {0:0.##} px, center-hole edge {1:0.##} px. Check both outlines before continuing."
+    "en": "The outer and center-hole edges have been rectified together. Outline errors: outer edge {0:0.##} px, center-hole edge {1:0.##} px. Check both outlines before continuing.",
+    "zh-TW": "已聯合校正外緣與內緣。輪廓誤差：外緣 {0:0.##} px，內緣 {1:0.##} px。請繼續核對兩條輪廓。",
+    "ja": "外縁と中心穴の縁をまとめて補正しました。輪郭の誤差：外縁 {0:0.##} px、中心穴の縁 {1:0.##} px。続行する前に両方の輪郭を確認してください。",
+    "tr": "Dış kenar ve merkez delik kenarı birlikte düzeltildi. Kontur hataları: dış kenar {0:0.##} px, merkez delik kenarı {1:0.##} px. Devam etmeden önce her iki konturu da kontrol edin.",
+    "es": "El borde exterior y el orificio central se han rectificado juntos. Errores del contorno: borde exterior {0:0.##} px, orificio central {1:0.##} px. Compruebe ambos contornos antes de continuar.",
+    "cs": "Vnější okraj a okraj středového otvoru byly narovnány společně. Chyby kontury: vnější okraj {0:0.##} px, středový otvor {1:0.##} px. Před pokračováním zkontrolujte obě kontury."
   },
   "不支持的标定会话版本 {0}。": {
     "zh-CN": "不支持的标定会话版本 {0}。",
-    "en": "Unsupported calibration record version {0}."
+    "en": "Unsupported calibration record version {0}.",
+    "zh-TW": "不支援的校準記錄版本 {0}。",
+    "ja": "対応していないキャリブレーション記録のバージョン {0} です。",
+    "tr": "Desteklenmeyen kalibrasyon kaydı sürümü {0}.",
+    "es": "La versión {0} del registro de calibración no es compatible.",
+    "cs": "Nepodporovaná verze {0} kalibračního záznamu."
   },
   "照片变换必须包含 9 个有限数值。": {
     "zh-CN": "照片变换必须包含 9 个有限数值。",
-    "en": "The photo transform must contain 9 finite numbers."
+    "en": "The photo transform must contain 9 finite numbers.",
+    "zh-TW": "相片變換必須包含 9 個有限數值。",
+    "ja": "写真の変換には 9 個の有限な数値が必要です。",
+    "tr": "Fotoğraf dönüşümü 9 sonlu sayı içermelidir.",
+    "es": "La transformación de la foto debe contener 9 números finitos.",
+    "cs": "Transformace fotografie musí obsahovat 9 konečných čísel."
   },
   "当前标靶没有宽定位环。": {
     "zh-CN": "当前标靶没有宽定位环。",
-    "en": "This target has no wide positioning bands."
+    "en": "This target has no wide positioning bands.",
+    "zh-TW": "此標靶沒有寬定位環。",
+    "ja": "このターゲットには幅広の位置合わせリングがありません。",
+    "tr": "Bu hedefte geniş konumlandırma halkaları yok.",
+    "es": "Este patrón no tiene anillos de posicionamiento anchos.",
+    "cs": "Tento terč nemá široké poziční prstence."
   }
 }

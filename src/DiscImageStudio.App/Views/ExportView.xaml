@@ -25,7 +25,7 @@
                          row carries the jump to its owner. -->
                     <controls:SourceChip Text="{Binding SourceSummary}">
                         <controls:SourceChip.Actions>
-                            <Button Style="{StaticResource CompactButton}" Content="{loc:Text Xaml.ProjectSettings2}"
+                            <Button Style="{StaticResource CompactButton}" Content="{loc:Text Xaml.ProjectSettings}"
                                     Command="{Binding OpenProjectSettingsCommand}"
                                     ToolTip="{loc:Text Xaml.EditGeometryRadiiSectorsAndTrackPitchInProject}" />
                         </controls:SourceChip.Actions>

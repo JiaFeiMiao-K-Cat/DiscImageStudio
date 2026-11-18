@@ -984,7 +984,7 @@ public partial class DesignViewModel : ObservableObject
                     if (!_windowClosed)
                     {
                         _shell.AppendLog(JobDiagnostics.FormatLog(L.T("设计合成失败"), exception));
-                        _shell.ShowToast(L.T("设计合成失败"), exception.Message, ToastKind.Error);
+                        _shell.ShowToast(L.T("设计合成失败"), L.Error(exception), ToastKind.Error);
                     }
                     return;
                 }

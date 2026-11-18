@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -14,7 +15,11 @@ public partial class ConfirmModal : UserControl
     public ConfirmModal()
     {
         InitializeComponent();
-        IsVisibleChanged += (_, args) =>
+        // Initial focus on Cancel — the safe default: Enter on an unexamined dialog
+        // refuses, and Tab walks to Confirm for the deliberate yes. The hook sits on the
+        // Root, not this control: a collapsed child does not change the UserControl's
+        // own IsVisible, so the previous hook never fired and no button ever took focus.
+        Root.IsVisibleChanged += (_, args) =>
         {
             if (args.NewValue is true)
             {
@@ -107,17 +112,54 @@ public partial class ConfirmModal : UserControl
     /// closes so an awaiting command can finish instead of leaking a pending task.
     internal void CancelPending() => Complete(confirmed: null);
 
-    /// Lets the host window route Escape to the open modal; returns false when hidden.
-    /// Escape refuses the burn confirm and cancels the save dialog alike.
-    public bool HandleKeyDown(Key key)
+    /// Routes the modal-facing keys. Escape resolves the dialog (refusal for the burn
+    /// confirm, cancel for the save dialog); Tab cycles focus across the modal's own
+    /// buttons so keyboard users can reach Confirm without wandering into the page
+    /// behind the overlay. Every other key — notably Enter and Space on the focused
+    /// button — falls through to normal routing. Returns true when the key was consumed.
+    public bool HandleKeyDown(Key key, ModifierKeys modifiers = ModifierKeys.None)
     {
         if (_pending is null && _pendingThreeWay is null)
         {
             return false;
         }
 
-        Complete(confirmed: _pendingThreeWay is not null ? null : false);
-        return true;
+        if (key == Key.Escape)
+        {
+            Complete(confirmed: _pendingThreeWay is not null ? null : false);
+            return true;
+        }
+
+        if (key == Key.Tab)
+        {
+            MoveModalFocus(modifiers.HasFlag(ModifierKeys.Shift));
+            return true;
+        }
+
+        return false;
+    }
+
+    /// Cycles keyboard focus across the visible modal buttons only (Cancel, the
+    /// three-way dialog's Discard, Confirm), wrapping at both ends.
+    private void MoveModalFocus(bool backwards)
+    {
+        List<Button> buttons = [CancelButton];
+        if (NeutralButton.Visibility == Visibility.Visible)
+        {
+            buttons.Add(NeutralButton);
+        }
+        buttons.Add(ConfirmButton);
+
+        Button? focused = Keyboard.FocusedElement as Button;
+        int index = focused is null ? -1 : buttons.IndexOf(focused);
+        if (index < 0)
+        {
+            buttons[backwards ? buttons.Count - 1 : 0].Focus();
+            return;
+        }
+
+        int next = (index + (backwards ? -1 : 1) + buttons.Count) % buttons.Count;
+        buttons[next].Focus();
     }
 
     private void Confirm_Click(object sender, RoutedEventArgs e) => Complete(confirmed: true);

@@ -1,210 +1,470 @@
 {
   "工程路径必须包含目录。": {
     "zh-CN": "工程路径必须包含目录。",
-    "en": "The project path must include a directory."
+    "en": "The project path must include a directory.",
+    "zh-TW": "專案路徑必須包含目錄。",
+    "ja": "プロジェクト パスにはディレクトリを含める必要があります。",
+    "tr": "Proje yolu bir dizin içermelidir.",
+    "es": "La ruta del proyecto debe incluir un directorio.",
+    "cs": "Cesta k projektu musí obsahovat adresář."
   },
   "不支持 schemaVersion={0}；当前支持 {1} 与 {2}。": {
     "zh-CN": "不支持 schemaVersion={0}；当前支持 {1} 与 {2}。",
-    "en": "Unsupported schemaVersion={0}; supported versions are {1} and {2}."
+    "en": "Unsupported schemaVersion={0}; supported versions are {1} and {2}.",
+    "zh-TW": "不支援 schemaVersion={0}；目前支援 {1} 與 {2}。",
+    "ja": "schemaVersion={0} はサポートされていません。サポートされているのは {1} と {2} です。",
+    "tr": "schemaVersion={0} desteklenmiyor; desteklenen sürümler {1} ve {2}.",
+    "es": "schemaVersion={0} no compatible; las versiones compatibles son {1} y {2}.",
+    "cs": "Nepodporované schemaVersion={0}; podporované verze jsou {1} a {2}."
   },
   "schemaVersion 1 只包含 CD/DVD 工程，不能声明蓝光字段。": {
     "zh-CN": "schemaVersion 1 只包含 CD/DVD 工程，不能声明蓝光字段。",
-    "en": "schemaVersion 1 supports only CD/DVD projects and cannot include Blu-ray fields."
+    "en": "schemaVersion 1 supports only CD/DVD projects and cannot include Blu-ray fields.",
+    "zh-TW": "schemaVersion 1 只包含 CD/DVD 專案，不能宣告藍光欄位。",
+    "ja": "schemaVersion 1 は CD/DVD プロジェクトのみをサポートし、Blu-ray フィールドを含めることはできません。",
+    "tr": "schemaVersion 1 yalnızca CD/DVD projelerini destekler ve Blu-ray alanları içeremez.",
+    "es": "schemaVersion 1 solo admite proyectos de CD/DVD y no puede incluir campos de Blu-ray.",
+    "cs": "schemaVersion 1 podporuje pouze projekty CD/DVD a nemůže obsahovat pole Blu-ray."
   },
   "bluRay 设置只用于蓝光工程。": {
     "zh-CN": "bluRay 设置只用于蓝光工程。",
-    "en": "bluRay settings are only valid for Blu-ray projects."
+    "en": "bluRay settings are only valid for Blu-ray projects.",
+    "zh-TW": "bluRay 設定只用於藍光專案。",
+    "ja": "bluRay 設定は Blu-ray プロジェクトにのみ使用されます。",
+    "tr": "bluRay ayarları yalnızca Blu-ray projelerinde geçerlidir.",
+    "es": "La configuración bluRay solo se usa en proyectos de Blu-ray.",
+    "cs": "Nastavení bluRay je platné jen pro projekty Blu-ray."
   },
   "工程名不能为空。": {
     "zh-CN": "工程名不能为空。",
-    "en": "The project name cannot be empty."
+    "en": "The project name cannot be empty.",
+    "zh-TW": "專案名稱不能為空。",
+    "ja": "プロジェクト名を空にすることはできません。",
+    "tr": "Proje adı boş olamaz.",
+    "es": "El nombre del proyecto no puede estar vacío.",
+    "cs": "Název projektu nesmí být prázdný."
   },
   "discFamily '{0}' 无效；仅支持 '{1}'、'{2}' 与 '{3}'。": {
     "zh-CN": "discFamily '{0}' 无效；仅支持 '{1}'、'{2}' 与 '{3}'。",
-    "en": "Invalid discFamily '{0}'; only '{1}', '{2}' and '{3}' are supported."
+    "en": "Invalid discFamily '{0}'; only '{1}', '{2}' and '{3}' are supported.",
+    "zh-TW": "discFamily '{0}' 無效；僅支援 '{1}'、'{2}' 與 '{3}'。",
+    "ja": "discFamily '{0}' は無効です。'{1}'、'{2}'、'{3}' のみサポートされています。",
+    "tr": "discFamily '{0}' geçersiz; yalnızca '{1}', '{2}' ve '{3}' desteklenir.",
+    "es": "discFamily '{0}' no válido; solo se admiten '{1}', '{2}' y '{3}'.",
+    "cs": "Neplatné discFamily '{0}'; podporovány jsou jen hodnoty '{1}', '{2}' a '{3}'."
   },
   "geometry 不能为空。": {
     "zh-CN": "geometry 不能为空。",
-    "en": "geometry cannot be null."
+    "en": "geometry cannot be null.",
+    "zh-TW": "geometry 不能為空。",
+    "ja": "geometry を空にすることはできません。",
+    "tr": "geometry boş olamaz.",
+    "es": "geometry no puede estar vacío.",
+    "cs": "geometry nesmí být prázdné."
   },
   "outputs 不能为空。": {
     "zh-CN": "outputs 不能为空。",
-    "en": "outputs cannot be null."
+    "en": "outputs cannot be null.",
+    "zh-TW": "outputs 不能為空。",
+    "ja": "outputs を空にすることはできません。",
+    "tr": "outputs boş olamaz.",
+    "es": "outputs no puede estar vacío.",
+    "cs": "outputs nesmí být prázdné."
   },
   "无法识别的工程字段 '{0}'。": {
     "zh-CN": "无法识别的工程字段 '{0}'。",
-    "en": "Unrecognized project field '{0}'."
+    "en": "Unrecognized project field '{0}'.",
+    "zh-TW": "無法識別的專案欄位 '{0}'。",
+    "ja": "認識できないプロジェクト フィールド '{0}'。",
+    "tr": "Tanınmayan proje alanı '{0}'.",
+    "es": "Campo de proyecto no reconocido '{0}'.",
+    "cs": "Nerozpoznané pole projektu '{0}'."
   },
   "outerRadiusMm 必须大于 innerRadiusMm。": {
     "zh-CN": "outerRadiusMm 必须大于 innerRadiusMm。",
-    "en": "outerRadiusMm must be greater than innerRadiusMm."
+    "en": "outerRadiusMm must be greater than innerRadiusMm.",
+    "zh-TW": "outerRadiusMm 必須大於 innerRadiusMm。",
+    "ja": "outerRadiusMm は innerRadiusMm より大きい必要があります。",
+    "tr": "outerRadiusMm, innerRadiusMm değerinden büyük olmalıdır.",
+    "es": "outerRadiusMm debe ser mayor que innerRadiusMm.",
+    "cs": "outerRadiusMm musí být větší než innerRadiusMm."
   },
   "sectors 必须大于 0。": {
     "zh-CN": "sectors 必须大于 0。",
-    "en": "sectors must be greater than 0."
+    "en": "sectors must be greater than 0.",
+    "zh-TW": "sectors 必須大於 0。",
+    "ja": "sectors は 0 より大きい必要があります。",
+    "tr": "sectors 0'dan büyük olmalıdır.",
+    "es": "sectors debe ser mayor que 0.",
+    "cs": "Počet sektorů (sectors) musí být větší než 0."
   },
   "DVD 的 sectors 必须是 16 的倍数。": {
     "zh-CN": "DVD 的 sectors 必须是 16 的倍数。",
-    "en": "DVD sectors must be a multiple of 16."
+    "en": "DVD sectors must be a multiple of 16.",
+    "zh-TW": "DVD 的 sectors 必須是 16 的倍數。",
+    "ja": "DVD の sectors は 16 の倍数である必要があります。",
+    "tr": "DVD sectors değeri 16'nın katı olmalıdır.",
+    "es": "Los sectores de DVD deben ser múltiplos de 16.",
+    "cs": "Počet sektorů (sectors) DVD musí být násobkem 16."
   },
   "蓝光的 sectors 必须是 32 的倍数。": {
     "zh-CN": "蓝光的 sectors 必须是 32 的倍数。",
-    "en": "Blu-ray sectors must be a multiple of 32."
+    "en": "Blu-ray sectors must be a multiple of 32.",
+    "zh-TW": "藍光的 sectors 必須是 32 的倍數。",
+    "ja": "Blu-ray の sectors は 32 の倍数である必要があります。",
+    "tr": "Blu-ray sectors değeri 32'nin katı olmalıdır.",
+    "es": "Los sectores de Blu-ray deben ser múltiplos de 32.",
+    "cs": "Počet sektorů (sectors) Blu-ray musí být násobkem 32."
   },
   "蓝光 sectors 不能超过单层容量 {0:N0}。": {
     "zh-CN": "蓝光 sectors 不能超过单层容量 {0:N0}。",
-    "en": "Blu-ray sectors cannot exceed the single-layer capacity of {0:N0}."
+    "en": "Blu-ray sectors cannot exceed the single-layer capacity of {0:N0}.",
+    "zh-TW": "藍光 sectors 不能超過單層容量 {0:N0}。",
+    "ja": "Blu-ray の sectors は単層容量 {0:N0} を超えられません。",
+    "tr": "Blu-ray sectors değeri tek katman kapasitesi {0:N0} değerini aşamaz.",
+    "es": "Los sectores de Blu-ray no pueden superar la capacidad de una capa de {0:N0}.",
+    "cs": "Počet sektorů (sectors) Blu-ray nesmí přesáhnout kapacitu jedné vrstvy {0:N0}."
   },
   "轨距系数无效：{0}": {
     "zh-CN": "轨距系数无效：{0}",
-    "en": "Invalid pitch coefficients: {0}"
+    "en": "Invalid pitch coefficients: {0}",
+    "zh-TW": "軌距係數無效：{0}",
+    "ja": "トラックピッチ係数が無効です：{0}",
+    "tr": "Geçersiz iz aralığı katsayıları: {0}",
+    "es": "Coeficientes de paso no válidos: {0}",
+    "cs": "Neplatné koeficienty rozteče: {0}"
   },
   "layers 不能为空。": {
     "zh-CN": "layers 不能为空。",
-    "en": "layers cannot be null."
+    "en": "layers cannot be null.",
+    "zh-TW": "layers 不能為空。",
+    "ja": "layers を空にすることはできません。",
+    "tr": "layers boş olamaz.",
+    "es": "layers no puede estar vacío.",
+    "cs": "Seznam vrstev (layers) nesmí být prázdný."
   },
   "图层不能是 null。": {
     "zh-CN": "图层不能是 null。",
-    "en": "A layer cannot be null."
+    "en": "A layer cannot be null.",
+    "zh-TW": "圖層不能是 null。",
+    "ja": "レイヤーを null にすることはできません。",
+    "tr": "Katman null olamaz.",
+    "es": "Una capa no puede ser null.",
+    "cs": "Vrstva nemůže být null."
   },
   "图层 id '{0}' 为空或重复。": {
     "zh-CN": "图层 id '{0}' 为空或重复。",
-    "en": "Layer id '{0}' is empty or duplicated."
+    "en": "Layer id '{0}' is empty or duplicated.",
+    "zh-TW": "圖層 id '{0}' 為空或重複。",
+    "ja": "レイヤー id '{0}' が空か重複しています。",
+    "tr": "Katman id '{0}' boş veya yinelenmiş.",
+    "es": "El id '{0}' de la capa está vacío o duplicado.",
+    "cs": "Id vrstvy '{0}' je prázdné nebo duplicitní."
   },
   "图层 '{0}' 的 name 不能为空。": {
     "zh-CN": "图层 '{0}' 的 name 不能为空。",
-    "en": "Layer '{0}' name cannot be empty."
+    "en": "Layer '{0}' name cannot be empty.",
+    "zh-TW": "圖層 '{0}' 的 name 不能為空。",
+    "ja": "レイヤー '{0}' の name を空にすることはできません。",
+    "tr": "Katman '{0}' name değeri boş olamaz.",
+    "es": "El name de la capa '{0}' no puede estar vacío.",
+    "cs": "Název vrstvy '{0}' nesmí být prázdný."
   },
   "图层 '{0}' 的 imagePath 不能为空。": {
     "zh-CN": "图层 '{0}' 的 imagePath 不能为空。",
-    "en": "Layer '{0}' imagePath cannot be empty."
+    "en": "Layer '{0}' imagePath cannot be empty.",
+    "zh-TW": "圖層 '{0}' 的 imagePath 不能為空。",
+    "ja": "レイヤー '{0}' の imagePath を空にすることはできません。",
+    "tr": "Katman '{0}' imagePath değeri boş olamaz.",
+    "es": "El imagePath de la capa '{0}' no puede estar vacío.",
+    "cs": "imagePath vrstvy '{0}' nesmí být prázdný."
   },
   "图层 '{0}' 的 translateXMm": {
     "zh-CN": "图层 '{0}' 的 translateXMm",
-    "en": "Layer '{0}' translateXMm"
+    "en": "Layer '{0}' translateXMm",
+    "zh-TW": "圖層 '{0}' 的 translateXMm",
+    "ja": "レイヤー '{0}' の translateXMm",
+    "tr": "Katman '{0}' translateXMm",
+    "es": "translateXMm de la capa '{0}'",
+    "cs": "translateXMm vrstvy '{0}'"
   },
   "图层 '{0}' 的 translateYMm": {
     "zh-CN": "图层 '{0}' 的 translateYMm",
-    "en": "Layer '{0}' translateYMm"
+    "en": "Layer '{0}' translateYMm",
+    "zh-TW": "圖層 '{0}' 的 translateYMm",
+    "ja": "レイヤー '{0}' の translateYMm",
+    "tr": "Katman '{0}' translateYMm",
+    "es": "translateYMm de la capa '{0}'",
+    "cs": "translateYMm vrstvy '{0}'"
   },
   "图层 '{0}' 的 rotationDeg": {
     "zh-CN": "图层 '{0}' 的 rotationDeg",
-    "en": "Layer '{0}' rotationDeg"
+    "en": "Layer '{0}' rotationDeg",
+    "zh-TW": "圖層 '{0}' 的 rotationDeg",
+    "ja": "レイヤー '{0}' の rotationDeg",
+    "tr": "Katman '{0}' rotationDeg",
+    "es": "rotationDeg de la capa '{0}'",
+    "cs": "rotationDeg vrstvy '{0}'"
   },
   "图层 '{0}' 的 scale 必须是大于 0 的有限数值。": {
     "zh-CN": "图层 '{0}' 的 scale 必须是大于 0 的有限数值。",
-    "en": "Layer '{0}' scale must be a finite number greater than 0."
+    "en": "Layer '{0}' scale must be a finite number greater than 0.",
+    "zh-TW": "圖層 '{0}' 的 scale 必須是大於 0 的有限數值。",
+    "ja": "レイヤー '{0}' の scale は 0 より大きい有限な数値である必要があります。",
+    "tr": "Katman '{0}' scale değeri 0'dan büyük sonlu bir sayı olmalıdır.",
+    "es": "El scale de la capa '{0}' debe ser un número finito mayor que 0.",
+    "cs": "Měřítko (scale) vrstvy '{0}' musí být konečné číslo větší než 0."
   },
   "outputs.outputPath 不能为空。": {
     "zh-CN": "outputs.outputPath 不能为空。",
-    "en": "outputs.outputPath cannot be empty."
+    "en": "outputs.outputPath cannot be empty.",
+    "zh-TW": "outputs.outputPath 不能為空。",
+    "ja": "outputs.outputPath を空にすることはできません。",
+    "tr": "outputs.outputPath boş olamaz.",
+    "es": "outputs.outputPath no puede estar vacío.",
+    "cs": "outputs.outputPath nesmí být prázdný."
   },
   "thumbnailPngBase64 长度超出允许范围。": {
     "zh-CN": "thumbnailPngBase64 长度超出允许范围。",
-    "en": "thumbnailPngBase64 length is outside the allowed range."
+    "en": "thumbnailPngBase64 length is outside the allowed range.",
+    "zh-TW": "thumbnailPngBase64 長度超出允許範圍。",
+    "ja": "thumbnailPngBase64 の長さが許容範囲を超えています。",
+    "tr": "thumbnailPngBase64 uzunluğu izin verilen aralığın dışında.",
+    "es": "La longitud de thumbnailPngBase64 está fuera del intervalo permitido.",
+    "cs": "Délka thumbnailPngBase64 je mimo povolený rozsah."
   },
   "thumbnailPngBase64 不是有效的 Base64。": {
     "zh-CN": "thumbnailPngBase64 不是有效的 Base64。",
-    "en": "thumbnailPngBase64 is not valid Base64."
+    "en": "thumbnailPngBase64 is not valid Base64.",
+    "zh-TW": "thumbnailPngBase64 不是有效的 Base64。",
+    "ja": "thumbnailPngBase64 は有効な Base64 ではありません。",
+    "tr": "thumbnailPngBase64 geçerli bir Base64 değil.",
+    "es": "thumbnailPngBase64 no es un Base64 válido.",
+    "cs": "thumbnailPngBase64 není platný Base64."
   },
   "{0} 不能为空。": {
     "zh-CN": "{0} 不能为空。",
-    "en": "{0} cannot be empty."
+    "en": "{0} cannot be empty.",
+    "zh-TW": "{0} 不能為空。",
+    "ja": "{0} を空にすることはできません。",
+    "tr": "{0} boş olamaz.",
+    "es": "{0} no puede estar vacío.",
+    "cs": "{0} nesmí být prázdné."
   },
   "{0} 格式有误（第 {1} 行，第 {2} 列）：{3}": {
     "zh-CN": "{0} 格式有误（第 {1} 行，第 {2} 列）：{3}",
-    "en": "Invalid format in {0} (line {1}, column {2}): {3}"
+    "en": "Invalid format in {0} (line {1}, column {2}): {3}",
+    "zh-TW": "{0} 格式有誤（第 {1} 行，第 {2} 欄）：{3}",
+    "ja": "{0} の形式が正しくありません（{1} 行、{2} 列）：{3}",
+    "tr": "{0} biçimi hatalı ({1}. satır, {2}. sütun): {3}",
+    "es": "Formato no válido en {0} (línea {1}, columna {2}): {3}",
+    "cs": "Neplatný formát v {0} (řádek {1}, sloupec {2}): {3}"
   },
   "{0} 必须是大于 0 的有限数值。": {
     "zh-CN": "{0} 必须是大于 0 的有限数值。",
-    "en": "{0} must be a finite number greater than 0."
+    "en": "{0} must be a finite number greater than 0.",
+    "zh-TW": "{0} 必須是大於 0 的有限數值。",
+    "ja": "{0} は 0 より大きい有限な数値である必要があります。",
+    "tr": "{0} 0'dan büyük sonlu bir sayı olmalıdır.",
+    "es": "{0} debe ser un número finito mayor que 0.",
+    "cs": "{0} musí být konečné číslo větší než 0."
   },
   "{0} 必须是有限数值。": {
     "zh-CN": "{0} 必须是有限数值。",
-    "en": "{0} must be a finite number."
+    "en": "{0} must be a finite number.",
+    "zh-TW": "{0} 必須是有限數值。",
+    "ja": "{0} は有限な数値である必要があります。",
+    "tr": "{0} sonlu bir sayı olmalıdır.",
+    "es": "{0} debe ser un número finito.",
+    "cs": "{0} musí být konečné číslo."
   },
   "程序缺少内置盘片预设资源。": {
     "zh-CN": "程序缺少内置盘片预设资源。",
-    "en": "The built-in disc preset resource is missing from the application."
+    "en": "The built-in disc preset resource is missing from the application.",
+    "zh-TW": "程式缺少內建光碟預設資源。",
+    "ja": "アプリケーションに内蔵ディスク プリセット リソースがありません。",
+    "tr": "Uygulamada yerleşik disk önayarı kaynağı eksik.",
+    "es": "Falta el recurso de preajustes de disco integrado en la aplicación.",
+    "cs": "V aplikaci chybí vestavěný prostředek pro předvolby disků."
   },
   "内置盘片预设": {
     "zh-CN": "内置盘片预设",
-    "en": "Built-in disc presets"
+    "en": "Built-in disc presets",
+    "zh-TW": "內建光碟預設",
+    "ja": "内蔵ディスク プリセット",
+    "tr": "Yerleşik disk önayarları",
+    "es": "Preajustes de disco integrados",
+    "cs": "Vestavěné předvolby disků"
   },
   "预设 JSON 路径必须包含目录。": {
     "zh-CN": "预设 JSON 路径必须包含目录。",
-    "en": "The preset JSON path must include a directory."
+    "en": "The preset JSON path must include a directory.",
+    "zh-TW": "預設 JSON 路徑必須包含目錄。",
+    "ja": "プリセット JSON パスにはディレクトリを含める必要があります。",
+    "tr": "Önayar JSON yolu bir dizin içermelidir.",
+    "es": "La ruta JSON de los preajustes debe incluir un directorio.",
+    "cs": "Cesta k souboru JSON s předvolbami musí obsahovat adresář."
   },
   "不支持 schemaVersion={0}；当前支持 {1}、{2} 与 {3}。请把顶层 schemaVersion 改为受支持的值，或删除该文件让程序重新生成分层配置模板。": {
     "zh-CN": "不支持 schemaVersion={0}；当前支持 {1}、{2} 与 {3}。请把顶层 schemaVersion 改为受支持的值，或删除该文件让程序重新生成分层配置模板。",
-    "en": "Unsupported schemaVersion={0}; supported versions are {1}, {2} and {3}. Change the top-level schemaVersion to a supported value, or delete this file so the application can regenerate the layered configuration template."
+    "en": "Unsupported schemaVersion={0}; supported versions are {1}, {2} and {3}. Change the top-level schemaVersion to a supported value, or delete this file so the application can regenerate the layered configuration template.",
+    "zh-TW": "不支援 schemaVersion={0}；目前支援 {1}、{2} 與 {3}。請把頂層 schemaVersion 改為受支援的值，或刪除該檔案讓程式重新產生分層設定範本。",
+    "ja": "schemaVersion={0} はサポートされていません。サポートされているのは {1}、{2}、{3} です。最上位の schemaVersion をサポートされる値に変更するか、このファイルを削除してアプリケーションに階層型設定テンプレートを再生成させてください。",
+    "tr": "schemaVersion={0} desteklenmiyor; desteklenen sürümler {1}, {2} ve {3}. Üst düzey schemaVersion değerini desteklenen bir değerle değiştirin veya uygulamanın katmanlı yapılandırma şablonunu yeniden oluşturması için bu dosyayı silin.",
+    "es": "schemaVersion={0} no compatible; las versiones compatibles son {1}, {2} y {3}. Cambie el schemaVersion de nivel superior por un valor compatible o elimine este archivo para que la aplicación vuelva a generar la plantilla de configuración por capas.",
+    "cs": "Nepodporované schemaVersion={0}; podporované verze jsou {1}, {2} a {3}. Změňte schemaVersion na nejvyšší úrovni na podporovanou hodnotu, nebo tento soubor odstraňte, aby aplikace mohla znovu vygenerovat šablonu vrstvené konfigurace."
   },
   "schemaVersion 4 必须包含 bluRayPresets 列表。": {
     "zh-CN": "schemaVersion 4 必须包含 bluRayPresets 列表。",
-    "en": "schemaVersion 4 must include a bluRayPresets list."
+    "en": "schemaVersion 4 must include a bluRayPresets list.",
+    "zh-TW": "schemaVersion 4 必須包含 bluRayPresets 清單。",
+    "ja": "schemaVersion 4 には bluRayPresets リストが必要です。",
+    "tr": "schemaVersion 4 bir bluRayPresets listesi içermelidir.",
+    "es": "schemaVersion 4 debe incluir una lista bluRayPresets.",
+    "cs": "schemaVersion 4 musí obsahovat seznam bluRayPresets."
   },
   "cdPresets 不能为空。": {
     "zh-CN": "cdPresets 不能为空。",
-    "en": "cdPresets cannot be null."
+    "en": "cdPresets cannot be null.",
+    "zh-TW": "cdPresets 不能為空。",
+    "ja": "cdPresets を空にすることはできません。",
+    "tr": "cdPresets boş olamaz.",
+    "es": "cdPresets no puede estar vacío.",
+    "cs": "cdPresets nesmí být prázdné."
   },
   "dvdPresets 不能为空。": {
     "zh-CN": "dvdPresets 不能为空。",
-    "en": "dvdPresets cannot be null."
+    "en": "dvdPresets cannot be null.",
+    "zh-TW": "dvdPresets 不能為空。",
+    "ja": "dvdPresets を空にすることはできません。",
+    "tr": "dvdPresets boş olamaz.",
+    "es": "dvdPresets no puede estar vacío.",
+    "cs": "dvdPresets nesmí být prázdné."
   },
   "CD 预设不能是 null。": {
     "zh-CN": "CD 预设不能是 null。",
-    "en": "A CD preset cannot be null."
+    "en": "A CD preset cannot be null.",
+    "zh-TW": "CD 預設不能是 null。",
+    "ja": "CD プリセットを null にすることはできません。",
+    "tr": "CD önayarı null olamaz.",
+    "es": "Un preajuste de CD no puede ser null.",
+    "cs": "Předvolba CD nemůže být null."
   },
   "DVD 预设不能是 null。": {
     "zh-CN": "DVD 预设不能是 null。",
-    "en": "A DVD preset cannot be null."
+    "en": "A DVD preset cannot be null.",
+    "zh-TW": "DVD 預設不能是 null。",
+    "ja": "DVD プリセットを null にすることはできません。",
+    "tr": "DVD önayarı null olamaz.",
+    "es": "Un preajuste de DVD no puede ser null.",
+    "cs": "Předvolba DVD nemůže být null."
   },
   "蓝光预设不能是 null。": {
     "zh-CN": "蓝光预设不能是 null。",
-    "en": "A Blu-ray preset cannot be null."
+    "en": "A Blu-ray preset cannot be null.",
+    "zh-TW": "藍光預設不能是 null。",
+    "ja": "Blu-ray プリセットを null にすることはできません。",
+    "tr": "Blu-ray önayarı null olamaz.",
+    "es": "Un preajuste de Blu-ray no puede ser null.",
+    "cs": "Předvolba Blu-ray nemůže být null."
   },
   "{0} 预设 id '{1}' 重复。": {
     "zh-CN": "{0} 预设 id '{1}' 重复。",
-    "en": "Duplicate {0} preset id '{1}'."
+    "en": "Duplicate {0} preset id '{1}'.",
+    "zh-TW": "{0} 預設 id '{1}' 重複。",
+    "ja": "{0} プリセット id '{1}' が重複しています。",
+    "tr": "{0} önayarında id '{1}' yineleniyor.",
+    "es": "Id '{1}' duplicado en el preajuste {0}.",
+    "cs": "Duplicitní id '{1}' předvolby {0}."
   },
   "{0} 预设 id '__manual__' 由界面的未保存状态保留，请换一个 id。": {
     "zh-CN": "{0} 预设 id '__manual__' 由界面的未保存状态保留，请换一个 id。",
-    "en": "The {0} preset id '__manual__' is reserved for unsaved settings in the UI. Choose another id."
+    "en": "The {0} preset id '__manual__' is reserved for unsaved settings in the UI. Choose another id.",
+    "zh-TW": "{0} 預設 id '__manual__' 由介面的未儲存狀態保留，請換一個 id。",
+    "ja": "{0} プリセット id '__manual__' は UI の未保存状態のために予約されています。別の id を指定してください。",
+    "tr": "{0} önayarının id '__manual__' değeri, arayüzdeki kaydedilmemiş ayarlar için ayrılmıştır. Başka bir id seçin.",
+    "es": "El id '__manual__' del preajuste {0} está reservado para el estado sin guardar de la interfaz. Elija otro id.",
+    "cs": "Id '__manual__' předvolby {0} je vyhrazeno pro neuložené nastavení v rozhraní. Zvolte jiné id."
   },
   "预设 '{0}' 的轨距系数无效：{1}": {
     "zh-CN": "预设 '{0}' 的轨距系数无效：{1}",
-    "en": "Preset '{0}' has invalid pitch coefficients: {1}"
+    "en": "Preset '{0}' has invalid pitch coefficients: {1}",
+    "zh-TW": "預設 '{0}' 的軌距係數無效：{1}",
+    "ja": "プリセット '{0}' のトラックピッチ係数が無効です：{1}",
+    "tr": "'{0}' önayarının iz aralığı katsayıları geçersiz: {1}",
+    "es": "El preajuste '{0}' tiene coeficientes de paso no válidos: {1}",
+    "cs": "Předvolba '{0}' má neplatné koeficienty rozteče: {1}"
   },
   "预设 '{0}' 的 {1} {2}。": {
     "zh-CN": "预设 '{0}' 的 {1} {2}。",
-    "en": "Preset '{0}' {1} {2}."
+    "en": "Preset '{0}' {1} {2}.",
+    "zh-TW": "預設 '{0}' 的 {1} {2}。",
+    "ja": "プリセット '{0}' の {1} は、{2}。",
+    "tr": "'{0}' önayarının {1} değeri {2}.",
+    "es": "El campo {1} del preajuste '{0}' {2}.",
+    "cs": "Pole {1} předvolby '{0}' {2}."
   },
   "必须大于 0": {
     "zh-CN": "必须大于 0",
-    "en": "must be greater than 0"
+    "en": "must be greater than 0",
+    "zh-TW": "必須大於 0",
+    "ja": "0 より大きい必要があります",
+    "tr": "0'dan büyük olmalı",
+    "es": "debe ser mayor que 0",
+    "cs": "musí být větší než 0"
   },
   "必须是 16 的倍数": {
     "zh-CN": "必须是 16 的倍数",
-    "en": "must be a multiple of 16"
+    "en": "must be a multiple of 16",
+    "zh-TW": "必須是 16 的倍數",
+    "ja": "16 の倍数である必要があります",
+    "tr": "16'nın katı olmalı",
+    "es": "debe ser un múltiplo de 16",
+    "cs": "musí být násobkem 16"
   },
   "必须是 32 的倍数且不超过 {0:N0}": {
     "zh-CN": "必须是 32 的倍数且不超过 {0:N0}",
-    "en": "must be a multiple of 32 and no greater than {0:N0}"
+    "en": "must be a multiple of 32 and no greater than {0:N0}",
+    "zh-TW": "必須是 32 的倍數且不超過 {0:N0}",
+    "ja": "32 の倍数で、{0:N0} を超えない必要があります",
+    "tr": "32'nin katı olmalı ve {0:N0} değerini aşmamalı",
+    "es": "debe ser un múltiplo de 32 y no superar {0:N0}",
+    "cs": "musí být násobkem 32 a nesmí přesáhnout {0:N0}"
   },
   "不能超过 60": {
     "zh-CN": "不能超过 60",
-    "en": "must not exceed 60"
+    "en": "must not exceed 60",
+    "zh-TW": "不能超過 60",
+    "ja": "60 を超えてはいけません",
+    "tr": "60'u aşmamalı",
+    "es": "no debe superar 60",
+    "cs": "nesmí přesáhnout 60"
   },
   "不能为空": {
     "zh-CN": "不能为空",
-    "en": "cannot be empty"
+    "en": "cannot be empty",
+    "zh-TW": "不能為空",
+    "ja": "空にできません",
+    "tr": "boş olamaz",
+    "es": "no puede estar vacío",
+    "cs": "nesmí být prázdné"
   },
   "必须大于 innerRadiusMm": {
     "zh-CN": "必须大于 innerRadiusMm",
-    "en": "must be greater than innerRadiusMm"
+    "en": "must be greater than innerRadiusMm",
+    "zh-TW": "必須大於 innerRadiusMm",
+    "ja": "innerRadiusMm より大きい必要があります",
+    "tr": "innerRadiusMm değerinden büyük olmalı",
+    "es": "debe ser mayor que innerRadiusMm",
+    "cs": "musí být větší než innerRadiusMm"
   },
   "必须是大于 0 的有限数值": {
     "zh-CN": "必须是大于 0 的有限数值",
-    "en": "must be a finite number greater than 0"
+    "en": "must be a finite number greater than 0",
+    "zh-TW": "必須是大於 0 的有限數值",
+    "ja": "0 より大きい有限な数値である必要があります",
+    "tr": "0'dan büyük sonlu bir sayı olmalı",
+    "es": "debe ser un número finito mayor que 0",
+    "cs": "musí být konečné číslo větší než 0"
   }
 }

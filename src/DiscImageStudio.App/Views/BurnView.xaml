@@ -115,8 +115,12 @@
                               IsChecked="{Binding ConfirmChecked}" Margin="0,14,0,0"
                               IsEnabled="{Binding IsSetupEnabled}" />
                     <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                        <!-- The disabled button names its missing precondition (device,
+                             confirmation, running job) instead of staying silent. -->
                         <Button Style="{StaticResource DangerButton}" Content="{loc:Text Xaml.StartStreamingBurn}"
-                                Command="{Binding StartBurnCommand}" Margin="0,0,10,0" />
+                                Command="{Binding StartBurnCommand}" Margin="0,0,10,0"
+                                ToolTipService.ShowOnDisabled="True"
+                                ToolTip="{Binding StartBurnDisabledReason}" />
                         <Button Style="{StaticResource SecondaryButton}" Content="{loc:Text Xaml.CancelBurn}"
                                 Command="{Binding CancelBurnCommand}" />
                     </StackPanel>

@@ -1,4 +1,13 @@
 {
+  "实时预览失败": {
+    "zh-CN": "实时预览失败",
+    "en": "Live preview failed",
+    "zh-TW": "即時預覽失敗",
+    "ja": "ライブ プレビューに失敗しました",
+    "tr": "Canlı önizleme başarısız",
+    "es": "Falló la vista previa en directo",
+    "cs": "Živý náhled selhal"
+  },
   "\n\n如果写入已经开始，当前盘片可能无法继续使用。": {
     "zh-CN": "\n\n如果写入已经开始，当前盘片可能无法继续使用。",
     "en": "\n\nIf writing has started, the disc may no longer be usable.",
@@ -632,27 +641,47 @@
   "擦除已有数据前会另行确认。开始后取消或断电可能使盘片报废。是否继续？": {
     "zh-CN": "擦除已有数据前会另行确认。开始后取消或断电可能使盘片报废。是否继续？",
     "en": "You will be asked again before existing data is erased. Canceling or losing power after recording starts may render the disc unusable. Continue?",
-    "zh-TW": "抹除現有資料前會另行確認。開始後取消或斷電可能使光碟報廢。是否繼續？"
+    "zh-TW": "抹除現有資料前會另行確認。開始後取消或斷電可能使光碟報廢。是否繼續？",
+    "ja": "既存データを消去する前に、改めて確認が表示されます。書き込み開始後にキャンセルしたり電源が切れたりすると、ディスクが使用できなくなる可能性があります。続行しますか？",
+    "tr": "Mevcut veriler silinmeden önce ayrıca onay istenecek. Yazma başladıktan sonra iptal etmek veya güç kesintisi diski kullanılamaz hale getirebilir. Devam edilsin mi?",
+    "es": "Se volverá a preguntar antes de borrar los datos existentes. Cancelar o perder la alimentación tras comenzar la grabación puede inutilizar el disco. ¿Continuar?",
+    "cs": "Před smazáním stávajících dat se ještě jednou zeptáme. Zrušení nebo výpadek napájení po zahájení vypalování může disk zničit. Pokračovat?"
   },
   "确认清除盘片数据": {
     "zh-CN": "确认清除盘片数据",
     "en": "Confirm loss of disc data",
-    "zh-TW": "確認清除光碟資料"
+    "zh-TW": "確認清除光碟資料",
+    "ja": "ディスク データの消去確認",
+    "tr": "Disk verilerinin kaybını onayla",
+    "es": "Confirmar la pérdida de datos del disco",
+    "cs": "Potvrzení ztráty dat disku"
   },
   "光驱：{0}\n盘片：{1}\n\n": {
     "zh-CN": "光驱：{0}\n盘片：{1}\n\n",
     "en": "Drive: {0}\nDisc: {1}\n\n",
-    "zh-TW": "光碟機：{0}\n光碟：{1}\n\n"
+    "zh-TW": "光碟機：{0}\n光碟：{1}\n\n",
+    "ja": "ドライブ：{0}\nディスク：{1}\n\n",
+    "tr": "Sürücü: {0}\nDisk: {1}\n\n",
+    "es": "Unidad: {0}\nDisco: {1}\n\n",
+    "cs": "Mechanika: {0}\nDisk: {1}\n\n"
   },
   "继续刻录将先擦除盘片，原有数据将丢失。是否继续？": {
     "zh-CN": "继续刻录将先擦除盘片，原有数据将丢失。是否继续？",
     "en": "The disc will be erased before recording. Existing data will be lost. Continue?",
-    "zh-TW": "繼續燒錄將先抹除光碟，原有資料將遺失。是否繼續？"
+    "zh-TW": "繼續燒錄將先抹除光碟，原有資料將遺失。是否繼續？",
+    "ja": "書き込みを続けると、まずディスクが消去され、既存のデータは失われます。続行しますか？",
+    "tr": "Yazmaya devam etmek için disk önce silinir; mevcut veriler kaybolur. Devam edilsin mi?",
+    "es": "El disco se borrará antes de grabar. Los datos existentes se perderán. ¿Continuar?",
+    "cs": "Před vypalováním bude disk smazán a stávající data budou ztracena. Pokračovat?"
   },
   "擦除并刻录": {
     "zh-CN": "擦除并刻录",
     "en": "Erase and record",
-    "zh-TW": "抹除並燒錄"
+    "zh-TW": "抹除並燒錄",
+    "ja": "消去して書き込む",
+    "tr": "Sil ve yaz",
+    "es": "Borrar y grabar",
+    "cs": "Smazat a vypálit"
   },
   "仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？": {
     "zh-CN": "仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？",
@@ -1161,7 +1190,11 @@
   "当前盘片未提供可选速度，将自动选择。若需擦除盘片，擦除后会重新读取速度。": {
     "zh-CN": "当前盘片未提供可选速度，将自动选择。若需擦除盘片，擦除后会重新读取速度。",
     "en": "Selectable speeds are unavailable. Speed will be selected automatically. If the disc needs erasing, speeds will be queried again afterward.",
-    "zh-TW": "目前光碟片未提供可選速度，將自動選擇。若需抹除光碟片，抹除後會重新讀取速度。"
+    "zh-TW": "目前光碟片未提供可選速度，將自動選擇。若需抹除光碟片，抹除後會重新讀取速度。",
+    "ja": "このディスクは選択可能な速度を提供していません。速度は自動的に選択されます。ディスクの消去が必要な場合、消去後に速度を再び読み取ります。",
+    "tr": "Disk seçilebilir hız sunmuyor; hız otomatik seçilecek. Diskin silinmesi gerekiyorsa, silme işleminden sonra hızlar yeniden okunur.",
+    "es": "El disco no ofrece velocidades seleccionables; se elegirá automáticamente. Si hay que borrar el disco, las velocidades se volverán a consultar después.",
+    "cs": "Disk nenabízí žádné volitelné rychlosti; rychlost se vybere automaticky. Pokud je potřeba disk smazat, rychlosti se po smazání načtou znovu."
   },
   "当前盘片未报告可选速度，将使用刻录接口的保守回退设置。": {
     "zh-CN": "当前盘片未报告可选速度，将使用刻录接口的保守回退设置。",
@@ -1288,15 +1321,6 @@
     "tr": "Serpiştirilmemiş",
     "es": "Sin intercalado",
     "cs": "Bez prokládání"
-  },
-  "未检测到支持 IMAPI2 的 CD/DVD/BD 刻录机。": {
-    "zh-CN": "未检测到支持 IMAPI2 的 CD/DVD/BD 刻录机。",
-    "en": "No IMAPI2-compatible CD/DVD/BD recorder was found.",
-    "zh-TW": "未偵測到支援 IMAPI2 的 CD/DVD/BD 燒錄機。",
-    "ja": "IMAPI2 対応の CD/DVD/BD ドライブが見つかりませんでした。",
-    "tr": "IMAPI2 uyumlu CD/DVD/BD yazıcısı bulunamadı.",
-    "es": "No se encontró ninguna grabadora CD/DVD/BD compatible con IMAPI2.",
-    "cs": "Nenašla se žádná vypalovačka CD/DVD/BD s podporou IMAPI2."
   },
   "未能读取当前盘片速度，将使用刻录接口的保守回退设置：": {
     "zh-CN": "未能读取当前盘片速度，将使用刻录接口的保守回退设置：",
@@ -1973,22 +1997,22 @@
     "es": "Importa primero una imagen en la página Diseño. La composición se añadirá automáticamente.",
     "cs": "Nejprve importujte obrázek na stránce Návrh. Složený obrázek se doplní automaticky."
   },
-  "请先在辅助标定工作区创建图案。": {
-    "zh-CN": "请先在辅助标定工作区创建图案。",
-    "en": "Create a pattern in the Calibration workspace first.",
-    "zh-TW": "請先在輔助校準工作區建立圖案。",
+  "请先在标定工作区创建图案。": {
+    "zh-CN": "请先在标定工作区创建图案。",
+    "en": "Create a pattern in the calibration workspace first.",
+    "zh-TW": "請先在校準工作區建立圖案。",
     "ja": "先にキャリブレーション ワークスペースでパターンを作成してください。",
-    "tr": "Önce Yardımcı Kalibrasyon çalışma alanında bir desen oluşturun.",
-    "es": "Crea primero un patrón en el espacio de trabajo Calibrar.",
+    "tr": "Önce Kalibrasyon çalışma alanında bir desen oluşturun.",
+    "es": "Crea primero un patrón en el espacio de trabajo de calibración.",
     "cs": "Nejprve vytvořte vzor na stránce Kalibrace."
   },
-  "请先在辅助标定工作区创建图案，再回到这里刻录。": {
-    "zh-CN": "请先在辅助标定工作区创建图案，再回到这里刻录。",
-    "en": "Create a pattern in the Calibration workspace, then return here to burn it.",
-    "zh-TW": "請先在輔助校準工作區建立圖案，再回到這裡燒錄。",
+  "请先在标定工作区创建图案，再回到这里刻录。": {
+    "zh-CN": "请先在标定工作区创建图案，再回到这里刻录。",
+    "en": "Create a pattern in the calibration workspace, then return here to burn it.",
+    "zh-TW": "請先在校準工作區建立圖案，再回到這裡燒錄。",
     "ja": "先にキャリブレーション ワークスペースでパターンを作成してから、ここに戻って書き込んでください。",
-    "tr": "Önce Yardımcı Kalibrasyon çalışma alanında bir desen oluşturun, ardından diske yazmak için buraya dönün.",
-    "es": "Crea un patrón en el espacio de trabajo Calibrar y vuelve aquí para grabarlo.",
+    "tr": "Önce Kalibrasyon çalışma alanında bir desen oluşturun, ardından diske yazmak için buraya dönün.",
+    "es": "Crea un patrón en el espacio de trabajo de calibración y vuelve aquí para grabarlo.",
     "cs": "Nejprve vytvořte vzor na stránce Kalibrace, pak se sem vraťte a vypalte ho."
   },
   "请先选择 {0}。": {
@@ -2188,5 +2212,14 @@
     "tr": "; dosyalar dış halkada, desen iç tarafta",
     "es": "; archivos en la zona exterior, dibujo por dentro",
     "cs": "; soubory na vnějším prstenci, kresba blíž ke středu"
+  },
+  "未检测到可用的光盘刻录机。请连接刻录机后点按「刷新」。": {
+    "zh-CN": "未检测到可用的光盘刻录机。请连接刻录机后点按「刷新」。",
+    "en": "No optical recorder was found. Connect a recorder, then press Refresh.",
+    "zh-TW": "未偵測到可用的光碟燒錄機。請連接燒錄機後點按「重新整理」。",
+    "ja": "使用できる光学ドライブが見つかりませんでした。ドライブを接続して「更新」を押してください。",
+    "tr": "Kullanılabilir bir optik yazıcı bulunamadı. Bir yazıcı bağlayıp Yenile'ye basın.",
+    "es": "No se encontró ninguna grabadora óptica disponible. Conecte una grabadora y pulse Actualizar.",
+    "cs": "Nenašla se žádná dostupná vypalovačka. Připojte vypalovačku a stiskněte Obnovit."
   }
 }

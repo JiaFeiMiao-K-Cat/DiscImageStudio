@@ -83,15 +83,29 @@
   "CalibrationMedia.ReadGeometryOnly": {
     "zh-CN": "{0} · {1}，已填入几何总扇区 {2:N0}。当前盘片无可写容量；新标靶的可用扇区按缺省值估算。",
     "zh-TW": "{0} · {1}，已填入幾何總磁區 {2:N0}。目前光碟無可寫容量；新標靶的可用磁區按預設值估算。",
-    "en": "{0} · {1}. Entered {2:N0} geometry sectors. This disc has no writable capacity; usable sectors for a new target use the default estimate."
+    "en": "{0} · {1}. Entered {2:N0} geometry sectors. This disc has no writable capacity; usable sectors for a new target use the default estimate.",
+    "ja": "{0} · {1}、幾何総セクター数 {2:N0} を入力しました。このディスクには書き込み可能な容量がありません。新しいターゲットの使用可能なセクター数は既定値で概算されます。",
+    "tr": "{0} · {1}. {2:N0} geometrik sektör girildi. Bu diskin yazılabilir kapasitesi yok; yeni hedef için kullanılabilir sektörler varsayılan tahminle hesaplanır.",
+    "es": "{0} · {1}. Se han introducido {2:N0} sectores de geometría. Este disco no tiene capacidad de escritura; los sectores utilizables para un nuevo patrón se estiman con el valor predeterminado.",
+    "cs": "{0} · {1}. Zadáno {2:N0} sektorů geometrie. Tento disk nemá zapisovatelnou kapacitu; využitelné sektory nového terče se odhadují výchozí hodnotou."
   },
   "光驱未报告有效的 CD 容量。": {
     "zh-CN": "光驱未报告有效的 CD 容量。",
-    "en": "The drive did not report a valid CD capacity."
+    "en": "The drive did not report a valid CD capacity.",
+    "zh-TW": "光碟機未回報有效的 CD 容量。",
+    "ja": "ドライブから有効な CD 容量が報告されませんでした。",
+    "tr": "Sürücü geçerli bir CD kapasitesi bildirmedi.",
+    "es": "La unidad no ha indicado una capacidad de CD válida.",
+    "cs": "Mechanika nenahlásila platnou kapacitu CD."
   },
   "光驱报告的 DVD 可写容量无效。": {
     "zh-CN": "光驱报告的 DVD 可写容量无效。",
-    "en": "The drive reported an invalid writable DVD capacity."
+    "en": "The drive reported an invalid writable DVD capacity.",
+    "zh-TW": "光碟機回報的 DVD 可寫容量無效。",
+    "ja": "ドライブが報告した DVD の書き込み可能容量が無効です。",
+    "tr": "Sürücünün bildirdiği DVD yazılabilir kapasitesi geçersiz.",
+    "es": "La unidad ha indicado una capacidad de escritura de DVD no válida.",
+    "cs": "Mechanika nahlásila neplatnou zapisovatelnou kapacitu DVD."
   },
   "CalibrationMedia.Failed": {
     "zh-CN": "读取失败。{0}",

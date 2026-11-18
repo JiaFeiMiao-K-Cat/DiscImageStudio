@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -24,11 +25,28 @@ public partial class HelpHint : UserControl
     public HelpHint()
     {
         InitializeComponent();
+        // Keyboard parity: the hint must be reachable without a mouse, so the badge takes
+        // focus and opens the same tooltip the hover path uses.
+        Focusable = true;
+        IsTabStop = true;
+        // Deferred lookup: the shared ring lives in the merged dictionaries, which are
+        // not walkable from a constructor before the control enters the tree.
+        SetResourceReference(FocusVisualStyleProperty, "FocusRing");
         _glyphBrush = (SolidColorBrush)HelpGlyph.Foreground;
         RefreshThemeColors();
         UpdateHint();
         Root.MouseEnter += (_, _) => SetHovered(true);
         Root.MouseLeave += (_, _) => SetHovered(false);
+        GotKeyboardFocus += (_, _) =>
+        {
+            SetHovered(true);
+            if (Root.ToolTip is ToolTip tip) tip.IsOpen = true;
+        };
+        LostKeyboardFocus += (_, _) =>
+        {
+            SetHovered(false);
+            if (Root.ToolTip is ToolTip tip) tip.IsOpen = false;
+        };
         Loaded += (_, _) =>
         {
             ThemeResolver.Changed -= ThemeResolver_Changed;
@@ -85,5 +103,25 @@ public partial class HelpHint : UserControl
     }
 
     private void UpdateHint()
-        => Root.ToolTip = string.IsNullOrEmpty(Hint) ? null : Hint;
+    {
+        if (string.IsNullOrEmpty(Hint))
+        {
+            Root.ToolTip = null;
+            AutomationProperties.SetName(this, string.Empty);
+            AutomationProperties.SetHelpText(this, string.Empty);
+            return;
+        }
+
+        // One reusable tooltip instance: hovering opens it through the usual service, and
+        // keyboard focus opens the very same instance programmatically.
+        if (Root.ToolTip is not ToolTip tip)
+        {
+            tip = new ToolTip();
+            Root.ToolTip = tip;
+        }
+
+        tip.Content = Hint;
+        AutomationProperties.SetName(this, Hint);
+        AutomationProperties.SetHelpText(this, Hint);
+    }
 }
