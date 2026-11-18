@@ -82,7 +82,18 @@ public partial class SettingsViewModel : ObservableObject
         DefaultProjectDirectory = normalized.DefaultProjectDirectory;
         CacheDirectory = normalized.CacheDirectory;
         RefreshCacheUsage();
+        _savedSnapshot = CaptureSnapshot();
     }
+
+    // The closing confirmation compares the editable fields against this snapshot; saving
+    // refreshes it so a saved dialog closes without prompting.
+    private (int Theme, int Language, string ProjectDirectory, string CacheDirectory) _savedSnapshot;
+
+    private (int Theme, int Language, string ProjectDirectory, string CacheDirectory) CaptureSnapshot()
+        => (ThemeIndex, LanguageIndex, DefaultProjectDirectory, CacheDirectory);
+
+    /// <summary>True when any editable field differs from the initial or last saved values.</summary>
+    public bool IsDirty => CaptureSnapshot() != _savedSnapshot;
 
     /// <summary>Folder the empty default-project field falls back to, shown as that field's
     /// watermark: an empty setting must not read as "no location".</summary>
@@ -207,6 +218,7 @@ public partial class SettingsViewModel : ObservableObject
         }
 
         SavedSettings = settings.Normalize();
+        _savedSnapshot = CaptureSnapshot();
         return true;
     }
 
@@ -462,7 +474,7 @@ public partial class SettingsViewModel : ObservableObject
 
     private static string FormatSize(long bytes)
     {
-        string[] units = ["B", "KB", "MB", "GB", "TB"];
+        string[] units = ["B", "KiB", "MiB", "GiB", "TiB"];
         double value = bytes;
         int unit = 0;
         while (value >= 1024 && unit < units.Length - 1)

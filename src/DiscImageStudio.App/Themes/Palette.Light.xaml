@@ -67,6 +67,7 @@
     <SolidColorBrush x:Key="TitleBarHoverBrush" Color="#0F000000" />
     <SolidColorBrush x:Key="BackdropBrush" Color="#66000000" />
     <SolidColorBrush x:Key="PrimaryGlowBrush" Color="#4D2569CC" />
+    <SolidColorBrush x:Key="FocusRingBrush" Color="#4D2569CC" />
     <SolidColorBrush x:Key="WarningSoftBrush" Color="#1FB45309" />
     <SolidColorBrush x:Key="WarningBorderBrush" Color="#66B45309" />
     <SolidColorBrush x:Key="WarningTextBrush" Color="#8A5205" />

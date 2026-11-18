@@ -260,6 +260,12 @@ dotnet run --project src/DiscImageStudio.App --configuration Release --no-build 
 
 `--burn-progress` 接受 `write`、`buffer`、`finalize`，使用模拟进度生成界面，不启动实际刻录。2026-10-28 核对了 BD 标定宽屏与 800×650 窄窗口、准备和封盘状态；底部写入量、速率、倍速与进度条均可见。此次另通过 DVD 引擎自检，没有执行实盘刻录。
 
+键盘可达性另用 `ui-focus-probe` 离屏实测：启动真实外壳（夹具光驱）后，用与 Tab 键同一套 MoveFocus 遍历逐工作区走完 Tab 环，报告死胡同与不可达焦点元素，并验证确认弹窗的 Escape 取消动线；退出码非 0 即发现回归。
+
+```powershell
+dotnet run --project src/DiscImageStudio.App --configuration Release --no-build -- ui-focus-probe --output artifacts/validation/focus-report.txt
+```
+
 `build` 工作流另执行模块目录的 DVD 自检、两扇区 CD 输出检查和主页截图。发布单文件 EXE 的附加检查见[发布指南](RELEASING.md)。
 
 本次另核对了 DVD/BD 各两种文件位置的设计投影、外圈导出页与外圈成品读回，共 8 张离屏截图；DVD/应用自检及发布工具的 45 项回归通过。

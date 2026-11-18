@@ -54,13 +54,74 @@ public partial class SettingsWindow : Window
         return true;
     }
 
+    private bool _closeApproved;
+    private bool _isCloseFlowRunning;
+
     private void SettingsWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        // Unsaved edits gate the close behind a save/discard/cancel modal. The flag must be
+        // set synchronously before any await, or WPF closes the window behind the modal.
+        if (!_closeApproved && !UpdateRequested && _viewModel.IsDirty)
+        {
+            e.Cancel = true;
+            if (!_isCloseFlowRunning)
+            {
+                _isCloseFlowRunning = true;
+                _ = RunCloseConfirmationAsync();
+            }
+
+            return;
+        }
+
+        RunCloseCleanup();
+    }
+
+    private async Task RunCloseConfirmationAsync()
+    {
+        try
+        {
+            bool? decision = await UnsavedConfirm.ShowThreeWayAsync(
+                L.T("有未保存的更改"),
+                L.T("设置更改尚未保存。要保存吗？"),
+                L.T("Settings.Save"),
+                L.T("不保存"));
+            if (decision is true)
+            {
+                // A failed save keeps the dialog open with its error message visible.
+                if (_viewModel.TrySave())
+                {
+                    ApproveClose();
+                }
+
+                return;
+            }
+
+            if (decision is false)
+            {
+                ApproveClose();
+            }
+            // null: cancelled — keep editing.
+        }
+        finally
+        {
+            _isCloseFlowRunning = false;
+        }
+    }
+
+    private void ApproveClose()
+    {
+        _closeApproved = true;
+        Close();
+    }
+
+    private void RunCloseCleanup()
     {
         // Escape, X, Save and Cancel all end this dialog's lifetime. Stop any in-flight
         // network work and release confirmations that would otherwise await a hidden modal.
         _viewModel.CancelPendingOperations();
         ClearCacheConfirm.CancelPending();
         UpdateConfirm.CancelPending();
+        UnsavedConfirm.CancelPending();
         if (!UpdateRequested)
         {
             // A downloaded update that never reaches the main window would otherwise sit in
@@ -122,13 +183,21 @@ public partial class SettingsWindow : Window
             return;
         }
 
-        if (ClearCacheConfirm.HandleKeyDown(e.Key) || UpdateConfirm.HandleKeyDown(e.Key))
+        if (ClearCacheConfirm.HandleKeyDown(e.Key) || UpdateConfirm.HandleKeyDown(e.Key)
+            || UnsavedConfirm.HandleKeyDown(e.Key))
         {
             e.Handled = true;
             return;
         }
 
         e.Handled = true;
+        if (_viewModel.IsDirty && !UpdateRequested)
+        {
+            // Route through Closing so unsaved edits hit the same save/discard/cancel modal.
+            Close();
+            return;
+        }
+
         DialogResult = false;
     }
 

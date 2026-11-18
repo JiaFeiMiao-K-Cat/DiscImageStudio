@@ -56,7 +56,7 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Button x:Name="BackHomeButton" Style="{StaticResource GhostButton}"
-                                    Width="32" Height="32" Padding="0" Focusable="False"
+                                    Width="32" Height="32" Padding="0"
                                     AutomationProperties.Name="{loc:Text Xaml.BackToHome}" ToolTip="{loc:Text Xaml.BackToHome}"
                                     Command="{Binding BackHomeCommand}">
                                 <iconPacks:PackIconLucide Kind="ChevronLeft" Width="17" Height="17"
@@ -64,7 +64,7 @@
                             </Button>
                             <Grid x:Name="ProjectHeaderHost" Grid.Column="1" Margin="8,0,0,0">
                                 <Button x:Name="ProjectHeaderButton" Style="{StaticResource TileButton}"
-                                        Padding="6,2" Focusable="False"
+                                        Padding="6,2"
                                         ToolTip="{loc:Text Xaml.ProjectSettings}"
                                         Click="EditProject_Click">
                                     <StackPanel Margin="0,0,30,0">
@@ -155,19 +155,24 @@
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    Margin="12,6,0,4" />
                         <controls:SideNavItem x:Name="NavDesign" LabelText="{loc:Text Xaml.Design}"
-                                              IconKind="Palette" />
+                                              IconKind="Palette"
+                                              AutomationProperties.AcceleratorKey="Ctrl+1" />
                         <controls:SideNavItem x:Name="NavExport" LabelText="{loc:Text Xaml.Export}"
-                                              IconKind="FileDown" />
+                                              IconKind="FileDown"
+                                              AutomationProperties.AcceleratorKey="Ctrl+2" />
                         <controls:SideNavItem x:Name="NavBurn" LabelText="{loc:Text Xaml.Burn}"
-                                              IconKind="Flame" />
+                                              IconKind="Flame"
+                                              AutomationProperties.AcceleratorKey="Ctrl+3" />
                         <TextBlock x:Name="CalibrationGroupHeader" Text="{loc:Text Xaml.GroupCalibration}"
                                    Style="{StaticResource MicroText}"
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    Margin="12,14,0,4" />
                         <controls:SideNavItem x:Name="NavPreview" LabelText="{loc:Text Xaml.Preview}"
-                                              IconKind="Eye" />
+                                              IconKind="Eye"
+                                              AutomationProperties.AcceleratorKey="Ctrl+4" />
                         <controls:SideNavItem x:Name="NavCalibration" LabelText="{loc:Text Xaml.Calibration}"
-                                              IconKind="Crosshair" />
+                                              IconKind="Crosshair"
+                                              AutomationProperties.AcceleratorKey="Ctrl+5" />
                     </StackPanel>
 
                     <controls:DriveInfoCard x:Name="DriveCardHost" Grid.Row="1"

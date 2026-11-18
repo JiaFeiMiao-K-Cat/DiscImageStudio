@@ -476,16 +476,11 @@ public partial class MainWindow : Window
         if (BurnConfirmModal.IsOpen)
         {
             // The modal owns the keyboard surface; do not run save/settings shortcuts behind it.
-            if (BurnConfirmModal.HandleKeyDown(e.Key))
+            if (BurnConfirmModal.HandleKeyDown(e.Key, Keyboard.Modifiers))
             {
                 e.Handled = true;
             }
 
-            return;
-        }
-
-        if (e.Key == Key.Escape)
-        {
             return;
         }
 
@@ -494,6 +489,27 @@ public partial class MainWindow : Window
             e.Handled = true;
             OpenSettingsDialog();
             return;
+        }
+
+        // Ctrl+1..5 switch workspaces in sidebar order (design, export, burn, preview,
+        // calibration). Digits carry no text input, so no TextBox guard is needed.
+        if (Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            Workspace? target = e.Key switch
+            {
+                Key.D1 or Key.NumPad1 => Workspace.Design,
+                Key.D2 or Key.NumPad2 => Workspace.Export,
+                Key.D3 or Key.NumPad3 => Workspace.Burn,
+                Key.D4 or Key.NumPad4 => Workspace.Preview,
+                Key.D5 or Key.NumPad5 => Workspace.Calibration,
+                _ => null,
+            };
+            if (target is { } workspace)
+            {
+                e.Handled = true;
+                _shell.NavigateTo(workspace);
+                return;
+            }
         }
 
         if (e.Key == Key.S && Keyboard.Modifiers is ModifierKeys.Control or (ModifierKeys.Control | ModifierKeys.Shift))

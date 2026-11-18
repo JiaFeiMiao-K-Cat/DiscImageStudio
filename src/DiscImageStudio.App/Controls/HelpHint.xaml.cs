@@ -29,6 +29,9 @@ public partial class HelpHint : UserControl
         // focus and opens the same tooltip the hover path uses.
         Focusable = true;
         IsTabStop = true;
+        // Deferred lookup: the shared ring lives in the merged dictionaries, which are
+        // not walkable from a constructor before the control enters the tree.
+        SetResourceReference(FocusVisualStyleProperty, "FocusRing");
         _glyphBrush = (SolidColorBrush)HelpGlyph.Foreground;
         RefreshThemeColors();
         UpdateHint();

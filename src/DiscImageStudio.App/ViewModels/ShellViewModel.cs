@@ -1,4 +1,5 @@
 using DiscImageStudio.Localization;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -80,6 +81,13 @@ public partial class ShellViewModel : ObservableObject
         ReturnFromCalibrationCommand = new RelayCommand(() =>
             NavigateTo(IsProjectOpen ? _calibrationReturnPage : Workspace.Home));
         NavigateCommand = new RelayCommand<Workspace>(NavigateTo);
+        // The host footer reads the backlog count; forward the stack's changes so the
+        // footer updates as hidden toasts expire or get promoted.
+        _toastStack.PropertyChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(ToastOverflowLabel));
+            OnPropertyChanged(nameof(ToastOverflowVisibility));
+        };
     }
 
     public DiscParametersState State { get; }
@@ -104,7 +112,16 @@ public partial class ShellViewModel : ObservableObject
     /// <summary>Sidebar drive card: read-only drive and media information.</summary>
     public OpticalDriveViewModel Drive { get; }
 
-    public ObservableCollection<ToastItem> Toasts { get; } = [];
+    private readonly ToastStack _toastStack = new();
+
+    /// <summary>The visible toast window; older toasts collapse into a counted backlog
+    /// instead of growing an endless column over page content.</summary>
+    public ObservableCollection<ToastItem> Toasts => _toastStack.Visible;
+
+    /// <summary>Backlog summary for the toast host footer, e.g. "还有 2 条通知".</summary>
+    public string? ToastOverflowLabel => _toastStack.OverflowLabel;
+
+    public Visibility ToastOverflowVisibility => _toastStack.OverflowVisibility;
 
     /// <summary>Installed by the window: Win32 file dialogs modal to the main window.</summary>
     internal FileDialogService? Dialogs { get; set; }
@@ -1020,24 +1037,38 @@ public partial class ShellViewModel : ObservableObject
     public void ShowToast(string title, string message, ToastKind kind)
         // Errors and warnings often carry multi-line details; they stay visible long enough
         // to be read, while info notices stay brief.
-        => ShowToast(title, message, kind, kind switch
-        {
-            ToastKind.Error => TimeSpan.FromSeconds(15),
-            ToastKind.Warning => TimeSpan.FromSeconds(10),
-            _ => TimeSpan.FromSeconds(2),
-        });
+        => ShowToast(title, message, kind, DefaultTimeout(kind));
 
-    public void ShowToast(string title, string message, ToastKind kind, TimeSpan timeout)
+    private static TimeSpan DefaultTimeout(ToastKind kind) => kind switch
     {
-        ToastItem toast = new(_dispatcher, title, message, kind, timeout);
-        // The toast host plays the exit animation on Closed; the drop from the collection
+        ToastKind.Error => TimeSpan.FromSeconds(15),
+        ToastKind.Warning => TimeSpan.FromSeconds(10),
+        _ => TimeSpan.FromSeconds(2),
+    };
+
+    /// <summary>Failure notice whose action opens the job log. The dock already unfolds for
+    /// a failed job; the action covers a user who dismissed it or never noticed, and the
+    /// toast cannot carry the multi-line diagnostic itself.</summary>
+    public void ShowLogToast(string title, string message, ToastKind kind)
+    {
+        IsJobDockExpanded = true;
+        ShowToast(title, message, kind, DefaultTimeout(kind), L.T("Xaml.ViewLog"), ExpandJobLog);
+    }
+
+    private void ExpandJobLog() => IsJobDockExpanded = true;
+
+    public void ShowToast(string title, string message, ToastKind kind, TimeSpan timeout,
+        string? actionLabel = null, Action? action = null)
+    {
+        ToastItem toast = new(_dispatcher, title, message, kind, timeout, actionLabel, action);
+        // The toast host plays the exit animation on Closed; the drop from the stack
         // waits just past that animation so the card leaves visibly instead of vanishing.
         toast.Closed += async (_, _) =>
         {
             await Task.Delay(220);
-            Toasts.Remove(toast);
+            _toastStack.Remove(toast);
         };
-        Toasts.Add(toast);
+        _toastStack.Push(toast);
         toast.BeginLifetime();
     }
 
@@ -1215,13 +1246,21 @@ public partial class ShellViewModel : ObservableObject
             CanPreviewLastOutput = IsDiscArtifact(_lastOutputPath);
             JobStatusText = L.T("完成：") + Path.GetFileName(_lastOutputPath);
             AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 完成：{_lastOutputPath}\n"));
+            // Success notice naming the output, with the open-folder shortcut attached.
+            // Action toasts need read-plus-click time, so they outlive the 2s info default.
+            ShowToast(
+                L.T("任务完成"),
+                Path.GetFileName(_lastOutputPath),
+                ToastKind.Success,
+                TimeSpan.FromSeconds(8),
+                L.T("Xaml.OpenOutputFolder"),
+                OpenOutput);
         }
         else
         {
             IsJobProgressIndeterminate = false;
             JobStatusText = L.T("任务未完成");
-            IsJobDockExpanded = true;
-            ShowToast(L.T("任务未完成"), L.T("详情见窗口底部的任务日志。"), ToastKind.Warning);
+            ShowLogToast(L.T("任务未完成"), L.T("详情见窗口底部的任务日志。"), ToastKind.Warning);
         }
         return result is not null;
     }

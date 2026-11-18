@@ -213,7 +213,7 @@ public partial class ExportViewModel : ObservableObject
             if (exception is ArgumentException or FormatException or OverflowException)
                 _shell.ShowValidationError(exception);
             else
-                _shell.ShowToast(L.T("任务未完成"), L.T("详情见窗口底部的任务日志。"), ToastKind.Error);
+                _shell.ShowLogToast(L.T("任务未完成"), L.T("详情见窗口底部的任务日志。"), ToastKind.Error);
         }
     }
 

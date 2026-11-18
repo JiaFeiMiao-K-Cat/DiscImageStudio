@@ -10,6 +10,28 @@ using System.Runtime.InteropServices.ComTypes;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
+if (args is ["--test-toast"])
+{
+    ToastHostTests.Run();
+    ToastStackTests.Run();
+    return;
+}
+
+if (args is ["--render-toast", string renderOutput])
+{
+    ToastRenderProbe.Run(renderOutput);
+    return;
+}
+
+if (args is ["--test-ux"])
+{
+    ToastHostTests.Run();
+    ToastStackTests.Run();
+    KeyboardReachabilityTests.Run();
+    FocusRingTests.Run();
+    return;
+}
+
 if (args is ["--test-image-drop"])
 {
     ImageDropTests.Run();
@@ -257,6 +279,10 @@ CalibrationShapeSeedTests.Run();
 CalibrationPhotoTests.Run();
 CalibrationPhotoCanvasTests.Run();
 DesignCanvasZoomTests.Run();
+ToastHostTests.Run();
+ToastStackTests.Run();
+KeyboardReachabilityTests.Run();
+FocusRingTests.Run();
 LayerPanelTests.Run();
 ImageDropTests.Run();
 SvgImportTests.Run();

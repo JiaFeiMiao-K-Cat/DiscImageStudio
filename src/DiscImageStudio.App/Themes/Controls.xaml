@@ -241,6 +241,20 @@
         </Setter>
     </Style>
 
+    <!-- Keyboard-focus ring shared by every interactive control. FocusVisualStyle renders
+         in the adorner layer and only for keyboard-originated focus, so mouse focus stays
+         quiet and the ring never shifts layout. Color: FocusRingBrush in both palettes. -->
+    <Style x:Key="FocusRing" TargetType="Control">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Rectangle Margin="-3" RadiusX="10" RadiusY="10" StrokeThickness="2"
+                               Stroke="{DynamicResource FocusRingBrush}" IsHitTestVisible="False" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Buttons -->
     <ControlTemplate x:Key="FilledButtonTemplate" TargetType="Button">
         <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" CornerRadius="{StaticResource RadiusField}"
@@ -269,6 +283,7 @@
          A derived style's own trigger does not outrank the base style's, which is why the
          danger ramp lives on a sibling of the primary ramp instead of on its subclass. -->
     <Style x:Key="FilledButtonBase" TargetType="Button">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <Setter Property="Foreground" Value="White" />
         <Setter Property="Height" Value="{StaticResource ButtonHeight}" />
         <Setter Property="Padding" Value="16,0" />
@@ -355,13 +370,14 @@
         <Setter Property="MinWidth" Value="0" />
     </Style>
 
-    <!-- Square icon-only chrome for list rows and canvas toolbars. -->
+    <!-- Square icon-only chrome for list rows and canvas toolbars. Icon buttons stay
+         keyboard-reachable: they inherit the shared focus ring from FilledButtonBase, so
+         dismiss buttons and canvas tools respond to Tab and Enter like any other action. -->
     <Style x:Key="IconButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
         <Setter Property="Width" Value="26" />
         <Setter Property="Height" Value="26" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="MinWidth" Value="0" />
-        <Setter Property="Focusable" Value="False" />
     </Style>
 
     <!-- Trailing action inside the project header: no chrome at rest so it keeps the
@@ -371,13 +387,13 @@
         <Setter Property="Height" Value="28" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="MinWidth" Value="0" />
-        <Setter Property="Focusable" Value="False" />
         <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
     </Style>
 
     <!-- Start-page tile: no chrome at rest, the whole card is the hit target, and hover
          lifts the surface the way a sidebar row does. -->
     <Style x:Key="TileButton" TargetType="Button">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="Cursor" Value="Hand" />
@@ -419,6 +435,7 @@
          column. The hub hole and the top sheen sit in a fixed overlay outside the spin so
          the "lighting" does not rotate with the face. -->
     <Style TargetType="controls:RecentProjectCard">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Template">
@@ -560,6 +577,9 @@
 
     <!-- TextBox: 40px field with focus ring -->
     <Style TargetType="TextBox">
+        <!-- The template's FocusGlow is the focus indicator; opt out of the system
+             dotted rectangle so keyboard focus does not stack two different rings. -->
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
@@ -586,7 +606,7 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="FocusGlow" Property="BorderBrush" Value="{DynamicResource PrimaryGlowBrush}" />
+                            <Setter TargetName="FocusGlow" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
                             <Setter TargetName="FieldBorder" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -607,6 +627,9 @@
 
     <!-- Borderless textbox for terminal-style log surfaces -->
     <Style x:Key="BareTextBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+        <!-- No FocusGlow in this template, so the shared ring is the focus indicator
+             instead of the null style inherited from the implicit TextBox. -->
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <!-- Opt out of the inherited single-line field height: a log surface fills its container. -->
         <Setter Property="Height" Value="Auto" />
         <Setter Property="Template">
@@ -634,6 +657,7 @@
     <!-- Continuous value slider (tone module): 4px track, 14px thumb, brand fill. The filled
          portion is the decrease repeat button, so no value converter is involved. -->
     <Style x:Key="ToneSlider" TargetType="Slider">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <Setter Property="Height" Value="26" />
         <Setter Property="IsMoveToPointEnabled" Value="True" />
         <Setter Property="Template">
@@ -689,6 +713,7 @@
     <!-- Bipolar variant (brightness): no fill, because a fill from the left edge would read
          as "half strength" at the neutral 0 position. A centre tick marks the zero point. -->
     <Style x:Key="ToneBipolarSlider" TargetType="Slider">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <Setter Property="Height" Value="26" />
         <Setter Property="IsMoveToPointEnabled" Value="True" />
         <Setter Property="Template">
@@ -744,6 +769,7 @@
 
     <!-- ComboBox -->
     <Style TargetType="ComboBoxItem">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Padding" Value="10,0" />
@@ -773,6 +799,9 @@
     </Style>
 
     <Style TargetType="ComboBox">
+        <!-- The template's FocusGlow is the focus indicator; opt out of the system
+             dotted rectangle so keyboard focus does not stack two different rings. -->
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="Background" Value="{DynamicResource Surface1Brush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
@@ -850,7 +879,7 @@
                             <Setter TargetName="Chevron" Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="FocusGlow" Property="BorderBrush" Value="{DynamicResource PrimaryGlowBrush}" />
+                            <Setter TargetName="FocusGlow" Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
@@ -865,6 +894,7 @@
 
     <!-- CheckBox -->
     <Style TargetType="CheckBox">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Cursor" Value="Hand" />
@@ -916,6 +946,7 @@
 
     <!-- RadioButton -->
     <Style TargetType="RadioButton">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="Cursor" Value="Hand" />
@@ -1120,7 +1151,10 @@
                     <StackPanel Background="Transparent">
                         <!-- Foreground must be restated: the ToggleButton's theme style would
                              otherwise paint the header with the system black text brush. -->
-                        <ToggleButton x:Name="PART_Header" Focusable="False" Cursor="Hand"
+                        <!-- The header is the expander's keyboard surface: Tab reaches it and
+                             the shared ring marks keyboard focus (mouse focus stays quiet). -->
+                        <ToggleButton x:Name="PART_Header" Cursor="Hand"
+                                      FocusVisualStyle="{StaticResource FocusRing}"
                                       Foreground="{TemplateBinding Foreground}"
                                       IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
                             <ToggleButton.Template>
@@ -1186,6 +1220,7 @@
          the surface, selection adds a primary accent bar. CardListBoxItem is the inset,
          rounded variant used inside dialogs. -->
     <Style x:Key="RowListBoxItem" TargetType="ListBoxItem">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -1218,6 +1253,7 @@
     </Style>
 
     <Style x:Key="CardListBoxItem" TargetType="ListBoxItem">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Cursor" Value="Hand" />
@@ -1278,7 +1314,8 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
-                            <ToggleButton x:Name="PART_Header" Focusable="False" Cursor="Hand"
+                            <ToggleButton x:Name="PART_Header" Cursor="Hand"
+                                          FocusVisualStyle="{StaticResource FocusRing}"
                                           IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
                                 <ToggleButton.Template>
                                     <ControlTemplate TargetType="ToggleButton">
@@ -1330,6 +1367,9 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="HeaderSurface" Property="Background" Value="{DynamicResource HoverOverlayBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsFocused" Value="True">
                                                 <Setter TargetName="HeaderSurface" Property="Background" Value="{DynamicResource HoverOverlayBrush}" />
                                             </Trigger>
                                             <Trigger Property="IsChecked" Value="True">

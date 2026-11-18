@@ -1,8 +1,13 @@
+<!-- Keyboard users reach the value by Tab and copy with Enter or Space; the focus ring
+     marks the stop. Hover keeps the underline affordance, and keyboard focus reuses it so
+     the copy affordance is visible without a pointer. -->
 <UserControl x:Class="DiscImageStudio.Controls.CopyableText"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:loc="clr-namespace:DiscImageStudio.Localization"
-             Background="Transparent" Cursor="Hand" Focusable="False"
+             Background="Transparent" Cursor="Hand"
+             Focusable="True" IsTabStop="True"
+             FocusVisualStyle="{StaticResource FocusRing}"
              ToolTip="{loc:Text DriveInfo.ClickToCopy}" ToolTipService.InitialShowDelay="450"
              SnapsToDevicePixels="True">
     <Grid>

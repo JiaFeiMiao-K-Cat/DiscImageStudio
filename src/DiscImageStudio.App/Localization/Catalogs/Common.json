@@ -44,6 +44,15 @@
     "es": "Excepción no controlada: ",
     "cs": "Neošetřená výjimka: "
   },
+  "设置更改尚未保存。要保存吗？": {
+    "zh-CN": "设置更改尚未保存。要保存吗？",
+    "en": "Settings changes have not been saved. Save them?",
+    "zh-TW": "設定變更尚未儲存。要儲存嗎？",
+    "ja": "設定の変更はまだ保存されていません。保存しますか？",
+    "tr": "Ayar değişiklikleri kaydedilmedi. Kaydedilsin mi?",
+    "es": "Los cambios de configuración no se han guardado. ¿Desea guardarlos?",
+    "cs": "Nastavení nebylo uloženo. Chcete ho uložit?"
+  },
   "滚轮缩放，右键平移；拖动控制点贴合边缘。": {
     "zh-CN": "滚轮缩放，右键平移；拖动控制点贴合边缘。",
     "en": "Scroll to zoom, right-drag to pan; drag control points to fit the edge.",

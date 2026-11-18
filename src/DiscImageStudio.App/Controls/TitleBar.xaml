@@ -26,7 +26,7 @@
                     WindowChrome.IsHitTestVisibleInChrome="True">
             <!-- Settings gear sits left of the window buttons and opens the settings dialog
                  directly; hidden on dialogs that do not opt in through ShowSettingsButton. -->
-            <Button x:Name="SettingsButton" Width="46" Height="32" Focusable="False"
+            <Button x:Name="SettingsButton" Width="46" Height="32" FocusVisualStyle="{DynamicResource FocusRing}"
                     Click="Settings_Click" ToolTip="{loc:Text Xaml.OpenSettingsShortcut}"
                     AutomationProperties.Name="{loc:Text Xaml.OpenSettingsShortcut}"
                     AutomationProperties.AcceleratorKey="Ctrl+," Visibility="Collapsed">
@@ -47,11 +47,15 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Hot" Property="Background" Value="{DynamicResource PressedOverlayBrush}" />
                             </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Hot" Property="Background" Value="{DynamicResource TitleBarHoverBrush}" />
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Button.Template>
             </Button>
-            <Button x:Name="MinimizeButton" Width="46" Height="32" Focusable="False" Click="Minimize_Click"
+            <Button x:Name="MinimizeButton" Width="46" Height="32" FocusVisualStyle="{DynamicResource FocusRing}"
+                    Click="Minimize_Click"
                     ToolTip="{loc:Text Xaml.Minimize}">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
@@ -66,11 +70,15 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Hot" Property="Background" Value="{DynamicResource PressedOverlayBrush}" />
                             </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Hot" Property="Background" Value="{DynamicResource TitleBarHoverBrush}" />
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Button.Template>
             </Button>
-            <Button x:Name="MaximizeButton" Width="46" Height="32" Focusable="False" Click="Maximize_Click"
+            <Button x:Name="MaximizeButton" Width="46" Height="32" FocusVisualStyle="{DynamicResource FocusRing}"
+                    Click="Maximize_Click"
                     ToolTip="{loc:Text Xaml.Maximize}">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
@@ -89,11 +97,15 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Hot" Property="Background" Value="{DynamicResource PressedOverlayBrush}" />
                             </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Hot" Property="Background" Value="{DynamicResource TitleBarHoverBrush}" />
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Button.Template>
             </Button>
-            <Button x:Name="CloseButton" Width="46" Height="32" Focusable="False" Click="Close_Click" ToolTip="{loc:Text Xaml.Close}">
+            <Button x:Name="CloseButton" Width="46" Height="32" FocusVisualStyle="{DynamicResource FocusRing}"
+                    Click="Close_Click" ToolTip="{loc:Text Xaml.Close}">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Hot" Background="Transparent">
@@ -106,6 +118,9 @@
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Hot" Property="Background" Value="{DynamicResource CloseHotBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Hot" Property="Background" Value="{DynamicResource CloseHotSoftBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

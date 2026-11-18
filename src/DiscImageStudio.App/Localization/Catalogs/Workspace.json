@@ -197,6 +197,15 @@
     "es": "Trabajo incompleto",
     "cs": "Úloha nedokončena"
   },
+  "任务完成": {
+    "zh-CN": "任务完成",
+    "en": "Task completed",
+    "zh-TW": "工作完成",
+    "ja": "タスク完了",
+    "tr": "Görev tamamlandı",
+    "es": "Tarea completada",
+    "cs": "Úloha dokončena"
+  },
   "关闭": {
     "zh-CN": "关闭",
     "en": "Close",
