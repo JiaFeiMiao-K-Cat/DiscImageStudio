@@ -6,7 +6,7 @@
 
 <h2>全能的光盘盘面可见图像生成与刻录工具</h2>
 
-Disc Image Studio 是一个多平台的光盘盘面图像生成与刻录工具，帮助您使用任何刻录光驱在任何 DVD / CD / 单层蓝光 光盘上刻蚀出肉眼可见的图像。
+Disc Image Studio 是一个多平台的光盘盘面图像生成与刻录工具，可在兼容的 DVD、CD 和单层蓝光盘上刻出肉眼可见的图像。
 
 ![.NET 版本](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)
 ![运行平台](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-0078d6?style=flat-square)
@@ -35,7 +35,7 @@ Disc Image Studio 是一个多平台的光盘盘面图像生成与刻录工具�
 
 ## 概述
 
-Disc Image Studio 可将一张图片转换成符合 CD、DVD 与单层 BD-R 光盘物理层约束的数据，刻录后将使光盘盘面呈现肉眼可见的图案。
+Disc Image Studio 可将图片转换为适合 CD、DVD 与单层蓝光绘图的数据。
 
 ## 界面预览
 
@@ -71,7 +71,7 @@ Windows x64 下载以 `win-x64.exe` 结尾的文件；Windows 11 ARM64 下载以
 
 - **CD 支持**：支持任何 CD 。您可导出带格式头的 WAV 音轨及配套 CUE，兼容 cdrecord, ImgBurn等刻录软件；也允许导出 RAW 音轨。详见 [CD 刻录兼容说明](docs/CD_AUDIO_COMPATIBILITY.md)。
 - **DVD 支持**：支持任何 DVD。您可导出 ISO 镜像。
-- **蓝光支持**：支持任何单层 BD-R 25 GB，支持纯绘图与 UDF 2.01 文件。详见 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。
+- **蓝光支持**：支持 25 GB 单层 BD-R 和可验证为无备用区的单层 BD-RE，提供纯绘图与 UDF 2.01 文件输出。详见 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。
 - **随盘文件**：CD／DVD／蓝光可在设计页直接选择要保存的文件夹及内圈／外圈位置，也可在导出页调整；设置随工程保存。
 - **文件区域预览**：混合盘的设计投影和成品读回用蓝色标出文件区（含文件系统）。
 - **介质灰度方案**：CD 与 DVD 均使用黑白二阶，CD 使用 `0D / AA`，DVD 扰码域使用 `A5 / 92`。详见 [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md)。
@@ -93,14 +93,14 @@ Disc Image Studio 提供粗标定、边界标定和精细标定流程，通过�
 ### 刻录
 
 - **镜像文件输出**：您可以导出完整 ISO / RAW 文件并使用合适的刻录软件手动刻录。
-- **即时流式刻录（实验性）**：CD、DVD 与 BD-R 边生成边刻录，不保存完整镜像；BD-R 走 MMC 顺序写入。
-- **不要使用非空白介质！**
+- **即时流式刻录（实验性）**：CD、DVD 和单层蓝光边生成边刻录，不保存完整镜像。
+- 一次写入的盘片必须是空白盘。可覆写盘片在界面确认后才会清除或覆写数据。
 
 ## 系统与设备要求
 
 - x64 桌面版需要 Windows 10 2004（2004/20H1，19041）及以上，或 Windows 11；ARM64 桌面版需要 Windows 11。ARM64 的原生 CI 覆盖软件自检与 GUI 截图，尚未验证实盘刻录。
 - 构建：.NET 10 SDK（`global.json` 锁定 10.0.x）；自行构建的非自包含 GUI 需要 .NET 10 Windows 桌面运行时。Release EXE 已包含运行时，无需另行安装 .NET。
-- “即时刻录”功能需要一台 Windows 可识别的 CD / DVD / BD 刻录机与空白盘片；BD-R 需要支持顺序写入的单层空白盘。
+- “即时刻录”需要 Windows 可识别的刻录机和兼容盘片。BD-R 需要支持顺序写入的单层空白盘。BD-RE 需要可验证的无备用区布局，首次格式化依赖光驱的 RENoSA 支持。
 
 ## 构建与运行
 

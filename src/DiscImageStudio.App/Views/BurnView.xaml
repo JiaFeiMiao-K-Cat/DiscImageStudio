@@ -12,7 +12,7 @@
             <controls:PageHeader Title="{Binding PageTitle}" Badge="{Binding FamilyLabel}"
                                  Workspace="{Binding PageWorkspace}"
                                  ShowStages="{Binding DataContext.IsProjectMode, RelativeSource={RelativeSource AncestorType=Window}, FallbackValue=False}"
-                                 Hint="{loc:Text Xaml.StreamDataDirectlyToABlankDiscWithoutFirst}">
+                                 Hint="{loc:Text Xaml.StreamDataDirectlyToDisc}">
                 <controls:PageHeader.Actions>
                     <controls:VisibilityGate IsOpen="{Binding UseCalibrationPattern}">
                         <Button Style="{StaticResource CompactButton}" Content="{loc:Text Standalone.ReturnToCalibration}" IsEnabled="{Binding IsSetupEnabled}"
@@ -110,8 +110,12 @@
                                    VerticalAlignment="Center" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource BodyText}" Foreground="{DynamicResource WarningTextBrush}"
-                               Text="{loc:Text Xaml.StreamingRequiresBlankMediaInterruptionsPowerLossOrInsufficient}" />
-                    <CheckBox Content="{loc:Text Xaml.IHaveInsertedTheCorrectBlankDisc}"
+                               Text="{loc:Text Xaml.StreamingBurnInterruptionWarning}" />
+                    <controls:VisibilityGate IsOpen="{Binding IsBluRayBurn}" Margin="0,6,0,0">
+                        <TextBlock Style="{StaticResource BodyText}" Foreground="{DynamicResource WarningTextBrush}"
+                                   Text="{loc:Text Xaml.BluRayStreamingMedia}" />
+                    </controls:VisibilityGate>
+                    <CheckBox Content="{loc:Text Xaml.IHaveInsertedTheCorrectDisc}"
                               IsChecked="{Binding ConfirmChecked}" Margin="0,14,0,0"
                               IsEnabled="{Binding IsSetupEnabled}" />
                     <StackPanel Orientation="Horizontal" Margin="0,16,0,0">

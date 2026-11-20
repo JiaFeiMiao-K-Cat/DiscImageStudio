@@ -35,6 +35,24 @@
     "es": "Cerrado",
     "cs": "Uzavřený"
   },
+  "DriveInfo.StateUnformatted": {
+    "zh-CN": "未格式化",
+    "en": "Unformatted",
+    "zh-TW": "未格式化",
+    "ja": "未フォーマット",
+    "tr": "Biçimlendirilmemiş",
+    "es": "Sin formatear",
+    "cs": "Nenaformátovaný"
+  },
+  "DriveInfo.StateFormatted": {
+    "zh-CN": "已格式化",
+    "en": "Formatted",
+    "zh-TW": "已格式化",
+    "ja": "フォーマット済み",
+    "tr": "Biçimlendirilmiş",
+    "es": "Formateado",
+    "cs": "Naformátovaný"
+  },
   "DriveInfo.StateOther": {
     "zh-CN": "其他",
     "en": "Other",

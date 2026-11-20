@@ -199,8 +199,18 @@ public sealed class ImapiOpticalDriveProbe : IOpticalDriveProbe
             }
         }
 
+        bool isBdRe = profile == 0x43;
+        OpticalDiscState state = isBdRe
+            ? disc.State switch
+            {
+                OpticalDiscState.Blank => OpticalDiscState.Unformatted,
+                OpticalDiscState.Complete => OpticalDiscState.Formatted,
+                _ => OpticalDiscState.Other,
+            }
+            : disc.State;
         long? total = reportedCapacity?.Total;
-        long? free = reportedCapacity?.Free;
+        // IMAPI reports total capacity as FreeSectorsOnMedia for BD-RE.
+        long? free = isBdRe ? null : reportedCapacity?.Free;
         long? usable;
         if (family == OpticalDriveMediaFamily.BluRay)
         {
@@ -209,16 +219,25 @@ public sealed class ImapiOpticalDriveProbe : IOpticalDriveProbe
                 (uint blocks, int status, int spareClusters) =
                     new BluRayMmcCommands(transport).ReadFormatCapacity();
                 if (blocks > 0) total = blocks;
+                if (isBdRe)
+                {
+                    state = status switch
+                    {
+                        1 => OpticalDiscState.Unformatted,
+                        2 => OpticalDiscState.Formatted,
+                        _ => state,
+                    };
+                }
                 if (trackFree is not null) free = trackFree;
-                usable = ReadBluRayUsableSectors(
+                // BD-RE's writable limit depends on the layout verified by burn preflight.
+                usable = isBdRe ? null : ReadBluRayUsableSectors(
                     profile, disc.State, blocks, status, spareClusters, trackData);
             }
             catch (Exception exception) when (exception is IOException or COMException)
             {
                 if (trackFree is not null) free = trackFree;
-                // The sequential writer cannot verify the physical layout without
-                // READ FORMAT CAPACITIES, so no writable capacity is advertised.
-                usable = 0;
+                // The sequential writer requires READ FORMAT CAPACITIES to verify its layout.
+                usable = isBdRe ? null : 0;
             }
         }
         else if (family == OpticalDriveMediaFamily.Cd && atip is not null)
@@ -272,7 +291,7 @@ public sealed class ImapiOpticalDriveProbe : IOpticalDriveProbe
             profile,
             profileName,
             family,
-            disc.State,
+            state,
             disc.IsErasable,
             disc.Sessions,
             mediaId,

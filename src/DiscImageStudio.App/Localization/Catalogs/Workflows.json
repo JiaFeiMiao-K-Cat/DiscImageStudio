@@ -143,6 +143,114 @@
     "es": "BD-R · {0} sectores",
     "cs": "BD-R · {0} sektorů"
   },
+  "Burn.BdReSectors": {
+    "zh-CN": "BD-RE · {0} 扇区",
+    "en": "BD-RE · {0} sectors",
+    "zh-TW": "BD-RE · {0} 磁區",
+    "ja": "BD-RE · {0} セクター",
+    "tr": "BD-RE · {0} sektör",
+    "es": "BD-RE · {0} sectores",
+    "cs": "BD-RE · {0} sektorů"
+  },
+  "Burn.BdRePreflight": {
+    "zh-CN": "修改 BD-RE 前会再次核对盘片并确认本次操作。",
+    "en": "The disc will be checked again and you will confirm the operation before the BD-RE is changed.",
+    "zh-TW": "修改 BD-RE 前會再次核對光碟並確認本次操作。",
+    "ja": "BD-RE を変更する前に、ディスクを再確認し、操作の確認を求めます。",
+    "tr": "BD-RE değiştirilmeden önce disk yeniden denetlenecek ve işlemi onaylamanız istenecek.",
+    "es": "Antes de modificar el BD-RE, se comprobará de nuevo el disco y se pedirá confirmación de la operación.",
+    "cs": "Před změnou BD-RE se disk znovu ověří a potvrdíte požadovanou operaci."
+  },
+  "Burn.BdReFormatTitle": {
+    "zh-CN": "确认格式化 BD-RE",
+    "en": "Confirm BD-RE formatting",
+    "zh-TW": "確認格式化 BD-RE",
+    "ja": "BD-RE のフォーマットを確認",
+    "tr": "BD-RE biçimlendirmesini onayla",
+    "es": "Confirmar el formateo del BD-RE",
+    "cs": "Potvrdit formátování BD-RE"
+  },
+  "Burn.BdReFormatBody": {
+    "zh-CN": "将把这张未格式化的 BD-RE 初始化为无备用区格式，然后从逻辑扇区 0 写入。",
+    "en": "This unformatted BD-RE will be initialized without spare areas, then written from logical sector 0.",
+    "zh-TW": "將把這張未格式化的 BD-RE 初始化為無備用區格式，然後從邏輯磁區 0 寫入。",
+    "ja": "未フォーマットの BD-RE を予備領域なしで初期化し、論理セクター 0 から書き込みます。",
+    "tr": "Bu biçimlendirilmemiş BD-RE yedek alan olmadan başlatılacak, ardından mantıksal sektör 0'dan yazılacak.",
+    "es": "Este BD-RE sin formatear se inicializará sin áreas de reserva y se grabará desde el sector lógico 0.",
+    "cs": "Tento nenaformátovaný disk BD-RE se inicializuje bez náhradních oblastí a zápis začne od logického sektoru 0."
+  },
+  "Burn.BdReFormatAction": {
+    "zh-CN": "格式化并刻录",
+    "en": "Format and burn",
+    "zh-TW": "格式化並燒錄",
+    "ja": "フォーマットして書き込む",
+    "tr": "Biçimlendir ve yaz",
+    "es": "Formatear y grabar",
+    "cs": "Naformátovat a vypálit"
+  },
+  "Burn.BdReReformatTitle": {
+    "zh-CN": "确认重新格式化 BD-RE",
+    "en": "Confirm BD-RE reformatting",
+    "zh-TW": "確認重新格式化 BD-RE",
+    "ja": "BD-RE の再フォーマットを確認",
+    "tr": "BD-RE'yi yeniden biçimlendirmeyi onayla",
+    "es": "Confirmar el reformateo del BD-RE",
+    "cs": "Potvrdit přeformátování BD-RE"
+  },
+  "Burn.BdReReformatBody": {
+    "zh-CN": "将整盘重新格式化为无备用区布局，盘上现有数据将丢失。格式化完成后开始刻录。",
+    "en": "The entire disc will be reformatted without spare areas. All existing data will be lost. Burning starts after formatting.",
+    "zh-TW": "將整片光碟重新格式化為無備用區配置，光碟上現有資料將遺失。格式化完成後開始燒錄。",
+    "ja": "ディスク全体を予備領域なしで再フォーマットします。既存のデータはすべて失われます。フォーマット完了後に書き込みを開始します。",
+    "tr": "Diskin tamamı yedek alan olmadan yeniden biçimlendirilecek. Mevcut tüm veriler kaybolacak. Yazma, biçimlendirmeden sonra başlar.",
+    "es": "Se reformateará todo el disco sin áreas de reserva. Se perderán todos los datos existentes. La grabación comenzará al terminar el formateo.",
+    "cs": "Celý disk se přeformátuje bez náhradních oblastí. Veškerá stávající data se ztratí. Vypalování začne po formátování."
+  },
+  "Burn.BdReReformatAction": {
+    "zh-CN": "重新格式化并刻录",
+    "en": "Reformat and burn",
+    "zh-TW": "重新格式化並燒錄",
+    "ja": "再フォーマットして書き込む",
+    "tr": "Yeniden biçimlendir ve yaz",
+    "es": "Reformatear y grabar",
+    "cs": "Přeformátovat a vypálit"
+  },
+  "Burn.BdReOverwriteTitle": {
+    "zh-CN": "确认覆写 BD-RE",
+    "en": "Confirm BD-RE overwrite",
+    "zh-TW": "確認覆寫 BD-RE",
+    "ja": "BD-RE の上書きを確認",
+    "tr": "BD-RE üzerine yazmayı onayla",
+    "es": "Confirmar la sobrescritura del BD-RE",
+    "cs": "Potvrdit přepsání BD-RE"
+  },
+  "Burn.BdReOverwriteBody": {
+    "zh-CN": "将从逻辑扇区 0 覆写本次写入范围。该范围内的旧数据将丢失，范围以外的旧数据可能保留。",
+    "en": "The write will overwrite its range starting at logical sector 0. Existing data in that range will be lost. Old data beyond it may remain.",
+    "zh-TW": "將從邏輯磁區 0 覆寫本次寫入範圍。該範圍內的舊資料將遺失，範圍以外的舊資料可能保留。",
+    "ja": "論理セクター 0 から今回の書き込み範囲を上書きします。範囲内の既存データは失われ、範囲外の古いデータは残る場合があります。",
+    "tr": "Yazma işlemi mantıksal sektör 0'dan başlayarak kendi aralığının üzerine yazacak. Bu aralıktaki veriler kaybolacak. Aralığın ötesindeki eski veriler kalabilir.",
+    "es": "La grabación sobrescribirá su intervalo desde el sector lógico 0. Se perderán los datos de ese intervalo. Los datos antiguos fuera de él pueden permanecer.",
+    "cs": "Zápis přepíše svůj rozsah od logického sektoru 0. Stávající data v tomto rozsahu se ztratí. Mimo něj mohou stará data zůstat."
+  },
+  "Burn.BdReOverwriteAction": {
+    "zh-CN": "覆写并刻录",
+    "en": "Overwrite and burn",
+    "zh-TW": "覆寫並燒錄",
+    "ja": "上書きして書き込む",
+    "tr": "Üzerine yaz ve kaydet",
+    "es": "Sobrescribir y grabar",
+    "cs": "Přepsat a vypálit"
+  },
+  "Burn.BdReCalibrationLayoutChanged": {
+    "zh-CN": "实际盘片布局与保存的蓝光标定地址不符，无法刻录此标定目标。",
+    "en": "The actual disc layout does not match the saved Blu-ray calibration addresses. This calibration target cannot be burned.",
+    "zh-TW": "實際光碟配置與儲存的藍光校正位址不符，無法燒錄此校正目標。",
+    "ja": "実際のディスク配置は保存済みの Blu-ray キャリブレーション アドレスと一致しません。このキャリブレーション ターゲットは書き込めません。",
+    "tr": "Diskin gerçek düzeni kayıtlı Blu-ray kalibrasyon adresleriyle uyuşmuyor. Bu kalibrasyon hedefi yazılamaz.",
+    "es": "La disposición real del disco no coincide con las direcciones de calibración Blu-ray guardadas. No se puede grabar este objetivo de calibración.",
+    "cs": "Skutečné rozložení disku neodpovídá uloženým kalibračním adresám Blu-ray. Tento kalibrační terč nelze vypálit."
+  },
   "CD 内半径": {
     "zh-CN": "CD 内半径",
     "en": "CD inner radius",

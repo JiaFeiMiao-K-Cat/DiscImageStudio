@@ -27,6 +27,13 @@ public sealed record OpticalBurnDevice(
     string DisplayName,
     IReadOnlyList<string> VolumePaths);
 
+public enum BluRayRewritablePreparation
+{
+    Format,
+    Reformat,
+    Overwrite,
+}
+
 /// <summary>
 /// The medium's geometry extent and the current write limit are separate values.
 /// WritableSectors is a payload limit, not a replacement for geometry or filesystem free space.
@@ -35,6 +42,8 @@ public sealed record OpticalMediaCapacity(long TotalSectors, long WritableSector
 {
     /// <summary>Writing this medium requires a separate erase confirmation.</summary>
     public bool RequiresErase { get; init; }
+
+    public BluRayRewritablePreparation? BluRayRewritablePreparation { get; init; }
 }
 
 public sealed record OpticalWriteSpeed(
@@ -105,6 +114,15 @@ public sealed record OpticalBurnRequest(
     // Invoked on the burn worker immediately before modifying a nonblank rewritable DVD.
     public Func<string, bool>? ConfirmDvdDataLoss { get; init; }
 
+    // Expected operation from preflight, checked again under the media lock.
+    public BluRayRewritablePreparation? BluRayRewritablePreparation { get; init; }
+
+    // Invoked on the burn worker under the media lock, before formatting or overwriting.
+    public Func<BluRayRewritablePreparation, bool>? ConfirmBluRayRewritable { get; init; }
+
+    // Arguments are the output stream, PSN of LBA 0, verified contiguous sector count, and cancellation token.
+    public Action<Stream, uint, uint, CancellationToken>? ProduceMappedBluRayContent { get; init; }
+
     public OpticalBurnBufferOptions EffectiveBufferOptions => BufferOptions
         ?? (MediaKind == OpticalBurnMediaKind.BluRayData
             ? OpticalBurnBufferOptions.BluRayDefault : OpticalBurnBufferOptions.Default);
@@ -119,6 +137,13 @@ public sealed record OpticalBurnRequest(
             throw new ArgumentOutOfRangeException(
                 nameof(ContentLength),
                 $"Stream length must be a positive multiple of {sectorBytes} bytes.");
+        }
+
+        if (BluRayRewritablePreparation is not null
+            && (MediaKind != OpticalBurnMediaKind.BluRayData || ProduceMappedBluRayContent is null
+                || ConfirmBluRayRewritable is null))
+        {
+            throw new ArgumentException("BD-RE requires a confirmed preparation and a mapped Blu-ray content producer.");
         }
 
         WriteSpeed?.Validate();

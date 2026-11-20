@@ -1,6 +1,6 @@
 namespace DiscImageStudio.BluRay.Encoding;
 
-/// <summary>BD-R additive data-frame scrambler, ISO/IEC 30190:2021, 13.4.</summary>
+/// <summary>BD-R and BD-RE additive data-frame scrambler (ISO/IEC 30190 and 30192, §13.4).</summary>
 public static class BluRayScrambler
 {
     /// <summary>PSN bits 19..5 seed s14..s0; s15 is one. All 32 frames in a cluster share a mask.</summary>
