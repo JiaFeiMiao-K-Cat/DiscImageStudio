@@ -23,7 +23,9 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
     // https://learn.microsoft.com/windows/win32/api/imapi2/ne-imapi2-imapi_media_physical_type
     // https://learn.microsoft.com/windows/win32/api/imapi2/ne-imapi2-imapi_profile_type
     private const int BluRayRecordableMedia = 0x12;
+    private const int BluRayRewritableMediaType = 0x13;
     private const int BluRaySequentialProfile = 0x41;
+    private const int BluRayRewritableProfile = 0x43;
     private const uint BluRaySingleLayerSectors = 12_219_392;
 
     public Task<IReadOnlyList<OpticalBurnDevice>> GetDevicesAsync(
@@ -55,7 +57,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             format = ImapiCom.CreateComObject("IMAPI2.MsftDiscFormat2Data");
             format.Recorder = recorder;
             format.ClientName = "Disc Image Studio";
-            ValidateRequestedMedia(mediaKind, recorder, format);
+            int physicalMediaType = ValidateRequestedMedia(mediaKind, (object)recorder, (object)format);
             // These are media queries. PrepareMedia would enter a recording session.
             OpticalMediaCapacity capacity;
             if (mediaKind == OpticalBurnMediaKind.DvdData)
@@ -76,7 +78,9 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 var transport = new ImapiMmcCommandTransport((object)recorder);
                 capacity = OpticalBurnMedia.UsesCdDao(mediaKind)
                     ? ReadCdMediaCapacity(ReadCdAtipSectorCount(transport), Convert.ToBoolean(format.MediaPhysicallyBlank))
-                    : ReadBluRayMediaCapacity(transport);
+                    : physicalMediaType == BluRayRewritableMediaType
+                        ? BluRayRewritableBurn.ReadCapacity(transport)
+                        : ReadBluRayMediaCapacity(transport);
             }
             token.ThrowIfCancellationRequested();
             return capacity;
@@ -283,12 +287,19 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 : ImapiCom.CreateComObject("IMAPI2.MsftDiscFormat2Data");
             format.Recorder = recorder;
             format.ClientName = "Disc Image Studio";
+            int physicalMediaType = ValidateRequestedMedia(mediaKind, (object)recorder, (object)format);
+            if (mediaKind == OpticalBurnMediaKind.BluRayData && physicalMediaType == BluRayRewritableMediaType)
+            {
+                OpticalMediaCapacity media = BluRayRewritableBurn.ReadCapacity(new ImapiMmcCommandTransport((object)recorder));
+                cancellationToken.ThrowIfCancellationRequested();
+                return media.BluRayRewritablePreparation == BluRayRewritablePreparation.Overwrite
+                    ? ReadSupportedWriteSpeeds(format)
+                    : [];
+            }
             if (!(bool)format.IsRecorderSupported(recorder))
             {
                 throw new InvalidOperationException("所选光驱不支持这种刻录方式。");
             }
-
-            ValidateRequestedMedia(mediaKind, recorder, format);
             if (mediaKind == OpticalBurnMediaKind.DvdData && DvdNeedsErase((object)format))
             {
                 // Read the speeds after erasing, when the writer can use the medium.
@@ -333,7 +344,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         cancellationToken.ThrowIfCancellationRequested();
         progress?.Report(new OpticalBurnProgress(
             "device",
-            "正在检查刻录机和空白介质…",
+            "正在检查刻录机和当前盘片…",
             0,
             request.ContentLength));
         dynamic recorder = ImapiCom.CreateRecorder(request.DeviceId);
@@ -344,6 +355,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         string? environmentDiagnostic = null;
         string? recorderDiagnostic = null;
         string? physicalMediaDiagnostic = null;
+        bool bluRayRewritable = false;
         try
         {
             BurnDeviceDiagnostics.Report(ReportDiagnostic, () => environmentDiagnostic = BurnDeviceDiagnostics.DescribeEnvironment(request));
@@ -356,19 +368,40 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             format.Recorder = recorder;
             format.ClientName = "Disc Image Studio";
             BurnDeviceDiagnostics.Report(ReportDiagnostic, () => physicalMediaDiagnostic = BurnDeviceDiagnostics.DescribePhysicalMedia((object)format));
-            currentOperation = "检查刻录机支持";
-            if (!(bool)format.IsRecorderSupported(recorder))
-            {
-                throw new InvalidOperationException("所选光驱不支持这种刻录方式。");
-            }
-
             currentOperation = "检查当前盘片兼容性";
-            ValidateRequestedMedia(request.MediaKind, recorder, format);
+            int physicalMediaType = ValidateRequestedMedia(request.MediaKind, (object)recorder, (object)format);
+            bluRayRewritable = request.MediaKind == OpticalBurnMediaKind.BluRayData
+                && physicalMediaType == BluRayRewritableMediaType;
+            if (bluRayRewritable != request.BluRayRewritablePreparation.HasValue)
+                throw new InvalidOperationException("蓝光盘片已更换或尚未确认 BD-RE 格式化／覆写，请重新开始刻录。");
+
+            if (!bluRayRewritable && !(bool)format.IsRecorderSupported(recorder))
+                throw new InvalidOperationException("所选光驱不支持这种刻录方式。");
+
             // Used DVD±RW can be erasable even when the data writer rejects its current state.
-            if (!(request.MediaKind == OpticalBurnMediaKind.DvdData && DvdNeedsErase((object)format))
+            if (!bluRayRewritable
+                && !(request.MediaKind == OpticalBurnMediaKind.DvdData && DvdNeedsErase((object)format))
                 && !(bool)format.IsCurrentMediaSupported(recorder))
             {
                 throw new InvalidOperationException("当前盘片与所选 CD/DVD/蓝光模式不兼容。");
+            }
+
+            using DynamicBluRaySequentialSession? rewritableSession = bluRayRewritable
+                ? CreateBluRaySession()
+                : null;
+            BluRayRewritableLayout? rewritableLayout = null;
+            Action<Stream, CancellationToken> produceContent = request.ProduceContent;
+            if (rewritableSession is not null)
+            {
+                ReportOperation("锁定并检查单层 BD-RE 盘片");
+                rewritableSession.Acquire();
+                BluRayRewritableLayout layout = BluRayRewritableBurn.Prepare(
+                    rewritableSession, request, cancellationToken, ReportOperation);
+                rewritableLayout = layout;
+                ReportDiagnostic($"BD-RE 无备用区：LBA 0 → PSN 0x{layout.FirstPhysicalSector:X8}，"
+                    + $"连续用户扇区={layout.SectorCount:N0}。");
+                var mappedProducer = request.ProduceMappedBluRayContent!;
+                produceContent = (output, token) => mappedProducer(output, layout.FirstPhysicalSector, layout.SectorCount, token);
             }
 
             if (request.MediaKind != OpticalBurnMediaKind.DvdData)
@@ -376,7 +409,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
 
             using GeneratedContentComStream content = new(
                 request.ContentLength,
-                request.ProduceContent,
+                produceContent,
                 (completed, total) => progress?.Report(new OpticalBurnProgress(
                     "transfer",
                     $"正在向刻录接口传输 {completed / (1024.0 * 1024.0):F1} / {total / (1024.0 * 1024.0):F1} MiB…",
@@ -400,7 +433,14 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             BurnDeviceDiagnostics.Report(ReportDiagnostic, content.GetDiagnosticSummary);
             // Preparation may take time. Recheck the loaded medium before writing.
             currentOperation = "再次检查当前盘片兼容性";
-            try { ValidateRequestedMedia(request.MediaKind, recorder, format); }
+            try
+            {
+                if (rewritableSession is null
+                    && ValidateRequestedMedia(request.MediaKind, (object)recorder, (object)format) != physicalMediaType)
+                    throw new InvalidOperationException("盘片已更换，请重新开始刻录。");
+                if (rewritableSession is not null && rewritableSession.ReadRewritableLayout() != rewritableLayout)
+                    throw new InvalidOperationException("BD-RE 物理布局已变化，请重新开始刻录。");
+            }
             catch (Exception exception)
             {
                 try { exception.Data["Burn.ContentAtFailure"] = content.GetDiagnosticSummary(); } catch { }
@@ -424,17 +464,41 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                     message => cleanupWarnings.Add(message),
                     ReportDiagnostic);
             }
+            else if (rewritableSession is not null)
+            {
+                ReportOperation("设置 BD-RE 写入速度");
+                actualWriteSpeed = rewritableSession.ConfigureRewritableWrite(request.WriteSpeed);
+                if (actualWriteSpeed is not null)
+                    ReportWriteSpeed(progress, actualWriteSpeed, request);
+                else
+                    ReportDiagnostic("BD-RE：刻录接口未报告实际写入速度。");
+                using CancellationTokenRegistration registration = cancellationToken.Register(rewritableSession.CancelWrite);
+                cancellationToken.ThrowIfCancellationRequested();
+                ReportOperation("正在写入单层 BD-RE");
+                try
+                {
+                    rewritableSession.Write(content, checked((uint)(request.ContentLength / BluRaySequentialWriter.SectorBytes)));
+                }
+                catch (Exception exception)
+                {
+                    try { exception.Data["Burn.ContentAtFailure"] = content.GetDiagnosticSummary(); } catch { }
+                    CaptureFailure(exception);
+                    try { rewritableSession.Flush(); }
+                    catch (Exception flushError) { cleanupWarnings.Add($"BD-RE 缓存刷新失败：{flushError.Message}"); }
+                    throw;
+                }
+                ReportOperation("刷新 BD-RE 缓存（请等待完成）");
+                rewritableSession.Flush();
+                cancellationToken.ThrowIfCancellationRequested();
+                ReportOperation("释放 BD-RE 刻录机访问权");
+                rewritableSession.Release();
+            }
             else if (request.MediaKind == OpticalBurnMediaKind.BluRayData)
             {
                 // IDiscFormat2Data.Write formats virgin BD-R with spare areas.
                 // The lower-level write engine only sends WRITE commands, so
                 // the unformatted track keeps the LBA/physical-address mapping.
-                using DynamicBluRaySequentialSession session = new((object)recorder, (object)format,
-                    writeProgress.ReportAcceptedBytes,
-                    reportCleanupWarning: message => cleanupWarnings.Add(message),
-                    reportDiagnostics: message => progress?.Report(new OpticalBurnProgress(
-                        "diagnostic", message, 0, request.ContentLength)),
-                    reportRecordedLba: writeProgress.ReportRecordedSectors);
+                using DynamicBluRaySequentialSession session = CreateBluRaySession();
                 actualWriteSpeed = BurnBluRay(session, content, request,
                     cancellationToken, ReportOperation,
                     speed => ReportWriteSpeed(progress, speed, request),
@@ -551,23 +615,33 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
 
         progress?.Report(new OpticalBurnProgress(
             "complete",
-            "刻录完成，盘片会话已关闭。",
+            bluRayRewritable ? "BD-RE 刻录完成，设备缓存已刷新。" : "刻录完成，盘片会话已关闭。",
             request.ContentLength,
             request.ContentLength));
         return result!;
+
+        DynamicBluRaySequentialSession CreateBluRaySession()
+            => new((object)recorder, (object)format!, writeProgress.ReportAcceptedBytes,
+                reportCleanupWarning: cleanupWarnings.Add,
+                reportDiagnostics: ReportDiagnostic,
+                reportRecordedLba: writeProgress.ReportRecordedSectors);
 
         void SelectAutomaticWriteSpeed()
         {
             if (request.WriteSpeed is not null)
                 return;
             currentOperation = "选择最低刻录速度";
-            IReadOnlyList<OpticalWriteSpeed> supportedSpeeds = ReadSupportedWriteSpeeds(format!);
+            IReadOnlyList<OpticalWriteSpeed> supportedSpeeds;
+            try { supportedSpeeds = ReadSupportedWriteSpeeds(format!); }
+            catch (COMException) when (bluRayRewritable) { supportedSpeeds = []; }
             BurnDeviceDiagnostics.Report(ReportDiagnostic, () => "可选写入速度："
                 + (supportedSpeeds.Count == 0 ? "none" : string.Join(" | ", supportedSpeeds.Select(BurnDeviceDiagnostics.DescribeSpeed))) + "。");
             request = request with { WriteSpeed = ResolveWriteSpeed(null, supportedSpeeds) };
             progress?.Report(new OpticalBurnProgress("speed",
                 request.WriteSpeed is null
-                    ? "当前盘片未报告可选速度，将使用刻录接口的保守回退设置…"
+                    ? bluRayRewritable
+                        ? "当前 BD-RE 未报告可选速度，将使用光驱当前设置…"
+                        : "当前盘片未报告可选速度，将使用刻录接口的保守回退设置…"
                     : $"自动选择最低写入速度：{request.WriteSpeed.GetMultiplier(request.MediaKind):0.#}×"
                         + $"（{request.WriteSpeed.GetMegabytesPerSecond(request.MediaKind):0.0} MB/s）…",
                 0, request.ContentLength));
@@ -609,11 +683,11 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
     internal static string GetBurnOperationStage(string operation) => operation switch
     {
         "CD 原始写入调用已返回" or "DVD 写入调用已返回" or "BD-R 数据传输调用已返回" => "write-complete",
-        "刷新 BD-R 缓存（请等待完成）" => "flush",
+        "刷新 BD-R 缓存（请等待完成）" or "刷新 BD-RE 缓存（请等待完成）" => "flush",
         "关闭 BD-R 轨道（请等待完成）" => "close-track",
         "封闭 BD-R 盘片（请等待完成）" => "close-disc",
         "关闭 CD 刻录会话" => "finalize",
-        "释放 BD-R 刻录机访问权" => "release",
+        "释放 BD-R 刻录机访问权" or "释放 BD-RE 刻录机访问权" => "release",
         _ when operation.Contains("校验", StringComparison.Ordinal) => "diagnostic",
         _ => "media",
     };
@@ -1241,34 +1315,45 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 + $"ElapsedMs={(burnTimer.Elapsed - operationStarted).TotalMilliseconds:F0}。");
     }
 
-    private static void ValidateRequestedMedia(
+    private static int ValidateRequestedMedia(
         OpticalBurnMediaKind mediaKind,
         dynamic recorder,
         dynamic format)
     {
+        int? currentProfile = null;
+        if (mediaKind == OpticalBurnMediaKind.BluRayData)
+        {
+            // An unformatted BD-RE may not be usable through IMAPI's data writer.
+            // Its actual MMC profile selects the direct command path.
+            var commands = new BluRayMmcCommands(new ImapiMmcCommandTransport((object)recorder));
+            currentProfile = commands.ReadCurrentProfile();
+            if (currentProfile == BluRayRewritableProfile) return BluRayRewritableMediaType;
+        }
+
         object currentProfiles = recorder.CurrentProfiles;
         int[] profiles = currentProfiles is Array values
             ? values.Cast<object>().Select(value => Convert.ToInt32(value)).ToArray()
             : [];
         int physicalMediaType = Convert.ToInt32(format.CurrentPhysicalMediaType);
-        if (IsWritableMedia(mediaKind, physicalMediaType, profiles))
-            return;
+        if (mediaKind == OpticalBurnMediaKind.BluRayData
+            ? currentProfile == BluRaySequentialProfile && IsWritableBluRayMedia(physicalMediaType, profiles)
+            : IsWritableMedia(mediaKind, physicalMediaType, profiles))
+            return physicalMediaType;
 
-        int? currentProfile = null;
         if (mediaKind == OpticalBurnMediaKind.DvdData && IsRewritableDvd(physicalMediaType))
         {
             // Some drives omit the current profile from the IMAPI profile list.
             var commands = new BluRayMmcCommands(new ImapiMmcCommandTransport((object)recorder));
             currentProfile = commands.ReadCurrentProfile();
             if (IsWritableMedia(mediaKind, physicalMediaType, [currentProfile.Value]))
-                return;
+                return physicalMediaType;
         }
 
         string medium = mediaKind switch
         {
             OpticalBurnMediaKind.CdAudio or OpticalBurnMediaKind.CdData => "CD-R 或 CD-RW",
             OpticalBurnMediaKind.DvdData => "DVD",
-            OpticalBurnMediaKind.BluRayData => "未格式化的单层顺序 BD-R（无备用区）",
+            OpticalBurnMediaKind.BluRayData => "单层顺序 BD-R 或单层 BD-RE（无备用区绘图）",
             _ => throw new ArgumentOutOfRangeException(nameof(mediaKind)),
         };
         string reportedProfiles = string.Join(", ", profiles.Select(profile => $"0x{profile:X4}"));
@@ -1303,7 +1388,9 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 0xD => currentProfiles.Contains(0x2A), // DVD+RW DL
                 _ => false,
             },
-            OpticalBurnMediaKind.BluRayData => IsWritableBluRayMedia(physicalMediaType, currentProfiles),
+            OpticalBurnMediaKind.BluRayData => physicalMediaType == BluRayRewritableMediaType
+                ? currentProfiles.Contains(BluRayRewritableProfile)
+                : IsWritableBluRayMedia(physicalMediaType, currentProfiles),
             _ => throw new ArgumentOutOfRangeException(nameof(mediaKind)),
         };
     }

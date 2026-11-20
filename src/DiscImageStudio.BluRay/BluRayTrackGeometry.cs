@@ -9,8 +9,8 @@ public readonly record struct BluRayTrackPoint(int Layer, double RadiusMm, doubl
     public double Ymm => RadiusMm * Math.Sin(AngleRadians);
 }
 
-/// <summary>Nominal recording-unit geometry with optional cubic radial pitch. Includes run-in/run-out
-/// spacing (ISO/IEC 30190 §14), but does not predict drive defect replacement.</summary>
+/// <summary>Layer-0 recording-unit geometry with optional cubic radial pitch. Includes run-in/run-out
+/// spacing and locates the contiguous user area by its physical offset.</summary>
 public sealed class BluRayTrackGeometry
 {
     private readonly BluRayDiscParameters _disc;
@@ -96,9 +96,10 @@ public sealed class BluRayTrackGeometry
     internal (Vector256<double> Radius, Vector256<double> Angle) AtSectorsFour(
         Vector256<double> sectorPositions)
     {
+        Vector256<double> physicalSectors = sectorPositions + Vector256.Create((double)_disc.UserDataSectorOffset);
         if (_variablePitch is not null)
         {
-            Vector256<double> arcs = (sectorPositions / Vector256.Create((double)_disc.TotalSectors))
+            Vector256<double> arcs = (physicalSectors / Vector256.Create((double)_disc.TotalSectors))
                 * Vector256.Create(TrackLengthPerLayerMm);
             var point = _variablePitch.AtArcLengthFast(arcs);
             return (point.Radius, Vector256.Create(_angleOffset) - point.Angle);
@@ -108,7 +109,7 @@ public sealed class BluRayTrackGeometry
         Vector256<double> growth = Vector256.Create(_growth);
         Vector256<double> growthSquared = Vector256.Create(_growth * _growth);
         Vector256<double> twiceGrowth = Vector256.Create(2 * _growth);
-        Vector256<double> target = (sectorPositions / Vector256.Create((double)_disc.TotalSectors))
+        Vector256<double> target = (physicalSectors / Vector256.Create((double)_disc.TotalSectors))
             * Vector256.Create(TrackLengthPerLayerMm);
         Vector256<double> radius = Vector256.Sqrt(Vector256.Create(_disc.InnerRadiusMm * _disc.InnerRadiusMm)
             + twiceGrowth * target);
@@ -158,11 +159,12 @@ public sealed class BluRayTrackGeometry
         return new BluRayTrackPoint(layer, radius, angle);
     }
 
+    /// <summary>Position of a logical user sector, including its physical offset from the data-zone start.</summary>
     public BluRayTrackPoint AtSector(double sectorPosition)
     {
-        if (!double.IsFinite(sectorPosition) || sectorPosition < 0 || sectorPosition > _disc.TotalSectors)
+        if (!double.IsFinite(sectorPosition) || sectorPosition < 0 || sectorPosition > _disc.LogicalGeometrySectors)
             throw new ArgumentOutOfRangeException(nameof(sectorPosition));
-        return AtLayerFraction(0, sectorPosition / _disc.TotalSectors);
+        return AtLayerFraction(0, (sectorPosition + _disc.UserDataSectorOffset) / _disc.TotalSectors);
     }
 
     /// <summary>Finds the nearest spiral turn at a point in fixed disc coordinates.
@@ -179,9 +181,7 @@ public sealed class BluRayTrackGeometry
             double difference = Math.IEEERemainder(Math.Atan2(yMm, xMm) - (_angleOffset - angle), 2 * Math.PI);
             double nearestAngle = angle - difference;
             if (nearestAngle < 0 || nearestAngle >= _variablePitch.TotalAngleRadians) return false;
-            sector = Math.Clamp(_variablePitch.ArcLengthAtAngle(nearestAngle)
-                * (_disc.TotalSectors / TrackLengthPerLayerMm), 0, Math.BitDecrement((double)_disc.TotalSectors));
-            return true;
+            return TryGetLogicalSector(_variablePitch.ArcLengthAtAngle(nearestAngle), out sector);
         }
 
         double growth = EffectiveTrackPitchMicrometers / (2 * Math.PI * 1000);
@@ -189,9 +189,17 @@ public sealed class BluRayTrackGeometry
         double delta = Math.IEEERemainder(Math.Atan2(yMm, xMm) - spiralAngle, 2 * Math.PI);
         double nearestRadius = radius - delta * growth;
         if (nearestRadius < _disc.InnerRadiusMm || nearestRadius >= _disc.OuterRadiusMm) return false;
-        sector = Math.Clamp((Primitive(nearestRadius, growth) - Primitive(_disc.InnerRadiusMm, growth))
-            * (_disc.TotalSectors / TrackLengthPerLayerMm), 0, Math.BitDecrement((double)_disc.TotalSectors));
-        return true;
+        return TryGetLogicalSector(Primitive(nearestRadius, growth) - Primitive(_disc.InnerRadiusMm, growth), out sector);
+    }
+
+    private bool TryGetLogicalSector(double arcLength, out double sector)
+    {
+        double physicalSector = Math.Clamp(arcLength * (_disc.TotalSectors / TrackLengthPerLayerMm),
+            0, Math.BitDecrement((double)_disc.TotalSectors));
+        double logicalSector = physicalSector - _disc.UserDataSectorOffset;
+        bool isInUserArea = logicalSector >= 0 && logicalSector < _disc.LogicalGeometrySectors;
+        sector = isInUserArea ? logicalSector : 0;
+        return isInUserArea;
     }
 
     private static double Primitive(double radius, double b)

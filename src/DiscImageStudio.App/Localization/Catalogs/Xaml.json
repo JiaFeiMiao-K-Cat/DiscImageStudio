@@ -575,14 +575,14 @@
     "es": "Grabar",
     "cs": "Vypálení"
   },
-  "Xaml.StreamDataDirectlyToABlankDiscWithoutFirst": {
-    "zh-CN": "即时刻录将数据直接流式写入空白盘片，不必单独生成镜像文件再刻录。",
-    "en": "Stream data directly to a blank disc without first generating an image file.",
-    "zh-TW": "即時燒錄會將資料直接串流寫入空白光碟，無須先產生映像檔。",
-    "ja": "イメージ ファイルを生成せずに、データを空のディスクへ直接ストリーミングして書き込みます。",
-    "tr": "Verileri önce bir imaj dosyası oluşturmadan doğrudan boş bir diske akışla yazın.",
-    "es": "Transmitir los datos directamente a un disco virgen sin generar primero un archivo de imagen.",
-    "cs": "Přímé vypalování zapisuje data rovnou na prázdný disk, bez vytváření souboru obrazu."
+  "Xaml.StreamDataDirectlyToDisc": {
+    "zh-CN": "将数据直接流式写入光盘，无需先生成镜像文件。",
+    "en": "Stream data directly to disc without first generating an image file.",
+    "zh-TW": "將資料直接串流寫入光碟，無須先產生映像檔。",
+    "ja": "イメージ ファイルを生成せずに、データをディスクに直接ストリーミングして書き込みます。",
+    "tr": "Önce bir imaj dosyası oluşturmadan verileri doğrudan diske akışla yazın.",
+    "es": "Transmite los datos directamente al disco sin generar primero un archivo de imagen.",
+    "cs": "Přímé vypalování zapisuje data rovnou na disk, bez vytváření souboru obrazu."
   },
   "Xaml.ContentToWrite": {
     "zh-CN": "写入内容",
@@ -674,23 +674,32 @@
     "es": "Antes de grabar",
     "cs": "Před vypalováním"
   },
-  "Xaml.StreamingRequiresBlankMediaInterruptionsPowerLossOrInsufficient": {
-    "zh-CN": "流式刻录仅支持空白介质。刻录开始后，中断、断电或生成速度不足都可能导致盘片报废。",
-    "en": "Streaming requires blank media. Interruptions, power loss, or insufficient generation speed may make the disc unusable.",
-    "zh-TW": "串流燒錄僅支援空白媒體。開始燒錄後，中斷、斷電或資料產生速度不足，都可能導致光碟報廢。",
-    "ja": "ストリーミング書き込みは空のメディアのみに対応しています。書き込み開始後に中断、停電、または生成速度の不足が発生すると、ディスクが使用できなくなる場合があります。",
-    "tr": "Akışla yazma yalnızca boş ortam gerektirir. Kesintiler, elektrik kesintisi veya yetersiz oluşturma hızı diski kullanılamaz hale getirebilir.",
-    "es": "La grabación en streaming requiere discos vírgenes. Las interrupciones, los cortes de alimentación o una generación demasiado lenta pueden inutilizar el disco.",
-    "cs": "Přímé vypalování funguje jen s prázdným médiem. Po spuštění může disk znehodnotit přerušení, výpadek proudu nebo příliš pomalé generování dat."
+  "Xaml.StreamingBurnInterruptionWarning": {
+    "zh-CN": "刻录过程中，中断、断电或生成速度不足都可能使盘片无法读取。",
+    "en": "Interruptions, power loss, or insufficient generation speed during burning may make the disc unreadable.",
+    "zh-TW": "燒錄過程中，中斷、斷電或資料產生速度不足都可能使光碟無法讀取。",
+    "ja": "書き込み中に中断、停電、または生成速度の不足が発生すると、ディスクを読み取れなくなる場合があります。",
+    "tr": "Yazma sırasında kesintiler, elektrik kesintisi veya yetersiz oluşturma hızı diski okunamaz hale getirebilir.",
+    "es": "Las interrupciones, los cortes de alimentación o una generación demasiado lenta durante la grabación pueden volver ilegible el disco.",
+    "cs": "Přerušení, výpadek napájení nebo příliš pomalé generování dat při vypalování mohou způsobit nečitelnost disku."
   },
-  "Xaml.IHaveInsertedTheCorrectBlankDisc": {
-    "zh-CN": "我确认已放入正确的空白盘",
-    "en": "I have inserted the correct blank disc",
-    "zh-TW": "我確認已放入正確的空白光碟",
-    "ja": "正しい空のディスクを挿入したことを確認しました",
-    "tr": "Doğru boş diski taktığımı onaylıyorum",
-    "es": "He insertado el disco virgen correcto",
-    "cs": "Potvrzuji, že je vložen správný prázdný disk"
+  "Xaml.BluRayStreamingMedia": {
+    "zh-CN": "支持空白单层 BD-R，以及能验证无备用区布局的 25 GB 单层 BD-RE。格式化或覆写 BD-RE 前会另行确认。",
+    "en": "Supports blank single-layer BD-R and 25 GB single-layer BD-RE with a verifiable layout without spare areas. Formatting or overwriting BD-RE requires separate confirmation.",
+    "zh-TW": "支援空白單層 BD-R，以及能驗證無備用區配置的 25 GB 單層 BD-RE。格式化或覆寫 BD-RE 前會另行確認。",
+    "ja": "空の 1 層 BD-R と、予備領域のない配置を検証できる 25 GB の 1 層 BD-RE に対応します。BD-RE のフォーマットや上書きの前に個別の確認が必要です。",
+    "tr": "Boş tek katmanlı BD-R ve yedek alansız düzeni doğrulanabilen 25 GB tek katmanlı BD-RE desteklenir. BD-RE'yi biçimlendirme veya üzerine yazma için ayrı onay gerekir.",
+    "es": "Admite BD-R vírgenes de una capa y BD-RE de 25 GB de una capa con una disposición verificable sin áreas de reserva. El formateo o la sobrescritura de BD-RE requiere una confirmación aparte.",
+    "cs": "Podporovány jsou prázdné jednovrstvé disky BD-R a 25 GB jednovrstvé disky BD-RE s ověřitelným rozložením bez náhradních oblastí. Formátování nebo přepis BD-RE vyžaduje samostatné potvrzení."
+  },
+  "Xaml.IHaveInsertedTheCorrectDisc": {
+    "zh-CN": "我确认已放入要刻录的盘片",
+    "en": "I have inserted the disc I want to burn",
+    "zh-TW": "我確認已放入要燒錄的光碟",
+    "ja": "書き込むディスクを挿入したことを確認しました",
+    "tr": "Yazdırmak istediğim diski taktığımı onaylıyorum",
+    "es": "He insertado el disco que quiero grabar",
+    "cs": "Potvrzuji, že je vložen disk určený k vypálení"
   },
   "Xaml.AllowRewritableDvdOverwrite": {
     "zh-CN": "允许覆写已写入的 DVD±RW（整盘擦除）",

@@ -22,11 +22,76 @@ internal static class BluRayModuleTests
     internal static void Run()
     {
         TestParametersAndGeometry();
+        TestPhysicalLayout();
         TestCalibratedPresetCommands();
         TestStreaming();
         TestAtomicFilesAndCommands();
         TestPictureCommands();
         Console.WriteLine("blu-ray-module: passed");
+    }
+
+    internal static void TestPhysicalLayout()
+    {
+        const uint physicalOffset = 131_072;
+        const uint firstPsn = BluRayDiscParameters.FirstLayer0PhysicalSector + physicalOffset;
+        const uint capacity = BluRayDiscParameters.SectorsPerLayer - 2 * physicalOffset;
+        var original = new BluRayDiscParameters(UsableSectors: 64, StartAngleDegrees: 37);
+        var plan = BluRayIsoGenerator.PrepareDrawing(original);
+        True(ReferenceEquals(plan, plan.WithPhysicalLayout(BluRayDiscParameters.FirstLayer0PhysicalSector,
+            BluRayDiscParameters.SectorsPerLayer)), "nominal layout preserves a confirmed drawing plan");
+        var relocatedPlan = plan.WithPhysicalLayout(firstPsn, capacity);
+        Equal(plan.ContentLength, relocatedPlan.ContentLength, "layout preserves the approved byte length");
+        True(relocatedPlan.DrawingStartRadiusMm > plan.DrawingStartRadiusMm, "raw plan tracks its actual inner edge");
+        Throws<InvalidOperationException>(() => plan.WithPhysicalLayout(firstPsn, 32));
+        Throws<ArgumentOutOfRangeException>(() => original.WithPhysicalLayout(firstPsn + 1, capacity));
+        Throws<ArgumentOutOfRangeException>(() => original.WithPhysicalLayout(firstPsn, BluRayDiscParameters.SectorsPerLayer));
+        var shorterGeometry = new BluRayDiscParameters(TotalSectors: 2048, UsableSectors: 1024, PitchLinear: .1);
+        Equal(shorterGeometry, shorterGeometry.WithPhysicalLayout(BluRayDiscParameters.FirstLayer0PhysicalSector,
+            BluRayDiscParameters.SectorsPerLayer), "full nominal disc leaves shorter legacy geometry and output untouched");
+
+        foreach (var disc in new[] { original, original with { PitchLinear = .24, PitchQuadratic = -.18, PitchCubic = .08 } })
+        {
+            BluRayDiscParameters relocated = disc.WithPhysicalLayout(firstPsn, capacity);
+            Equal(firstPsn, relocated.GetPhysicalSectorNumber(0), "logical sector zero uses the reported PSN");
+            Equal(firstPsn + capacity - 1, relocated.GetPhysicalSectorNumber(capacity - 1), "addressing stops at the end of the user area");
+            Throws<ArgumentOutOfRangeException>(() => relocated.GetPhysicalSectorNumber(capacity));
+            var before = new BluRayTrackGeometry(disc);
+            var after = new BluRayTrackGeometry(relocated);
+            Equal(before.TrackLengthPerLayerMm, after.TrackLengthPerLayerMm, "physical track length is independent of available sectors");
+            Equal(before.AtSector(physicalOffset), after.AtSector(0), "LBA zero uses its actual physical track position");
+            Equal(before.AtSector(physicalOffset + 64), after.AtSector(64), "trimmed output uses the actual outer position");
+            var point = after.AtSector(32.5);
+            True(after.TryGetSectorAtPoint(point.Xmm, point.Ymm, out double sector), "inverse can locate the shifted track");
+            Near(32.5, sector, 1e-6, "inverse reports the relocated LBA");
+            point = before.AtSector(32.5);
+            True(!after.TryGetSectorAtPoint(point.Xmm, point.Ymm, out _), "inverse excludes sectors before the user area");
+
+            var raster = new BluRayGray8Raster(64, 64, Enumerable.Range(0, 64 * 64)
+                .Select(index => (byte)(((index % 64 >= 32) ^ (index / 64 >= 32)) ? 255 : 0)).ToArray());
+            using var logicalStream = new MemoryStream();
+            using var physicalStream = new MemoryStream();
+            BluRayDiscParameters physicalDisc = disc with { UsableSectors = null };
+            BluRayStreamingGenerator.GenerateToStream(logicalStream, new(relocated, 0, 64),
+                new BluRayImagePayloadMapping(relocated, raster, new BluRayRunLengthMapping(), disc.OuterRadiusMm));
+            BluRayStreamingGenerator.GenerateToStream(physicalStream, new(physicalDisc, physicalOffset, 64),
+                new BluRayImagePayloadMapping(physicalDisc, raster, new BluRayRunLengthMapping(), disc.OuterRadiusMm));
+            True(logicalStream.ToArray().SequenceEqual(physicalStream.ToArray()),
+                "raster streaming samples the same image at matching physical addresses");
+        }
+
+        using var output = new MemoryStream();
+        BluRayStreamingGenerator.GenerateToStream(output, new(relocatedPlan.Disc, 0, 64), new BluRayConstantByteMapping(0));
+        byte[] payload = output.ToArray();
+        for (uint sector = 0; sector < 64; sector++)
+        {
+            byte[] expectedMask = BluRayScrambler.CreateMask(firstPsn + sector, BluRayDiscParameters.BytesPerSector);
+            True(payload.AsSpan((int)sector * BluRayDiscParameters.BytesPerSector, BluRayDiscParameters.BytesPerSector)
+                .SequenceEqual(expectedMask), "stream precompensates with the reported physical cluster's scrambler mask");
+        }
+        True(!payload.AsSpan(0, BluRayDiscParameters.BytesPerSector)
+            .SequenceEqual(BluRayScrambler.CreateMask(BluRayDiscParameters.FirstLayer0PhysicalSector, BluRayDiscParameters.BytesPerSector)),
+            "shifted PSN produces a different mask from BD-R nominal addressing");
+        Console.WriteLine("blu-ray-physical-layout: passed (PSN bounds, geometry, ISO plan, raster and scrambling)");
     }
 
     private static void TestParametersAndGeometry()

@@ -16,6 +16,7 @@ internal static class OpticalDriveProbeTests
         TestUnknownProfileUsesAtip();
         TestUnknownProfileWithoutAtip();
         TestBluRayProbe();
+        TestBdReProbe();
         TestBluRayLayoutGate();
         TestParserEdgeCases();
         Console.WriteLine("optical-drive-probe: passed (CD ATIP, DVD media ID, pressed CD, no media, Blu-ray, read-only commands)");
@@ -207,24 +208,49 @@ internal static class OpticalDriveProbeTests
         Require(transport.Remaining == 0, "Blu-ray probe issues no unexpected command");
     }
 
+    private static void TestBdReProbe()
+    {
+        (int DiscStatus, MmcCommandResult Capacities, long Total, OpticalDiscState State)[] cases =
+        [
+            (0, Ok(FormatCapacity(12_219_392, 1, 4096)), 12_219_392, OpticalDiscState.Unformatted),
+            (2, Ok(FormatCapacity(11_826_176, 2, 12_288)), 11_826_176, OpticalDiscState.Formatted),
+            (2, Failed(5, 0x20, 0), 12_219_392, OpticalDiscState.Formatted),
+        ];
+        foreach (var (discStatus, capacities, total, state) in cases)
+        {
+            const long imapiCapacity = 12_219_392;
+            FakeTransport transport = new();
+            transport.Expect(ReadCdb(0x46, 8), 8, 30, Ok(Configuration(0x43)));
+            transport.Expect(ReadCdb(0x51, 64), 64, 30, Ok(DiscInformation(discStatus, true, 1, 1)));
+            transport.Expect(ReadCdb(0x23, 256), 256, 30, capacities);
+            transport.Expect(PerformanceCdb(read: true), 136, 30, Ok(ReadPerformance(8990)));
+            transport.Expect(PerformanceCdb(read: false), 136, 30, Ok(WritePerformance(8990)));
+
+            OpticalDriveMediaInfo media = Probe(transport, (imapiCapacity, imapiCapacity));
+            Require(media.ProfileName == "BD-RE" && media.State == state && media.IsErasable,
+                "BD-RE reports format status instead of a sequential session state");
+            Require(media.TotalSectors == total && media.FreeSectors is null
+                && media.NextWritableAddress is null && media.UsableSectors is null,
+                "BD-RE does not publish total capacity as free space or an unverified writable limit");
+            RequireReadOnlyCommands(transport);
+            Require(transport.Remaining == 0, "BD-RE probe issues no unexpected command");
+        }
+    }
+
     private static void TestBluRayLayoutGate()
     {
-        RequireBluRayUsable(profile: 0x43, formatStatus: 1, spareClusters: 0,
-            trackSize: 12_219_392, blocks: 12_219_392, expectedUsable: 0,
-            "BD-RE never advertises writable sectors for the sequential BD-R workflow");
-        RequireBluRayUsable(profile: 0x41, formatStatus: 2, spareClusters: 0,
+        RequireBluRayUsable(formatStatus: 2, spareClusters: 0,
             trackSize: 12_219_392, blocks: 12_219_392, expectedUsable: 0,
             "formatted BD-R does not advertise writable sectors");
-        RequireBluRayUsable(profile: 0x41, formatStatus: 1, spareClusters: 0,
+        RequireBluRayUsable(formatStatus: 1, spareClusters: 0,
             trackSize: 12_219_360, blocks: 12_219_392, expectedUsable: 0,
             "BD-R with a short track does not advertise writable sectors");
-        RequireBluRayUsable(profile: 0x41, formatStatus: 2, spareClusters: 4096,
+        RequireBluRayUsable(formatStatus: 2, spareClusters: 4096,
             trackSize: 12_219_392, blocks: 12_219_392, expectedUsable: 0,
             "BD-R with allocated spare areas does not advertise writable sectors");
     }
 
     private static void RequireBluRayUsable(
-        int profile,
         int formatStatus,
         int spareClusters,
         int trackSize,
@@ -233,13 +259,10 @@ internal static class OpticalDriveProbeTests
         string message)
     {
         FakeTransport transport = new();
-        transport.Expect(ReadCdb(0x46, 8), 8, 30, Ok(Configuration(profile)));
+        transport.Expect(ReadCdb(0x46, 8), 8, 30, Ok(Configuration(0x41)));
         transport.Expect(ReadCdb(0x51, 64), 64, 30, Ok(DiscInformation(0, erasable: false, 0, 1)));
-        if (profile == 0x41)
-        {
-            transport.Expect(TrackCdb(1), 48, 30,
-                Ok(TrackInformation(0, (int)blocks, trackSize: trackSize)));
-        }
+        transport.Expect(TrackCdb(1), 48, 30,
+            Ok(TrackInformation(0, (int)blocks, trackSize: trackSize)));
 
         transport.Expect(ReadCdb(0x23, 256), 256, 30,
             Ok(FormatCapacity(blocks, formatStatus, spareClusters)));

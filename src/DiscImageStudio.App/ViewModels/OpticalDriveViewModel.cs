@@ -425,6 +425,8 @@ public partial class OpticalDriveViewModel : ObservableObject
         OpticalDiscState.Blank => L.T("DriveInfo.StateBlank"),
         OpticalDiscState.Incomplete => L.T("DriveInfo.StateIncomplete"),
         OpticalDiscState.Complete => L.T("DriveInfo.StateComplete"),
+        OpticalDiscState.Unformatted => L.T("DriveInfo.StateUnformatted"),
+        OpticalDiscState.Formatted => L.T("DriveInfo.StateFormatted"),
         _ => L.T("DriveInfo.StateOther"),
     };
 

@@ -91,6 +91,17 @@ if (args is ["--test-usable-sectors"])
     return;
 }
 
+if (args is ["--test-bdre"])
+{
+    BluRayModuleTests.TestPhysicalLayout();
+    BluRayRewritableMmcTests.Run();
+    BluRayRewritableBurnTests.Run();
+    BluRaySequentialBurnTests.Run();
+    OpticalDriveProbeTests.Run();
+    StreamBurnCapacityTests.Run();
+    return;
+}
+
 if (args is ["--test-data-region"])
 {
     DesignDataRegionTests.Run();
@@ -202,6 +213,8 @@ OpticalBurnOperationGateTests.Run();
 MediaSectorCountTests.Run();
 OpticalDriveProbeTests.Run();
 BluRaySequentialBurnTests.Run();
+BluRayRewritableMmcTests.Run();
+BluRayRewritableBurnTests.Run();
 BluRayFlushDiagnosticsTests.Run();
 BluRaySequentialWriterTests.Run();
 BluRaySessionCleanupTests.Run();
