@@ -300,19 +300,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             {
                 throw new InvalidOperationException("所选光驱不支持这种刻录方式。");
             }
-            if (mediaKind == OpticalBurnMediaKind.DvdData && DvdNeedsErase((object)format))
-            {
-                // Read the speeds after erasing, when the writer can use the medium.
-                cancellationToken.ThrowIfCancellationRequested();
-                return [];
-            }
-            if (!(bool)format.IsCurrentMediaSupported(recorder))
-            {
-                throw new InvalidOperationException("请放入与所选 CD/DVD/蓝光模式兼容的可写盘片。");
-            }
-
-            cancellationToken.ThrowIfCancellationRequested();
-            return ReadSupportedWriteSpeeds(format);
+            return ReadCurrentMediaWriteSpeeds(mediaKind, (object)recorder, (object)format, cancellationToken);
         }
         catch (COMException exception)
         {
@@ -329,6 +317,27 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
 
             ImapiCom.ReleaseComObject(recorder);
         }
+    }
+
+    internal static IReadOnlyList<OpticalWriteSpeed> ReadCurrentMediaWriteSpeeds(
+        OpticalBurnMediaKind mediaKind, dynamic recorder, dynamic format, CancellationToken cancellationToken)
+    {
+        // A formatted DVD+RW is overwritten in place. A used DVD-RW is erased first,
+        // then its speeds are read again from the newly blank medium.
+        if (mediaKind == OpticalBurnMediaKind.DvdData
+            && Convert.ToInt32(format.CurrentPhysicalMediaType) == DvdMinusRw
+            && !IsDvdBlank((object)format))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return [];
+        }
+        if (!(bool)format.IsCurrentMediaSupported(recorder))
+        {
+            throw new InvalidOperationException("请放入与所选 CD/DVD/蓝光模式兼容的可写盘片。");
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        return ReadSupportedWriteSpeeds(format);
     }
 
     private static OpticalBurnResult Burn(
