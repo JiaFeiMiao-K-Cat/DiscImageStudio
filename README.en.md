@@ -88,7 +88,7 @@ Disc Image Studio provides an intelligent, precise assisted calibration workflow
 | `P20261004-133519.jpg` | `P20261004-135416.jpg` |
 
 
-See the [assisted calibration guide](docs/CALIBRATION.md) for the workflow and parameters.
+For a first use, follow the [DVD calibration walkthrough for Verbatim AZO DVD-R](docs/CALIBRATION_TUTORIAL.en.md) to see the photos, measurement points, and results from all three stages. See the [assisted calibration guide](docs/CALIBRATION.en.md) for the complete workflow and parameters.
 
 ### Burning
 
@@ -179,7 +179,8 @@ docs/                        Architecture, engine, preset, release, and other do
 | [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | CD audio track formats, byte order, and ghosting troubleshooting |
 | [ADDING_BLURAY.md](docs/ADDING_BLURAY.md) | Blu-ray module physical model, generation/burning pipeline, and extension points |
 | [DISC_PRESETS.md](docs/DISC_PRESETS.md) | Layered JSON format and merging rules for editable disc presets |
-| [CALIBRATION.md](docs/CALIBRATION.md) | Photo rectification (marking the disc’s outermost physical edge and center-hole edge), curve calibration, and DVD cubic track-pitch fitting |
+| [CALIBRATION.en.md](docs/CALIBRATION.en.md) | Photo rectification (marking the disc’s outermost physical edge and center-hole edge), curve calibration, and DVD cubic track-pitch fitting |
+| [CALIBRATION_TUTORIAL.en.md](docs/CALIBRATION_TUTORIAL.en.md) | Verbatim AZO DVD-R walkthrough with actual records, measurement points, and results after fine calibration |
 | [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md) | Review of the CD / DVD generation physical models |
 | [VALIDATION.md](docs/VALIDATION.md) | Local validation records for builds, regressions, and physical disc tests |
 | [RELEASING.md](docs/RELEASING.md) | GitHub Releases, MSIX packaging, signing tests, and Store submission procedures |
