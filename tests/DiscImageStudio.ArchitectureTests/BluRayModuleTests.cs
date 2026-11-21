@@ -98,7 +98,7 @@ internal static class BluRayModuleTests
     {
         BluRayDiscParameters disc = new();
         disc.Validate();
-        Equal(5, BluRayDiscPreset.BuiltIn.Count, "generic and calibrated single-layer presets");
+        Equal(6, BluRayDiscPreset.BuiltIn.Count, "generic and calibrated single-layer presets");
         True(BluRayDiscPreset.BuiltIn.All(preset => preset.LayerCount == 1), "all builtins retain single-layer support");
         Equal(new BluRayDiscParameters(UsableSectors: BluRayDiscParameters.SectorsPerLayer), BluRayDiscPreset.BuiltIn[0].CreateParameters(), "generic geometry remains the first builtin");
         BluRayDiscPreset ritek = BluRayDiscPreset.Find(RitekPresetId);

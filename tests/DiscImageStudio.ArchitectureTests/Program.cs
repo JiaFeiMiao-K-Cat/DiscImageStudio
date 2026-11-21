@@ -382,7 +382,7 @@ static void TestDiscPresets()
     DiscPresetJsonDocument builtIn = DiscPresetJsonStore.LoadBuiltIn();
     Equal(4, builtIn.CdPresets.Count, "built-in CD preset count");
     Equal(9, builtIn.DvdPresets.Count, "built-in DVD preset count");
-    Equal(5, builtIn.BluRayPresets!.Count, "built-in Blu-ray preset count");
+    Equal(6, builtIn.BluRayPresets!.Count, "built-in Blu-ray preset count");
     Equal("zh-CN", builtIn.FallbackLanguage!, "built-in preset fallback language");
     True(
         builtIn.CdPresets.All(value =>
@@ -561,6 +561,19 @@ static void TestDiscPresets()
     Equal(new BluRayDiscParameters(verbatimBd64293.TotalSectors, 1, verbatimBd64293.InnerRadiusMm, verbatimBd64293.OuterRadiusMm, UsableSectors: verbatimBd64293.UsableSectors),
         cliVerbatim64293.CreateParameters(), "GUI JSON and CLI Verbatim BD-R 64293 geometry agree exactly");
     Equal(verbatimBd64293.InvertMapping, cliVerbatim64293.InvertMapping, "GUI JSON and CLI Verbatim BD-R 64293 polarity agree");
+
+    BluRayDiscPresetDefinition verbatimBdRe = builtIn.BluRayPresets!.Single(
+        value => value.Id == "bd-re-verbatim-43614");
+    Equal(12_219_392U, verbatimBdRe.TotalSectors, "Verbatim BD-RE 43614 full capacity");
+    True(verbatimBdRe.UsableSectors == verbatimBdRe.TotalSectors, "Verbatim BD-RE 43614 usable capacity");
+    True(verbatimBdRe.Description.Contains("CMCMAG-CN2", StringComparison.Ordinal), "Verbatim BD-RE 43614 MID");
+    True(verbatimBdRe.Description.Contains("CSBE2DV10 S-0525 003", StringComparison.Ordinal), "Verbatim BD-RE 43614 ring code");
+    BluRayDiscPreset cliVerbatimBdRe = BluRayDiscPreset.Find(verbatimBdRe.Id);
+    Equal(new BluRayDiscParameters(verbatimBdRe.TotalSectors, 1, verbatimBdRe.InnerRadiusMm, verbatimBdRe.OuterRadiusMm,
+            PitchLinear: verbatimBdRe.PitchLinear, PitchQuadratic: verbatimBdRe.PitchQuadratic,
+            PitchCubic: verbatimBdRe.PitchCubic, UsableSectors: verbatimBdRe.UsableSectors),
+        cliVerbatimBdRe.CreateParameters(), "GUI and CLI Verbatim BD-RE 43614 geometry and pitch agree exactly");
+    True(!verbatimBdRe.InvertMapping && !cliVerbatimBdRe.InvertMapping, "Verbatim BD-RE 43614 normal polarity");
 }
 
 static void TestDiscPresetJson()
@@ -597,7 +610,7 @@ static void TestDiscPresetJson()
         DiscPresetJsonDocument merged = DiscPresetJsonStore.Merge(builtIn, created);
         Equal(5, merged.CdPresets.Count, "merged CD preset count");
         Equal(10, merged.DvdPresets.Count, "merged DVD preset count");
-        Equal(6, merged.BluRayPresets!.Count, "merged Blu-ray preset count");
+        Equal(7, merged.BluRayPresets!.Count, "merged Blu-ray preset count");
         DvdDiscPresetDefinition verbatim = merged.DvdPresets.Single(
             value => value.Id == "verbatim-dvd-r-azo-43533");
         Equal(2_297_888U, verbatim.TotalSectors, "merged Verbatim DVD sectors");
@@ -763,7 +776,7 @@ static void TestDiscPresetJson()
             interim.DvdPresets[0].ChannelBitLengthNm,
             "interim schema without the field falls back to the DVD standard");
         Equal(
-            5,
+            builtIn.BluRayPresets!.Count,
             DiscPresetJsonStore.Merge(builtIn, interim).BluRayPresets!.Count,
             "pre-BD schema still receives the built-in Blu-ray catalog");
 

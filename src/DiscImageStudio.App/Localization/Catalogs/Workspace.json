@@ -1367,6 +1367,24 @@
     "es": "Parámetros medidos: radio interior 23,987042 mm, radio exterior 57,987960 mm, 12.219.392 sectores; parámetros coinciden con 64099.",
     "cs": "Naměřené parametry: vnitřní poloměr 23,987042 mm, vnější poloměr 57,987960 mm, 12 219 392 sektorů; parametry odpovídají 64099."
   },
+  "威宝 BD-RE (43614)（实测）": {
+    "zh-CN": "威宝 BD-RE (43614)（实测）",
+    "en": "Verbatim BD-RE (43614) (measured)",
+    "zh-TW": "Verbatim BD-RE (43614)（實測）",
+    "ja": "Verbatim BD-RE (43614) (実測)",
+    "tr": "Verbatim BD-RE (43614) (ölçülen)",
+    "es": "Verbatim BD-RE (43614) (medido)",
+    "cs": "Verbatim BD-RE (43614) (měřeno)"
+  },
+  "实测内半径 23.987216 mm、外半径 57.988779 mm，共 12,219,392 扇区。MID 为 CMCMAG-CN2，圈码为 CSBE2DV10 S-0525 003。": {
+    "zh-CN": "实测内半径 23.987216 mm、外半径 57.988779 mm，共 12,219,392 扇区。MID 为 CMCMAG-CN2，圈码为 CSBE2DV10 S-0525 003。",
+    "en": "Measured inner radius of 23.987216 mm and outer radius of 57.988779 mm across 12,219,392 sectors. MID is CMCMAG-CN2. Ring code is CSBE2DV10 S-0525 003.",
+    "zh-TW": "實測內半徑 23.987216 mm、外半徑 57.988779 mm，共 12,219,392 磁區。MID 為 CMCMAG-CN2，圈碼為 CSBE2DV10 S-0525 003。",
+    "ja": "実測の内半径は 23.987216 mm、外半径は 57.988779 mm で、全 12,219,392 セクターです。MID は CMCMAG-CN2、リングコードは CSBE2DV10 S-0525 003 です。",
+    "tr": "Ölçülen iç yarıçap 23,987216 mm, dış yarıçap 57,988779 mm ve toplam 12.219.392 sektör. MID CMCMAG-CN2, halka kodu CSBE2DV10 S-0525 003.",
+    "es": "Radio interior medido de 23,987216 mm y radio exterior de 57,988779 mm para 12.219.392 sectores. El MID es CMCMAG-CN2 y el código del anillo es CSBE2DV10 S-0525 003.",
+    "cs": "Naměřený vnitřní poloměr 23,987216 mm a vnější poloměr 57,988779 mm při 12 219 392 sektorech. MID je CMCMAG-CN2 a kód vnitřního prstence je CSBE2DV10 S-0525 003."
+  },
   "自定义参数（未保存）": {
     "zh-CN": "自定义参数（未保存）",
     "en": "Custom parameters (unsaved)",

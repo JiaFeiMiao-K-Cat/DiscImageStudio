@@ -138,6 +138,7 @@ public sealed class ImapiOpticalDriveProbe : IOpticalDriveProbe
         string profileName = OpticalDriveMediaProfiles.Describe(profile);
 
         CdAtipInfo? atip = null;
+        string? mediaId = null;
         if (family == OpticalDriveMediaFamily.Cd || profile == 0)
         {
             try
@@ -146,6 +147,8 @@ public sealed class ImapiOpticalDriveProbe : IOpticalDriveProbe
                     OpticalDriveMediaParsers.ParseAtip(ReadAtip(transport));
                 atip = new CdAtipInfo(
                     parsed.LeadInTime, parsed.LeadOutTime, parsed.LeadOutSectors, parsed.IsRewritable);
+                if (parsed.MediaId is ushort cdMediaId)
+                    mediaId = $"0x{cdMediaId:X4}";
                 if (profile == 0)
                 {
                     family = OpticalDriveMediaFamily.Cd;
@@ -158,19 +161,21 @@ public sealed class ImapiOpticalDriveProbe : IOpticalDriveProbe
             }
         }
 
-        // ATIP carries a lead-in/lead-out stamp, not a media ID; only DVD structures do.
-        string? mediaId = null;
-        if (family == OpticalDriveMediaFamily.Dvd
-            && (profile is 0x11 or 0x13 or 0x14 or 0x15 or 0x16 or 0x1a or 0x1b or 0x2a or 0x2b))
+        try
         {
-            try
+            mediaId = profile switch
             {
-                mediaId = ReadDvdMediaId(transport, profile);
-            }
-            catch (Exception exception) when (exception is IOException or COMException)
-            {
-                // Media ID layout differs by book type and some drives omit it.
-            }
+                0x11 or 0x13 or 0x14 or 0x15 or 0x16 or 0x1a or 0x1b or 0x2a or 0x2b
+                    => ReadDvdMediaId(transport, profile),
+                0x41 or 0x42 or 0x43 => OpticalDriveMediaParsers.ParseBluRayMediaId(
+                    ReadDiscStructure(transport, mediaType: 1, format: 0, allocationLength: 128),
+                    rewritable: profile == 0x43),
+                _ => mediaId,
+            };
+        }
+        catch (Exception exception) when (exception is IOException or COMException)
+        {
+            // Media ID is optional; the remaining probe still reports capacity and speeds.
         }
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -355,17 +360,19 @@ public sealed class ImapiOpticalDriveProbe : IOpticalDriveProbe
     private static string? ReadDvdMediaId(IMmcCommandTransport transport, int profile)
     {
         if (profile is 0x1a or 0x1b or 0x2a or 0x2b)
-            return OpticalDriveMediaParsers.ParseDvdPlusMediaId(ReadDvdStructure(transport, 0x11, 34));
-        return OpticalDriveMediaParsers.ParseDvdMinusMediaId(ReadDvdStructure(transport, 0x0e, 35));
+            return OpticalDriveMediaParsers.ParseDvdPlusMediaId(ReadDiscStructure(transport, 0, 0x11, 34));
+        return OpticalDriveMediaParsers.ParseDvdMinusMediaId(ReadDiscStructure(transport, 0, 0x0e, 35));
     }
 
-    private static byte[] ReadDvdStructure(
+    private static byte[] ReadDiscStructure(
         IMmcCommandTransport transport,
+        byte mediaType,
         byte format,
         ushort allocationLength)
     {
         byte[] cdb = new byte[12];
         cdb[0] = 0xad;
+        cdb[1] = mediaType;
         cdb[7] = format;
         BinaryPrimitives.WriteUInt16BigEndian(cdb.AsSpan(8, 2), allocationLength);
         MmcCommandResult result = transport.Execute(cdb, allocationLength, 30);

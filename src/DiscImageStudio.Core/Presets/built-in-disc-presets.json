@@ -239,6 +239,19 @@
       "outerRadiusMm": 57.987960341783236,
       "invertMapping": false,
       "contributor": "bczhc"
+    },
+    {
+      "id": "bd-re-verbatim-43614",
+      "displayName": "威宝 BD-RE (43614)（实测）",
+      "description": "实测内半径 23.987216 mm、外半径 57.988779 mm，共 12,219,392 扇区。MID 为 CMCMAG-CN2，圈码为 CSBE2DV10 S-0525 003。",
+      "totalSectors": 12219392,
+      "usableSectors": 12219392,
+      "innerRadiusMm": 23.987215945206195,
+      "outerRadiusMm": 57.9887794672236,
+      "pitchLinear": 9.828857433309327E-06,
+      "pitchQuadratic": -2.23099595737756E-05,
+      "pitchCubic": 1.4515048946969683E-05,
+      "invertMapping": false
     }
   ]
 }

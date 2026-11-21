@@ -120,9 +120,13 @@ public sealed record BluRayDiscPreset(string Id, string DisplayName, int LayerCo
             new("bd-r-verbatim-64293", "Verbatim BD-R (64293)", 1,
                 new(12_219_392, 1, 23.987042157339335, 57.987960341783236, 0), InvertMapping: false,
                 Contributor: "bczhc"),
+            new("bd-re-verbatim-43614", "Verbatim BD-RE (43614)", 1,
+                new(12_219_392, 1, 23.987215945206195, 57.9887794672236,
+                    PitchLinear: 9.828857433309327E-06, PitchQuadratic: -2.23099595737756E-05,
+                    PitchCubic: 1.4515048946969683E-05, UsableSectors: 12_219_392), InvertMapping: false),
         });
 
     public static BluRayDiscPreset Find(string id)
         => BuiltIn.FirstOrDefault(p => p.Id.Equals(id, StringComparison.OrdinalIgnoreCase))
-            ?? throw new ArgumentException($"Unknown BD-R preset '{id}'.", nameof(id));
+            ?? throw new ArgumentException($"Unknown Blu-ray preset '{id}'.", nameof(id));
 }
