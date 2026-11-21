@@ -39,6 +39,22 @@
       "descriptionResourceKey": "DiscPreset_VerbatimAzo43438_Description"
     },
     {
+      "id": "moser-baer-cdr52xsda-003-010106",
+      "displayName": "MOSER BAER CD-R 52x (CDR52XSDA 003 010106)（实测）",
+      "description": "实测参数：内半径 24.830285 mm、外半径 57.970151 mm、359,849 扇区；采用三次轨距分布（c1=8.214245594457365E-06、c2=-1.749095169611041E-05、c3=9.771370067205218E-06）；扫描速度采用 1200 mm/s。盘片标识为 MOSER BAER-CDR52XSDA 003 010106。",
+      "sectors": 359849,
+      "usableSectors": 359847,
+      "innerRadiusMm": 24.8302852931084,
+      "outerRadiusMm": 57.97015070731133,
+      "linearVelocityMmPerSecond": 1200,
+      "pitchLinear": 8.214245594457365E-06,
+      "pitchQuadratic": -1.749095169611041E-05,
+      "pitchCubic": 9.771370067205218E-06,
+      "contributor": "30phi60",
+      "displayNameResourceKey": "DiscPreset_MoserBaerCdr52xsda_DisplayName",
+      "descriptionResourceKey": "DiscPreset_MoserBaerCdr52xsda_Description"
+    },
+    {
       "id": "cd-74",
       "displayName": "标准 74min CD",
       "description": "ECMA-130／ISO/IEC 10149 标准速度 1200 mm/s；120 mm 盘、约 74 分钟，333,000 扇区（24.5–56.8 mm）。",
