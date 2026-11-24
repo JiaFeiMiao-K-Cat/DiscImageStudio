@@ -8,27 +8,46 @@ namespace DiscImageStudio.Cd;
 
 public sealed class CdDataLayoutPlan
 {
-    internal CdDataLayoutPlan(Iso9660ImageWriter.LayoutPlan layout)
+    internal CdDataLayoutPlan(Iso9660ImageWriter.LayoutPlan layout, long volumeStartLba = 0, long? trackSectors = null)
     {
         IsoLayout = layout;
-        DrawingStartLba = layout.FilesAtOuterRing ? layout.MetadataEndLbaExclusive : layout.DataEndLbaExclusive;
-        DrawingEndLbaExclusive = layout.FilesAtOuterRing ? layout.FileDataStartLba : layout.VolumeSectors;
+        VolumeStartLba = volumeStartLba;
+        TrackSectors = trackSectors ?? layout.VolumeSectors;
+        long relativeStart = layout.FilesAtOuterRing ? layout.MetadataEndLbaExclusive : layout.DataEndLbaExclusive;
+        // A later-session data track draws through its trailing post-gap when the files
+        // sit at the inner edge; outer-ring files keep the post-gap as zero sectors.
+        long relativeEnd = layout.FilesAtOuterRing ? layout.FileDataStartLba : TrackSectors;
+        DrawingStartLba = checked((uint)(volumeStartLba + relativeStart));
+        DrawingEndLbaExclusive = checked((uint)(volumeStartLba + relativeEnd));
     }
 
     internal Iso9660ImageWriter.LayoutPlan IsoLayout { get; }
-    public long TotalSectors => IsoLayout.VolumeSectors;
+
+    /// <summary>Absolute disc LBA of the first sector of this data track. Zero for a
+    /// single-session data disc; the measured next writable address for a CD-Extra
+    /// picture session.</summary>
+    public long VolumeStartLba { get; }
+
+    /// <summary>Sectors written for the track: the ISO volume plus any trailing post-gap.</summary>
+    public long TrackSectors { get; }
+
+    /// <summary>ISO9660 volume size; equals <see cref="TrackSectors"/> without a post-gap.</summary>
+    public long VolumeSectors => IsoLayout.VolumeSectors;
+
+    public bool IsLaterSession => VolumeStartLba > 0;
+    public long TotalSectors => TrackSectors;
     public long ContentLength => TotalSectors * CdDataImageGenerator.BytesPerSector;
     public string SourceDirectory => IsoLayout.SourceDirectory;
     public uint DrawingStartLba { get; }
     public uint DrawingEndLbaExclusive { get; }
     public uint DrawingSectors => DrawingEndLbaExclusive - DrawingStartLba;
 
-    /// <summary>Occupied regions, in LBAs: the filesystem metadata always starts at the
-    /// inner edge, the file data sits at the chosen ring. The designer's data-region guide
-    /// maps both to radii; the dispersion reserve is added by the caller.</summary>
-    public uint MetadataEndLbaExclusive => IsoLayout.MetadataEndLbaExclusive;
-    public uint FileDataStartLba => IsoLayout.FileDataStartLba;
-    public uint DataEndLbaExclusive => IsoLayout.DataEndLbaExclusive;
+    /// <summary>Occupied regions, in absolute LBAs: the filesystem metadata always starts at
+    /// the inner edge of the volume, the file data sits at the chosen ring. The designer's
+    /// data-region guide maps both to radii; the dispersion reserve is added by the caller.</summary>
+    public uint MetadataEndLbaExclusive => checked((uint)(VolumeStartLba + IsoLayout.MetadataEndLbaExclusive));
+    public uint FileDataStartLba => checked((uint)(VolumeStartLba + IsoLayout.FileDataStartLba));
+    public uint DataEndLbaExclusive => checked((uint)(VolumeStartLba + IsoLayout.DataEndLbaExclusive));
 
     public bool FilesAtOuterRing => IsoLayout.FilesAtOuterRing;
     public int FileCount => IsoLayout.FileCount;
@@ -60,6 +79,35 @@ public static class CdDataImageGenerator
         return plan;
     }
 
+    /// <summary>
+    /// Plans a data track that starts at an absolute LBA, such as the picture session of a
+    /// CD-Extra disc. The ISO9660/Joliet volume (PVD at <paramref name="startLba"/> + 16, all
+    /// extents absolute) occupies all but the last <paramref name="postgapSectors"/> sectors;
+    /// without a data folder it is an empty volume of 25 sectors. The drawing keeps the
+    /// whole-disc coordinates of the single-session disc.
+    /// </summary>
+    public static CdDataLayoutPlan PrepareSessionLayout(CdDiscParameters parameters, long startLba,
+        long trackSectors, string? dataDirectory = null, string volumeLabel = "CD_IMAGE",
+        bool filesAtOuterRing = false, int postgapSectors = CdExtraLayout.DataPostgapSectors,
+        DateTimeOffset? timestamp = null)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+        parameters.Validate();
+        if (startLba <= 0) throw new ArgumentOutOfRangeException(nameof(startLba), "A later session starts after LBA 0.");
+        if (postgapSectors < 0) throw new ArgumentOutOfRangeException(nameof(postgapSectors));
+        if (trackSectors <= postgapSectors || checked(startLba + trackSectors) > parameters.OutputSectors)
+            throw new ArgumentOutOfRangeException(nameof(trackSectors),
+                $"Session data track {startLba}+{trackSectors} does not fit the {parameters.OutputSectors} output sectors.");
+        string? folder = string.IsNullOrWhiteSpace(dataDirectory) ? null : dataDirectory.Trim();
+        Iso9660ImageWriter.LayoutPlan iso = Iso9660ImageWriter.Plan(folder,
+            checked((uint)(trackSectors - postgapSectors)), volumeLabel, timestamp,
+            filesAtOuterRing: folder is not null && filesAtOuterRing, lbaBias: checked((uint)startLba));
+        CdDataLayoutPlan plan = new(iso, startLba, trackSectors);
+        if (plan.DrawingStartLba >= plan.DrawingEndLbaExclusive)
+            throw new ArgumentException("The filesystem leaves no CD sectors for drawing.", nameof(dataDirectory));
+        return plan;
+    }
+
     public static CdGenerationSummary Generate(string imagePath, string outputPath,
         CdDiscParameters parameters, CdDataLayoutPlan plan, Action<CdProgress>? progress = null,
         CancellationToken cancellationToken = default, ToneProfile? tone = null, bool useSimdSampling = true,
@@ -71,9 +119,12 @@ public static class CdDataImageGenerator
         string target = Path.GetFullPath(outputPath);
         if (!Path.GetExtension(target).Equals(".iso", StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("CD data output must be a Mode 1 .iso image.", nameof(outputPath));
+        // An empty session volume has no source folder; comparing against an empty
+        // prefix would reject every UNC output path.
         if (target.Equals(source, StringComparison.OrdinalIgnoreCase)
-            || target.StartsWith(Path.TrimEndingDirectorySeparator(plan.SourceDirectory)
-                + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            || (plan.SourceDirectory.Length > 0
+                && target.StartsWith(Path.TrimEndingDirectorySeparator(plan.SourceDirectory)
+                    + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)))
             throw new ArgumentException("The output must be outside the source data folder and must not overwrite the source image.", nameof(outputPath));
         RasterImage image = RasterImage.Load(source);
         ToneProfile effectiveTone = (tone ?? ToneProfile.LegacyBinary).Normalized();
@@ -85,8 +136,11 @@ public static class CdDataImageGenerator
             result = GenerateImageToStream(source, image, output, parameters, plan, progress,
                 cancellationToken, effectiveTone, useSimdSampling, useParallelSampling) with { OutputTrack = target };
         }
-        CdDataImageMetadata.Save(target, new(parameters, plan.DrawingStartLba,
-            plan.DrawingEndLbaExclusive, plan.FilesAtOuterRing, effectiveTone));
+        // A later-session track is described by its caller's CD-Extra sidecar; the
+        // single-session format would tell older readers the volume starts at LBA 0.
+        if (!plan.IsLaterSession)
+            CdDataImageMetadata.Save(target, new(parameters, plan.DrawingStartLba,
+                plan.DrawingEndLbaExclusive, plan.FilesAtOuterRing, effectiveTone));
         return result;
     }
 
@@ -113,10 +167,13 @@ public static class CdDataImageGenerator
         bool sampleFour = useSimdSampling && sampler.SupportsSimd;
         Stopwatch stopwatch = Stopwatch.StartNew();
         ProgressStream writer = new(output, plan.ContentLength, stopwatch, progress, cancellationToken);
+        // The ISO writer works in volume-relative sectors; sampling uses absolute LBAs.
+        uint relativeDrawingStart = checked((uint)(plan.DrawingStartLba - plan.VolumeStartLba));
+        uint relativeDrawingEnd = checked((uint)(plan.DrawingEndLbaExclusive - plan.VolumeStartLba));
         if (plan.FilesAtOuterRing)
-            Iso9660ImageWriter.WriteOuterRingPrefix(plan.IsoLayout, writer, plan.DrawingStartLba, cancellationToken);
+            Iso9660ImageWriter.WriteOuterRingPrefix(plan.IsoLayout, writer, relativeDrawingStart, cancellationToken);
         else
-            Iso9660ImageWriter.WriteSequentialPrefix(plan.IsoLayout, writer, plan.DrawingStartLba, cancellationToken);
+            Iso9660ImageWriter.WriteSequentialPrefix(plan.IsoLayout, writer, relativeDrawingStart, cancellationToken);
 
         if (useParallelSampling)
         {
@@ -149,7 +206,13 @@ public static class CdDataImageGenerator
             }
         }
         if (plan.FilesAtOuterRing)
-            Iso9660ImageWriter.WriteOuterRingSuffix(plan.IsoLayout, writer, plan.DrawingEndLbaExclusive, cancellationToken);
+        {
+            Iso9660ImageWriter.WriteOuterRingSuffix(plan.IsoLayout, writer, relativeDrawingEnd, cancellationToken);
+            // A later-session track ends with its zero post-gap after the outer-ring files.
+            byte[] zero = new byte[BytesPerSector];
+            for (long sector = plan.VolumeSectors; sector < plan.TrackSectors; sector++)
+                writer.Write(zero);
+        }
         writer.Flush();
         stopwatch.Stop();
         progress?.Invoke(new CdProgress(writer.CompletedBytes, plan.ContentLength, stopwatch.Elapsed));
@@ -192,6 +255,13 @@ public static class CdDataImageGenerator
         ArgumentNullException.ThrowIfNull(parameters);
         ArgumentNullException.ThrowIfNull(plan);
         parameters.Validate();
+        if (plan.IsLaterSession)
+        {
+            // A later session keeps whole-disc geometry and must end inside it.
+            if (checked(plan.VolumeStartLba + plan.TrackSectors) > parameters.OutputSectors)
+                throw new ArgumentException("The session data track extends beyond the CD output sectors.", nameof(plan));
+            return;
+        }
         if (parameters.OutputSectors != plan.TotalSectors)
             throw new ArgumentException("CD layout and geometry must have the same sector count.", nameof(plan));
     }
@@ -268,13 +338,30 @@ public static class CdDataImageGenerator
         ValidatePreview(actual, outputSize, byteStep);
         using FileStream input = new(isoPath, FileMode.Open, FileAccess.Read, FileShare.Read,
             1024 * 1024, FileOptions.SequentialScan);
-        if (input.Length % BytesPerSector != 0 || input.Length != checked(actual.OutputSectors * BytesPerSector))
-            throw new ArgumentException("CD data ISO length must match the selected 2048-byte sector count.", nameof(isoPath));
-        CdDataImageMetadata? metadata = CdDataImageMetadata.TryLoad(isoPath);
-        if (metadata?.Parameters.OutputSectors != actual.OutputSectors) metadata = null;
-        long start = metadata?.DrawingStartLba ?? 0;
-        long end = metadata?.DrawingEndLbaExclusive ?? actual.OutputSectors;
-        input.Position = start * BytesPerSector;
+        long start;
+        long end;
+        long volumeStart = 0;
+        if (CdExtraImageMetadata.TryLoad(isoPath) is { } session)
+        {
+            // A CD-Extra picture track: file sector 0 is disc LBA Session2StartLba.
+            if (input.Length != checked(session.TrackSectors * BytesPerSector))
+                throw new ArgumentException("CD-Extra session ISO length does not match its sidecar.", nameof(isoPath));
+            if (session.Session2StartLba + session.TrackSectors > actual.OutputSectors)
+                throw new ArgumentException("CD-Extra session lies beyond the selected CD sector count.", nameof(isoPath));
+            volumeStart = session.Session2StartLba;
+            start = session.DrawingStartLba;
+            end = session.DrawingEndLbaExclusive;
+        }
+        else
+        {
+            if (input.Length % BytesPerSector != 0 || input.Length != checked(actual.OutputSectors * BytesPerSector))
+                throw new ArgumentException("CD data ISO length must match the selected 2048-byte sector count.", nameof(isoPath));
+            CdDataImageMetadata? metadata = CdDataImageMetadata.TryLoad(isoPath);
+            if (metadata?.Parameters.OutputSectors != actual.OutputSectors) metadata = null;
+            start = metadata?.DrawingStartLba ?? 0;
+            end = metadata?.DrawingEndLbaExclusive ?? actual.OutputSectors;
+        }
+        input.Position = (start - volumeStart) * BytesPerSector;
         byte[] sector = new byte[BytesPerSector];
         DataPreview preview = new(outputSize, actual);
         for (long lba = start; lba < end; lba++)

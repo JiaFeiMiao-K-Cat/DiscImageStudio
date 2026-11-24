@@ -5,7 +5,7 @@ using System.Runtime.InteropServices.ComTypes;
 
 namespace DiscImageStudio.Burning;
 
-public sealed class WindowsImapiBurner : IOpticalDiscBurner
+public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
 {
     private readonly OpticalBurnOperationGate _operationGate = new();
     private const int CdDaoFallbackSpeedSectorsPerSecond = 1200;

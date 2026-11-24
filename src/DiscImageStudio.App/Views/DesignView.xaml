@@ -104,6 +104,7 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" MinHeight="260" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <!-- Layer list. Rows are selectable and drive both the canvas selection and the
                              property panel, mirroring how a selection drives the other workspaces. -->
@@ -323,6 +324,170 @@
                                 </StackPanel>
                             </Border>
                         </controls:VisibilityGate>
+
+                        <!-- CD-Extra: music in session 1, the picture as the data track of
+                             session 2. Audio players read only the first session, so the
+                             picture is never played as noise. The share summary comes from
+                             the same plan as the canvas rings and the previews. -->
+                        <controls:VisibilityGate x:Name="MusicCardGate" Grid.Row="2"
+                                                 IsOpen="{Binding IsCd}"
+                                                 SizeChanged="OnPageSizeChanged"
+                                                 IsVisibleChanged="OnFilesCardVisibilityChanged">
+                            <Border Style="{StaticResource CardStyle}" Padding="14" Margin="0,16,0,0">
+                                <StackPanel DataContext="{Binding Music}">
+                                    <TextBlock Text="{loc:Text Xaml.CdExtraMusicTitle}" Style="{StaticResource PanelTitle}"
+                                               Margin="0,0,0,12" />
+                                    <controls:SegmentedControl x:Name="CdLayoutSwitch"
+                                                               LabelA="{loc:Text Xaml.CdLayoutPictureOnly}"
+                                                               LabelB="{loc:Text Xaml.CdLayoutExtra}"
+                                                               IsSecondSelected="{Binding State.CdExtraEnabled}" />
+                                    <controls:VisibilityGate IsOpen="{Binding State.CdExtraEnabled}" Inverted="True">
+                                        <TextBlock Style="{StaticResource HintText}" Margin="0,12,0,0"
+                                                   Text="{loc:Text Xaml.CdExtraOffHint}" />
+                                    </controls:VisibilityGate>
+                                    <controls:VisibilityGate IsOpen="{Binding State.CdExtraEnabled}">
+                                        <StackPanel Margin="0,12,0,0">
+                                            <Grid Margin="0,0,0,10"
+                                                  Visibility="{Binding HasProblem, Converter={StaticResource BoolToVisibility}}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <iconPacks:PackIconLucide Kind="TriangleAlert" Width="14" Height="14"
+                                                                          Foreground="{DynamicResource DangerBrush}"
+                                                                          VerticalAlignment="Top" Margin="0,2,0,0" />
+                                                <TextBlock Grid.Column="1" Text="{Binding ProblemText}"
+                                                           Foreground="{DynamicResource DangerBrush}"
+                                                           Margin="6,0,0,0" TextWrapping="Wrap" />
+                                            </Grid>
+                                            <TextBlock Style="{StaticResource FieldLabel}" Text="{Binding TrackSummary}"
+                                                       Margin="0,0,0,6" />
+                                            <ListBox x:Name="MusicList" ItemsSource="{Binding Tracks}"
+                                                     SelectedItem="{Binding SelectedTrack, Mode=TwoWay}"
+                                                     MaxHeight="210" Background="Transparent" BorderThickness="0" Padding="0"
+                                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                                     AutomationProperties.Name="{loc:Text Xaml.CdExtraMusicTitle}"
+                                                     Visibility="{Binding HasTracks, Converter={StaticResource BoolToVisibility}}">
+                                                <ListBox.ItemContainerStyle>
+                                                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource RowListBoxItem}">
+                                                        <Setter Property="Padding" Value="8,5" />
+                                                    </Style>
+                                                </ListBox.ItemContainerStyle>
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="24" />
+                                                                <ColumnDefinition Width="*" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Grid.Column="0" Text="{Binding NumberText}"
+                                                                       Style="{StaticResource MicroText}" VerticalAlignment="Top"
+                                                                       Margin="0,2,0,0" />
+                                                            <StackPanel Grid.Column="1">
+                                                                <TextBlock Text="{Binding FileName}" Style="{StaticResource RowText}"
+                                                                           TextTrimming="CharacterEllipsis" ToolTip="{Binding Path}" />
+                                                                <TextBlock Text="{Binding Detail}" Margin="0,2,0,0" TextWrapping="Wrap">
+                                                                    <TextBlock.Style>
+                                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource MicroText}">
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding HasError}" Value="True">
+                                                                                    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </TextBlock.Style>
+                                                                </TextBlock>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                            <Grid Margin="0,8,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <Button Grid.Column="0" Style="{StaticResource SecondaryButton}"
+                                                        Height="{StaticResource ControlHeight}"
+                                                        Content="{loc:Text Xaml.AddMusic}" Command="{Binding AddMusicCommand}"
+                                                        HorizontalAlignment="Stretch" />
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="6,0,0,0">
+                                                    <Button Style="{StaticResource IconButton}" Command="{Binding MoveUpCommand}"
+                                                            AutomationProperties.Name="{loc:Text Xaml.MoveTrackUp}"
+                                                            ToolTip="{loc:Text Xaml.MoveTrackUp}">
+                                                        <iconPacks:PackIconLucide Kind="ArrowUp" Width="14" Height="14"
+                                                                                  Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                    </Button>
+                                                    <Button Style="{StaticResource IconButton}" Command="{Binding MoveDownCommand}"
+                                                            AutomationProperties.Name="{loc:Text Xaml.MoveTrackDown}"
+                                                            ToolTip="{loc:Text Xaml.MoveTrackDown}">
+                                                        <iconPacks:PackIconLucide Kind="ArrowDown" Width="14" Height="14"
+                                                                                  Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                    </Button>
+                                                    <Button Style="{StaticResource IconButton}" Command="{Binding RemoveSelectedCommand}"
+                                                            AutomationProperties.Name="{loc:Text Xaml.RemoveTrack}"
+                                                            ToolTip="{loc:Text Xaml.RemoveTrack}">
+                                                        <iconPacks:PackIconLucide Kind="Trash2" Width="14" Height="14"
+                                                                                  Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                            <!-- Disc share: music | session gap | picture, by area. -->
+                                            <StackPanel Margin="0,14,0,0"
+                                                        Visibility="{Binding HasLayout, Converter={StaticResource BoolToVisibility}}">
+                                                <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.DiscShare}"
+                                                           Margin="0,0,0,6" />
+                                                <Grid x:Name="DiscShareBar" Height="10" Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="{Binding MusicShareWidth}" />
+                                                        <ColumnDefinition Width="{Binding GapShareWidth}" />
+                                                        <ColumnDefinition Width="{Binding PictureShareWidth}" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Grid.Column="0" Background="#F5A623" CornerRadius="2,0,0,2" />
+                                                    <Border Grid.Column="1" Background="#7A7A85" />
+                                                    <Border Grid.Column="2" Background="{DynamicResource PrimaryBrush}" CornerRadius="0,2,2,0" />
+                                                </Grid>
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Rectangle Width="10" Height="10" Fill="#F5A623" RadiusX="2" RadiusY="2"
+                                                               Margin="0,2,6,0" VerticalAlignment="Top" />
+                                                    <TextBlock Grid.Column="1" Style="{StaticResource MicroText}" Text="{Binding MusicShareText}"
+                                                               TextWrapping="Wrap" />
+                                                </Grid>
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Rectangle Width="10" Height="10" Fill="#7A7A85" RadiusX="2" RadiusY="2"
+                                                               Margin="0,2,6,0" VerticalAlignment="Top" />
+                                                    <TextBlock Grid.Column="1" Style="{StaticResource MicroText}" Text="{Binding GapShareText}"
+                                                               TextWrapping="Wrap" />
+                                                </Grid>
+                                                <Grid Margin="0,0,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Rectangle Width="10" Height="10" Fill="{DynamicResource PrimaryBrush}"
+                                                               RadiusX="2" RadiusY="2" Margin="0,2,6,0" VerticalAlignment="Top" />
+                                                    <TextBlock Grid.Column="1" Style="{StaticResource MicroText}" Text="{Binding PictureShareText}"
+                                                               TextWrapping="Wrap" />
+                                                </Grid>
+                                                <TextBlock Style="{StaticResource HintText}" Margin="0,6,0,0"
+                                                           Text="{Binding Session2Text}" />
+                                            </StackPanel>
+                                            <TextBlock Style="{StaticResource HintText}" Margin="0,10,0,0"
+                                                       Text="{loc:Text Xaml.CdExtraHint}" />
+                                        </StackPanel>
+                                    </controls:VisibilityGate>
+                                </StackPanel>
+                            </Border>
+                        </controls:VisibilityGate>
                     </Grid>
                 </ScrollViewer>
 
@@ -336,21 +501,37 @@
                         <controls:DiscDesignCanvas x:Name="DesignCanvas" />
                         <!-- The tone module's file-region legend sits in the canvas corner:
                              it describes the blue zones without taking rail height. -->
-                        <controls:VisibilityGate HorizontalAlignment="Left" VerticalAlignment="Bottom"
-                                                 Margin="10,0,0,10"
-                                                 IsOpen="{Binding Tone.HasFileRegionOverlay}">
-                            <Border Padding="8,4"
-                                    Background="{DynamicResource Surface2Brush}"
-                                    BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
-                                    CornerRadius="{StaticResource RadiusChip}">
-                                <StackPanel Orientation="Horizontal">
-                                    <Rectangle Width="12" Height="12" Fill="#3385FF" RadiusX="2" RadiusY="2"
-                                               Margin="0,0,8,0" VerticalAlignment="Center" />
-                                    <TextBlock Style="{StaticResource MicroText}" VerticalAlignment="Center"
-                                               Text="{loc:Text Xaml.FileAreaIncludingFilesystem}" />
-                                </StackPanel>
-                            </Border>
-                        </controls:VisibilityGate>
+                        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10,0,0,10">
+                            <!-- CD-Extra rings: the canvas paints them translucent over the layers. -->
+                            <controls:VisibilityGate IsOpen="{Binding Music.HasLayout}" Margin="0,0,0,6">
+                                <Border Padding="8,4"
+                                        Background="{DynamicResource Surface2Brush}"
+                                        BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                                        CornerRadius="{StaticResource RadiusChip}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Rectangle Width="12" Height="12" Fill="#F5A623" RadiusX="2" RadiusY="2"
+                                                   Margin="0,0,4,0" VerticalAlignment="Center" />
+                                        <Rectangle Width="12" Height="12" Fill="#7A7A85" RadiusX="2" RadiusY="2"
+                                                   Margin="0,0,8,0" VerticalAlignment="Center" />
+                                        <TextBlock Style="{StaticResource MicroText}" VerticalAlignment="Center"
+                                                   Text="{Binding Music.CanvasLegendText}" />
+                                    </StackPanel>
+                                </Border>
+                            </controls:VisibilityGate>
+                            <controls:VisibilityGate IsOpen="{Binding Tone.HasFileRegionOverlay}">
+                                <Border Padding="8,4"
+                                        Background="{DynamicResource Surface2Brush}"
+                                        BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                                        CornerRadius="{StaticResource RadiusChip}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Rectangle Width="12" Height="12" Fill="#3385FF" RadiusX="2" RadiusY="2"
+                                                   Margin="0,0,8,0" VerticalAlignment="Center" />
+                                        <TextBlock Style="{StaticResource MicroText}" VerticalAlignment="Center"
+                                                   Text="{loc:Text Xaml.FileAreaIncludingFilesystem}" />
+                                    </StackPanel>
+                                </Border>
+                            </controls:VisibilityGate>
+                        </StackPanel>
                         <!-- Always visible: the buttons are the discoverable way to zoom out,
                              so hiding the bar at fit zoom would hide the feature itself. -->
                         <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"

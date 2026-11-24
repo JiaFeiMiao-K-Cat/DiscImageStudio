@@ -52,12 +52,25 @@
                                                 ButtonLabel="{loc:Text Xaml.Select}"
                                                 Hint="{Binding State.CdOutputHint}"
                                                 Command="{Binding BrowseOutputCommand}" />
-                            <controls:VisibilityGate IsOpen="{Binding State.HasCdFiles}">
+                            <controls:VisibilityGate IsOpen="{Binding State.UsesCdVolumeLabel}">
                                 <StackPanel Margin="0,14,0,0">
                                     <TextBlock Style="{StaticResource FieldLabel}" Margin="0,0,0,6" Text="{loc:Text Xaml.VolumeLabel}" />
                                     <TextBox Text="{Binding State.CdVolumeLabel, UpdateSourceTrigger=PropertyChanged}" MaxLength="16" />
                                     <TextBlock Style="{StaticResource HintText}" Margin="0,4,0,0"
                                                Text="{loc:Text Xaml.VolumeLabelHint}" />
+                                </StackPanel>
+                            </controls:VisibilityGate>
+                            <!-- CD-Extra: the picture ISO is valid only where session 2 really
+                                 starts; music burned by other software needs the measured start. -->
+                            <controls:VisibilityGate IsOpen="{Binding State.CdExtraEnabled}">
+                                <StackPanel Margin="0,14,0,0">
+                                    <TextBlock Style="{StaticResource FieldLabel}" Margin="0,0,0,6"
+                                               Text="{loc:Text Xaml.CdExtraMeasuredStart}" />
+                                    <TextBox Text="{Binding CdExtraSession2StartLba, UpdateSourceTrigger=PropertyChanged}"
+                                             MaxLength="32"
+                                             AutomationProperties.Name="{loc:Text Xaml.CdExtraMeasuredStart}" />
+                                    <TextBlock Style="{StaticResource HintText}" Margin="0,4,0,0" TextWrapping="Wrap"
+                                               Text="{Binding CdExtraSession2Hint}" />
                                 </StackPanel>
                             </controls:VisibilityGate>
                             <controls:VisibilityGate IsOpen="{Binding State.IsCdAudioMode}">
