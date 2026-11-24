@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -40,7 +41,8 @@ internal static class UiPreviewRenderer
         bool settingsDialog = false,
         string? settingsView = null,
         string? language = null,
-        string? driveFixture = null)
+        string? driveFixture = null,
+        string? focusTarget = null)
     {
         // The settings window is 760 px wide, so its snapshots relax the page minimum.
         int minimumWidth = settingsDialog ? 640 : 800;
@@ -175,6 +177,11 @@ internal static class UiPreviewRenderer
         }
 
         window.ScrollWorkspace(scrollOffset);
+        if (!string.IsNullOrWhiteSpace(focusTarget))
+        {
+            FocusElementForSnapshot(window, focusTarget);
+        }
+
         return SaveWindowBitmap(window, outputPath, width, height, application);
     }
 
@@ -315,6 +322,66 @@ internal static class UiPreviewRenderer
         application.Shutdown();
         Console.WriteLine($"UI snapshot complete: output={fullPath}");
         return 0;
+    }
+
+    /// <summary>Moves keyboard focus to the element named --focus-target and pumps a frame
+    /// so the shared FocusVisualStyle adorner paints into the capture. The ring renders only
+    /// while the input manager believes the keyboard was the last input device, so the
+    /// snapshot fakes a keyboard event before focusing — no scripted interaction produces
+    /// the ring on its own.</summary>
+    private static void FocusElementForSnapshot(Window window, string name)
+    {
+        FrameworkElement? target = FindNamedElement(window, name);
+        if (target is null)
+        {
+            throw new ArgumentException($"--focus-target names no element '{name}' in the window tree.");
+        }
+
+        InputManager input = InputManager.Current;
+        typeof(InputManager).GetProperty(nameof(InputManager.MostRecentInputDevice))!
+            .SetValue(input, input.PrimaryKeyboardDevice);
+
+        if (!target.Focus())
+        {
+            throw new ArgumentException($"--focus-target '{name}' refused keyboard focus.");
+        }
+
+        window.UpdateLayout();
+        PumpDispatcher(TimeSpan.FromMilliseconds(120));
+    }
+
+    private static FrameworkElement? FindNamedElement(DependencyObject root, string name)
+    {
+        if (root is FrameworkElement element && element.Name == name)
+        {
+            return element;
+        }
+
+        // Grid share objects such as ColumnDefinition hang off the tree without being
+        // Visuals, and VisualTreeHelper refuses them outright.
+        if (root is Visual or System.Windows.Media.Media3D.Visual3D)
+        {
+            int visualCount = VisualTreeHelper.GetChildrenCount(root);
+            for (int index = 0; index < visualCount; index++)
+            {
+                if (FindNamedElement(VisualTreeHelper.GetChild(root, index), name) is { } found)
+                {
+                    return found;
+                }
+            }
+        }
+
+        // Content inside collapsed surfaces (folded expanders, the toast backlog) leaves
+        // the visual tree, so the logical tree gets a second pass over the same nodes.
+        foreach (object logical in LogicalTreeHelper.GetChildren(root))
+        {
+            if (logical is DependencyObject node && FindNamedElement(node, name) is { } found)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     private static void WaitForLivePreview(MainWindow window, TimeSpan timeout)

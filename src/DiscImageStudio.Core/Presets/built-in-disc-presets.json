@@ -17,7 +17,7 @@
     {
       "id": "ritek-medical-aqua",
       "displayName": "铼德医疗水蓝盘（实测）",
-      "description": "实测参数：内半径 24.911275 mm、外半径 57.931155 mm、359,845 扇区；扫描速度采用 1200 mm/s。",
+      "description": "实测参数：内半径 24.911275 mm、外半径 57.931155 mm、359,845 扇区；扫描速度采用 1200 mm/s。MID 为 97m15s17f，圈码为 RSD80M-00009 80。",
       "sectors": 359845,
       "usableSectors": 359843,
       "innerRadiusMm": 24.911275,
@@ -29,7 +29,7 @@
     {
       "id": "verbatim-azo-43438",
       "displayName": "威宝 CD-R AZO (43438)（实测）",
-      "description": "实测参数：内半径 24.837775 mm、外半径 58.020875 mm、359,848 扇区；扫描速度采用 1200 mm/s。",
+      "description": "实测参数：内半径 24.837775 mm、外半径 58.020875 mm、359,848 扇区；扫描速度采用 1200 mm/s。MID 为 97m34s23f，圈码为 ZE6778-CDR-A80A AZO。",
       "sectors": 359848,
       "usableSectors": 359846,
       "innerRadiusMm": 24.837775,
@@ -67,7 +67,7 @@
     {
       "id": "verbatim-dvd-r-azo-43533",
       "displayName": "威宝 DVD-R AZO (43533)（实测）",
-      "description": "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。",
+      "description": "威宝 DVD-R AZO 43533 已验证标定参数：23.9914606277–57.9648936579 mm，共 2,297,888 个扇区；采用三次轨距分布。MID 为 MCC 03RG20，圈码为 ZE5788-DVR-J47F4。",
       "totalSectors": 2297888,
       "usableSectors": 2297888,
       "innerRadiusMm": 23.991460627731737,
@@ -112,6 +112,21 @@
       "contributor": "Disappear9"
     },
     {
+      "id": "verbatim-dvd-plus-rw-94520-95043",
+      "displayName": "威宝 DVD+RW (94520 / 95043)（实测）",
+      "description": "威宝 DVD+RW 94520 / 95043 实测标定参数：23.980218–57.992243 mm，共 2,295,104 个扇区；采用三次轨距分布。MID 为 MKM A02，圈码为 CC5410-DVRW-Q47H。",
+      "totalSectors": 2295104,
+      "usableSectors": 2295104,
+      "innerRadiusMm": 23.980218014466367,
+      "outerRadiusMm": 57.992242964473164,
+      "channelBitLengthNm": 133.3,
+      "pitchLinear": -1.1634886202119528E-05,
+      "pitchQuadratic": -3.3979833896105916E-07,
+      "pitchCubic": 4.091381687648905E-06,
+      "displayNameResourceKey": "DiscPreset_VerbatimDvdPlusRw94520And95043_DisplayName",
+      "descriptionResourceKey": "DiscPreset_VerbatimDvdPlusRw94520And95043_Description"
+    },
+    {
       "id": "philips-dvd-plus-r",
       "displayName": "PHILIPS DVD+R（实测）",
       "description": "PHILIPS DVD+R 实测标定参数：24.157724–57.881039 mm，共 2,295,104 个扇区；采用三次轨距分布。",
@@ -142,6 +157,22 @@
       "displayNameResourceKey": "DiscPreset_RitekDvdPlusRESeries_DisplayName",
       "descriptionResourceKey": "DiscPreset_RitekDvdPlusRESeries_Description",
       "contributor": "EternalEve"
+    },
+    {
+      "id": "ritek-dvd-plus-rw-4x",
+      "displayName": "铼德 Excellent X DVD+RW 4×（实测）",
+      "description": "铼德 Excellent X DVD+RW 4× 实测标定参数（MID RITEK-004-48，圈码 VW47H-01062，见 Discussions #191）：23.941751–58.143818 mm，共 2,295,104 个扇区；采用三次轨距分布。已在该盘片的 DVD+RW 覆写刻录中整盘写入。",
+      "totalSectors": 2295104,
+      "usableSectors": 2295104,
+      "innerRadiusMm": 23.94175055849737,
+      "outerRadiusMm": 58.14381800018976,
+      "channelBitLengthNm": 133.3,
+      "pitchLinear": 2.527588772812498E-05,
+      "pitchQuadratic": -6.043471664833591E-06,
+      "pitchCubic": -8.489947530016172E-08,
+      "displayNameResourceKey": "DiscPreset_RitekDvdPlusRw4x_DisplayName",
+      "descriptionResourceKey": "DiscPreset_RitekDvdPlusRw4x_Description",
+      "contributor": "FanJZSS"
     },
     {
       "id": "ritek-dvd-r-e-series",
@@ -186,7 +217,7 @@
     {
       "id": "bd-r-ritek-10x",
       "displayName": "铼德 BD-R 10x（实测）",
-      "description": "实测参数：内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 扇区。",
+      "description": "实测参数：内半径 23.988221 mm、外半径 58.023235 mm、12,219,392 扇区。MID 为 RITEK-BR2，圈码为 RBD4R015D 001。",
       "totalSectors": 12219392,
       "usableSectors": 12219392,
       "innerRadiusMm": 23.98822105616562,
@@ -207,7 +238,7 @@
     {
       "id": "bd-r-verbatim-64099",
       "displayName": "威宝 BD-R (64099)（实测）",
-      "description": "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。",
+      "description": "实测参数：内半径 23.987042 mm、外半径 57.987960 mm、12,219,392 扇区。MID 为 CMCMAG-BA5，圈码为 CMBR6DV5.3 S-0525 002。",
       "totalSectors": 12219392,
       "usableSectors": 12219392,
       "innerRadiusMm": 23.987042157339335,
@@ -224,6 +255,19 @@
       "outerRadiusMm": 57.987960341783236,
       "invertMapping": false,
       "contributor": "bczhc"
+    },
+    {
+      "id": "bd-re-verbatim-43614",
+      "displayName": "威宝 BD-RE (43614)（实测）",
+      "description": "实测内半径 23.987216 mm、外半径 57.988779 mm，共 12,219,392 扇区。MID 为 CMCMAG-CN2，圈码为 CSBE2DV10 S-0525 003。",
+      "totalSectors": 12219392,
+      "usableSectors": 12219392,
+      "innerRadiusMm": 23.987215945206195,
+      "outerRadiusMm": 57.9887794672236,
+      "pitchLinear": 9.828857433309327E-06,
+      "pitchQuadratic": -2.23099595737756E-05,
+      "pitchCubic": 1.4515048946969683E-05,
+      "invertMapping": false
     }
   ]
 }

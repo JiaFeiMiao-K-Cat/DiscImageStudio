@@ -27,8 +27,8 @@
     "cs": "Vypálit kalibrační disk"
   },
   "Standalone.ReturnToCalibration": {
-    "zh-CN": "返回辅助标定",
-    "zh-TW": "返回輔助校準",
+    "zh-CN": "返回标定",
+    "zh-TW": "返回校準",
     "en": "Back to calibration",
     "ja": "校正に戻る",
     "tr": "Kalibrasyona dön",

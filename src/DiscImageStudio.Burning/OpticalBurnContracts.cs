@@ -27,11 +27,24 @@ public sealed record OpticalBurnDevice(
     string DisplayName,
     IReadOnlyList<string> VolumePaths);
 
+public enum BluRayRewritablePreparation
+{
+    Format,
+    Reformat,
+    Overwrite,
+}
+
 /// <summary>
 /// The medium's geometry extent and the current write limit are separate values.
 /// WritableSectors is a payload limit, not a replacement for geometry or filesystem free space.
 /// </summary>
-public sealed record OpticalMediaCapacity(long TotalSectors, long WritableSectors);
+public sealed record OpticalMediaCapacity(long TotalSectors, long WritableSectors)
+{
+    /// <summary>Writing this medium requires a separate erase confirmation.</summary>
+    public bool RequiresErase { get; init; }
+
+    public BluRayRewritablePreparation? BluRayRewritablePreparation { get; init; }
+}
 
 public sealed record OpticalWriteSpeed(
     int SectorsPerSecond,
@@ -117,6 +130,12 @@ public sealed record CdAudioDiscLayout(long PregapSectors, IReadOnlyList<long> T
 /// as required by IMAPI_CD_SECTOR_AUDIO. ContentLength excludes any WAV header.
 /// CD data, DVD and Blu-ray producers supply complete 2048-byte logical data sectors.
 /// The recording backend adds physical encoding and error correction.
+/// OverwriteRewritableMedia lets a DVD data burn repurpose a formatted erasable disc.
+/// A DVD+RW never returns to IMAPI's blank state after its first format: erasing only
+/// replaces the contents, and IDiscFormat2Data reports IMAPI_FORMAT2_DATA_MEDIA_STATE_
+/// OVERWRITE_ONLY instead of BLANK. IMAPI refuses such a disc with
+/// E_IMAPI_DF2DATA_MEDIA_NOT_BLANK unless ForceOverwrite is enabled, so the request
+/// carries the user's explicit permission to erase and rewrite the whole disc.
 /// Without <see cref="CdAudioLayout"/> a CD audio burn records its content as one track.
 /// </summary>
 public sealed record OpticalBurnRequest(
@@ -126,8 +145,21 @@ public sealed record OpticalBurnRequest(
     Action<Stream, CancellationToken> ProduceContent,
     OpticalWriteSpeed? WriteSpeed = null,
     OpticalBurnBufferOptions? BufferOptions = null,
+    bool OverwriteRewritableMedia = false,
     CdAudioDiscLayout? CdAudioLayout = null)
 {
+    // Invoked on the burn worker immediately before modifying a nonblank rewritable DVD.
+    public Func<string, bool>? ConfirmDvdDataLoss { get; init; }
+
+    // Expected operation from preflight, checked again under the media lock.
+    public BluRayRewritablePreparation? BluRayRewritablePreparation { get; init; }
+
+    // Invoked on the burn worker under the media lock, before formatting or overwriting.
+    public Func<BluRayRewritablePreparation, bool>? ConfirmBluRayRewritable { get; init; }
+
+    // Arguments are the output stream, PSN of LBA 0, verified contiguous sector count, and cancellation token.
+    public Action<Stream, uint, uint, CancellationToken>? ProduceMappedBluRayContent { get; init; }
+
     public OpticalBurnBufferOptions EffectiveBufferOptions => BufferOptions
         ?? (MediaKind == OpticalBurnMediaKind.BluRayData
             ? OpticalBurnBufferOptions.BluRayDefault : OpticalBurnBufferOptions.Default);
@@ -151,6 +183,13 @@ public sealed record OpticalBurnRequest(
             CdAudioLayout.Validate();
             if (CdAudioLayout.TotalSectors * CdAudioDiscLayout.SectorBytes != ContentLength)
                 throw new ArgumentException("The track layout does not cover the content length.", nameof(CdAudioLayout));
+        }
+
+        if (BluRayRewritablePreparation is not null
+            && (MediaKind != OpticalBurnMediaKind.BluRayData || ProduceMappedBluRayContent is null
+                || ConfirmBluRayRewritable is null))
+        {
+            throw new ArgumentException("BD-RE requires a confirmed preparation and a mapped Blu-ray content producer.");
         }
 
         WriteSpeed?.Validate();

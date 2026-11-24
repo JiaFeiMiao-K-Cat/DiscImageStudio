@@ -10,10 +10,33 @@ using System.Runtime.InteropServices.ComTypes;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
+if (args is ["--test-toast"])
+{
+    ToastHostTests.Run();
+    ToastStackTests.Run();
+    return;
+}
+
+if (args is ["--render-toast", string renderOutput])
+{
+    ToastRenderProbe.Run(renderOutput);
+    return;
+}
+
+if (args is ["--test-ux"])
+{
+    ToastHostTests.Run();
+    ToastStackTests.Run();
+    KeyboardReachabilityTests.Run();
+    FocusRingTests.Run();
+    return;
+}
+
 if (args is ["--test-image-drop"])
 {
     ImageDropTests.Run();
     LayerPanelTests.Run();
+    SvgImportTests.Run();
     return;
 }
 
@@ -68,6 +91,17 @@ if (args is ["--test-usable-sectors"])
     return;
 }
 
+if (args is ["--test-bdre"])
+{
+    BluRayModuleTests.TestPhysicalLayout();
+    BluRayRewritableMmcTests.Run();
+    BluRayRewritableBurnTests.Run();
+    BluRaySequentialBurnTests.Run();
+    OpticalDriveProbeTests.Run();
+    StreamBurnCapacityTests.Run();
+    return;
+}
+
 if (args is ["--test-data-region"])
 {
     DesignDataRegionTests.Run();
@@ -92,6 +126,12 @@ if (args is ["--test-hybrid-parity"])
 if (args is ["--test-outer-ring-bleed"])
 {
     OuterRingBleedTests.Run();
+    return;
+}
+
+if (args is ["--test-design-composite-race"])
+{
+    DesignCompositeConcurrencyTests.Run();
     return;
 }
 
@@ -182,6 +222,8 @@ OpticalBurnOperationGateTests.Run();
 MediaSectorCountTests.Run();
 OpticalDriveProbeTests.Run();
 BluRaySequentialBurnTests.Run();
+BluRayRewritableMmcTests.Run();
+BluRayRewritableBurnTests.Run();
 BluRayFlushDiagnosticsTests.Run();
 BluRaySequentialWriterTests.Run();
 BluRaySessionCleanupTests.Run();
@@ -211,6 +253,7 @@ CdDataImageTests.Run();
 VolumeLabelTests.Run();
 CdParallelDataTests.Run();
 CdDataBurnTests.Run();
+DvdRewritableOverwriteTests.Run();
 CdDataDaoWorkflowTests.Run();
 CdMode1SectorTests.Run();
 CdDataSubchannelPatchTests.Run();
@@ -262,8 +305,13 @@ CalibrationShapeSeedTests.Run();
 CalibrationPhotoTests.Run();
 CalibrationPhotoCanvasTests.Run();
 DesignCanvasZoomTests.Run();
+ToastHostTests.Run();
+ToastStackTests.Run();
+KeyboardReachabilityTests.Run();
+FocusRingTests.Run();
 LayerPanelTests.Run();
 ImageDropTests.Run();
+SvgImportTests.Run();
 CalibrationBurnWorkflowTests.Run();
 CalibrationBurnSourceTests.Run();
 BurnJobDockTests.Run();
@@ -272,6 +320,7 @@ DiscImageGenerationApiTests.Run();
 DvdTypedOperationTests.Run();
 JobDiagnosticsTests.Run();
 ViewModelFailureDiagnosticsTests.Run();
+DesignCompositeConcurrencyTests.Run();
 CalibrationOutputPublisherTests.Run();
 CalibrationPhotoViewModelTests.Run();
 CalibrationThreeStageTests.Run();
@@ -345,8 +394,8 @@ static void TestDiscPresets()
 {
     DiscPresetJsonDocument builtIn = DiscPresetJsonStore.LoadBuiltIn();
     Equal(4, builtIn.CdPresets.Count, "built-in CD preset count");
-    Equal(8, builtIn.DvdPresets.Count, "built-in DVD preset count");
-    Equal(5, builtIn.BluRayPresets!.Count, "built-in Blu-ray preset count");
+    Equal(10, builtIn.DvdPresets.Count, "built-in DVD preset count");
+    Equal(6, builtIn.BluRayPresets!.Count, "built-in Blu-ray preset count");
     Equal("zh-CN", builtIn.FallbackLanguage!, "built-in preset fallback language");
     True(
         builtIn.CdPresets.All(value =>
@@ -484,6 +533,19 @@ static void TestDiscPresets()
     Equal(1.0507210681810583E-05, ritekDvdR.PitchQuadratic, "Ritek DVD-R E-Series quadratic pitch");
     Equal(-8.562064227346657E-06, ritekDvdR.PitchCubic, "Ritek DVD-R E-Series cubic pitch");
     True(ritekDvdR.Contributor == "bczhc", "Ritek DVD-R E-Series contributor is recorded");
+    DvdDiscPresetDefinition ritekDvdRw = builtIn.DvdPresets.Single(
+        value => value.Id == "ritek-dvd-plus-rw-4x");
+    Equal(2_295_104U, ritekDvdRw.TotalSectors, "Ritek DVD+RW 4x sectors");
+    Equal(2_295_104U, ritekDvdRw.UsableSectors!.Value, "Ritek DVD+RW 4x usable sectors");
+    True(ritekDvdRw.Description.Contains("RITEK-004-48", StringComparison.Ordinal)
+        && ritekDvdRw.Description.Contains("VW47H-01062", StringComparison.Ordinal),
+        "Ritek DVD+RW 4x preserves the contributed MID and ring code");
+    Equal(23.94175055849737, ritekDvdRw.InnerRadiusMm, "Ritek DVD+RW 4x inner radius");
+    Equal(58.14381800018976, ritekDvdRw.OuterRadiusMm, "Ritek DVD+RW 4x outer radius");
+    Equal(2.527588772812498E-05, ritekDvdRw.PitchLinear, "Ritek DVD+RW 4x linear pitch");
+    Equal(-6.043471664833591E-06, ritekDvdRw.PitchQuadratic, "Ritek DVD+RW 4x quadratic pitch");
+    Equal(-8.489947530016172E-08, ritekDvdRw.PitchCubic, "Ritek DVD+RW 4x cubic pitch");
+    True(ritekDvdRw.Contributor == "FanJZSS", "Ritek DVD+RW 4x contributor is recorded");
     BluRayDiscPresetDefinition ritekBd12x = builtIn.BluRayPresets!.Single(
         value => value.Id == "bd-r-ritek-12x");
     Equal("铼德 BD-R 12x（实测）", ritekBd12x.DisplayName, "Ritek BD-R 12x preset name");
@@ -525,6 +587,19 @@ static void TestDiscPresets()
     Equal(new BluRayDiscParameters(verbatimBd64293.TotalSectors, 1, verbatimBd64293.InnerRadiusMm, verbatimBd64293.OuterRadiusMm, UsableSectors: verbatimBd64293.UsableSectors),
         cliVerbatim64293.CreateParameters(), "GUI JSON and CLI Verbatim BD-R 64293 geometry agree exactly");
     Equal(verbatimBd64293.InvertMapping, cliVerbatim64293.InvertMapping, "GUI JSON and CLI Verbatim BD-R 64293 polarity agree");
+
+    BluRayDiscPresetDefinition verbatimBdRe = builtIn.BluRayPresets!.Single(
+        value => value.Id == "bd-re-verbatim-43614");
+    Equal(12_219_392U, verbatimBdRe.TotalSectors, "Verbatim BD-RE 43614 full capacity");
+    True(verbatimBdRe.UsableSectors == verbatimBdRe.TotalSectors, "Verbatim BD-RE 43614 usable capacity");
+    True(verbatimBdRe.Description.Contains("CMCMAG-CN2", StringComparison.Ordinal), "Verbatim BD-RE 43614 MID");
+    True(verbatimBdRe.Description.Contains("CSBE2DV10 S-0525 003", StringComparison.Ordinal), "Verbatim BD-RE 43614 ring code");
+    BluRayDiscPreset cliVerbatimBdRe = BluRayDiscPreset.Find(verbatimBdRe.Id);
+    Equal(new BluRayDiscParameters(verbatimBdRe.TotalSectors, 1, verbatimBdRe.InnerRadiusMm, verbatimBdRe.OuterRadiusMm,
+            PitchLinear: verbatimBdRe.PitchLinear, PitchQuadratic: verbatimBdRe.PitchQuadratic,
+            PitchCubic: verbatimBdRe.PitchCubic, UsableSectors: verbatimBdRe.UsableSectors),
+        cliVerbatimBdRe.CreateParameters(), "GUI and CLI Verbatim BD-RE 43614 geometry and pitch agree exactly");
+    True(!verbatimBdRe.InvertMapping && !cliVerbatimBdRe.InvertMapping, "Verbatim BD-RE 43614 normal polarity");
 }
 
 static void TestDiscPresetJson()
@@ -560,8 +635,8 @@ static void TestDiscPresetJson()
 
         DiscPresetJsonDocument merged = DiscPresetJsonStore.Merge(builtIn, created);
         Equal(5, merged.CdPresets.Count, "merged CD preset count");
-        Equal(9, merged.DvdPresets.Count, "merged DVD preset count");
-        Equal(6, merged.BluRayPresets!.Count, "merged Blu-ray preset count");
+        Equal(11, merged.DvdPresets.Count, "merged DVD preset count");
+        Equal(7, merged.BluRayPresets!.Count, "merged Blu-ray preset count");
         DvdDiscPresetDefinition verbatim = merged.DvdPresets.Single(
             value => value.Id == "verbatim-dvd-r-azo-43533");
         Equal(2_297_888U, verbatim.TotalSectors, "merged Verbatim DVD sectors");
@@ -727,7 +802,7 @@ static void TestDiscPresetJson()
             interim.DvdPresets[0].ChannelBitLengthNm,
             "interim schema without the field falls back to the DVD standard");
         Equal(
-            5,
+            builtIn.BluRayPresets!.Count,
             DiscPresetJsonStore.Merge(builtIn, interim).BluRayPresets!.Count,
             "pre-BD schema still receives the built-in Blu-ray catalog");
 

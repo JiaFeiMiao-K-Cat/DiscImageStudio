@@ -122,7 +122,7 @@ public sealed class BluRayPatternRangeMapping : IBluRayBatchPayloadMapping
 
     private void FillSweep(uint sector, Span<byte> destination, byte background)
     {
-        double start = (long)(sector / BluRayDiscParameters.SectorsPerCluster)
+        double start = (long)((sector + _disc.UserDataSectorOffset) / BluRayDiscParameters.SectorsPerCluster)
             * BluRayDiscParameters.ChannelBitsPerRecordingUnit;
         double end = start + BluRayDiscParameters.ChannelBitsPerRecordingUnit;
         int index = Array.BinarySearch(_switchChannels, start);

@@ -35,6 +35,24 @@
     "es": "Cerrado",
     "cs": "Uzavřený"
   },
+  "DriveInfo.StateUnformatted": {
+    "zh-CN": "未格式化",
+    "en": "Unformatted",
+    "zh-TW": "未格式化",
+    "ja": "未フォーマット",
+    "tr": "Biçimlendirilmemiş",
+    "es": "Sin formatear",
+    "cs": "Nenaformátovaný"
+  },
+  "DriveInfo.StateFormatted": {
+    "zh-CN": "已格式化",
+    "en": "Formatted",
+    "zh-TW": "已格式化",
+    "ja": "フォーマット済み",
+    "tr": "Biçimlendirilmiş",
+    "es": "Formateado",
+    "cs": "Naformátovaný"
+  },
   "DriveInfo.StateOther": {
     "zh-CN": "其他",
     "en": "Other",
@@ -252,13 +270,13 @@
     "cs": "Kapacita se počítá v\u00A0sektorech po 2048 bajtech; použitelné sektory jsou limit zápisu aplikace."
   },
   "DriveInfo.ClickToCopy": {
-    "zh-CN": "点击复制",
-    "en": "Click to copy",
-    "zh-TW": "點擊複製",
-    "ja": "クリックしてコピー",
-    "tr": "Kopyalamak için tıklayın",
-    "es": "Clic para copiar",
-    "cs": "Kliknutím zkopírovat"
+    "zh-CN": "点击或按 Enter 复制",
+    "en": "Click or press Enter to copy",
+    "zh-TW": "點擊或按 Enter 複製",
+    "ja": "クリックまたは Enter キーでコピー",
+    "tr": "Kopyalamak için tıklayın veya Enter tuşuna basın",
+    "es": "Haga clic o pulse Intro para copiar",
+    "cs": "Zkopírujte kliknutím nebo stisknutím Enter"
   },
   "DriveInfo.Copied": {
     "zh-CN": "已复制",

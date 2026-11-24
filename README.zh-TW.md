@@ -1,6 +1,6 @@
 <div align="center">
 
-[简体中文](README.md) | **繁體中文** | [English](README.en.md) | [日本語](README.ja.md) | [Türkçe](README.tr.md) | [Español](README.es.md) | [Čeština](README.cs.md)
+[简体中文](README.md) | **繁體中文** | [English](README.en.md) | [日本語](README.ja.md) | [Türkçe](README.tr.md) | [Español](README.es.md) | [Čeština](README.cs.md) | [Português (Brasil)](README.pt-BR.md)
 
 ![Banner](docs/images/DiscImageStudio_Banner_2.png)
 
@@ -17,7 +17,7 @@ Disc Image Studio 是一個多平台的光碟表面圖像產生與燒錄工具�
 
 <a href="https://trendshift.io/repositories/332271?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-332271" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/332271" alt="JiaFeiMiao-K-Cat%2FDiscImageStudio | Trendshift" width="250" height="55"/></a>
 
-<a href="https://discord.gg/7nDs9H3r"><img alt="加入 Disc Image Studio 的 Discord 社群" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
+<a href="https://discord.gg/rHkD2g7ufH"><img alt="加入 Disc Image Studio 的 Discord 社群" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
 
 </div>
 

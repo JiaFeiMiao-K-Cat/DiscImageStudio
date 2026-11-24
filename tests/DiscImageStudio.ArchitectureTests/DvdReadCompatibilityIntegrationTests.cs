@@ -24,7 +24,8 @@ internal static class DvdReadCompatibilityIntegrationTests
                 pixels[i + 3] = 255;
             }
             RasterCodec.SavePng(source, 64, 64, pixels, grayscale: false);
-            var options = new DvdStreamingOptions(256, 24, 58, FastParallelism: 2, ReadCompatibility: true);
+            var options = new DvdStreamingOptions(256, 24, 58, FastParallelism: 2, ReadCompatibility: true,
+                ReadCompatibilityMode: DvdReadCompatibilityModes.Periodic9B16);
             using MemoryStream stream = new();
             var summary = DvdStreamingGenerator.Generate(source, stream, options);
             Require(summary.CompatibilityChanges > 0, "fixture exercises periodic protection");
@@ -42,17 +43,10 @@ internal static class DvdReadCompatibilityIntegrationTests
             Require(DvdImageMetadata.TryLoad(iso) is
                 { ReadCompatibility: true, ReadCompatibilityMode: DvdReadCompatibilityModes.Periodic9B16 },
                 "typed metadata recognizes the periodic mode");
-            string cli = Path.Combine(directory, "cli.iso");
-            var result = new DvdDiscModule().ExecuteAsync(new DiscJobRequest("solve",
-                ["--image", source, "--iso-output", cli, "--total-sectors", "256", "--fill-sectors", "256",
-                 "--inner-radius-mm", "24", "--outer-radius-mm", "58", "--read-compatibility", "true",
-                 "--fast-parallelism", "2"])).GetAwaiter().GetResult();
-            Require(result.Succeeded && File.ReadAllBytes(cli).SequenceEqual(stream.ToArray()), "product CLI parity");
-            Require(DvdImageMetadata.TryLoad(cli) is
-                { ReadCompatibility: true, ReadCompatibilityMode: DvdReadCompatibilityModes.Periodic9B16 },
-                "CLI sidecar records the periodic mode");
+            VerifyWriteSafeCli(directory, source, options);
             VerifyPreview(directory, iso);
             VerifyHybrid(directory, source, options);
+            VerifyHybrid(directory, source, options with { ReadCompatibilityMode = DvdReadCompatibilityModes.WriteSafeLight });
             VerifyCalibration(directory, options);
             VerifyModeValidation(directory, source, options);
             using var canceled = new MemoryStream();
@@ -67,6 +61,40 @@ internal static class DvdReadCompatibilityIntegrationTests
         }
         finally { Directory.Delete(directory, recursive: true); }
         Console.WriteLine("dvd-read-compatibility-integration: passed (file/CLI/stream, versioned sidecar, preview, protected files, frozen calibration)");
+    }
+
+    private static void VerifyWriteSafeCli(string directory, string source, DvdStreamingOptions options)
+    {
+        foreach ((string? argument, string mode) in new[]
+        {
+            ((string?)null, DvdReadCompatibilityModes.WriteSafeLight),
+            ("1", DvdReadCompatibilityModes.WriteSafeLight),
+            ("2", DvdReadCompatibilityModes.WriteSafeStrong),
+            ("3", DvdReadCompatibilityModes.WriteSafeZone),
+        })
+        {
+            using MemoryStream stream = new();
+            DvdStreamingOptions selected = options with { ReadCompatibilityMode = mode };
+            var summary = DvdStreamingGenerator.Generate(source, stream, selected);
+            string cli = Path.Combine(directory, $"cli-{argument ?? "default"}.iso");
+            List<string> arguments =
+            [
+                "--image", source, "--iso-output", cli, "--total-sectors", "256", "--fill-sectors", "256",
+                "--inner-radius-mm", "24", "--outer-radius-mm", "58", "--read-compatibility", "true",
+                "--fast-parallelism", "2",
+            ];
+            if (argument is not null) arguments.AddRange(["--read-compatibility-mode", argument]);
+            var result = new DvdDiscModule().ExecuteAsync(new DiscJobRequest("solve", arguments)).GetAwaiter().GetResult();
+            Require(result.Succeeded && File.ReadAllBytes(cli).AsSpan().SequenceEqual(stream.ToArray()),
+                $"product CLI and streaming bytes agree for {mode}");
+            Require(DvdImageMetadata.TryLoad(cli) is { ReadCompatibility: true, ReadCompatibilityMode: var persisted }
+                && persisted == mode, $"typed metadata loads {mode} from the CLI sidecar");
+            using var metadata = JsonDocument.Parse(File.ReadAllText(cli + ".json"));
+            Require(metadata.RootElement.GetProperty("compatibilityChanges").GetInt64() == summary.CompatibilityChanges
+                && summary.CompatibilityChanges > 0
+                && metadata.RootElement.GetProperty("totalScore").ValueKind == JsonValueKind.Null,
+                $"{mode} records the actual substitutions and omits the transition score");
+        }
     }
 
     private static void VerifyPreview(string directory, string iso)
@@ -137,7 +165,8 @@ internal static class DvdReadCompatibilityIntegrationTests
             int start = checked((int)plan.DrawingStartLba * 2048), end = checked((int)plan.DrawingEndLbaExclusive * 2048);
             Require(first.AsSpan(0, start).SequenceEqual(second.AsSpan(0, start))
                 && first.AsSpan(end).SequenceEqual(second.AsSpan(end)), "filesystem, file extents and padding remain byte-identical");
-            string iso = Path.Combine(directory, outer ? "hybrid-outer.iso" : "hybrid-inner.iso");
+            string placement = outer ? "outer" : "inner";
+            string iso = Path.Combine(directory, $"hybrid-{placement}-{options.ReadCompatibilityMode}.iso");
             DvdImageGenerator.Generate(new(source, iso, options, data, "GUARD", outer));
             byte[] generated = File.ReadAllBytes(iso);
             // Separate plans record their own creation timestamps in the filesystem.
@@ -145,8 +174,8 @@ internal static class DvdReadCompatibilityIntegrationTests
                 && generated.AsSpan(start, end - start).SequenceEqual(second.AsSpan(start, end - start)),
                 "hybrid ISO and streaming drawing protection match");
             Require(DvdImageMetadata.TryLoad(iso) is
-                { ReadCompatibility: true, ReadCompatibilityMode: DvdReadCompatibilityModes.Periodic9B16, HasFileSystem: true },
-                "hybrid sidecar identifies the filesystem and periodic mode");
+                { ReadCompatibility: true, ReadCompatibilityMode: var mode, HasFileSystem: true }
+                && mode == options.ReadCompatibilityMode, "hybrid sidecar identifies the filesystem and actual mode");
         }
     }
 
@@ -154,18 +183,21 @@ internal static class DvdReadCompatibilityIntegrationTests
     {
         var parameters = new CalibrationParameters(CalibrationDiscKind.Dvd, 24, 58, 256, 133.3);
         foreach (var artwork in new[] { CalibrationArtwork.WideAddressBands, CalibrationArtwork.ReferenceCross })
+        foreach (string mode in new[] { DvdReadCompatibilityModes.Periodic9B16,
+            DvdReadCompatibilityModes.WriteSafeLight, DvdReadCompatibilityModes.WriteSafeStrong,
+            DvdReadCompatibilityModes.WriteSafeZone })
         {
             // The target's frozen generation parameters win over the current project setting.
             var target = CalibrationTarget.Create(parameters, artwork: artwork);
             using MemoryStream legacy = new(), guarded = new(), replay = new();
             var off = DvdStreamingGenerator.GeneratePattern(target, legacy, options);
-            var enabledTarget = CalibrationTarget.Create(parameters with { DvdReadCompatibility = true }, artwork: artwork);
-            Require(enabledTarget.DvdReadCompatibilityMode == DvdReadCompatibilityModes.Periodic9B16
-                && enabledTarget.EffectiveDvdReadCompatibilityMode == DvdReadCompatibilityModes.Periodic9B16,
-                "new calibration freezes the periodic mode");
+            var enabledTarget = CalibrationTarget.Create(parameters with { DvdReadCompatibility = true },
+                artwork: artwork, dvdReadCompatibilityMode: mode);
+            Require(enabledTarget.DvdReadCompatibilityMode == mode && enabledTarget.EffectiveDvdReadCompatibilityMode == mode,
+                "new calibration freezes the selected mode");
             var on = DvdStreamingGenerator.GeneratePattern(enabledTarget, guarded, options with { ReadCompatibility = false });
             var restored = CalibrationSessionJson.Deserialize(CalibrationSessionJson.Serialize(new(enabledTarget, []))).Target;
-            Require(restored.DvdReadCompatibilityMode == DvdReadCompatibilityModes.Periodic9B16,
+            Require(restored.DvdReadCompatibilityMode == mode,
                 "saved calibration preserves the protection version");
             DvdStreamingGenerator.GeneratePattern(restored, replay, options with
             {
@@ -173,13 +205,14 @@ internal static class DvdReadCompatibilityIntegrationTests
             });
             Require(off.CompatibilityChanges == 0 && on.CompatibilityChanges > 0, "frozen calibration opt-in used");
             Require(guarded.ToArray().SequenceEqual(replay.ToArray()), "calibration bytes independent of current project toggle");
-            string path = Path.Combine(directory, artwork + ".iso");
+            string path = Path.Combine(directory, $"{artwork}-{mode}.iso");
             DvdImageGenerator.GenerateCalibration(enabledTarget, path, options with { ReadCompatibility = false });
             Require(File.ReadAllBytes(path).SequenceEqual(guarded.ToArray())
-                && DvdImageMetadata.TryLoad(path) is
-                    { ReadCompatibility: true, ReadCompatibilityMode: DvdReadCompatibilityModes.Periodic9B16 },
+                && DvdImageMetadata.TryLoad(path) is { ReadCompatibility: true, ReadCompatibilityMode: var persisted }
+                && persisted == mode,
                 "calibration file bytes match streaming and carry preview metadata");
 
+            if (mode != DvdReadCompatibilityModes.Periodic9B16) continue;
             // Records created before mode versioning contain the boolean opt-in only.
             var oldTarget = new CalibrationTarget(enabledTarget.SchemaVersion, enabledTarget.Id,
                 enabledTarget.Parameters, enabledTarget.Options, enabledTarget.Cells, enabledTarget.Artwork);

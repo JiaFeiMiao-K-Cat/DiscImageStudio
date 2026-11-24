@@ -254,5 +254,6 @@
 
         <controls:ConfirmModal x:Name="ClearCacheConfirm" Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="30" />
         <controls:ConfirmModal x:Name="UpdateConfirm" Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="31" />
+        <controls:ConfirmModal x:Name="UnsavedConfirm" Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="32" />
     </Grid>
 </Window>

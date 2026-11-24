@@ -54,7 +54,7 @@ internal static class LayerPanelTests
         BitmapSource? preloaded = BitmapSource.Create(
             4, 2, 96, 96, PixelFormats.Bgra32, null, new byte[4 * 2 * 4], 4 * 4);
         preloaded.Freeze();
-        Dictionary<string, (BitmapSource? Image, BitmapSource? Thumbnail)> map =
+        Dictionary<string, (ImageSource? Image, ImageSource? Thumbnail)> map =
             new(StringComparer.OrdinalIgnoreCase)
             {
                 ["missing-on-disk.png"] = (preloaded, preloaded),

@@ -10,7 +10,7 @@ public interface IBluRayLuminanceMapping
 }
 
 /// <summary>A user byte's location after LDC interleaving and BIS multiplexing.</summary>
-/// <remarks>Channel position is a nominal byte midpoint using the 2:3 modulation rate,
+/// <remarks>Channel position from the start of the physical data zone is a nominal byte midpoint using the 2:3 modulation rate,
 /// including dc-control insertion, sync and recording-unit run-in. Variable-length 17PP
 /// codewords mean this is not an exact channel-bit boundary or a predicted optical mark.</remarks>
 public readonly record struct BluRayPayloadBytePosition(
@@ -298,8 +298,9 @@ public sealed class BluRayImagePayloadMapping : IBluRayBatchPayloadMapping
         double channelPosition = (long)(sector / 32) * BluRayDiscParameters.ChannelBitsPerRecordingUnit
             + 2760 + frame * 1932 + 30 + (dataBitMidpoint + precedingDcBits) * 1.5;
         double sectorPosition = channelPosition / (BluRayDiscParameters.ChannelBitsPerRecordingUnit / 32.0);
+        long dataZoneOffset = (long)(_disc.UserDataSectorOffset / 32) * BluRayDiscParameters.ChannelBitsPerRecordingUnit;
         return new(sector, byteOffset, physicalSector, frame, ldcColumn, eccColumn,
-            channelPosition, _geometry.AtSector(sectorPosition));
+            dataZoneOffset + channelPosition, _geometry.AtSector(sectorPosition));
     }
 
     public void FillScrambledPayload(BluRaySectorContext context, Span<byte> destination)

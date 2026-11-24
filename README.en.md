@@ -1,6 +1,6 @@
 <div align="center">
 
-[简体中文](README.md) | [繁體中文](README.zh-TW.md) | **English** | [日本語](README.ja.md) | [Türkçe](README.tr.md) | [Español](README.es.md) | [Čeština](README.cs.md)
+[简体中文](README.md) | [繁體中文](README.zh-TW.md) | **English** | [日本語](README.ja.md) | [Türkçe](README.tr.md) | [Español](README.es.md) | [Čeština](README.cs.md) | [Português (Brasil)](README.pt-BR.md)
 
 ![Banner](docs/images/DiscImageStudio_Banner_2.png)
 
@@ -17,7 +17,7 @@ Disc Image Studio is a multi-platform disc-surface image generation and burning 
 
 <a href="https://trendshift.io/repositories/332271?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-332271" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/332271" alt="JiaFeiMiao-K-Cat%2FDiscImageStudio | Trendshift" width="250" height="55"/></a>
 
-<a href="https://discord.gg/7nDs9H3r"><img alt="Join the Disc Image Studio Discord community" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
+<a href="https://discord.gg/rHkD2g7ufH"><img alt="Join the Disc Image Studio Discord community" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
 
 </div>
 
@@ -57,7 +57,7 @@ Choose CD, DVD, or Blu-ray on the home page, specify an output location, and cre
 
 ### 2. Design the Disc Surface
 
-Click **Import images** on the Design page, or drag one or multiple images from Explorer onto the page. Arrange them using layers, and adjust dithering, gamma, brightness, and grayscale levels in the **Tone** panel on the right.
+Click **Import images** on the Design page, or drag one or multiple images (PNG, JPEG, BMP, TIFF, GIF, and `.svg` vector artwork up to 32 MiB) from Explorer onto the page. Arrange them using layers, and adjust dithering, gamma, brightness, and grayscale levels in the **Tone** panel on the right. Vector `.svg` layers retain sharp vector rendering and `viewBox` proportions while editing and rasterize on demand for preview and export; SVG parsing uses `SharpVectors` with external resources and scripts ignored, and complex `<filter>` effects, masks, or advanced CSS class selectors may degrade or be ignored (flattened static-path SVGs are recommended).
 
 ### 3. Preview and Export
 
@@ -89,7 +89,7 @@ Disc Image Studio provides an intelligent, precise assisted calibration workflow
 | `P20261004-133519.jpg` | `P20261004-135416.jpg` |
 
 
-See the [assisted calibration guide](docs/CALIBRATION.md) for the workflow and parameters.
+For a first use, follow the [DVD calibration walkthrough for Verbatim AZO DVD-R](docs/CALIBRATION_TUTORIAL.en.md) to see the photos, measurement points, and results from all three stages. See the [assisted calibration guide](docs/CALIBRATION.en.md) for the complete workflow and parameters.
 
 ### Burning
 
@@ -181,7 +181,8 @@ docs/                        Architecture, engine, preset, release, and other do
 | [CD_AUDIO_COMPATIBILITY.md](docs/CD_AUDIO_COMPATIBILITY.md) | CD audio track formats, byte order, ghosting troubleshooting, and music + picture discs |
 | [ADDING_BLURAY.md](docs/ADDING_BLURAY.md) | Blu-ray module physical model, generation/burning pipeline, and extension points |
 | [DISC_PRESETS.md](docs/DISC_PRESETS.md) | Layered JSON format and merging rules for editable disc presets |
-| [CALIBRATION.md](docs/CALIBRATION.md) | Photo rectification (marking the disc’s outermost physical edge and center-hole edge), curve calibration, and DVD cubic track-pitch fitting |
+| [CALIBRATION.en.md](docs/CALIBRATION.en.md) | Photo rectification (marking the disc’s outermost physical edge and center-hole edge), curve calibration, and DVD cubic track-pitch fitting |
+| [CALIBRATION_TUTORIAL.en.md](docs/CALIBRATION_TUTORIAL.en.md) | Verbatim AZO DVD-R walkthrough with actual records, measurement points, and results after fine calibration |
 | [PHYSICAL_MODEL_AUDIT.md](docs/PHYSICAL_MODEL_AUDIT.md) | Review of the CD / DVD generation physical models |
 | [VALIDATION.md](docs/VALIDATION.md) | Local validation records for builds, regressions, and physical disc tests |
 | [RELEASING.md](docs/RELEASING.md) | GitHub Releases, MSIX packaging, signing tests, and Store submission procedures |

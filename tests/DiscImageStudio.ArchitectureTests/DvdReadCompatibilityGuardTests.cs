@@ -2,11 +2,14 @@ using System.IO;
 using System.Reflection;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using DiscImageStudio.Core;
 using DvdImageSolver.Solver;
 
 internal static class DvdReadCompatibilityGuardTests
 {
     private delegate int ApplySector(Span<byte> payload, ReadOnlySpan<byte> mask, ReadOnlySpan<byte> ownership);
+    private delegate int ApplyWriteSafeSector(Span<byte> payload, ReadOnlySpan<byte> mask,
+        ReadOnlySpan<byte> ownership, uint lba, string mode);
     private static readonly ApplySector Apply = typeof(FastDispersionImageWriter).Assembly
         .GetType("DvdImageSolver.Solver.DvdReadCompatibilityGuard", throwOnError: true)!
         .GetMethod("ApplySector", BindingFlags.Static | BindingFlags.NonPublic)!
@@ -15,6 +18,10 @@ internal static class DvdReadCompatibilityGuardTests
         .GetType("DvdImageSolver.Solver.DvdReadCompatibilityGuard", throwOnError: true)!
         .GetMethod("ApplyLegacySector", BindingFlags.Static | BindingFlags.NonPublic)!
         .CreateDelegate<ApplySector>();
+    private static readonly ApplyWriteSafeSector ApplyWriteSafe = typeof(FastDispersionImageWriter).Assembly
+        .GetType("DvdImageSolver.Solver.DvdReadCompatibilityGuard", throwOnError: true)!
+        .GetMethod("ApplyWriteSafeSector", BindingFlags.Static | BindingFlags.NonPublic)!
+        .CreateDelegate<ApplyWriteSafeSector>();
 
     internal static void Run()
     {
@@ -22,8 +29,11 @@ internal static class DvdReadCompatibilityGuardTests
         CheckIndependentOracle();
         CheckLegacyReplay();
         CheckPatternWriters();
+        CheckWriteSafeSector();
+        CheckWriteSafeWriters();
+        CheckWriteSafeReadback();
         CheckRasterPaths();
-        Console.WriteLine("dvd-read-compatibility-guard: passed (independent every-16 and frozen legacy oracles, fixed phase, non-A5 values, ownership, idempotence, default-off bytes, exact-Q rejection and scalar/SIMD/reuse/parallel parity)");
+        Console.WriteLine("dvd-read-compatibility-guard: passed (independent legacy/periodic/write-safe oracles, zones, ownership, default-off bytes, exact-Q rejection and scalar/SIMD/reuse/parallel parity)");
     }
 
     private static void CheckBoundaries()
@@ -201,7 +211,7 @@ internal static class DvdReadCompatibilityGuardTests
 
     private static void CheckPatternWriters()
     {
-        var options = Options();
+        var options = Options() with { ReadCompatibilityMode = DvdReadCompatibilityModes.Periodic9B16 };
         using MemoryStream defaultOutput = new(), explicitOff = new(), enabled = new();
         var original = FastDispersionImageWriter.WriteSectorPatternStream(_ => 255, defaultOutput, options);
         FastDispersionImageWriter.WriteSectorPatternStream(_ => 255, explicitOff, options with { ReadCompatibility = false });
@@ -238,6 +248,146 @@ internal static class DvdReadCompatibilityGuardTests
                 options with { ReadCompatibility = true, Algorithm = algorithm }));
     }
 
+    private static void CheckWriteSafeSector()
+    {
+        byte[] mask = IndependentMask(0x30070);
+        byte[] q = Enumerable.Range(0, 2048).Select(index => (index / 23 % 3) switch
+        {
+            0 => (byte)0xA5,
+            1 => (byte)0x92,
+            _ => (byte)0x9B,
+        }).ToArray();
+        byte[] ownership = Enumerable.Range(0, 2048).Select(index => (byte)(index % 5 == 0 ? 0 : 1)).ToArray();
+        foreach (string mode in new[] { DvdReadCompatibilityModes.WriteSafeLight,
+            DvdReadCompatibilityModes.WriteSafeStrong, DvdReadCompatibilityModes.WriteSafeZone })
+        foreach (uint lba in new[] { 99_999u, 100_000u, 299_999u, 300_000u })
+        {
+            byte[] payload = Xor(q, mask);
+            byte[] expected = q.Select((anchor, index) => ownership[index] == 0
+                ? anchor : WriteSafeOracle(anchor, index, lba, mode)).ToArray();
+            int expectedChanges = q.Where((anchor, index) => expected[index] != anchor).Count();
+            int actualChanges = ApplyWriteSafe(payload, mask, ownership, lba, mode);
+            Require(expectedChanges > 0 && actualChanges == expectedChanges
+                && Xor(payload, mask).AsSpan().SequenceEqual(expected),
+                $"{mode} changes only owned anchors at the expected positions for LBA {lba}");
+            Require(ApplyWriteSafe(payload, mask, ownership, lba, mode) == 0,
+                $"{mode} leaves already transformed bytes intact");
+        }
+    }
+
+    private static void CheckWriteSafeWriters()
+    {
+        Require(DvdReadCompatibilityModes.Current == DvdReadCompatibilityModes.WriteSafeLight,
+            "light is the default enabled mode");
+        var options = Options() with { StartLba = 99_984, FillSectors = 32 };
+        using MemoryStream original = new();
+        var unguarded = FastDispersionImageWriter.WriteSectorPatternStream(_ => 0, original, options);
+        Require(!options.ReadCompatibility && unguarded.CompatibilityChanges == 0,
+            "write-safe remains off by default");
+        foreach (string mode in new[] { DvdReadCompatibilityModes.WriteSafeLight,
+            DvdReadCompatibilityModes.WriteSafeStrong, DvdReadCompatibilityModes.WriteSafeZone })
+        {
+            var selected = options with { ReadCompatibility = true, ReadCompatibilityMode = mode };
+            using MemoryStream sectors = new(), analytic = new(), codewords = new(), exact = new();
+            var streamed = FastDispersionImageWriter.WriteSectorPatternStream(_ => 0, sectors, selected);
+            var sampled = FastDispersionImageWriter.WritePatternStream((_, _) => 0, analytic, selected);
+            var codeword = FastDispersionImageWriter.WriteCodewordPatternStream(_ => 0, codewords, selected);
+            byte[] payload = sectors.ToArray();
+            Require(payload.AsSpan().SequenceEqual(analytic.ToArray())
+                && payload.AsSpan().SequenceEqual(codewords.ToArray())
+                && streamed.CompatibilityChanges == sampled.CompatibilityChanges
+                && streamed.CompatibilityChanges == codeword.CompatibilityChanges,
+                $"{mode} agrees across sector, analytic and gray codeword writers");
+            long expectedChanges = 0;
+            for (uint sector = 0; sector < selected.FillSectors; sector++)
+            {
+                uint lba = selected.StartLba + sector;
+                byte[] mask = IndependentMask(lba + selected.PsnOffset);
+                string diagnostic = $"{mode} uses the absolute LBA for its transformation";
+                for (int index = 0; index < mask.Length; index++)
+                {
+                    byte expected = WriteSafeOracle(0xA5, index, lba, mode);
+                    Require((payload[checked((int)sector * mask.Length + index)] ^ mask[index]) == expected,
+                        diagnostic);
+                    if (expected != 0xA5) expectedChanges++;
+                }
+            }
+            Require(streamed.CompatibilityChanges == expectedChanges, $"{mode} reports the exact change count");
+            int calls = 0;
+            Throws<ArgumentException>(() => FastDispersionImageWriter.WriteScrambledCodewordPatternStream(
+                _ => { calls++; return 0xA5; }, exact, selected));
+            Require(exact.Length == 0 && calls == 0, $"{mode} cannot transform exact-Q requests");
+        }
+    }
+
+    private static byte WriteSafeOracle(byte q, int position, uint lba, string mode)
+    {
+        bool strong = mode == DvdReadCompatibilityModes.WriteSafeStrong
+            || (mode == DvdReadCompatibilityModes.WriteSafeZone && lba is >= 100_000 and < 300_000);
+        if (q == 0xA5 && strong && position % 2 == 0)
+            return (position % 8) switch { 0 => 0x58, 2 => 0x5D, 4 => 0xB0, _ => 0xB7 };
+        if (position % 4 != 0) return q;
+        return (q, position % 16) switch
+        {
+            (0xA5, 0) => 0x3B,
+            (0xA5, 4) => 0x3C,
+            (0xA5, 8) => 0x63,
+            (0xA5, 12) => 0x64,
+            (0x92, 0) => 0x90,
+            (0x92, 4) => 0x94,
+            (0x92, 8) => 0x98,
+            (0x92, 12) => 0x9D,
+            _ => q,
+        };
+    }
+
+    private static void CheckWriteSafeReadback()
+    {
+        const uint psn = 0x30000;
+        var directory = Directory.CreateTempSubdirectory("dvd-write-safe-preview-");
+        try
+        {
+            string iso = Path.Combine(directory.FullName, "sample.iso");
+            string png = Path.Combine(directory.FullName, "preview.png");
+            byte[] q = new byte[2048];
+            q[0] = q[1] = q[4] = 0x3B;
+            q[2] = 0xA5;
+            q[3] = 0x92;
+            q[8] = 0x63;
+            q[9] = 0x90;
+            q[12] = 0x9D;
+            q[16] = 0x58;
+            q[32] = 0x9B;
+            q[48] = 0x90;
+            using (FileStream output = File.Create(iso))
+            {
+                output.Write(Xor(q, IndependentMask(psn)));
+                // XORing Q=0 with the mask leaves only unclassified bytes in these sectors.
+                for (uint sector = 1; sector < 16; sector++) output.Write(IndependentMask(psn + sector));
+            }
+
+            var options = new IsoReadbackOptions(64, 0, 16, psn, 24, 24.1, 133.3, true, 64, 2048);
+            Verify(null, 2);
+            Verify("off", 2);
+            Verify("future-mode", 2);
+            Verify(DvdReadCompatibilityModes.WriteSafeLight, 6, supported: true);
+            Verify(DvdReadCompatibilityModes.WriteSafeStrong, 5, supported: true);
+            Verify(DvdReadCompatibilityModes.WriteSafeZone, 6, supported: true);
+            Verify(DvdReadCompatibilityModes.Periodic9B16, 3, supported: true);
+            Verify(DvdReadCompatibilityModes.LegacyBridge, 3, supported: true);
+
+            void Verify(string? mode, long classified, bool supported = false)
+            {
+                if (mode is not null) File.WriteAllText(iso + ".json", $$"""{"readCompatibility":"{{mode}}"}""");
+                var summary = IsoReadbackRenderer.Render(iso, png, options);
+                string expectedMode = supported ? $"payload-scramble-classify-splat-{mode}" : "payload-scramble-classify-splat";
+                Require(summary.ClassifiedSamples == classified && summary.MappingMode == expectedMode,
+                    $"{mode ?? "no sidecar"} classifies only the inserted values and phases its recipe writes");
+            }
+        }
+        finally { directory.Delete(recursive: true); }
+    }
+
     private static void CheckRasterPaths()
     {
         string directory = Path.Combine(Path.GetTempPath(), "dvd-guard-" + Guid.NewGuid().ToString("N"));
@@ -247,10 +397,16 @@ internal static class DvdReadCompatibilityGuardTests
             string opaque = WriteImage(directory, "opaque", (_, _) => 255);
             string translucent = WriteImage(directory, "alpha", (x, y) => ((x / 8 + y / 7) % 3) switch { 0 => 0, 1 => 127, _ => 255 });
             string excluded = WriteImage(directory, "excluded", (_, _) => 127);
+            foreach (string mode in new[] { DvdReadCompatibilityModes.Periodic9B16, DvdReadCompatibilityModes.WriteSafeLight })
             foreach (string path in new[] { opaque, translucent, excluded })
             foreach (bool zeroInitial in new[] { false, true })
             {
-                var options = Options() with { ZeroInitialPayload = zeroInitial, ReadCompatibility = true };
+                var options = Options() with
+                {
+                    ZeroInitialPayload = zeroInitial,
+                    ReadCompatibility = true,
+                    ReadCompatibilityMode = mode,
+                };
                 using MemoryStream scalar = new(), optimized = new(), off = new();
                 var expected = FastDispersionImageWriter.WriteStream(path, scalar, options with { UseSampleReuse = false, UseSimdSampling = false });
                 var actual = FastDispersionImageWriter.WriteStream(path, optimized, options with { FastParallelism = 2 });
@@ -264,7 +420,7 @@ internal static class DvdReadCompatibilityGuardTests
                     Require(actual.ControlledWords == 0 && actual.CompatibilityChanges == 0 && off.ToArray().AsSpan().SequenceEqual(optimized.ToArray()),
                         "alpha below threshold preserves all initial payload bytes");
                 else
-                    Require(actual.CompatibilityChanges > 0, "opaque and partial-alpha fixtures actually exercise bridges");
+                    Require(actual.CompatibilityChanges > 0, "opaque and partial-alpha fixtures exercise the selected transform");
             }
         }
         finally

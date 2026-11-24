@@ -116,13 +116,33 @@
             <Border Grid.Row="2" x:Name="LogHost" Height="200" Background="{DynamicResource BackgroundBrush}"
                     BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0"
                     Visibility="{Binding IsJobDockExpanded, Converter={StaticResource BoolToVisibility}}">
-                <TextBox x:Name="LogTextBox" Style="{StaticResource BareTextBox}" IsReadOnly="True"
-                         AcceptsReturn="True" VerticalAlignment="Stretch" VerticalContentAlignment="Top"
-                         FontFamily="{StaticResource MonoFontFamily}" FontSize="12"
-                         Foreground="{DynamicResource TextPrimaryBrush}"
-                         Background="Transparent" BorderThickness="0"
-                         HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
-                         TextWrapping="Wrap" Padding="14,8,14,8" />
+                <Grid>
+                    <TextBox x:Name="LogTextBox" Style="{StaticResource BareTextBox}" IsReadOnly="True"
+                             AcceptsReturn="True" VerticalAlignment="Stretch" VerticalContentAlignment="Top"
+                             FontFamily="{StaticResource MonoFontFamily}" FontSize="12"
+                             Foreground="{DynamicResource TextPrimaryBrush}"
+                             Background="Transparent" BorderThickness="0"
+                             HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
+                             TextWrapping="Wrap" Padding="14,8,14,8" />
+                    <!-- The empty dock is a black pane that reads as broken; the placeholder
+                         names what will fill it and clears on the first log line. -->
+                    <TextBlock Text="{loc:Text Xaml.JobLogPlaceholder}"
+                               Foreground="{DynamicResource TextMutedBrush}" FontSize="12"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False" TextWrapping="Wrap" Margin="14,8"
+                               TextAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasLogContent}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
             </Border>
         </Grid>
     </Border>

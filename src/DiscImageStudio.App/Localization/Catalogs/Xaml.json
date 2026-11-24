@@ -1,4 +1,13 @@
 {
+  "Xaml.JobLogPlaceholder": {
+    "zh-CN": "暂无日志。任务开始后，进度与结果会显示在这里。",
+    "en": "No log yet. Progress and results will appear here once a task starts.",
+    "zh-TW": "尚無日誌。工作開始後，進度與結果會顯示在這裡。",
+    "ja": "ログはまだありません。タスクを開始すると、進行状況と結果がここに表示されます。",
+    "tr": "Henüz günlük yok. Görev başlayınca ilerleme ve sonuçlar burada görünür.",
+    "es": "Aún no hay registro. El progreso y los resultados aparecerán aquí al iniciar una tarea.",
+    "cs": "Zatím žádný protokol. Po spuštění úlohy se zde zobrazí průběh a výsledky."
+  },
   "Xaml.VerifySectorScale": {
     "zh-CN": "用扇区核对照片尺度",
     "en": "Check photo scale against the sector",
@@ -566,14 +575,14 @@
     "es": "Grabar",
     "cs": "Vypálení"
   },
-  "Xaml.StreamDataDirectlyToABlankDiscWithoutFirst": {
-    "zh-CN": "即时刻录将数据直接流式写入空白盘片，不必单独生成镜像文件再刻录。",
-    "en": "Stream data directly to a blank disc without first generating an image file.",
-    "zh-TW": "即時燒錄會將資料直接串流寫入空白光碟，無須先產生映像檔。",
-    "ja": "イメージ ファイルを生成せずに、データを空のディスクへ直接ストリーミングして書き込みます。",
-    "tr": "Verileri önce bir imaj dosyası oluşturmadan doğrudan boş bir diske akışla yazın.",
-    "es": "Transmitir los datos directamente a un disco virgen sin generar primero un archivo de imagen.",
-    "cs": "Přímé vypalování zapisuje data rovnou na prázdný disk, bez vytváření souboru obrazu."
+  "Xaml.StreamDataDirectlyToDisc": {
+    "zh-CN": "将数据直接流式写入光盘，无需先生成镜像文件。",
+    "en": "Stream data directly to disc without first generating an image file.",
+    "zh-TW": "將資料直接串流寫入光碟，無須先產生映像檔。",
+    "ja": "イメージ ファイルを生成せずに、データをディスクに直接ストリーミングして書き込みます。",
+    "tr": "Önce bir imaj dosyası oluşturmadan verileri doğrudan diske akışla yazın.",
+    "es": "Transmite los datos directamente al disco sin generar primero un archivo de imagen.",
+    "cs": "Přímé vypalování zapisuje data rovnou na disk, bez vytváření souboru obrazu."
   },
   "Xaml.ContentToWrite": {
     "zh-CN": "写入内容",
@@ -594,11 +603,11 @@
     "cs": "Složený obrázek z návrhu"
   },
   "Xaml.CalibrationPattern": {
-    "zh-CN": "辅助标定图案",
+    "zh-CN": "标定图案",
     "en": "Calibration pattern",
-    "zh-TW": "輔助校準圖案",
+    "zh-TW": "校準圖案",
     "ja": "キャリブレーション パターン",
-    "tr": "Yardımcı kalibrasyon deseni",
+    "tr": "Kalibrasyon deseni",
     "es": "Patrón de calibración",
     "cs": "Kalibrační vzor"
   },
@@ -665,23 +674,50 @@
     "es": "Antes de grabar",
     "cs": "Před vypalováním"
   },
-  "Xaml.StreamingRequiresBlankMediaInterruptionsPowerLossOrInsufficient": {
-    "zh-CN": "流式刻录仅支持空白介质。刻录开始后，中断、断电或生成速度不足都可能导致盘片报废。",
-    "en": "Streaming requires blank media. Interruptions, power loss, or insufficient generation speed may make the disc unusable.",
-    "zh-TW": "串流燒錄僅支援空白媒體。開始燒錄後，中斷、斷電或資料產生速度不足，都可能導致光碟報廢。",
-    "ja": "ストリーミング書き込みは空のメディアのみに対応しています。書き込み開始後に中断、停電、または生成速度の不足が発生すると、ディスクが使用できなくなる場合があります。",
-    "tr": "Akışla yazma yalnızca boş ortam gerektirir. Kesintiler, elektrik kesintisi veya yetersiz oluşturma hızı diski kullanılamaz hale getirebilir.",
-    "es": "La grabación en streaming requiere discos vírgenes. Las interrupciones, los cortes de alimentación o una generación demasiado lenta pueden inutilizar el disco.",
-    "cs": "Přímé vypalování funguje jen s prázdným médiem. Po spuštění může disk znehodnotit přerušení, výpadek proudu nebo příliš pomalé generování dat."
+  "Xaml.StreamingBurnInterruptionWarning": {
+    "zh-CN": "刻录过程中，中断、断电或生成速度不足都可能使盘片无法读取。",
+    "en": "Interruptions, power loss, or insufficient generation speed during burning may make the disc unreadable.",
+    "zh-TW": "燒錄過程中，中斷、斷電或資料產生速度不足都可能使光碟無法讀取。",
+    "ja": "書き込み中に中断、停電、または生成速度の不足が発生すると、ディスクを読み取れなくなる場合があります。",
+    "tr": "Yazma sırasında kesintiler, elektrik kesintisi veya yetersiz oluşturma hızı diski okunamaz hale getirebilir.",
+    "es": "Las interrupciones, los cortes de alimentación o una generación demasiado lenta durante la grabación pueden volver ilegible el disco.",
+    "cs": "Přerušení, výpadek napájení nebo příliš pomalé generování dat při vypalování mohou způsobit nečitelnost disku."
   },
-  "Xaml.IHaveInsertedTheCorrectBlankDisc": {
-    "zh-CN": "我确认已放入正确的空白盘",
-    "en": "I have inserted the correct blank disc",
-    "zh-TW": "我確認已放入正確的空白光碟",
-    "ja": "正しい空のディスクを挿入したことを確認しました",
-    "tr": "Doğru boş diski taktığımı onaylıyorum",
-    "es": "He insertado el disco virgen correcto",
-    "cs": "Potvrzuji, že je vložen správný prázdný disk"
+  "Xaml.BluRayStreamingMedia": {
+    "zh-CN": "支持空白单层 BD-R，以及能验证无备用区布局的 25 GB 单层 BD-RE。格式化或覆写 BD-RE 前会另行确认。",
+    "en": "Supports blank single-layer BD-R and 25 GB single-layer BD-RE with a verifiable layout without spare areas. Formatting or overwriting BD-RE requires separate confirmation.",
+    "zh-TW": "支援空白單層 BD-R，以及能驗證無備用區配置的 25 GB 單層 BD-RE。格式化或覆寫 BD-RE 前會另行確認。",
+    "ja": "空の 1 層 BD-R と、予備領域のない配置を検証できる 25 GB の 1 層 BD-RE に対応します。BD-RE のフォーマットや上書きの前に個別の確認が必要です。",
+    "tr": "Boş tek katmanlı BD-R ve yedek alansız düzeni doğrulanabilen 25 GB tek katmanlı BD-RE desteklenir. BD-RE'yi biçimlendirme veya üzerine yazma için ayrı onay gerekir.",
+    "es": "Admite BD-R vírgenes de una capa y BD-RE de 25 GB de una capa con una disposición verificable sin áreas de reserva. El formateo o la sobrescritura de BD-RE requiere una confirmación aparte.",
+    "cs": "Podporovány jsou prázdné jednovrstvé disky BD-R a 25 GB jednovrstvé disky BD-RE s ověřitelným rozložením bez náhradních oblastí. Formátování nebo přepis BD-RE vyžaduje samostatné potvrzení."
+  },
+  "Xaml.IHaveInsertedTheCorrectDisc": {
+    "zh-CN": "我确认已放入要刻录的盘片",
+    "en": "I have inserted the disc I want to burn",
+    "zh-TW": "我確認已放入要燒錄的光碟",
+    "ja": "書き込むディスクを挿入したことを確認しました",
+    "tr": "Yazdırmak istediğim diski taktığımı onaylıyorum",
+    "es": "He insertado el disco que quiero grabar",
+    "cs": "Potvrzuji, že je vložen disk určený k vypálení"
+  },
+  "Xaml.AllowRewritableDvdOverwrite": {
+    "zh-CN": "允许覆写已写入的 DVD±RW（整盘擦除）",
+    "en": "Allow overwriting a used DVD±RW (erases the whole disc)",
+    "zh-TW": "允許覆寫已寫入的 DVD±RW（整片抹除）",
+    "ja": "書き込み済みの DVD±RW への上書きを許可（ディスク全体を消去）",
+    "tr": "Kullanılmış bir DVD±RW'nin üzerine yazmaya izin ver (diskin tamamı silinir)",
+    "es": "Permitir sobrescribir un DVD±RW ya usado (borra todo el disco)",
+    "cs": "Povolit přepsání použitého DVD±RW (smaže celý disk)"
+  },
+  "Xaml.AllowRewritableDvdOverwriteHint": {
+    "zh-CN": "仅对已格式化或写入过的 DVD+RW／DVD-RW 生效；DVD-R 与 DVD+R 仍必须是空白盘。",
+    "en": "Applies to formatted or previously written DVD+RW/DVD-RW only; DVD-R and DVD+R must still be blank.",
+    "zh-TW": "僅對已格式化或寫入過的 DVD+RW／DVD-RW 生效；DVD-R 與 DVD+R 仍必須是空白光碟。",
+    "ja": "フォーマット済み、または書き込み済みの DVD+RW／DVD-RW にのみ適用されます。DVD-R と DVD+R は引き続き空のディスクが必要です。",
+    "tr": "Yalnızca biçimlendirilmiş veya daha önce yazılmış DVD+RW/DVD-RW için geçerlidir; DVD-R ve DVD+R hâlâ boş olmalıdır.",
+    "es": "Solo se aplica a DVD+RW/DVD-RW formateados o ya grabados; los DVD-R y DVD+R deben seguir estando vírgenes.",
+    "cs": "Platí jen pro naformátované nebo již zapsané DVD+RW/DVD-RW; DVD-R/DVD+R musí zůstat prázdné."
   },
   "Xaml.StartStreamingBurn": {
     "zh-CN": "开始流式刻录",
@@ -826,15 +862,6 @@
     "tr": "Kaynak görsel",
     "es": "Imagen de origen",
     "cs": "Zdrojový obrázek"
-  },
-  "Xaml.ProjectSettings2": {
-    "zh-CN": "工程设置…",
-    "en": "Project settings…",
-    "zh-TW": "專案設定…",
-    "ja": "プロジェクトの設定…",
-    "tr": "Proje ayarları…",
-    "es": "Configuración del proyecto…",
-    "cs": "Nastavení projektu…"
   },
   "Xaml.EditGeometryRadiiSectorsAndTrackPitchInProject": {
     "zh-CN": "几何参数（半径、扇区、轨距）在工程设置中修改。",
@@ -1186,15 +1213,6 @@
     "tr": "Listeden kaldır",
     "es": "Quitar de la lista",
     "cs": "Odebrat ze seznamu"
-  },
-  "Xaml.Calibration2": {
-    "zh-CN": "辅助标定",
-    "en": "Calibration",
-    "zh-TW": "輔助校準",
-    "ja": "キャリブレーション",
-    "tr": "Yardımcı Kalibrasyon",
-    "es": "Calibrar",
-    "cs": "Kalibrace"
   },
   "Xaml.UseDiscImageStudioSBuiltInAlgorithmsTo": {
     "zh-CN": "通过盘片照片逐步校准参数。可从粗标定开始，也可按已有参数选择边界标定或精细标定。",
@@ -1799,15 +1817,6 @@
     "es": "Ctrl/Alt + rueda para ampliar; arrastra con el botón central para desplazar",
     "cs": "Ctrl/Alt + kolečko přibližuje, tažení prostředním tlačítkem posouvá"
   },
-  "Xaml.FitToWindow2": {
-    "zh-CN": "适应窗口",
-    "en": "Fit to window",
-    "zh-TW": "符合視窗大小",
-    "ja": "ウィンドウに合わせる",
-    "tr": "Pencereye sığdır",
-    "es": "Ajustar a la ventana",
-    "cs": "Přizpůsobit oknu"
-  },
   "Xaml.FitToWindowOrDoubleClickEmptySpace": {
     "zh-CN": "适应窗口（双击空白处同样生效）",
     "en": "Fit to window (or double-click empty space)",
@@ -1969,6 +1978,24 @@
     "tr": "Bildirimi kapat",
     "es": "Descartar notificación",
     "cs": "Zavřít oznámení"
+  },
+  "Xaml.MoreToasts": {
+    "zh-CN": "还有 {0} 条通知",
+    "en": "{0} more notifications",
+    "zh-TW": "還有 {0} 則通知",
+    "ja": "他 {0} 件の通知",
+    "tr": "{0} bildirim daha",
+    "es": "{0} notificaciones más",
+    "cs": "Ještě {0} upozornění"
+  },
+  "Xaml.ViewLog": {
+    "zh-CN": "查看日志",
+    "en": "View log",
+    "zh-TW": "查看日誌",
+    "ja": "ログを表示",
+    "tr": "Günlüğü görüntüle",
+    "es": "Ver el registro",
+    "cs": "Zobrazit protokol"
   },
   "Xaml.Close": {
     "zh-CN": "关闭",

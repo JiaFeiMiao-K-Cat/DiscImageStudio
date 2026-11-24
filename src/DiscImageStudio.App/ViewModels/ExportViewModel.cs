@@ -247,7 +247,7 @@ public partial class ExportViewModel : ObservableObject
             if (exception is ArgumentException or FormatException or OverflowException)
                 _shell.ShowValidationError(exception);
             else
-                _shell.ShowToast(L.T("任务未完成"), L.T("详情见窗口底部的任务日志。"), ToastKind.Error);
+                _shell.ShowLogToast(L.T("任务未完成"), L.T("详情见窗口底部的任务日志。"), ToastKind.Error);
         }
     }
 
@@ -312,7 +312,8 @@ public partial class ExportViewModel : ObservableObject
             PitchCubic: ParameterParser.ParseDouble(_state.DvdPitchCubic, L.T("相对三次项")),
             UsableSectors: checked((uint)_state.GetUsableSectors(OpticalDiscFamily.Dvd)),
             Tone: _state.DvdTone,
-            ReadCompatibility: _state.DvdReadCompatibility);
+            ReadCompatibility: _state.DvdReadCompatibility,
+            ReadCompatibilityMode: _state.DvdReadCompatibilityMode);
         DvdImageRequest request = new(compositePath, output, options, _state.DvdDataDirectory.Trim(),
             _state.ResolveVolumeLabel(OpticalDiscFamily.Dvd),
             !string.IsNullOrWhiteSpace(_state.DvdDataDirectory) && _state.DvdFilesAtOuterRing);

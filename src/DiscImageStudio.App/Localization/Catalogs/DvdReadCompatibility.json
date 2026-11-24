@@ -1,22 +1,101 @@
 {
   "DvdReadCompatibility.Label": {
-    "zh-CN": "DVD读取兼容性（实验性）",
-    "en": "DVD read compatibility (experimental)"
+    "zh-CN": "DVD 兼容性（实验性）",
+    "en": "DVD compatibility (experimental)",
+    "zh-TW": "DVD 相容性（實驗性）",
+    "ja": "DVD 互換性（試験的）",
+    "tr": "DVD uyumluluğu (deneysel)",
+    "es": "Compatibilidad de DVD (experimental)",
+    "cs": "Kompatibilita DVD (experimentální)"
   },
   "DvdReadCompatibility.Hint": {
-    "zh-CN": "可改善部分光驱的读回；盘面纹理和对比度可能变化。",
-    "en": "May improve readback on some drives. Texture and contrast may change."
+    "zh-CN": "可尝试改善部分光驱与盘片组合的刻录稳定性。盘面纹理和对比度可能变化。",
+    "en": "May improve recording on some drive and media combinations. Texture and contrast may change.",
+    "zh-TW": "可嘗試改善部分光碟機與光碟組合的燒錄穩定性。盤面紋理與對比可能改變。",
+    "ja": "一部のドライブとメディアの組み合わせで書き込みの安定性が向上する場合があります。模様の質感とコントラストが変わることがあります。",
+    "tr": "Bazı sürücü ve disk birleşimlerinde yazmayı iyileştirebilir. Desenin dokusu ve kontrastı değişebilir.",
+    "es": "Puede mejorar la grabación con algunas combinaciones de unidad y disco. La textura y el contraste pueden cambiar.",
+    "cs": "U některých kombinací mechanik a disků může zlepšit zápis. Struktura a kontrast obrazu se mohou změnit."
   },
   "DvdReadCompatibility.FrozenHint": {
     "zh-CN": "使用标靶记录中的设置和保护规则；如需更改，请创建新标靶。",
-    "en": "Uses the settings and protection rule saved with this target. Create a new target to change them."
+    "en": "Uses the settings and protection rule saved with this target. Create a new target to change them.",
+    "zh-TW": "使用標靶記錄中的設定與保護規則。如需變更，請建立新標靶。",
+    "ja": "このターゲットに保存された設定と保護ルールを使用します。変更するには新しいターゲットを作成してください。",
+    "tr": "Bu hedefle kaydedilen ayarlar ve koruma kuralı kullanılır. Değiştirmek için yeni bir hedef oluşturun.",
+    "es": "Se usan los ajustes y la regla de protección guardados en este patrón. Crea un patrón nuevo para cambiarlos.",
+    "cs": "Použijí se nastavení a pravidlo ochrany uložené s tímto terčem. Chcete-li je změnit, vytvořte nový terč."
   },
   "DvdReadCompatibility.Enabled": {
-    "zh-CN": "DVD读取兼容性：已启用（实验性）",
-    "en": "DVD read compatibility: enabled (experimental)"
+    "zh-CN": "DVD 兼容性（实验性）：{0}",
+    "en": "DVD compatibility (experimental): {0}",
+    "zh-TW": "DVD 相容性（實驗性）：{0}",
+    "ja": "DVD 互換性（試験的）：{0}",
+    "tr": "DVD uyumluluğu (deneysel): {0}",
+    "es": "Compatibilidad de DVD (experimental): {0}",
+    "cs": "Kompatibilita DVD (experimentální): {0}"
   },
   "DvdReadCompatibility.Disabled": {
-    "zh-CN": "DVD读取兼容性：关闭",
-    "en": "DVD read compatibility: off"
+    "zh-CN": "DVD 兼容性：关闭",
+    "en": "DVD compatibility: off",
+    "zh-TW": "DVD 相容性：關閉",
+    "ja": "DVD 互換性：オフ",
+    "tr": "DVD uyumluluğu: kapalı",
+    "es": "Compatibilidad de DVD: desactivada",
+    "cs": "Kompatibilita DVD: vypnuto"
+  },
+  "DvdReadCompatibility.Mode": {
+    "zh-CN": "DVD 兼容性档位",
+    "en": "DVD compatibility level",
+    "zh-TW": "DVD 相容性等級",
+    "ja": "DVD 互換性レベル",
+    "tr": "DVD uyumluluk düzeyi",
+    "es": "Nivel de compatibilidad de DVD",
+    "cs": "Úroveň kompatibility DVD"
+  },
+  "DvdReadCompatibility.Light": {
+    "zh-CN": "1 · 轻度",
+    "en": "1 · Light",
+    "zh-TW": "1 · 輕度",
+    "ja": "1 · 軽度",
+    "tr": "1 · Hafif",
+    "es": "1 · Suave",
+    "cs": "1 · Mírná"
+  },
+  "DvdReadCompatibility.Strong": {
+    "zh-CN": "2 · 强力",
+    "en": "2 · Strong",
+    "zh-TW": "2 · 強力",
+    "ja": "2 · 強め",
+    "tr": "2 · Güçlü",
+    "es": "2 · Fuerte",
+    "cs": "2 · Silná"
+  },
+  "DvdReadCompatibility.Zone": {
+    "zh-CN": "3 · 分区",
+    "en": "3 · Zone",
+    "zh-TW": "3 · 分區",
+    "ja": "3 · ゾーン",
+    "tr": "3 · Bölgesel",
+    "es": "3 · Por zona",
+    "cs": "3 · Zónová"
+  },
+  "DvdReadCompatibility.LegacyBridge": {
+    "zh-CN": "旧版桥接",
+    "en": "Legacy bridge",
+    "zh-TW": "舊版橋接",
+    "ja": "旧ブリッジ",
+    "tr": "Eski köprüleme",
+    "es": "Puente anterior",
+    "cs": "Starší přemostění"
+  },
+  "DvdReadCompatibility.LegacyPeriodic": {
+    "zh-CN": "旧版周期保护",
+    "en": "Legacy periodic guard",
+    "zh-TW": "舊版週期保護",
+    "ja": "旧周期ガード",
+    "tr": "Eski periyodik koruma",
+    "es": "Protección periódica anterior",
+    "cs": "Starší periodická ochrana"
   }
 }

@@ -138,22 +138,31 @@ internal static class TempFiles
         return resolved;
     }
 
-    internal static void TryDeleteTemporaryFile(string? path)
+    /// <summary>Best-effort temporary file deletion. Returns true when the file is deleted
+    /// or no longer exists, and false when an access lock kept it on disk.</summary>
+    internal static bool TryDeleteTemporaryFile(string? path)
     {
         if (string.IsNullOrWhiteSpace(path))
         {
-            return;
+            return true;
         }
 
         try
         {
             File.Delete(path);
+            return true;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return true;
         }
         catch (IOException)
         {
+            return !File.Exists(path);
         }
         catch (UnauthorizedAccessException)
         {
+            return !File.Exists(path);
         }
     }
 

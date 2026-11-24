@@ -2,78 +2,116 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:loc="clr-namespace:DiscImageStudio.Localization"
-             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
-             IsHitTestVisible="False">
-    <ItemsControl x:Name="ToastList" ItemsSource="{Binding Toasts}">
-        <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-                <StackPanel Orientation="Vertical" />
-            </ItemsPanelTemplate>
-        </ItemsControl.ItemsPanel>
-        <ItemsControl.ItemTemplate>
-            <DataTemplate>
-                <Border x:Name="ToastCard" Width="320" Margin="0,0,0,10" HorizontalAlignment="Right"
-                        Background="{DynamicResource Surface1Brush}"
-                        BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
-                        CornerRadius="{StaticResource RadiusFloating}" Padding="12,10,8,10" SnapsToDevicePixels="True"
-                        Effect="{StaticResource FloatingShadow}"
-                        IsHitTestVisible="True">
-                    <Border.RenderTransform>
-                        <TranslateTransform x:Name="Slide" X="24" />
-                    </Border.RenderTransform>
-                    <Border.Triggers>
-                        <EventTrigger RoutedEvent="Border.Loaded">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="Slide" Storyboard.TargetProperty="X"
-                                                     From="24" To="0" Duration="0:0:0.25">
-                                        <DoubleAnimation.EasingFunction>
-                                            <CubicEase EasingMode="EaseOut" />
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                     From="0" To="1" Duration="0:0:0.25" />
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                    </Border.Triggers>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" x:Name="KindBar" Width="3" CornerRadius="1.5" Margin="0,2,12,2" />
-                        <StackPanel Grid.Column="1" Margin="0,0,20,0">
-                            <TextBlock Text="{Binding Title}" Style="{StaticResource PanelTitle}" />
-                            <TextBlock Text="{Binding Message}" Style="{StaticResource CompactText}"
-                                       Margin="0,4,0,0" />
-                        </StackPanel>
-                        <!-- Manual dismiss: the host itself stays hit-test-invisible so empty
-                             toast area keeps passing clicks through to the page underneath. -->
-                        <Button Grid.Column="2" Style="{StaticResource IconButton}" VerticalAlignment="Top"
-                                AutomationProperties.Name="{loc:Text Xaml.DismissNotification}" ToolTip="{loc:Text Xaml.Close}"
-                                Click="CloseToast_Click">
-                            <iconPacks:PackIconLucide Kind="X" Width="14" Height="14"
-                                                      Foreground="{DynamicResource TextMutedBrush}" />
-                        </Button>
-                    </Grid>
-                </Border>
-                <DataTemplate.Triggers>
-                    <DataTrigger Binding="{Binding Kind}" Value="Success">
-                        <Setter TargetName="KindBar" Property="Background" Value="{DynamicResource SuccessBrush}" />
-                    </DataTrigger>
-                    <DataTrigger Binding="{Binding Kind}" Value="Warning">
-                        <Setter TargetName="KindBar" Property="Background" Value="{DynamicResource WarningBrush}" />
-                    </DataTrigger>
-                    <DataTrigger Binding="{Binding Kind}" Value="Error">
-                        <Setter TargetName="KindBar" Property="Background" Value="{DynamicResource DangerBrush}" />
-                    </DataTrigger>
-                    <DataTrigger Binding="{Binding Kind}" Value="Info">
-                        <Setter TargetName="KindBar" Property="Background" Value="{DynamicResource PrimaryBrush}" />
-                    </DataTrigger>
-                </DataTemplate.Triggers>
-            </DataTemplate>
-        </ItemsControl.ItemTemplate>
-    </ItemsControl>
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks">
+    <!-- Keep the host hit-test-visible: WPF coerces IsHitTestVisible to false on every
+         descendant of a hit-test-invisible element, so an invisible host made the close
+         button unreachable. The host sizes to its toast stack, so it never covers page
+         content beyond the cards themselves. -->
+    <StackPanel>
+        <!-- Hidden backlog: toasts that arrived while the visible window was full. The
+             shell owns the count; the chip sits above the stack because hidden toasts
+             are older than every visible one. The attribute binding is a local value,
+             so it always decides: no overflow state means the chip stays collapsed. -->
+        <Border HorizontalAlignment="Right" Margin="0,0,0,8"
+                Background="{DynamicResource Surface1Brush}"
+                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                CornerRadius="{StaticResource RadiusChip}" Padding="8,3"
+                Visibility="{Binding ToastOverflowVisibility, FallbackValue=Collapsed}">
+            <TextBlock Text="{Binding ToastOverflowLabel}" FontSize="11.5"
+                       Foreground="{DynamicResource TextMutedBrush}" />
+        </Border>
+        <!-- Screen readers: each arriving toast is an assertive live region, so success
+             and error feedback is announced without waiting for the user to find the card. -->
+        <ItemsControl x:Name="ToastList" ItemsSource="{Binding Toasts}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Vertical" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border x:Name="ToastCard" Width="320" Margin="0,0,0,10" HorizontalAlignment="Right"
+                            Background="{DynamicResource Surface1Brush}"
+                            BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                            CornerRadius="{StaticResource RadiusFloating}" Padding="12,10,8,10" SnapsToDevicePixels="True"
+                            Effect="{StaticResource FloatingShadow}"
+                            AutomationProperties.LiveSetting="Assertive"
+                            AutomationProperties.Name="{Binding Title}"
+                            MouseEnter="ToastCard_MouseEnter" MouseLeave="ToastCard_MouseLeave"
+                            GotKeyboardFocus="ToastCard_GotKeyboardFocus"
+                            LostKeyboardFocus="ToastCard_LostKeyboardFocus">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="Slide" X="24" />
+                        </Border.RenderTransform>
+                        <Border.Triggers>
+                            <EventTrigger RoutedEvent="Border.Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Slide" Storyboard.TargetProperty="X"
+                                                         From="24" To="0" Duration="0:0:0.25">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         From="0" To="1" Duration="0:0:0.25" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Border.Triggers>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <!-- Kind icon: color plus shape distinguish the four severities
+                                 without relying on the narrow accent bar alone. -->
+                            <iconPacks:PackIconLucide Grid.Column="0" x:Name="KindIcon" Kind="Info"
+                                                      Width="17" Height="17" Margin="0,2,10,0"
+                                                      VerticalAlignment="Top"
+                                                      Foreground="{DynamicResource PrimaryBrush}" />
+                            <StackPanel Grid.Column="1" Margin="0,0,20,0">
+                                <TextBlock Text="{Binding Title}" Style="{StaticResource PanelTitle}" />
+                                <TextBlock Text="{Binding Message}" Style="{StaticResource CompactText}"
+                                           Margin="0,4,0,0" />
+                                <Button x:Name="ToastAction" Content="{Binding ActionLabel}"
+                                        Style="{StaticResource CompactButton}" Margin="0,8,0,0"
+                                        HorizontalAlignment="Left" Click="ToastAction_Click" />
+                            </StackPanel>
+                            <Button x:Name="DismissButton" Grid.Column="2" Style="{StaticResource IconButton}"
+                                    VerticalAlignment="Top"
+                                    AutomationProperties.Name="{loc:Text Xaml.DismissNotification}" ToolTip="{loc:Text Xaml.Close}"
+                                    Click="CloseToast_Click">
+                                <iconPacks:PackIconLucide Kind="X" Width="14" Height="14"
+                                                          Foreground="{DynamicResource TextMutedBrush}" />
+                            </Button>
+                        </Grid>
+                    </Border>
+                    <DataTemplate.Triggers>
+                        <DataTrigger Binding="{Binding Kind}" Value="Success">
+                            <Setter TargetName="KindIcon" Property="Kind" Value="CircleCheck" />
+                            <Setter TargetName="KindIcon" Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Kind}" Value="Warning">
+                            <Setter TargetName="KindIcon" Property="Kind" Value="TriangleAlert" />
+                            <Setter TargetName="KindIcon" Property="Foreground" Value="{DynamicResource WarningBrush}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Kind}" Value="Error">
+                            <Setter TargetName="KindIcon" Property="Kind" Value="CircleAlert" />
+                            <Setter TargetName="KindIcon" Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Kind}" Value="Info">
+                            <Setter TargetName="KindIcon" Property="Kind" Value="Info" />
+                            <Setter TargetName="KindIcon" Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+                        </DataTrigger>
+                        <!-- Only toasts that carry a follow-up render the action button. -->
+                        <DataTrigger Binding="{Binding ActionLabel}" Value="{x:Null}">
+                            <Setter TargetName="ToastAction" Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </DataTemplate.Triggers>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
 </UserControl>

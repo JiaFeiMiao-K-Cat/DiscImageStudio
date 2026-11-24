@@ -31,6 +31,11 @@ English: Music + picture (outer music and CD-Extra), 2026-11-10, .NET SDK 10.0.4
 2026-11-08，使用 .NET SDK 10.0.100 完成拖拽导入验证：Release solution 构建零警告、零错误，`--test-image-drop`、DVD `selftest` 和完整 ArchitectureTests 全部通过。构建／测试日志位于 `tmp/image-drop-*.log`，离屏截图 `artifacts/image-drop/design-image-drop.png` 已检查。拖放事件由 WPF 回归程序构造；Windows x64 自包含测试版通过打包自检及界面启动检查，用户已确认实际拖拽导入测试成功。
 
 2026-11-08 评审补充：悬停只按扩展名给出复制光标，落下时再次校验文件存在，避免在网络路径上每次 `DragOver` 都查询文件系统；任务状态变化会刷新导入命令，运行期间「导入图片」按钮禁用。使用 .NET SDK 10.0.114 重跑 Release 构建、`--test-image-drop` 和完整 ArchitectureTests，均通过。
+2026-11-07，DVD+RW 覆写（#203）：新增 `OpticalBurnRequest.OverwriteRewritableMedia`，勾选后通过 `IDiscFormat2Data::ForceOverwrite` 覆写已格式化的 DVD+RW，非空白盘只在 IMAPI 报告 `OVERWRITE_ONLY`（0x1）时放行，容量按盘片总扇区数计算。实盘验证一次：MATSHITA DVD+-RW UJ8B1（固件 D.03）+ RITEK DVD+RW（`PhysicalMediaType=DVD+RW`），IMAPI 数据格式，自动选择最低的 2.4×（1623 sectors/s），2,295,104 扇区（4,700,372,992 字节）。刻录前 `MediaState=0x00000001`、`MediaPhysicallyBlank=False`、`MediaHeuristicallyBlank=False`（盘上已有旧图案）；勾选后设备设置 `ForceOverwrite=True`，事件流 `StartLba=0`、`LastWrittenLba=2,295,103`，写入调用返回后会话正常关闭，`ElapsedMs=1,500,173`，盘面图案可见。本次未做读回比对，也没有其他光驱、固件或盘片的数据；覆写耗时包含整盘写入本身，日志中没有单独的长时间格式化阶段。
+
+Release solution 构建通过（0 警告、0 错误）；完整 ArchitectureTests 通过（最终输出 `architecture-selftest: all checks passed`），其中新增的 `dvd-rewritable-overwrite` 覆盖空白盘、显式覆写、总容量边界、一次性盘拒绝和容量上报；DVD 引擎 `selftest` 通过。以上自动化检查不访问光驱。
+
+English: DVD+RW overwrite support sets `IDiscFormat2Data::ForceOverwrite` for a non-blank disc that IMAPI reports as `OVERWRITE_ONLY` (0x1), and sizes the capacity check from the disc total. One physical burn was validated: MATSHITA DVD+-RW UJ8B1 (firmware D.03) with a RITEK DVD+RW at 2.4×, 2,295,104 sectors; the disc reported `MediaState=0x00000001` with previous contents, `ForceOverwrite=True` was applied, the event stream went from `StartLba=0` to `LastWrittenLba=2,295,103`, and the session closed normally after 1,500,173 ms with a visible drawing. No read-back comparison and no data from other drives, firmware or media yet.
 
 2026-11-08，#233 卷标长度审查：CD／DVD 的 Joliet 标签超过 16 个字符时在写入前报错，不再由 `Iso9660ImageWriter` 静默截断；蓝光 UDF 标签保持 32 个字符，不受影响。回归验证 16／17 字符边界、PVD 32 字节与 SVD UCS-2 描述符中的实际写入值、空白卷标回退、BD 放行和中英文报错文案。导出页卷标输入限制为 16 个字符并显示提示，DVD 导出页离屏截图 `artifacts/issue233/export-dvd.png` 已核对；Release 构建零警告、零错误，DVD `selftest` 与完整 ArchitectureTests 通过。未执行实盘刻录。
 
@@ -268,6 +273,12 @@ dotnet run --project src/DiscImageStudio.App --configuration Release --no-build 
 ```
 
 `--burn-progress` 接受 `write`、`buffer`、`finalize`，使用模拟进度生成界面，不启动实际刻录。2026-10-28 核对了 BD 标定宽屏与 800×650 窄窗口、准备和封盘状态；底部写入量、速率、倍速与进度条均可见。此次另通过 DVD 引擎自检，没有执行实盘刻录。
+
+键盘可达性另用 `ui-focus-probe` 离屏实测：启动真实外壳（夹具光驱）后，用与 Tab 键同一套 MoveFocus 遍历逐工作区走完 Tab 环，报告死胡同与不可达焦点元素，并验证确认弹窗的 Escape 取消动线；退出码非 0 即发现回归。
+
+```powershell
+dotnet run --project src/DiscImageStudio.App --configuration Release --no-build -- ui-focus-probe --output artifacts/validation/focus-report.txt
+```
 
 `build` 工作流另执行模块目录的 DVD 自检、两扇区 CD 输出检查和主页截图。发布单文件 EXE 的附加检查见[发布指南](RELEASING.md)。
 

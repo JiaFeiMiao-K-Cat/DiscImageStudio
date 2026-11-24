@@ -1,6 +1,9 @@
 <UserControl x:Class="DiscImageStudio.Controls.DvdReadCompatibilityToggle"
+             x:Name="Root"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:DiscImageStudio.Controls"
+             xmlns:core="clr-namespace:DiscImageStudio.Core;assembly=DiscImageStudio.Core"
              xmlns:loc="clr-namespace:DiscImageStudio.Localization">
     <UserControl.Resources>
         <!-- The calibration sidebar is narrow. A star column constrains the label while
@@ -43,6 +46,21 @@
                   AutomationProperties.Name="{loc:Text DvdReadCompatibility.Label}">
             <TextBlock Text="{loc:Text DvdReadCompatibility.Label}" TextWrapping="Wrap" />
         </CheckBox>
+        <controls:VisibilityGate IsOpen="{Binding IsChecked, ElementName=Root}" Margin="0,6,0,0">
+            <ComboBox x:Name="ModePicker" Style="{StaticResource CompactComboBox}"
+                      SelectedValue="{Binding Mode, ElementName=Root, Mode=TwoWay}"
+                      SelectedValuePath="Tag" IsEnabled="{Binding IsEditable, ElementName=Root}"
+                      AutomationProperties.Name="{loc:Text DvdReadCompatibility.Mode}">
+                <ComboBoxItem Tag="{x:Static core:DvdReadCompatibilityModes.WriteSafeLight}" Content="{loc:Text DvdReadCompatibility.Light}" />
+                <ComboBoxItem Tag="{x:Static core:DvdReadCompatibilityModes.WriteSafeStrong}" Content="{loc:Text DvdReadCompatibility.Strong}" />
+                <ComboBoxItem Tag="{x:Static core:DvdReadCompatibilityModes.WriteSafeZone}" Content="{loc:Text DvdReadCompatibility.Zone}" />
+                <!-- Frozen targets may still select these labels for display. -->
+                <ComboBoxItem Tag="{x:Static core:DvdReadCompatibilityModes.LegacyBridge}"
+                              Content="{loc:Text DvdReadCompatibility.LegacyBridge}" Visibility="Collapsed" IsEnabled="False" />
+                <ComboBoxItem Tag="{x:Static core:DvdReadCompatibilityModes.Periodic9B16}"
+                              Content="{loc:Text DvdReadCompatibility.LegacyPeriodic}" Visibility="Collapsed" IsEnabled="False" />
+            </ComboBox>
+        </controls:VisibilityGate>
         <TextBlock Text="{loc:Text DvdReadCompatibility.Hint}" Style="{StaticResource CompactHint}"
                    TextWrapping="Wrap" Margin="0,4,0,0" />
     </StackPanel>

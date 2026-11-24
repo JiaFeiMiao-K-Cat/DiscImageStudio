@@ -16,7 +16,7 @@ public sealed class BluRayDiscModule : IOpticalDiscModule
 
     private static readonly DiscOptionDefinition[] GeometryOptions =
     [
-        new("preset", "BD-R preset", DiscOptionValueType.Choice, DefaultValue: "bd-r-sl-25gb",
+        new("preset", "Blu-ray preset", DiscOptionValueType.Choice, DefaultValue: "bd-r-sl-25gb",
             Choices: BluRayDiscPreset.BuiltIn.Select(preset => preset.Id).ToArray()),
         new("total-sectors", "Geometry total sectors", DiscOptionValueType.Integer, DefaultValue: "12219392"),
         new("usable-sectors", "Output sectors within the geometry", DiscOptionValueType.Integer),

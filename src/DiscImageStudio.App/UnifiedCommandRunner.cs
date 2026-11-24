@@ -63,7 +63,13 @@ internal static class UnifiedCommandRunner
                     settingsDialog,
                     FindOption(snapshotArguments, "settings-view"),
                     FindOption(snapshotArguments, "language"),
-                    FindOption(snapshotArguments, "drive-fixture"));
+                    FindOption(snapshotArguments, "drive-fixture"),
+                    FindOption(snapshotArguments, "focus-target"));
+            }
+
+            if (command == "ui-focus-probe")
+            {
+                return FocusProbeRunner.Run(arguments.AsSpan(1).ToArray());
             }
 
             if (command == "burn-devices")
@@ -119,9 +125,12 @@ internal static class UnifiedCommandRunner
                           [--language zh-CN|zh-TW|en|ja|tr|es|cs|system]
                           [--settings-view general|storage|about] [--theme dark|light|system]
                           [--expand] [--scroll N] [--home-hover]
+                          [--focus-target ELEMENT_NAME]
                           [--burn-progress write|buffer|finalize|write-complete|verify|flush|close-track|close-disc|release]
                           [--project-update] [--project-save] [--tone-preview]
                           [--drive-fixture none|empty|cd|dvd|bd|error]
+              ui-focus-probe [--output REPORT.txt] walks the Tab order of every workspace
+                          and checks dead ends, unreachable focusables and Escape routing
               burn-devices
               burn-build-info
 
@@ -136,7 +145,9 @@ internal static class UnifiedCommandRunner
             palette before the window is created; --settings-dialog captures the settings
             window at 760x600 by default and never touches the real settings file;
             --settings-view picks its category; --drive-fixture feeds the sidebar drive card
-            with a deterministic fixture (none by default, so snapshots never open a recorder).
+            with a deterministic fixture (none by default, so snapshots never open a recorder);
+            --focus-target moves keyboard focus to the element with that x:Name so the shared
+            focus ring renders in the capture.
 
             Blu-ray: bd-info exports parameters; bd-probe exports raw payload tests;
             bd-encode exports one ECC cluster; bd-generate maps dark to 3T and light to 6T run-count bias.

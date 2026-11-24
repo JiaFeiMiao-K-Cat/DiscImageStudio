@@ -46,7 +46,7 @@ public partial class HomeViewModel : ObservableObject
         TemplateCommand = new AsyncRelayCommand<HomeTemplateTile>(CreateFromTemplate, _ => !_shell.IsBusy);
         OpenRecentCommand = new AsyncRelayCommand<RecentProjectTile>(OpenRecent, _ => !_shell.IsBusy);
         RemoveRecentCommand = new RelayCommand<RecentProjectTile>(RemoveRecent);
-        ClearRecentsCommand = new RelayCommand(ClearRecents, () => HasRecents);
+        ClearRecentsCommand = new AsyncRelayCommand(ClearRecentsAsync, () => HasRecents);
         _shell.BusyChanged += NotifyCommands;
         _shell.PropertyChanged += Shell_PropertyChanged;
         _state.PropertyChanged += State_PropertyChanged;
@@ -82,7 +82,7 @@ public partial class HomeViewModel : ObservableObject
 
     public RelayCommand<RecentProjectTile> RemoveRecentCommand { get; }
 
-    public RelayCommand ClearRecentsCommand { get; }
+    public IAsyncRelayCommand ClearRecentsCommand { get; }
 
     /// <summary>Called by the shell whenever the home page becomes visible or the recent
     /// list changes underneath it.</summary>
@@ -254,8 +254,20 @@ public partial class HomeViewModel : ObservableObject
         RefreshRecentProjects();
     }
 
-    private void ClearRecents()
+    /// <summary>Wipes every recent-project entry, but only after an explicit confirmation:
+    /// the whole list disappears at once, while the project files themselves are never
+    /// touched.</summary>
+    private async Task ClearRecentsAsync()
     {
+        bool confirmed = await _shell.ConfirmAsync(
+            L.T("清空最近工程"),
+            L.T("将移除全部最近工程记录，工程文件不受影响。是否继续？"),
+            L.T("Xaml.Clear"));
+        if (!confirmed)
+        {
+            return;
+        }
+
         _recentStore.Clear();
         RefreshRecentProjects();
     }

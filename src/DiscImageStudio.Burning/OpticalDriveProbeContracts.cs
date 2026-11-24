@@ -15,6 +15,8 @@ public enum OpticalDiscState
     Incomplete,
     Complete,
     Other,
+    Unformatted,
+    Formatted,
 }
 
 public sealed record OpticalDriveInfo(
@@ -36,6 +38,9 @@ public sealed record CdAtipInfo(
 /// UsableSectors is the application's writable payload limit in the same caliber
 /// as <see cref="OpticalMediaCapacity.WritableSectors"/>. FreeSectors is the
 /// drive-reported free space and is not a replacement for that limit.
+/// For BD-RE, the drive's reported free count is total capacity, so
+/// FreeSectors is unavailable without reading the file system.
+/// BD-RE's usable limit is determined by burn preflight.
 /// </summary>
 public sealed record OpticalDriveMediaInfo(
     int Profile,

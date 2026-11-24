@@ -33,8 +33,11 @@ internal sealed class MmcCommandException : IOException
     public int AdditionalSenseCode { get; }
     public int AdditionalSenseQualifier { get; }
     public bool HasValidSense => SenseKey >= 0;
-    public bool IsOperationInProgress => SenseKey == 2
-        && AdditionalSenseCode == 4 && AdditionalSenseQualifier is 1 or 7 or 8;
+    public bool IsOperationInProgress => HasValidSense
+        ? SenseKey == 2 && AdditionalSenseCode == 4 && AdditionalSenseQualifier is 1 or 7 or 8
+        : HResult is unchecked((int)0xC0AA0205)  // E_IMAPI_RECORDER_MEDIA_BECOMING_READY
+            or unchecked((int)0xC0AA0206)        // E_IMAPI_RECORDER_MEDIA_FORMAT_IN_PROGRESS
+            or unchecked((int)0xC0AA0207);       // E_IMAPI_RECORDER_MEDIA_BUSY
     public bool IsMediumNotPresent => SenseKey == 2 && AdditionalSenseCode == 0x3a;
 
     private static string Describe(byte opcode, MmcCommandResult result)
@@ -67,14 +70,18 @@ internal sealed class BluRayMmcCommands(IMmcCommandTransport transport, Action<i
 {
     internal const int CommandHasSenseData = 0x00AA0200;
 
-    internal BluRaySequentialMediaInfo ReadMedia()
+    internal int ReadCurrentProfile()
     {
         byte[] configuration = Read(0x46, 8);
         RequireLength(configuration, 8, "GET CONFIGURATION");
         if (BinaryPrimitives.ReadUInt32BigEndian(configuration.AsSpan(0, 4)) < 4)
             throw new IOException("GET CONFIGURATION 返回了无效的长度字段。");
-        int profile = BinaryPrimitives.ReadUInt16BigEndian(configuration.AsSpan(6, 2));
+        return BinaryPrimitives.ReadUInt16BigEndian(configuration.AsSpan(6, 2));
+    }
 
+    internal BluRaySequentialMediaInfo ReadMedia()
+    {
+        int profile = ReadCurrentProfile();
         byte[] disc = Read(0x51, 64);
         RequireResponseLength(disc, 12, "READ DISC INFORMATION");
         bool discBlank = (disc[2] & 3) == 0;

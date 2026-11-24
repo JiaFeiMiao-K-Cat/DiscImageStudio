@@ -23,7 +23,7 @@ flowchart LR
     BD --> Iso[DiscImageStudio.Iso / UDF 2.01]
 ```
 
-`DiscImageStudio.Cli` 和 Windows 桌面程序的命令行入口从同一份模块目录执行离线命令。GUI 导出直接构造 `CdImageRequest`、`DvdImageRequest` 或 `BluRayImageRequest` 并调用相应生成器，返回不含退出码的 `DiscImageResult`；DVD 预览直接调用类型化渲染器。内部调用通过进度对象和取消令牌协作，异常原样传至界面，命令行解析与控制台输出只在 CLI 适配边界发生。`DiscImageStudio.ImageIO` 在 Windows 桌面目标使用 WIC，在通用 `net10.0` 目标使用 StbImageSharp 读图、StbImageWriteSharp 写 PNG。两个后端都向生成器提供相同顺序的 BGRA 像素。蓝光共用透明度合成和灰度转换代码，CD 和 DVD 也分别共用各自原有的采样算法。
+`DiscImageStudio.Cli` 和 Windows 桌面程序的命令行入口从同一份模块目录执行离线命令。GUI 导出直接构造 `CdImageRequest`、`DvdImageRequest` 或 `BluRayImageRequest` 并调用相应生成器，返回不含退出码的 `DiscImageResult`；DVD 预览直接调用类型化渲染器。内部调用通过进度对象和取消令牌协作，异常原样传至界面，命令行解析与控制台输出只在 CLI 适配边界发生。`DiscImageStudio.ImageIO` 在 Windows 桌面目标使用 WIC，在通用 `net10.0` 目标使用 StbImageSharp 读图、StbImageWriteSharp 写 PNG；两个后端都向生成器提供相同顺序的 BGRA 像素。`.svg` 矢量图导入由 WPF 层的 `DesignComposer` 通过 `SharpVectors.Wpf` 单独承担，CLI 与介质编码层只消费光栅结果。蓝光共用透明度合成和灰度转换代码，CD 和 DVD 也分别共用各自原有的采样算法。
 
 ## Core 契约
 
@@ -73,7 +73,7 @@ flowchart LR
 - **影调**是生成参数，归设计工作区右栏：抖动强度（0–100%，新工程 75%）、sRGB 线性化（伽马）、CD 的灰阶档位（2/4 级；DVD/BD 固定 2 级）与亮度（±64）写进工程 `tone` 节，生成、流式刻录、读回与标定投影共用同一个 `ToneProfile`。BD 另有 3T/6T 极性开关，数据上是独立的 `bluRay.invertMapping`，不塞进 `ToneProfile`。模块内的盘面预览用同一映射投影当前合成图，拖动滑块即时更新；导出页只保留输出选项并提示影调在设计页，预览页不重复编辑。
 - **预览专属参数**（实测半径、导出尺寸、每扇区采样）留在预览页，因为它们是检视行为而非工程参数。打开工程、应用盘片预设或确认工程几何修改时，实测半径与三项轨距系数同步为工程几何，设计投影因此默认中性；用户仍可手填实测值检视偏差。仅修改工程名不重置实测值，预览尺寸与采样精度也不会随预设重置。
 
-设计工作区（`DesignViewModel` + `DiscDesignCanvas` + `DesignComposer`）维护图层栈：图层按面板顺序存储（顶部索引 0，画布自下而上绘制，与合成顺序一致），画布以盘心为原点的毫米坐标系渲染并支持拖动/角点缩放/旋转柄；图层行是可选中列表，与画布及属性面板双向同步。图层编辑经 450 ms 防抖后由 `DesignComposer` 渲染出方形合成图（预览 2048 px，导出 8192 px）：方形中心即盘心，边长对应 2 × 可用区域的物理外半径；此半径由原几何在可用扇区末端的位置求得。生成器的图像采样使用同一尺度，避免输出缩短时丢失画面外缘。旧底层调用未指定可用数时仍保留原图像尺度。合成图写入 State 的源图片路径，成为导出与预览的共同输入；生成 CLI 与管线对此无感知。导出与刻录两条交付路径都使用导出质量的 8192 px 合成图，因此预览验证的素材就是写入盘片的素材。页眉的「下一步」贯穿 设计 → 预览 → 导出 → 刻录，标定经侧边栏或刻录页的链接进入。
+设计工作区（`DesignViewModel` + `DiscDesignCanvas` + `DesignComposer`）维护图层栈：图层按面板顺序存储（顶部索引 0，画布自下而上绘制，与合成顺序一致），画布以盘心为原点的毫米坐标系渲染并支持拖动/角点缩放/旋转柄；图层行是可选中列表，与画布及属性面板双向同步。图层源与预加载管线以 `ImageSource` 承接位图与矢量图形，交互导入（按钮与拖放）与工程打开均在后台线程并发解码并冻结结果：`.svg`（上限 32 MiB、元素嵌套上限 256 层）通过 `SharpVectors.Wpf` 在禁用 DTD、外部资源访问与过滤空画布后解码并冻结为矢量 `DrawingImage`，保留 `viewBox` 比例与留白并直接作为缩略图复用，不提前栅格化。图层编辑经 450 ms 防抖后由 `DesignComposer` 在单次 `RenderTargetBitmap` 通道渲染出方形合成图（预览 2048 px，导出 8192 px）：方形中心即盘心，边长对应 2 × 可用区域的物理外半径；此半径由原几何在可用扇区末端的位置求得。生成器的图像采样使用同一尺度，避免输出缩短时丢失画面外缘。旧底层调用未指定可用数时仍保留原图像尺度。合成图写入 State 的源图片路径，成为导出与预览的共同输入；生成 CLI 与管线对此无感知。导出与刻录两条交付路径都使用导出质量的 8192 px 合成图，因此预览验证的素材就是写入盘片的素材。页眉的「下一步」贯穿 设计 → 预览 → 导出 → 刻录，标定经侧边栏或刻录页的链接进入。
 
 CD-Extra 的布局只在 CD 模块里计算：`CdMusicFile.Inspect` 读取每个 WAV 头，`CdExtraLayout.Plan` 算出音轨起点、第 2 区段起点和数据轨长度，`CdDataImageGenerator.PrepareSessionLayout` 规划第 2 区段的文件系统与绘图范围。界面通过 `Services/CdExtraPlanner` 依次调用这三步，并把失败归类成可本地化的提示（没有音乐、文件不可用、音乐太长、随盘文件太大）；设计页引导（`DesignViewModel` 的防抖后台计算）、影调与预览叠加和刻录前的规划都使用它。导出页和命令行经 `CdImageGenerator.Generate`／`PlanCdExtra` 调用同样的三步，刻录中途按实测起点重新规划时也是如此，所以画布圆环、占比卡片、预览、导出的 ISO 和写入的盘片描述同一布局。`CdMusicViewModel` 只编辑 State 中的曲目列表和模式开关；时长、占比和错误标记来自最近一次引导计算的计划，读不出的文件只把对应行标红，不隐藏整个布局。
 

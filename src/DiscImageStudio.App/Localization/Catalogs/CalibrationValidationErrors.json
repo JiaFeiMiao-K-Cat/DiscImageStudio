@@ -1,214 +1,479 @@
 {
   "短圆弧量取记录无效。": {
     "zh-CN": "短圆弧量取记录无效。",
-    "en": "The short-arc measurement record is invalid."
+    "en": "The short-arc measurement record is invalid.",
+    "zh-TW": "短圓弧量測記錄無效。",
+    "ja": "短い円弧の測定記録が無効です。",
+    "tr": "Kısa yay ölçüm kaydı geçersiz.",
+    "es": "El registro de medición de arco corto no es válido.",
+    "cs": "Záznam měření krátkého oblouku je neplatný."
   },
   "该进度没有有效的正半径轨迹。": {
     "zh-CN": "该进度没有有效的正半径轨迹。",
-    "en": "There is no valid positive-radius path at this progress value."
+    "en": "There is no valid positive-radius path at this progress value.",
+    "zh-TW": "該進度沒有有效的正半徑軌跡。",
+    "ja": "この進行状況では、有効な正の半径の軌跡がありません。",
+    "tr": "Bu ilerleme değerinde geçerli bir pozitif yarıçaplı yol yok.",
+    "es": "En este valor de progreso no hay una trayectoria válida de radio positivo.",
+    "cs": "Při této hodnotě průběhu neexistuje platná trajektorie s kladným poloměrem."
   },
   "照片变换不可逆。": {
     "zh-CN": "照片变换不可逆。",
-    "en": "The photo transform cannot be inverted."
+    "en": "The photo transform cannot be inverted.",
+    "zh-TW": "相片變換不可逆。",
+    "ja": "写真の変換を逆変換できません。",
+    "tr": "Fotoğraf dönüşümü tersine çevrilemiyor.",
+    "es": "La transformación de la foto no se puede invertir.",
+    "cs": "Transformaci fotografie nelze invertovat."
   },
   "照片坐标必须为有限数值。": {
     "zh-CN": "照片坐标必须为有限数值。",
-    "en": "Photo coordinates must be finite numbers."
+    "en": "Photo coordinates must be finite numbers.",
+    "zh-TW": "相片座標必須為有限數值。",
+    "ja": "写真の座標は有限な数値である必要があります。",
+    "tr": "Fotoğraf koordinatları sonlu sayılar olmalıdır.",
+    "es": "Las coordenadas de la foto deben ser números finitos.",
+    "cs": "Souřadnice fotografie musí být konečná čísla."
   },
   "该位置接近照片投影地平线，无法矫正。": {
     "zh-CN": "该位置接近照片投影地平线，无法矫正。",
-    "en": "This point is too close to the photo's projective horizon to rectify."
+    "en": "This point is too close to the photo's projective horizon to rectify.",
+    "zh-TW": "該位置太接近相片的投影地平線，無法校正。",
+    "ja": "この点は写真の投影地平線に近すぎて補正できません。",
+    "tr": "Bu nokta, fotoğrafın projeksiyon ufkuna çok yakın olduğundan düzeltilemiyor.",
+    "es": "Este punto está demasiado cerca del horizonte proyectivo de la foto para rectificarlo.",
+    "cs": "Tento bod je příliš blízko projektivního horizontu fotografie, nelze ho narovnat."
   },
   "照片变换产生了无效坐标。": {
     "zh-CN": "照片变换产生了无效坐标。",
-    "en": "The photo transform produced invalid coordinates."
+    "en": "The photo transform produced invalid coordinates.",
+    "zh-TW": "相片變換產生了無效座標。",
+    "ja": "写真の変換が無効な座標を生成しました。",
+    "tr": "Fotoğraf dönüşümü geçersiz koordinatlar üretti.",
+    "es": "La transformación de la foto produjo coordenadas no válidas.",
+    "cs": "Transformace fotografie vytvořila neplatné souřadnice."
   },
   "照片变换退化，无法恢复盘面坐标。": {
     "zh-CN": "照片变换退化，无法恢复盘面坐标。",
-    "en": "The photo transform is degenerate and cannot recover disc coordinates."
+    "en": "The photo transform is degenerate and cannot recover disc coordinates.",
+    "zh-TW": "相片變換退化，無法還原碟面座標。",
+    "ja": "写真の変換が縮退しており、ディスク面の座標を復元できません。",
+    "tr": "Fotoğraf dönüşümü bozuldu; disk yüzeyi koordinatları kurtarılamıyor.",
+    "es": "La transformación de la foto es degenerada y no puede recuperar las coordenadas de la superficie del disco.",
+    "cs": "Transformace fotografie je degenerovaná a nedokáže obnovit souřadnice disku."
   },
   "请分别输入实体外缘和实体内缘轮廓。": {
     "zh-CN": "请分别输入实体外缘和实体内缘轮廓。",
-    "en": "Mark the physical outer rim and center-hole edge separately."
+    "en": "Mark the physical outer rim and center-hole edge separately.",
+    "zh-TW": "請分別輸入實體外緣和實體內緣輪廓。",
+    "ja": "物理的な外縁と中心穴の縁の輪郭をそれぞれ入力してください。",
+    "tr": "Fiziksel dış kenar ile merkez delik kenarı konturlarını ayrı ayrı girin.",
+    "es": "Introduzca por separado el contorno del borde exterior físico y el del orificio central.",
+    "cs": "Zadejte zvlášť obrys fyzického vnějšího okraje a obrys okraje středového otvoru."
   },
   "盘片与内缘的实体尺寸无效。常规盘为直径 120 mm、孔径 15 mm。": {
     "zh-CN": "盘片与内缘的实体尺寸无效。常规盘为直径 120 mm、孔径 15 mm。",
-    "en": "The physical disc or center-hole dimensions are invalid. A standard disc is 120 mm in diameter with a 15 mm center hole."
+    "en": "The physical disc or center-hole dimensions are invalid. A standard disc is 120 mm in diameter with a 15 mm center hole.",
+    "zh-TW": "光碟與內緣的實體尺寸無效。常規光碟為直徑 120 mm、孔徑 15 mm。",
+    "ja": "ディスクと中心穴の物理寸法が無効です。標準ディスクは直径 120 mm、穴径 15 mm です。",
+    "tr": "Disk ile merkez deliğin fiziksel ölçüleri geçersiz. Standart disk 120 mm çapında ve 15 mm delik çapındadır.",
+    "es": "Las dimensiones físicas del disco o del orificio central no son válidas. Un disco estándar mide 120 mm de diámetro con un orificio central de 15 mm.",
+    "cs": "Fyzické rozměry disku nebo středového otvoru jsou neplatné. Standardní disk má průměr 120 mm a středový otvor 15 mm."
   },
   "外缘和内缘各需要至少 5 个分散的点，且每条轮廓不超过 256 个点。": {
     "zh-CN": "外缘和内缘各需要至少 5 个分散的点，且每条轮廓不超过 256 个点。",
-    "en": "Mark at least five well-spaced points on each edge, with no more than 256 points per outline."
+    "en": "Mark at least five well-spaced points on each edge, with no more than 256 points per outline.",
+    "zh-TW": "外緣和內緣各需要至少 5 個分散的點，且每條輪廓不超過 256 個點。",
+    "ja": "外縁と内縁のそれぞれに少なくとも 5 つの離れた点が必要で、各輪郭は最大 256 点です。",
+    "tr": "Dış ve iç kenarların her birinde en az beş iyi dağılmış nokta gerekir; her kontur en fazla 256 nokta içerebilir.",
+    "es": "Cada borde, exterior e interior, necesita al menos 5 puntos bien separados, y cada contorno no más de 256 puntos.",
+    "cs": "Vnější i vnitřní okraj potřebuje alespoň 5 rozložených bodů a každá kontura nejvýše 256 bodů."
   },
   "轮廓中存在无效坐标。": {
     "zh-CN": "轮廓中存在无效坐标。",
-    "en": "The outline contains invalid coordinates."
+    "en": "The outline contains invalid coordinates.",
+    "zh-TW": "輪廓中存在無效座標。",
+    "ja": "輪郭に無効な座標が含まれています。",
+    "tr": "Kontur geçersiz koordinatlar içeriyor.",
+    "es": "El contorno contiene coordenadas no válidas.",
+    "cs": "Kontura obsahuje neplatné souřadnice."
   },
   "照片中的盘片过小，无法稳定矫正。": {
     "zh-CN": "照片中的盘片过小，无法稳定矫正。",
-    "en": "The disc is too small in the photo for reliable rectification."
+    "en": "The disc is too small in the photo for reliable rectification.",
+    "zh-TW": "相片中的光碟太小，無法穩定校正。",
+    "ja": "写真の中のディスクが小さすぎて、安定して補正できません。",
+    "tr": "Disk, fotoğrafta güvenilir düzeltme için çok küçük.",
+    "es": "El disco es demasiado pequeño en la foto para una rectificación estable.",
+    "cs": "Disk je na fotografii příliš malý pro spolehlivé narovnání."
   },
   "轮廓点重复或接近一条直线，请沿外缘和内缘分别分散布点。": {
     "zh-CN": "轮廓点重复或接近一条直线，请沿外缘和内缘分别分散布点。",
-    "en": "The outline points overlap or are nearly collinear. Spread them around both the outer rim and center-hole edge."
+    "en": "The outline points overlap or are nearly collinear. Spread them around both the outer rim and center-hole edge.",
+    "zh-TW": "輪廓點重複或接近一條直線，請沿外緣和內緣分別分散布點。",
+    "ja": "輪郭の点が重複しているか、ほぼ一条の直線上にあります。外縁と内縁のそれぞれに沿って点を分散させてください。",
+    "tr": "Kontur noktaları yineleniyor veya neredeyse tek bir doğru üzerinde. Noktaları dış kenar ve iç kenar boyunca ayrı ayrı dağıtın.",
+    "es": "Los puntos del contorno están repetidos o casi en una misma recta. Repártalos por separado a lo largo del borde exterior y del interior.",
+    "cs": "Body kontury se opakují nebo leží téměř v jedné přímce. Rozmístěte je zvlášť podél vnějšího a vnitřního okraje."
   },
   "外缘轮廓无法形成稳定椭圆，请核对实体外缘上的点。": {
     "zh-CN": "外缘轮廓无法形成稳定椭圆，请核对实体外缘上的点。",
-    "en": "The outer outline does not form a stable ellipse. Check the points on the physical outer rim."
+    "en": "The outer outline does not form a stable ellipse. Check the points on the physical outer rim.",
+    "zh-TW": "外緣輪廓無法形成穩定橢圓，請核對實體外緣上的點。",
+    "ja": "外縁の輪郭から安定した楕円が得られません。物理的な外縁上の点を確認してください。",
+    "tr": "Dış kenar konturu kararlı bir elips oluşturmuyor. Fiziksel dış kenardaki noktaları kontrol edin.",
+    "es": "El contorno del borde exterior no forma una elipse estable. Compruebe los puntos del borde exterior físico.",
+    "cs": "Kontura vnějšího okraje netvoří stabilní elipsu. Zkontrolujte body na fyzickém vnějším okraji."
   },
   "内缘轮廓与外缘位置不符，请确认选中的是贯通的实体内缘，而非盘面的印刷圆环。": {
     "zh-CN": "内缘轮廓与外缘位置不符，请确认选中的是贯通的实体内缘，而非盘面的印刷圆环。",
-    "en": "The inner outline does not align with the outer rim. Mark the edge of the center hole, not a printed ring on the disc."
+    "en": "The inner outline does not align with the outer rim. Mark the edge of the center hole, not a printed ring on the disc.",
+    "zh-TW": "內緣輪廓與外緣位置不符，請確認選中的是貫通的實體內緣，而非碟面上的印刷圓環。",
+    "ja": "内縁の輪郭が外縁の位置と一致しません。ディスク面の印刷リングではなく、貫通する物理的な内縁を選んでいることを確認してください。",
+    "tr": "İç kenar konturu dış kenarın konumuyla uyuşmuyor. Disk yüzeyindeki baskılı halkayı değil, geçen fiziksel iç kenarı seçtiğinizden emin olun.",
+    "es": "El contorno del borde interior no coincide con la posición del borde exterior. Compruebe que ha marcado el borde interior físico que atraviesa el disco, no un anillo impreso de la superficie.",
+    "cs": "Kontura vnitřního okraje neodpovídá poloze vnějšího okraje. Ověřte, že jste vybrali fyzický vnitřní okraj procházející diskem, a ne potištěný kroužek na povrchu disku."
   },
   "两条轮廓不能得到有效的联合投影，请检查布点。": {
     "zh-CN": "两条轮廓不能得到有效的联合投影，请检查布点。",
-    "en": "The two outlines do not produce a valid joint projection. Check the marked points."
+    "en": "The two outlines do not produce a valid joint projection. Check the marked points.",
+    "zh-TW": "兩條輪廓不能得到有效的聯合投影，請檢查布點。",
+    "ja": "2 つの輪郭の組み合わせから有効な投影が得られません。点の配置を確認してください。",
+    "tr": "İki konturdan geçerli bir birleşik projeksiyon elde edilemiyor. Noktaların yerleşimini kontrol edin.",
+    "es": "Los dos contornos no producen una proyección conjunta válida. Compruebe la disposición de los puntos.",
+    "cs": "Z obou kontur nelze získat platnou společnou projekci. Zkontrolujte rozmístění bodů."
   },
   "拍摄角度或轮廓对应关系导致投影退化，请换角度拍摄或重新布点。": {
     "zh-CN": "拍摄角度或轮廓对应关系导致投影退化，请换角度拍摄或重新布点。",
-    "en": "The camera angle or outline correspondence produces a degenerate projection. Retake the photo from another angle or adjust the points."
+    "en": "The camera angle or outline correspondence produces a degenerate projection. Retake the photo from another angle or adjust the points.",
+    "zh-TW": "拍攝角度或輪廓對應關係導致投影退化，請換角度拍攝或重新布點。",
+    "ja": "撮影角度または輪郭の対応関係により投影が縮退しています。別の角度で撮り直すか、点を配置し直してください。",
+    "tr": "Çekim açısı veya kontur eşleşmesi bozulmuş bir projeksiyona yol açıyor. Fotoğrafı başka bir açıdan yeniden çekin veya noktaları yeniden yerleştirin.",
+    "es": "El ángulo de disparo o la correspondencia de los contornos produce una proyección degenerada. Tome la foto desde otro ángulo o reubique los puntos.",
+    "cs": "Úhel snímku nebo odpovídání bodů kontury vytváří degenerovanou projekci. Vyfoťte z jiného úhlu nebo body rozmístěte znovu."
   },
   "轮廓点集中在局部，请在两条完整圆周的不同方向补点。": {
     "zh-CN": "轮廓点集中在局部，请在两条完整圆周的不同方向补点。",
-    "en": "The outline points are clustered in one area. Add points around the full circumference of both edges."
+    "en": "The outline points are clustered in one area. Add points around the full circumference of both edges.",
+    "zh-TW": "輪廓點集中在局部，請在兩條完整圓周的不同方向補點。",
+    "ja": "輪郭の点が一部に集中しています。2 つの完全な円周の異なる方向に点を追加してください。",
+    "tr": "Kontur noktaları tek bir bölgede kümelenmiş. İki tam çemberin farklı yönlerine nokta ekleyin.",
+    "es": "Los puntos del contorno están concentrados en una zona. Añada puntos en distintas direcciones de las dos circunferencias completas.",
+    "cs": "Body kontury jsou soustředěné lokálně. Přidejte body v různých směrech obou úplných kružnic."
   },
   "标定图案 PNG 与固定参考文件不一致。": {
     "zh-CN": "标定图案 PNG 与固定参考文件不一致。",
-    "en": "The calibration pattern PNG does not match the fixed reference file."
+    "en": "The calibration pattern PNG does not match the fixed reference file.",
+    "zh-TW": "校準圖案 PNG 與固定參考檔案不一致。",
+    "ja": "キャリブレーション パターン PNG が固定参照ファイルと一致しません。",
+    "tr": "Kalibrasyon deseni PNG'si sabit başvuru dosyasıyla uyuşmuyor.",
+    "es": "El PNG del patrón de calibración no coincide con el archivo de referencia fijo.",
+    "cs": "Kalibrační vzor PNG neodpovídá pevnému referenčnímu souboru."
   },
   "标定图案像素与固定参考文件不一致。": {
     "zh-CN": "标定图案像素与固定参考文件不一致。",
-    "en": "The calibration pattern pixels do not match the fixed reference file."
+    "en": "The calibration pattern pixels do not match the fixed reference file.",
+    "zh-TW": "校準圖案像素與固定參考檔案不一致。",
+    "ja": "キャリブレーション パターンのピクセルが固定参照ファイルと一致しません。",
+    "tr": "Kalibrasyon deseni pikselleri sabit başvuru dosyasıyla uyuşmuyor.",
+    "es": "Los píxeles del patrón de calibración no coinciden con el archivo de referencia fijo.",
+    "cs": "Pixely kalibračního vzoru neodpovídají pevnému referenčnímu souboru."
   },
   "缺少内置标定参考图案资源。": {
     "zh-CN": "缺少内置标定参考图案资源。",
-    "en": "The built-in calibration reference pattern is missing."
+    "en": "The built-in calibration reference pattern is missing.",
+    "zh-TW": "缺少內建校準參考圖案資源。",
+    "ja": "内蔵のキャリブレーション参照パターン リソースがありません。",
+    "tr": "Yerleşik kalibrasyon başvuru deseni kaynağı eksik.",
+    "es": "Falta el recurso del patrón de referencia de calibración integrado.",
+    "cs": "Chybí prostředek vestavěného kalibračního referenčního vzoru."
   },
   "时标读数的优先方向无效。": {
     "zh-CN": "时标读数的优先方向无效。",
-    "en": "The preferred direction for reading the clock ruler is invalid."
+    "en": "The preferred direction for reading the clock ruler is invalid.",
+    "zh-TW": "時鐘尺讀數的優先方向無效。",
+    "ja": "クロック定規を読み取る優先方向が無効です。",
+    "tr": "Saat cetvelini okumak için tercih edilen yön geçersiz.",
+    "es": "La dirección preferida para leer la regla de reloj no es válida.",
+    "cs": "Upřednostňovaný směr čtení hodinového pravítka je neplatný."
   },
   "边界描点只能用于对应的边界中标记录，不能与十字线或单线的中线描点混用。": {
     "zh-CN": "边界描点只能用于对应的边界中标记录，不能与十字线或单线的中线描点混用。",
-    "en": "Boundary points require the matching boundary-calibration record and cannot be combined with centerline points from cross or single-line targets."
+    "en": "Boundary points require the matching boundary-calibration record and cannot be combined with centerline points from cross or single-line targets.",
+    "zh-TW": "邊界描點只能用於對應的邊界校準記錄，不能與十字線或單線的中線描點混用。",
+    "ja": "境界点は対応する境界校正記録にのみ使用でき、十字線や単線ターゲットの中心線の点と組み合わせることはできません。",
+    "tr": "Sınır noktaları yalnızca eşleşen sınır kalibrasyonu kaydıyla kullanılabilir; artı veya tek çizgi hedeflerinin orta çizgi noktalarıyla karıştırılamaz.",
+    "es": "Los puntos de límite se destinan al registro de calibración por límites correspondiente y no se pueden mezclar con puntos de la línea central de patrones de cruz o de línea única.",
+    "cs": "Hraniční body patří k odpovídajícímu záznamu kalibrace podle hranic a nesmí se míchat s body středové linie křížových nebo jednočárných terčů."
   },
   "请选择 12 cm 或 8 cm 光盘。": {
     "zh-CN": "请选择 12 cm 或 8 cm 光盘。",
-    "en": "Choose a 12 cm or 8 cm disc."
+    "en": "Choose a 12 cm or 8 cm disc.",
+    "zh-TW": "請選擇 12 cm 或 8 cm 光碟。",
+    "ja": "12 cm または 8 cm のディスクを選択してください。",
+    "tr": "12 cm veya 8 cm disk seçin.",
+    "es": "Elija un disco de 12 cm u 8 cm.",
+    "cs": "Zvolte disk 12 cm nebo 8 cm."
   },
   "十字线记录无效。": {
     "zh-CN": "十字线记录无效。",
-    "en": "The cross-trace record is invalid."
+    "en": "The cross-trace record is invalid.",
+    "zh-TW": "十字線記錄無效。",
+    "ja": "十字線の記録が無効です。",
+    "tr": "Artı çizgisi kaydı geçersiz.",
+    "es": "El registro de la cruz no es válido.",
+    "cs": "Záznam kříže je neplatný."
   },
   "尚未确认照片矫正，不能保存描线点。": {
     "zh-CN": "尚未确认照片矫正，不能保存描线点。",
-    "en": "Confirm photo rectification before saving trace points."
+    "en": "Confirm photo rectification before saving trace points.",
+    "zh-TW": "尚未確認相片校正，不能儲存描線點。",
+    "ja": "写真の補正がまだ確定していないため、トレース点を保存できません。",
+    "tr": "Fotoğraf düzeltmesi henüz onaylanmadı; çizim noktaları kaydedilemez.",
+    "es": "La rectificación de la foto aún no está confirmada; no se pueden guardar los puntos del trazado.",
+    "cs": "Narovnání fotografie ještě nebylo potvrzeno; body obkreslení nelze uložit."
   },
   "分段描边记录需要已确认的矫正照片，所有点须位于盘面上。": {
     "zh-CN": "分段描边记录需要已确认的矫正照片，所有点须位于盘面上。",
-    "en": "Segmented boundary traces require confirmed photo rectification, with every point on the disc."
+    "en": "Segmented boundary traces require confirmed photo rectification, with every point on the disc.",
+    "zh-TW": "分段描邊記錄需要已確認校正的相片，所有點都必須位於碟面上。",
+    "ja": "分割境界トレースの記録には、補正が確定した写真が必要です。すべての点がディスク面上になければなりません。",
+    "tr": "Bölümlenmiş sınır çizimi kaydı, düzeltmesi onaylanmış bir fotoğraf gerektirir; tüm noktalar disk yüzeyinde olmalıdır.",
+    "es": "El registro de trazos de límite por segmentos requiere una foto con la rectificación confirmada; todos los puntos deben estar sobre la superficie del disco.",
+    "cs": "Záznam segmentovaných hraničních úseků vyžaduje fotografii s potvrzeným narovnáním; všechny body musí ležet na povrchu disku."
   },
   "照片轮廓控制点无效。": {
     "zh-CN": "照片轮廓控制点无效。",
-    "en": "The photo outline control points are invalid."
+    "en": "The photo outline control points are invalid.",
+    "zh-TW": "相片輪廓控制點無效。",
+    "ja": "写真の輪郭制御点が無効です。",
+    "tr": "Fotoğraf konturunun denetim noktaları geçersiz.",
+    "es": "Los puntos de control del contorno de la foto no son válidos.",
+    "cs": "Řídicí body kontury fotografie jsou neplatné."
   },
   "标定会话文件过大。": {
     "zh-CN": "标定会话文件过大。",
-    "en": "The calibration record file is too large."
+    "en": "The calibration record file is too large.",
+    "zh-TW": "校準記錄檔案過大。",
+    "ja": "キャリブレーション記録ファイルが大きすぎます。",
+    "tr": "Kalibrasyon kayıt dosyası çok büyük.",
+    "es": "El archivo de registro de calibración es demasiado grande.",
+    "cs": "Soubor kalibračního záznamu je příliš velký."
   },
   "标定会话为空。": {
     "zh-CN": "标定会话为空。",
-    "en": "The calibration record is empty."
+    "en": "The calibration record is empty.",
+    "zh-TW": "校準記錄為空。",
+    "ja": "キャリブレーション記録が空です。",
+    "tr": "Kalibrasyon kaydı boş.",
+    "es": "El registro de calibración está vacío.",
+    "cs": "Kalibrační záznam je prázdný."
   },
   "标定参数无效：请检查盘片类型、内外半径、扇区数和线速度／位长。": {
     "zh-CN": "标定参数无效：请检查盘片类型、内外半径、扇区数和线速度／位长。",
-    "en": "Invalid calibration parameters. Check the disc type, inner and outer radii, sector count, and linear speed or channel bit length."
+    "en": "Invalid calibration parameters. Check the disc type, inner and outer radii, sector count, and linear speed or channel bit length.",
+    "zh-TW": "校準參數無效：請檢查光碟類型、內外半徑、磁區數與線速度／位元長度。",
+    "ja": "校正パラメーターが無効です。ディスクの種類、内外半径、セクター数、線速度／チャネル ビット長を確認してください。",
+    "tr": "Kalibrasyon parametreleri geçersiz. Disk türünü, iç ve dış yarıçapları, sektör sayısını ve doğrusal hız veya kanal bit uzunluğunu kontrol edin.",
+    "es": "Parámetros de calibración no válidos. Compruebe el tipo de disco, los radios interior y exterior, el número de sectores y la velocidad lineal o la longitud de bit de canal.",
+    "cs": "Neplatné parametry kalibrace. Zkontrolujte typ disku, vnitřní a vnější poloměry, počet sektorů a lineární rychlost nebo délku kanálového bitu."
   },
   "标定图案的可绘制扇区范围无效。": {
     "zh-CN": "标定图案的可绘制扇区范围无效。",
-    "en": "The calibration pattern's drawable sector range is invalid."
+    "en": "The calibration pattern's drawable sector range is invalid.",
+    "zh-TW": "校準圖案的可繪製磁區範圍無效。",
+    "ja": "キャリブレーション パターンの描画可能なセクター範囲が無効です。",
+    "tr": "Kalibrasyon deseninin çizilebilir sektör aralığı geçersiz.",
+    "es": "El intervalo de sectores dibujables del patrón de calibración no es válido.",
+    "cs": "Rozsah vykreslitelných sektorů kalibračního vzoru je neplatný."
   },
   "蓝光标定需要完整的 32 扇区簇、74.5 nm 位长和不超过 60 mm 的外半径。": {
     "zh-CN": "蓝光标定需要完整的 32 扇区簇、74.5 nm 位长和不超过 60 mm 的外半径。",
-    "en": "Blu-ray calibration requires complete 32-sector clusters, a 74.5 nm channel bit length, and an outer radius no greater than 60 mm."
+    "en": "Blu-ray calibration requires complete 32-sector clusters, a 74.5 nm channel bit length, and an outer radius no greater than 60 mm.",
+    "zh-TW": "藍光校準需要完整的 32 磁區叢集、74.5 nm 位元長度，且外半徑不超過 60 mm。",
+    "ja": "Blu-ray の校正には、完全な 32 セクター クラスタ、74.5 nm のチャネル ビット長、60 mm 以下の外半径が必要です。",
+    "tr": "Blu-ray kalibrasyonu, eksiksiz 32 sektör kümelerini, 74,5 nm kanal bit uzunluğunu ve 60 mm'yi aşmayan bir dış yarıçapı gerektirir.",
+    "es": "La calibración de Blu-ray requiere clústeres completos de 32 sectores, una longitud de bit de canal de 74,5 nm y un radio exterior no mayor de 60 mm.",
+    "cs": "Kalibrace Blu-ray vyžaduje úplné klastry po 32 sektorech, délku kanálového bitu 74,5 nm a vnější poloměr nejvýše 60 mm."
   },
   "标定记录中的兼容图案选项无效，请重新创建标定图案。": {
     "zh-CN": "标定记录中的兼容图案选项无效，请重新创建标定图案。",
-    "en": "The compatibility pattern option in this calibration record is invalid. Create a new calibration pattern."
+    "en": "The compatibility pattern option in this calibration record is invalid. Create a new calibration pattern.",
+    "zh-TW": "校準記錄中的相容圖案選項無效，請重新建立校準圖案。",
+    "ja": "このキャリブレーション記録の互換パターン オプションが無効です。キャリブレーション パターンを再作成してください。",
+    "tr": "Bu kalibrasyon kaydındaki uyumluluk deseni seçeneği geçersiz. Kalibrasyon desenini yeniden oluşturun.",
+    "es": "La opción de patrón de compatibilidad de este registro de calibración no es válida. Cree de nuevo el patrón de calibración.",
+    "cs": "Možnost kompatibilního vzoru v tomto kalibračním záznamu je neplatná. Vytvořte kalibrační vzor znovu."
   },
   "此标靶未刻录宽角度参考标记。": {
     "zh-CN": "此标靶未刻录宽角度参考标记。",
-    "en": "This target has no wide-angle reference marks."
+    "en": "This target has no wide-angle reference marks.",
+    "zh-TW": "此標靶未燒錄寬角度參考標記。",
+    "ja": "このターゲットには広角度の基準マークが書き込まれていません。",
+    "tr": "Bu hedefe geniş açılı başvuru işaretleri yazılmamış.",
+    "es": "En este patrón no se grabaron marcas de referencia de gran angular.",
+    "cs": "Na tento terč nebyly vypáleny širokoúhlé referenční značky."
   },
   "控制块或控制点编号无效。": {
     "zh-CN": "控制块或控制点编号无效。",
-    "en": "The control block or control point index is invalid."
+    "en": "The control block or control point index is invalid.",
+    "zh-TW": "控制塊或控制點編號無效。",
+    "ja": "制御ブロックまたは制御点の番号が無効です。",
+    "tr": "Denetim bloğu veya denetim noktası dizini geçersiz.",
+    "es": "El índice del bloque de control o del punto de control no es válido.",
+    "cs": "Index řídicího bloku nebo řídicího bodu je neplatný."
   },
   "控制块编号无效。": {
     "zh-CN": "控制块编号无效。",
-    "en": "The control block index is invalid."
+    "en": "The control block index is invalid.",
+    "zh-TW": "控制塊編號無效。",
+    "ja": "制御ブロックの番号が無効です。",
+    "tr": "Denetim bloğu dizini geçersiz.",
+    "es": "El índice del bloque de control no es válido.",
+    "cs": "Index řídicího bloku je neplatný."
   },
   "标定图案类型与记录版本不匹配。": {
     "zh-CN": "标定图案类型与记录版本不匹配。",
-    "en": "The calibration pattern type does not match the record version."
+    "en": "The calibration pattern type does not match the record version.",
+    "zh-TW": "校準圖案類型與記錄版本不符。",
+    "ja": "キャリブレーション パターンの種類が記録のバージョンと一致しません。",
+    "tr": "Kalibrasyon deseni türü, kayıt sürümüyle uyuşmuyor.",
+    "es": "El tipo de patrón de calibración no coincide con la versión del registro.",
+    "cs": "Typ kalibračního vzoru neodpovídá verzi záznamu."
   },
   "标定图案 ID 无效。": {
     "zh-CN": "标定图案 ID 无效。",
-    "en": "The calibration pattern ID is invalid."
+    "en": "The calibration pattern ID is invalid.",
+    "zh-TW": "校準圖案 ID 無效。",
+    "ja": "キャリブレーション パターン ID が無効です。",
+    "tr": "Kalibrasyon deseni kimliği geçersiz.",
+    "es": "El identificador del patrón de calibración no es válido.",
+    "cs": "ID kalibračního vzoru je neplatné."
   },
   "时钟尺粗标靶需要 70–85 分钟、1200 mm/s 的标准 12 cm CD。": {
     "zh-CN": "时钟尺粗标靶需要 70–85 分钟、1200 mm/s 的标准 12 cm CD。",
-    "en": "The coarse clock-ruler target requires a standard 12 cm CD with 70–85 minutes of capacity and a linear speed of 1200 mm/s."
+    "en": "The coarse clock-ruler target requires a standard 12 cm CD with 70–85 minutes of capacity and a linear speed of 1200 mm/s.",
+    "zh-TW": "時鐘尺粗校準靶需要 70–85 分鐘、1200 mm/s 的標準 12 cm CD。",
+    "ja": "クロック定規の概略校正ターゲットには、70–85 分の容量と 1200 mm/s の線速度をもつ標準 12 cm CD が必要です。",
+    "tr": "Kaba saat cetveli hedefi, 70–85 dakika kapasiteli ve 1200 mm/s doğrusal hızlı standart bir 12 cm CD gerektirir.",
+    "es": "El patrón inicial de regla de reloj requiere un CD estándar de 12 cm con 70–85 minutos de capacidad y una velocidad lineal de 1200 mm/s.",
+    "cs": "Terč hrubé kalibrace hodinovým pravítkem vyžaduje standardní 12 cm CD s kapacitou 70–85 minut a lineární rychlostí 1200 mm/s."
   },
   "圆弧粗标靶需要 70–85 分钟、1200 mm/s 的标准 12 cm CD。": {
     "zh-CN": "圆弧粗标靶需要 70–85 分钟、1200 mm/s 的标准 12 cm CD。",
-    "en": "The coarse arc target requires a standard 12 cm CD with 70–85 minutes of capacity and a linear speed of 1200 mm/s."
+    "en": "The coarse arc target requires a standard 12 cm CD with 70–85 minutes of capacity and a linear speed of 1200 mm/s.",
+    "zh-TW": "圓弧粗校準靶需要 70–85 分鐘、1200 mm/s 的標準 12 cm CD。",
+    "ja": "円弧の概略校正ターゲットには、70–85 分の容量と 1200 mm/s の線速度をもつ標準 12 cm CD が必要です。",
+    "tr": "Kaba yay hedefi, 70–85 dakika kapasiteli ve 1200 mm/s doğrusal hızlı standart bir 12 cm CD gerektirir.",
+    "es": "El patrón inicial de arcos requiere un CD estándar de 12 cm con 70–85 minutos de capacidad y una velocidad lineal de 1200 mm/s.",
+    "cs": "Terč hrubé kalibrace oblouky vyžaduje standardní 12 cm CD s kapacitou 70–85 minut a lineární rychlostí 1200 mm/s."
   },
   "标定图案控制块数量无效。": {
     "zh-CN": "标定图案控制块数量无效。",
-    "en": "The number of control blocks in the calibration pattern is invalid."
+    "en": "The number of control blocks in the calibration pattern is invalid.",
+    "zh-TW": "校準圖案控制塊數量無效。",
+    "ja": "キャリブレーション パターンの制御ブロック数が無効です。",
+    "tr": "Kalibrasyon desenindeki denetim bloğu sayısı geçersiz.",
+    "es": "El número de bloques de control del patrón de calibración no es válido.",
+    "cs": "Počet řídicích bloků kalibračního vzoru je neplatný."
   },
   "标定图案含重复控制块 ID。": {
     "zh-CN": "标定图案含重复控制块 ID。",
-    "en": "The calibration pattern contains duplicate control block IDs."
+    "en": "The calibration pattern contains duplicate control block IDs.",
+    "zh-TW": "校準圖案含重複控制塊 ID。",
+    "ja": "キャリブレーション パターンに重複した制御ブロック ID が含まれています。",
+    "tr": "Kalibrasyon deseni yinelenen denetim bloğu kimlikleri içeriyor.",
+    "es": "El patrón de calibración contiene identificadores de bloque de control duplicados.",
+    "cs": "Kalibrační vzor obsahuje duplicitní ID řídicích bloků."
   },
   "标定图案与生成参数或图案规则不一致。": {
     "zh-CN": "标定图案与生成参数或图案规则不一致。",
-    "en": "The calibration pattern does not match its generation parameters or pattern rules."
+    "en": "The calibration pattern does not match its generation parameters or pattern rules.",
+    "zh-TW": "校準圖案與產生參數或圖案規則不一致。",
+    "ja": "キャリブレーション パターンが生成パラメーターまたはパターン規則と一致しません。",
+    "tr": "Kalibrasyon deseni, oluşturma parametreleriyle veya desen kurallarıyla uyuşmuyor.",
+    "es": "El patrón de calibración no coincide con sus parámetros de generación ni con las reglas del patrón.",
+    "cs": "Kalibrační vzor neodpovídá parametrům generování ani pravidlům vzoru."
   },
   "控制块或角点编号无效。": {
     "zh-CN": "控制块或角点编号无效。",
-    "en": "The control block or corner index is invalid."
+    "en": "The control block or corner index is invalid.",
+    "zh-TW": "控制塊或角點編號無效。",
+    "ja": "制御ブロックまたは角点の番号が無効です。",
+    "tr": "Denetim bloğu veya köşe dizini geçersiz.",
+    "es": "El índice del bloque de control o de la esquina no es válido.",
+    "cs": "Index řídicího bloku nebo rohového bodu je neplatný."
   },
   "标定组编号无效。": {
     "zh-CN": "标定组编号无效。",
-    "en": "The calibration group index is invalid."
+    "en": "The calibration group index is invalid.",
+    "zh-TW": "校準群組編號無效。",
+    "ja": "校正グループの番号が無効です。",
+    "tr": "Kalibrasyon grubu dizini geçersiz.",
+    "es": "El índice del grupo de calibración no es válido.",
+    "cs": "Index kalibrační skupiny je neplatný."
   },
   "时钟尺按 CD 逻辑字节生成，不能用平面图像采样编码。": {
     "zh-CN": "时钟尺按 CD 逻辑字节生成，不能用平面图像采样编码。",
-    "en": "The clock ruler is generated from CD logical bytes and cannot be encoded by sampling a flat image."
+    "en": "The clock ruler is generated from CD logical bytes and cannot be encoded by sampling a flat image.",
+    "zh-TW": "時鐘尺按 CD 邏輯位元組產生，不能用平面圖像取樣編碼。",
+    "ja": "クロック定規は CD の論理バイトから生成されるため、平面画像のサンプリングで符号化することはできません。",
+    "tr": "Saat cetveli, CD mantıksal baytlarından oluşturulur ve düz bir görüntünün örneklenmesiyle kodlanamaz.",
+    "es": "La regla de reloj se genera a partir de bytes lógicos de CD y no se puede codificar muestreando una imagen plana.",
+    "cs": "Hodinové pravítko se generuje z logických bajtů CD a nedá se kódovat vzorkováním plochého obrazu."
   },
   "旋转必须是有限数值。": {
     "zh-CN": "旋转必须是有限数值。",
-    "en": "Rotation must be a finite number."
+    "en": "Rotation must be a finite number.",
+    "zh-TW": "旋轉必須是有限數值。",
+    "ja": "回転は有限な数値である必要があります。",
+    "tr": "Döndürme sonlu bir sayı olmalıdır.",
+    "es": "La rotación debe ser un número finito.",
+    "cs": "Otočení musí být konečné číslo."
   },
   "角点坐标必须是有限数值。": {
     "zh-CN": "角点坐标必须是有限数值。",
-    "en": "Corner coordinates must be finite numbers."
+    "en": "Corner coordinates must be finite numbers.",
+    "zh-TW": "角點座標必須是有限數值。",
+    "ja": "角点の座標は有限な数値である必要があります。",
+    "tr": "Köşe koordinatları sonlu sayılar olmalıdır.",
+    "es": "Las coordenadas de las esquinas deben ser números finitos.",
+    "cs": "Souřadnice rohových bodů musí být konečná čísla."
   },
   "源控制点不在生成时的绘图环带内。": {
     "zh-CN": "源控制点不在生成时的绘图环带内。",
-    "en": "A source control point is outside the drawing annulus used to generate the pattern."
+    "en": "A source control point is outside the drawing annulus used to generate the pattern.",
+    "zh-TW": "來源控制點不在產生時的繪圖環帶內。",
+    "ja": "元の制御点が、パターンの生成に使用された描画帯域の外にあります。",
+    "tr": "Kaynak denetim noktası, deseni oluştururken kullanılan çizim bandının dışında.",
+    "es": "Un punto de control de origen está fuera de la banda de dibujo usada para generar el patrón.",
+    "cs": "Zdrojový řídicí bod leží mimo kreslicí pás použité při generování vzoru."
   },
   "轮廓在当前轨距参数下没有有效映射。": {
     "zh-CN": "轮廓在当前轨距参数下没有有效映射。",
-    "en": "The outline has no valid mapping with the current track-pitch parameters."
+    "en": "The outline has no valid mapping with the current track-pitch parameters.",
+    "zh-TW": "輪廓在目前軌距參數下沒有有效映射。",
+    "ja": "現在のトラックピッチ パラメーターでは、輪郭を有効にマッピングできません。",
+    "tr": "Geçerli iz aralığı parametreleriyle konturun geçerli bir eşlemesi yok.",
+    "es": "El contorno no tiene una asignación válida con los parámetros actuales de paso de pista.",
+    "cs": "Pro aktuální parametry rozteče stop nemá kontura žádné platné mapování."
   },
   "候选绕行过多，完整轮廓采样超出上限；请缩小搜索范围或提高采样上限后再确认形状。": {
     "zh-CN": "候选绕行过多，完整轮廓采样超出上限；请缩小搜索范围或提高采样上限后再确认形状。",
-    "en": "The candidate has too many turns to sample the full outline within the limit. Narrow the search range or raise the sampling limit before checking its shape."
+    "en": "The candidate has too many turns to sample the full outline within the limit. Narrow the search range or raise the sampling limit before checking its shape.",
+    "zh-TW": "候選繞圈過多，完整輪廓取樣超出上限；請縮小搜尋範圍或提高取樣上限後再確認形狀。",
+    "ja": "候補の周回が多すぎて、上限内で輪郭全体をサンプリングできません。形状を確認する前に、検索範囲を狭めるかサンプリング上限を上げてください。",
+    "tr": "Aday fazla sayıda dönüş içeriyor; tam kontur sınır içinde örneklenemiyor. Şekli onaylamadan önce arama aralığını daraltın veya örnekleme sınırını yükseltin.",
+    "es": "El candidato tiene demasiadas vueltas para muestrear el contorno completo dentro del límite. Reduzca el intervalo de búsqueda o aumente el límite de muestreo antes de confirmar la forma.",
+    "cs": "Kandidát má příliš mnoho závitů, takže celou konturu nelze v limitě vzorkovat. Před potvrzením tvaru zúžte rozsah hledání nebo zvyšte limit vzorkování."
   },
   "标定固定盘片类型、扇区数和线速度／位长，可拟合内外半径、三次轨距与整体旋转。": {
     "zh-CN": "标定固定盘片类型、扇区数和线速度／位长，可拟合内外半径、三次轨距与整体旋转。",
-    "en": "Calibration keeps the disc type, sector count, and linear speed or channel bit length fixed. It can fit the inner and outer radii, cubic track pitch, and overall rotation."
+    "en": "Calibration keeps the disc type, sector count, and linear speed or channel bit length fixed. It can fit the inner and outer radii, cubic track pitch, and overall rotation.",
+    "zh-TW": "校準會固定光碟類型、磁區數與線速度／位元長度，可擬合內外半徑、三次軌距與整體旋轉。",
+    "ja": "校正では、ディスクの種類、セクター数、線速度／チャネル ビット長を固定し、内外半径、3 次トラックピッチ、全体の回転を推定できます。",
+    "tr": "Kalibrasyon; disk türünü, sektör sayısını ve doğrusal hız veya kanal bit uzunluğunu sabit tutar. İç ve dış yarıçapları, kübik iz aralığını ve genel döndürmeyi uydurabilir.",
+    "es": "La calibración mantiene fijos el tipo de disco, el número de sectores y la velocidad lineal o la longitud de bit de canal. Puede ajustar los radios interior y exterior, el paso de pista cúbico y la rotación global.",
+    "cs": "Kalibrace ponechá typ disku, počet sektorů a lineární rychlost či délku kanálového bitu pevné. Dokáže proložit vnitřní a vnější poloměry, kubickou rozteč stop a celkové otočení."
   }
 }

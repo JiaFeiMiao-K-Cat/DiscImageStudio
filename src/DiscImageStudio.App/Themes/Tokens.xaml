@@ -75,6 +75,10 @@
     <SolidColorBrush x:Key="TitleBarHoverBrush" Color="#12FFFFFF" />
     <SolidColorBrush x:Key="BackdropBrush" Color="#80000000" />
     <SolidColorBrush x:Key="PrimaryGlowBrush" Color="#803385FF" />
+    <!-- Keyboard-focus ring, shared by every interactive control through the FocusRing
+         focus visual. Same family as the primary glow but a separate token so focus never
+         borrows selection or hover semantics. -->
+    <SolidColorBrush x:Key="FocusRingBrush" Color="#803385FF" />
     <SolidColorBrush x:Key="WarningSoftBrush" Color="#14F5A524" />
     <SolidColorBrush x:Key="WarningBorderBrush" Color="#4DF5A524" />
     <SolidColorBrush x:Key="WarningTextBrush" Color="#E5C783" />

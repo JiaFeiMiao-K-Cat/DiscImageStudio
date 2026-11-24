@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 
 namespace DiscImageStudio.Burning;
@@ -34,7 +35,7 @@ internal interface IBluRaySequentialSession : IDisposable
 /// commands rather than formatting the medium with spare areas.
 /// The recorder and speed-format COM objects remain owned by the caller.
 /// </summary>
-internal sealed class DynamicBluRaySequentialSession : IBluRaySequentialSession
+internal sealed class DynamicBluRaySequentialSession : IBluRaySequentialSession, IBluRayRewritablePreparationSession
 {
     private readonly dynamic _recorder;
     private readonly dynamic _speedFormat;
@@ -88,7 +89,31 @@ internal sealed class DynamicBluRaySequentialSession : IBluRaySequentialSession
         return _commands.ReadMedia();
     }
 
+    public BluRayRewritableMedia ReadRewritableMedia()
+    {
+        RequireAcquired();
+        return new BluRayRewritableMmcCommands(_transport).ReadMedia();
+    }
+
+    public BluRayRewritableLayout ReadRewritableLayout()
+    {
+        RequireAcquired();
+        return new BluRayRewritableMmcCommands(_transport).ReadLayout();
+    }
+
+    public BluRayRewritableLayout FormatRewritableWithoutSpareArea(CancellationToken cancellationToken)
+    {
+        RequireAcquired();
+        return new BluRayRewritableMmcCommands(_transport).FormatWithoutSpareArea(cancellationToken);
+    }
+
     public OpticalWriteSpeed ConfigureWrite(OpticalWriteSpeed? requested)
+        => ConfigureWrite(requested, requireReportedSpeed: true)!;
+
+    internal OpticalWriteSpeed? ConfigureRewritableWrite(OpticalWriteSpeed? requested)
+        => ConfigureWrite(requested, requireReportedSpeed: false);
+
+    private OpticalWriteSpeed? ConfigureWrite(OpticalWriteSpeed? requested, bool requireReportedSpeed)
     {
         RequireAcquired();
         if (_configured) throw new InvalidOperationException("蓝光写入参数已经设置。");
@@ -97,12 +122,24 @@ internal sealed class DynamicBluRaySequentialSession : IBluRaySequentialSession
             requested.Validate();
             _speedFormat.SetWriteSpeed(requested.SectorsPerSecond, requested.RotationTypeIsPureCav);
         }
-        OpticalWriteSpeed actual = new(Convert.ToInt32(_speedFormat.CurrentWriteSpeed),
-            Convert.ToBoolean(_speedFormat.CurrentRotationTypeIsPureCAV));
-        actual.Validate();
-
-        _configured = true;
-        return actual;
+        try
+        {
+            int sectorsPerSecond = Convert.ToInt32(_speedFormat.CurrentWriteSpeed);
+            if (!requireReportedSpeed && sectorsPerSecond <= 0)
+            {
+                _configured = true;
+                return null;
+            }
+            OpticalWriteSpeed actual = new(sectorsPerSecond, Convert.ToBoolean(_speedFormat.CurrentRotationTypeIsPureCAV));
+            actual.Validate();
+            _configured = true;
+            return actual;
+        }
+        catch (COMException) when (!requireReportedSpeed)
+        {
+            _configured = true;
+            return null;
+        }
     }
 
     public void Write(IStream content, uint sectorCount)
@@ -111,8 +148,8 @@ internal sealed class DynamicBluRaySequentialSession : IBluRaySequentialSession
         if (!_configured)
             throw new InvalidOperationException("必须先设置蓝光顺序写入参数。");
 
-        // The first WRITE initializes a blank BD-R in SRM without allocating
-        // spare areas. No FORMAT UNIT, RESERVE TRACK, page 05 or OPC is issued.
+        // BD-R initializes on the first WRITE. BD-RE must already have a verified
+        // no-spare layout. Aligned WRITE commands work for both paths.
         BluRaySequentialWriter.Write(_transport, content, sectorCount, _reportWriteProgress,
             () => Volatile.Read(ref _cancelRequested) != 0, reportDiagnostics: _reportDiagnostics);
     }
