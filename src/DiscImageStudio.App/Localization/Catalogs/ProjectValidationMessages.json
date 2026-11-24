@@ -55,6 +55,10 @@
     "zh-CN": "cdExtra 的音乐路径不能为空。",
     "en": "cdExtra music paths cannot be empty."
   },
+  "cdExtra.musicPosition '{0}' 无效；仅支持 'outer' 与 'inner'。": {
+    "zh-CN": "cdExtra.musicPosition '{0}' 无效；仅支持 'outer' 与 'inner'。",
+    "en": "cdExtra.musicPosition '{0}' is invalid; only 'outer' and 'inner' are supported."
+  },
   "工程名不能为空。": {
     "zh-CN": "工程名不能为空。",
     "en": "The project name cannot be empty.",
