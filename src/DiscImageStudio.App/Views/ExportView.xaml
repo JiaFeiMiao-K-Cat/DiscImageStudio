@@ -25,7 +25,7 @@
                          row carries the jump to its owner. -->
                     <controls:SourceChip Text="{Binding SourceSummary}">
                         <controls:SourceChip.Actions>
-                            <Button Style="{StaticResource CompactButton}" Content="{loc:Text Xaml.ProjectSettings2}"
+                            <Button Style="{StaticResource CompactButton}" Content="{loc:Text Xaml.ProjectSettings}"
                                     Command="{Binding OpenProjectSettingsCommand}"
                                     ToolTip="{loc:Text Xaml.EditGeometryRadiiSectorsAndTrackPitchInProject}" />
                         </controls:SourceChip.Actions>
@@ -98,7 +98,8 @@
                             <TextBox Text="{Binding State.DvdVolumeLabel, UpdateSourceTrigger=PropertyChanged}" MaxLength="16" />
                             <TextBlock Style="{StaticResource HintText}" Margin="0,4,0,0"
                                        Text="{loc:Text Xaml.VolumeLabelHint}" />
-                            <controls:DvdReadCompatibilityToggle IsChecked="{Binding State.DvdReadCompatibility}" Margin="0,14,0,0" />
+                            <controls:DvdReadCompatibilityToggle IsChecked="{Binding State.DvdReadCompatibility}"
+                                                                 Mode="{Binding State.DvdReadCompatibilityMode}" Margin="0,14,0,0" />
                         </StackPanel>
                     </controls:VisibilityGate>
 

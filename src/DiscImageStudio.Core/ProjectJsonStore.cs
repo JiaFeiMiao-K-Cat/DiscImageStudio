@@ -39,7 +39,8 @@ public sealed record ProjectOutputs(
     bool Interleave,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool FilesAtOuterRing = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool DvdReadCompatibility = false,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool OuterRingBleed = false);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool OuterRingBleed = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? DvdReadCompatibilityMode = null);
 
 /// <summary>Generation settings that exist only for BD-R: the 3T/6T mapping polarity.
 /// This is deliberately separate from <see cref="ToneProfile"/>: polarity selects which
@@ -199,6 +200,9 @@ public static class ProjectJsonStore
         ProjectDocument clean = document with
         {
             SchemaVersion = RequiredSchemaVersion(document),
+            Outputs = document.Outputs.DvdReadCompatibilityMode == DvdReadCompatibilityModes.Current
+                ? document.Outputs with { DvdReadCompatibilityMode = null }
+                : document.Outputs,
             ExtensionData = document.ExtensionData is { Count: > 0 } ? null : document.ExtensionData,
         };
         string temporaryPath = Path.Combine(directory, $".{Path.GetFileName(fullPath)}.{Guid.NewGuid():N}.tmp");
@@ -448,6 +452,11 @@ public static class ProjectJsonStore
         if (string.IsNullOrWhiteSpace(outputs.OutputPath))
         {
             throw DiagnosticMessage.InvalidData($"outputs.outputPath 不能为空。");
+        }
+        if (outputs.DvdReadCompatibilityMode is { } mode
+            && (!document.IsDvd || !DvdReadCompatibilityModes.IsWriteSafe(mode)))
+        {
+            throw DiagnosticMessage.InvalidData($"outputs.dvdReadCompatibilityMode 必须是 DVD 支持的刻录兼容性模式。");
         }
     }
 

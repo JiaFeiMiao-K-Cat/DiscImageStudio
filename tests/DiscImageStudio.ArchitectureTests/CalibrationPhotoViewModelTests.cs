@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
@@ -819,7 +818,7 @@ internal static class CalibrationPhotoViewModelTests
     {
         var shell = (ShellViewModel)RuntimeHelpers.GetUninitializedObject(typeof(ShellViewModel));
         Set(shell, "_log", new StringBuilder()); Set(shell, "_dispatcher", Dispatcher.CurrentDispatcher);
-        Set(shell, "<Toasts>k__BackingField", new ObservableCollection<ToastItem>());
+        Set(shell, "_toastStack", new ToastStack());
         foreach (string name in new[]
         {
             "OpenOutputCommand", "BrowseCdTrackCommand", "BrowseDvdIsoCommand",

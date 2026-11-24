@@ -71,6 +71,9 @@ public static class IsoReadbackRenderer
         string isoFullPath = Path.GetFullPath(isoPath);
         string? readCompatibilityMode = ReadCompatibilityMode(isoFullPath);
         bool readCompatibility = readCompatibilityMode is not null;
+        bool usesWriteSafe = DvdReadCompatibilityModes.IsWriteSafe(readCompatibilityMode);
+        bool usesLegacyBridgeByte = readCompatibilityMode is
+            DvdReadCompatibilityModes.LegacyBridge or DvdReadCompatibilityModes.Periodic9B16;
         long isoSectors = new FileInfo(isoFullPath).Length / DvdEccBlockEncoder.PayloadBytesPerSector;
         if ((ulong)options.StartLba + options.FillSectors > (ulong)isoSectors)
         {
@@ -133,7 +136,9 @@ public static class IsoReadbackRenderer
                 iso.ReadExactly(block);
                 for (int sector = 0; sector < DvdEccBlockEncoder.SectorCount; sector++)
                 {
-                    uint psn = blockStartLba + options.PsnOffset + (uint)sector;
+                    uint lba = blockStartLba + (uint)sector;
+                    uint psn = lba + options.PsnOffset;
+                    bool strongBlack = usesWriteSafe && DvdReadCompatibilityGuard.UsesStrongBlack(readCompatibilityMode, lba);
                     ReadOnlySpan<byte> mask = DvdDataFrameBuilder.PayloadScramblerMask(psn);
                     ReadOnlySpan<byte> payload = block.AsSpan(
                         sector * DvdEccBlockEncoder.PayloadBytesPerSector,
@@ -147,13 +152,13 @@ public static class IsoReadbackRenderer
                         }
 
                         byte scrambled = (byte)(payload[byteIndex] ^ mask[byteIndex]);
-                        // Compatibility guards replace white texture bytes, so show their intended
-                        // tone only for a sidecar identifying that algorithm. This is
-                        // an artwork preview, not an optical reflectance simulation.
+                        // A matching sidecar identifies which inserts represent an intended tone.
                         byte level;
-                        if (readCompatibility && scrambled == 0x9B)
+                        if (usesLegacyBridgeByte && scrambled == 0x9B)
                             level = 255;
-                        else if (!DvdGrayscalePalette.TryGetLuminance(scrambled, out level))
+                        else if (!DvdGrayscalePalette.TryGetLuminance(scrambled, out level)
+                            && !(usesWriteSafe && DvdReadCompatibilityGuard.TryGetWriteSafeLuminance(
+                                scrambled, byteIndex, strongBlack, out level)))
                         {
                             continue;
                         }

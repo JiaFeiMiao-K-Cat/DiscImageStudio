@@ -1,6 +1,6 @@
-# 蓝光模式（单层 BD-R）
+# 蓝光模式（单层 BD-R 与 BD-RE）
 
-蓝光实现位于 `src/DiscImageStudio.BluRay`，引用介质无关的 Core 和 `src/DiscImageStudio.Iso`，不依赖 CD/DVD 编码器。依据 ISO/IEC 30190:2021，当前范围为 **120 mm、单层 25 GB BD-R**；不支持双层、BDXL、BD-RE 或视频蓝光制作。
+蓝光实现位于 `src/DiscImageStudio.BluRay`，引用介质无关的 Core 和 `src/DiscImageStudio.Iso`。绘图范围为 **120 mm、25 GB 单层 BD-R 和可验证为无备用区的 BD-RE**，分别参考 ISO/IEC 30190:2021 与 ISO/IEC 30192:2021。镜像导出采用单层 BD-R 的布局。双层、BDXL 和视频蓝光制作尚未支持。
 
 ## 在应用中的位置
 
@@ -12,7 +12,7 @@
 - **刻录**：把同一 ISO 流直接送入 MMC 顺序写入，不保存完整镜像；任务坞支持进度与取消。
 - **标定**：BD 目标覆盖完整数据区，保存扇区、半径、极性、绘图起止与 ISO 时间戳；拟合使用恒定轨距并回到 BD 参数。
 
-BD 预设与 CD/DVD 一起存放在 `disc-presets.json`（schema 4）的 `bluRayPresets` 中。内置「标准 25GB 单层 BD」「铼德 BD-R 10x」「铼德 BD-R 12x」「Verbatim BD-R (64099)」和「Verbatim BD-R (64293)」；用户预设可在工程设置对话框底部保存。
+BD 预设与 CD/DVD 一起存放在 `disc-presets.json`（schema 4）的 `bluRayPresets` 中。内置「标准 25GB 单层 BD」「铼德 BD-R 10x」「铼德 BD-R 12x」「Verbatim BD-R (64099)」「Verbatim BD-R (64293)」和「Verbatim BD-RE (43614)」。用户预设可在工程设置对话框底部保存。
 
 ## 容量与几何
 
@@ -76,7 +76,7 @@ dotnet run --project src/DiscImageStudio.App -- bd-probe --byte 0xA6 --sectors 3
 dotnet run --project src/DiscImageStudio.App -- bd-encode --input bd-probe.bin --psn 0x100000 --output bd-ecc.bin
 ```
 
-`bd-generate` 的 `--preset` 可选 `bd-r-sl-25gb`、`bd-r-ritek-10x`、`bd-r-ritek-12x`、`bd-r-verbatim-64099` 或 `bd-r-verbatim-64293`；`--total-sectors`、`--r0`、`--r1`、`--start-angle` 可覆盖对应值。`--invert` 接受 `true`/`false`。`bd-generate` 不再接受旧的 `--start-sector` / `--sectors` 切片参数；切片仅保留在 `bd-probe`。
+`bd-generate` 的 `--preset` 可选 `bd-r-sl-25gb`、`bd-r-ritek-10x`、`bd-r-ritek-12x`、`bd-r-verbatim-64099`、`bd-r-verbatim-64293` 或 `bd-re-verbatim-43614`。`--total-sectors`、`--r0`、`--r1`、`--start-angle` 可覆盖对应值。`--invert` 接受 `true`/`false`。`--start-sector` 和 `--sectors` 切片参数仅用于 `bd-probe`。
 
 `bd-probe` 的 `--byte` 为 0..255 或 `0x00`..`0xFF`，范围按 32 对齐。`bd-encode` 输入必须恰好 65,536 bytes，输出 76,880 bytes 的 ECC cluster，不含 17PP、DC-control 或文件系统，不能当作可刻录镜像。
 
@@ -102,7 +102,7 @@ dotnet run --project src/DiscImageStudio.App -- bd-encode --input bd-probe.bin -
 
 默认 24–58 mm 是名义几何，不是特定盘片的实测参数。内置流式刻录通过保持 BD-R 未格式化、不分配缺陷管理备用区来匹配 `sector → PSN` 模型。实际半径、位置与光学对比度仍需实盘标定；外部软件刻录 ISO 时也应采用无备用区方式。
 
-## 无备用区流式刻录
+## 单层 BD-R 无备用区流式刻录
 
 `IDiscFormat2Data` 对未格式化 BD-R 报告的可用容量可能是默认备用区方案的 11,826,176 扇区，比原始 12,219,392 扇区少 768 MiB。蓝光通道通过 `IDiscRecorder2Ex.SendCommandSendDataToDevice` 从 LBA 0 顺序发送 `WRITE(10)`，每次 32 扇区（64 KiB），单命令超时为 200 秒，给首写初始化留出等待时间。缓冲区遵循适配器的地址对齐和最大传输限制。此通道不调用数据刻录接口的 `Write`、`FORMAT UNIT` 或分配备用区的操作。
 
@@ -120,10 +120,18 @@ BD 实时速率按刻录机确认接收的写入命令计算，包含设备缓�
 
 图片供流采用最多 8 个工作线程、16 个簇（1 MiB）的有界批次，完成计算后按原顺序写出。内建 3T/6T 阈值映射及扰码 XOR 使用整数 SIMD，位置计算保留原精度；不再为每个字节重复检查已经验证的盘片参数。不可变栅格图自动启用并行，内建标定图案显式声明采样线程安全；自定义采样回调默认保持串行。预缓冲只能暂时吸收速度差异，持续刻录仍要求供流速度高于所选设备速度。
 
-协议和工作流测试只使用假设备及 1024 扇区（2 MiB）的 UDF 数据流；完整 12,219,392 扇区仅验证容量与几何元数据，不生成全盘 ISO。物理刻录结果仍需实盘验证。
+## 单层 BD-RE 格式化与覆写
+
+在刻录页选择装有 25 GB 单层 BD-RE 的光驱并开始流式刻录。未格式化和已分配备用区的盘片需要在刻录前格式化。程序仅在光驱报告 RENoSA 和可用的 `31h` 格式描述符时提供此流程。锁定盘片后会按实际操作再次确认。重新格式化会使旧数据丢失，格式化完成后即使取消刻录也已生效。已经验证为无备用区的盘片可直接覆写，短镜像只覆写前面的写入范围。
+
+格式化完成后，程序核对实际 DDS、用户区容量、备用簇和缺陷管理状态。通过检查后，生成器才使用从光驱读回的 LBA 0 对应 PSN 来计算盘面坐标和反扰码，随后逐簇写入并刷新缓存。无法确认连续无备用区布局的盘片会被拒绝。无备用区时，出现坏块可能导致写入失败。实际盘面位置与对比度仍需按盘片和光驱验证。 [BDA MMC §6.3.3.5](https://www.t10.org/ftp/t10/document.08/08-340r0.pdf#page=97)
+
+2026-11-20 实盘验证使用 Verbatim 66768（固件 1.01）和一张全新 25 GB 单层 BD-RE。`31h` 格式化后报告零备用簇、12,219,392 个连续用户扇区，LBA 0 对应 PSN `0x00100000`。首次流式写入、直接覆写及 1 GiB 扩大范围覆写均通过写后全量读回 SHA-256 校验。测试全程从内存生成数据，盘面可见效果尚待目视确认。
+
+自动协议和工作流测试使用模拟光驱及 1,024 扇区（2 MiB）的 UDF 数据流。完整 12,219,392 扇区只做容量和几何检查，无需生成全盘 ISO。
 
 实现依据：[微软发送数据与命令超时接口](https://learn.microsoft.com/en-us/windows/win32/api/imapi2/nf-imapi2-idiscrecorder2ex-sendcommandsenddatatodevice)、[libburn MMC 实现](https://dev.lovelyhq.com/libburnia/libburn/src/branch/master/libburn/mmc.c)、[libburn 写入超时](https://dev.lovelyhq.com/libburnia/libburn/src/branch/master/libburn/spc.h)。
 
 ## 验证范围
 
-自动检查覆盖 17PP/EDC/Reed-Solomon、完整 RUB 重放、图像映射、并行生成、ISO/UDF、大于 4 GiB 文件、顺序刻录命令、绘图范围、sidecar 与取消。落盘 UDF 测试仅 1024 扇区，单个 ISO 最大 2 MiB；大文件测试先启用并验证稀疏属性，再创建超过 4 GiB 的逻辑源文件（实际分配小于 1 MiB），向校验后丢弃数据的流顺序输出，不写大 ISO。真实盘容量只做数学验证。测试不访问真实刻录设备，也不证明实际盘面的可见亮度或极性。
+自动检查覆盖 17PP/EDC/Reed-Solomon、完整 RUB 重放、图像映射、并行生成、ISO/UDF、大于 4 GiB 文件、顺序刻录命令、绘图范围、sidecar 与取消。落盘 UDF 测试仅 1024 扇区，单个 ISO 最大 2 MiB；大文件测试先启用并验证稀疏属性，再创建超过 4 GiB 的逻辑源文件（实际分配小于 1 MiB），向校验后丢弃数据的流顺序输出，不写大 ISO。自动测试不访问刻录设备。实盘检查范围见上节。

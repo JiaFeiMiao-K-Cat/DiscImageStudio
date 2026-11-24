@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using System.Windows;
 using DiscImageStudio.Services;
 using DiscImageStudio.Localization;
@@ -15,6 +17,7 @@ internal static class AppHost
         // paths, which is why switching never migrates old cache.
         TempFiles.TryConfigureCacheDirectory(settings.CacheDirectory);
         MainWindow window = new(settings, store);
+        InstallFaultHandlers(application, window);
         return application.Run(window);
     }
 
@@ -40,5 +43,37 @@ internal static class AppHost
             Source = new Uri("/Themes/Controls.xaml", UriKind.Relative),
         });
         return application;
+    }
+
+    /// <summary>Converts otherwise fatal dispatcher exceptions into a job-log entry plus an
+    /// error toast, so one failing operation no longer kills the whole application.
+    /// Unobserved task exceptions do not crash the runtime by default, but reporting them
+    /// through the same channel keeps discarded-task failures from disappearing silently.</summary>
+    private static void InstallFaultHandlers(Application application, MainWindow window)
+    {
+        void Report(Exception exception)
+        {
+            try
+            {
+                window.ReportUnhandledFault(exception);
+            }
+            catch
+            {
+                // The reporter itself must never throw out of an exception handler.
+            }
+        }
+
+        application.DispatcherUnhandledException += (_, args) =>
+        {
+            Report(args.Exception);
+            args.Handled = true;
+        };
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            args.SetObserved();
+            // This event arrives on a finalizer thread; the log and toast live on the UI
+            // thread, so the report is marshalled instead of touching view-model state.
+            window.Dispatcher.InvokeAsync(() => Report(args.Exception));
+        };
     }
 }

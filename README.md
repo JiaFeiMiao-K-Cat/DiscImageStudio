@@ -1,12 +1,12 @@
 <div align="center">
 
-**简体中文** | [繁體中文](README.zh-TW.md) | [English](README.en.md) | [日本語](README.ja.md) | [Türkçe](README.tr.md) | [Español](README.es.md) | [Čeština](README.cs.md)
+**简体中文** | [繁體中文](README.zh-TW.md) | [English](README.en.md) | [日本語](README.ja.md) | [Türkçe](README.tr.md) | [Español](README.es.md) | [Čeština](README.cs.md) | [Português (Brasil)](README.pt-BR.md)
 
 ![Banner](docs/images/DiscImageStudio_Banner_2.png)
 
 <h2>全能的光盘盘面可见图像生成与刻录工具</h2>
 
-Disc Image Studio 是一个多平台的光盘盘面图像生成与刻录工具，帮助您使用任何刻录光驱在任何 DVD / CD / 单层蓝光 光盘上刻蚀出肉眼可见的图像。
+Disc Image Studio 是一个多平台的光盘盘面图像生成与刻录工具，可在兼容的 DVD、CD 和单层蓝光盘上刻出肉眼可见的图像。
 
 ![.NET 版本](https://img.shields.io/badge/.NET-10.0-512bd4?style=flat-square)
 ![运行平台](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-0078d6?style=flat-square)
@@ -17,7 +17,7 @@ Disc Image Studio 是一个多平台的光盘盘面图像生成与刻录工具�
 
 <a href="https://trendshift.io/repositories/332271?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-332271" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/332271" alt="JiaFeiMiao-K-Cat%2FDiscImageStudio | Trendshift" width="250" height="55"/></a>
 
-<a href="https://discord.gg/7nDs9H3r"><img alt="加入 Disc Image Studio 的 Discord 社区" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
+<a href="https://discord.gg/rHkD2g7ufH"><img alt="加入 Disc Image Studio 的 Discord 社区" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
 
 </div>
 
@@ -35,7 +35,7 @@ Disc Image Studio 是一个多平台的光盘盘面图像生成与刻录工具�
 
 ## 概述
 
-Disc Image Studio 可将一张图片转换成符合 CD、DVD 与单层 BD-R 光盘物理层约束的数据，刻录后将使光盘盘面呈现肉眼可见的图案。
+Disc Image Studio 可将图片转换为适合 CD、DVD 与单层蓝光绘图的数据。
 
 ## 界面预览
 
@@ -57,7 +57,7 @@ Windows x64 下载以 `win-x64.exe` 结尾的文件；Windows 11 ARM64 下载以
 
 ### 2. 设计盘面
 
-在设计页点击「导入图片」，或从资源管理器将单张／多张图片拖入设计页，用图层完成排版，并在右栏「影调」模块调整抖动、伽马、亮度与灰阶档位。
+在设计页点击「导入图片」，或从资源管理器将单张／多张图片（支持 PNG、JPEG、BMP、TIFF、GIF 及 ≤32 MiB 的 `.svg` 矢量图）拖入设计页，用图层完成排版，并在右栏「影调」模块调整抖动、伽马、亮度与灰阶档位。`.svg` 图层在编辑阶段保持矢量缩放与 `viewBox` 比例，导出与预览时按需高分辨率渲染；基于 `SharpVectors` 解析，忽略外部资源与脚本，`<filter>`、遮罩（`mask`）或复杂 CSS 类选择器可能会被降级或忽略，建议先导出为静态路径 SVG。
 
 ### 3. 预览与导出
 
@@ -71,7 +71,7 @@ Windows x64 下载以 `win-x64.exe` 结尾的文件；Windows 11 ARM64 下载以
 
 - **CD 支持**：支持任何 CD 。您可导出带格式头的 WAV 音轨及配套 CUE，兼容 cdrecord, ImgBurn等刻录软件；也允许导出 RAW 音轨。详见 [CD 刻录兼容说明](docs/CD_AUDIO_COMPATIBILITY.md)。
 - **DVD 支持**：支持任何 DVD。您可导出 ISO 镜像。
-- **蓝光支持**：支持任何单层 BD-R 25 GB，支持纯绘图与 UDF 2.01 文件。详见 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。
+- **蓝光支持**：支持 25 GB 单层 BD-R 和可验证为无备用区的单层 BD-RE，提供纯绘图与 UDF 2.01 文件输出。详见 [ADDING_BLURAY.md](docs/ADDING_BLURAY.md)。
 - **随盘文件**：CD／DVD／蓝光可在设计页直接选择要保存的文件夹及内圈／外圈位置，也可在导出页调整；设置随工程保存。
 - **CD-Extra（音乐 + 图片）**：CD 工程可在设计页添加 WAV 音乐，音乐写在内圈的第 1 区段，图片作为第 2 区段的数据轨写在外圈，CD 机只播放音乐。设计页随编辑显示音乐区、区段间隔和图片区的半径与盘面占比。详见 [CD-Extra 说明](docs/CD_AUDIO_COMPATIBILITY.md#cd-extra音乐--图片)。
 - **文件区域预览**：混合盘的设计投影和成品读回用蓝色标出文件区（含文件系统）。
@@ -94,15 +94,15 @@ Disc Image Studio 提供粗标定、边界标定和精细标定流程，通过�
 ### 刻录
 
 - **镜像文件输出**：您可以导出完整 ISO / RAW 文件并使用合适的刻录软件手动刻录。
-- **即时流式刻录（实验性）**：CD、DVD 与 BD-R 边生成边刻录，不保存完整镜像；BD-R 走 MMC 顺序写入。
+- **即时流式刻录（实验性）**：CD、DVD 和单层蓝光边生成边刻录，不保存完整镜像。
 - **CD-Extra 刻录（实验性）**：按 Track-at-Once 先写入并关闭音乐区段，再按光驱报告的地址生成并写入图片区段，最后封盘；可先模拟写入。已实刻一张盘并在三台 CD 机上播放正常。
-- **不要使用非空白介质！**
+- 一次写入的盘片必须是空白盘。可覆写盘片在界面确认后才会清除或覆写数据。
 
 ## 系统与设备要求
 
 - x64 桌面版需要 Windows 10 2004（2004/20H1，19041）及以上，或 Windows 11；ARM64 桌面版需要 Windows 11。ARM64 的原生 CI 覆盖软件自检与 GUI 截图，尚未验证实盘刻录。
 - 构建：.NET 10 SDK（`global.json` 锁定 10.0.x）；自行构建的非自包含 GUI 需要 .NET 10 Windows 桌面运行时。Release EXE 已包含运行时，无需另行安装 .NET。
-- “即时刻录”功能需要一台 Windows 可识别的 CD / DVD / BD 刻录机与空白盘片；BD-R 需要支持顺序写入的单层空白盘。
+- “即时刻录”需要 Windows 可识别的刻录机和兼容盘片。BD-R 需要支持顺序写入的单层空白盘。BD-RE 需要可验证的无备用区布局，首次格式化依赖光驱的 RENoSA 支持。
 
 ## 构建与运行
 

@@ -1,3 +1,4 @@
+using System;
 using DiscImageStudio.Localization;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -104,6 +105,17 @@ public partial class MainWindow : Window
     }
 
     // ---- Snapshot hooks (used by UiPreviewRenderer / CLI ui-snapshot) ----
+
+    /// <summary>Last-resort fault reporting for exceptions that escaped every command's own
+    /// handling: details land in the job log and an error toast, so a discarded task
+    /// exception cannot disappear silently and a dispatcher fault does not kill the process.</summary>
+    internal void ReportUnhandledFault(Exception exception)
+    {
+        _shell.AppendLog(
+            $"[{DateTime.Now:HH:mm:ss}] " + L.T("发生未处理的异常：") + L.Error(exception) + "\n"
+            + exception.StackTrace + "\n");
+        _shell.ShowToast(L.T("发生内部错误"), L.Error(exception), ToastKind.Error);
+    }
 
     internal bool IsLivePreviewReady => _shell.LivePreview.IsLivePreviewReady;
 
@@ -446,6 +458,7 @@ public partial class MainWindow : Window
         _workArea.Dispose();
         _shell.Drive.OnWindowClosed();
         _shell.LivePreview.OnWindowClosed();
+        _shell.Design.OnWindowClosed();
         _shell.Calibration.OnWindowClosed();
     }
 
@@ -463,16 +476,11 @@ public partial class MainWindow : Window
         if (BurnConfirmModal.IsOpen)
         {
             // The modal owns the keyboard surface; do not run save/settings shortcuts behind it.
-            if (BurnConfirmModal.HandleKeyDown(e.Key))
+            if (BurnConfirmModal.HandleKeyDown(e.Key, Keyboard.Modifiers))
             {
                 e.Handled = true;
             }
 
-            return;
-        }
-
-        if (e.Key == Key.Escape)
-        {
             return;
         }
 
@@ -481,6 +489,27 @@ public partial class MainWindow : Window
             e.Handled = true;
             OpenSettingsDialog();
             return;
+        }
+
+        // Ctrl+1..5 switch workspaces in sidebar order (design, export, burn, preview,
+        // calibration). Digits carry no text input, so no TextBox guard is needed.
+        if (Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            Workspace? target = e.Key switch
+            {
+                Key.D1 or Key.NumPad1 => Workspace.Design,
+                Key.D2 or Key.NumPad2 => Workspace.Export,
+                Key.D3 or Key.NumPad3 => Workspace.Burn,
+                Key.D4 or Key.NumPad4 => Workspace.Preview,
+                Key.D5 or Key.NumPad5 => Workspace.Calibration,
+                _ => null,
+            };
+            if (target is { } workspace)
+            {
+                e.Handled = true;
+                _shell.NavigateTo(workspace);
+                return;
+            }
         }
 
         if (e.Key == Key.S && Keyboard.Modifiers is ModifierKeys.Control or (ModifierKeys.Control | ModifierKeys.Shift))

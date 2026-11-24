@@ -1,5 +1,6 @@
 using System;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -16,7 +17,8 @@ public partial class SideNavItem : UserControl
         new PropertyMetadata(null, static (sender, _) => ((SideNavItem)sender).UpdateVisual()));
 
     public static readonly DependencyProperty LabelTextProperty = DependencyProperty.Register(
-        nameof(LabelText), typeof(string), typeof(SideNavItem), new PropertyMetadata(string.Empty));
+        nameof(LabelText), typeof(string), typeof(SideNavItem),
+        new PropertyMetadata(string.Empty, static (sender, _) => ((SideNavItem)sender).UpdateAutomationName()));
 
     public static readonly DependencyProperty IsActiveProperty = DependencyProperty.Register(
         nameof(IsActive), typeof(bool), typeof(SideNavItem),
@@ -106,6 +108,21 @@ public partial class SideNavItem : UserControl
         MouseEnter += (_, _) => UpdateVisual();
         MouseLeave += (_, _) => UpdateVisual();
         MouseLeftButtonUp += (_, _) => RaiseEvent(new RoutedEventArgs(ActivatedEvent, this));
+        // Keyboard parity: the item is a tab stop, Enter/Space activate it, and a focused
+        // item wears the hover look so the focus position stays visible.
+        KeyDown += (_, e) =>
+        {
+            if (e.Key is not (Key.Enter or Key.Space))
+            {
+                return;
+            }
+
+            e.Handled = true;
+            RaiseEvent(new RoutedEventArgs(ActivatedEvent, this));
+        };
+        GotKeyboardFocus += (_, _) => UpdateVisual(animate: false);
+        LostKeyboardFocus += (_, _) => UpdateVisual(animate: false);
+        UpdateAutomationName();
         Loaded += (_, _) =>
         {
             ThemeResolver.Changed -= ThemeResolver_Changed;
@@ -133,9 +150,11 @@ public partial class SideNavItem : UserControl
         _idleBackgroundColor = ThemeValues.WithAlpha(_hoverBackgroundColor, 0);
     }
 
+    private void UpdateAutomationName() => AutomationProperties.SetName(this, LabelText);
+
     private void UpdateVisual(bool animate = true)
     {
-        bool hovering = IsMouseOver;
+        bool hovering = IsMouseOver || IsKeyboardFocused;
         AnimateBrush(
             _textBrush,
             IsActive || hovering ? _activeTextColor : _idleTextColor,

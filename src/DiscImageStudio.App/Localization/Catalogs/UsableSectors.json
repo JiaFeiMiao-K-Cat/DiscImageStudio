@@ -1,38 +1,83 @@
 {
   "Xaml.GeometryTotalSectors": {
     "zh-CN": "几何总扇区数",
-    "en": "Geometry sectors"
+    "en": "Geometry sectors",
+    "zh-TW": "幾何總磁區數",
+    "ja": "幾何総セクター数",
+    "tr": "Geometrik sektörler",
+    "es": "Sectores de geometría",
+    "cs": "Sektory geometrie"
   },
   "Xaml.UsableSectors": {
     "zh-CN": "可用扇区数",
-    "en": "Usable sectors"
+    "en": "Usable sectors",
+    "zh-TW": "可用磁區數",
+    "ja": "使用可能なセクター数",
+    "tr": "Kullanılabilir sektörler",
+    "es": "Sectores utilizables",
+    "cs": "Využitelné sektory"
   },
   "Xaml.UsableSectorsHint": {
     "zh-CN": "限制输出长度，不改变总扇区数对应的盘面几何。留空时使用盘型默认预留。",
-    "en": "Limits output length without changing the geometry represented by the total sector count. Leave empty to use the media family's default reserve."
+    "en": "Limits output length without changing the geometry represented by the total sector count. Leave empty to use the media family's default reserve.",
+    "zh-TW": "限制輸出長度，不改變總磁區數對應的碟面幾何。留空時使用碟型預設預留。",
+    "ja": "出力長を制限します。総セクター数に対応するディスク面のジオメトリは変わりません。空欄にすると、ディスク種別の既定の予約領域を使用します。",
+    "tr": "Çıkış uzunluğunu sınırlar; toplam sektör sayısının temsil ettiği disk geometrisini değiştirmez. Boş bırakılırsa disk türünün varsayılan rezervi kullanılır.",
+    "es": "Limita la longitud de salida sin cambiar la geometría que representa el total de sectores. Si se deja vacío, se usa la reserva predeterminada del tipo de disco.",
+    "cs": "Omezuje délku výstupu, aniž by změnila geometrii danou celkovým počtem sektorů. Pokud zůstane prázdné, použije se výchozí rezerva typu disku."
   },
   "可用扇区数": {
     "zh-CN": "可用扇区数",
-    "en": "Usable sectors"
+    "en": "Usable sectors",
+    "zh-TW": "可用磁區數",
+    "ja": "使用可能なセクター数",
+    "tr": "Kullanılabilir sektörler",
+    "es": "Sectores utilizables",
+    "cs": "Využitelné sektory"
   },
   "可用扇区数必须大于 0、不超过总扇区数，且是 {0} 的倍数。": {
     "zh-CN": "可用扇区数必须大于 0、不超过总扇区数，且是 {0} 的倍数。",
-    "en": "Usable sectors must be positive, not exceed total sectors, and be a multiple of {0}."
+    "en": "Usable sectors must be positive, not exceed total sectors, and be a multiple of {0}.",
+    "zh-TW": "可用磁區數必須大於 0、不超過總磁區數，且是 {0} 的倍數。",
+    "ja": "使用可能なセクター数は 0 より大きく、総セクター数を超えず、{0} の倍数である必要があります。",
+    "tr": "Kullanılabilir sektörler 0'dan büyük, toplam sektör sayısını aşmayan ve {0} katı olan bir değer olmalıdır.",
+    "es": "Los sectores utilizables deben ser mayores que 0, no superar el total de sectores y ser un múltiplo de {0}.",
+    "cs": "Využitelné sektory musí být větší než 0, nesmí překročit celkový počet sektorů a musí být násobkem {0}."
   },
   "usableSectors 必须大于 0、不超过 sectors，且是 {0} 的倍数。": {
     "zh-CN": "usableSectors 必须大于 0、不超过 sectors，且是 {0} 的倍数。",
-    "en": "usableSectors must be positive, not exceed sectors, and be a multiple of {0}."
+    "en": "usableSectors must be positive, not exceed sectors, and be a multiple of {0}.",
+    "zh-TW": "usableSectors 必須大於 0、不超過 sectors，且是 {0} 的倍數。",
+    "ja": "usableSectors は 0 より大きく、sectors を超えず、{0} の倍数である必要があります。",
+    "tr": "usableSectors 0'dan büyük, sectors değerini aşmayan ve {0} katı olan bir değer olmalıdır.",
+    "es": "usableSectors debe ser mayor que 0, no superar sectors y ser un múltiplo de {0}.",
+    "cs": "Počet sektorů (usableSectors) musí být větší než 0, nesmí překročit sectors a musí být násobkem {0}."
   },
   "必须大于 0、不超过总扇区数，且是 {0} 的倍数": {
     "zh-CN": "必须大于 0、不超过总扇区数，且是 {0} 的倍数",
-    "en": "must be positive, not exceed total sectors, and be a multiple of {0}"
+    "en": "must be positive, not exceed total sectors, and be a multiple of {0}",
+    "zh-TW": "必須大於 0、不超過總磁區數，且是 {0} 的倍數",
+    "ja": "0 より大きく、総セクター数を超えず、{0} の倍数である必要があります",
+    "tr": "0'dan büyük, toplam sektör sayısını aşmayan ve {0} katı olan bir değer olmalı",
+    "es": "debe ser mayor que 0, no superar el total de sectores y ser un múltiplo de {0}",
+    "cs": "musí být větší než 0, nesmí překročit celkový počet sektorů a musí být násobkem {0}"
   },
   "标定的可用扇区数必须为正数、不超过总扇区数，并符合介质写入对齐要求。": {
     "zh-CN": "标定的可用扇区数必须为正数、不超过总扇区数，并符合介质写入对齐要求。",
-    "en": "Calibration usable sectors must be positive, not exceed total sectors, and satisfy the media write alignment."
+    "en": "Calibration usable sectors must be positive, not exceed total sectors, and satisfy the media write alignment.",
+    "zh-TW": "校準的可用磁區數必須為正數、不超過總磁區數，並符合介質寫入對齊要求。",
+    "ja": "校正の使用可能なセクター数は正の値で、総セクター数を超えず、メディアの書き込みアラインメントに適合する必要があります。",
+    "tr": "Kalibrasyon kullanılabilir sektörleri pozitif olmalı, toplam sektör sayısını aşmamalı ve medyanın yazma hizalamasını karşılamalıdır.",
+    "es": "Los sectores utilizables de la calibración deben ser positivos, no superar el total de sectores y cumplir la alineación de escritura del medio.",
+    "cs": "Využitelné sektory kalibrace musí být kladné, nesmí překročit celkový počet sektorů a musí odpovídat zarovnání zápisu média."
   },
   "CD 粗标的可用扇区数不足以包含最外侧固定地址边界及其后的留白。请增加可用扇区数，或使用边界标定。": {
     "zh-CN": "CD 粗标的可用扇区数不足以包含最外侧固定地址边界及其后的留白。请增加可用扇区数，或使用边界标定。",
-    "en": "The usable CD capacity does not cover the outermost fixed-address calibration edge and the light area after it. Increase usable sectors or use boundary calibration."
+    "en": "The usable CD capacity does not cover the outermost fixed-address calibration edge and the light area after it. Increase usable sectors or use boundary calibration.",
+    "zh-TW": "CD 粗校準的可用磁區數不足以包含最外側固定位址邊界及其後的留白。請增加可用磁區數，或使用邊界校準。",
+    "ja": "CD の概略校正では、使用可能なセクター数が最外周の固定アドレス境界とその後ろの余白を覆うのに足りません。使用可能なセクター数を増やすか、境界校正を使用してください。",
+    "tr": "CD kaba kalibrasyonunda kullanılabilir sektör sayısı, en dıştaki sabit adres sınırını ve ardından gelen boş alanı kapsamaya yetmiyor. Kullanılabilir sektör sayısını artırın veya sınır kalibrasyonunu kullanın.",
+    "es": "La capacidad utilizable del CD no cubre el borde de calibración de dirección fija más externo ni la zona clara posterior. Aumente los sectores utilizables o use la calibración por límites.",
+    "cs": "Využitelná kapacita CD nepokrývá nejvzdálenější hranici kalibrace s pevnou adresou ani světlou oblast za ní. Zvyšte počet využitelných sektorů nebo použijte kalibraci podle hranic."
   }
 }

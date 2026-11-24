@@ -47,7 +47,7 @@ internal static class Program
             return SolveMultipleBlocks(arguments, fillSectors);
         }
 
-        if (ReadBoolean(arguments, "read-compatibility", fallback: false))
+        if (ReadCompatibility(arguments).Enabled)
             throw new ArgumentException("--read-compatibility true requires --fast-output true and --algorithm dispersion.");
 
         string? outputPath = arguments.Has("output") ? arguments.Require("output") : null;
@@ -439,7 +439,7 @@ internal static class Program
             throw new ArgumentException("--fast-output true requires --algorithm dispersion.");
         }
 
-        bool readCompatibility = ReadBoolean(arguments, "read-compatibility", fallback: false);
+        (bool readCompatibility, string readCompatibilityMode) = ReadCompatibility(arguments);
         if (readCompatibility && !fastOutput)
             throw new ArgumentException("--read-compatibility true requires --fast-output true and --algorithm dispersion.");
 
@@ -556,7 +556,8 @@ internal static class Program
             arguments.GetInt("search-lanes", 1),
             arguments.GetInt("fast-parallelism", 0),
             PreserveExistingIso: hybridMode,
-            ReadCompatibility: readCompatibility);
+            ReadCompatibility: readCompatibility,
+            ReadCompatibilityMode: readCompatibilityMode);
         int totalBlocks = checked((int)(fillSectors / DvdEccBlockEncoder.SectorCount));
         int progressEvery = Math.Max(1, totalBlocks / 100);
         if (fastOutput)
@@ -763,7 +764,7 @@ internal static class Program
             + "image sampled at every payload code-word center");
 
         if (options.ReadCompatibility)
-            Console.WriteLine($"read compatibility={options.ReadCompatibilityMode} (experimental drawing-byte protection)");
+            Console.WriteLine($"write compatibility={options.ReadCompatibilityMode} (experimental drawing texture)");
 
         FastDispersionWriteResult result = FastDvdImageFileWriter.WritePrepared(
             arguments.Require("image"),
@@ -1132,6 +1133,24 @@ internal static class Program
         return value;
     }
 
+    private static (bool Enabled, string Mode) ReadCompatibility(CliArguments arguments)
+    {
+        bool enabled = ReadBoolean(arguments, "read-compatibility", fallback: false);
+        if (!arguments.Has("read-compatibility-mode"))
+            return (enabled, DvdReadCompatibilityModes.Current);
+        if (!enabled)
+            throw new ArgumentException("--read-compatibility-mode requires --read-compatibility true.");
+
+        string mode = arguments.Require("read-compatibility-mode") switch
+        {
+            "1" => DvdReadCompatibilityModes.WriteSafeLight,
+            "2" => DvdReadCompatibilityModes.WriteSafeStrong,
+            "3" => DvdReadCompatibilityModes.WriteSafeZone,
+            _ => throw new ArgumentException("--read-compatibility-mode must be 1, 2, or 3."),
+        };
+        return (enabled, mode);
+    }
+
     private static bool ReadBoolean(CliArguments arguments, string key, bool fallback)
     {
         if (!arguments.Has(key))
@@ -1380,7 +1399,9 @@ internal static class Program
                                         (default false; true in hybrid mode)
               --fast-parallelism 0..64 Fast-output workers; 0 selects processor count (default 0)
               --read-compatibility true|false
-                                        Experimental periodic 0x9B protection for fast dispersion (default false)
+                                        Experimental write compatibility for fast dispersion (default false)
+              --read-compatibility-mode 1|2|3
+                                        1 light (default), 2 strong black, 3 strong black in LBA [100000,300000)
               --iterations-per-block N  Full/state-control passes; dispersion ignores search (defaults 100/3/1)
               --iso-output FILE         Write a directly burnable 2048-byte/sector ISO image
               --iso-sectors N           Sector count for a new minimal ISO (image mode reuses total sectors)
@@ -1421,9 +1442,9 @@ internal static class Program
             Other images retain alpha-weighted bilinear sampling. Q=0x66 and 0xB9 are not
             generated; old ISOs retain readback of 66 as black and B9 as nominal dark gray 85.
             With --fast-output true, final ECC/EFM boundary and DSV verification are skipped;
-            the JSON finalBoundary is therefore null. --read-compatibility true optionally replaces
-            eligible white drawing bytes with 0x9B at a 16-byte interval to interrupt long 0x92 runs. It may
-            improve readback on affected drives/media; it is experimental and defaults off.
+            the JSON finalBoundary is therefore null. --read-compatibility true optionally mixes
+            eligible black and white drawing bytes at fixed intervals to interrupt long single-tone runs.
+            It is experimental and defaults off. Strong and zonal modes can make dark areas lighter.
             Full/state-control output and exact scrambled-byte test patterns do not accept this option.
 
             Hybrid --data-dir mode builds a mountable ISO9660/Joliet filesystem. Files default to the inner ring;

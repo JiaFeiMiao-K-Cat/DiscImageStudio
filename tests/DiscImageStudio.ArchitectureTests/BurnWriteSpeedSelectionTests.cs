@@ -1,3 +1,4 @@
+using System.Dynamic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -12,8 +13,44 @@ internal static class BurnWriteSpeedSelectionTests
 {
     internal static void Run()
     {
+        CheckRewritableMediaSpeeds();
         WpfTestHost.Run(CheckSelection);
-        Console.WriteLine("burn-write-speed-selection: repeated selections, refresh and language changes passed (no hardware)");
+        Console.WriteLine("burn-write-speed-selection: rewritable media, repeated selections, refresh and language changes passed (no hardware)");
+    }
+
+    private static void CheckRewritableMediaSpeeds()
+    {
+        object recorder = new();
+        dynamic usedMinusRw = new ExpandoObject();
+        usedMinusRw.CurrentPhysicalMediaType = 0xA;
+        usedMinusRw.CurrentMediaStatus = 0x4000;
+        // Before erase the format lacks both the support query and the speed properties.
+        Require(WindowsImapiBurner.ReadCurrentMediaWriteSpeeds(
+            OpticalBurnMediaKind.DvdData, recorder, (object)usedMinusRw, default).Count == 0,
+            "a finalized DVD-RW defers speed enumeration until after the quick erase");
+
+        dynamic format = new ExpandoObject();
+        format.CurrentPhysicalMediaType = 0x7;
+        format.CurrentMediaStatus = 0x1;
+        format.MediaHeuristicallyBlank = false;
+        format.IsCurrentMediaSupported = new Func<object, bool>(device => ReferenceEquals(device, recorder));
+        dynamic fourTimes = new ExpandoObject();
+        fourTimes.WriteSpeed = 2705;
+        fourTimes.RotationTypeIsPureCAV = false;
+        format.SupportedWriteSpeedDescriptors = new object[] { fourTimes };
+        Require(WindowsImapiBurner.ReadCurrentMediaWriteSpeeds(
+            OpticalBurnMediaKind.DvdData, recorder, (object)format, default)
+            .SequenceEqual(new[] { new OpticalWriteSpeed(2705, false) }),
+            "a formatted DVD+RW advertises 4× before overwrite");
+
+        format.CurrentPhysicalMediaType = 0xA;
+        format.CurrentMediaStatus = 0x2;
+        format.SupportedWriteSpeedDescriptors = Array.Empty<object>();
+        format.SupportedWriteSpeeds = new[] { 2705 };
+        Require(WindowsImapiBurner.ReadCurrentMediaWriteSpeeds(
+            OpticalBurnMediaKind.DvdData, recorder, (object)format, default)
+            .SequenceEqual(new[] { new OpticalWriteSpeed(2705, false) }),
+            "a blank DVD-RW advertises its speed immediately");
     }
 
     private static void CheckSelection()

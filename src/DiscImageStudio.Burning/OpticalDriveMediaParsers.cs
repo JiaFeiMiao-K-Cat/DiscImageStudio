@@ -14,7 +14,8 @@ internal sealed record OpticalAtipInformation(
     string LeadInTime,
     string LeadOutTime,
     long LeadOutSectors,
-    bool IsRewritable);
+    bool IsRewritable,
+    ushort? MediaId);
 
 internal sealed record OpticalTrackInformation(long NextWritableAddress, long FreeSectors);
 
@@ -63,11 +64,24 @@ internal static class OpticalDriveMediaParsers
         long leadOutSectors = MsfToSectors(leadOutMinutes, leadOutSeconds, leadOutFrames) - 150;
         if (leadOutSectors <= 0)
             throw new IOException("光驱返回的 CD 引出区地址无效。");
+        bool isRewritable = (data[6] & 0x40) != 0;
         return new(
             FormatMsf(leadInMinutes, leadInSeconds, leadInFrames),
             FormatMsf(leadOutMinutes, leadOutSeconds, leadOutFrames),
             leadOutSectors,
-            (data[6] & 0x40) != 0);
+            isRewritable,
+            ReadCdAtipMediaId(data.AsSpan(0, Math.Min(data.Length, declared)), isRewritable));
+    }
+
+    private static ushort? ReadCdAtipMediaId(ReadOnlySpan<byte> data, bool isRewritable)
+    {
+        // MMC ATIP A3 Valid and A3 Values. ECMA-395 defines this MID on Ultra Speed CD-RW.
+        if (data.Length < 27 || (data[6] & 1) == 0
+            || (isRewritable && (data[6] & 0x38) is not (0x10 or 0x18)))
+            return null;
+
+        // ECMA-394 and ECMA-395 put Q1–Q16 across the three A3 bytes.
+        return (ushort)(((data[24] & 0x1f) << 11) | ((data[25] & 0x7f) << 4) | ((data[26] >> 3) & 0xf));
     }
 
     internal static string? ParseDvdMinusMediaId(byte[] response)
@@ -83,6 +97,28 @@ internal static class OpticalDriveMediaParsers
         string? manufacturer = CleanMediaCode(payload.Slice(19, 8));
         string? type = CleanMediaCode(payload.Slice(27, 3));
         return manufacturer is null || type is null ? null : $"{manufacturer} {type}";
+    }
+
+    internal static string? ParseBluRayMediaId(byte[] response, bool rewritable)
+    {
+        // The first DI unit holds the manufacturer and media type at offsets 100 and 106.
+        ReadOnlySpan<byte> unit = GetDiscStructurePayload(response, 109);
+        ReadOnlySpan<byte> discType = rewritable ? "BDW"u8 : "BDR"u8;
+        if (!unit[..2].SequenceEqual("DI"u8) || !unit.Slice(8, 3).SequenceEqual(discType))
+            return null;
+
+        string? manufacturer = ReadBluRayMediaCode(unit.Slice(100, 6));
+        string? type = ReadBluRayMediaCode(unit.Slice(106, 3));
+        return manufacturer is null || type is null ? null : $"{manufacturer}-{type}";
+    }
+
+    private static string? ReadBluRayMediaCode(ReadOnlySpan<byte> field)
+    {
+        while (!field.IsEmpty && field[^1] is 0 or 0x20)
+            field = field[..^1];
+        return field.IsEmpty || field.IndexOfAnyExceptInRange((byte)0x20, (byte)0x7e) >= 0
+            ? null
+            : Encoding.ASCII.GetString(field);
     }
 
     internal static OpticalTrackInformation? ParseTrackInformation(byte[] data)

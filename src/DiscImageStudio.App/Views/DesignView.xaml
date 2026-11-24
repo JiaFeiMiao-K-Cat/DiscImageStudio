@@ -171,9 +171,9 @@
                                                 <StackPanel Grid.Column="1" Margin="10,0,6,0" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Name}" Style="{StaticResource RowText}" />
                                                     <TextBlock Style="{StaticResource MicroText}" Margin="0,2,0,0">
-                                                        <Run Text="{Binding TranslateXMm, Mode=OneWay, StringFormat={}{0:F1}}" />
+                                                        <Run Text="{Binding TranslateXMm, Mode=OneWay, StringFormat={}{0:F2}}" />
                                                         <Run Text=", " />
-                                                        <Run Text="{Binding TranslateYMm, Mode=OneWay, StringFormat={}{0:F1}}" />
+                                                        <Run Text="{Binding TranslateYMm, Mode=OneWay, StringFormat={}{0:F2}}" />
                                                         <Run Text=" mm" />
                                                     </TextBlock>
                                                 </StackPanel>
@@ -557,7 +557,7 @@
                                 <Border Width="1" Height="16" Margin="3,0" VerticalAlignment="Center"
                                         Background="{DynamicResource DividerBrush}" />
                                 <Button Style="{StaticResource IconButton}" Click="ResetCanvasZoomClick"
-                                        AutomationProperties.Name="{loc:Text Xaml.FitToWindow2}" ToolTip="{loc:Text Xaml.FitToWindowOrDoubleClickEmptySpace}">
+                                        AutomationProperties.Name="{loc:Text Xaml.FitToWindow}" ToolTip="{loc:Text Xaml.FitToWindowOrDoubleClickEmptySpace}">
                                     <iconPacks:PackIconLucide Kind="RefreshCcw" Width="14" Height="14"
                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
                                 </Button>

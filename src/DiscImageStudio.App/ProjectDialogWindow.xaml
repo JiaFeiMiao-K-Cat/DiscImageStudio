@@ -21,6 +21,7 @@
              Items must stay focusable: a non-focusable ListBoxItem does not select on mouse
              click, which leaves every tab inert. -->
         <Style x:Key="TemplateTabItem" TargetType="ListBoxItem">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
@@ -47,6 +48,7 @@
              brand outline. Fixed width so the WrapPanel reads as a grid. Focusable for the
              same reason as the tabs: otherwise a click never selects the card. -->
         <Style x:Key="TemplateCardItem" TargetType="ListBoxItem">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
             <Setter Property="Width" Value="148" />
             <Setter Property="Cursor" Value="Hand" />
             <!-- Right-click removal, same idiom as the recent-project tiles on the home page.

@@ -16,9 +16,10 @@ internal static class OpticalDriveProbeTests
         TestUnknownProfileUsesAtip();
         TestUnknownProfileWithoutAtip();
         TestBluRayProbe();
+        TestBdReProbe();
         TestBluRayLayoutGate();
         TestParserEdgeCases();
-        Console.WriteLine("optical-drive-probe: passed (CD ATIP, DVD media ID, pressed CD, no media, Blu-ray, read-only commands)");
+        Console.WriteLine("optical-drive-probe: passed (CD ATIP, CD/DVD/Blu-ray media IDs, pressed CD, no media, read-only commands)");
     }
 
     private static void TestCdAtipProbe()
@@ -26,7 +27,9 @@ internal static class OpticalDriveProbeTests
         FakeTransport transport = new();
         transport.Expect(ReadCdb(0x46, 8), 8, 30, Ok(Configuration(0x09)));
         transport.Expect(ReadCdb(0x51, 64), 64, 30, Ok(DiscInformation(0, erasable: false, 0, 1)));
-        transport.Expect(AtipCdb(), 64, 30, Ok(Atip(97, 15, 17, 79, 59, 74, rewritable: false)));
+        byte[] atip = Atip(97, 15, 17, 79, 59, 74, rewritable: false);
+        SetAtipA3(atip, 0x9234);
+        transport.Expect(AtipCdb(), 64, 30, Ok(atip));
         transport.Expect(TrackCdb(1), 48, 30, Ok(TrackInformation(0, 359_847)));
         transport.Expect(PerformanceCdb(read: true), 136, 30, Ok(ReadPerformance(8468)));
         transport.Expect(PerformanceCdb(read: false), 136, 30, Ok(WritePerformance(4234)));
@@ -36,8 +39,8 @@ internal static class OpticalDriveProbeTests
             && media.ProfileName == "CD-R", "CD-R profile is identified");
         Require(media.State == OpticalDiscState.Blank && !media.IsErasable && media.Sessions == 0,
             "blank CD-R state, erasable flag and session count are parsed");
-        Require(media.MediaId is null && media.MediaManufacturer is null,
-            "CD ATIP lead-in is not promoted to a media ID");
+        Require(media.MediaId == "0x9234" && media.MediaManufacturer is null,
+            "CD-R shows its numeric A3 MID independently of its lead-in stamp");
         Require(media.Atip is
             {
                 LeadInTime: "97m15s17f",
@@ -190,6 +193,7 @@ internal static class OpticalDriveProbeTests
         FakeTransport transport = new();
         transport.Expect(ReadCdb(0x46, 8), 8, 30, Ok(Configuration(0x41)));
         transport.Expect(ReadCdb(0x51, 64), 64, 30, Ok(DiscInformation(0, erasable: false, 0, 1)));
+        transport.Expect(BluRayDiCdb(), 128, 30, Ok(BluRayDiscInformation("BDR"u8, "RITEK "u8, "BR2"u8)));
         transport.Expect(TrackCdb(1), 48, 30,
             Ok(TrackInformation(0, 12_219_392, trackSize: 12_219_392)));
         transport.Expect(ReadCdb(0x23, 256), 256, 30, Ok(FormatCapacity(12_219_392, 1)));
@@ -199,32 +203,61 @@ internal static class OpticalDriveProbeTests
         OpticalDriveMediaInfo media = Probe(transport, (12_219_392, 12_219_392));
         Require(media.Family == OpticalDriveMediaFamily.BluRay && media.ProfileName == "BD-R",
             "BD-R profile is identified");
-        Require(media.MediaId is null && media.Atip is null,
-            "Blu-ray does not show a fabricated MID or ATIP data");
+        Require(media.MediaId == "RITEK-BR2" && media.MediaManufacturer == "Ritek" && media.Atip is null,
+            "BD-R shows the disc information media ID and manufacturer without CD ATIP data");
         Require(media.TotalSectors == 12_219_392 && media.UsableSectors == 12_219_392
             && media.FreeSectors == 12_219_392, "blank BD-R uses format capacity and free blocks");
         RequireReadOnlyCommands(transport);
         Require(transport.Remaining == 0, "Blu-ray probe issues no unexpected command");
     }
 
+    private static void TestBdReProbe()
+    {
+        byte[] di = BluRayDiscInformation("BDW"u8, "CMCMAG"u8, "CN2"u8);
+        (int DiscStatus, MmcCommandResult Di, MmcCommandResult Capacities, long Total, OpticalDiscState State, string? Mid)[] cases =
+        [
+            (0, Ok(di), Ok(FormatCapacity(12_219_392, 1, 4096)), 12_219_392, OpticalDiscState.Unformatted, "CMCMAG-CN2"),
+            (2, Failed(5, 0x24, 0), Ok(FormatCapacity(11_826_176, 2, 12_288)), 11_826_176, OpticalDiscState.Formatted, null),
+            (2, Ok(di), Failed(5, 0x20, 0), 12_219_392, OpticalDiscState.Formatted, "CMCMAG-CN2"),
+        ];
+        foreach (var (discStatus, diResult, capacities, total, state, mid) in cases)
+        {
+            const long imapiCapacity = 12_219_392;
+            FakeTransport transport = new();
+            transport.Expect(ReadCdb(0x46, 8), 8, 30, Ok(Configuration(0x43)));
+            transport.Expect(ReadCdb(0x51, 64), 64, 30, Ok(DiscInformation(discStatus, true, 1, 1)));
+            transport.Expect(BluRayDiCdb(), 128, 30, diResult);
+            transport.Expect(ReadCdb(0x23, 256), 256, 30, capacities);
+            transport.Expect(PerformanceCdb(read: true), 136, 30, Ok(ReadPerformance(8990)));
+            transport.Expect(PerformanceCdb(read: false), 136, 30, Ok(WritePerformance(8990)));
+
+            OpticalDriveMediaInfo media = Probe(transport, (imapiCapacity, imapiCapacity));
+            Require(media.ProfileName == "BD-RE" && media.State == state && media.IsErasable,
+                "BD-RE reports format status instead of a sequential session state");
+            Require(media.MediaId == mid && media.MediaManufacturer == (mid is null ? null : "CMC Magnetics"),
+                "BD-RE publishes the optional MID and manufacturer independently of format and capacity");
+            Require(media.TotalSectors == total && media.FreeSectors is null
+                && media.NextWritableAddress is null && media.UsableSectors is null,
+                "BD-RE does not publish total capacity as free space or an unverified writable limit");
+            RequireReadOnlyCommands(transport);
+            Require(transport.Remaining == 0, "BD-RE probe issues no unexpected command");
+        }
+    }
+
     private static void TestBluRayLayoutGate()
     {
-        RequireBluRayUsable(profile: 0x43, formatStatus: 1, spareClusters: 0,
-            trackSize: 12_219_392, blocks: 12_219_392, expectedUsable: 0,
-            "BD-RE never advertises writable sectors for the sequential BD-R workflow");
-        RequireBluRayUsable(profile: 0x41, formatStatus: 2, spareClusters: 0,
+        RequireBluRayUsable(formatStatus: 2, spareClusters: 0,
             trackSize: 12_219_392, blocks: 12_219_392, expectedUsable: 0,
             "formatted BD-R does not advertise writable sectors");
-        RequireBluRayUsable(profile: 0x41, formatStatus: 1, spareClusters: 0,
+        RequireBluRayUsable(formatStatus: 1, spareClusters: 0,
             trackSize: 12_219_360, blocks: 12_219_392, expectedUsable: 0,
             "BD-R with a short track does not advertise writable sectors");
-        RequireBluRayUsable(profile: 0x41, formatStatus: 2, spareClusters: 4096,
+        RequireBluRayUsable(formatStatus: 2, spareClusters: 4096,
             trackSize: 12_219_392, blocks: 12_219_392, expectedUsable: 0,
             "BD-R with allocated spare areas does not advertise writable sectors");
     }
 
     private static void RequireBluRayUsable(
-        int profile,
         int formatStatus,
         int spareClusters,
         int trackSize,
@@ -233,13 +266,11 @@ internal static class OpticalDriveProbeTests
         string message)
     {
         FakeTransport transport = new();
-        transport.Expect(ReadCdb(0x46, 8), 8, 30, Ok(Configuration(profile)));
+        transport.Expect(ReadCdb(0x46, 8), 8, 30, Ok(Configuration(0x41)));
         transport.Expect(ReadCdb(0x51, 64), 64, 30, Ok(DiscInformation(0, erasable: false, 0, 1)));
-        if (profile == 0x41)
-        {
-            transport.Expect(TrackCdb(1), 48, 30,
-                Ok(TrackInformation(0, (int)blocks, trackSize: trackSize)));
-        }
+        transport.Expect(BluRayDiCdb(), 128, 30, Failed(5, 0x24, 0));
+        transport.Expect(TrackCdb(1), 48, 30,
+            Ok(TrackInformation(0, (int)blocks, trackSize: trackSize)));
 
         transport.Expect(ReadCdb(0x23, 256), 256, 30,
             Ok(FormatCapacity(blocks, formatStatus, spareClusters)));
@@ -268,6 +299,17 @@ internal static class OpticalDriveProbeTests
             () => OpticalDriveMediaParsers.ParseAtip(Atip(97, 15, 17, 79, 59, 75, false)),
             "invalid ATIP frames are rejected");
 
+        byte[] rewritableAtip = Atip(97, 15, 17, 79, 59, 74, true);
+        SetAtipA3(rewritableAtip, 0xabcd);
+        Require(OpticalDriveMediaParsers.ParseAtip(rewritableAtip).MediaId is null,
+            "legacy CD-RW subtype does not publish an undefined A3 code");
+        rewritableAtip[6] |= 0x10; // Ultra Speed CD-RW (US24).
+        Require(OpticalDriveMediaParsers.ParseAtip(rewritableAtip).MediaId == 0xabcd,
+            "Ultra Speed CD-RW can publish a valid A3 MID");
+        rewritableAtip[1] = 24;
+        Require(OpticalDriveMediaParsers.ParseAtip(rewritableAtip[..26]).MediaId is null,
+            "a short A3 field leaves the ordinary ATIP fields usable");
+
         byte[] badMarkers = DvdMinusPayload("MCC 03", "RG20");
         badMarkers[16] = 0;
         Require(OpticalDriveMediaParsers.ParseDvdMinusMediaId(DiscStructure(badMarkers)) is null,
@@ -275,6 +317,20 @@ internal static class OpticalDriveProbeTests
         Require(OpticalDriveMediaParsers.ParseDvdPlusMediaId(
             DiscStructure(DvdPlusPayload("MBIPG101", "R05"))) == "MBIPG101 R05",
             "DVD+R media ID combines the ADIP manufacturer and media type");
+
+        byte[] bdReDi = BluRayDiscInformation("BDW"u8, "CMC\0\0\0"u8, "CN "u8);
+        Require(OpticalDriveMediaParsers.ParseBluRayMediaId(bdReDi, rewritable: true) == "CMC-CN",
+            "BD media code trims trailing null and space padding");
+        Require(OpticalDriveMediaParsers.ParseBluRayMediaId(bdReDi, rewritable: false) is null,
+            "BD media ID requires a DI type matching the drive profile");
+        Require(OpticalDriveMediaParsers.ParseBluRayMediaId(
+            BluRayDiscInformation("BDW"u8, "CMCMAG"u8, "C\0N"u8), rewritable: true) is null,
+            "BD media codes with embedded nonprintable bytes are ignored");
+        Throws<IOException>(() => OpticalDriveMediaParsers.ParseBluRayMediaId(bdReDi[..112], rewritable: true),
+            "BD media ID requires both complete fields in the returned bytes");
+        BinaryPrimitives.WriteUInt16BigEndian(bdReDi, 110);
+        Throws<IOException>(() => OpticalDriveMediaParsers.ParseBluRayMediaId(bdReDi, rewritable: true),
+            "BD media ID requires the announced response length to include both fields");
 
         Require(OpticalDriveMediaParsers.ParseTrackInformation(
             TrackInformation(0, 0, nwaValid: false)) is null, "invalid NWA hides track information");
@@ -359,6 +415,14 @@ internal static class OpticalDriveProbeTests
         return data;
     }
 
+    private static void SetAtipA3(byte[] data, ushort mid)
+    {
+        data[6] |= 1;
+        data[24] = (byte)(0x20 | (mid >> 11));
+        data[25] = (byte)(0x80 | ((mid >> 4) & 0x7f));
+        data[26] = (byte)(0x85 | ((mid & 0xf) << 3));
+    }
+
     private static byte[] TrackInformation(int nextWritable, int freeSectors, bool nwaValid = true,
         int trackNumber = 1, int trackStart = 0, int trackSize = 0, bool trackBlank = true)
     {
@@ -428,6 +492,18 @@ internal static class OpticalDriveProbeTests
         return data;
     }
 
+    private static byte[] BluRayDiscInformation(ReadOnlySpan<byte> discType, ReadOnlySpan<byte> manufacturer,
+        ReadOnlySpan<byte> mediaType)
+    {
+        byte[] data = new byte[128];
+        BinaryPrimitives.WriteUInt16BigEndian(data, 4098);
+        "DI"u8.CopyTo(data.AsSpan(4));
+        discType.CopyTo(data.AsSpan(12));
+        manufacturer.CopyTo(data.AsSpan(104));
+        mediaType.CopyTo(data.AsSpan(110));
+        return data;
+    }
+
     private static byte[] FormatCapacity(uint blocks, int formatStatus, int spareClusters = 0)
     {
         byte[] data = new byte[12];
@@ -466,6 +542,8 @@ internal static class OpticalDriveProbeTests
         BinaryPrimitives.WriteUInt16BigEndian(cdb.AsSpan(8, 2), allocationLength);
         return cdb;
     }
+
+    private static byte[] BluRayDiCdb() => [0xad, 1, 0, 0, 0, 0, 0, 0, 0, 128, 0, 0];
 
     private static byte[] PerformanceCdb(bool read)
     {

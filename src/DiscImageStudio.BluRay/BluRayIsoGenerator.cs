@@ -24,7 +24,7 @@ public sealed class BluRayIsoPlan
         Disc = disc;
         DrawingStartSector = 0;
         DrawingEndSectorExclusive = disc.OutputSectors;
-        DrawingStartRadiusMm = disc.InnerRadiusMm;
+        DrawingStartRadiusMm = disc.OutputInnerRadiusMm;
         DrawingEndRadiusMm = disc.OutputOuterRadiusMm;
     }
 
@@ -68,6 +68,18 @@ public sealed class BluRayIsoPlan
     /// its data area. The partition moves as a whole, so the design guide marks their span.</summary>
     public uint PartitionStartSector => _filesystem?.PartitionStartLba ?? 0;
     public uint DataEndSectorExclusive => _filesystem?.DataEndLbaExclusive ?? DrawingEndSectorExclusive;
+
+    /// <summary>Adopts a verified physical layout while preserving the length and input snapshot of this plan.</summary>
+    public BluRayIsoPlan WithPhysicalLayout(uint firstUserDataPhysicalSector, uint userDataSectors)
+    {
+        BluRayDiscParameters disc = Disc.WithPhysicalLayout(firstUserDataPhysicalSector, userDataSectors);
+        if (disc.OutputSectors != TotalSectors)
+            throw new InvalidOperationException("The confirmed BD drawing does not fit within the verified user area.");
+        if (disc == Disc) return this;
+        return _filesystem is null
+            ? new BluRayIsoPlan(disc, DrawingStartSector, DrawingEndSectorExclusive)
+            : new BluRayIsoPlan(disc, _filesystem, DrawingStartSector);
+    }
 }
 
 /// <summary>Writes a UDF filesystem at the selected end, image payload in the remaining

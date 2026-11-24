@@ -43,13 +43,15 @@ public partial class StageBar : UserControl
         nameof(Current), typeof(Workspace), typeof(StageBar),
         new PropertyMetadata(Workspace.Home, static (sender, _) => ((StageBar)sender).RebuildItems()));
 
+    // Stage labels reuse the sidebar's catalog keys so the rail cannot drift from the
+    // navigation wording (a bare "标定" key would show Chinese text under other languages).
     private static readonly (Workspace Workspace, string Key)[] Stages =
     [
-        (Workspace.Design, "设计"),
-        (Workspace.Export, "导出"),
-        (Workspace.Burn, "刻录"),
-        (Workspace.Preview, "预览"),
-        (Workspace.Calibration, "标定"),
+        (Workspace.Design, "Xaml.Design"),
+        (Workspace.Export, "Xaml.Export"),
+        (Workspace.Burn, "Xaml.Burn"),
+        (Workspace.Preview, "Xaml.Preview"),
+        (Workspace.Calibration, "Xaml.Calibration"),
     ];
 
     /// <summary>The stage that opens the second group; the rail draws its divider ahead of it.</summary>

@@ -1,4 +1,13 @@
 {
+  "实时预览失败": {
+    "zh-CN": "实时预览失败",
+    "en": "Live preview failed",
+    "zh-TW": "即時預覽失敗",
+    "ja": "ライブ プレビューに失敗しました",
+    "tr": "Canlı önizleme başarısız",
+    "es": "Falló la vista previa en directo",
+    "cs": "Živý náhled selhal"
+  },
   "\n\n如果写入已经开始，当前盘片可能无法继续使用。": {
     "zh-CN": "\n\n如果写入已经开始，当前盘片可能无法继续使用。",
     "en": "\n\nIf writing has started, the disc may no longer be usable.",
@@ -133,6 +142,114 @@
     "tr": "BD-R · {0} sektör",
     "es": "BD-R · {0} sectores",
     "cs": "BD-R · {0} sektorů"
+  },
+  "Burn.BdReSectors": {
+    "zh-CN": "BD-RE · {0} 扇区",
+    "en": "BD-RE · {0} sectors",
+    "zh-TW": "BD-RE · {0} 磁區",
+    "ja": "BD-RE · {0} セクター",
+    "tr": "BD-RE · {0} sektör",
+    "es": "BD-RE · {0} sectores",
+    "cs": "BD-RE · {0} sektorů"
+  },
+  "Burn.BdRePreflight": {
+    "zh-CN": "修改 BD-RE 前会再次核对盘片并确认本次操作。",
+    "en": "The disc will be checked again and you will confirm the operation before the BD-RE is changed.",
+    "zh-TW": "修改 BD-RE 前會再次核對光碟並確認本次操作。",
+    "ja": "BD-RE を変更する前に、ディスクを再確認し、操作の確認を求めます。",
+    "tr": "BD-RE değiştirilmeden önce disk yeniden denetlenecek ve işlemi onaylamanız istenecek.",
+    "es": "Antes de modificar el BD-RE, se comprobará de nuevo el disco y se pedirá confirmación de la operación.",
+    "cs": "Před změnou BD-RE se disk znovu ověří a potvrdíte požadovanou operaci."
+  },
+  "Burn.BdReFormatTitle": {
+    "zh-CN": "确认格式化 BD-RE",
+    "en": "Confirm BD-RE formatting",
+    "zh-TW": "確認格式化 BD-RE",
+    "ja": "BD-RE のフォーマットを確認",
+    "tr": "BD-RE biçimlendirmesini onayla",
+    "es": "Confirmar el formateo del BD-RE",
+    "cs": "Potvrdit formátování BD-RE"
+  },
+  "Burn.BdReFormatBody": {
+    "zh-CN": "将把这张未格式化的 BD-RE 初始化为无备用区格式，然后从逻辑扇区 0 写入。",
+    "en": "This unformatted BD-RE will be initialized without spare areas, then written from logical sector 0.",
+    "zh-TW": "將把這張未格式化的 BD-RE 初始化為無備用區格式，然後從邏輯磁區 0 寫入。",
+    "ja": "未フォーマットの BD-RE を予備領域なしで初期化し、論理セクター 0 から書き込みます。",
+    "tr": "Bu biçimlendirilmemiş BD-RE yedek alan olmadan başlatılacak, ardından mantıksal sektör 0'dan yazılacak.",
+    "es": "Este BD-RE sin formatear se inicializará sin áreas de reserva y se grabará desde el sector lógico 0.",
+    "cs": "Tento nenaformátovaný disk BD-RE se inicializuje bez náhradních oblastí a zápis začne od logického sektoru 0."
+  },
+  "Burn.BdReFormatAction": {
+    "zh-CN": "格式化并刻录",
+    "en": "Format and burn",
+    "zh-TW": "格式化並燒錄",
+    "ja": "フォーマットして書き込む",
+    "tr": "Biçimlendir ve yaz",
+    "es": "Formatear y grabar",
+    "cs": "Naformátovat a vypálit"
+  },
+  "Burn.BdReReformatTitle": {
+    "zh-CN": "确认重新格式化 BD-RE",
+    "en": "Confirm BD-RE reformatting",
+    "zh-TW": "確認重新格式化 BD-RE",
+    "ja": "BD-RE の再フォーマットを確認",
+    "tr": "BD-RE'yi yeniden biçimlendirmeyi onayla",
+    "es": "Confirmar el reformateo del BD-RE",
+    "cs": "Potvrdit přeformátování BD-RE"
+  },
+  "Burn.BdReReformatBody": {
+    "zh-CN": "将整盘重新格式化为无备用区布局，盘上现有数据将丢失。格式化完成后开始刻录。",
+    "en": "The entire disc will be reformatted without spare areas. All existing data will be lost. Burning starts after formatting.",
+    "zh-TW": "將整片光碟重新格式化為無備用區配置，光碟上現有資料將遺失。格式化完成後開始燒錄。",
+    "ja": "ディスク全体を予備領域なしで再フォーマットします。既存のデータはすべて失われます。フォーマット完了後に書き込みを開始します。",
+    "tr": "Diskin tamamı yedek alan olmadan yeniden biçimlendirilecek. Mevcut tüm veriler kaybolacak. Yazma, biçimlendirmeden sonra başlar.",
+    "es": "Se reformateará todo el disco sin áreas de reserva. Se perderán todos los datos existentes. La grabación comenzará al terminar el formateo.",
+    "cs": "Celý disk se přeformátuje bez náhradních oblastí. Veškerá stávající data se ztratí. Vypalování začne po formátování."
+  },
+  "Burn.BdReReformatAction": {
+    "zh-CN": "重新格式化并刻录",
+    "en": "Reformat and burn",
+    "zh-TW": "重新格式化並燒錄",
+    "ja": "再フォーマットして書き込む",
+    "tr": "Yeniden biçimlendir ve yaz",
+    "es": "Reformatear y grabar",
+    "cs": "Přeformátovat a vypálit"
+  },
+  "Burn.BdReOverwriteTitle": {
+    "zh-CN": "确认覆写 BD-RE",
+    "en": "Confirm BD-RE overwrite",
+    "zh-TW": "確認覆寫 BD-RE",
+    "ja": "BD-RE の上書きを確認",
+    "tr": "BD-RE üzerine yazmayı onayla",
+    "es": "Confirmar la sobrescritura del BD-RE",
+    "cs": "Potvrdit přepsání BD-RE"
+  },
+  "Burn.BdReOverwriteBody": {
+    "zh-CN": "将从逻辑扇区 0 覆写本次写入范围。该范围内的旧数据将丢失，范围以外的旧数据可能保留。",
+    "en": "The write will overwrite its range starting at logical sector 0. Existing data in that range will be lost. Old data beyond it may remain.",
+    "zh-TW": "將從邏輯磁區 0 覆寫本次寫入範圍。該範圍內的舊資料將遺失，範圍以外的舊資料可能保留。",
+    "ja": "論理セクター 0 から今回の書き込み範囲を上書きします。範囲内の既存データは失われ、範囲外の古いデータは残る場合があります。",
+    "tr": "Yazma işlemi mantıksal sektör 0'dan başlayarak kendi aralığının üzerine yazacak. Bu aralıktaki veriler kaybolacak. Aralığın ötesindeki eski veriler kalabilir.",
+    "es": "La grabación sobrescribirá su intervalo desde el sector lógico 0. Se perderán los datos de ese intervalo. Los datos antiguos fuera de él pueden permanecer.",
+    "cs": "Zápis přepíše svůj rozsah od logického sektoru 0. Stávající data v tomto rozsahu se ztratí. Mimo něj mohou stará data zůstat."
+  },
+  "Burn.BdReOverwriteAction": {
+    "zh-CN": "覆写并刻录",
+    "en": "Overwrite and burn",
+    "zh-TW": "覆寫並燒錄",
+    "ja": "上書きして書き込む",
+    "tr": "Üzerine yaz ve kaydet",
+    "es": "Sobrescribir y grabar",
+    "cs": "Přepsat a vypálit"
+  },
+  "Burn.BdReCalibrationLayoutChanged": {
+    "zh-CN": "实际盘片布局与保存的蓝光标定地址不符，无法刻录此标定目标。",
+    "en": "The actual disc layout does not match the saved Blu-ray calibration addresses. This calibration target cannot be burned.",
+    "zh-TW": "實際光碟配置與儲存的藍光校正位址不符，無法燒錄此校正目標。",
+    "ja": "実際のディスク配置は保存済みの Blu-ray キャリブレーション アドレスと一致しません。このキャリブレーション ターゲットは書き込めません。",
+    "tr": "Diskin gerçek düzeni kayıtlı Blu-ray kalibrasyon adresleriyle uyuşmuyor. Bu kalibrasyon hedefi yazılamaz.",
+    "es": "La disposición real del disco no coincide con las direcciones de calibración Blu-ray guardadas. No se puede grabar este objetivo de calibración.",
+    "cs": "Skutečné rozložení disku neodpovídá uloženým kalibračním adresám Blu-ray. Tento kalibrační terč nelze vypálit."
   },
   "CD 内半径": {
     "zh-CN": "CD 内半径",
@@ -619,6 +736,60 @@
     "tr": "{0}; gerçek hız yazıcı tarafından belirlenir.",
     "es": "{0}; la grabadora determina la velocidad real.",
     "cs": "{0}; skutečnou rychlost určí vypalovačka."
+  },
+  "已允许覆写 DVD±RW：非空白盘会被整盘擦除，空白盘照常写入。开始后取消或断电仍可能使盘片报废。是否继续？": {
+    "zh-CN": "已允许覆写 DVD±RW：非空白盘会被整盘擦除，空白盘照常写入。开始后取消或断电仍可能使盘片报废。是否继续？",
+    "en": "DVD±RW overwrite is enabled: a non-blank disc will be erased completely and blank discs are written as usual. Canceling or losing power after writing starts may still ruin the disc. Continue?",
+    "zh-TW": "已允許覆寫 DVD±RW：非空白光碟會被整片抹除，空白光碟照常寫入。開始後取消或斷電仍可能使光碟報廢。是否繼續？",
+    "ja": "DVD±RW の上書きを許可しました。空でないディスクは全体が消去され、空のディスクは通常どおり書き込まれます。開始後にキャンセルしたり電源が切れたりすると、ディスクが使用できなくなる可能性があります。続行しますか？",
+    "tr": "DVD±RW üzerine yazma etkin: boş olmayan disk tamamen silinir, boş diskler normal şekilde yazılır. Yazma başladıktan sonra iptal etmek veya elektriğin kesilmesi diski kullanılamaz hale getirebilir. Devam edilsin mi?",
+    "es": "Sobrescritura de DVD±RW activada: un disco no virgen se borrará por completo y los discos vírgenes se graban con normalidad. Cancelar o perder la alimentación tras comenzar la escritura puede inutilizar el disco. ¿Continuar?",
+    "cs": "Přepis DVD±RW je povolen: neprázdný disk bude zcela smazán, prázdné disky se zapíší obvyklým způsobem. Zrušení nebo výpadek napájení po začátku zápisu může disk zničit. Pokračovat?"
+  },
+  "擦除已有数据前会另行确认。开始后取消或断电可能使盘片报废。是否继续？": {
+    "zh-CN": "擦除已有数据前会另行确认。开始后取消或断电可能使盘片报废。是否继续？",
+    "en": "You will be asked again before existing data is erased. Canceling or losing power after recording starts may render the disc unusable. Continue?",
+    "zh-TW": "抹除現有資料前會另行確認。開始後取消或斷電可能使光碟報廢。是否繼續？",
+    "ja": "既存データを消去する前に、改めて確認が表示されます。書き込み開始後にキャンセルしたり電源が切れたりすると、ディスクが使用できなくなる可能性があります。続行しますか？",
+    "tr": "Mevcut veriler silinmeden önce ayrıca onay istenecek. Yazma başladıktan sonra iptal etmek veya güç kesintisi diski kullanılamaz hale getirebilir. Devam edilsin mi?",
+    "es": "Se volverá a preguntar antes de borrar los datos existentes. Cancelar o perder la alimentación tras comenzar la grabación puede inutilizar el disco. ¿Continuar?",
+    "cs": "Před smazáním stávajících dat se ještě jednou zeptáme. Zrušení nebo výpadek napájení po zahájení vypalování může disk zničit. Pokračovat?"
+  },
+  "确认清除盘片数据": {
+    "zh-CN": "确认清除盘片数据",
+    "en": "Confirm loss of disc data",
+    "zh-TW": "確認清除光碟資料",
+    "ja": "ディスク データの消去確認",
+    "tr": "Disk verilerinin kaybını onayla",
+    "es": "Confirmar la pérdida de datos del disco",
+    "cs": "Potvrzení ztráty dat disku"
+  },
+  "光驱：{0}\n盘片：{1}\n\n": {
+    "zh-CN": "光驱：{0}\n盘片：{1}\n\n",
+    "en": "Drive: {0}\nDisc: {1}\n\n",
+    "zh-TW": "光碟機：{0}\n光碟：{1}\n\n",
+    "ja": "ドライブ：{0}\nディスク：{1}\n\n",
+    "tr": "Sürücü: {0}\nDisk: {1}\n\n",
+    "es": "Unidad: {0}\nDisco: {1}\n\n",
+    "cs": "Mechanika: {0}\nDisk: {1}\n\n"
+  },
+  "继续刻录将先擦除盘片，原有数据将丢失。是否继续？": {
+    "zh-CN": "继续刻录将先擦除盘片，原有数据将丢失。是否继续？",
+    "en": "The disc will be erased before recording. Existing data will be lost. Continue?",
+    "zh-TW": "繼續燒錄將先抹除光碟，原有資料將遺失。是否繼續？",
+    "ja": "書き込みを続けると、まずディスクが消去され、既存のデータは失われます。続行しますか？",
+    "tr": "Yazmaya devam etmek için disk önce silinir; mevcut veriler kaybolur. Devam edilsin mi?",
+    "es": "El disco se borrará antes de grabar. Los datos existentes se perderán. ¿Continuar?",
+    "cs": "Před vypalováním bude disk smazán a stávající data budou ztracena. Pokračovat?"
+  },
+  "擦除并刻录": {
+    "zh-CN": "擦除并刻录",
+    "en": "Erase and record",
+    "zh-TW": "抹除並燒錄",
+    "ja": "消去して書き込む",
+    "tr": "Sil ve yaz",
+    "es": "Borrar y grabar",
+    "cs": "Smazat a vypálit"
   },
   "仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？": {
     "zh-CN": "仅允许空白盘。开始后取消或断电可能使盘片报废。是否继续？",
@@ -1124,6 +1295,15 @@
     "es": "El disco informa de {0} configuraciones de escritura. El modo automático usa el valor más bajo: ",
     "cs": "Disk hlásí konfigurace zápisu: {0}. Automatický režim použije nejnižší hodnotu: "
   },
+  "当前盘片未提供可选速度，将自动选择。若需擦除盘片，擦除后会重新读取速度。": {
+    "zh-CN": "当前盘片未提供可选速度，将自动选择。若需擦除盘片，擦除后会重新读取速度。",
+    "en": "Selectable speeds are unavailable. Speed will be selected automatically. If the disc needs erasing, speeds will be queried again afterward.",
+    "zh-TW": "目前光碟片未提供可選速度，將自動選擇。若需抹除光碟片，抹除後會重新讀取速度。",
+    "ja": "このディスクは選択可能な速度を提供していません。速度は自動的に選択されます。ディスクの消去が必要な場合、消去後に速度を再び読み取ります。",
+    "tr": "Disk seçilebilir hız sunmuyor; hız otomatik seçilecek. Diskin silinmesi gerekiyorsa, silme işleminden sonra hızlar yeniden okunur.",
+    "es": "El disco no ofrece velocidades seleccionables; se elegirá automáticamente. Si hay que borrar el disco, las velocidades se volverán a consultar después.",
+    "cs": "Disk nenabízí žádné volitelné rychlosti; rychlost se vybere automaticky. Pokud je potřeba disk smazat, rychlosti se po smazání načtou znovu."
+  },
   "当前盘片未报告可选速度，将使用刻录接口的保守回退设置。": {
     "zh-CN": "当前盘片未报告可选速度，将使用刻录接口的保守回退设置。",
     "en": "The disc did not report available speeds. The burn interface will use its conservative fallback.",
@@ -1249,15 +1429,6 @@
     "tr": "Serpiştirilmemiş",
     "es": "Sin intercalado",
     "cs": "Bez prokládání"
-  },
-  "未检测到支持 IMAPI2 的 CD/DVD/BD 刻录机。": {
-    "zh-CN": "未检测到支持 IMAPI2 的 CD/DVD/BD 刻录机。",
-    "en": "No IMAPI2-compatible CD/DVD/BD recorder was found.",
-    "zh-TW": "未偵測到支援 IMAPI2 的 CD/DVD/BD 燒錄機。",
-    "ja": "IMAPI2 対応の CD/DVD/BD ドライブが見つかりませんでした。",
-    "tr": "IMAPI2 uyumlu CD/DVD/BD yazıcısı bulunamadı.",
-    "es": "No se encontró ninguna grabadora CD/DVD/BD compatible con IMAPI2.",
-    "cs": "Nenašla se žádná vypalovačka CD/DVD/BD s podporou IMAPI2."
   },
   "未能读取当前盘片速度，将使用刻录接口的保守回退设置：": {
     "zh-CN": "未能读取当前盘片速度，将使用刻录接口的保守回退设置：",
@@ -1934,22 +2105,22 @@
     "es": "Importa primero una imagen en la página Diseño. La composición se añadirá automáticamente.",
     "cs": "Nejprve importujte obrázek na stránce Návrh. Složený obrázek se doplní automaticky."
   },
-  "请先在辅助标定工作区创建图案。": {
-    "zh-CN": "请先在辅助标定工作区创建图案。",
-    "en": "Create a pattern in the Calibration workspace first.",
-    "zh-TW": "請先在輔助校準工作區建立圖案。",
+  "请先在标定工作区创建图案。": {
+    "zh-CN": "请先在标定工作区创建图案。",
+    "en": "Create a pattern in the calibration workspace first.",
+    "zh-TW": "請先在校準工作區建立圖案。",
     "ja": "先にキャリブレーション ワークスペースでパターンを作成してください。",
-    "tr": "Önce Yardımcı Kalibrasyon çalışma alanında bir desen oluşturun.",
-    "es": "Crea primero un patrón en el espacio de trabajo Calibrar.",
+    "tr": "Önce Kalibrasyon çalışma alanında bir desen oluşturun.",
+    "es": "Crea primero un patrón en el espacio de trabajo de calibración.",
     "cs": "Nejprve vytvořte vzor na stránce Kalibrace."
   },
-  "请先在辅助标定工作区创建图案，再回到这里刻录。": {
-    "zh-CN": "请先在辅助标定工作区创建图案，再回到这里刻录。",
-    "en": "Create a pattern in the Calibration workspace, then return here to burn it.",
-    "zh-TW": "請先在輔助校準工作區建立圖案，再回到這裡燒錄。",
+  "请先在标定工作区创建图案，再回到这里刻录。": {
+    "zh-CN": "请先在标定工作区创建图案，再回到这里刻录。",
+    "en": "Create a pattern in the calibration workspace, then return here to burn it.",
+    "zh-TW": "請先在校準工作區建立圖案，再回到這裡燒錄。",
     "ja": "先にキャリブレーション ワークスペースでパターンを作成してから、ここに戻って書き込んでください。",
-    "tr": "Önce Yardımcı Kalibrasyon çalışma alanında bir desen oluşturun, ardından diske yazmak için buraya dönün.",
-    "es": "Crea un patrón en el espacio de trabajo Calibrar y vuelve aquí para grabarlo.",
+    "tr": "Önce Kalibrasyon çalışma alanında bir desen oluşturun, ardından diske yazmak için buraya dönün.",
+    "es": "Crea un patrón en el espacio de trabajo de calibración y vuelve aquí para grabarlo.",
     "cs": "Nejprve vytvořte vzor na stránce Kalibrace, pak se sem vraťte a vypalte ho."
   },
   "请先选择 {0}。": {
@@ -2149,5 +2320,14 @@
     "tr": "; dosyalar dış halkada, desen iç tarafta",
     "es": "; archivos en la zona exterior, dibujo por dentro",
     "cs": "; soubory na vnějším prstenci, kresba blíž ke středu"
+  },
+  "未检测到可用的光盘刻录机。请连接刻录机后点按「刷新」。": {
+    "zh-CN": "未检测到可用的光盘刻录机。请连接刻录机后点按「刷新」。",
+    "en": "No optical recorder was found. Connect a recorder, then press Refresh.",
+    "zh-TW": "未偵測到可用的光碟燒錄機。請連接燒錄機後點按「重新整理」。",
+    "ja": "使用できる光学ドライブが見つかりませんでした。ドライブを接続して「更新」を押してください。",
+    "tr": "Kullanılabilir bir optik yazıcı bulunamadı. Bir yazıcı bağlayıp Yenile'ye basın.",
+    "es": "No se encontró ninguna grabadora óptica disponible. Conecte una grabadora y pulse Actualizar.",
+    "cs": "Nenašla se žádná dostupná vypalovačka. Připojte vypalovačku a stiskněte Obnovit."
   }
 }

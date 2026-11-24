@@ -18,7 +18,7 @@
                     <Rectangle Width="1" Height="14" Fill="{DynamicResource DividerBrush}"
                                Margin="12,0,6,0" VerticalAlignment="Center"
                                Visibility="{Binding GroupDividerVisibility}" />
-                    <Button Click="Stage_Click" Focusable="False" Cursor="Hand"
+                    <Button Click="Stage_Click" Cursor="Hand" FocusVisualStyle="{DynamicResource FocusRing}"
                             AutomationProperties.Name="{Binding Label}">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
@@ -32,6 +32,9 @@
                                     </Trigger>
                                     <Trigger Property="IsPressed" Value="True">
                                         <Setter TargetName="Hot" Property="Background" Value="{DynamicResource PressedOverlayBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsFocused" Value="True">
+                                        <Setter TargetName="Hot" Property="Background" Value="{DynamicResource HoverOverlayBrush}" />
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>

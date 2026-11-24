@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using DiscImageStudio.ViewModels;
@@ -29,6 +30,28 @@ public partial class ToastHost : UserControl
             toast.Close();
         }
     }
+
+    private void ToastAction_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is ToastItem toast)
+        {
+            toast.Action?.Invoke();
+            toast.Close();
+        }
+    }
+
+    // Reading pauses: a hovered or keyboard-focused card holds its countdown and resumes
+    // it when the pointer or focus leaves. Close() already stopped the timer, so pausing
+    // during the exit animation is a no-op.
+    private static ToastItem? ToastOf(object sender) => (sender as FrameworkElement)?.DataContext as ToastItem;
+
+    private void ToastCard_MouseEnter(object sender, MouseEventArgs e) => ToastOf(sender)?.PauseLifetime();
+
+    private void ToastCard_MouseLeave(object sender, MouseEventArgs e) => ToastOf(sender)?.ResumeLifetime();
+
+    private void ToastCard_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => ToastOf(sender)?.PauseLifetime();
+
+    private void ToastCard_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => ToastOf(sender)?.ResumeLifetime();
 
     private void HookExitAnimations()
     {

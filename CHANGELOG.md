@@ -4,20 +4,68 @@
 
 ### 中文
 
-- Windows 应用宿主设置 `CetCompat=false`，作为 #229 所报启动失败的兼容性处理；这会降低该应用进程的硬件影子栈保护，不修改系统级安全设置。受影响原机上的启动结果仍待验证。
-- 新增 Windows ARM64 自包含单文件 EXE；Windows x64 与 ARM64 分别在原生 runner 上构建并对最终发布文件执行自检、音轨生成和 GUI 截图检查，Release 复用这些已测试制品。ARM64 使用 Windows 11，CI 仅覆盖软件检查，尚未验证实盘刻录。
-- 设计页支持从资源管理器拖入单张或多张图片。
-- 设计页占用区引导改用 CD、DVD、BD 的真实布局规划器，并按可用（可写）容量计算，包含文件系统元数据、逐文件扇区取整与对齐；与 #96 的碎片化放置共用与图片无关的元数据预留。外圈放置文件时同时标出内圈元数据，支持多个环形区域。文件夹或盘片参数变化后延迟合并计算，图片编辑不再触发重算。
-- 生成 CD／DVD 数据盘 ISO 时校验卷标长度：超过 Joliet 的 16 个字符会在写入前报错，不再静默截断；导出页的卷标输入限制为 16 个字符并显示提示，蓝光 UDF 卷标不受影响。
-- 关于页在 GitHub 按钮左侧新增「检查更新」：从上游 GitHub Release 的 `latest.json` 获取正式版信息，按当前处理器架构下载便携 EXE，核对长度与 SHA-256 后替换并重启；替换失败或新版本启动即退出时恢复旧 EXE，应用目录不可写时提示手动下载。更新包与清单未签名，完整性只相对发布清单有意义。
+- 新增铼德 Excellent X DVD+RW 4× 内置预设（MID `RITEK-004-48`，圈码 `VW47H-01062`）：内半径 23.941751 mm、外半径 58.143818 mm、2,295,104 扇区，三项轨距系数取自[讨论 #191](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/discussions/191)。该盘片已完成一次整盘 DVD+RW 覆写刻录。
+- 键盘可达性补全：阶段条、标定步骤手风琴、标题栏窗口按钮、侧边栏导航项与返回／工程头按钮现在可以获得键盘焦点；侧边栏项支持 Enter／空格激活；新增 Ctrl+1..5 按侧栏顺序切换工作区（设计／导出／刻录／预览／标定）。
+- 术语统一：标定工作区在侧边栏、页头、阶段条与相关提示中统一为「标定」（原页头作「辅助标定」）；删除 Xaml.Calibration2／ProjectSettings2／FitToWindow2 三个重复文案键。
+- 设置窗口在有未保存修改时关闭会先弹出保存／放弃／取消确认，不再因 Esc 或关闭按钮静默丢弃修改。
+- 修复右上角信息弹窗（toast）无法手动关闭的问题：toast 宿主此前整体命中测试不可见，而 WPF 会把命中测试不可见元素的全部后代强制为不可见，导致关闭按钮收不到点击；现在点击关闭按钮可立即关闭弹窗，不必等待自动过期。
+- 统一键盘焦点指示：新增 FocusRingBrush 令牌与共享焦点环，按钮、复选框、单选框、下拉项、滑杆、侧边栏导航项、阶段条与标题栏按钮在键盘聚焦时显示同一主色圆角环；文本框／下拉框保留自身聚焦光晕并停用系统虚线框，不再混用两套焦点样式。
+
+- 修复两类静默失败：应用宿主捕获调度器未处理异常与未观察的任务异常，写入任务日志并以错误 toast 提示，单个操作失败不再可能直接退出进程；「清空最近工程」现在需要确认，避免一次点击清掉全部记录。
+- 刻录按钮禁用时在按钮上直接说明原因（任务运行中／正在准备／未选刻录机／未勾选确认）；错误与警告 toast 分别停留 15 与 10 秒（原为 6 秒）；「?」帮助提示支持键盘聚焦并在聚焦时显示同一提示，同时写入 `AutomationProperties.HelpText` 供读屏使用。
+- 补齐 7 个本地化目录（标定校验错误、工程校验信息、标定拟合诊断、可用扇区、标定弹窗、工作流、标定介质）缺失的繁体中文、日语、西班牙语、土耳其语与捷克语译文共约 990 条；这些语言在相应页面不再回退到英文。
+
+- DVD 兼容性（实验性）改用 #188 的 WriteSafe，提供三档，启用时默认第 1 档。DVD 导出、流式刻录和新标定靶使用所选档位，已有标定靶和镜像继续识别各自的配方。较强的档位可能降低深色对比度或在区间边缘留下亮度变化。
+
 - 新增 CD-Extra（音乐 + 图片）：音乐写在内圈第 1 区段，图片作为第 2 区段的 Mode 1 数据轨写在外圈，音频 CD 机只播放第 1 区段。设计页新增「音乐（CD-Extra）」卡片，可添加或拖入 44.1 kHz、16 位、立体声 PCM WAV（含 WAVE_FORMAT_EXTENSIBLE 封装；原样写入，不转码），调整顺序，并显示时长以及音乐区、区段间隔和图片区的半径与面积占比；画布、影调和预览页标出音乐区与间隔。
 - CD-Extra 导出与命令行：导出页生成第 2 区段 ISO（ISO9660/Joliet 使用整盘绝对 LBA）和 `.iso.json`，可填写外部刻录后实测的第 2 区段起点；`cd-generate`、`cd-preview-warp` 新增 `--music` 与 `--session2-start-lba`（接受 `cdrecord -msinfo` 的原样输出）。含音乐的工程保存可选的 `cdExtra` 字段并写为 schemaVersion 3，旧版本会提示版本不受支持；其他工程仍为 schemaVersion 2。
 - CD-Extra 程序内刻录（实验性）：用 Track-at-Once 先写入并关闭音乐区段，再按光驱报告的第 2 区段起点生成图片并封盘，可先做不改变盘片的模拟写入。已实刻一张盘并在三台 CD 机上播放正常（总时间显示为 79:59，不影响播放），目前只有一台刻录机的结果。
+
+### English
+
+- Added a built-in preset for the RiTEK Excellent X DVD+RW 4× (MID `RITEK-004-48`, ring code `VW47H-01062`): inner radius 23.941751 mm, outer radius 58.143818 mm, 2,295,104 sectors, with the three track-pitch coefficients contributed in [Discussion #191](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/discussions/191). The same disc completed one full-disc DVD+RW overwrite burn.
+- Keyboard accessibility: the stage rail, the calibration step accordion, the title-bar window buttons, the sidebar navigation items and the back/project-header buttons now take keyboard focus; sidebar items activate with Enter/Space; Ctrl+1..5 switches workspaces in sidebar order (design, export, burn, preview, calibration).
+- Terminology: the calibration workspace is now consistently called "Calibration" across the sidebar, page header, stage rail and related hints (the page header previously read "auxiliary calibration"); removed the duplicated Xaml.Calibration2/ProjectSettings2/FitToWindow2 catalog keys.
+- The settings window now shows a save/discard/cancel confirmation before closing with unsaved edits instead of silently discarding them on Escape or the close button.
+- Fixed the top-right toast notifications not being dismissible by hand: the toast host was hit-test-invisible, and WPF forces IsHitTestVisible=false onto every descendant of a hit-test-invisible element, so the close button never received clicks; clicking the close button now dismisses the toast immediately instead of waiting for the timeout.
+- Unified keyboard focus indication: a new FocusRingBrush token and a shared focus ring now appear around buttons, check boxes, radio buttons, combo items, sliders, sidebar navigation items, the stage rail and the title-bar buttons on keyboard focus; text boxes and combo boxes keep their own focus glow and opt out of the system dotted rectangle, so two focus styles no longer mix.
+
+- Fix two classes of silent failure: the application host catches unhandled dispatcher exceptions and unobserved task exceptions, writes them to the job log and shows an error toast, so one failing operation can no longer take down the process; clearing the recent-projects list now asks for confirmation.
+- The disabled burn button explains its missing precondition on itself (job running / preparing / no recorder selected / confirmation unchecked); error and warning toasts stay visible for 15 and 10 seconds respectively (previously 6); the "?" help hint is keyboard-focusable, shows the same tooltip on focus and exposes `AutomationProperties.HelpText` for screen readers.
+- Filled about 990 missing Traditional Chinese, Japanese, Spanish, Turkish and Czech translations in seven localization catalogs (calibration validation errors, project validation messages, calibration fit diagnostics, usable sectors, calibration popups, workflows, calibration media); those languages no longer fall back to English on the affected pages.
+
+- DVD compatibility (experimental) now uses WriteSafe from #188 with three selectable levels. Enabling the option defaults to level 1. DVD export, streaming burns and new calibration targets use the selection, while existing targets and images retain their original recipe. Stronger settings can reduce dark-area contrast or leave a brightness change at the zone boundaries.
+
+- Add CD-Extra (music + picture): the music goes into session 1 on the inner rings and the picture becomes the Mode 1 data track of session 2 on the outer rings, so audio CD players play session 1 only. The design page gains a "Music (CD-Extra)" card that adds 44.1 kHz 16-bit stereo PCM WAV files, also in the WAVE_FORMAT_EXTENSIBLE container, by button or drag and drop (written unchanged, never transcoded), reorders them, and shows the lengths plus the radius and area share of the music, the session gap and the picture. The canvas, tone and preview pages mark the music and the gap.
+- CD-Extra export and command line: the export page writes the session 2 ISO (ISO 9660/Joliet with whole-disc absolute LBAs) and its `.iso.json`, and accepts a measured session 2 start for music burned elsewhere. `cd-generate` and `cd-preview-warp` gain `--music` and `--session2-start-lba` (which also takes raw `cdrecord -msinfo` output). Projects with music store an optional `cdExtra` field and are written as schemaVersion 3, which older builds report as unsupported; all other projects stay at schemaVersion 2.
+- In-app CD-Extra burning (experimental): Track-at-Once writes and closes the music session, then the picture is generated for the session 2 start the recorder reports and the disc is closed. An optional test write leaves the disc unchanged. One disc has been burned and plays on three CD players (they show a total time of 79:59, which does not affect playback); this is the result of a single recorder so far.
+
+## [1.6.0] - 2026-11-15
+
+### 中文
+
+- Windows 设计页新增 `.svg` 矢量图导入（支持「导入图片」筛选器及资源管理器拖拽，单文件上限 32 MiB）。引入纯托管 IL 的 `SharpVectors.Wpf` `1.8.6`（`BSD-3-Clause` 及随包 MIT 声明已并入 `THIRD-PARTY-NOTICES.txt`），导入与工程打开均在后台线程解码并冻结为 WPF 矢量 `DrawingImage`，画布排版、缩略图与工程异步预加载均以 `ImageSource` 保留矢量表示并保持 `viewBox` 比例与留白，仅在 `DesignComposer.Render` 生成预览或导出 PNG 时一次性栅格化；解析器禁用 DTD、限制嵌套深度、图元数量、实体与文档长度、忽略外部资源引用，将文字转为几何路径并过滤无可见图元的空白画布。跨平台 CLI 与底层介质编码模块不变。
+- Windows 应用宿主设置 `CetCompat=false`，作为 #229 所报启动失败的兼容性处理；这会降低该应用进程的硬件影子栈保护，不修改系统级安全设置。受影响原机上的启动结果仍待验证。
+- 新增 Windows ARM64 自包含单文件 EXE；Windows x64 与 ARM64 分别在原生 runner 上构建并对最终发布文件执行自检、音轨生成和 GUI 截图检查，Release 复用这些已测试制品。ARM64 使用 Windows 11，CI 仅覆盖软件检查，尚未验证实盘刻录。
+- 设计页支持从资源管理器拖入单张或多张图片，沿用导入按钮的图层适配和错误提示。忙碌时禁用导入，文件夹和不支持的文件会被忽略。
+- 预览失败时清除上一张预览图及其导出入口，状态行和占位区保留失败原因。切换界面语言会翻译错误提示，失败画面保持清空。
+- 设计页占用区引导改用 CD、DVD、BD 的真实布局规划器，并按可用（可写）容量计算，包含文件系统元数据、逐文件扇区取整与对齐；与 #96 的碎片化放置共用与图片无关的元数据预留。外圈放置文件时同时标出内圈元数据，支持多个环形区域。文件夹或盘片参数变化后延迟合并计算，图片编辑不再触发重算。
+- 设计页的占用区引导改用主题蓝色，提高不透明度，并显示在图层和选择框上方，以便在浅色图片上辨认。
+- 影调和预览页的文件区域叠加层和图例也使用主题蓝色。影调页图例移至设计画布左下角，腾出右侧空间。
+- 设计页图层卡片移除上移、下移和删除按钮。可拖拽排序，通过行菜单或 Delete 键删除。随盘文件选择按钮改为「浏览…」。
+- 移除「显示数据占用区」开关，蓝色引导始终显示。
+- 项目侧边栏新增只读光驱与介质卡片，显示光驱型号、固件、介质类型、容量、写入状态和速度。连接多台光驱时可以切换查看，刻录期间暂停探测。光驱卡片取代侧边栏手动折叠按钮。
+- 随盘文件位于外圈时，可打开「外缘出血」，将有效容量限制在总扇区数约 95% 并按介质写入单位向下对齐。该设置适用于 CD、DVD 和 BD 的布局、预览、导出及刻录，工程和标定沿用原始容量。
+- 修复调整盘片参数时，设计合成与实时预览、影调预览并发访问同一个临时文件导致的共享冲突。
+- 生成 CD／DVD 数据盘 ISO 时校验卷标长度：超过 Joliet 的 16 个字符会在写入前报错，不再静默截断；导出页的卷标输入限制为 16 个字符并显示提示，蓝光 UDF 卷标不受影响。
+- 关于页在 GitHub 按钮左侧新增「检查更新」：从上游 GitHub Release 的 `latest.json` 获取正式版信息，按当前处理器架构下载便携 EXE，核对长度与 SHA-256 后替换并重启；替换失败或新版本启动即退出时恢复旧 EXE，应用目录不可写时提示手动下载。更新包与清单未签名，完整性只相对发布清单有意义。
+- 新增默认关闭的「允许覆写已写入的 DVD±RW」刻录选项。确认后，已使用的 DVD-RW 会先快速擦除再按空白盘刻录，已使用的 DVD+RW 会复用现有格式直接覆写。DVD+RW 在首次格式化后不会再回到 IMAPI 的空白（`BLANK`）状态：擦除只替换盘上内容，`IDiscFormat2Data` 始终报告 `OVERWRITE_ONLY`，旧版本因此会一直以「DVD 不是空白盘」拒绝再次刻录。勾选后刻录请求设置 `IDiscFormat2Data::ForceOverwrite`，由 IMAPI 从 LBA 0 整盘覆写；容量检查改用盘片总扇区数，写入前仍要求盘片处于可覆写状态，一次性 DVD-R／DVD+R 继续只接受空白盘。确认对话框会说明覆写将清除旧内容。实盘验证：MATSHITA DVD+-RW UJ8B1（固件 D.03）配 RITEK DVD+RW，2,295,104 扇区，2.4×，事件流 `StartLba=0`、`LastWrittenLba=2,295,103`，写入 1,500,173 ms 后正常关闭会话，盘面图案可见；尚未执行读回比对，也没有其他设备或盘片的数据。
 - CD 音轨读回预览接受 WAVE_FORMAT_EXTENSIBLE 封装的 44.1 kHz、16 位立体声 PCM WAV（不少编辑软件这样导出）；浮点、24 位和多声道仍然拒绝。
 - CD 输出格式：加入随盘文件使输出变为 ISO 后，再去掉随盘文件时恢复为之前选择的 .raw 或 .wav，不再一律变成 .wav；打开工程时按该工程保存的输出路径决定，不沿用上一个工程的选择。
 
 ### English
 
+- Added `.svg` vector artwork import to the Windows design workspace (supported in the artwork picker and drag-and-drop, capped at 32 MiB per file). Using pure managed IL `SharpVectors.Wpf` `1.8.6` (BSD 3-Clause and bundled MIT notices added to `THIRD-PARTY-NOTICES.txt`), SVGs decode off the UI thread into frozen WPF `DrawingImage` instances and flow through interactive import, layer state, thumbnails, and project background preloading as `ImageSource`, preserving vector edges and explicit `viewBox` whitespace until a single rasterization pass in `DesignComposer.Render` for preview or export PNGs. Parsing disallows DTDs and caps element nesting depth, element count, and entity and document sizes, ignores external resource references, converts text to geometry, and rejects blank SVGs with no visible drawing primitives. The cross-platform CLI and disc encoding modules remain unchanged.
 - Set `CetCompat=false` on the Windows application host as a compatibility workaround for the startup failure reported in #229. This reduces hardware shadow-stack protection for this application process without changing system-wide security settings. Startup on the affected original machine still needs verification.
 - Add a self-contained single-file Windows ARM64 EXE. Windows x64 and ARM64 builds run on native runners and check the final executables with self-tests, audio-track generation and GUI snapshots; releases reuse those tested artifacts. ARM64 uses Windows 11. CI covers software checks only; physical disc burning on ARM64 remains unverified.
 - Import one or multiple images by dragging files from Explorer onto the design page, using the same layer fitting and failure messages as the import button. Folders and unrelated files are ignored, and imports are disabled while a job is running.
@@ -27,11 +75,12 @@
 - The tone and preview pages now use the same theme blue for their file-region overlay and legend. The tone panel's legend moved to the design canvas bottom-left corner, so it no longer consumes right-rail height.
 - Removed the move-up, move-down, and delete buttons from the design layer card. Reordering stays on drag, and deletion remains available from the row menu and the Del key. The disc-file picker buttons now read "Browse…".
 - Removed the "Show data occupancy area" toggle; the blue guide is always visible.
+- Add a read-only drive and media card to the project sidebar with the recorder model, firmware, medium type, capacity, write state and speeds. Select a recorder when several are connected. Polling pauses during burning. The card replaces the manual sidebar collapse button.
+- Turn on outer-ring bleed when disc files are on the outer ring to cap usable capacity at approximately 95% of the total sectors, rounded down to the medium's write alignment. The setting applies to layout, preview, export and burning for CD, DVD and BD. Projects and calibration retain the original capacity.
+- Fix file-sharing failures when design compositing, live preview and tone preview access the same temporary file after disc parameters change.
 - Validate volume-label length when generating CD/DVD data ISOs: labels longer than Joliet's 16 characters now fail before writing instead of being silently truncated. The export page limits label input to 16 characters with a hint; Blu-ray UDF labels are unaffected.
 - Add "Check for updates" to the About page, left of the GitHub button. It reads the stable release manifest (`latest.json`) from upstream GitHub Releases, downloads the portable EXE for the current processor architecture, verifies its length and SHA-256, then replaces the running file and restarts. A failed replacement, or a new build that exits during startup, restores the old EXE; a non-writable application folder prompts a manual download. The manifest and EXE remain unsigned, so integrity only holds relative to the published manifest.
-- Add CD-Extra (music + picture): the music goes into session 1 on the inner rings and the picture becomes the Mode 1 data track of session 2 on the outer rings, so audio CD players play session 1 only. The design page gains a "Music (CD-Extra)" card that adds 44.1 kHz 16-bit stereo PCM WAV files, also in the WAVE_FORMAT_EXTENSIBLE container, by button or drag and drop (written unchanged, never transcoded), reorders them, and shows the lengths plus the radius and area share of the music, the session gap and the picture. The canvas, tone and preview pages mark the music and the gap.
-- CD-Extra export and command line: the export page writes the session 2 ISO (ISO 9660/Joliet with whole-disc absolute LBAs) and its `.iso.json`, and accepts a measured session 2 start for music burned elsewhere. `cd-generate` and `cd-preview-warp` gain `--music` and `--session2-start-lba` (which also takes raw `cdrecord -msinfo` output). Projects with music store an optional `cdExtra` field and are written as schemaVersion 3, which older builds report as unsupported; all other projects stay at schemaVersion 2.
-- In-app CD-Extra burning (experimental): Track-at-Once writes and closes the music session, then the picture is generated for the session 2 start the recorder reports and the disc is closed. An optional test write leaves the disc unchanged. One disc has been burned and plays on three CD players (they show a total time of 79:59, which does not affect playback); this is the result of a single recorder so far.
+- Added an opt-in "allow overwriting a used DVD±RW" burn option. After confirmation, a used DVD-RW is quick-erased and burned as blank media, while a used DVD+RW is overwritten using its existing format. A DVD+RW never returns to IMAPI's `BLANK` state after its first format: erasing only replaces the disc contents, `IDiscFormat2Data` keeps reporting `OVERWRITE_ONLY`, and previous versions therefore always refused the disc with "DVD is not blank". With the option enabled the burn request sets `IDiscFormat2Data::ForceOverwrite` so IMAPI rewrites the disc from LBA 0, the capacity check uses the disc's total sector count, and the write still requires an overwritable media state; write-once DVD-R/DVD+R remain blank-only. The confirmation dialog explains that overwriting erases the previous contents. Physical validation: MATSHITA DVD+-RW UJ8B1 (firmware D.03) with a RITEK DVD+RW, 2,295,104 sectors at 2.4×; the event stream reported `StartLba=0` and `LastWrittenLba=2,295,103`, the write returned after 1,500,173 ms and the session closed normally, with a visible drawing on the disc. Read-back comparison and data for other drives or media are still pending.
 - CD track read-back preview accepts WAVE_FORMAT_EXTENSIBLE 44.1 kHz 16-bit stereo PCM WAVs, as several editors export them; float, 24-bit and multichannel files are still rejected.
 - CD output format: removing the disc files after they turned the output into an ISO restores the .raw or .wav chosen before instead of always .wav; opening a project takes the format from that project's saved output path, not from the previous project.
 
