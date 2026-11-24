@@ -77,6 +77,10 @@ public partial class ToneViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasFileRegionOverlay;
 
+    /// <summary>The preview shows CD-Extra bands: music (amber) and the session gap (grey).</summary>
+    [ObservableProperty]
+    private bool _hasMusicRegionOverlay;
+
     [ObservableProperty]
     private string _tonePreviewStatus = L.T("导入图片后自动生成预览。");
 
@@ -171,6 +175,9 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.CdVolumeLabel)
             or nameof(DiscParametersState.CdFilesAtOuterRing)
             or nameof(DiscParametersState.CdOuterRingBleed)
+            or nameof(DiscParametersState.CdExtraEnabled)
+            or nameof(DiscParametersState.CdMusicAtOuterRing)
+            or nameof(DiscParametersState.CdMusicTracks)
             or nameof(DiscParametersState.DvdInnerRadius)
             or nameof(DiscParametersState.DvdOuterRadius)
             or nameof(DiscParametersState.DvdUsableSectors)
@@ -290,6 +297,7 @@ public partial class ToneViewModel : ObservableObject
 
             int samplesPerSector;
             bool hasFileRegionOverlay;
+            bool hasMusicRegionOverlay = false;
             if (IsBluRay)
             {
                 BluRayDiscParameters parameters = ReadBluRayPreviewParameters();
@@ -371,10 +379,46 @@ public partial class ToneViewModel : ObservableObject
                     ? _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc)
                     : string.Empty;
                 bool filesAtOuterRing = _state.CdFilesAtOuterRing;
+                IReadOnlyList<string>? music = _state.CdExtraEnabled ? _state.CdMusicTracks : null;
+                bool musicAtOuterRing = _state.CdMusicAtOuterRing;
+                // Audio-only projects may carry a legacy label the hidden field cannot fix.
+                string extraLabel = music is null ? string.Empty : _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc);
                 hasFileRegionOverlay = dataDirectory.Length > 0;
-                await StaWorker.RunAsync(() =>
+                (bool files, bool bands) = await StaWorker.RunAsync(() =>
                 {
                     cancellationToken.ThrowIfCancellationRequested();
+                    if (music is not null)
+                    {
+                        // CD-Extra: only the picture session is drawn; the music ring and
+                        // the session gap are marked as bands.
+                        CdExtraPlan extra = CdExtraPlanner.Plan(parameters, music,
+                            dataDirectory.Length == 0 ? null : dataDirectory, extraLabel, filesAtOuterRing,
+                            cancellationToken: cancellationToken, musicAtOuterRing: musicAtOuterRing);
+                        cancellationToken.ThrowIfCancellationRequested();
+                        if (extra.IsValid && extra.Layout!.MusicAtOuterRing)
+                        {
+                            // Music on the outer rings: the picture is an audio track that
+                            // ends where the music starts; the music ring is marked as a band.
+                            CdTrackGenerator.PreviewWarp(sourcePath, outputPath,
+                                CdImageGenerator.HiddenPictureParameters(parameters, extra.Layout), display,
+                                TonePreviewSize, samplesPerSector, tone, cancellationToken);
+                            FileRegionPreviewOverlay.ApplyOuterMusic(outputPath, display, extra.Layout, cancellationToken);
+                            return (false, true);
+                        }
+                        if (extra.IsValid)
+                        {
+                            CdDataImageGenerator.PreviewWarp(sourcePath, outputPath, parameters, display,
+                                TonePreviewSize, samplesPerSector, tone, extra.DataPlan, cancellationToken);
+                            FileRegionPreviewOverlay.ApplyCdExtra(outputPath, display, extra.Layout!,
+                                extra.DataPlan!, cancellationToken);
+                            return (dataDirectory.Length > 0, true);
+                        }
+                        // Only an empty music list falls back to the picture-only disc; any
+                        // other problem would preview a disc that export and burn refuse.
+                        if (extra.Problem != CdExtraPlanProblem.NoMusic)
+                            throw new InvalidOperationException(CdExtraPlanner.DescribeProblem(extra));
+                    }
+
                     CdDataLayoutPlan? plan = dataDirectory.Length > 0
                         ? CdDataImageGenerator.PrepareLayout(dataDirectory, parameters, volumeLabel, filesAtOuterRing)
                         : null;
@@ -391,8 +435,10 @@ public partial class ToneViewModel : ObservableObject
                         CdTrackGenerator.PreviewWarp(sourcePath, outputPath, parameters, display,
                             TonePreviewSize, samplesPerSector, tone, cancellationToken);
                     }
-                    return 0;
+                    return (plan is not null, false);
                 });
+                hasFileRegionOverlay = files;
+                hasMusicRegionOverlay = bands;
             }
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -421,6 +467,7 @@ public partial class ToneViewModel : ObservableObject
             TonePreviewImage = bitmap;
             HasTonePreview = true;
             HasFileRegionOverlay = hasFileRegionOverlay;
+            HasMusicRegionOverlay = hasMusicRegionOverlay;
             _tonePreviewRendering = false;
             _tonePreviewError = null;
             _tonePreviewReady = true;
@@ -440,6 +487,7 @@ public partial class ToneViewModel : ObservableObject
                 TonePreviewImage = null;
                 HasTonePreview = false;
                 HasFileRegionOverlay = false;
+                HasMusicRegionOverlay = false;
                 _tonePreviewReady = false;
                 TempFiles.TryDeleteTemporaryFile(_lastTonePreviewPath);
                 _lastTonePreviewPath = null;
@@ -477,6 +525,7 @@ public partial class ToneViewModel : ObservableObject
         TonePreviewImage = null;
         HasTonePreview = false;
         HasFileRegionOverlay = false;
+        HasMusicRegionOverlay = false;
         _tonePreviewReady = false;
         _tonePreviewRendering = false;
         _tonePreviewError = null;

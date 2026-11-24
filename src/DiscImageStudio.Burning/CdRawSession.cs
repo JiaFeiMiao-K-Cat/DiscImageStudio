@@ -51,6 +51,13 @@ internal interface ICdRawImageSession : IDisposable
     // sectorType must equal the type requested from the RawCD format. IMAPI cannot
     // detect a mismatch because both supported layouts use 2448-byte sectors.
     IStream CreateImage(IStream content, int sectorType);
+
+    /// <summary>With a layout, the content becomes the pre-gap of track 1 and several audio
+    /// tracks instead of one track. Sessions that only build one track refuse a layout.</summary>
+    IStream CreateImage(IStream content, int sectorType, CdAudioDiscLayout? layout)
+        => layout is null
+            ? CreateImage(content, sectorType)
+            : throw new NotSupportedException("This CD image session records a single track.");
 }
 
 internal sealed class DynamicCdRawSession(object format, Action<object>? reportWriteProgress = null) : ICdRawSession
@@ -129,6 +136,7 @@ internal sealed class DynamicCdRawImageSession : ICdRawImageSession
 
     private readonly dynamic _creator;
     private object? _resultImage;
+    private SequentialSliceSource? _slices;
     private bool _disposed;
 
     internal DynamicCdRawImageSession()
@@ -144,6 +152,9 @@ internal sealed class DynamicCdRawImageSession : ICdRawImageSession
     internal int ResultingImageType => Convert.ToInt32(_creator.ResultingImageType);
 
     public IStream CreateImage(IStream audioContent, int sectorType)
+        => CreateImage(audioContent, sectorType, null);
+
+    public IStream CreateImage(IStream audioContent, int sectorType, CdAudioDiscLayout? layout)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(audioContent);
@@ -160,7 +171,22 @@ internal sealed class DynamicCdRawImageSession : ICdRawImageSession
         _creator.ResultingImageType = sectorType;
         // AddTrack expects WAV-order PCM without a header. The RAW image creator
         // preserves the supplied sample bytes; it does not correct big-endian input.
-        _creator.AddTrack(AudioSectorType, audioContent);
+        if (layout is null)
+        {
+            _creator.AddTrack(AudioSectorType, audioContent);
+        }
+        else
+        {
+            // The creator reads the pre-gap and the tracks in disc order while the image is
+            // written, so they can be consecutive parts of the one generated stream. Its
+            // default (gapless) mode adds no silence between the tracks.
+            layout.Validate();
+            _slices = new SequentialSliceSource(audioContent);
+            if (layout.PregapSectors > 0)
+                _creator.AddSpecialPregap(_slices.Take(layout.PregapSectors * CdAudioDiscLayout.SectorBytes));
+            foreach (long sectors in layout.TrackSectors)
+                _creator.AddTrack(AudioSectorType, _slices.Take(sectors * CdAudioDiscLayout.SectorBytes));
+        }
         _resultImage = _creator.CreateResultImage();
         return (IStream)_resultImage;
     }
@@ -182,5 +208,7 @@ internal sealed class DynamicCdRawImageSession : ICdRawImageSession
         {
             Marshal.FinalReleaseComObject(_creator);
         }
+
+        _slices?.Release();
     }
 }

@@ -29,6 +29,7 @@ public static class Iso9660ImageWriter
         internal readonly string _primaryVolumeLabel;
         internal readonly string _jolietVolumeLabel;
         internal readonly DateTimeOffset _timestamp;
+        internal readonly uint _lbaBias;
 
         internal LayoutPlan(
             string sourceDirectory,
@@ -38,7 +39,8 @@ public static class Iso9660ImageWriter
             Layout layout,
             string primaryVolumeLabel,
             string jolietVolumeLabel,
-            DateTimeOffset timestamp)
+            DateTimeOffset timestamp,
+            uint lbaBias = 0)
         {
             SourceDirectory = sourceDirectory;
             VolumeSectors = volumeSectors;
@@ -48,6 +50,7 @@ public static class Iso9660ImageWriter
             _primaryVolumeLabel = primaryVolumeLabel;
             _jolietVolumeLabel = jolietVolumeLabel;
             _timestamp = timestamp;
+            _lbaBias = lbaBias;
             List<IsoNode> files = EnumerateFiles(root).ToList();
             FileCount = files.Count;
             DirectoryCount = directories.Count;
@@ -71,20 +74,36 @@ public static class Iso9660ImageWriter
         public uint FileDataStartLba => _layout.FileDataStartLba;
 
         public bool FilesAtOuterRing => _layout.FilesAtOuterRing;
+
+        /// <summary>Absolute disc LBA of volume sector 0. Every LBA serialised into the
+        /// filesystem is offset by this value (a later session starts at its next writable
+        /// address, as with mkisofs -C). Stream positions and layout properties stay
+        /// relative to the start of the volume.</summary>
+        public uint LbaBias => _lbaBias;
     }
 
+    /// <param name="lbaBias">Absolute disc LBA where this volume starts. Zero keeps the
+    /// single-session layout byte-identical; a later CD session passes its start address.</param>
     public static LayoutPlan Plan(
         string? sourceDirectory,
         uint volumeSectors,
         string volumeLabel,
         DateTimeOffset? timestamp = null,
-        bool filesAtOuterRing = false)
+        bool filesAtOuterRing = false,
+        uint lbaBias = 0)
     {
         if (volumeSectors <= FirstMetadataLba)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(volumeSectors),
                 "Hybrid ISO volume is too small for filesystem metadata.");
+        }
+
+        if ((ulong)lbaBias + volumeSectors > uint.MaxValue)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(lbaBias),
+                "The volume would extend beyond the 32-bit ISO9660 address range.");
         }
 
         ArgumentNullException.ThrowIfNull(volumeLabel);
@@ -110,7 +129,8 @@ public static class Iso9660ImageWriter
             layout,
             primaryVolumeLabel,
             jolietVolumeLabel,
-            timestamp ?? DateTimeOffset.UtcNow);
+            timestamp ?? DateTimeOffset.UtcNow,
+            lbaBias);
     }
 
     public static void WriteSequentialPrefix(
@@ -193,54 +213,57 @@ public static class Iso9660ImageWriter
 
     private static void WriteMetadata(LayoutPlan plan, SequentialIsoWriter output)
     {
+        // Only serialised addresses carry the session bias; the stream itself always
+        // starts at volume sector 0. With a zero bias the bytes are unchanged.
+        uint bias = plan._lbaBias;
         output.WriteAtLba(PrimaryVolumeDescriptorLba, BuildVolumeDescriptor(
             type: 1,
-            plan.VolumeSectors,
+            checked(bias + plan.VolumeSectors),
             plan._primaryVolumeLabel,
             plan._layout.PrimaryPathTableBytes,
-            plan._layout.PrimaryLittlePathTableLba,
-            plan._layout.PrimaryBigPathTableLba,
-            plan._root.PrimaryDirectoryLba,
+            checked(bias + plan._layout.PrimaryLittlePathTableLba),
+            checked(bias + plan._layout.PrimaryBigPathTableLba),
+            checked(bias + plan._root.PrimaryDirectoryLba),
             plan._root.PrimaryDirectoryBytes,
             joliet: false,
             plan._timestamp));
         output.WriteAtLba(SupplementaryVolumeDescriptorLba, BuildVolumeDescriptor(
             type: 2,
-            plan.VolumeSectors,
+            checked(bias + plan.VolumeSectors),
             plan._jolietVolumeLabel,
             plan._layout.JolietPathTableBytes,
-            plan._layout.JolietLittlePathTableLba,
-            plan._layout.JolietBigPathTableLba,
-            plan._root.JolietDirectoryLba,
+            checked(bias + plan._layout.JolietLittlePathTableLba),
+            checked(bias + plan._layout.JolietBigPathTableLba),
+            checked(bias + plan._root.JolietDirectoryLba),
             plan._root.JolietDirectoryBytes,
             joliet: true,
             plan._timestamp));
         output.WriteAtLba(TerminatorLba, BuildTerminator());
         output.WriteAtLba(
             plan._layout.PrimaryLittlePathTableLba,
-            BuildPathTable(plan._directories, littleEndian: true, joliet: false));
+            BuildPathTable(plan._directories, littleEndian: true, joliet: false, bias));
         output.WriteAtLba(
             plan._layout.PrimaryBigPathTableLba,
-            BuildPathTable(plan._directories, littleEndian: false, joliet: false));
+            BuildPathTable(plan._directories, littleEndian: false, joliet: false, bias));
         output.WriteAtLba(
             plan._layout.JolietLittlePathTableLba,
-            BuildPathTable(plan._directories, littleEndian: true, joliet: true));
+            BuildPathTable(plan._directories, littleEndian: true, joliet: true, bias));
         output.WriteAtLba(
             plan._layout.JolietBigPathTableLba,
-            BuildPathTable(plan._directories, littleEndian: false, joliet: true));
+            BuildPathTable(plan._directories, littleEndian: false, joliet: true, bias));
 
         foreach (IsoNode directory in plan._directories)
         {
             output.WriteAtLba(
                 directory.PrimaryDirectoryLba,
-                BuildDirectoryExtent(directory, joliet: false));
+                BuildDirectoryExtent(directory, joliet: false, bias));
         }
 
         foreach (IsoNode directory in plan._directories)
         {
             output.WriteAtLba(
                 directory.JolietDirectoryLba,
-                BuildDirectoryExtent(directory, joliet: true));
+                BuildDirectoryExtent(directory, joliet: true, bias));
         }
 
     }
@@ -480,7 +503,8 @@ public static class Iso9660ImageWriter
     private static byte[] BuildPathTable(
         IEnumerable<IsoNode> directories,
         bool littleEndian,
-        bool joliet)
+        bool joliet,
+        uint lbaBias)
     {
         using MemoryStream table = new();
         byte[] numeric = new byte[6];
@@ -489,7 +513,7 @@ public static class Iso9660ImageWriter
             byte[] identifier = directory.Parent is null ? [0] : IdentifierBytes(directory, joliet);
             table.WriteByte(checked((byte)identifier.Length));
             table.WriteByte(0);
-            uint extentLba = joliet ? directory.JolietDirectoryLba : directory.PrimaryDirectoryLba;
+            uint extentLba = checked(lbaBias + (joliet ? directory.JolietDirectoryLba : directory.PrimaryDirectoryLba));
             ushort parentNumber = directory.Parent?.DirectoryNumber ?? 1;
             if (littleEndian)
             {
@@ -513,14 +537,14 @@ public static class Iso9660ImageWriter
         return table.ToArray();
     }
 
-    private static byte[] BuildDirectoryExtent(IsoNode directory, bool joliet)
+    private static byte[] BuildDirectoryExtent(IsoNode directory, bool joliet, uint lbaBias)
     {
         int extentBytes = joliet ? directory.JolietDirectoryBytes : directory.PrimaryDirectoryBytes;
         byte[] extent = new byte[extentBytes];
         int offset = 0;
-        uint currentLba = joliet ? directory.JolietDirectoryLba : directory.PrimaryDirectoryLba;
+        uint currentLba = checked(lbaBias + (joliet ? directory.JolietDirectoryLba : directory.PrimaryDirectoryLba));
         IsoNode parent = directory.Parent ?? directory;
-        uint parentLba = joliet ? parent.JolietDirectoryLba : parent.PrimaryDirectoryLba;
+        uint parentLba = checked(lbaBias + (joliet ? parent.JolietDirectoryLba : parent.PrimaryDirectoryLba));
         int parentBytes = joliet ? parent.JolietDirectoryBytes : parent.PrimaryDirectoryBytes;
         AddDirectoryRecord(extent, ref offset, BuildDirectoryRecord(
             currentLba,
@@ -539,6 +563,10 @@ public static class Iso9660ImageWriter
             uint childLba = child.IsDirectory
                 ? joliet ? child.JolietDirectoryLba : child.PrimaryDirectoryLba
                 : child.DataLba;
+            // An empty outer-ring file is planned at extent 0 and owns no sector;
+            // keep that placeholder instead of pointing it into the session.
+            if (child.IsDirectory || child.DataLength != 0 || child.DataLba != 0)
+                childLba = checked(lbaBias + childLba);
             long childBytes = child.IsDirectory
                 ? joliet ? child.JolietDirectoryBytes : child.PrimaryDirectoryBytes
                 : child.DataLength;

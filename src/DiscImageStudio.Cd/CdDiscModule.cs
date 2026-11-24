@@ -54,7 +54,7 @@ public sealed class CdDiscModule : IOpticalDiscModule
             new DiscCommandDescriptor(
                 "cd-generate",
                 "Generate CD audio or data image",
-                "Without files, writes WAV/CUE or RAW audio; with --data-dir, writes a Mode 1 ISO with inner/outer-ring files.",
+                "Without files, writes WAV/CUE or RAW audio; with --data-dir, writes a Mode 1 ISO with inner/outer-ring files; with --music, writes a WAV/CUE with the picture in the pre-gap of track 1 and the music behind it, or with --music-position inner the picture session ISO of a CD-Extra disc.",
                 DiscModuleCapabilities.RawTrackGeneration | DiscModuleCapabilities.DataImageGeneration | DiscModuleCapabilities.HybridFilesystem,
                 [
                     new("input", "Source image", DiscOptionValueType.InputFile, Required: true),
@@ -62,6 +62,9 @@ public sealed class CdDiscModule : IOpticalDiscModule
                     new("data-dir", "Files to include; omitted for audio", DiscOptionValueType.InputFolder),
                     new("volume-label", "Data volume label", DiscOptionValueType.String, DefaultValue: "CD_IMAGE"),
                     new("file-position", "File position", DiscOptionValueType.Choice, DefaultValue: "inner", Choices: ["inner", "outer"]),
+                    new("music", "Music for a picture + music disc: a folder of 44.1 kHz 16-bit stereo .wav files or a playlist", DiscOptionValueType.String),
+                    new("music-position", "Music position: outer (one audio session, picture in the pre-gap of track 1) or inner (CD-Extra, picture in session 2)", DiscOptionValueType.Choice, DefaultValue: "outer", Choices: ["outer", "inner"]),
+                    new("session2-start-lba", "Measured CD-Extra session 2 start LBA: the second number of cdrecord -msinfo (\"0,15055\" is accepted)", DiscOptionValueType.String),
                     .. GeometryOptions,
                     new("interleave", "CD-DA delay interleave", DiscOptionValueType.Boolean, DefaultValue: "true"),
                     new("cue", "Write a CUE sheet next to the WAV track", DiscOptionValueType.Boolean, DefaultValue: "true"),
@@ -81,6 +84,9 @@ public sealed class CdDiscModule : IOpticalDiscModule
                     new("data-dir", "Data files for drawing-range preview", DiscOptionValueType.InputFolder),
                     new("volume-label", "Data volume label", DiscOptionValueType.String, DefaultValue: "CD_IMAGE"),
                     new("file-position", "File position", DiscOptionValueType.Choice, DefaultValue: "inner", Choices: ["inner", "outer"]),
+                    new("music", "Music folder or playlist; previews the picture next to the music", DiscOptionValueType.String),
+                    new("music-position", "Music position", DiscOptionValueType.Choice, DefaultValue: "outer", Choices: ["outer", "inner"]),
+                    new("session2-start-lba", "Measured CD-Extra session 2 start LBA (see cd-generate)", DiscOptionValueType.String),
                     new("size", "Preview size", DiscOptionValueType.Integer, DefaultValue: "1600", Unit: "px"),
                     new("samples-per-sector", "Samples per sector", DiscOptionValueType.Integer, DefaultValue: "16"),
                 ]),
@@ -127,6 +133,7 @@ public sealed class CdDiscModule : IOpticalDiscModule
         IProgress<DiscJobProgress>? progress,
         CancellationToken cancellationToken)
     {
+        (IReadOnlyList<string>? music, long? session2, CdMusicPosition position) = ReadCdExtra(options);
         CdImageRequest image = new(
             options.Require("input"),
             options.Require("output"),
@@ -136,10 +143,43 @@ public sealed class CdDiscModule : IOpticalDiscModule
             options.GetBoolean("cue", true),
             options.GetString("data-dir", string.Empty),
             options.GetString("volume-label", "CD_IMAGE"),
-            ReadFilePosition(options));
+            ReadFilePosition(options),
+            music,
+            session2,
+            position);
         DiscImageResult result = CdImageGenerator.Generate(image, progress, cancellationToken);
         return new DiscJobResult(ModuleId, request.Command, 0, result.Summary, result.OutputPath);
     }
+
+    private static (IReadOnlyList<string>? Music, long? Session2StartLba, CdMusicPosition Position) ReadCdExtra(
+        CdCommandOptions options)
+    {
+        string music = options.GetString("music", string.Empty).Trim();
+        long? session2 = options.Contains("session2-start-lba")
+            ? ParseSession2Start(options.GetString("session2-start-lba", string.Empty))
+            : null;
+        string position = options.GetString("music-position", "outer").Trim();
+        bool outer = position.Equals("outer", StringComparison.OrdinalIgnoreCase);
+        if (!outer && !position.Equals("inner", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException($"--music-position must be 'outer' or 'inner', not '{position}'.");
+        if (music.Length == 0)
+        {
+            if (session2 is not null) throw new ArgumentException("--session2-start-lba requires --music.");
+            if (options.Contains("music-position")) throw new ArgumentException("--music-position requires --music.");
+            return (null, null, CdMusicPosition.Outer);
+        }
+        if (outer && session2 is not null)
+            throw new ArgumentException("--session2-start-lba applies to --music-position inner (CD-Extra) only.");
+        return (CdMusicFile.ResolveSource(music), session2, outer ? CdMusicPosition.Outer : CdMusicPosition.Inner);
+    }
+
+    /// <summary>The session 2 start LBA, or the whole "first,second" output of cdrecord
+    /// -msinfo, whose second number is where the next session starts.</summary>
+    internal static long ParseSession2Start(string raw)
+        => CdExtraLayout.TryParseSession2Start(raw, out long lba)
+            ? lba
+            : throw new ArgumentException(
+                $"--session2-start-lba needs the LBA where session 2 starts (the second number printed by cdrecord -msinfo), not '{raw}'.");
 
     private static DiscJobResult PreviewWarp(
         DiscJobRequest request,
@@ -152,6 +192,31 @@ public sealed class CdDiscModule : IOpticalDiscModule
         CdDiscParameters generated = ReadParameters(options);
         string dataDirectory = options.GetString("data-dir", string.Empty).Trim();
         bool outer = ReadFilePosition(options);
+        (IReadOnlyList<string>? music, long? session2, CdMusicPosition position) = ReadCdExtra(options);
+        if (music is not null && position == CdMusicPosition.Outer)
+        {
+            if (dataDirectory.Length > 0)
+                throw new ArgumentException("--data-dir cannot be combined with music on the outer rings; use --music-position inner.");
+            CdExtraLayout layout = CdImageGenerator.PlanOuterMusic(generated, music);
+            CdDiscParameters picture = CdImageGenerator.HiddenPictureParameters(generated, layout);
+            CdTrackGenerator.PreviewWarp(options.Require("input"), output, picture,
+                ReadMeasuredParameters(options, picture), options.GetInt("size", 1600),
+                options.GetInt("samples-per-sector", 16), ReadTone(options), cancellationToken);
+            return new DiscJobResult(ModuleId, request.Command, 0,
+                $"CD picture + music preview complete: picture LBA 0..{layout.PictureEndLbaExclusive - 1}, "
+                + $"music from LBA {layout.MusicStartLba}, output={output}", output);
+        }
+        if (music is not null)
+        {
+            CdExtraLayout layout = CdImageGenerator.PlanCdExtra(generated, music, session2);
+            CdDataLayoutPlan plan = CdDataImageGenerator.PrepareSessionLayout(generated, layout.Session2StartLba,
+                layout.DataTrackSectors, dataDirectory, options.GetString("volume-label", "CD_IMAGE"), outer);
+            CdDataImageGenerator.PreviewWarp(options.Require("input"), output, generated,
+                ReadMeasuredParameters(options, generated), options.GetInt("size", 1600),
+                options.GetInt("samples-per-sector", 16), ReadTone(options), plan, cancellationToken);
+            return new DiscJobResult(ModuleId, request.Command, 0,
+                $"CD-Extra picture session preview complete: session 2 at LBA {layout.Session2StartLba}, output={output}", output);
+        }
         if (dataDirectory.Length > 0)
         {
             CdDataLayoutPlan plan = CdDataImageGenerator.PrepareLayout(dataDirectory, generated,
@@ -190,8 +255,9 @@ public sealed class CdDiscModule : IOpticalDiscModule
         string track = options.Require("track");
         if (Path.GetExtension(track).Equals(".iso", StringComparison.OrdinalIgnoreCase))
         {
-            CdDataImageMetadata? metadata = CdDataImageMetadata.TryLoad(track);
-            CdDiscParameters parameters = ReadParameters(options, metadata?.Parameters);
+            CdDiscParameters? sidecar = CdExtraImageMetadata.TryLoad(track)?.Parameters
+                ?? CdDataImageMetadata.TryLoad(track)?.Parameters;
+            CdDiscParameters parameters = ReadParameters(options, sidecar);
             CdDataImageGenerator.PreviewTrack(track, output, parameters,
                 options.GetInt("size", 1600), options.GetInt("byte-step", 48), cancellationToken);
             return new DiscJobResult(ModuleId, request.Command, 0,

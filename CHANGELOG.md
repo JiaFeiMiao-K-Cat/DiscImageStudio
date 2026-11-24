@@ -17,6 +17,10 @@
 
 - DVD 兼容性（实验性）改用 #188 的 WriteSafe，提供三档，启用时默认第 1 档。DVD 导出、流式刻录和新标定靶使用所选档位，已有标定靶和镜像继续识别各自的配方。较强的档位可能降低深色对比度或在区间边缘留下亮度变化。
 
+- 新增「音乐 + 图片」CD：同一张盘上既有可播放的音乐又有盘面图片，CD 机只播放音乐。设计页新增「音乐」卡片，可添加或拖入 44.1 kHz、16 位、立体声 PCM WAV（含 WAVE_FORMAT_EXTENSIBLE 封装；原样写入，不转码），调整顺序，选择音乐位置，并显示时长以及音乐区、图片区的半径与面积占比；画布、影调和预览页标出音乐区。音乐默认在外圈：整盘是一个音频区段，图片写在第 1 轨的预间隙里，地址在写入前就确定。也可放在内圈（CD-Extra）：音乐在第 1 区段，图片是第 2 区段的 Mode 1 数据轨。
+- 音乐 + 图片的导出与命令行：音乐在外圈时导出一个 WAV 和带 `INDEX 00` 的 CUE，需整盘一次写入（DAO）；音乐在内圈时导出第 2 区段 ISO（ISO9660/Joliet 使用整盘绝对 LBA）和 `.iso.json`，可填写外部刻录后实测的第 2 区段起点。`cd-generate`、`cd-preview-warp` 新增 `--music`、`--music-position`（默认 `outer`）与 `--session2-start-lba`（接受 `cdrecord -msinfo` 的原样输出）。含音乐的工程保存可选的 `cdExtra` 字段并写为 schemaVersion 3，旧版本会提示版本不受支持；其他工程仍为 schemaVersion 2。
+- 音乐 + 图片的程序内刻录（实验性）：音乐在外圈时沿用 CD DAO 路径整盘一次写入；音乐在内圈时用 Track-at-Once 先写入并关闭音乐区段，再按光驱报告的第 2 区段起点生成图片并封盘，可先做不改变盘片的模拟写入。两种布局都已实刻并在三台 CD 机上播放正常（总时间显示为 79:59，不影响播放），目前只有一台刻录机的结果。
+
 ### English
 
 - Added a built-in preset for the RiTEK Excellent X DVD+RW 4× (MID `RITEK-004-48`, ring code `VW47H-01062`): inner radius 23.941751 mm, outer radius 58.143818 mm, 2,295,104 sectors, with the three track-pitch coefficients contributed in [Discussion #191](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/discussions/191). The same disc completed one full-disc DVD+RW overwrite burn.
@@ -31,6 +35,10 @@
 - Filled about 990 missing Traditional Chinese, Japanese, Spanish, Turkish and Czech translations in seven localization catalogs (calibration validation errors, project validation messages, calibration fit diagnostics, usable sectors, calibration popups, workflows, calibration media); those languages no longer fall back to English on the affected pages.
 
 - DVD compatibility (experimental) now uses WriteSafe from #188 with three selectable levels. Enabling the option defaults to level 1. DVD export, streaming burns and new calibration targets use the selection, while existing targets and images retain their original recipe. Stronger settings can reduce dark-area contrast or leave a brightness change at the zone boundaries.
+
+- Add "Music + picture" CDs: one disc carries playable music and a surface picture, and CD players play only the music. The design page gains a "Music" card that adds 44.1 kHz 16-bit stereo PCM WAV files, also in the WAVE_FORMAT_EXTENSIBLE container, by button or drag and drop (written unchanged, never transcoded), reorders them, selects the music position, and shows the lengths plus the radius and area share of the music and the picture. The canvas, tone and preview pages mark the music. By default the music is on the outer rings: the disc is one audio session, the picture is the pre-gap of track 1, and every address is fixed before writing. It can also go on the inner rings (CD-Extra): music in session 1, the picture as the Mode 1 data track of session 2.
+- Music + picture export and command line: with the music on the outer rings the export is one WAV and a CUE sheet with `INDEX 00`, to be burned Disc-at-Once; with the music on the inner rings it is the session 2 ISO (ISO 9660/Joliet with whole-disc absolute LBAs) and its `.iso.json`, with an optional measured session 2 start for music burned elsewhere. `cd-generate` and `cd-preview-warp` gain `--music`, `--music-position` (default `outer`) and `--session2-start-lba` (which also takes raw `cdrecord -msinfo` output). Projects with music store an optional `cdExtra` field and are written as schemaVersion 3, which older builds report as unsupported; all other projects stay at schemaVersion 2.
+- In-app music + picture burning (experimental): with the music on the outer rings the existing CD Disc-at-Once path writes the whole disc; with the music on the inner rings Track-at-Once writes and closes the music session, then the picture is generated for the session 2 start the recorder reports and the disc is closed, with an optional test write that leaves the disc unchanged. Both layouts have been burned and play on three CD players (they show a total time of 79:59, which does not affect playback); so far this is the result of one recorder.
 
 ## [1.6.0] - 2026-11-15
 

@@ -46,6 +46,36 @@ internal static class CdWaveFile
         return cuePath;
     }
 
+    /// <summary>A CUE sheet for a file that holds a picture followed by music tracks: the
+    /// picture is the index 0 pre-gap of track 1, and <paramref name="trackStartSectors"/>
+    /// are the sectors in the file where each track's index 1 starts.</summary>
+    internal static string WriteCue(string wavePath, IReadOnlyList<long> trackStartSectors)
+    {
+        ArgumentNullException.ThrowIfNull(trackStartSectors);
+        if (trackStartSectors.Count is 0 or > 99) throw new ArgumentOutOfRangeException(nameof(trackStartSectors));
+        StringBuilder cue = new();
+        cue.Append("FILE \"").Append(Path.GetFileName(wavePath)).Append("\" WAVE\r\n");
+        for (int index = 0; index < trackStartSectors.Count; index++)
+        {
+            cue.Append("  TRACK ").Append((index + 1).ToString("00", System.Globalization.CultureInfo.InvariantCulture))
+                .Append(" AUDIO\r\n");
+            if (index == 0 && trackStartSectors[0] > 0) cue.Append("    INDEX 00 00:00:00\r\n");
+            cue.Append("    INDEX 01 ").Append(FormatCueTime(trackStartSectors[index])).Append("\r\n");
+        }
+
+        string cuePath = Path.ChangeExtension(wavePath, ".cue");
+        File.WriteAllText(cuePath, cue.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+        return cuePath;
+    }
+
+    /// <summary>mm:ss:ff at 75 frames per second; CUE minutes run past 59.</summary>
+    internal static string FormatCueTime(long sectors)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(sectors);
+        return string.Create(System.Globalization.CultureInfo.InvariantCulture,
+            $"{sectors / (75 * 60):00}:{sectors / 75 % 60:00}:{sectors % 75:00}");
+    }
+
     private const ushort WaveFormatPcm = 1;
     private const ushort WaveFormatExtensible = 0xFFFE;
 
