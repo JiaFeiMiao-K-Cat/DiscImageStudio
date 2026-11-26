@@ -58,6 +58,11 @@ public partial class ConfirmModal : UserControl
     /// <summary>Two-button confirmation for a constructive action that is not destructive,
     /// such as downloading an application update.</summary>
     public Task<bool> ShowPrimaryAsync(string title, string message, string confirmLabel)
+        => ShowPrimaryAsync(title, message, confirmLabel, PackIconLucideKind.FileDown);
+
+    /// <summary>The constructive confirmation with its own header glyph, e.g. a globe before
+    /// sending text to an online service.</summary>
+    public Task<bool> ShowPrimaryAsync(string title, string message, string confirmLabel, PackIconLucideKind icon)
     {
         if (_pending is not null || _pendingThreeWay is not null)
         {
@@ -66,7 +71,7 @@ public partial class ConfirmModal : UserControl
 
         TitleText.Text = title;
         MessageText.Text = message;
-        HeaderIcon.Kind = PackIconLucideKind.FileDown;
+        HeaderIcon.Kind = icon;
         HeaderIcon.Foreground = (System.Windows.Media.Brush)FindResource("TextSecondaryBrush");
         ConfirmButton.Content = confirmLabel;
         ConfirmButton.Style = (Style)FindResource("PrimaryButton");

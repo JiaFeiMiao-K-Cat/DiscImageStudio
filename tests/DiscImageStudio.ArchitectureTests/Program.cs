@@ -129,6 +129,12 @@ if (args is ["--test-music-sources"])
     return;
 }
 
+if (args is ["--test-album-info"])
+{
+    AlbumInfoTests.Run();
+    return;
+}
+
 if (args is ["--test-cd-text"])
 {
     CdTextTests.Run();

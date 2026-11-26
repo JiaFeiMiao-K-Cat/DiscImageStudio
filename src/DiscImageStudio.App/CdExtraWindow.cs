@@ -14,6 +14,7 @@ using DiscImageStudio.Controls;
 using DiscImageStudio.Core;
 using DiscImageStudio.Localization;
 using DiscImageStudio.Services;
+using MahApps.Metro.IconPacks;
 using Microsoft.Win32;
 
 namespace DiscImageStudio;
@@ -27,7 +28,8 @@ public sealed partial class CdExtraWindow : TransitionWindow
     private readonly ToneProfile _tone;
     private readonly ObservableCollection<string> _music = [];
     private CdExtraPackage? _package;
-    private readonly IReadOnlyDictionary<string, CdTextTrack> _projectTrackTexts;
+    private readonly ViewModels.CdExtraCdTextModel _text;
+    private bool _switchingSource;
     private string? _directory;
     private readonly ViewModels.BurnMilestonesViewModel _milestones = new();
     private CancellationTokenSource? _operation;
@@ -45,11 +47,21 @@ public sealed partial class CdExtraWindow : TransitionWindow
         _artwork = artwork;
         _geometry = geometry;
         _tone = tone;
-        _projectTrackTexts = projectTrackTexts ?? new Dictionary<string, CdTextTrack>();
+        // The window keeps its own CD-TEXT, off until ticked here: it starts from this window's
+        // music tags, or from the design page when that is chosen, and never writes back.
+        _text = new ViewModels.CdExtraCdTextModel(projectCdText, projectTrackTexts);
         InitializeComponent();
-        CdTextCheck.IsChecked = projectCdText?.Enabled == true;
-        CdTextAlbumBox.Text = projectCdText?.AlbumTitle ?? string.Empty;
-        CdTextPerformerBox.Text = projectCdText?.AlbumPerformer ?? string.Empty;
+        CdTextFields.DataContext = _text;
+        _text.SyncTracks(_music);
+        _text.Changed += () =>
+        {
+            if (_package is not null && CdTextCheck.IsChecked == true) InvalidatePackage("CD-TEXT 已修改，请重新准备刻录包。");
+        };
+        SourceDesignChoice.IsEnabled = _text.HasDesignText;
+        if (!_text.HasDesignText) SourceDesignChoice.ToolTip = "设计页没有填写 CD-TEXT。";
+        SourceWindowChoice.Checked += (_, _) => SwitchSource(ViewModels.CdExtraTextSource.Window);
+        SourceDesignChoice.Checked += (_, _) => SwitchSource(ViewModels.CdExtraTextSource.Design);
+        LookupButton.Click += (_, _) => LookUpAlbum();
         CdTextCheck.Checked += (_, _) => InvalidatePackage();
         CdTextCheck.Unchecked += (_, _) => InvalidatePackage();
         MilestoneStrip.DataContext = _milestones;
@@ -62,7 +74,11 @@ public sealed partial class CdExtraWindow : TransitionWindow
             : "使用当前工程的图案与影调。";
         AddMusicButton.Click += (_, _) => AddMusic();
         SortMusicButton.Click += (_, _) => SortMusicByFileName();
-        _music.CollectionChanged += (_, _) => SortMusicButton.IsEnabled = _music.Count > 1;
+        _music.CollectionChanged += (_, _) =>
+        {
+            SortMusicButton.IsEnabled = _music.Count > 1;
+            _text.SyncTracks(_music);
+        };
         MoveUpButton.Click += (_, _) => Move(-1);
         MoveDownButton.Click += (_, _) => Move(1);
         RemoveMusicButton.Click += (_, _) =>
@@ -88,6 +104,8 @@ public sealed partial class CdExtraWindow : TransitionWindow
         HistoryButton.Click += (_, _) => OpenHistory();
         Loaded += async (_, _) => await RefreshDevicesAsync();
         Closing += OnClosing;
+        PreviewKeyDown += (_, e) => { if (CdTextConfirm.HandleKeyDown(e.Key, System.Windows.Input.Keyboard.Modifiers)) e.Handled = true; };
+        Closed += (_, _) => CdTextConfirm.CancelPending();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -163,10 +181,10 @@ public sealed partial class CdExtraWindow : TransitionWindow
         if (from < 0 || to < 0 || to >= _music.Count) return;
         _music.Move(from, to); _list.SelectedIndex = to; InvalidatePackage();
     }
-    private void InvalidatePackage()
+    private void InvalidatePackage(string reason = "音乐列表已变化，请重新准备刻录包。")
     {
         _package = null; _directory = null; _burn.IsEnabled = false;
-        _summary.Text = "音乐列表已变化，请重新准备刻录包。";
+        _summary.Text = reason;
         PackageRangeDisc.Visibility = Visibility.Collapsed;
     }
 
@@ -263,6 +281,7 @@ public sealed partial class CdExtraWindow : TransitionWindow
     private async Task PrepareAsync()
     {
         if (_artwork is null) { Append("请先在设计页导入图案。"); return; }
+        if (CdTextCheck.IsChecked == true && !await ConfirmCdTextIssuesAsync()) return;
         OpenFolderDialog dialog = new() { Title = "选择刻录包的保存目录（将在其中新建子目录）" };
         if (dialog.ShowDialog(this) != true) return;
         string[] music = _music.ToArray();
@@ -282,26 +301,55 @@ public sealed partial class CdExtraWindow : TransitionWindow
             Append("刻录包准备完成：" + destination);
         });
     }
-    /// <summary>Track text from the project's CD-TEXT, else the file's tags, else its name.</summary>
+    /// <summary>The window's own CD-TEXT table, one entry per track in list order.</summary>
     private CdExtraPackageCdText CollectCdText(IReadOnlyList<string> music)
     {
-        string? album = Clean(CdTextAlbumBox.Text), performer = Clean(CdTextPerformerBox.Text);
-        List<CdTextTrack> tracks = [];
-        foreach (string path in music)
-        {
-            AudioTags tags = AudioTags.None;
-            try { tags = AudioTagReader.Read(path); }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
-            _projectTrackTexts.TryGetValue(path, out CdTextTrack? project);
-            tracks.Add(new CdTextTrack(Clean(project?.Title) ?? tags.Title ?? Path.GetFileNameWithoutExtension(path),
-                Clean(project?.Performer) ?? tags.Artist));
-            album ??= tags.Album;
-            performer ??= tags.AlbumArtist ?? tags.Artist;
-        }
-        return new CdExtraPackageCdText(album, performer, tracks);
+        _text.SyncTracks(music);
+        return _text.Collect();
     }
 
-    private static string? Clean(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+    /// <summary>Switches where the CD-TEXT starts from, asking before replacing edited text.</summary>
+    private async void SwitchSource(ViewModels.CdExtraTextSource source)
+    {
+        if (_switchingSource || _text.Source == source) return;
+        string name = source == ViewModels.CdExtraTextSource.Design ? "“设计”页的信息" : "本窗口导入音源的标签";
+        if (_text.IsEdited && !await CdTextConfirm.ShowAsync("更换 CD-TEXT 来源",
+                $"改用{name}会替换专辑名、专辑艺术家和每首曲目的文字，包括已修改、查找或翻译的内容。", "替换"))
+        {
+            _switchingSource = true;
+            (_text.Source == ViewModels.CdExtraTextSource.Design ? SourceDesignChoice : SourceWindowChoice).IsChecked = true;
+            _switchingSource = false;
+            return;
+        }
+        _text.FillFrom(source);
+    }
+
+    /// <summary>Before a package is made, lists every field that most players will not show
+    /// correctly; the user may still go on.</summary>
+    private async Task<bool> ConfirmCdTextIssuesAsync()
+    {
+        _text.SyncTracks(_music);
+        IReadOnlyList<string> lines = _text.IssueLines();
+        if (lines.Count == 0) return true;
+        string list = string.Join("\n", lines.Take(8)) + (lines.Count > 8 ? $"\n……共 {lines.Count} 项" : string.Empty);
+        return await CdTextConfirm.ShowPrimaryAsync("检查 CD-TEXT",
+            $"以下文字不是纯拉丁字母，整张盘的 CD-TEXT 将用日文 MS-JIS 编码，Windows 媒体播放器、VLC 等可能显示乱码：\n\n{list}\n\n可先用“在线查找专辑信息”换成官方英文或罗马字名称，或直接修改标出的字段。",
+            "仍然准备", MahApps.Metro.IconPacks.PackIconLucideKind.TriangleAlert);
+    }
+
+    private void ShowNotice(string? text)
+    {
+        CdTextNotice.Text = text ?? string.Empty;
+        CdTextNotice.Visibility = text is null ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void LookUpAlbum()
+    {
+        ShowNotice(null);
+        if (_text.Rows.Count == 0) { Append("请先添加音乐，再查找专辑信息。"); return; }
+        if (new AlbumLookupWindow(_text) { Owner = this }.ShowDialog() == true)
+            Append("已填入在线查到的专辑信息（仅本窗口）。");
+    }
 
     private async Task LoadAsync()
     {
@@ -313,8 +361,7 @@ public sealed partial class CdExtraWindow : TransitionWindow
             var package = await Task.Run(() => { token.ThrowIfCancellationRequested(); return CdExtraPackage.Load(directory); }, token);
             _music.Clear(); foreach (var t in package.Tracks) _music.Add(Path.Combine(directory, t.File));
             CdTextCheck.IsChecked = package.CdText is not null;
-            CdTextAlbumBox.Text = package.CdText?.AlbumTitle ?? string.Empty;
-            CdTextPerformerBox.Text = package.CdText?.AlbumPerformer ?? string.Empty;
+            _text.LoadPackage(package.CdText);
             SetPackage(directory, package);
             Append("已打开刻录包：" + directory);
         });
@@ -358,9 +405,9 @@ public sealed partial class CdExtraWindow : TransitionWindow
         if (_package is null || _directory is null) return;
         if (_devices.SelectedItem is not OpticalBurnDevice device) { Append("请选择刻录机。"); return; }
         if (_speed.SelectedItem is not WriteSpeedChoice choice) return;
-        if (MessageBox.Show(this, $"即将写入 {device.DisplayName}：\n{_package.Tracks.Count} 首音乐＋外圈图案数据，最后封盘。\n\n"
-            + "需要空白 CD-R。开始后取消或断电可能使盘片报废。是否开始？", "确认 CD Extra 刻录",
-            MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        if (!await CdTextConfirm.ShowAsync("确认 CD Extra 刻录",
+            $"即将写入 {device.DisplayName}：\n{_package.Tracks.Count} 首音乐＋外圈图案数据，最后封盘。\n\n"
+            + "需要空白 CD-R。开始后取消或断电可能使盘片报废。是否开始？", "开始刻录")) return;
         string directory = _directory;
         await RunAsync("刻录 CD Extra", async (token, status) =>
         {
@@ -374,9 +421,10 @@ public sealed partial class CdExtraWindow : TransitionWindow
             {
                 request = request with
                 {
-                    ConfirmWithoutCdText = reason => Dispatcher.Invoke(() => MessageBox.Show(this,
+                    // Asked from the burn thread, which waits for the app's own card on the UI thread.
+                    ConfirmWithoutCdText = reason => Dispatcher.InvokeAsync(() => CdTextConfirm.ShowAsync("光驱无法写入 CD-TEXT",
                         reason + "\n\n继续刻录时盘片不会带有专辑、曲名和艺术家文字，音乐与图案照常写入；盘片目前仍未写入任何数据。是否不带 CD-TEXT 继续？",
-                        "光驱无法写入 CD-TEXT", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes),
+                        "不带 CD-TEXT 继续")).Task.Unwrap().GetAwaiter().GetResult(),
                 };
             }
             string? lastPhase = null;
@@ -411,9 +459,9 @@ public sealed partial class CdExtraWindow : TransitionWindow
     {
         if (_operation is not null || _devices.SelectedItem is not OpticalBurnDevice device) return;
         string? path = new FileDialogService(() => this).PickCdExtraCheckpoint(_directory);
-        if (path is null || MessageBox.Show(this, $"{device.DisplayName}\n{path}\n\n确认原盘与已写数据后续写缺失部分。已封盘时只读校验。",
-            "图案断点续写与校验", MessageBoxButton.OKCancel, MessageBoxImage.Information,
-            MessageBoxResult.Cancel) != MessageBoxResult.OK) return;
+        if (path is null || !await CdTextConfirm.ShowPrimaryAsync("图案断点续写与校验",
+            $"{device.DisplayName}\n{path}\n\n确认原盘与已写数据后续写缺失部分。已封盘时只读校验。", "开始",
+            PackIconLucideKind.Disc3)) return;
         await RunAsync("图案断点续写与校验", async (token, status) =>
         {
             _refreshMediaAfterTask = true;

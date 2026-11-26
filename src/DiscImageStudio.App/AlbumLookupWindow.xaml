@@ -1,0 +1,138 @@
+<app:TransitionWindow x:Class="DiscImageStudio.AlbumLookupWindow"
+        xmlns:app="clr-namespace:DiscImageStudio"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:DiscImageStudio.Controls"
+        Title="在线查找专辑信息 · Disc Image Studio" Icon="{StaticResource AppIconSource}"
+        Width="900" Height="640" MinWidth="700" MinHeight="480"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize" ShowInTaskbar="False"
+        Background="{DynamicResource BackgroundBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
+        FontFamily="{StaticResource AppFontFamily}" UseLayoutRounding="True" SnapsToDevicePixels="True">
+    <WindowChrome.WindowChrome>
+        <WindowChrome GlassFrameThickness="0" CaptionHeight="32" CornerRadius="0"
+                      ResizeBorderThickness="7" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+    <Grid Background="{DynamicResource BackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="32" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <controls:TitleBar ProjectTitle="在线查找专辑信息" UseSystemWindowCommands="True" />
+
+        <StackPanel Grid.Row="1" Margin="20,14,20,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="专辑名" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                    <TextBox x:Name="AlbumBox" Style="{StaticResource CompactTextBox}" AutomationProperties.Name="搜索专辑名" />
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="艺术家" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                    <TextBox x:Name="ArtistBox" Style="{StaticResource CompactTextBox}" AutomationProperties.Name="搜索艺术家" />
+                </StackPanel>
+            </Grid>
+            <WrapPanel Margin="0,10,0,0" VerticalAlignment="Center">
+                <TextBlock Text="来源" Style="{StaticResource InlineText}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                <RadioButton x:Name="MusicBrainzChoice" GroupName="LookupSource" IsChecked="True"
+                             Content="MusicBrainz（推荐）" VerticalAlignment="Center" Margin="0,0,16,0"
+                             ToolTip="优先使用拉丁字母版曲目表与艺术家英文名" />
+                <RadioButton x:Name="AppleChoice" GroupName="LookupSource" Content="Apple Music（备选）"
+                             VerticalAlignment="Center" Margin="0,0,8,0" />
+                <ComboBox x:Name="StoreBox" Style="{StaticResource CompactComboBox}" MinWidth="96"
+                          IsEnabled="{Binding IsChecked, ElementName=AppleChoice}" AutomationProperties.Name="Apple 区域"
+                          Margin="0,0,16,0" />
+                <Button x:Name="SearchButton" Content="搜索…" Style="{StaticResource CompactPrimaryButton}" />
+            </WrapPanel>
+            <TextBlock x:Name="SourceHint" Style="{StaticResource CompactHint}" Margin="0,8,0,0" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Grid Grid.Row="2" Margin="20,0,20,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="3*" />
+            </Grid.ColumnDefinitions>
+            <Border BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                    CornerRadius="{StaticResource RadiusChip}" Padding="4">
+                <Grid>
+                    <ListBox x:Name="ResultList" Background="Transparent" BorderThickness="0"
+                             ItemContainerStyle="{StaticResource RowListBoxItem}"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="搜索结果">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,2">
+                                    <TextBlock Text="{Binding Title}" Style="{StaticResource RowText}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Detail}" Style="{StaticResource MicroText}" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <TextBlock x:Name="ResultHint" Style="{StaticResource HintText}" TextWrapping="Wrap" TextAlignment="Center"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16" IsHitTestVisible="False"
+                               Text="填写专辑名或艺术家后点“搜索…”。&#x0a;每次搜索前都会先询问。" />
+                </Grid>
+            </Border>
+            <Border Grid.Column="2" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                    CornerRadius="{StaticResource RadiusChip}" Padding="10,8">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                        <TextBlock x:Name="CompareTitle" Text="对照" Style="{StaticResource CardTitle}" />
+                        <TextBlock x:Name="CompareNote" Style="{StaticResource CompactHint}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                        <CheckBox x:Name="PerformerCheck" Content="同时替换每首的艺术家" IsChecked="True"
+                                  Style="{StaticResource CompactCheckBox}" Margin="0,6,0,0" Visibility="Collapsed" />
+                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl x:Name="CompareList" AutomationProperties.Name="逐项对照">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="78" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="20" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox IsChecked="{Binding Apply}" Style="{StaticResource CompactCheckBox}"
+                                                  VerticalAlignment="Top" AutomationProperties.Name="{Binding Label}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Label}" Style="{StaticResource MicroText}"
+                                                   VerticalAlignment="Top" Margin="4,2,0,0" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Current}" Style="{StaticResource RowText}"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" ToolTip="当前" />
+                                        <TextBlock Grid.Column="3" Text="→" Style="{StaticResource MicroText}" HorizontalAlignment="Center" />
+                                        <TextBlock Grid.Column="4" Text="{Binding Display}" Style="{StaticResource RowText}"
+                                                   TextWrapping="Wrap" ToolTip="查到的" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="3" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0"
+                Background="{DynamicResource CaptionSurfaceBrush}" Padding="20,10,20,12" Margin="0,12,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="StatusText" Style="{StaticResource CompactText}" VerticalAlignment="Center"
+                           TextWrapping="Wrap" Margin="0,0,12,0" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button x:Name="CancelButton" Content="关闭" Style="{StaticResource CompactButton}" IsCancel="True" Margin="0,0,6,0" />
+                    <Button x:Name="ApplyButton" Content="填入勾选项" Style="{StaticResource CompactPrimaryButton}" IsEnabled="False" />
+                </StackPanel>
+            </Grid>
+        </Border>
+        <!-- The app's own confirmation card: every search is shown here before it is sent. -->
+        <controls:ConfirmModal x:Name="NetworkConfirm" Grid.Row="1" Grid.RowSpan="3" Panel.ZIndex="20" />
+    </Grid>
+</app:TransitionWindow>

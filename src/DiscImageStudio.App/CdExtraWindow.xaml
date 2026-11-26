@@ -119,19 +119,165 @@
                             <Border Height="1" Background="{DynamicResource DividerBrush}" Margin="0,14,0,12" />
                             <CheckBox x:Name="CdTextCheck" Content="写入 CD-TEXT（专辑、曲名、艺术家）"
                                       Style="{StaticResource CompactCheckBox}" />
-                            <Grid x:Name="CdTextFields" Margin="0,8,0,0" IsEnabled="{Binding IsChecked, ElementName=CdTextCheck}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="8" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBox x:Name="CdTextAlbumBox" Style="{StaticResource CompactTextBox}" MaxLength="160"
-                                         ToolTip="专辑名" AutomationProperties.Name="专辑名" />
-                                <TextBox x:Name="CdTextPerformerBox" Grid.Column="2" Style="{StaticResource CompactTextBox}" MaxLength="160"
-                                         ToolTip="专辑艺术家" AutomationProperties.Name="专辑艺术家" />
-                            </Grid>
-                            <TextBlock x:Name="CdTextHint" Style="{StaticResource CompactHint}" Margin="0,6,0,0" TextWrapping="Wrap"
-                                       Text="曲名与艺术家取自工程的 CD-TEXT 或音乐文件标签，缺省时用文件名；准备刻录包时写入 package.cdextra.json。需要光驱支持 SAO。" />
+                            <StackPanel x:Name="CdTextFields" Margin="0,10,0,0" IsEnabled="{Binding IsChecked, ElementName=CdTextCheck}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="信息来源" Style="{StaticResource InlineText}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                    <RadioButton x:Name="SourceWindowChoice" GroupName="CdTextSource" IsChecked="True" FontSize="13"
+                                                 Content="本窗口导入的音源" VerticalAlignment="Center" Margin="0,0,14,0"
+                                                 ToolTip="取自上面音乐文件的标签，缺省时用文件名" />
+                                    <RadioButton x:Name="SourceDesignChoice" GroupName="CdTextSource" FontSize="13"
+                                                 Content="“设计”页的信息" VerticalAlignment="Center"
+                                                 ToolTip="取自设计页 CD-TEXT 中同一文件的文字；设计页没有的曲目仍用文件标签" />
+                                </StackPanel>
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="专辑名" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                                        <TextBox x:Name="CdTextAlbumBox" MaxLength="160"
+                                                 Text="{Binding AlbumTitle, UpdateSourceTrigger=PropertyChanged}"
+                                                 AutomationProperties.Name="专辑名">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox" BasedOn="{StaticResource CompactTextBox}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasAlbumTitleIssue}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}" />
+                                                            <Setter Property="ToolTip" Value="{Binding AlbumTitleIssue}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="专辑艺术家" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                                        <TextBox x:Name="CdTextPerformerBox" MaxLength="160"
+                                                 Text="{Binding AlbumPerformer, UpdateSourceTrigger=PropertyChanged}"
+                                                 AutomationProperties.Name="专辑艺术家">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox" BasedOn="{StaticResource CompactTextBox}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasAlbumPerformerIssue}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}" />
+                                                            <Setter Property="ToolTip" Value="{Binding AlbumPerformerIssue}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
+                                    </StackPanel>
+                                </Grid>
+                                <Grid Margin="0,10,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="24" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="80" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="#" Style="{StaticResource MicroText}" />
+                                    <TextBlock Grid.Column="1" Text="曲名" Style="{StaticResource MicroText}" />
+                                    <TextBlock Grid.Column="3" Text="艺术家" Style="{StaticResource MicroText}" />
+                                    <TextBlock Grid.Column="4" Text="来源" Style="{StaticResource MicroText}" Margin="8,0,0,0" />
+                                </Grid>
+                                <Border BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                                        CornerRadius="{StaticResource RadiusChip}" Padding="6,6,6,0">
+                                    <Grid>
+                                        <ScrollViewer MaxHeight="232" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                            <ItemsControl x:Name="CdTextTrackList" ItemsSource="{Binding Rows}"
+                                                          AutomationProperties.Name="逐曲 CD-TEXT">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Margin="0,0,0,6">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="24" />
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="6" />
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="80" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Text="{Binding NumberText}" Style="{StaticResource MicroText}"
+                                                                       VerticalAlignment="Center" ToolTip="{Binding FileName}" />
+                                                            <TextBox Grid.Column="1" MaxLength="160"
+                                                                     Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"
+                                                                     ToolTip="{Binding TitleToolTip}" AutomationProperties.Name="曲名">
+                                                                <TextBox.Style>
+                                                                    <Style TargetType="TextBox" BasedOn="{StaticResource CompactTextBox}">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding HasTitleIssue}" Value="True">
+                                                                                <Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBox.Style>
+                                                            </TextBox>
+                                                            <TextBox Grid.Column="3" MaxLength="160"
+                                                                     Text="{Binding Performer, UpdateSourceTrigger=PropertyChanged}"
+                                                                     AutomationProperties.Name="艺术家">
+                                                                <TextBox.Style>
+                                                                    <Style TargetType="TextBox" BasedOn="{StaticResource CompactTextBox}">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding HasPerformerIssue}" Value="True">
+                                                                                <Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}" />
+                                                                                <Setter Property="ToolTip" Value="{Binding PerformerIssue}" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBox.Style>
+                                                            </TextBox>
+                                                            <TextBlock Grid.Column="4" Text="{Binding Origin}" Style="{StaticResource MicroText}"
+                                                                       VerticalAlignment="Center" Margin="8,0,0,0" TextTrimming="CharacterEllipsis"
+                                                                       ToolTip="{Binding Origin}" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                        <TextBlock Text="添加音乐后逐曲列出" HorizontalAlignment="Center"
+                                                   Margin="0,4,0,10" IsHitTestVisible="False">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource HintText}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasItems, ElementName=CdTextTrackList}" Value="False">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </Border>
+                                <WrapPanel Margin="0,10,0,0">
+                                    <Button x:Name="LookupButton" Style="{StaticResource CompactButton}" Margin="0,0,6,4"
+                                            ToolTip="用 MusicBrainz（或 Apple Music）查找官方的英文或罗马字专辑与曲目名称；每次搜索前都会询问">
+                                        <StackPanel Orientation="Horizontal">
+                                            <icons:PackIconLucide Kind="Globe" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                            <TextBlock Text="在线查找专辑信息…" />
+                                        </StackPanel>
+                                    </Button>
+                                </WrapPanel>
+                                <TextBlock x:Name="CdTextNotice" Style="{StaticResource CompactHint}" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource WarningTextBrush}" Margin="0,4,0,0" Visibility="Collapsed" />
+                                <TextBlock x:Name="CdTextHint" Margin="0,6,0,0" TextWrapping="Wrap" Text="{Binding StatusText}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource CompactHint}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasError}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock x:Name="CdTextWarning" Text="{Binding WarningText}" Style="{StaticResource CompactHint}"
+                                           Foreground="{DynamicResource WarningTextBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                <TextBlock Style="{StaticResource CompactHint}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                           Text="这里的文字只用于本窗口的刻录包，不改动设计页。准备刻录包时写入 package.cdextra.json。" />
+                            </StackPanel>
                         </StackPanel>
                     </GroupBox>
 
@@ -220,5 +366,7 @@
                          FontSize="12" FontFamily="{StaticResource MonoFontFamily}" AutomationProperties.Name="任务日志" />
             </StackPanel>
         </Border>
+        <!-- Every confirmation in this window (CD-TEXT, burn, resume) uses the app's own card. -->
+        <controls:ConfirmModal x:Name="CdTextConfirm" Grid.Row="1" Grid.RowSpan="2" Panel.ZIndex="20" />
     </Grid>
 </app:TransitionWindow>

@@ -333,6 +333,20 @@ public static class CdTextPacks
         return differences;
     }
 
+    /// <summary>True when <paramref name="text"/> fits ISO-8859-1. One field that does not
+    /// switches the whole block to MS-JIS, which many players show garbled.</summary>
+    public static bool IsLatin1Text(string? text) => text is null || text.All(IsLatin1Printable);
+
+    /// <summary>The characters of <paramref name="text"/> that even MS-JIS cannot hold;
+    /// <see cref="Encode"/> writes each as "？".</summary>
+    public static IReadOnlyList<string> MsJisUnrepresentable(string? text)
+    {
+        if (string.IsNullOrEmpty(text) || IsLatin1Text(text)) return [];
+        List<string> missing = [];
+        _ = EncodeMsJis(text, missing);
+        return missing.Distinct().ToArray();
+    }
+
     private static bool IsLatin1Printable(char c) => c is >= ' ' and <= '~' or >= ' ' and <= 'ÿ';
 
     private static byte[] EncodeMsJis(string text, List<string> unrepresentable)
