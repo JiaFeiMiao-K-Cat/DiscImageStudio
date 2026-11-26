@@ -1205,6 +1205,24 @@
     "es": "Calibración medida de Verbatim DVD+RW 94520 / 95043: 23,980218–57,992243 mm, 2.295.104 sectores, distribución cúbica del paso de pista. MID: MKM A02. Código del anillo: CC5410-DVRW-Q47H.",
     "cs": "Naměřená kalibrace Verbatim DVD+RW 94520 / 95043: 23,980218–57,992243 mm, celkem 2 295 104 sektorů, kubické rozložení rozteče stop. MID: MKM A02. Kód vnitřního prstence: CC5410-DVRW-Q47H."
   },
+  "威宝 DVD-RW (43284 / 43285)（实测）": {
+    "zh-CN": "威宝 DVD-RW (43284 / 43285)（实测）",
+    "en": "Verbatim DVD-RW (43284 / 43285) (measured)",
+    "zh-TW": "Verbatim DVD-RW (43284 / 43285)（實測）",
+    "ja": "Verbatim DVD-RW (43284 / 43285) (実測)",
+    "tr": "Verbatim DVD-RW (43284 / 43285) (ölçülen)",
+    "es": "Verbatim DVD-RW (43284 / 43285) (medido)",
+    "cs": "Verbatim DVD-RW (43284 / 43285) (měřeno)"
+  },
+  "威宝 DVD-RW 43284 / 43285 实测标定范围为 23.987195–57.961475 mm，共 2,297,888 个扇区。采用三次轨距分布，MID 为 MCC 01RW4X，圈码为 CD2260-DVRW-E47B2。": {
+    "zh-CN": "威宝 DVD-RW 43284 / 43285 实测标定范围为 23.987195–57.961475 mm，共 2,297,888 个扇区。采用三次轨距分布，MID 为 MCC 01RW4X，圈码为 CD2260-DVRW-E47B2。",
+    "en": "Measured calibration for Verbatim DVD-RW 43284 / 43285 spans 23.987195–57.961475 mm across 2,297,888 sectors. It uses a cubic track pitch distribution. The MID is MCC 01RW4X and the ring code is CD2260-DVRW-E47B2.",
+    "zh-TW": "Verbatim DVD-RW 43284 / 43285 實測校準範圍為 23.987195–57.961475 mm，共 2,297,888 個磁區。採用三次軌距分布，MID 為 MCC 01RW4X，圈碼為 CD2260-DVRW-E47B2。",
+    "ja": "Verbatim DVD-RW 43284 / 43285 の実測キャリブレーション範囲は 23.987195–57.961475 mm で、全 2,297,888 セクターです。3 次のトラックピッチ分布を使用します。MID は MCC 01RW4X、リングコードは CD2260-DVRW-E47B2 です。",
+    "tr": "Verbatim DVD-RW 43284 / 43285 için ölçülen kalibrasyon aralığı 23,987195–57,961475 mm olup toplam 2.297.888 sektörü kapsar. Üçüncü dereceden iz aralığı dağılımı kullanılır. MID değeri MCC 01RW4X, halka kodu CD2260-DVRW-E47B2’dir.",
+    "es": "El intervalo de calibración medido de Verbatim DVD-RW 43284 / 43285 es de 23,987195 a 57,961475 mm, con 2.297.888 sectores. Usa una distribución cúbica del paso de pista. El MID es MCC 01RW4X y el código del anillo es CD2260-DVRW-E47B2.",
+    "cs": "Naměřený rozsah kalibrace pro Verbatim DVD-RW 43284 / 43285 je 23,987195–57,961475 mm při celkovém počtu 2 297 888 sektorů. Používá se kubické rozložení rozteče stop. MID je MCC 01RW4X a kód vnitřního prstence je CD2260-DVRW-E47B2."
+  },
   "PHILIPS DVD+R（实测）": {
     "zh-CN": "PHILIPS DVD+R（实测）",
     "en": "PHILIPS DVD+R (measured)",

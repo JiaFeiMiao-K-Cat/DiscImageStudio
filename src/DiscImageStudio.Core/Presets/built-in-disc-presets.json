@@ -127,6 +127,21 @@
       "descriptionResourceKey": "DiscPreset_VerbatimDvdPlusRw94520And95043_Description"
     },
     {
+      "id": "verbatim-dvd-rw-43284-43285",
+      "displayName": "威宝 DVD-RW (43284 / 43285)（实测）",
+      "description": "威宝 DVD-RW 43284 / 43285 实测标定范围为 23.987195–57.961475 mm，共 2,297,888 个扇区。采用三次轨距分布，MID 为 MCC 01RW4X，圈码为 CD2260-DVRW-E47B2。",
+      "totalSectors": 2297888,
+      "usableSectors": 2297888,
+      "innerRadiusMm": 23.987195309256087,
+      "outerRadiusMm": 57.96147511900821,
+      "channelBitLengthNm": 133.3,
+      "pitchLinear": -6.895292187853084E-05,
+      "pitchQuadratic": 0.00011961924687769748,
+      "pitchCubic": -7.110501507157955E-05,
+      "displayNameResourceKey": "DiscPreset_VerbatimDvdRw43284And43285_DisplayName",
+      "descriptionResourceKey": "DiscPreset_VerbatimDvdRw43284And43285_Description"
+    },
+    {
       "id": "philips-dvd-plus-r",
       "displayName": "PHILIPS DVD+R（实测）",
       "description": "PHILIPS DVD+R 实测标定参数：24.157724–57.881039 mm，共 2,295,104 个扇区；采用三次轨距分布。",

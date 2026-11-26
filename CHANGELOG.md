@@ -4,6 +4,7 @@
 
 ### 中文
 
+- 新增威宝 DVD-RW (43284 / 43285) 实测内置预设。MID 为 `MCC 01RW4X`，圈码为 `CD2260-DVRW-E47B2`，共 2,297,888 个扇区。
 - 新增铼德 Excellent X DVD+RW 4× 内置预设（MID `RITEK-004-48`，圈码 `VW47H-01062`）：内半径 23.941751 mm、外半径 58.143818 mm、2,295,104 扇区，三项轨距系数取自[讨论 #191](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/discussions/191)。该盘片已完成一次整盘 DVD+RW 覆写刻录。
 - 键盘可达性补全：阶段条、标定步骤手风琴、标题栏窗口按钮、侧边栏导航项与返回／工程头按钮现在可以获得键盘焦点；侧边栏项支持 Enter／空格激活；新增 Ctrl+1..5 按侧栏顺序切换工作区（设计／导出／刻录／预览／标定）。
 - 术语统一：标定工作区在侧边栏、页头、阶段条与相关提示中统一为「标定」（原页头作「辅助标定」）；删除 Xaml.Calibration2／ProjectSettings2／FitToWindow2 三个重复文案键。
@@ -19,6 +20,7 @@
 
 ### English
 
+- Added a measured built-in preset for Verbatim DVD-RW (43284 / 43285) with 2,297,888 sectors, MID `MCC 01RW4X`, and ring code `CD2260-DVRW-E47B2`.
 - Added a built-in preset for the RiTEK Excellent X DVD+RW 4× (MID `RITEK-004-48`, ring code `VW47H-01062`): inner radius 23.941751 mm, outer radius 58.143818 mm, 2,295,104 sectors, with the three track-pitch coefficients contributed in [Discussion #191](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/discussions/191). The same disc completed one full-disc DVD+RW overwrite burn.
 - Keyboard accessibility: the stage rail, the calibration step accordion, the title-bar window buttons, the sidebar navigation items and the back/project-header buttons now take keyboard focus; sidebar items activate with Enter/Space; Ctrl+1..5 switches workspaces in sidebar order (design, export, burn, preview, calibration).
 - Terminology: the calibration workspace is now consistently called "Calibration" across the sidebar, page header, stage rail and related hints (the page header previously read "auxiliary calibration"); removed the duplicated Xaml.Calibration2/ProjectSettings2/FitToWindow2 catalog keys.
