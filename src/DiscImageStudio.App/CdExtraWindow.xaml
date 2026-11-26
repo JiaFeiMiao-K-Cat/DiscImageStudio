@@ -175,6 +175,9 @@
         <Border Grid.Row="2" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0"
                 Background="{DynamicResource CaptionSurfaceBrush}" Padding="24,12,24,14">
             <StackPanel>
+                <controls:VisibilityGate x:Name="MilestoneGate" Margin="0,0,0,10">
+                    <controls:BurnMilestoneStrip x:Name="MilestoneStrip" />
+                </controls:VisibilityGate>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />

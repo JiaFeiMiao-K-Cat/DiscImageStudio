@@ -248,6 +248,32 @@ public partial class MainWindow : Window
     }
 
     // Snapshot-only synthetic telemetry. No burner or recorder is created here.
+    /// <summary>Snapshot hook: replays the stages a CD Extra burn reports into the outcome
+    /// strip, stopping at the requested point.</summary>
+    internal void ShowBurnOutcomeForSnapshot(string outcome)
+    {
+        var milestones = _shell.Burn.Milestones;
+        const long total = 359_846L * 2048;
+        milestones.Begin(testWrite: outcome == "test-write");
+        milestones.Observe(new("write", "写入音乐与图案", total / 2, total));
+        if (outcome == "writing") return;
+        milestones.Observe(new("close-session", "关闭第 1 区段", total, total));
+        milestones.Observe(new("flush", "图案轨缓存已刷写完成。", total, total));
+        if (outcome == "test-write") { milestones.Succeed(); return; }
+        milestones.Observe(new("finalize", "关闭第 2 区段并封盘（请等待完成）", total, total));
+        if (outcome == "finalizing") return;
+        milestones.Observe(new("verify", "正在读回校验图案", total / 4, total));
+        if (outcome == "verifying") return;
+        if (outcome == "verify-failed")
+        {
+            milestones.Fail("LBA 356,283 读取失败（03/11/00）。断点已保存：picture.cdresume.json", cancelled: false);
+            return;
+        }
+
+        milestones.Observe(new("complete", "盘片已封盘，图案轨全部 267,544 个扇区读回校验通过。", total, total));
+        milestones.Succeed("图案轨 267,544 个扇区读回一致");
+    }
+
     internal void ShowBurnProgressForSnapshot(string phase)
     {
         if (phase is not ("write" or "buffer" or "finalize" or "write-complete" or "verify"
@@ -377,6 +403,15 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (SettingsPageHost.IsActiveSession && !_isUpdateRestarting)
+        {
+            // The former modal dialog blocked closing the main window; the in-window page
+            // asks to leave first, with its own unsaved-settings confirmation.
+            e.Cancel = true;
+            SettingsPageHost.RequestClose();
+            return;
+        }
+
         if (_isUpdateRestarting)
         {
             // The update flow closes the window itself once the helper owns the file swap;
@@ -485,6 +520,32 @@ public partial class MainWindow : Window
 
     private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (SettingsPageHost.IsActiveSession)
+        {
+            // Settings own the keyboard: Escape and Ctrl+, leave it; workspace shortcuts must
+            // not act on the page hidden underneath.
+            if (e.Key == Key.Escape || e.Key == Key.OemComma && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                e.Handled = true;
+                if (e.Key == Key.Escape) SettingsPageHost.HandleEscape();
+                else SettingsPageHost.RequestClose();
+            }
+            else if (Keyboard.Modifiers == ModifierKeys.Control && e.Key is not (Key.C or Key.V or Key.X or Key.A or Key.Z))
+            {
+                e.Handled = true;
+            }
+
+            return;
+        }
+
+        if (e.Key == Key.Escape && _shell.Drive.IsDetailsOpen && !BurnConfirmModal.IsOpen)
+        {
+            e.Handled = true;
+            _shell.Drive.IsDetailsOpen = false;
+            DriveCardHost.Anchor.Focus();
+            return;
+        }
+
         if (BurnConfirmModal.IsOpen)
         {
             // The modal owns the keyboard surface; do not run save/settings shortcuts behind it.
@@ -650,20 +711,28 @@ public partial class MainWindow : Window
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettingsDialog();
 
-    /// <summary>Opens the settings modal. A successful Save applies the theme immediately and
-    /// points new cache writes at the chosen folder. An update request closes the dialog first;
-    /// the main window then runs the same unsaved-changes gate as a normal close.</summary>
+    /// <summary>Opens settings inside the window: the page grows out of the title-bar gear and,
+    /// whatever ends the session (Save, Cancel, Back, Escape, a second gear click), folds
+    /// back into it. A click while it is still folding away reverses the fold from the frame
+    /// on screen. A successful Save applies the theme immediately and points new cache
+    /// writes at the chosen folder. An update request ends the session first; the main
+    /// window then runs the same unsaved-changes gate as a normal close.</summary>
     private async void OpenSettingsDialog()
     {
         if (BurnConfirmModal.IsOpen) return;
+        if (SettingsPageHost.IsActiveSession)
+        {
+            // The gear and Ctrl+, toggle: a second press leaves settings the same way Back does.
+            SettingsPageHost.RequestClose();
+            return;
+        }
 
         SettingsViewModel viewModel = new(_settings, _settingsStore)
         {
             IsBusyProvider = () => _shell.IsBusy,
         };
-        SettingsWindow window = new(viewModel) { Owner = this };
 
-        // The clear-cache command must follow the shell's busy flag while the dialog is open.
+        // The clear-cache command must follow the shell's busy flag while settings are open.
         PropertyChangedEventHandler busyHandler = (_, args) =>
         {
             if (args.PropertyName == nameof(ShellViewModel.IsBusy))
@@ -673,29 +742,87 @@ public partial class MainWindow : Window
         };
         _shell.PropertyChanged += busyHandler;
         viewModel.RefreshBusyState();
-        bool updateRequested = false;
-        string? updatePath = null;
+        _shell.Drive.IsDetailsOpen = false;
+        Task<SettingsOutcome> session = SettingsPageHost.Begin(viewModel);
+        SettingsSurface.Open(() => AppTitleBar.SettingsAnchor);
+        ContentRoot.IsHitTestVisible = false;
+        KeyboardNavigation.SetTabNavigation(ContentRoot, KeyboardNavigationMode.None);
+        _ = SettingsPageHost.Dispatcher.BeginInvoke(new Action(() => SettingsPageHost.FocusFirst()),
+            DispatcherPriority.Input);
+        SettingsOutcome outcome;
         try
         {
-            bool? result = window.ShowDialog();
-            updateRequested = window.UpdateRequested;
-            updatePath = window.PendingUpdatePath;
-            // The update request persists valid pending edits before closing, so they must be
-            // applied even though the dialog result is Cancel rather than Save.
-            if ((result == true || updateRequested) && viewModel.SavedSettings is { } settings)
-            {
-                ApplySettings(settings);
-            }
+            outcome = await session;
         }
         finally
         {
             _shell.PropertyChanged -= busyHandler;
         }
 
+        // A newer session may already have started (gear clicked again mid-fold); only the
+        // session that is still current folds the surface away.
+        if (!SettingsPageHost.IsActiveSession)
+        {
+            SettingsSurface.Close();
+            ContentRoot.IsHitTestVisible = true;
+            KeyboardNavigation.SetTabNavigation(ContentRoot, KeyboardNavigationMode.Continue);
+            AppTitleBar.SettingsAnchor.Focus();
+        }
+
+        bool updateRequested = outcome == SettingsOutcome.UpdateRequested;
+        string? updatePath = SettingsPageHost.PendingUpdatePath;
+        // The update request persists valid pending edits before closing, so they must be
+        // applied even though it is not a plain Save.
+        if ((outcome == SettingsOutcome.Saved || updateRequested) && viewModel.SavedSettings is { } settings)
+        {
+            ApplySettings(settings);
+        }
+
         if (updateRequested && updatePath is not null)
         {
             await RestartForUpdateAsync(updatePath);
         }
+    }
+
+    internal bool IsSettingsOpen => SettingsPageHost.IsActiveSession;
+
+    /// <summary>Snapshot hook: settings at rest on the given category, no transition.</summary>
+    internal void ShowSettingsForSnapshot(SettingsViewModel viewModel, int category)
+    {
+        _ = SettingsPageHost.Begin(viewModel);
+        SettingsPageHost.ShowCategoryForSnapshot(category);
+        SettingsSurface.Snap(true, () => AppTitleBar.SettingsAnchor);
+    }
+
+    internal ConnectedSurface SettingsSurfaceForTests => SettingsSurface;
+
+    internal ConnectedSurface DriveDetailsSurfaceForTests => DriveDetailsSurface;
+
+    internal UIElement SettingsBackdropForTests => SettingsBackdrop;
+
+    // ---- Drive & disc details ----
+
+    private void SyncDriveDetails()
+    {
+        bool open = _shell.Drive.IsDetailsOpen && DriveCardHost.Visibility == Visibility.Visible;
+        if (open == DriveDetailsSurface.IsOpen) return;
+        if (open)
+        {
+            DriveDetailsDismiss.Visibility = Visibility.Visible;
+            DriveDetailsSurface.Open(() => DriveCardHost.Anchor);
+        }
+        else
+        {
+            DriveDetailsDismiss.Visibility = Visibility.Collapsed;
+            DriveDetailsSurface.Close();
+        }
+    }
+
+    private void DriveDetailsDismiss_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        _shell.Drive.IsDetailsOpen = false;
+        // The click that dismissed the panel must not also land on the drive card and reopen it.
+        e.Handled = DriveCardHost.Anchor.IsMouseOver;
     }
 
     /// <summary>Installs an already downloaded update. Dirty projects get the normal
@@ -806,9 +933,47 @@ public partial class MainWindow : Window
         }
     }
 
+    private bool? _sidebarOpen;
+    private int _sidebarVersion;
+
+    /// <summary>The project sidebar slides in from the window edge when a project opens and
+    /// back out when returning home. Its width is animated from the width on screen, so a
+    /// quick home → project → home reverses smoothly, and the final width is written as the
+    /// base value first so the end of the clock cannot snap back. The page column re-centres
+    /// with it every frame, keeping the page in the middle of the space beside the sidebar.</summary>
+    private void SetSidebarOpen(bool open)
+    {
+        if (_sidebarOpen == open) return;
+        bool first = _sidebarOpen is null;
+        _sidebarOpen = open;
+        int version = ++_sidebarVersion;
+        double full = (double)FindResource("SidebarWidth");
+        double from = SidebarBorder.Visibility == Visibility.Visible ? SidebarBorder.ActualWidth : 0;
+        SidebarBorder.BeginAnimation(WidthProperty, null);
+        SidebarBorder.Width = open ? full : 0;
+        SidebarGrid.Width = Math.Max(0, full - SidebarGrid.Margin.Left - SidebarGrid.Margin.Right - SidebarBorder.BorderThickness.Right);
+        SidebarGrid.HorizontalAlignment = HorizontalAlignment.Right;
+        if (open) SidebarBorder.Visibility = Visibility.Visible;
+        if (first || !Motion.Enabled || !IsLoaded || Math.Abs(from - SidebarBorder.Width) < 0.5)
+        {
+            SidebarBorder.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
+            return;
+        }
+
+        double distance = Math.Abs(SidebarBorder.Width - from) / full;
+        var clock = Motion.Create(from, SidebarBorder.Width,
+            new Duration(TimeSpan.FromMilliseconds(Math.Max(90, (open ? 260 : 200) * distance))), exiting: !open);
+        clock.Completed += (_, _) =>
+        {
+            if (version != _sidebarVersion) return;
+            if (!open) SidebarBorder.Visibility = Visibility.Collapsed;
+        };
+        SidebarBorder.BeginAnimation(WidthProperty, clock, HandoffBehavior.SnapshotAndReplace);
+    }
+
     private void UpdateProjectHeader()
     {
-        SidebarBorder.Visibility = _shell.IsProjectMode ? Visibility.Visible : Visibility.Collapsed;
+        SetSidebarOpen(_shell.IsProjectMode);
         UpdateDriveCardVisibility();
         UpdateJobDockVisibility();
         if (!_shell.IsProjectOpen)
@@ -831,6 +996,8 @@ public partial class MainWindow : Window
         {
             _shell.Drive.IsDetailsOpen = false;
         }
+
+        SyncDriveDetails();
     }
 
     private void Drive_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -838,6 +1005,11 @@ public partial class MainWindow : Window
         if (e.PropertyName == nameof(OpticalDriveViewModel.HasDrive))
         {
             UpdateDriveCardVisibility();
+        }
+
+        if (e.PropertyName == nameof(OpticalDriveViewModel.IsDetailsOpen))
+        {
+            SyncDriveDetails();
         }
     }
 

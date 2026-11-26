@@ -42,14 +42,14 @@ internal static class UiPreviewRenderer
         string? settingsView = null,
         string? language = null,
         string? driveFixture = null,
-        string? focusTarget = null)
+        string? focusTarget = null,
+        string? burnOutcome = null)
     {
-        // The settings window is 760 px wide, so its snapshots relax the page minimum.
-        int minimumWidth = settingsDialog ? 640 : 800;
+        int minimumWidth = 800;
         if (width < minimumWidth || height < 600 || width > 4096 || height > 2160)
             throw new ArgumentOutOfRangeException(
                 nameof(width),
-                "Snapshot dimensions must be at least 800×600 (640×600 for the settings dialog) and at most 4096×2160.");
+                "Snapshot dimensions must be at least 800×600 and at most 4096×2160.");
         AppTheme requestedTheme = theme?.ToLowerInvariant() switch
         {
             null or "" or "dark" => AppTheme.Dark,
@@ -106,6 +106,7 @@ internal static class UiPreviewRenderer
             expandJobDock,
             burnSource);
         if (burnProgress is not null) window.ShowBurnProgressForSnapshot(burnProgress);
+        if (burnOutcome is not null) window.ShowBurnOutcomeForSnapshot(burnOutcome);
         window.Show();
         window.UpdateLayout();
         if (driveFixture is "empty" or "cd" or "dvd" or "bd" or "error")
@@ -258,20 +259,22 @@ internal static class UiPreviewRenderer
             Path.GetDirectoryName(Path.GetFullPath(outputPath))!,
             "disc-settings-snapshot-" + Guid.NewGuid().ToString("N") + ".json"));
         SettingsViewModel viewModel = new(settings, store);
-        SettingsWindow window = new(viewModel)
+        // Settings live inside the main window now; render the window with the page at rest.
+        MainWindow window = new(settings, store, new SnapshotOpticalDriveProbe("none"))
         {
-            Width = width,
+            Width = Math.Max(width, 800),
             Height = height,
+            WindowState = WindowState.Normal,
             WindowStartupLocation = WindowStartupLocation.Manual,
             Left = -10000,
             Top = -10000,
             ShowInTaskbar = false,
         };
-        // Select before Show so the nav item's Loaded refresh snaps to its active color
-        // instead of the snapshot catching the fade-in at frame zero.
-        window.ShowCategoryForSnapshot(category);
         window.Show();
         window.UpdateLayout();
+        window.ShowSettingsForSnapshot(viewModel, category);
+        window.UpdateLayout();
+        PumpDispatcher(TimeSpan.FromMilliseconds(120));
         return SaveWindowBitmap(window, outputPath, width, height, application);
     }
 

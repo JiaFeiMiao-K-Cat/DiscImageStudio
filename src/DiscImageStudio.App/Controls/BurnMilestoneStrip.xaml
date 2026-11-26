@@ -1,0 +1,72 @@
+<UserControl x:Class="DiscImageStudio.Controls.BurnMilestoneStrip"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:DiscImageStudio.ViewModels"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             AutomationProperties.LiveSetting="Polite">
+    <!-- Three separate facts after a burn: written (the recorder accepted everything),
+         finalized (the recorder closed the disc) and read-back verification. Each row has
+         its own state, so a 100 % progress bar is never mistaken for a verified disc. -->
+    <Border Background="{DynamicResource Surface1Brush}" BorderBrush="{DynamicResource DividerBrush}"
+            BorderThickness="1" Padding="16,12">
+        <StackPanel>
+            <TextBlock Text="{Binding Summary}" Style="{StaticResource RowText}" FontWeight="SemiBold"
+                       TextWrapping="Wrap" Margin="0,0,0,8" />
+            <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Rows="1" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:BurnMilestone}">
+                        <Grid Margin="0,0,12,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid Width="22" Height="22" VerticalAlignment="Top" Margin="0,1,10,0">
+                                <Ellipse x:Name="Ring" StrokeThickness="1.5" Stroke="{DynamicResource TextMutedBrush}" />
+                                <iconPacks:PackIconLucide x:Name="Glyph" Width="13" Height="13" Kind="Minus"
+                                                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                          Foreground="{DynamicResource TextMutedBrush}" Visibility="Collapsed" />
+                            </Grid>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock x:Name="Title" Text="{Binding Title}" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextMutedBrush}" />
+                                <TextBlock Text="{Binding Detail}" Style="{StaticResource MicroText}" TextWrapping="Wrap"
+                                           Margin="0,2,0,0" />
+                            </StackPanel>
+                        </Grid>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding State}" Value="{x:Static vm:MilestoneState.Active}">
+                                <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource PrimaryBrush}" />
+                                <Setter TargetName="Ring" Property="StrokeDashArray" Value="3 2" />
+                                <Setter TargetName="Title" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding State}" Value="{x:Static vm:MilestoneState.Done}">
+                                <Setter TargetName="Ring" Property="Fill" Value="{DynamicResource SuccessBrush}" />
+                                <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource SuccessBrush}" />
+                                <Setter TargetName="Glyph" Property="Kind" Value="Check" />
+                                <Setter TargetName="Glyph" Property="Foreground" Value="White" />
+                                <Setter TargetName="Glyph" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="Title" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding State}" Value="{x:Static vm:MilestoneState.Failed}">
+                                <Setter TargetName="Ring" Property="Fill" Value="{DynamicResource DangerBrush}" />
+                                <Setter TargetName="Ring" Property="Stroke" Value="{DynamicResource DangerBrush}" />
+                                <Setter TargetName="Glyph" Property="Kind" Value="X" />
+                                <Setter TargetName="Glyph" Property="Foreground" Value="White" />
+                                <Setter TargetName="Glyph" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="Title" Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding State}" Value="{x:Static vm:MilestoneState.Skipped}">
+                                <Setter TargetName="Glyph" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </Border>
+</UserControl>

@@ -112,48 +112,5 @@
             </Border>
         </Button>
 
-        <Popup x:Name="DetailsPopup" Placement="Right" PlacementTarget="{Binding ElementName=CardHost}"
-               HorizontalOffset="10" VerticalOffset="-8" AllowsTransparency="True"
-               StaysOpen="False" PopupAnimation="Fade"
-               IsOpen="{Binding IsDetailsOpen, Mode=TwoWay}">
-            <Border Width="252" Background="{DynamicResource Surface1Brush}"
-                    BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
-                    CornerRadius="{StaticResource RadiusFloating}" Padding="14,12"
-                    Effect="{StaticResource FloatingShadow}">
-                <StackPanel>
-                    <TextBlock Text="{loc:Text DriveInfo.DetailsTitle}" Style="{StaticResource RowText}"
-                               FontWeight="Medium" />
-                    <controls:VisibilityGate IsOpen="{Binding IsMultipleDrives}" Margin="0,10,0,0">
-                        <StackPanel>
-                            <TextBlock Text="{loc:Text DriveInfo.Drive}"
-                                       Style="{StaticResource MicroText}" Margin="0,0,0,4" />
-                            <ComboBox ItemsSource="{Binding Drives}" SelectedItem="{Binding SelectedDrive}"
-                                      DisplayMemberPath="DisplayName" />
-                        </StackPanel>
-                    </controls:VisibilityGate>
-                    <ItemsControl ItemsSource="{Binding Details}" Margin="0,10,0,0">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Grid Margin="0,0,0,6">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" MinWidth="74" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding Label}" Style="{StaticResource MicroText}"
-                                               Margin="0,1,8,0" />
-                                    <controls:CopyableText Grid.Column="1" Text="{Binding Value}"
-                                                           FontSize="12"
-                                                           Foreground="{DynamicResource TextPrimaryBrush}"
-                                                           TextAlignment="Right" TextWrapping="Wrap" />
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <TextBlock Text="{loc:Text DriveInfo.CapacityHint}"
-                               Style="{StaticResource MicroText}" TextWrapping="Wrap"
-                               Margin="0,4,0,0" />
-                </StackPanel>
-            </Border>
-        </Popup>
     </Grid>
 </UserControl>

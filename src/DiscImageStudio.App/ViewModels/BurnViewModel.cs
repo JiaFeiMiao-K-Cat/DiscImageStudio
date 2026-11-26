@@ -16,6 +16,9 @@ namespace DiscImageStudio.ViewModels;
 
 public partial class BurnViewModel : ObservableObject
 {
+    /// <summary>Written / finalized / verified, tracked apart for the current or last burn.</summary>
+    public BurnMilestonesViewModel Milestones { get; } = new();
+
     private readonly ShellViewModel _shell;
     private readonly DiscParametersState _state;
     private readonly DesignViewModel _design;
@@ -624,13 +627,16 @@ public partial class BurnViewModel : ObservableObject
                 IsBurnRunning = true;
                 var recoveryCancellation = _burnCancellation = new CancellationTokenSource();
                 _shell.BeginDockJob(L.T("图案断点续写与校验"), determinate: true);
+                Milestones.Begin(resume: true);
                 var recoveryProgress = new Progress<OpticalBurnProgress>(p =>
                 {
                     if (_burnCancellation != recoveryCancellation) return;
+                    Milestones.Observe(p);
                     _shell.ReportDockJob(p.Message, p.Fraction * 100);
                     if (p.Stage is "diagnostic" or "reconnect" or "finalize" or "complete") _shell.AppendLog(p.Message + "\n");
                 });
                 long sectors = await burner.ResumeCdExtraPictureAsync(device.Id, path, recoveryProgress, recoveryCancellation.Token);
+                Milestones.Succeed(L.F($"图案轨全部 {sectors:N0} 个扇区读回一致"));
                 _shell.CompleteDockJob(L.T("图案读回校验通过") + $" · {sectors:N0}");
                 _shell.ShowToast(L.T("图案读回校验通过"), device.DisplayName, ToastKind.Success);
                 return;
@@ -881,6 +887,7 @@ public partial class BurnViewModel : ObservableObject
             _shell.AppendLog(
                 L.F($"\n[{DateTime.Now:HH:mm:ss}] 开始流式刻录：{contentDescription}；")
                 + L.F($"设备={device.DisplayName}；请求速度={selectedWriteSpeed.DisplayName}。\n"));
+            Milestones.Begin(testWrite: cdExtraRequest?.TestWrite == true);
             Progress<OpticalBurnProgress> progress = new(value =>
             {
                 if (!IsBurnRunning || !ReferenceEquals(_burnCancellation, burnCancellation))
@@ -888,6 +895,7 @@ public partial class BurnViewModel : ObservableObject
                     return;
                 }
 
+                Milestones.Observe(value);
                 _shell.ReportBurnProgress(value, cancellationRequested: burnCancellation.IsCancellationRequested);
             });
             OpticalBurnResult result;
@@ -907,6 +915,7 @@ public partial class BurnViewModel : ObservableObject
                     progress,
                     burnCancellation.Token);
             }
+            Milestones.Succeed();
             _shell.CompleteDockJob(L.T("完成：流式刻录 ") + contentDescription);
             _shell.AppendLog(
                 L.F($"[{DateTime.Now:HH:mm:ss}] 流式刻录完成：{result.BytesWritten} 字节，")
@@ -924,6 +933,7 @@ public partial class BurnViewModel : ObservableObject
         }
         catch (OperationCanceledException exception)
         {
+            Milestones.Fail(exception.Message, cancelled: true);
             if (ownsBusyState) _shell.AbortDockJob(L.T("已取消：流式刻录"), expandLog: false);
             _shell.AppendLog(IsCdExtraBurn
                 ? $"[{DateTime.Now:HH:mm:ss}] {exception.Message}\n"
@@ -932,6 +942,7 @@ public partial class BurnViewModel : ObservableObject
         }
         catch (Exception exception)
         {
+            Milestones.Fail(exception.Message, cancelled: false);
             if (ownsBusyState) _shell.AbortDockJob(L.T("失败：流式刻录"), expandLog: true);
             _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] 流式刻录失败：{exception.Message}\n"));
             _shell.AppendLog(OpticalBurnDiagnostics.FormatException(exception) + "\n");

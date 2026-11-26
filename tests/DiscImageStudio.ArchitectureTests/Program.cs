@@ -19,6 +19,7 @@ if (args is ["--single-instance-probe", string instanceName])
 if (args is ["--test-wpf-startup"])
 {
     MotionTransitionTests.Run();
+    FrontendMotionTests.Run();
     SingleInstanceTests.Run();
     StartupFailureTests.Run();
     return;

@@ -12,6 +12,7 @@ using DiscImageStudio.Burning;
 using DiscImageStudio.Cd;
 using DiscImageStudio.Controls;
 using DiscImageStudio.Core;
+using DiscImageStudio.Localization;
 using DiscImageStudio.Services;
 using Microsoft.Win32;
 
@@ -27,6 +28,7 @@ public sealed partial class CdExtraWindow : TransitionWindow
     private readonly ObservableCollection<string> _music = [];
     private CdExtraPackage? _package;
     private string? _directory;
+    private readonly ViewModels.BurnMilestonesViewModel _milestones = new();
     private CancellationTokenSource? _operation;
     private CancellationTokenSource? _speedQuery;
     private bool _refreshingDevices;
@@ -42,6 +44,9 @@ public sealed partial class CdExtraWindow : TransitionWindow
         _geometry = geometry;
         _tone = tone;
         InitializeComponent();
+        MilestoneStrip.DataContext = _milestones;
+        MilestoneGate.SetBinding(VisibilityGate.IsOpenProperty,
+            new System.Windows.Data.Binding(nameof(ViewModels.BurnMilestonesViewModel.IsVisible)) { Source = _milestones });
 
         _list.ItemsSource = _music;
         _summary.Text = artwork is null
@@ -301,14 +306,27 @@ public sealed partial class CdExtraWindow : TransitionWindow
             var request = await StaWorker.RunAsync(() => package.CreateBurnRequest(
                 directory, device.Id, choice.Speed, token, progress.Report));
             string? lastPhase = null;
+            _milestones.Begin(testWrite: request.TestWrite);
             var deviceProgress = new Progress<OpticalBurnProgress>(value =>
             {
                 if (_operation?.Token != token) return;
+                _milestones.Observe(value);
                 if (value.Stage is "diagnostic" or "reconnect" || lastPhase != value.Stage) Append(value.Message);
                 lastPhase = value.Stage;
                 status.Report(new(value.Message, value.TotalBytes > 0 ? value.Fraction : null));
             });
-            var result = await new WindowsImapiBurner().BurnCdExtraAsync(request, deviceProgress, token);
+            CdExtraBurnResult result;
+            try
+            {
+                result = await new WindowsImapiBurner().BurnCdExtraAsync(request, deviceProgress, token);
+            }
+            catch (Exception e)
+            {
+                _milestones.Fail(e.Message, cancelled: e is OperationCanceledException);
+                throw;
+            }
+
+            _milestones.Succeed(L.F($"图案轨 {result.VerifiedPictureSectors:N0} 个扇区读回一致"));
             Append($"已封盘，图案轨 {result.VerifiedPictureSectors:N0} 个扇区全部读回校验通过。");
         });
     }
@@ -323,13 +341,26 @@ public sealed partial class CdExtraWindow : TransitionWindow
         await RunAsync("图案断点续写与校验", async (token, status) =>
         {
             _refreshMediaAfterTask = true;
+            _milestones.Begin(resume: true);
             var progress = new Progress<OpticalBurnProgress>(p =>
             {
                 if (_operation?.Token != token) return;
+                _milestones.Observe(p);
                 if (p.Stage is "diagnostic" or "reconnect" or "finalize" or "complete") Append(p.Message);
                 status.Report(new(p.Message, p.TotalBytes > 0 ? p.Fraction : null));
             });
-            long sectors = await new WindowsImapiBurner().ResumeCdExtraPictureAsync(device.Id, path, progress, token);
+            long sectors;
+            try
+            {
+                sectors = await new WindowsImapiBurner().ResumeCdExtraPictureAsync(device.Id, path, progress, token);
+            }
+            catch (Exception e)
+            {
+                _milestones.Fail(e.Message, cancelled: e is OperationCanceledException);
+                throw;
+            }
+
+            _milestones.Succeed(L.F($"图案轨全部 {sectors:N0} 个扇区读回一致"));
             Append($"图案轨 {sectors:N0} 个扇区全部读回校验通过。");
         });
     }

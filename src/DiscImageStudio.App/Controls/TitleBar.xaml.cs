@@ -59,6 +59,9 @@ public partial class TitleBar : UserControl
     }
 
     /// <summary>Shows the direct settings gear. Only the main window opts in.</summary>
+    /// <summary>The gear: settings open out of it and fold back into it.</summary>
+    internal Button SettingsAnchor => SettingsButton;
+
     public bool ShowSettingsButton
     {
         get => (bool)GetValue(ShowSettingsButtonProperty);

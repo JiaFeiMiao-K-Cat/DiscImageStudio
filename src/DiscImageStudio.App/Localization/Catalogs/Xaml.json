@@ -1809,13 +1809,13 @@
     "cs": "Složka (volitelné)"
   },
   "Xaml.CtrlAltScrollToZoomMiddleDragToPan": {
-    "zh-CN": "Ctrl/Alt + 滚轮同样可以缩放；中键拖动平移",
-    "en": "Ctrl/Alt + scroll to zoom; middle-drag to pan",
-    "zh-TW": "Ctrl/Alt + 滾輪同樣可以縮放；中鍵拖曳平移",
-    "ja": "Ctrl/Alt + ホイールでもズームできます。中ボタンのドラッグでパンします",
-    "tr": "Ctrl/Alt + kaydırarak yakınlaştırın; orta tuşla sürükleyerek kaydırın",
-    "es": "Ctrl/Alt + rueda para ampliar; arrastra con el botón central para desplazar",
-    "cs": "Ctrl/Alt + kolečko přibližuje, tažení prostředním tlačítkem posouvá"
+    "zh-CN": "滚轮缩放视口（不改变图片大小）；放大后中键拖动平移",
+    "en": "Scroll to zoom the view (the artwork keeps its size); middle-drag to pan when zoomed in",
+    "zh-TW": "滾輪縮放視圖（不改變圖片大小）；放大後中鍵拖曳平移",
+    "ja": "ホイールで表示を拡大縮小（画像サイズは変わりません）。拡大中は中ボタンのドラッグでパン",
+    "tr": "Görünümü yakınlaştırmak için kaydırın (resim boyutu değişmez); yakınlaştırınca orta tuşla kaydırın",
+    "es": "Rueda para ampliar la vista (la imagen conserva su tamaño); arrastra con el botón central para desplazar",
+    "cs": "Kolečko přibližuje zobrazení (velikost obrázku se nemění); prostředním tlačítkem posouváte"
   },
   "Xaml.FitToWindowOrDoubleClickEmptySpace": {
     "zh-CN": "适应窗口（双击空白处同样生效）",

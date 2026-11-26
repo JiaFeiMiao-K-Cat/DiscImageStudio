@@ -10,32 +10,52 @@
         <!-- MaxWidth alone centers this column: Stretch + MaxWidth arranges it at 1120 and
              WPF centers the capped element, so the sections span the full page column. -->
         <StackPanel MaxWidth="1120" Margin="{StaticResource PagePadding}">
-            <Border Background="{DynamicResource HomeHeaderBrush}" BorderBrush="{DynamicResource DividerBrush}"
-                    BorderThickness="0" Padding="24,20,24,20">
-                <StackPanel>
-                    <TextBlock Text="Disc Image Studio" Style="{StaticResource H1Title}" />
-                    <TextBlock Style="{StaticResource PageSubtitle}" Margin="0,6,0,0"
-                               Text="{loc:Text Xaml.CreateAndBurnVisibleArtworkOnOpticalDiscs}" />
-                    <WrapPanel Margin="0,20,0,0">
-                        <Button Style="{StaticResource PrimaryButton}" Content="{loc:Text Xaml.NewProject}"
-                                Padding="18,0" Margin="0,0,8,6" Command="{Binding NewProjectCommand}" />
-                        <Button Style="{StaticResource SecondaryButton}" Content="{loc:Text Xaml.OpenProject}"
-                                Padding="18,0" Margin="0,0,8,6" Command="{Binding OpenProjectCommand}" />
-                        <Button Style="{StaticResource SecondaryButton}" Padding="14,0" Margin="0,0,0,6"
-                                Command="{Binding ContinueProjectCommand}"
-                                Visibility="{Binding IsProjectOpenVisibility}"
-                                ToolTip="{loc:Text Xaml.ReturnToTheOpenProjectAndContinueInDesign}">
-                            <StackPanel Orientation="Horizontal">
-                                <iconPacks:PackIconLucide Kind="ArrowLeft" Width="16" Height="16" VerticalAlignment="Center"
-                                                          Foreground="{DynamicResource PrimaryBrush}" />
-                                <TextBlock Text="{loc:Text Xaml.BackToProject}" Margin="8,0,0,0" VerticalAlignment="Center" />
-                                <TextBlock Text="{Binding CurrentProjectName}" Margin="8,0,0,0"
-                                           VerticalAlignment="Center" MaxWidth="200" TextTrimming="CharacterEllipsis"
-                                           Foreground="{DynamicResource TextMutedBrush}" />
-                            </StackPanel>
-                        </Button>
-                    </WrapPanel>
-                </StackPanel>
+            <!-- Hero band: the app's own icon and name on the blue gradient, with the two ways
+                 into work — a new project or an existing one. -->
+            <Border x:Name="Hero" Background="{DynamicResource HomeHeaderBrush}" Padding="28,24,28,24">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Image Source="{StaticResource AppIconSource}" Width="64" Height="64" VerticalAlignment="Top"
+                           Margin="0,2,20,0" RenderOptions.BitmapScalingMode="HighQuality" />
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="Disc Image Studio" Style="{StaticResource H1Title}" />
+                        <TextBlock Style="{StaticResource PageSubtitle}" Margin="0,4,0,0"
+                                   Text="{loc:Text Xaml.CreateAndBurnVisibleArtworkOnOpticalDiscs}" />
+                        <WrapPanel Margin="0,20,0,0">
+                            <Button x:Name="NewProjectButton" Style="{StaticResource PrimaryButton}" Padding="16,0" Margin="0,0,8,6"
+                                    Command="{Binding NewProjectCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconLucide Kind="Plus" Width="16" Height="16" VerticalAlignment="Center" />
+                                    <TextBlock Text="{loc:Text Xaml.NewProject}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="OpenProjectButton" Style="{StaticResource SecondaryButton}" Padding="16,0" Margin="0,0,8,6"
+                                    Command="{Binding OpenProjectCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconLucide Kind="FolderOpen" Width="16" Height="16" VerticalAlignment="Center"
+                                                              Foreground="{DynamicResource PrimaryBrush}" />
+                                    <TextBlock Text="{loc:Text Xaml.OpenProject}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource SecondaryButton}" Padding="14,0" Margin="0,0,0,6"
+                                    Command="{Binding ContinueProjectCommand}"
+                                    Visibility="{Binding IsProjectOpenVisibility}"
+                                    ToolTip="{loc:Text Xaml.ReturnToTheOpenProjectAndContinueInDesign}">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconPacks:PackIconLucide Kind="ArrowLeft" Width="16" Height="16" VerticalAlignment="Center"
+                                                              Foreground="{DynamicResource PrimaryBrush}" />
+                                    <TextBlock Text="{loc:Text Xaml.BackToProject}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding CurrentProjectName}" Margin="8,0,0,0"
+                                               VerticalAlignment="Center" MaxWidth="200" TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource TextMutedBrush}" />
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+                    </StackPanel>
+                </Grid>
             </Border>
 
             <TextBlock Text="{loc:Text Xaml.StartFromATemplate}" Style="{StaticResource CardTitle}"

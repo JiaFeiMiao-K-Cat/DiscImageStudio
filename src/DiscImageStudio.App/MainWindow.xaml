@@ -26,11 +26,11 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <controls:TitleBar Grid.Row="0" ProjectTitle="{Binding ProjectTitleDisplay}"
+        <controls:TitleBar x:Name="AppTitleBar" Grid.Row="0" ProjectTitle="{Binding ProjectTitleDisplay}"
                            ShowSettingsButton="True" SettingsRequested="Settings_Click"
                            UseSystemWindowCommands="True" />
 
-        <Grid Grid.Row="1">
+        <Grid x:Name="ContentRoot" Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -183,6 +183,28 @@
                 <controls:JobDock x:Name="DockHost" Grid.Row="1" Focusable="False" />
             </Grid>
         </Grid>
+
+        <!-- Drive & disc details: a light-dismiss layer plus a surface that grows out of the
+             sidebar drive card and folds back into it. -->
+        <Border x:Name="DriveDetailsDismiss" Grid.Row="1" Panel.ZIndex="14" Background="Transparent"
+                Visibility="Collapsed" MouseDown="DriveDetailsDismiss_MouseDown" />
+        <controls:ConnectedSurface x:Name="DriveDetailsSurface" Grid.Row="1" Panel.ZIndex="15"
+                                   HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                                   Margin="{Binding Source={StaticResource SidebarWidth}, Converter={x:Static controls:DriveDetailsMargin.Instance}}"
+                                   OpenDuration="0:0:0.26" CloseDuration="0:0:0.2">
+            <controls:DriveDetailsPanel x:Name="DriveDetails" DataContext="{Binding Drive}" />
+        </controls:ConnectedSurface>
+
+        <!-- Settings: a Windows 10 Settings page inside the window. It opens out of the
+             title-bar gear and closes back into it; the dimmed backdrop keeps the page it
+             came from visible during the transition. -->
+        <Border x:Name="SettingsBackdrop" Grid.Row="1" Panel.ZIndex="24"
+                Background="{DynamicResource BackdropBrush}" Visibility="Collapsed" Opacity="0" />
+        <controls:ConnectedSurface x:Name="SettingsSurface" Grid.Row="1" Panel.ZIndex="25"
+                                   Backdrop="{Binding ElementName=SettingsBackdrop}"
+                                   OpenDuration="0:0:0.32" CloseDuration="0:0:0.24">
+            <controls:SettingsPage x:Name="SettingsPageHost" />
+        </controls:ConnectedSurface>
 
         <!-- Toasts: top-right, over pages and sidebar -->
         <controls:ToastHost Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Top"

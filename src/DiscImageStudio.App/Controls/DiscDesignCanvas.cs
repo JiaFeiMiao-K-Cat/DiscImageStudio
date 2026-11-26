@@ -579,15 +579,16 @@ public class DiscDesignCanvas : FrameworkElement
     protected override void OnMouseWheel(MouseWheelEventArgs args)
     {
         base.OnMouseWheel(args);
-        // Plain wheel keeps scrolling the page; Ctrl/Alt zoom with the cursor as the anchor
-        // so the point under the mouse stays put while the fit scale grows beneath it.
-        if (_design is null
-            || (Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Alt)) == 0)
+        // The wheel zooms the viewport (never the artwork) around the cursor, so the point
+        // under the mouse stays put. Layer size only changes through the corner handles.
+        if (_design is null || args.Delta == 0)
         {
             return;
         }
 
-        ZoomAt(args.Delta > 0 ? WheelZoomStep : 1.0 / WheelZoomStep, args.GetPosition(this));
+        int notches = Math.Clamp(Math.Abs(args.Delta) / 120, 1, 4);
+        double factor = Math.Pow(WheelZoomStep, notches);
+        ZoomAt(args.Delta > 0 ? factor : 1.0 / factor, args.GetPosition(this));
         args.Handled = true;
     }
 
@@ -796,19 +797,42 @@ public class DiscDesignCanvas : FrameworkElement
             return;
         }
 
-        Point mouse = args.GetPosition(this);
-        if (HitScaleHandle(mouse).HasValue
-            || (_design.SelectedLayer is { } selected
-                && RotateHandlePoint(selected) is { } rotate
-                && Near(mouse, rotate, HandleSize + 2)))
-        {
-            Cursor = Cursors.SizeAll;
-        }
-        else
-        {
-            Cursor = Cursors.Arrow;
-        }
+        Cursor = CursorAt(args.GetPosition(this));
     }
+
+    /// <summary>Windows conventions: diagonal resize arrows on the corner handles (following
+    /// the layer's rotation), a hand on the rotation handle, the move cross over a layer.</summary>
+    private Cursor CursorAt(Point mouse)
+    {
+        if (_design is null) return Cursors.Arrow;
+        if (HitScaleHandle(mouse) is { } corner && _design.SelectedLayer is { } scaled)
+        {
+            // NW/SE corners point along 135°/315°, NE/SW along 45°/225°, before rotation.
+            double angle = (corner.CornerIndex % 2 == 0 ? 135 : 45) - scaled.RotationDeg;
+            angle = ((angle % 180) + 180) % 180;
+            if (angle < 22.5 || angle >= 157.5) return Cursors.SizeWE;
+            if (angle < 67.5) return Cursors.SizeNESW;
+            if (angle < 112.5) return Cursors.SizeNS;
+            return Cursors.SizeNWSE;
+        }
+
+        if (_design.SelectedLayer is { } selected && RotateHandlePoint(selected) is { } rotate
+            && Near(mouse, rotate, HandleSize + 2))
+        {
+            return Cursors.Hand;
+        }
+
+        return HitTestLayer(MmFromScreen(mouse)) is not null ? Cursors.SizeAll : Cursors.Arrow;
+    }
+
+    // ---- Probe hooks: where a real pointer must go to grab each handle ----
+
+    internal Point ProbeScreenPointForMm(double xMm, double yMm) => ScreenFromMm(xMm, yMm);
+
+    internal Point[] ProbeCornerPoints(DesignLayerViewModel layer)
+        => LayerCorners(layer).Select(corner => ScreenFromMm(corner.X, corner.Y)).ToArray();
+
+    internal Point? ProbeRotateHandle(DesignLayerViewModel layer) => RotateHandlePoint(layer);
 
     protected override void OnMouseLeftButtonUp(MouseButtonEventArgs args)
     {

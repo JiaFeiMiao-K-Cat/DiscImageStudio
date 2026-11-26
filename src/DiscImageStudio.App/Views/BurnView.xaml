@@ -111,6 +111,10 @@
                 </StackPanel>
             </controls:SectionCard>
 
+            <!-- Outcome of the current/last burn: written, finalized and verified apart. -->
+            <controls:VisibilityGate IsOpen="{Binding Milestones.IsVisible}" Margin="0,0,0,24">
+                <controls:BurnMilestoneStrip DataContext="{Binding Milestones}" />
+            </controls:VisibilityGate>
             <!-- Danger zone: the warning, its acknowledgement and the single action that
                  starts the write belong to one card. Progress is reported by the job dock. -->
             <Border Style="{StaticResource DangerCard}">

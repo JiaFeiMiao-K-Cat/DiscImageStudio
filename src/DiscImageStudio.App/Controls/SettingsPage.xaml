@@ -1,57 +1,64 @@
-<app:TransitionWindow x:Class="DiscImageStudio.SettingsWindow"
-        xmlns:app="clr-namespace:DiscImageStudio"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:loc="clr-namespace:DiscImageStudio.Localization"
-        xmlns:controls="clr-namespace:DiscImageStudio.Controls"
-        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
-        Title="{loc:Text Settings.Settings}"
-        Width="760" Height="600"
-        WindowStartupLocation="CenterOwner"
-        WindowStyle="None" ResizeMode="NoResize"
-        Background="{DynamicResource BackgroundBrush}"
-        FontFamily="{StaticResource AppFontFamily}"
-        UseLayoutRounding="True" SnapsToDevicePixels="True">
-    <WindowChrome.WindowChrome>
-        <WindowChrome GlassFrameThickness="0" CaptionHeight="32" CornerRadius="0"
-                      ResizeBorderThickness="0" UseAeroCaptionButtons="False" />
-    </WindowChrome.WindowChrome>
-
-    <Grid Background="{DynamicResource BackgroundBrush}">
+<UserControl x:Class="DiscImageStudio.Controls.SettingsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:DiscImageStudio.Localization"
+             xmlns:controls="clr-namespace:DiscImageStudio.Controls"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             Background="{DynamicResource BackgroundBrush}"
+             KeyboardNavigation.TabNavigation="Cycle"
+             FocusManager.IsFocusScope="False">
+    <!-- Windows 10 Settings layout inside the main window: a back arrow and a light 28 px
+         title, categories on the left, the active category on the right, Save/Cancel at the
+         bottom. The page opens out of the title-bar gear and closes back into it
+         (ConnectedSurface); nothing is applied until Save. -->
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="32" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <controls:TitleBar Grid.Row="0" ProjectTitle="{loc:Text Settings.Settings}"
-                           ShowMinimizeButton="False" ShowMaximizeButton="False" />
+        <Grid Grid.Row="0" Margin="12,12,24,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button x:Name="BackButton" Style="{StaticResource GhostButton}" Width="40" Height="40" Padding="0"
+                    AutomationProperties.Name="{loc:Text Xaml.BackToHome}" ToolTip="{loc:Text Settings.Cancel}"
+                    Click="Back_Click">
+                <iconPacks:PackIconLucide Kind="ArrowLeft" Width="18" Height="18"
+                                          Foreground="{DynamicResource TextPrimaryBrush}" />
+            </Button>
+            <TextBlock Grid.Column="1" Text="{loc:Text Settings.Settings}" Style="{StaticResource H1Title}"
+                       VerticalAlignment="Center" Margin="12,0,0,2" />
+        </Grid>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="220" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="{DynamicResource PaneSurfaceBrush}"
-                    BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,1,0"
-                    Padding="16,12">
-                <StackPanel>
-                    <controls:SideNavItem x:Name="GeneralNav" LabelText="{loc:Text Settings.General}"
-                                          IconKind="SlidersHorizontal" IsActive="True"
-                                          Activated="GeneralNav_Activated" />
-                    <controls:SideNavItem x:Name="StorageNav" LabelText="{loc:Text Settings.Storage}"
-                                          IconKind="HardDrive" Activated="StorageNav_Activated" />
-                    <controls:SideNavItem x:Name="AboutNav" LabelText="{loc:Text Xaml.About}"
-                                          IconKind="Info" Activated="AboutNav_Activated" />
-                </StackPanel>
-            </Border>
+            <StackPanel Grid.Column="0" Margin="12,8,12,12">
+                <controls:SideNavItem x:Name="GeneralNav" LabelText="{loc:Text Settings.General}"
+                                      IconKind="SlidersHorizontal" IsActive="True"
+                                      Activated="GeneralNav_Activated" />
+                <controls:SideNavItem x:Name="StorageNav" LabelText="{loc:Text Settings.Storage}"
+                                      IconKind="HardDrive" Activated="StorageNav_Activated" />
+                <controls:SideNavItem x:Name="AboutNav" LabelText="{loc:Text Xaml.About}"
+                                      IconKind="Info" Activated="AboutNav_Activated" />
+            </StackPanel>
 
-            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto"
+            <ScrollViewer x:Name="ContentScroller" Grid.Column="1" VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
-                <StackPanel Margin="24,16,24,24">
+                <Grid Margin="24,0,32,24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MaxWidth="760" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                <StackPanel x:Name="ContentColumn">
                     <StackPanel x:Name="GeneralPanel">
-                        <TextBlock Text="{loc:Text Settings.General}" Style="{StaticResource H1Title}" />
+                        <TextBlock Text="{loc:Text Settings.General}" Style="{StaticResource H1Title}" FontSize="22" FontWeight="Normal" />
                         <TextBlock Text="{loc:Text Settings.AppearanceAndLanguagePreferences}" Style="{StaticResource PageSubtitle}" Margin="0,4,0,0" />
 
                         <controls:SectionCard Header="{loc:Text Settings.Appearance}" IconKind="Palette" Margin="0,20,0,0">
@@ -79,7 +86,7 @@
                     </StackPanel>
 
                     <StackPanel x:Name="StoragePanel" Visibility="Collapsed">
-                        <TextBlock Text="{loc:Text Settings.Storage}" Style="{StaticResource H1Title}" />
+                        <TextBlock Text="{loc:Text Settings.Storage}" Style="{StaticResource H1Title}" FontSize="22" FontWeight="Normal" />
                         <TextBlock Text="{loc:Text Settings.DefaultLocationsForNewProjectsAndTemporaryFiles}"
                                    Style="{StaticResource PageSubtitle}" Margin="0,4,0,0" />
 
@@ -140,7 +147,7 @@
                          the three embedded license texts behind expanders. No cards: this is
                          a colophon, not a settings form. -->
                     <StackPanel x:Name="AboutPanel" Visibility="Collapsed">
-                        <TextBlock Text="{loc:Text Xaml.About}" Style="{StaticResource H1Title}" />
+                        <TextBlock Text="{loc:Text Xaml.About}" Style="{StaticResource H1Title}" FontSize="22" FontWeight="Normal" />
 
                         <Grid Margin="0,20,0,0">
                             <Grid.ColumnDefinitions>
@@ -232,6 +239,7 @@
                         </Expander>
                     </StackPanel>
                 </StackPanel>
+                </Grid>
             </ScrollViewer>
         </Grid>
 
@@ -247,9 +255,9 @@
                 <TextBlock Text="{Binding ErrorMessage}" Style="{StaticResource CompactText}"
                            Foreground="{DynamicResource DangerBrush}"
                            VerticalAlignment="Center" Margin="0,0,16,0" TextWrapping="Wrap" />
-                <Button Grid.Column="1" Content="{loc:Text Settings.Cancel}" Style="{StaticResource SecondaryButton}"
+                <Button x:Name="CancelButton" Grid.Column="1" Content="{loc:Text Settings.Cancel}" Style="{StaticResource SecondaryButton}"
                         MinWidth="88" Click="Cancel_Click" />
-                <Button Grid.Column="3" Content="{loc:Text Settings.Save}" Style="{StaticResource PrimaryButton}"
+                <Button x:Name="SaveButton" Grid.Column="3" Content="{loc:Text Settings.Save}" Style="{StaticResource PrimaryButton}"
                         MinWidth="88" Click="Save_Click" />
             </Grid>
         </Border>
@@ -258,4 +266,4 @@
         <controls:ConfirmModal x:Name="UpdateConfirm" Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="31" />
         <controls:ConfirmModal x:Name="UnsavedConfirm" Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="32" />
     </Grid>
-</app:TransitionWindow>
+</UserControl>

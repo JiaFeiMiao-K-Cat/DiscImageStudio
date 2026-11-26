@@ -1,0 +1,46 @@
+<UserControl x:Class="DiscImageStudio.Controls.DriveDetailsPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:DiscImageStudio.Controls"
+             xmlns:loc="clr-namespace:DiscImageStudio.Localization">
+    <!-- "光驱与盘片" details. Hosted by a ConnectedSurface in the main window: it grows out of
+         the sidebar drive card and folds back into it. -->
+    <Border x:Name="Card" Width="300" Background="{DynamicResource Surface1Brush}"
+                    BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1"
+                    CornerRadius="{StaticResource RadiusFloating}" Padding="16,14"
+                    Effect="{StaticResource FloatingShadow}">
+                <StackPanel>
+                    <TextBlock Text="{loc:Text DriveInfo.DetailsTitle}" Style="{StaticResource RowText}"
+                               FontWeight="Medium" />
+                    <controls:VisibilityGate IsOpen="{Binding IsMultipleDrives}" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Text="{loc:Text DriveInfo.Drive}"
+                                       Style="{StaticResource MicroText}" Margin="0,0,0,4" />
+                            <ComboBox ItemsSource="{Binding Drives}" SelectedItem="{Binding SelectedDrive}"
+                                      DisplayMemberPath="DisplayName" />
+                        </StackPanel>
+                    </controls:VisibilityGate>
+                    <ItemsControl ItemsSource="{Binding Details}" Margin="0,10,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" MinWidth="74" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Label}" Style="{StaticResource MicroText}"
+                                               Margin="0,1,8,0" />
+                                    <controls:CopyableText Grid.Column="1" Text="{Binding Value}"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                           TextAlignment="Right" TextWrapping="Wrap" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{loc:Text DriveInfo.CapacityHint}"
+                               Style="{StaticResource MicroText}" TextWrapping="Wrap"
+                               Margin="0,4,0,0" />
+                </StackPanel>
+            </Border>
+</UserControl>

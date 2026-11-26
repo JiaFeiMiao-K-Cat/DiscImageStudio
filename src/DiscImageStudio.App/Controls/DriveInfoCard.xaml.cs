@@ -27,6 +27,9 @@ public partial class DriveInfoCard : UserControl
         Unloaded += (_, _) => _isLoaded = false;
     }
 
+    /// <summary>The clickable card; the details surface opens out of it and folds back in.</summary>
+    internal FrameworkElement Anchor => CardHost;
+
     public bool HasDisc
     {
         get => (bool)GetValue(HasDiscProperty);

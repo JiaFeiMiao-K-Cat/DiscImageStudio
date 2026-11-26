@@ -1,0 +1,236 @@
+{
+  "设备已接收 {0:P0}": {
+    "zh-CN": "设备已接收 {0:P0}",
+    "en": "The recorder has accepted {0:P0}",
+    "zh-TW": "裝置已接收 {0:P0}",
+    "ja": "ドライブが {0:P0} を受信",
+    "tr": "Kaydedici {0:P0} kabul etti",
+    "es": "La grabadora ha aceptado {0:P0}",
+    "cs": "Mechanika přijala {0:P0}"
+  },
+  "设备已接收全部数据": {
+    "zh-CN": "设备已接收全部数据",
+    "en": "The recorder accepted all data",
+    "zh-TW": "裝置已接收全部資料",
+    "ja": "ドライブがすべてのデータを受信しました",
+    "tr": "Kaydedici tüm verileri kabul etti",
+    "es": "La grabadora aceptó todos los datos",
+    "cs": "Mechanika přijala všechna data"
+  },
+  "第 1 区段（音乐）已关闭，等待写入图案后封盘": {
+    "zh-CN": "第 1 区段（音乐）已关闭，等待写入图案后封盘",
+    "en": "Session 1 (music) closed; the disc is finalized after the artwork",
+    "zh-TW": "第 1 區段（音樂）已關閉，寫入圖案後封盤",
+    "ja": "セッション 1（音楽）を閉じました。図案の書き込み後にファイナライズします",
+    "tr": "1. oturum (müzik) kapandı; disk görselden sonra sonlandırılır",
+    "es": "Sesión 1 (música) cerrada; el disco se finaliza tras la imagen",
+    "cs": "Relace 1 (hudba) uzavřena; disk se uzavře po zápisu obrázku"
+  },
+  "光驱已确认封盘": {
+    "zh-CN": "光驱已确认封盘",
+    "en": "The recorder confirmed the disc is finalized",
+    "zh-TW": "光碟機已確認封盤",
+    "ja": "ドライブがファイナライズを確認しました",
+    "tr": "Kaydedici diskin sonlandırıldığını onayladı",
+    "es": "La grabadora confirmó que el disco está finalizado",
+    "cs": "Mechanika potvrdila uzavření disku"
+  },
+  "已读回 {0:P0}": {
+    "zh-CN": "已读回 {0:P0}",
+    "en": "Read back {0:P0}",
+    "zh-TW": "已讀回 {0:P0}",
+    "ja": "{0:P0} を読み戻しました",
+    "tr": "{0:P0} geri okundu",
+    "es": "Releído {0:P0}",
+    "cs": "Zpětně přečteno {0:P0}"
+  },
+  "模拟写入不会封盘": {
+    "zh-CN": "模拟写入不会封盘",
+    "en": "A test write does not finalize",
+    "zh-TW": "模擬寫入不會封盤",
+    "ja": "テスト書き込みではファイナライズしません",
+    "tr": "Deneme yazımı diski sonlandırmaz",
+    "es": "Una escritura de prueba no finaliza el disco",
+    "cs": "Zkušební zápis disk neuzavírá"
+  },
+  "模拟写入不会读回校验": {
+    "zh-CN": "模拟写入不会读回校验",
+    "en": "A test write is not read back",
+    "zh-TW": "模擬寫入不會讀回校驗",
+    "ja": "テスト書き込みでは読み戻し検証をしません",
+    "tr": "Deneme yazımı geri okunarak doğrulanmaz",
+    "es": "Una escritura de prueba no se verifica por relectura",
+    "cs": "Zkušební zápis se zpětně neověřuje"
+  },
+  "正在核对原盘和已写前缀…": {
+    "zh-CN": "正在核对原盘和已写前缀…",
+    "en": "Checking the disc and the part already written…",
+    "zh-TW": "正在核對原盤和已寫前綴…",
+    "ja": "元のディスクと書き込み済みの部分を確認中…",
+    "tr": "Disk ve yazılmış kısım denetleniyor…",
+    "es": "Comprobando el disco y la parte ya escrita…",
+    "cs": "Kontroluje se disk a již zapsaná část…"
+  },
+  "刻录进行中": {
+    "zh-CN": "刻录进行中",
+    "en": "Burning",
+    "zh-TW": "燒錄進行中",
+    "ja": "書き込み中",
+    "tr": "Yazılıyor",
+    "es": "Grabando",
+    "cs": "Probíhá vypalování"
+  },
+  "模拟写入完成：光驱接受了全部写入命令，盘片没有被改变。": {
+    "zh-CN": "模拟写入完成：光驱接受了全部写入命令，盘片没有被改变。",
+    "en": "Test write finished: the recorder accepted every write command; the disc was not changed.",
+    "zh-TW": "模擬寫入完成：光碟機接受了全部寫入命令，光碟沒有被改變。",
+    "ja": "テスト書き込み完了：ドライブはすべての書き込みコマンドを受け付けました。ディスクは変更されていません。",
+    "tr": "Deneme yazımı bitti: kaydedici tüm yazma komutlarını kabul etti; disk değişmedi.",
+    "es": "Escritura de prueba terminada: la grabadora aceptó todos los comandos; el disco no cambió.",
+    "cs": "Zkušební zápis dokončen: mechanika přijala všechny příkazy, disk se nezměnil."
+  },
+  "写入完成、已封盘、读回校验通过。": {
+    "zh-CN": "写入完成、已封盘、读回校验通过。",
+    "en": "Written, finalized and verified by read-back.",
+    "zh-TW": "寫入完成、已封盤、讀回校驗通過。",
+    "ja": "書き込み完了・ファイナライズ済み・読み戻し検証合格。",
+    "tr": "Yazıldı, sonlandırıldı ve geri okunarak doğrulandı.",
+    "es": "Escrito, finalizado y verificado por relectura.",
+    "cs": "Zapsáno, uzavřeno a ověřeno zpětným čtením."
+  },
+  "本次刻录未进行读回校验": {
+    "zh-CN": "本次刻录未进行读回校验",
+    "en": "This burn was not read back",
+    "zh-TW": "本次燒錄未進行讀回校驗",
+    "ja": "今回の書き込みでは読み戻し検証を行っていません",
+    "tr": "Bu yazım geri okunarak doğrulanmadı",
+    "es": "Esta grabación no se verificó por relectura",
+    "cs": "Tento zápis nebyl zpětně ověřen"
+  },
+  "写入完成并已封盘；本次未读回校验。": {
+    "zh-CN": "写入完成并已封盘；本次未读回校验。",
+    "en": "Written and finalized; not verified by read-back.",
+    "zh-TW": "寫入完成並已封盤；本次未讀回校驗。",
+    "ja": "書き込みとファイナライズは完了。読み戻し検証は未実施です。",
+    "tr": "Yazıldı ve sonlandırıldı; geri okunarak doğrulanmadı.",
+    "es": "Escrito y finalizado; no verificado por relectura.",
+    "cs": "Zapsáno a uzavřeno; zpětně neověřeno."
+  },
+  "未完成": {
+    "zh-CN": "未完成",
+    "en": "Not completed",
+    "zh-TW": "未完成",
+    "ja": "未完了",
+    "tr": "Tamamlanmadı",
+    "es": "No completado",
+    "cs": "Nedokončeno"
+  },
+  "已取消，校验未完成": {
+    "zh-CN": "已取消，校验未完成",
+    "en": "Cancelled; verification not completed",
+    "zh-TW": "已取消，校驗未完成",
+    "ja": "キャンセル。検証は未完了",
+    "tr": "İptal edildi; doğrulama tamamlanmadı",
+    "es": "Cancelado; verificación no completada",
+    "cs": "Zrušeno; ověření nedokončeno"
+  },
+  "校验未完成": {
+    "zh-CN": "校验未完成",
+    "en": "Verification not completed",
+    "zh-TW": "校驗未完成",
+    "ja": "検証未完了",
+    "tr": "Doğrulama tamamlanmadı",
+    "es": "Verificación no completada",
+    "cs": "Ověření nedokončeno"
+  },
+  "已写入并封盘，但读回校验未完成。": {
+    "zh-CN": "已写入并封盘，但读回校验未完成。",
+    "en": "Written and finalized, but read-back verification did not complete.",
+    "zh-TW": "已寫入並封盤，但讀回校驗未完成。",
+    "ja": "書き込みとファイナライズは完了しましたが、読み戻し検証は完了していません。",
+    "tr": "Yazıldı ve sonlandırıldı, ancak geri okuma doğrulaması tamamlanmadı.",
+    "es": "Escrito y finalizado, pero la verificación por relectura no terminó.",
+    "cs": "Zapsáno a uzavřeno, ale zpětné ověření nebylo dokončeno."
+  },
+  "数据已写入，盘片尚未确认封盘。": {
+    "zh-CN": "数据已写入，盘片尚未确认封盘。",
+    "en": "Data written; the disc has not been confirmed as finalized.",
+    "zh-TW": "資料已寫入，光碟尚未確認封盤。",
+    "ja": "データは書き込まれましたが、ファイナライズは確認されていません。",
+    "tr": "Veriler yazıldı; diskin sonlandırıldığı doğrulanmadı.",
+    "es": "Datos escritos; no se confirmó la finalización del disco.",
+    "cs": "Data zapsána; uzavření disku nebylo potvrzeno."
+  },
+  "刻录已取消。": {
+    "zh-CN": "刻录已取消。",
+    "en": "Burn cancelled.",
+    "zh-TW": "燒錄已取消。",
+    "ja": "書き込みをキャンセルしました。",
+    "tr": "Yazma iptal edildi.",
+    "es": "Grabación cancelada.",
+    "cs": "Vypalování zrušeno."
+  },
+  "刻录未完成。": {
+    "zh-CN": "刻录未完成。",
+    "en": "Burn did not complete.",
+    "zh-TW": "燒錄未完成。",
+    "ja": "書き込みは完了しませんでした。",
+    "tr": "Yazma tamamlanmadı.",
+    "es": "La grabación no terminó.",
+    "cs": "Vypalování nebylo dokončeno."
+  },
+  "写入完成": {
+    "zh-CN": "写入完成",
+    "en": "Written",
+    "zh-TW": "寫入完成",
+    "ja": "書き込み完了",
+    "tr": "Yazıldı",
+    "es": "Escrito",
+    "cs": "Zapsáno"
+  },
+  "已封盘": {
+    "zh-CN": "已封盘",
+    "en": "Finalized",
+    "zh-TW": "已封盤",
+    "ja": "ファイナライズ済み",
+    "tr": "Sonlandırıldı",
+    "es": "Finalizado",
+    "cs": "Uzavřeno"
+  },
+  "读回校验通过": {
+    "zh-CN": "读回校验通过",
+    "en": "Verified by read-back",
+    "zh-TW": "讀回校驗通過",
+    "ja": "読み戻し検証合格",
+    "tr": "Geri okuma doğrulandı",
+    "es": "Verificado por relectura",
+    "cs": "Ověřeno zpětným čtením"
+  },
+  "未读回校验": {
+    "zh-CN": "未读回校验",
+    "en": "Not read back",
+    "zh-TW": "未讀回校驗",
+    "ja": "読み戻し未検証",
+    "tr": "Geri okunmadı",
+    "es": "Sin relectura",
+    "cs": "Zpětně neověřeno"
+  },
+  "图案轨全部 {0:N0} 个扇区读回一致": {
+    "zh-CN": "图案轨全部 {0:N0} 个扇区读回一致",
+    "en": "All {0:N0} artwork sectors read back identical",
+    "zh-TW": "圖案軌全部 {0:N0} 個磁區讀回一致",
+    "ja": "図案トラックの {0:N0} セクターすべてが一致",
+    "tr": "Görsel izinin {0:N0} sektörünün tümü aynı okundu",
+    "es": "Los {0:N0} sectores de la imagen se releyeron idénticos",
+    "cs": "Všech {0:N0} sektorů obrázku se přečetlo shodně"
+  },
+  "图案轨 {0:N0} 个扇区读回一致": {
+    "zh-CN": "图案轨 {0:N0} 个扇区读回一致",
+    "en": "{0:N0} artwork sectors read back identical",
+    "zh-TW": "圖案軌 {0:N0} 個磁區讀回一致",
+    "ja": "図案トラックの {0:N0} セクターが一致",
+    "tr": "Görsel izinin {0:N0} sektörü aynı okundu",
+    "es": "{0:N0} sectores de la imagen releídos idénticos",
+    "cs": "{0:N0} sektorů obrázku se přečetlo shodně"
+  }
+}

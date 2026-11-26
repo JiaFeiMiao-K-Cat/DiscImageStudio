@@ -43,8 +43,8 @@ internal static class UnifiedCommandRunner
                     FindOption(snapshotArguments, "live-input"),
                     FindOption(snapshotArguments, "live-disc"),
                     FindOption(snapshotArguments, "live-mode"),
-                    int.Parse(FindOption(snapshotArguments, "width") ?? (settingsDialog ? "760" : "1366")),
-                    int.Parse(FindOption(snapshotArguments, "height") ?? (settingsDialog ? "600" : "768")),
+                    int.Parse(FindOption(snapshotArguments, "width") ?? (settingsDialog ? "1180" : "1366")),
+                    int.Parse(FindOption(snapshotArguments, "height") ?? (settingsDialog ? "720" : "768")),
                     FindOption(snapshotArguments, "calibration-session"),
                     FindOption(snapshotArguments, "calibration-view"),
                     FindOption(snapshotArguments, "project"),
@@ -64,7 +64,13 @@ internal static class UnifiedCommandRunner
                     FindOption(snapshotArguments, "settings-view"),
                     FindOption(snapshotArguments, "language"),
                     FindOption(snapshotArguments, "drive-fixture"),
-                    FindOption(snapshotArguments, "focus-target"));
+                    FindOption(snapshotArguments, "focus-target"),
+                    FindOption(snapshotArguments, "burn-outcome"));
+            }
+
+            if (command == "ui-interaction-probe")
+            {
+                return UiInteractionProbe.Run(arguments.AsSpan(1).ToArray());
             }
 
             if (command == "ui-focus-probe")
