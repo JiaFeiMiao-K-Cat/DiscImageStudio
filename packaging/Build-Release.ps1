@@ -77,7 +77,8 @@ New-Item -ItemType Directory -Path $publishDirectory, $isolatedAppDirectory -For
     "-p:AssemblyVersion=$($metadata.FileVersion)" `
     "-p:FileVersion=$($metadata.FileVersion)" `
     -p:PublishSingleFile=true `
-    -p:IncludeNativeLibrariesForSelfExtract=true
+    -p:IncludeNativeLibrariesForSelfExtract=true `
+    -p:EnableCompressionInSingleFile=true
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish failed with exit code $LASTEXITCODE."
 }
@@ -184,5 +185,6 @@ $checksumPath = Join-Path $releaseDirectory 'SHA256SUMS.txt'
 $checksumLine = "$hash  $packageFileName`n"
 [IO.File]::WriteAllText($checksumPath, $checksumLine, [Text.UTF8Encoding]::new($false))
 [IO.File]::WriteAllText("$packagePath.sha256", $checksumLine, [Text.UTF8Encoding]::new($false))
-Write-Host "Single executable release ready: $packagePath"
+$packageSizeBytes = (Get-Item -LiteralPath $packagePath).Length
+Write-Host "Single executable release ready: $packagePath ($packageSizeBytes bytes)"
 Write-Host "Checksums: $checksumPath"
