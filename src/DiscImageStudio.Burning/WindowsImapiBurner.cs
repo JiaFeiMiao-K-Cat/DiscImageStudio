@@ -9,6 +9,8 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
 {
     private readonly OpticalBurnOperationGate _operationGate = new();
     private const int CdDaoFallbackSpeedSectorsPerSecond = 1200;
+    private const int RawCdMediaNotBlank = unchecked((int)0xC0AA0606);
+    private const int RawCdMediaNotSupported = unchecked((int)0xC0AA0607);
     private const int BlankMediaState = 0x2;
     // IMAPI_FORMAT2_DATA_MEDIA_STATE_OVERWRITE_ONLY / _RANDOMLY_WRITABLE (imapi2.h).
     // A DVD+RW never returns to BLANK after its first format: erasing only replaces
@@ -79,7 +81,8 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             {
                 var transport = new ImapiMmcCommandTransport((object)recorder);
                 capacity = OpticalBurnMedia.UsesCdDao(mediaKind)
-                    ? ReadCdMediaCapacity(ReadCdAtipSectorCount(transport), Convert.ToBoolean(format.MediaPhysicallyBlank))
+                    ? ReadCdMediaCapacity(ReadCdAtipSectorCount(transport),
+                        Convert.ToBoolean(format.MediaPhysicallyBlank), physicalMediaType)
                     : physicalMediaType == BluRayRewritableMediaType
                         ? BluRayRewritableBurn.ReadCapacity(transport)
                         : ReadBluRayMediaCapacity(transport);
@@ -162,14 +165,17 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         return true;
     }
 
-    internal static OpticalMediaCapacity ReadCdMediaCapacity(long atipSectors, bool physicallyBlank)
+    internal static OpticalMediaCapacity ReadCdMediaCapacity(long atipSectors, bool physicallyBlank, int physicalMediaType)
     {
         if (atipSectors <= 2)
             throw new IOException("光驱未报告有效的 CD 容量。");
         // A conservative single-track payload limit shared with TAO. The actual
         // recorder remains DAO and independently checks its lead-out before writing.
-        // A used CD is not writable by this application's blank-disc DAO workflow.
-        return new(atipSectors, physicallyBlank ? atipSectors - 2 : 0);
+        bool requiresErase = !physicallyBlank && physicalMediaType == CdRewritableMediaType;
+        return new(atipSectors, physicallyBlank || requiresErase ? atipSectors - 2 : 0)
+        {
+            RequiresErase = requiresErase,
+        };
     }
 
     internal static OpticalMediaCapacity ReadDvdMediaCapacity(int physicalMediaType, int mediaState,
@@ -364,7 +370,8 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             BurnDeviceDiagnostics.Report(ReportDiagnostic, () => environmentDiagnostic = BurnDeviceDiagnostics.DescribeEnvironment(request));
             BurnDeviceDiagnostics.Report(ReportDiagnostic, () => recorderDiagnostic = BurnDeviceDiagnostics.DescribeRecorder((object)recorder));
             currentOperation = "创建刻录格式";
-            format = OpticalBurnMedia.UsesCdDao(request.MediaKind)
+            bool cdDao = OpticalBurnMedia.UsesCdDao(request.MediaKind);
+            format = cdDao
                 ? ImapiCom.CreateComObject("IMAPI2.MsftDiscFormat2RawCD")
                 : ImapiCom.CreateComObject("IMAPI2.MsftDiscFormat2Data");
             currentOperation = "连接刻录机";
@@ -378,16 +385,8 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             if (bluRayRewritable != request.BluRayRewritablePreparation.HasValue)
                 throw new InvalidOperationException("蓝光盘片已更换或尚未确认 BD-RE 格式化／覆写，请重新开始刻录。");
 
-            if (!bluRayRewritable && !(bool)format.IsRecorderSupported(recorder))
-                throw new InvalidOperationException("所选光驱不支持这种刻录方式。");
-
-            // Used DVD±RW can be erasable even when the data writer rejects its current state.
-            if (!bluRayRewritable
-                && !(request.MediaKind == OpticalBurnMediaKind.DvdData && DvdNeedsErase((object)format))
-                && !(bool)format.IsCurrentMediaSupported(recorder))
-            {
-                throw new InvalidOperationException("当前盘片与所选 CD/DVD/蓝光模式不兼容。");
-            }
+            bool cdRwNeedsErase = !bluRayRewritable
+                && ValidateWriterSupportBeforeBurn(request, physicalMediaType, (object)recorder, (object)format);
 
             using DynamicBluRaySequentialSession? rewritableSession = bluRayRewritable
                 ? CreateBluRaySession()
@@ -407,7 +406,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 produceContent = (output, token) => mappedProducer(output, layout.FirstPhysicalSector, layout.SectorCount, token);
             }
 
-            if (request.MediaKind != OpticalBurnMediaKind.DvdData)
+            if (request.MediaKind != OpticalBurnMediaKind.DvdData && !cdRwNeedsErase)
                 SelectAutomaticWriteSpeed();
 
             using GeneratedContentComStream content = new(
@@ -451,8 +450,44 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             }
 
             OpticalWriteSpeed? actualWriteSpeed;
-            if (OpticalBurnMedia.UsesCdDao(request.MediaKind))
+            if (cdDao)
             {
+                if (cdRwNeedsErase)
+                {
+                    ReportOperation("锁定并检查 CD-RW 盘片");
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var transport = new ImapiMmcCommandTransport((object)recorder);
+                    var commands = new BluRayMmcCommands(transport);
+                    commands.PreventRemoval(true);
+                    removalProtection = commands;
+
+                    PrepareCdRwForBurn(request, () =>
+                    {
+                        if (ValidateRequestedMedia(request.MediaKind, (object)recorder, (object)format!) != CdRewritableMediaType)
+                            throw new InvalidOperationException("盘片已更换，请重新开始刻录。");
+                        return ReadCdMediaCapacity(ReadCdAtipSectorCount(transport),
+                            Convert.ToBoolean(format!.MediaPhysicallyBlank), CdRewritableMediaType);
+                    }, () =>
+                    {
+                        ReportOperation("正在快速擦除 CD-RW，擦除完成后将继续刻录…");
+                        cancellationToken.ThrowIfCancellationRequested();
+                        EraseRewritableMedia((object)recorder, "CD-RW");
+                        cancellationToken.ThrowIfCancellationRequested();
+                        ReportOperation("重新检查已擦除的 CD-RW 盘片");
+                        ImapiCom.ReleaseComObject((object)format!);
+                        format = null;
+                        format = ImapiCom.CreateComObject("IMAPI2.MsftDiscFormat2RawCD");
+                        format.Recorder = recorder;
+                        format.ClientName = "Disc Image Studio";
+                    }, cancellationToken);
+
+                    if (!(bool)format.IsRecorderSupported(recorder))
+                        throw new InvalidOperationException("所选光驱不支持这种刻录方式。");
+                    if (!(bool)format.IsCurrentMediaSupported(recorder))
+                        throw new InvalidOperationException("当前 CD-RW 盘片无法进行 RAW DAO 刻录。");
+                    SelectAutomaticWriteSpeed();
+                }
+
                 using ICdRawImageSession imageSession = request.MediaKind == OpticalBurnMediaKind.CdData
                     ? new CdDataRawImageSession() : new DynamicCdRawImageSession();
                 actualWriteSpeed = BurnCdDao(
@@ -542,7 +577,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                             // A quick erase returns DVD-RW to the blank state, so the
                             // burn continues like any blank-disc session.
                             ReportOperation("正在擦除 DVD-RW，擦除完成后将继续刻录…");
-                            EraseDvd((object)recorder);
+                            EraseRewritableMedia((object)recorder, "DVD±RW");
                             cancellationToken.ThrowIfCancellationRequested();
                             ImapiCom.ReleaseComObject((object)format);
                             format = null;
@@ -1441,13 +1476,80 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
         => IsRewritableDvd(mediaType ?? Convert.ToInt32(format.CurrentPhysicalMediaType))
             && !IsDvdBlank((object)format, mediaState);
 
-    private static void EraseDvd(dynamic recorder)
+    internal static bool ValidateWriterSupportBeforeBurn(OpticalBurnRequest request, int physicalMediaType,
+        dynamic recorder, dynamic format)
+    {
+        bool cdDao = OpticalBurnMedia.UsesCdDao(request.MediaKind);
+        if (cdDao && request.ConfirmCdRwErase is not null && physicalMediaType != CdRewritableMediaType)
+            throw new InvalidOperationException("盘片已更换，请重新开始刻录。");
+        bool cdRwNeedsErase = cdDao && physicalMediaType == CdRewritableMediaType && !(bool)format.MediaPhysicallyBlank;
+        if (cdRwNeedsErase && request.ConfirmCdRwErase is null)
+            throw new InvalidOperationException("CD-RW 不是空白盘，需要确认擦除后才能刻录。");
+
+        try
+        {
+            if (!(bool)format.IsRecorderSupported(recorder))
+                throw new InvalidOperationException("所选光驱不支持这种刻录方式。");
+        }
+        catch (COMException exception) when (cdRwNeedsErase
+            && exception.HResult is RawCdMediaNotBlank or RawCdMediaNotSupported)
+        {
+            // RAW CD may reject the loaded disc even during the recorder support probe.
+            // Repeat the probe after the confirmed erase with the blank disc.
+            return true;
+        }
+        if (cdRwNeedsErase)
+            return true;
+
+        // The DVD writer can reject used media that the eraser will prepare later.
+        if (!(request.MediaKind == OpticalBurnMediaKind.DvdData && DvdNeedsErase((object)format))
+            && !(bool)format.IsCurrentMediaSupported(recorder))
+        {
+            throw new InvalidOperationException("当前盘片与所选 CD/DVD/蓝光模式不兼容。");
+        }
+
+        return false;
+    }
+
+    internal static void PrepareCdRwForBurn(OpticalBurnRequest request, Func<OpticalMediaCapacity> readCapacity,
+        Action eraseAndRefresh, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        long requiredSectors = request.ContentLength / OpticalBurnMedia.GetSectorBytes(request.MediaKind);
+        OpticalMediaCapacity capacity = readCapacity();
+        ValidateCapacity(capacity);
+        if (!capacity.RequiresErase)
+            return;
+
+        Func<bool> confirmErase = request.ConfirmCdRwErase
+            ?? throw new InvalidOperationException("CD-RW 不是空白盘，需要确认擦除后才能刻录。");
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!confirmErase())
+            throw new OperationCanceledException("已取消擦除 CD-RW 盘片。");
+        cancellationToken.ThrowIfCancellationRequested();
+        eraseAndRefresh();
+        cancellationToken.ThrowIfCancellationRequested();
+
+        capacity = readCapacity();
+        if (capacity.RequiresErase)
+            throw new InvalidOperationException("快速擦除后 CD-RW 仍不是空白盘，已取消刻录。");
+        ValidateCapacity(capacity);
+
+        void ValidateCapacity(OpticalMediaCapacity media)
+        {
+            if (media.WritableSectors < requiredSectors)
+                throw new InvalidOperationException(
+                    $"CD-RW 容量不足：需要 {requiredSectors:N0} 扇区，可写 {media.WritableSectors:N0} 扇区。");
+        }
+    }
+
+    private static void EraseRewritableMedia(dynamic recorder, string mediaName)
     {
         dynamic eraser = ImapiCom.CreateComObject("IMAPI2.MsftDiscFormat2Erase");
         try
         {
             if (!(bool)eraser.IsRecorderSupported(recorder) || !(bool)eraser.IsCurrentMediaSupported(recorder))
-                throw new InvalidOperationException("Windows 刻录接口无法擦除当前 DVD±RW。");
+                throw new InvalidOperationException($"Windows 刻录接口无法擦除当前 {mediaName}。");
             eraser.Recorder = recorder;
             eraser.ClientName = "Disc Image Studio";
             eraser.FullErase = false;

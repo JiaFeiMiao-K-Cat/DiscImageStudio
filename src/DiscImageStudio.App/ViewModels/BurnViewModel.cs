@@ -773,15 +773,15 @@ public partial class BurnViewModel : ObservableObject
             else if (capacity.RequiresErase)
             {
                 Dispatcher dispatcher = Dispatcher.CurrentDispatcher;
-                request = request with
-                {
-                    ConfirmDvdDataLoss = media => dispatcher.InvokeAsync(() => _shell.ConfirmAsync(
-                        L.T("确认清除盘片数据"),
-                        L.F($"光驱：{device.DisplayName}\n盘片：{media}\n\n")
-                            + L.T("继续刻录将先擦除盘片，原有数据将丢失。是否继续？"),
-                        L.T("擦除并刻录")))
-                        .Task.Unwrap().GetAwaiter().GetResult(),
-                };
+                bool ConfirmDataLoss(string media) => dispatcher.InvokeAsync(() => _shell.ConfirmAsync(
+                    L.T("确认清除盘片数据"),
+                    L.F($"光驱：{device.DisplayName}\n盘片：{media}\n\n")
+                        + L.T("继续刻录将先擦除盘片，原有数据将丢失。是否继续？"),
+                    L.T("擦除并刻录")))
+                    .Task.Unwrap().GetAwaiter().GetResult();
+                request = request.MediaKind is OpticalBurnMediaKind.CdAudio or OpticalBurnMediaKind.CdData
+                    ? request with { ConfirmCdRwErase = () => ConfirmDataLoss("CD-RW") }
+                    : request with { ConfirmDvdDataLoss = ConfirmDataLoss };
             }
             _shell.BeginBurnDockJob(request.MediaKind, request.ContentLength);
             _shell.AppendLog(

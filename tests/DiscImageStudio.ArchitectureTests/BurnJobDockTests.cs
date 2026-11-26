@@ -22,7 +22,7 @@ internal static class BurnJobDockTests
         thread.Start();
         thread.Join();
         if (error is not null) ExceptionDispatchInfo.Capture(error).Throw();
-        Console.WriteLine("burn-job-dock: passed (standalone telemetry, navigation, cancellation, failure, output isolation and late callbacks; no device access)");
+        Console.WriteLine("burn-job-dock: passed (standalone telemetry, navigation, cancellation, failure, output isolation, late callbacks, and CD-RW erase confirmation; no device access)");
     }
 
     private static void RunOnSta()
@@ -37,7 +37,7 @@ internal static class BurnJobDockTests
         using ControlledBurner burner = new();
         try
         {
-            shell = new ShellViewModel(Dispatcher.CurrentDispatcher, burner);
+            shell = new ShellViewModel(Dispatcher.CurrentDispatcher, burner, burner);
             shell.NavigateTo(Workspace.Calibration);
             Require(!shell.IsProjectOpen && shell.IsJobDockVisible, "standalone calibration has the shared dock");
             shell.Calibration.Parameters.BdTotalSectors = "64";
@@ -182,6 +182,33 @@ internal static class BurnJobDockTests
                 && !shell.Toasts[^1].Message.Contains("ControlledBurner", StringComparison.Ordinal),
                 "full diagnostics remain in the task log rather than the brief failure toast");
 
+            shell.Calibration.Parameters.CdSectors = "64";
+            shell.Calibration.Parameters.CdUsableSectors = "64";
+            shell.Calibration.SelectedDiscType = "CD";
+            shell.Calibration.SelectFineModeCommand.Execute(null);
+            shell.Calibration.CreateTargetCommand.Execute(null);
+            shell.Calibration.SaveSessionTo(Path.Combine(directory, "cd-rw.calibration.json"));
+            burner.RequiresErase = true;
+            List<string> confirmations = [];
+            shell.ConfirmHandler = (_, message, _) =>
+            {
+                confirmations.Add(message);
+                return Task.FromResult(confirmations.Count == 1);
+            };
+            Task cdRw = Start(burn);
+            Require(burner.Request is { MediaKind: OpticalBurnMediaKind.CdAudio, ConfirmCdRwErase: not null, ConfirmDvdDataLoss: null }
+                && confirmations.Count == 1 && confirmations[0].Contains("擦除已有数据前会另行确认", StringComparison.Ordinal),
+                "a used CD-RW carries a separate erase confirmation after the normal burn confirmation");
+            Task<bool> eraseDecision = Task.Run(burner.Request.ConfirmCdRwErase!);
+            Wait(eraseDecision);
+            Require(!eraseDecision.Result && confirmations.Count == 2
+                && confirmations[1].Contains("CD-RW", StringComparison.Ordinal)
+                && confirmations[1].Contains("Memory recorder", StringComparison.Ordinal),
+                "the erase dialog identifies the disc and recorder and relays a refusal to the worker");
+            burner.Fail(new OperationCanceledException("Erase declined by user."));
+            Wait(cdRw);
+            Require(!shell.IsBusy && !shell.JobHasResult, "declining erase ends the recording as canceled");
+
             shell.BeginDockJob("new calibration calculation", determinate: false);
             Require(!shell.IsBurnTelemetryVisible && shell.JobProgressValue == 0
                 && shell.ResultActionsVisibility == Visibility.Collapsed,
@@ -231,7 +258,7 @@ internal static class BurnJobDockTests
         if (!condition) throw new InvalidOperationException("Burn job dock: " + message);
     }
 
-    private sealed class ControlledBurner : IOpticalDiscBurner, IDisposable
+    private sealed class ControlledBurner : IOpticalDiscBurner, IOpticalDriveProbe, IDisposable
     {
         private TaskCompletionSource<OpticalBurnResult>? _completion;
         private CancellationTokenRegistration _cancellationRegistration;
@@ -240,8 +267,14 @@ internal static class BurnJobDockTests
         internal IProgress<OpticalBurnProgress>? Progress { get; private set; }
         internal bool CancellationRequested { get; private set; }
         internal bool DelayCancellation { get; set; }
+        internal bool RequiresErase { get; set; }
+        internal OpticalBurnRequest Request => _request!;
         internal long TotalBytes => _request!.ContentLength;
         internal bool EjectOnSuccess => _request!.EjectOnSuccess;
+
+        public Task<OpticalDriveProbeResult> ProbeAsync(string? preferredDeviceId = null,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(new OpticalDriveProbeResult([], null, null));
 
         public Task<IReadOnlyList<OpticalBurnDevice>> GetDevicesAsync(CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<OpticalBurnDevice>>([new("memory-only", "Memory recorder", [])]);
@@ -250,7 +283,8 @@ internal static class BurnJobDockTests
             CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
         public Task<OpticalMediaCapacity> GetMediaCapacityAsync(string deviceId, OpticalBurnMediaKind mediaKind,
-            CancellationToken cancellationToken = default) => Task.FromResult(new OpticalMediaCapacity(64, 64));
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(new OpticalMediaCapacity(64, 64) { RequiresErase = RequiresErase });
 
         public Task<IReadOnlyList<OpticalWriteSpeed>> GetSupportedWriteSpeedsAsync(string deviceId,
             OpticalBurnMediaKind mediaKind, CancellationToken cancellationToken = default)

@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Dynamic;
 using System.IO;
+using System.Runtime.InteropServices;
 using DiscImageStudio.Burning;
 
 internal static class MediaSectorCountTests
@@ -25,11 +26,17 @@ internal static class MediaSectorCountTests
         cd.HResult = BluRayMmcCommands.CommandHasSenseData;
         Throws<MmcCommandException>(() => WindowsImapiBurner.ReadCdAtipSectorCount(cd));
 
-        Require(WindowsImapiBurner.ReadCdMediaCapacity(359845, physicallyBlank: true)
+        Require(WindowsImapiBurner.ReadCdMediaCapacity(359845, physicallyBlank: true, physicalMediaType: 0x2)
             == new OpticalMediaCapacity(359845, 359843));
-        Require(WindowsImapiBurner.ReadCdMediaCapacity(359845, physicallyBlank: false)
+        Require(WindowsImapiBurner.ReadCdMediaCapacity(359845, physicallyBlank: false, physicalMediaType: 0x2)
             == new OpticalMediaCapacity(359845, 0));
-        Throws<IOException>(() => WindowsImapiBurner.ReadCdMediaCapacity(2, physicallyBlank: true));
+        Require(WindowsImapiBurner.ReadCdMediaCapacity(359845, physicallyBlank: true, physicalMediaType: 0x3)
+            == new OpticalMediaCapacity(359845, 359843));
+        Require(WindowsImapiBurner.ReadCdMediaCapacity(359845, physicallyBlank: false, physicalMediaType: 0x3)
+            == new OpticalMediaCapacity(359845, 359843) { RequiresErase = true });
+        Throws<IOException>(() => WindowsImapiBurner.ReadCdMediaCapacity(2, physicallyBlank: false, physicalMediaType: 0x3));
+        TestCdRwWriterSupport();
+        TestCdRwPreparation();
 
         Require(WindowsImapiBurner.ReadDvdSectorCount(0x9, 714_544) == 714_544);
         Require(!WindowsImapiBurner.IsWritableMedia(OpticalBurnMediaKind.DvdData, 0x5, [0x12]));
@@ -91,7 +98,164 @@ internal static class MediaSectorCountTests
             == new OpticalMediaCapacity(12_219_392, 0));
         bdMedia.SpareClusters = 4096;
         Throws<InvalidOperationException>(() => WindowsImapiBurner.ReadBluRayMediaCapacity(bdMedia));
-        Console.WriteLine("calibration-media-capacity: separate geometry/payload limits, CD reservation, direct DVD Free, strict BD layout and read-only queries passed");
+        Console.WriteLine("calibration-media-capacity: separate geometry/payload limits, simulated CD-RW preparation, direct DVD Free, strict BD layout and read-only queries passed");
+    }
+
+    private static void TestCdRwWriterSupport()
+    {
+        const int cdRecordable = 0x2;
+        const int cdRewritable = 0x3;
+        const int rawMediaNotBlank = unchecked((int)0xC0AA0606);
+        const int rawMediaNotSupported = unchecked((int)0xC0AA0607);
+        const int rawRecorderNotSupported = unchecked((int)0xC0AA0610);
+        var recorder = new object();
+        int? recorderError = rawMediaNotSupported;
+        bool recorderSupported = true;
+        List<string> probes = [];
+        dynamic format = new ExpandoObject();
+        format.MediaPhysicallyBlank = false;
+        format.IsRecorderSupported = new Func<object, bool>(_ =>
+        {
+            probes.Add("recorder");
+            if (recorderError is int hresult)
+                throw new COMException("RAW CD support probe failed.", hresult);
+            return recorderSupported;
+        });
+        format.IsCurrentMediaSupported = new Func<object, bool>(_ =>
+        {
+            probes.Add("media");
+            return true;
+        });
+        OpticalBurnRequest audio = new("simulated-cd", OpticalBurnMediaKind.CdAudio, 2352, (_, _) => { });
+        OpticalBurnRequest authorized = audio with { ConfirmCdRwErase = () => true };
+
+        Throws<InvalidOperationException>(() => WindowsImapiBurner.ValidateWriterSupportBeforeBurn(
+            audio, cdRewritable, recorder, (object)format));
+        Require(probes.Count == 0, "a used CD-RW without an erase confirmation callback is rejected before RAW support probes");
+        Throws<COMException>(() => WindowsImapiBurner.ValidateWriterSupportBeforeBurn(
+            audio, cdRecordable, recorder, (object)format));
+        Require(probes.SequenceEqual(new[] { "recorder" }), "used CD-R still receives the RAW support check");
+
+        foreach (int hresult in new[] { rawMediaNotSupported, rawMediaNotBlank })
+        {
+            probes.Clear();
+            recorderError = hresult;
+            Require(WindowsImapiBurner.ValidateWriterSupportBeforeBurn(authorized, cdRewritable, recorder, (object)format)
+                && probes.SequenceEqual(new[] { "recorder" }),
+                $"a used CD-RW with RAW media error 0x{hresult:X8} reaches preparation before the current-media probe");
+        }
+
+        probes.Clear();
+        recorderError = rawRecorderNotSupported;
+        Throws<COMException>(() => WindowsImapiBurner.ValidateWriterSupportBeforeBurn(
+            authorized, cdRewritable, recorder, (object)format));
+        Require(probes.SequenceEqual(new[] { "recorder" }), "a RAW recorder capability error blocks CD-RW preparation");
+
+        probes.Clear();
+        recorderError = null;
+        recorderSupported = false;
+        Throws<InvalidOperationException>(() => WindowsImapiBurner.ValidateWriterSupportBeforeBurn(
+            authorized, cdRewritable, recorder, (object)format));
+        Require(probes.SequenceEqual(new[] { "recorder" }), "an unsupported recorder blocks CD-RW preparation");
+
+        probes.Clear();
+        recorderSupported = true;
+        format.MediaPhysicallyBlank = true;
+        Require(!WindowsImapiBurner.ValidateWriterSupportBeforeBurn(audio, cdRewritable, recorder, (object)format)
+            && probes.SequenceEqual(new[] { "recorder", "media" }), "blank CD-RW uses both normal RAW support checks");
+    }
+
+    private static void TestCdRwPreparation()
+    {
+        const long atipSectors = 100;
+        OpticalMediaCapacity used = WindowsImapiBurner.ReadCdMediaCapacity(atipSectors, physicallyBlank: false, physicalMediaType: 0x3);
+        OpticalMediaCapacity blank = WindowsImapiBurner.ReadCdMediaCapacity(atipSectors, physicallyBlank: true, physicalMediaType: 0x3);
+        OpticalMediaCapacity media = used;
+        List<string> calls = [];
+        OpticalBurnRequest audio = new("simulated-cd", OpticalBurnMediaKind.CdAudio,
+            blank.WritableSectors * 2352, (_, _) => { }) { ConfirmCdRwErase = Confirm };
+        OpticalBurnRequest data = audio with
+        {
+            MediaKind = OpticalBurnMediaKind.CdData,
+            ContentLength = blank.WritableSectors * 2048,
+        };
+
+        foreach (OpticalBurnRequest request in new[] { audio, data })
+        {
+            calls.Clear();
+            media = used;
+            WindowsImapiBurner.PrepareCdRwForBurn(request, ReadCapacity, Erase, CancellationToken.None);
+            Require(calls.SequenceEqual(new[] { "read capacity", "confirm", "erase", "read capacity" }),
+                $"{request.MediaKind} validates before confirmation and checks the newly blank disc after erasing");
+        }
+
+        calls.Clear();
+        WindowsImapiBurner.PrepareCdRwForBurn(audio, ReadCapacity, Erase, CancellationToken.None);
+        Require(calls.SequenceEqual(new[] { "read capacity" }), "an already blank disc goes straight to writing");
+
+        calls.Clear();
+        media = used;
+        Throws<InvalidOperationException>(() => WindowsImapiBurner.PrepareCdRwForBurn(
+            audio with { ConfirmCdRwErase = null }, ReadCapacity, Erase, CancellationToken.None));
+        Require(calls.SequenceEqual(new[] { "read capacity" }), "a used CD-RW is never erased without confirmation");
+
+        calls.Clear();
+        Throws<OperationCanceledException>(() => WindowsImapiBurner.PrepareCdRwForBurn(
+            audio with { ConfirmCdRwErase = () => { calls.Add("decline"); return false; } },
+            ReadCapacity, Erase, CancellationToken.None));
+        Require(calls.SequenceEqual(new[] { "read capacity", "decline" }), "declining confirmation never erases");
+
+        calls.Clear();
+        using var cancellation = new CancellationTokenSource();
+        Throws<OperationCanceledException>(() => WindowsImapiBurner.PrepareCdRwForBurn(
+            audio with { ConfirmCdRwErase = () => { cancellation.Cancel(); return Confirm(); } },
+            ReadCapacity, Erase, cancellation.Token));
+        Require(calls.SequenceEqual(new[] { "read capacity", "confirm" }), "cancelling at confirmation never erases");
+
+        foreach (OpticalMediaCapacity unusable in new[]
+        {
+            WindowsImapiBurner.ReadCdMediaCapacity(atipSectors, physicallyBlank: false, physicalMediaType: 0x2),
+            used with { WritableSectors = used.WritableSectors - 1 },
+        })
+        {
+            calls.Clear();
+            media = unusable;
+            Throws<InvalidOperationException>(() => WindowsImapiBurner.PrepareCdRwForBurn(
+                audio, ReadCapacity, Erase, CancellationToken.None));
+            Require(calls.SequenceEqual(new[] { "read capacity" }),
+                "a used write-once CD-R or undersized CD-RW is rejected before confirmation or erase");
+        }
+
+        foreach (OpticalMediaCapacity unusable in new[] { used, blank with { WritableSectors = blank.WritableSectors - 1 } })
+        {
+            calls.Clear();
+            media = used;
+            Throws<InvalidOperationException>(() => WindowsImapiBurner.PrepareCdRwForBurn(audio, ReadCapacity, () =>
+            {
+                calls.Add("erase");
+                media = unusable;
+            }, CancellationToken.None));
+            Require(calls.SequenceEqual(new[] { "read capacity", "confirm", "erase", "read capacity" }),
+                "erase must leave an actually blank disc with adequate capacity before the burn can proceed");
+        }
+
+        OpticalMediaCapacity ReadCapacity()
+        {
+            calls.Add("read capacity");
+            return media;
+        }
+
+        bool Confirm()
+        {
+            calls.Add("confirm");
+            return true;
+        }
+
+        void Erase()
+        {
+            calls.Add("erase");
+            media = blank;
+        }
     }
 
     private sealed class TotalOnlyReader : IOpticalDiscBurner
@@ -167,9 +331,9 @@ internal static class MediaSectorCountTests
         }
     }
 
-    private static void Require(bool condition)
+    private static void Require(bool condition, string message = "Unexpected calibration medium capacity or device command.")
     {
-        if (!condition) throw new InvalidOperationException("Unexpected calibration medium capacity or device command.");
+        if (!condition) throw new InvalidOperationException(message);
     }
 
     private static void Throws<T>(Action action) where T : Exception
