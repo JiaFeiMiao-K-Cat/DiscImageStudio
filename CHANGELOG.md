@@ -20,6 +20,12 @@
 - 新增 CD-Extra（音乐 + 图片）：音乐写在内圈第 1 区段，图片作为第 2 区段的 Mode 1 数据轨写在外圈，音频 CD 机只播放第 1 区段。设计页新增「音乐（CD-Extra）」卡片，可添加或拖入 44.1 kHz、16 位、立体声 PCM WAV（含 WAVE_FORMAT_EXTENSIBLE 封装；原样写入，不转码），调整顺序，并显示时长以及音乐区、区段间隔和图片区的半径与面积占比；画布、影调和预览页标出音乐区与间隔。
 - CD-Extra 导出与命令行：导出页生成第 2 区段 ISO（ISO9660/Joliet 使用整盘绝对 LBA）和 `.iso.json`，可填写外部刻录后实测的第 2 区段起点；`cd-generate`、`cd-preview-warp` 新增 `--music` 与 `--session2-start-lba`（接受 `cdrecord -msinfo` 的原样输出）。含音乐的工程保存可选的 `cdExtra` 字段并写为 schemaVersion 3，旧版本会提示版本不受支持；其他工程仍为 schemaVersion 2。
 - CD-Extra 程序内刻录（实验性）：用 Track-at-Once 先写入并关闭音乐区段，再按光驱报告的第 2 区段起点生成图片并封盘，可先做不改变盘片的模拟写入。已实刻一张盘并在三台 CD 机上播放正常（总时间显示为 79:59，不影响播放），目前只有一台刻录机的结果。
+- CD-Extra 改为在独立的「CD Extra」窗口中准备刻录包并刻录（导出页 → 打开刻录包工具）。图片区段中断后可断点续写并完整读回校验；刻录中光驱断开会重新连接原刻录机继续；对结果不明确的写入命令，从光驱报告的可写地址核实后恢复；兼容 TAO 写入能力位图为空的刻录机。
+- 新增 CD-TEXT（实验性）：设计页可填写专辑、艺术家和每首曲名，音频 CD 与 CD-Extra 均以 Session-at-Once 写入导入区；光驱不支持时先确认，可不带 CD-TEXT 按原路径继续。仅含 ISO-8859-1 字符时按拉丁字母写入，含中文或日文时整盘改用 MS-JIS，并逐项标出 MS-JIS 无法表示的字。导出 WAV+CUE 时写入 TITLE/PERFORMER 与 CDTEXTFILE。
+- CD Extra 窗口可选择 CD-TEXT 来源（本窗口音乐的标签或设计页信息），可在确认后联网查找专辑信息（MusicBrainz 优先、Apple Music 备选），逐项对照后只填入勾选项；查找结果不会改动设计页。
+- 设计页音乐可直接添加 MP3、FLAC、M4A（AAC）、WMA 和非 CD 格式的 WAV，后台转换为 CD 音频并缓存，工程仍保存原文件路径。
+- 界面改为 Windows 10 风格；所有确认改用应用内确认卡片，不再弹出系统对话框。
+- 以上 CD-TEXT 与 CD Extra 窗口部分目前只在 Wine 中通过自动测试，尚未在实体刻录机上验证；实机测试清单见 `docs/CD-TEXT-hardware-test.md`。
 
 ### English
 
@@ -39,6 +45,12 @@
 - Add CD-Extra (music + picture): the music goes into session 1 on the inner rings and the picture becomes the Mode 1 data track of session 2 on the outer rings, so audio CD players play session 1 only. The design page gains a "Music (CD-Extra)" card that adds 44.1 kHz 16-bit stereo PCM WAV files, also in the WAVE_FORMAT_EXTENSIBLE container, by button or drag and drop (written unchanged, never transcoded), reorders them, and shows the lengths plus the radius and area share of the music, the session gap and the picture. The canvas, tone and preview pages mark the music and the gap.
 - CD-Extra export and command line: the export page writes the session 2 ISO (ISO 9660/Joliet with whole-disc absolute LBAs) and its `.iso.json`, and accepts a measured session 2 start for music burned elsewhere. `cd-generate` and `cd-preview-warp` gain `--music` and `--session2-start-lba` (which also takes raw `cdrecord -msinfo` output). Projects with music store an optional `cdExtra` field and are written as schemaVersion 3, which older builds report as unsupported; all other projects stay at schemaVersion 2.
 - In-app CD-Extra burning (experimental): Track-at-Once writes and closes the music session, then the picture is generated for the session 2 start the recorder reports and the disc is closed. An optional test write leaves the disc unchanged. One disc has been burned and plays on three CD players (they show a total time of 79:59, which does not affect playback); this is the result of a single recorder so far.
+- CD-Extra now has its own "CD Extra" window for preparing and burning a package (Export → open the package tool). An interrupted picture session can be resumed and is read back in full; a recorder that disconnects mid-burn is reconnected and the burn continues; write commands with an ambiguous result are recovered from the writable address the drive reports; recorders that return an empty TAO write-type bitmap are accepted.
+- Added CD-TEXT (experimental): album, artist and per-track titles on the design page, written to the lead-in Session-at-Once for audio CDs and CD-Extra. If the recorder cannot write CD-TEXT the user is asked first and may continue without it on the previous path. Text limited to ISO-8859-1 is written as Latin; any Chinese or Japanese switches the whole block to MS-JIS, and characters MS-JIS cannot hold are named field by field. WAV+CUE export writes TITLE/PERFORMER and CDTEXTFILE.
+- The CD Extra window chooses the CD-TEXT source (tags of its own music or the design page) and can look up album information online after confirmation (MusicBrainz first, Apple Music as an alternative), filling only the rows ticked in a side-by-side comparison; lookups never change the design page.
+- Design-page music accepts MP3, FLAC, M4A (AAC), WMA and non-CD-format WAV; files are converted to CD audio in the background and cached, while the project keeps the original paths.
+- The interface is restyled in a Windows 10 look, and every confirmation uses the in-app confirmation card instead of a system dialog.
+- The CD-TEXT and CD Extra window changes above pass automated tests under Wine only and have not yet been verified on a physical recorder; the hardware checklist is in `docs/CD-TEXT-hardware-test.md`.
 
 ## [1.6.0] - 2026-11-15
 
