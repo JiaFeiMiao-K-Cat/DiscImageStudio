@@ -607,7 +607,10 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 CompleteBurnCleanup(burnFailure, cleanupWarnings,
                     () => { if (format is not null) ImapiCom.ReleaseComObject((object)format); },
                     () => ImapiCom.ReleaseComObject((object)recorder),
-                    removalProtection is null ? null : () => removalProtection.PreventRemoval(false));
+                    allowRemoval: removalProtection is null ? null : () => removalProtection.PreventRemoval(false),
+                    ejectMedia: request.EjectOnSuccess && result is not null ? () => recorder.EjectMedia() : null,
+                    reportEjectDiagnostic: ReportDiagnostic,
+                    cancellationToken: cancellationToken);
             }
             catch (Exception exception)
             {
@@ -699,12 +702,29 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
     // Every caller-owned COM object gets its release attempt before we propagate
     // that exception or report an otherwise successful burn's cleanup failure.
     internal static void CompleteBurnCleanup(Exception? burnFailure, ICollection<string> cleanupWarnings,
-        Action releaseFormat, Action releaseRecorder, Action? allowRemoval = null)
+        Action releaseFormat, Action releaseRecorder, Action? allowRemoval = null, Action? ejectMedia = null,
+        Action<string>? reportEjectDiagnostic = null, CancellationToken cancellationToken = default)
     {
         Exception? firstCleanupFailure = null;
         if (allowRemoval is not null)
             ReleaseOne(allowRemoval, "解除盘片弹出保护");
         ReleaseOne(releaseFormat, "释放刻录格式 COM 对象");
+
+        // Eject through the same recorder while it is still available, after the writer and media lock are released.
+        if (ejectMedia is not null && burnFailure is null && cleanupWarnings.Count == 0
+            && !cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                ejectMedia();
+                BurnDeviceDiagnostics.Report(reportEjectDiagnostic, () => "刻录完成后已自动弹出盘片。");
+            }
+            catch (Exception exception)
+            {
+                BurnDeviceDiagnostics.Report(reportEjectDiagnostic,
+                    () => $"刻录已完成，自动弹出盘片失败（HRESULT 0x{exception.HResult:X8}）：{exception.Message}");
+            }
+        }
         ReleaseOne(releaseRecorder, "释放刻录机 COM 对象");
 
         string details = cleanupWarnings.Count == 0 ? string.Empty

@@ -14,7 +14,10 @@ internal static class BluRaySessionCleanupTests
         TestOuterComCleanupPreservesWriteFailureAndReleasesBothObjects();
         TestOuterComCleanupCannotReportFailedReleaseAsSuccess();
         TestOuterComCleanupPreservesUnchangedFailure();
-        Console.WriteLine("blu-ray-session-cleanup: passed (paired releases, retained failures, post-engine retry, outer COM releases, original exceptions, diagnostics; no hardware)");
+        TestOptionalEjectFollowsFormatRelease();
+        TestEjectSkipsPendingWarningsAndLateCancellation();
+        TestEjectFailurePreservesBurnSuccess();
+        Console.WriteLine("blu-ray-session-cleanup: passed (paired releases, retained failures, post-engine retry, outer COM releases, original exceptions, diagnostics, optional eject; no hardware)");
     }
 
     private static void TestSuccessfulCleanupIsNotRepeated()
@@ -174,11 +177,12 @@ internal static class BluRaySessionCleanupTests
         InvalidOperationException observed = Throws<InvalidOperationException>(() =>
             WindowsImapiBurner.CompleteBurnCleanup(null, [],
                 () => { operations.Add("format"); throw failure; },
-                () => operations.Add("recorder")));
+                () => operations.Add("recorder"),
+                ejectMedia: () => operations.Add("eject")));
         Require(operations.SequenceEqual(new[] { "format", "recorder" })
             && ReferenceEquals(observed.InnerException, failure)
             && observed.Message.Contains("设备未能正常释放", StringComparison.Ordinal),
-            "a completed write with failed COM cleanup is explicitly reported and still releases the recorder");
+            "a failed format release prevents eject while still releasing the recorder and reporting the failure");
 
         operations.Clear();
         WindowsImapiBurner.CompleteBurnCleanup(null, [],
@@ -193,11 +197,65 @@ internal static class BluRaySessionCleanupTests
             { new IOException("Source ended early"), new OperationCanceledException("Cancelled before the next WRITE") })
         {
             int releases = 0;
+            int ejections = 0;
             Exception observed = Throws<Exception>(() => WindowsImapiBurner.CompleteBurnCleanup(
-                failure, [], () => releases++, () => releases++));
-            Require(ReferenceEquals(observed, failure) && releases == 2,
-                "successful outer cleanup rethrows the same failure, including cancellation, after both releases");
+                failure, [], () => releases++, () => releases++, ejectMedia: () => ejections++));
+            Require(ReferenceEquals(observed, failure) && releases == 2 && ejections == 0,
+                "outer cleanup releases both objects and preserves a write failure or cancellation without ejecting");
         }
+    }
+
+    private static void TestOptionalEjectFollowsFormatRelease()
+    {
+        List<string> operations = [];
+        WindowsImapiBurner.CompleteBurnCleanup(null, [],
+            () => operations.Add("format"), () => operations.Add("recorder"),
+            allowRemoval: () => operations.Add("allow"));
+        Require(operations.SequenceEqual(new[] { "allow", "format", "recorder" }),
+            "with automatic eject off, successful cleanup just unlocks and releases the recorder");
+
+        operations.Clear();
+        WindowsImapiBurner.CompleteBurnCleanup(null, [],
+            () => operations.Add("format"), () => operations.Add("recorder"),
+            allowRemoval: () => operations.Add("allow"), ejectMedia: () => operations.Add("eject"));
+        Require(operations.SequenceEqual(new[] { "allow", "format", "eject", "recorder" }),
+            "with automatic eject on, the tray ejects once after unlock and format release while the recorder is still available");
+    }
+
+    private static void TestEjectSkipsPendingWarningsAndLateCancellation()
+    {
+        int ejections = 0;
+        Throws<InvalidOperationException>(() => WindowsImapiBurner.CompleteBurnCleanup(
+            null, ["Earlier session unlock warning"], () => { }, () => { }, ejectMedia: () => ejections++));
+        Require(ejections == 0, "earlier session cleanup warnings prevent automatic eject");
+
+        using var cancellation = new CancellationTokenSource();
+        int recorderReleases = 0;
+        WindowsImapiBurner.CompleteBurnCleanup(null, [],
+            cancellation.Cancel, () => recorderReleases++, ejectMedia: () => ejections++,
+            cancellationToken: cancellation.Token);
+        Require(ejections == 0 && recorderReleases == 1,
+            "cancellation while releasing the format prevents eject and still releases the recorder");
+    }
+
+    private static void TestEjectFailurePreservesBurnSuccess()
+    {
+        List<string> operations = [];
+        List<string> cleanupWarnings = [];
+        List<string> diagnostics = [];
+        WindowsImapiBurner.CompleteBurnCleanup(null, cleanupWarnings,
+            () => operations.Add("format"), () => operations.Add("recorder"),
+            ejectMedia: () =>
+            {
+                operations.Add("eject");
+                throw new COMException("Tray would not open", unchecked((int)0x800700AA));
+            },
+            reportEjectDiagnostic: diagnostics.Add);
+        Require(operations.SequenceEqual(new[] { "format", "eject", "recorder" }) && cleanupWarnings.Count == 0,
+            "an eject failure still releases the recorder and preserves the successful burn result");
+        Require(diagnostics.Any(message => message.Contains("0x800700AA", StringComparison.Ordinal)
+            && message.Contains("Tray would not open", StringComparison.Ordinal)),
+            "the eject diagnostic exposes the recorder's error and HRESULT");
     }
 
     private sealed class Fixture

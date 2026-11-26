@@ -53,7 +53,10 @@ internal static class BurnJobDockTests
             shell.RegisterOutput(previousOutput);
             Require(shell.ResultActionsVisibility == Visibility.Visible, "a generated file has output actions");
             BurnViewModel burn = shell.CalibrationBurn;
+            Require(!burn.EjectOnSuccess && !shell.Burn.EjectOnSuccess, "ejecting is off by default on both streaming burn pages");
+            burn.EjectOnSuccess = true;
             Task successful = Start(burn);
+            Require(burner.EjectOnSuccess, "an enabled eject option reaches the streaming burn request");
             Require(shell.IsBusy && shell.IsJobRunning && burn.IsBurnRunning && !shell.Burn.IsBurnRunning,
                 "the calibration burn occupies the shell independently of project burning");
             Require(shell.IsBurnTelemetryVisible && shell.JobProgressValue == 0
@@ -112,7 +115,9 @@ internal static class BurnJobDockTests
             shell.NavigateTo(Workspace.CalibrationBurn);
             Require(shell.IsJobDockVisible, "returning to calibration exposes the completed burn log");
             burner.DelayCancellation = true;
+            burn.EjectOnSuccess = false;
             Task cancelled = Start(burn);
+            Require(!burner.EjectOnSuccess, "turning off eject updates the next streaming burn request");
             oldProgress.Report(new("write", "callback from previous burn", burner.TotalBytes, burner.TotalBytes));
             DrainDispatcher();
             Require(shell.JobProgressValue == 0 && !shell.LogText.Contains("callback from previous burn", StringComparison.Ordinal),
@@ -236,6 +241,7 @@ internal static class BurnJobDockTests
         internal bool CancellationRequested { get; private set; }
         internal bool DelayCancellation { get; set; }
         internal long TotalBytes => _request!.ContentLength;
+        internal bool EjectOnSuccess => _request!.EjectOnSuccess;
 
         public Task<IReadOnlyList<OpticalBurnDevice>> GetDevicesAsync(CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<OpticalBurnDevice>>([new("memory-only", "Memory recorder", [])]);

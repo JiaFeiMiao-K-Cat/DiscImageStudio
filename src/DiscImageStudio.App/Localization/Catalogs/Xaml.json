@@ -692,6 +692,15 @@
     "es": "Admite BD-R vírgenes de una capa y BD-RE de 25 GB de una capa con una disposición verificable sin áreas de reserva. El formateo o la sobrescritura de BD-RE requiere una confirmación aparte.",
     "cs": "Podporovány jsou prázdné jednovrstvé disky BD-R a 25 GB jednovrstvé disky BD-RE s ověřitelným rozložením bez náhradních oblastí. Formátování nebo přepis BD-RE vyžaduje samostatné potvrzení."
   },
+  "Xaml.EjectDiscAfterBurn": {
+    "zh-CN": "刻录完成后弹出光盘",
+    "en": "Eject disc after burning",
+    "zh-TW": "燒錄完成後退出光碟",
+    "ja": "書き込み完了後にディスクを取り出す",
+    "tr": "Yazma tamamlandığında diski çıkar",
+    "es": "Expulsar el disco al finalizar la grabación",
+    "cs": "Po vypálení vysunout disk"
+  },
   "Xaml.IHaveInsertedTheCorrectDisc": {
     "zh-CN": "我确认已放入要刻录的盘片",
     "en": "I have inserted the disc I want to burn",

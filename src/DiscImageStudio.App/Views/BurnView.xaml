@@ -115,6 +115,9 @@
                         <TextBlock Style="{StaticResource BodyText}" Foreground="{DynamicResource WarningTextBrush}"
                                    Text="{loc:Text Xaml.BluRayStreamingMedia}" />
                     </controls:VisibilityGate>
+                    <CheckBox Content="{loc:Text Xaml.EjectDiscAfterBurn}"
+                              IsChecked="{Binding EjectOnSuccess}" Margin="0,14,0,0"
+                              IsEnabled="{Binding IsSetupEnabled}" />
                     <CheckBox Content="{loc:Text Xaml.IHaveInsertedTheCorrectDisc}"
                               IsChecked="{Binding ConfirmChecked}" Margin="0,14,0,0"
                               IsEnabled="{Binding IsSetupEnabled}" />

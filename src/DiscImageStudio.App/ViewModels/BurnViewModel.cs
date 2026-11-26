@@ -79,6 +79,9 @@ public partial class BurnViewModel : ObservableObject
     private bool _allowRewritableOverwrite;
 
     [ObservableProperty]
+    private bool _ejectOnSuccess;
+
+    [ObservableProperty]
     private bool _isBurnRunning;
 
     public BurnViewModel(ShellViewModel shell, DiscParametersState state, DesignViewModel design)
@@ -588,6 +591,7 @@ public partial class BurnViewModel : ObservableObject
             int preparationRevision = _burnPreparationRevision;
             OpticalBurnMediaKind mediaKind = CurrentMediaKind;
             BurnWriteSpeedOption selectedWriteSpeed = SelectedSpeed ?? BurnWriteSpeedOption.Automatic;
+            bool ejectOnSuccess = EjectOnSuccess;
             OpticalBurnRequest request;
             string contentDescription;
             OpticalMediaCapacity capacity = await _opticalDiscBurner.GetMediaCapacityAsync(device.Id, mediaKind);
@@ -724,6 +728,8 @@ public partial class BurnViewModel : ObservableObject
 
             if (dvdCompatibilitySummary is not null)
                 contentDescription += Environment.NewLine + dvdCompatibilitySummary;
+
+            request = request with { EjectOnSuccess = ejectOnSuccess };
 
             // In-app danger modal; default focus sits on the refusing button.
             bool confirmed = await _shell.ConfirmAsync(
