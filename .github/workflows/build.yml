@@ -115,13 +115,30 @@ jobs:
         run: dotnet build DiscImageStudio.slnx --configuration Release --no-restore
 
       - name: Test module architecture
-        run: dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Release --no-build
+        run: dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Release --no-build -- --skip-calibration-boundary
 
-      - name: Test original DVD engine
-        run: dotnet run --project src/DvdImageSolver --configuration Release --no-build -- selftest
+      - name: Smoke-test DVD engine and desktop module
+        run: |
+          $directory = Join-Path $env:RUNNER_TEMP 'dvd-smoke'
+          New-Item -ItemType Directory -Path $directory | Out-Null
+          $payload = Join-Path $directory 'payload.bin'
+          $engineOutput = Join-Path $directory 'engine.bin'
+          $desktopOutput = Join-Path $directory 'desktop.bin'
+          [IO.File]::WriteAllBytes($payload, [byte[]]::new(32768))
 
-      - name: Test DVD through module catalog
-        run: dotnet run --project src/DiscImageStudio.App --configuration Release --no-build -- selftest
+          dotnet run --project src/DvdImageSolver --configuration Release --no-build -- encode --input $payload --output $engineOutput
+          if ($LASTEXITCODE -ne 0) { throw 'Standalone DVD encoding failed.' }
+          dotnet run --project src/DiscImageStudio.App --configuration Release --no-build -- encode --input $payload --output $desktopOutput
+          if ($LASTEXITCODE -ne 0) { throw 'Desktop DVD encoding failed.' }
+
+          # One ECC block is 16 sectors of 38,688 channel bits, packed into bytes.
+          if ((Get-Item -LiteralPath $engineOutput).Length -ne 77376 -or
+              (Get-Item -LiteralPath $desktopOutput).Length -ne 77376) {
+            throw 'DVD encoding did not produce a complete packed ECC block.'
+          }
+          if ((Get-FileHash -LiteralPath $engineOutput).Hash -ne (Get-FileHash -LiteralPath $desktopOutput).Hash) {
+            throw 'The standalone and desktop DVD commands produced different output.'
+          }
 
       - name: Smoke-test CD module
         run: |
@@ -157,3 +174,33 @@ jobs:
           path: |
             artifacts/ci/cd-smoke.raw
             artifacts/store/home-screen.png
+
+  windows-calibration-boundary:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [windows-latest, windows-11-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build architecture tests
+        run: dotnet build tests/DiscImageStudio.ArchitectureTests/DiscImageStudio.ArchitectureTests.csproj --configuration Release
+
+      - name: Test calibration boundary fitting
+        run: dotnet run --project tests/DiscImageStudio.ArchitectureTests --configuration Release --no-build -- --test-calibration-boundary

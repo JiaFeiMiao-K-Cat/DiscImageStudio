@@ -43,7 +43,8 @@ internal static class DesignCompositeConcurrencyTests
 
         SynchronizationContext? previousContext = SynchronizationContext.Current;
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
-        ShellViewModel shell = new(Dispatcher.CurrentDispatcher, new NoRecorder());
+        NoRecorder recorder = new();
+        ShellViewModel shell = new(Dispatcher.CurrentDispatcher, recorder, recorder);
         try
         {
             string sourcePath = Path.Combine(root, "artwork.png");
@@ -200,13 +201,14 @@ internal static class DesignCompositeConcurrencyTests
             shell.LivePreview.OnWindowClosed();
             shell.Design.OnWindowClosed();
             shell.Calibration.OnWindowClosed();
+            // A canceled preview can still hold the composite open until its worker exits.
+            Wait(Task.WhenAll(shell.Design.WaitForPendingWorkAsync(), shell.LivePreview.WaitForPendingRefreshesAsync()));
+            shell.Design.OnWindowClosed();
             Require((latestCompositeBeforeClear.Length == 0 || !File.Exists(latestCompositeBeforeClear))
                 && (previousCompositeBeforeClear.Length == 0 || !File.Exists(previousCompositeBeforeClear))
                 && ((IReadOnlyList<string>)pendingDeletesField.GetValue(shell.Design)!).Count == 0,
                 "OnWindowClosed deletes retained and pending preview composite files");
 
-            Wait(Task.WhenAll(shell.Design.WaitForPendingWorkAsync(), shell.LivePreview.WaitForPendingRefreshesAsync()));
-            shell.Design.OnWindowClosed();
             // Cache files live under the per-process session directory, so enumerate recursively
             // and count only app-managed artifacts (the session lease lock is not one).
             string[] drainedLeftovers = Directory.EnumerateFiles(cacheDir, "*", SearchOption.AllDirectories)
@@ -217,7 +219,7 @@ internal static class DesignCompositeConcurrencyTests
 
             // 5. Closing the window directly while preview composite, tone, and live preview work is in flight
             // invalidates publication and leaves zero stale cache files after background tasks finish.
-            ShellViewModel midCloseShell = new(Dispatcher.CurrentDispatcher, new NoRecorder());
+            ShellViewModel midCloseShell = new(Dispatcher.CurrentDispatcher, recorder, recorder);
             try
             {
                 midCloseShell.OpenProjectForSnapshot(projectPath);
@@ -343,8 +345,10 @@ internal static class DesignCompositeConcurrencyTests
         if (!condition) throw new InvalidOperationException("Design composite concurrency: " + message);
     }
 
-    private sealed class NoRecorder : IOpticalDiscBurner
+    private sealed class NoRecorder : IOpticalDiscBurner, IOpticalDriveProbe
     {
+        public Task<OpticalDriveProbeResult> ProbeAsync(string? preferredDeviceId = null,
+            CancellationToken cancellationToken = default) => Task.FromResult(new OpticalDriveProbeResult([], null, null));
         public Task<IReadOnlyList<OpticalBurnDevice>> GetDevicesAsync(CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<OpticalBurnDevice>>([]);
         public Task<long> GetMediaSectorCountAsync(string deviceId, OpticalBurnMediaKind mediaKind,

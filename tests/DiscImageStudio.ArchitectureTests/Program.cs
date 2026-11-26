@@ -126,6 +126,12 @@ if (args is ["--test-design-composite-race"])
     return;
 }
 
+if (args is ["--test-calibration-boundary"])
+{
+    CalibrationBoundaryFitterTests.Run();
+    return;
+}
+
 if (args is ["--benchmark-cd-pitch"])
 {
     CdCubicPitchTests.Benchmark();
@@ -274,7 +280,10 @@ AppCubicMediaTests.Run();
 CalibrationEncoderTests.Run();
 CalibrationCoreTests.Run();
 CalibrationHalfDiscArtworkTests.Run();
-CalibrationBoundaryFitterTests.Run();
+if (args is not ["--skip-calibration-boundary"])
+{
+    CalibrationBoundaryFitterTests.Run();
+}
 CalibrationRingFitterTests.Run();
 CalibrationClockArtworkTests.Run();
 CalibrationWideBandArtworkTests.Run();
