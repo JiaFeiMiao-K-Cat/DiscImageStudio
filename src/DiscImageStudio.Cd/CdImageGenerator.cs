@@ -1,3 +1,4 @@
+using System.IO;
 using DiscImageStudio.Core;
 
 namespace DiscImageStudio.Cd;
@@ -16,7 +17,8 @@ public sealed record CdImageRequest(
     string VolumeLabel = "CD_IMAGE",
     bool FilesAtOuterRing = false,
     IReadOnlyList<string>? MusicTracks = null,
-    long? Session2StartLba = null);
+    long? Session2StartLba = null,
+    CdTextAlbum? CdText = null);
 
 public static class CdImageGenerator
 {
@@ -30,7 +32,13 @@ public static class CdImageGenerator
         cancellationToken.ThrowIfCancellationRequested();
         request.Tone.Validate();
         if (request.MusicTracks is { Count: > 0 } music)
-            return GenerateCdExtra(request, music, progress, cancellationToken);
+        {
+            DiscImageResult extra = GenerateCdExtra(request, music, progress, cancellationToken);
+            // The music session's CD-TEXT, for burning session 1 with another program.
+            string? cdt = request.CdText is { IsEmpty: false } text
+                ? CdTextExport.WriteCdt(Path.ChangeExtension(request.OutputPath, ".music.cdt"), text) : null;
+            return cdt is null ? extra : extra with { Summary = extra.Summary + $", cdtext={cdt}" };
+        }
         string? dataDirectory = request.DataDirectory?.Trim();
         if (!string.IsNullOrEmpty(dataDirectory))
         {
@@ -51,6 +59,8 @@ public static class CdImageGenerator
             value => progress?.Report(new DiscJobProgress(CdDiscModule.ModuleId, "generate",
                 $"CD progress {value.Fraction:P1}", value.Fraction, value.CompletedBytes,
                 value.TotalBytes, value.Elapsed)), cancellationToken, request.Tone);
+        if (request.CdText is { IsEmpty: false } cdText && summary.CueSheetPath is { } cue)
+            CdTextExport.AddToCue(cue, cdText, CdTextExport.WriteCdt(Path.ChangeExtension(cue, ".cdt"), cdText));
         string message =
             $"CD track complete: {summary.Sectors} sectors, {summary.BytesWritten} bytes, "
             + $"interleave={summary.Interleaved}, elapsed={summary.Elapsed.TotalSeconds:F1}s, "

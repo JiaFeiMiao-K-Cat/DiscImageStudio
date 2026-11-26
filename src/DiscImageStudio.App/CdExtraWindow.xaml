@@ -116,6 +116,22 @@
                             </WrapPanel>
                             <TextBlock Text="按列表顺序播放。支持 WAV、MP3、FLAC、M4A、AAC、WMA，取决于 Windows 解码器。"
                                        Style="{StaticResource CompactHint}" Margin="0,12,0,0" />
+                            <Border Height="1" Background="{DynamicResource DividerBrush}" Margin="0,14,0,12" />
+                            <CheckBox x:Name="CdTextCheck" Content="写入 CD-TEXT（专辑、曲名、艺术家）"
+                                      Style="{StaticResource CompactCheckBox}" />
+                            <Grid x:Name="CdTextFields" Margin="0,8,0,0" IsEnabled="{Binding IsChecked, ElementName=CdTextCheck}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="CdTextAlbumBox" Style="{StaticResource CompactTextBox}" MaxLength="160"
+                                         ToolTip="专辑名" AutomationProperties.Name="专辑名" />
+                                <TextBox x:Name="CdTextPerformerBox" Grid.Column="2" Style="{StaticResource CompactTextBox}" MaxLength="160"
+                                         ToolTip="专辑艺术家" AutomationProperties.Name="专辑艺术家" />
+                            </Grid>
+                            <TextBlock x:Name="CdTextHint" Style="{StaticResource CompactHint}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                       Text="曲名与艺术家取自工程的 CD-TEXT 或音乐文件标签，缺省时用文件名；准备刻录包时写入 package.cdextra.json。需要光驱支持 SAO。" />
                         </StackPanel>
                     </GroupBox>
 
@@ -130,6 +146,9 @@
                             <StackPanel>
                                 <TextBlock x:Name="_summary" Style="{StaticResource CompactText}"
                                            Margin="0,0,0,10" />
+                                <controls:CdTrackRangeDisc x:Name="PackageRangeDisc" Width="170" HorizontalAlignment="Center"
+                                                           Margin="0,0,0,10" Visibility="Collapsed"
+                                                           AutomationProperties.Name="音轨刻录范围" />
                                 <WrapPanel>
                                     <Button x:Name="PreparePackageButton" Content="准备刻录包…"
                                             Style="{StaticResource CompactButton}" Margin="0,0,6,4" />

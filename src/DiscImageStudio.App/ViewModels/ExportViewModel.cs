@@ -127,7 +127,7 @@ public partial class ExportViewModel : ObservableObject
                 UsableSectors: _state.GetUsableSectors(OpticalDiscFamily.CompactDisc));
             parameters.Validate();
             string? composite = HasLayers ? await _design.EnsureExportCompositeAsync() : null;
-            new CdExtraWindow(composite, parameters, _state.Tone)
+            new CdExtraWindow(composite, parameters, _state.Tone, _state.CdText, _state.CdTrackTexts)
             { Owner = System.Windows.Application.Current.MainWindow }.ShowDialog();
         }
         catch (Exception e) { _shell.ShowValidationError(e); }
@@ -307,7 +307,8 @@ public partial class ExportViewModel : ObservableObject
             _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc),
             _state.CdFilesAtOuterRing,
             cdExtra ? _state.CdMusicTracks : null,
-            measuredSession2);
+            measuredSession2,
+            _state.EffectiveCdText());
     }
 
     private async Task GenerateDvdAsync(string compositePath)

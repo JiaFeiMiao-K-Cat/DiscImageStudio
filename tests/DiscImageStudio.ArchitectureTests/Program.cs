@@ -123,6 +123,12 @@ if (args is ["--test-data-region"])
     return;
 }
 
+if (args is ["--test-cd-text"])
+{
+    CdTextTests.Run();
+    return;
+}
+
 if (args is ["--test-cd-extra"])
 {
     CdExtraLayoutTests.Run();

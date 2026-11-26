@@ -127,6 +127,15 @@ public sealed record OpticalBurnRequest(
     // Arguments are the output stream, PSN of LBA 0, verified contiguous sector count, and cancellation token.
     public Action<Stream, uint, uint, CancellationToken>? ProduceMappedBluRayContent { get; init; }
 
+    /// <summary>CD audio only: CD-TEXT for the lead-in. The disc is then written Session-at-Once
+    /// by the raw MMC path; without it (or when the recorder cannot and the user agrees via
+    /// <see cref="ConfirmWithoutCdText"/>) the IMAPI DAO path runs unchanged.</summary>
+    public CdTextLeadIn? CdText { get; init; }
+
+    /// <summary>Invoked on the burn worker, before anything is written, when the recorder cannot
+    /// write CD-TEXT. Returning true burns without it; false (or no callback) cancels.</summary>
+    public Func<string, bool>? ConfirmWithoutCdText { get; init; }
+
     public OpticalBurnBufferOptions EffectiveBufferOptions => BufferOptions
         ?? (MediaKind == OpticalBurnMediaKind.BluRayData
             ? OpticalBurnBufferOptions.BluRayDefault : OpticalBurnBufferOptions.Default);
@@ -160,7 +169,16 @@ public sealed record OpticalBurnResult(
     OpticalBurnMediaKind MediaKind,
     long BytesWritten,
     TimeSpan Elapsed,
-    OpticalWriteSpeed? ActualWriteSpeed = null);
+    OpticalWriteSpeed? ActualWriteSpeed = null)
+{
+    /// <summary>CD-TEXT outcome when the request carried CD-TEXT; null otherwise.</summary>
+    public CdTextBurnOutcome? CdText { get; init; }
+}
+
+/// <summary>What happened to the CD-TEXT of a burn: whether it went into the lead-in, and the
+/// packs the recorder returned from the finished disc (READ TOC format 0101b), for the
+/// application to compare with what it asked for.</summary>
+public sealed record CdTextBurnOutcome(bool Written, byte[]? ReadbackPacks, string? ReadbackError, string? SkippedReason = null);
 
 /// <summary>One CD-Extra music track. The producer writes exactly
 /// <see cref="ContentLength"/> bytes of headerless 44.1 kHz, 16-bit stereo little-endian
@@ -215,6 +233,14 @@ public sealed record CdExtraBurnRequest(
     Func<IDisposable>? PrepareAudio = null)
 {
     internal string? RecoveryRoot { get; init; }
+
+    /// <summary>CD-TEXT for session 1. When set and the recorder supports Session-at-Once,
+    /// session 1 is written SAO with the text in its lead-in (same track addresses as TAO);
+    /// otherwise <see cref="ConfirmWithoutCdText"/> decides whether to continue in TAO.</summary>
+    public CdTextLeadIn? CdText { get; init; }
+
+    /// <summary>See <see cref="OpticalBurnRequest.ConfirmWithoutCdText"/>.</summary>
+    public Func<string, bool>? ConfirmWithoutCdText { get; init; }
     public const int MaximumAudioTracks = 98;
     /// <summary>Run-out blocks the recorder writes behind every Track-at-Once track.</summary>
     public const int RunOutSectors = 2;
@@ -243,6 +269,7 @@ public sealed record CdExtraBurnRequest(
                 throw new ArgumentOutOfRangeException(nameof(AudioTracks),
                     $"Each audio track needs at least {CdExtraAudioTrack.MinimumSectors} sectors.");
         }
+        CdText?.Validate();
         if (PredictedSession2StartLba <= 0 || PredictedDataSectors <= 0)
             throw new ArgumentOutOfRangeException(nameof(PredictedSession2StartLba),
                 "The predicted picture session must start after LBA 0 and contain sectors.");
@@ -262,6 +289,9 @@ public sealed record CdExtraBurnResult(
     bool TestWrite = false)
 {
     public long VerifiedPictureSectors { get; init; }
+
+    /// <summary>CD-TEXT outcome when the request carried CD-TEXT; null otherwise.</summary>
+    public CdTextBurnOutcome? CdText { get; init; }
 }
 
 public interface IOpticalDiscBurner

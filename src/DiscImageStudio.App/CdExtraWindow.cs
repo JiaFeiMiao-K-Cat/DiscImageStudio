@@ -27,6 +27,7 @@ public sealed partial class CdExtraWindow : TransitionWindow
     private readonly ToneProfile _tone;
     private readonly ObservableCollection<string> _music = [];
     private CdExtraPackage? _package;
+    private readonly IReadOnlyDictionary<string, CdTextTrack> _projectTrackTexts;
     private string? _directory;
     private readonly ViewModels.BurnMilestonesViewModel _milestones = new();
     private CancellationTokenSource? _operation;
@@ -38,12 +39,19 @@ public sealed partial class CdExtraWindow : TransitionWindow
     private static string LogDirectory => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DiscImageStudio", "CDExtra", "Logs");
 
-    public CdExtraWindow(string? artwork, CdDiscParameters geometry, ToneProfile tone)
+    public CdExtraWindow(string? artwork, CdDiscParameters geometry, ToneProfile tone,
+        ProjectCdText? projectCdText = null, IReadOnlyDictionary<string, CdTextTrack>? projectTrackTexts = null)
     {
         _artwork = artwork;
         _geometry = geometry;
         _tone = tone;
+        _projectTrackTexts = projectTrackTexts ?? new Dictionary<string, CdTextTrack>();
         InitializeComponent();
+        CdTextCheck.IsChecked = projectCdText?.Enabled == true;
+        CdTextAlbumBox.Text = projectCdText?.AlbumTitle ?? string.Empty;
+        CdTextPerformerBox.Text = projectCdText?.AlbumPerformer ?? string.Empty;
+        CdTextCheck.Checked += (_, _) => InvalidatePackage();
+        CdTextCheck.Unchecked += (_, _) => InvalidatePackage();
         MilestoneStrip.DataContext = _milestones;
         MilestoneGate.SetBinding(VisibilityGate.IsOpenProperty,
             new System.Windows.Data.Binding(nameof(ViewModels.BurnMilestonesViewModel.IsVisible)) { Source = _milestones });
@@ -159,6 +167,7 @@ public sealed partial class CdExtraWindow : TransitionWindow
     {
         _package = null; _directory = null; _burn.IsEnabled = false;
         _summary.Text = "音乐列表已变化，请重新准备刻录包。";
+        PackageRangeDisc.Visibility = Visibility.Collapsed;
     }
 
     private async Task RefreshDevicesAsync()
@@ -257,16 +266,43 @@ public sealed partial class CdExtraWindow : TransitionWindow
         OpenFolderDialog dialog = new() { Title = "选择刻录包的保存目录（将在其中新建子目录）" };
         if (dialog.ShowDialog(this) != true) return;
         string[] music = _music.ToArray();
+        CdExtraPackageCdText? cdText = CdTextCheck.IsChecked == true ? CollectCdText(music) : null;
+        if (cdText is not null)
+        {
+            try { _ = CdTextPacks.Encode(cdText.ToAlbum()); }
+            catch (CdTextTooLongException e) { Append($"CD-TEXT 文字太长：需要 {e.Packs} 个数据包，一张盘最多 {CdTextPacks.MaximumTextPacks} 个。"); return; }
+        }
         string destination = Path.Combine(dialog.FolderName, "CDExtra-" + DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture) + "-" + Guid.NewGuid().ToString("N")[..6]);
         await RunAsync("准备刻录包", async (token, status) =>
         {
             IProgress<string> progress = new Progress<string>(Append);
             var package = await StaWorker.RunAsync(() => CdExtraPackage.Create(destination, _artwork, music,
-                _geometry, _tone, progress.Report, token, status));
+                _geometry, _tone, progress.Report, token, status, cdText));
             SetPackage(destination, package);
             Append("刻录包准备完成：" + destination);
         });
     }
+    /// <summary>Track text from the project's CD-TEXT, else the file's tags, else its name.</summary>
+    private CdExtraPackageCdText CollectCdText(IReadOnlyList<string> music)
+    {
+        string? album = Clean(CdTextAlbumBox.Text), performer = Clean(CdTextPerformerBox.Text);
+        List<CdTextTrack> tracks = [];
+        foreach (string path in music)
+        {
+            AudioTags tags = AudioTags.None;
+            try { tags = AudioTagReader.Read(path); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+            _projectTrackTexts.TryGetValue(path, out CdTextTrack? project);
+            tracks.Add(new CdTextTrack(Clean(project?.Title) ?? tags.Title ?? Path.GetFileNameWithoutExtension(path),
+                Clean(project?.Performer) ?? tags.Artist));
+            album ??= tags.Album;
+            performer ??= tags.AlbumArtist ?? tags.Artist;
+        }
+        return new CdExtraPackageCdText(album, performer, tracks);
+    }
+
+    private static string? Clean(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+
     private async Task LoadAsync()
     {
         OpenFileDialog dialog = new() { Filter = "CD Extra 刻录包|package.cdextra.json", Title = "打开刻录包" };
@@ -276,6 +312,9 @@ public sealed partial class CdExtraWindow : TransitionWindow
         {
             var package = await Task.Run(() => { token.ThrowIfCancellationRequested(); return CdExtraPackage.Load(directory); }, token);
             _music.Clear(); foreach (var t in package.Tracks) _music.Add(Path.Combine(directory, t.File));
+            CdTextCheck.IsChecked = package.CdText is not null;
+            CdTextAlbumBox.Text = package.CdText?.AlbumTitle ?? string.Empty;
+            CdTextPerformerBox.Text = package.CdText?.AlbumPerformer ?? string.Empty;
             SetPackage(directory, package);
             Append("已打开刻录包：" + directory);
         });
@@ -283,11 +322,37 @@ public sealed partial class CdExtraWindow : TransitionWindow
     private void SetPackage(string directory, CdExtraPackage package)
     {
         _package = package; _directory = directory;
+        ShowRanges(package, directory);
         double minutes = package.Tracks.Sum(t => t.Sectors) / 75.0 / 60;
         double radius = package.Geometry.RadiusFromByte(package.EstimatedStart * 2352);
-        _summary.Text = $"已准备 {package.Tracks.Count} 首 · 音乐 {minutes:F2} 分钟\n"
+        _summary.Text = $"已准备 {package.Tracks.Count} 首 · 音乐 {minutes:F2} 分钟"
+            + (package.CdText is { } text ? $" · CD-TEXT：{text.AlbumTitle ?? text.Tracks[0].Title}" : string.Empty) + "\n"
             + $"估计绘图起始半径约 {radius:F2} mm（刻录时按实际会话起点重算）。\n刻录包：{directory}";
     }
+    /// <summary>Track rings from the package's plan (predicted session 2 start; the burn
+    /// measures the real one). Clicking a ring selects the track in the list and back.</summary>
+    private void ShowRanges(CdExtraPackage package, string directory)
+    {
+        CdExtraLayout layout = CdExtraLayout.Plan(package.Geometry, package.Tracks.Select(t => t.Sectors).ToArray());
+        PackageRangeDisc.Tracks = Controls.CdTrackRange.FromLayout(layout, index =>
+        {
+            CdTextTrack? text = package.CdText is { } cd && index < cd.Tracks.Count ? cd.Tracks[index] : null;
+            return (text?.Title ?? Path.GetFileNameWithoutExtension(package.Tracks[index].Title), text?.Performer, null);
+        });
+        PackageRangeDisc.Session2InnerRadiusMm = layout.PictureInnerRadiusMm;
+        PackageRangeDisc.Session2OuterRadiusMm = layout.PictureOuterRadiusMm;
+        PackageRangeDisc.ModeText = ViewModels.CdMusicViewModel.DescribeWriteMode(package.CdText is not null);
+        PackageRangeDisc.Visibility = Visibility.Visible;
+        if (!_rangeLinked)
+        {
+            _rangeLinked = true;
+            PackageRangeDisc.SetBinding(Controls.CdTrackRangeDisc.SelectedIndexProperty,
+                new System.Windows.Data.Binding(nameof(ListBox.SelectedIndex)) { Source = _list, Mode = System.Windows.Data.BindingMode.TwoWay });
+        }
+    }
+
+    private bool _rangeLinked;
+
     private async Task BurnAsync()
     {
         if (_package is null || _directory is null) return;
@@ -305,8 +370,17 @@ public sealed partial class CdExtraWindow : TransitionWindow
             IProgress<string> progress = new Progress<string>(Append);
             var request = await StaWorker.RunAsync(() => package.CreateBurnRequest(
                 directory, device.Id, choice.Speed, token, progress.Report));
+            if (request.CdText is not null)
+            {
+                request = request with
+                {
+                    ConfirmWithoutCdText = reason => Dispatcher.Invoke(() => MessageBox.Show(this,
+                        reason + "\n\n继续刻录时盘片不会带有专辑、曲名和艺术家文字，音乐与图案照常写入；盘片目前仍未写入任何数据。是否不带 CD-TEXT 继续？",
+                        "光驱无法写入 CD-TEXT", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes),
+                };
+            }
             string? lastPhase = null;
-            _milestones.Begin(testWrite: request.TestWrite);
+            _milestones.Begin(testWrite: request.TestWrite, cdText: request.CdText is not null);
             var deviceProgress = new Progress<OpticalBurnProgress>(value =>
             {
                 if (_operation?.Token != token) return;
@@ -328,6 +402,8 @@ public sealed partial class CdExtraWindow : TransitionWindow
 
             _milestones.Succeed(L.F($"图案轨 {result.VerifiedPictureSectors:N0} 个扇区读回一致"));
             Append($"已封盘，图案轨 {result.VerifiedPictureSectors:N0} 个扇区全部读回校验通过。");
+            if (package.CdText is { } expected)
+                Append(ViewModels.CdTextReadback.Report(_milestones, expected.ToAlbum(), result.CdText));
         });
     }
 

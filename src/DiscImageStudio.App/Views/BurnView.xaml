@@ -111,6 +111,46 @@
                 </StackPanel>
             </controls:SectionCard>
 
+            <!-- CD-Extra: where each music track lands, from the plan the burn uses. -->
+            <controls:VisibilityGate IsOpen="{Binding IsCdExtraBurn}" Margin="0,0,0,24">
+                <Border Style="{StaticResource CardStyle}" Padding="16" DataContext="{Binding Music}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="20" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <controls:CdTrackRangeDisc x:Name="BurnRangeDisc" Width="180"
+                                                   Tracks="{Binding TrackRanges}"
+                                                   Session2InnerRadiusMm="{Binding PictureInnerRadiusMm}"
+                                                   Session2OuterRadiusMm="{Binding PictureOuterRadiusMm}"
+                                                   SelectedIndex="{Binding SelectedTrackIndex, Mode=TwoWay}"
+                                                   ModeText="{Binding RangeModeText}"
+                                                   AutomationProperties.Name="{loc:Text Xaml.CdTrackRangePreview}" />
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Text Xaml.CdTrackRangePreview}" Style="{StaticResource CardTitle}" Margin="0,0,0,6" />
+                            <TextBlock Text="{Binding TrackSummary}" Style="{StaticResource FieldLabel}" Margin="0,0,0,8" />
+                            <ListBox x:Name="BurnRangeList" ItemsSource="{Binding Tracks}" SelectedItem="{Binding SelectedTrack, Mode=TwoWay}"
+                                     MaxHeight="150" Background="Transparent" BorderThickness="0" Padding="0"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ItemContainerStyle="{StaticResource RowListBoxItem}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Style="{StaticResource RowText}" TextTrimming="CharacterEllipsis">
+                                            <Run Text="{Binding NumberText, Mode=OneWay}" />
+                                            <Run Text="  " />
+                                            <Run Text="{Binding FileName, Mode=OneWay}" />
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <TextBlock Text="{Binding MusicShareText}" Style="{StaticResource HintText}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding Session2Text}" Style="{StaticResource HintText}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </controls:VisibilityGate>
+
             <!-- Outcome of the current/last burn: written, finalized and verified apart. -->
             <controls:VisibilityGate IsOpen="{Binding Milestones.IsVisible}" Margin="0,0,0,24">
                 <controls:BurnMilestoneStrip DataContext="{Binding Milestones}" />

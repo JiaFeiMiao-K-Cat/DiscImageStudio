@@ -98,6 +98,12 @@ internal static class ProjectSession
                 // previous project's music.
                 state.CdExtraEnabled = document.CdExtra?.Enabled ?? false;
                 state.CdMusicTracks = document.CdExtra?.Tracks.Select(track => track.Path).ToArray() ?? [];
+                state.CdText = document.CdText ?? new ProjectCdText();
+                state.CdTrackTexts = (document.CdExtra?.Tracks ?? [])
+                    .Where(track => track.HasCdText)
+                    .GroupBy(track => track.Path, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(group => group.Key, group => new CdTextTrack(group.First().Title, group.First().Performer),
+                        StringComparer.OrdinalIgnoreCase);
                 state.CdVolumeLabel = string.IsNullOrWhiteSpace(outputs.VolumeLabel) ? "CD_IMAGE" : outputs.VolumeLabel;
                 state.CdOutputPath = outputs.OutputPath;
                 state.NormalizeCdOutputFormat();
@@ -205,8 +211,27 @@ internal static class ProjectSession
     public static ProjectCdExtraSettings? CaptureCdExtra(ProjectDocument current, DiscParametersState state)
         => current.Family == OpticalDiscFamily.CompactDisc && (state.CdExtraEnabled || state.HasCdMusic)
             ? new ProjectCdExtraSettings(state.CdExtraEnabled,
-                state.CdMusicTracks.Select(path => new ProjectMusicTrack(path)).ToArray())
+                state.CdMusicTracks.Select(path => state.CdTrackTexts.TryGetValue(path, out CdTextTrack? text)
+                    ? new ProjectMusicTrack(path, Clean(text.Title), Clean(text.Performer))
+                    : new ProjectMusicTrack(path)).ToArray())
             : null;
+
+    /// <summary>CD-only CD-TEXT block; absent while CD-TEXT was never switched on or filled in,
+    /// so projects without it keep their schema version and JSON shape.</summary>
+    public static ProjectCdText? CaptureCdText(ProjectDocument current, DiscParametersState state)
+    {
+        if (current.Family != OpticalDiscFamily.CompactDisc) return null;
+        ProjectCdText text = state.CdText with
+        {
+            AlbumTitle = Clean(state.CdText.AlbumTitle),
+            AlbumPerformer = Clean(state.CdText.AlbumPerformer),
+            PictureTrackTitle = Clean(state.CdText.PictureTrackTitle),
+            PictureTrackPerformer = Clean(state.CdText.PictureTrackPerformer),
+        };
+        return text.Enabled || !text.IsEmpty ? text : null;
+    }
+
+    private static string? Clean(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
 
     public static string Format(double value)
         => value.ToString("R", CultureInfo.InvariantCulture);

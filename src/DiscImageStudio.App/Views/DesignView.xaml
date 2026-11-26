@@ -105,6 +105,7 @@
                             <RowDefinition Height="*" MinHeight="260" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <!-- Layer list. Rows are selectable and drive both the canvas selection and the
                              property panel, mirroring how a selection drives the other workspaces. -->
@@ -438,6 +439,14 @@
                                                         Visibility="{Binding HasLayout, Converter={StaticResource BoolToVisibility}}">
                                                 <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.DiscShare}"
                                                            Margin="0,0,0,6" />
+                                                <controls:CdTrackRangeDisc x:Name="MusicRangeDisc" Width="200" HorizontalAlignment="Center"
+                                                                           Margin="0,0,0,10"
+                                                                           Tracks="{Binding TrackRanges}"
+                                                                           Session2InnerRadiusMm="{Binding PictureInnerRadiusMm}"
+                                                                           Session2OuterRadiusMm="{Binding PictureOuterRadiusMm}"
+                                                                           SelectedIndex="{Binding SelectedTrackIndex, Mode=TwoWay}"
+                                                                           ModeText="{Binding RangeModeText}"
+                                                                           AutomationProperties.Name="{loc:Text Xaml.CdTrackRangePreview}" />
                                                 <Grid x:Name="DiscShareBar" Height="10" Margin="0,0,0,8">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="{Binding MusicShareWidth}" />
@@ -485,6 +494,118 @@
                                                        Text="{loc:Text Xaml.CdExtraHint}" />
                                         </StackPanel>
                                     </controls:VisibilityGate>
+                                </StackPanel>
+                            </Border>
+                        </controls:VisibilityGate>
+                        <!-- CD-TEXT: album, track titles and performers in the lead-in of the
+                             audio session. Off by default; burned Session-at-Once only when on. -->
+                        <controls:VisibilityGate x:Name="CdTextCardGate" Grid.Row="3"
+                                                 IsOpen="{Binding IsCd}"
+                                                 SizeChanged="OnPageSizeChanged">
+                            <Border Style="{StaticResource CardStyle}" Padding="14" Margin="0,16,0,0">
+                                <StackPanel DataContext="{Binding CdText}">
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="CD-TEXT" Style="{StaticResource PanelTitle}" VerticalAlignment="Center" />
+                                        <CheckBox x:Name="CdTextSwitch" Grid.Column="1" Style="{StaticResource CompactCheckBox}"
+                                                  Content="{loc:Text Xaml.CdTextWrite}" IsChecked="{Binding IsEnabled}"
+                                                  IsEnabled="{Binding IsAvailable}"
+                                                  AutomationProperties.Name="{loc:Text Xaml.CdTextWrite}" />
+                                    </Grid>
+                                    <controls:VisibilityGate IsOpen="{Binding IsEnabled}">
+                                        <StackPanel>
+                                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.CdTextAlbumTitle}" Margin="0,4,0,4" />
+                                            <TextBox x:Name="CdTextAlbumTitle" Style="{StaticResource CompactTextBox}"
+                                                     Text="{Binding AlbumTitle, UpdateSourceTrigger=PropertyChanged}" MaxLength="160"
+                                                     AutomationProperties.Name="{loc:Text Xaml.CdTextAlbumTitle}" />
+                                            <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.CdTextAlbumPerformer}" Margin="0,8,0,4" />
+                                            <TextBox Style="{StaticResource CompactTextBox}"
+                                                     Text="{Binding AlbumPerformer, UpdateSourceTrigger=PropertyChanged}" MaxLength="160"
+                                                     AutomationProperties.Name="{loc:Text Xaml.CdTextAlbumPerformer}" />
+                                            <controls:VisibilityGate IsOpen="{Binding IsPictureTrackMode}">
+                                                <StackPanel>
+                                                    <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.CdTextPictureTrack}" Margin="0,8,0,4" />
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="6" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBox Style="{StaticResource CompactTextBox}"
+                                                                 Text="{Binding PictureTrackTitle, UpdateSourceTrigger=PropertyChanged}" MaxLength="160"
+                                                                 ToolTip="{loc:Text Xaml.CdTextTrackTitle}"
+                                                                 AutomationProperties.Name="{loc:Text Xaml.CdTextTrackTitle}" />
+                                                        <TextBox Grid.Column="2" Style="{StaticResource CompactTextBox}"
+                                                                 Text="{Binding PictureTrackPerformer, UpdateSourceTrigger=PropertyChanged}" MaxLength="160"
+                                                                 ToolTip="{loc:Text Xaml.CdTextTrackPerformer}"
+                                                                 AutomationProperties.Name="{loc:Text Xaml.CdTextTrackPerformer}" />
+                                                    </Grid>
+                                                </StackPanel>
+                                            </controls:VisibilityGate>
+                                            <controls:VisibilityGate IsOpen="{Binding IsMusicMode}">
+                                                <StackPanel Margin="0,10,0,0">
+                                                    <Grid Margin="0,0,0,4">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Style="{StaticResource FieldLabel}" Text="{loc:Text Xaml.CdTextTracks}"
+                                                                   VerticalAlignment="Center" />
+                                                        <Button Grid.Column="1" Style="{StaticResource QuietButton}" Height="28"
+                                                                Content="{loc:Text Xaml.CdTextFromTags}" Command="{Binding FillFromTagsCommand}" />
+                                                    </Grid>
+                                                    <ItemsControl x:Name="CdTextTrackList" ItemsSource="{Binding Tracks}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Grid Margin="0,0,0,6">
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="24" />
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="6" />
+                                                                        <ColumnDefinition Width="*" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock Text="{Binding NumberText}" Style="{StaticResource MicroText}"
+                                                                               VerticalAlignment="Center" ToolTip="{Binding FileName}" />
+                                                                    <TextBox Grid.Column="1" Style="{StaticResource CompactTextBox}"
+                                                                             Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" MaxLength="160"
+                                                                             ToolTip="{Binding FileName}"
+                                                                             AutomationProperties.Name="{loc:Text Xaml.CdTextTrackTitle}" />
+                                                                    <TextBox Grid.Column="3" Style="{StaticResource CompactTextBox}"
+                                                                             Text="{Binding Performer, UpdateSourceTrigger=PropertyChanged}" MaxLength="160"
+                                                                             AutomationProperties.Name="{loc:Text Xaml.CdTextTrackPerformer}" />
+                                                                </Grid>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </controls:VisibilityGate>
+                                            <Grid Margin="0,8,0,0" Visibility="{Binding HasWarning, Converter={StaticResource BoolToVisibility}}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <iconPacks:PackIconLucide Kind="TriangleAlert" Width="14" Height="14"
+                                                                          Foreground="{DynamicResource WarningBrush}"
+                                                                          VerticalAlignment="Top" Margin="0,2,0,0" />
+                                                <TextBlock Grid.Column="1" Text="{Binding WarningText}" Margin="6,0,0,0" TextWrapping="Wrap"
+                                                           Style="{StaticResource MicroText}" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </controls:VisibilityGate>
+                                    <TextBlock x:Name="CdTextStatus" Text="{Binding StatusText}" Margin="0,8,0,0" TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource HintText}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasError}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </StackPanel>
                             </Border>
                         </controls:VisibilityGate>

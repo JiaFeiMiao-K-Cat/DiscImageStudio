@@ -48,8 +48,35 @@ public sealed record ProjectOutputs(
 /// that bit.</summary>
 public sealed record ProjectBluRaySettings(bool InvertMapping = false);
 
-/// <summary>One CD-Extra music track: a CD-format PCM WAV referenced by absolute path.</summary>
-public sealed record ProjectMusicTrack(string Path);
+/// <summary>One CD-Extra music track: a CD-format PCM WAV referenced by absolute path, with
+/// its CD-TEXT title and performer (null: not written; files from before CD-TEXT support have none).</summary>
+public sealed record ProjectMusicTrack(
+    string Path,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Title = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Performer = null)
+{
+    [JsonIgnore]
+    public bool HasCdText => !string.IsNullOrWhiteSpace(Title) || !string.IsNullOrWhiteSpace(Performer);
+}
+
+/// <summary>CD-TEXT of a CD project: the album title and performer, and the title and
+/// performer of the single picture track of a picture-only audio CD. Music track texts live
+/// on <see cref="ProjectMusicTrack"/> so they follow their track when it is reordered.</summary>
+public sealed record ProjectCdText(
+    bool Enabled = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? AlbumTitle = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? AlbumPerformer = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? PictureTrackTitle = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? PictureTrackPerformer = null)
+{
+    /// <summary>A CD-TEXT field holds at most this many characters in the editor; the disc
+    /// limit is the 253 packs of a block, checked when the burn is prepared.</summary>
+    public const int MaximumFieldLength = 160;
+
+    [JsonIgnore]
+    public bool IsEmpty => string.IsNullOrWhiteSpace(AlbumTitle) && string.IsNullOrWhiteSpace(AlbumPerformer)
+        && string.IsNullOrWhiteSpace(PictureTrackTitle) && string.IsNullOrWhiteSpace(PictureTrackPerformer);
+}
 
 /// <summary>CD-Extra (Enhanced CD) settings, CD projects only. When enabled, the listed
 /// tracks form the audio session and the picture is written as a second, data session
@@ -80,7 +107,9 @@ public sealed record ProjectDocument(
     ToneProfile? Tone = null,
     ProjectBluRaySettings? BluRay = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    ProjectCdExtraSettings? CdExtra = null)
+    ProjectCdExtraSettings? CdExtra = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    ProjectCdText? CdText = null)
 {
     public const string CdFamily = "cd";
     public const string DvdFamily = "dvd";
@@ -137,6 +166,10 @@ public static class ProjectJsonStore
     /// not know the block reports an unsupported version instead of a malformed file; every
     /// other project stays at <see cref="CurrentSchemaVersion"/> and opens in both.</summary>
     public const int CdExtraSchemaVersion = 3;
+    /// <summary>Written only for a project that carries CD-TEXT (a cdText block or a music
+    /// track title/performer); builds without CD-TEXT support report the version instead of failing
+    /// on the unknown members. Without CD-TEXT a project keeps its earlier version.</summary>
+    public const int CdTextSchemaVersion = 4;
 
     /// <summary>The version a file with this content is written as, which is also the lowest
     /// version a file with this content may declare: the schema version states the newest
@@ -148,6 +181,8 @@ public static class ProjectJsonStore
         ArgumentNullException.ThrowIfNull(document);
         // The block is present in the file even while the mode is switched off, and builds
         // without CD-Extra reject any member they do not know.
+        if (document.CdText is not null || document.CdExtra?.Tracks?.Any(track => track is { HasCdText: true }) == true)
+            return CdTextSchemaVersion;
         return document.CdExtra is null ? CurrentSchemaVersion : CdExtraSchemaVersion;
     }
     private const int LegacySchemaVersion = 1;
@@ -232,10 +267,10 @@ public static class ProjectJsonStore
     public static void Validate(ProjectDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
-        if (document.SchemaVersion is not (LegacySchemaVersion or CurrentSchemaVersion or CdExtraSchemaVersion))
+        if (document.SchemaVersion is not (LegacySchemaVersion or CurrentSchemaVersion or CdExtraSchemaVersion or CdTextSchemaVersion))
         {
             throw DiagnosticMessage.InvalidData(
-                $"不支持 schemaVersion={document.SchemaVersion}；当前支持 {LegacySchemaVersion}、{CurrentSchemaVersion} 与 {CdExtraSchemaVersion}。");
+                $"不支持 schemaVersion={document.SchemaVersion}；当前支持 {LegacySchemaVersion}、{CurrentSchemaVersion}、{CdExtraSchemaVersion} 与 {CdTextSchemaVersion}。");
         }
 
         if (document.SchemaVersion == LegacySchemaVersion
@@ -252,6 +287,17 @@ public static class ProjectJsonStore
         if (!document.IsCd && document.CdExtra is not null)
         {
             throw DiagnosticMessage.InvalidData($"cdExtra 设置只用于 CD 工程。");
+        }
+
+        if (!document.IsCd && document.CdText is not null)
+        {
+            throw DiagnosticMessage.InvalidData($"cdText 设置只用于 CD 工程。");
+        }
+
+        if (document.CdText is { } cdText && new[] { cdText.AlbumTitle, cdText.AlbumPerformer, cdText.PictureTrackTitle,
+                cdText.PictureTrackPerformer }.Any(text => text?.Length > ProjectCdText.MaximumFieldLength))
+        {
+            throw DiagnosticMessage.InvalidData($"CD-TEXT 文字过长（每项最多 {ProjectCdText.MaximumFieldLength} 个字符）。");
         }
 
         if (string.IsNullOrWhiteSpace(document.Name))
@@ -307,6 +353,11 @@ public static class ProjectJsonStore
             if (track is null || string.IsNullOrWhiteSpace(track.Path))
             {
                 throw DiagnosticMessage.InvalidData($"cdExtra 的音乐路径不能为空。");
+            }
+
+            if (track.Title?.Length > ProjectCdText.MaximumFieldLength || track.Performer?.Length > ProjectCdText.MaximumFieldLength)
+            {
+                throw DiagnosticMessage.InvalidData($"CD-TEXT 文字过长（每项最多 {ProjectCdText.MaximumFieldLength} 个字符）。");
             }
         }
     }

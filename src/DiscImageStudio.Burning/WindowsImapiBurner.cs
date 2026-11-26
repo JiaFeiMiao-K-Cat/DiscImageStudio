@@ -222,7 +222,10 @@ public sealed partial class WindowsImapiBurner : IOpticalDiscBurner
     {
         ArgumentNullException.ThrowIfNull(request);
         request.Validate();
-        return _operationGate.RunAsync(() => ImapiCom.RunOnStaThread(() => Burn(request, progress, cancellationToken)),
+        return _operationGate.RunAsync(() => ImapiCom.RunOnStaThread(() =>
+                request is { MediaKind: OpticalBurnMediaKind.CdAudio, CdText: not null }
+                    ? BurnCdAudioWithCdText(request, progress, cancellationToken)
+                    : Burn(request, progress, cancellationToken)),
             cancellationToken);
     }
 

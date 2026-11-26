@@ -217,6 +217,19 @@ public sealed partial class WindowsImapiBurner : ICdExtraBurner
             speed = session.ConfigureWrite(request.WriteSpeed);
             tracker.Stage("speed", $"设备设置速度={speed.GetMultiplier(OpticalBurnMediaKind.CdAudio):0.#}×（设备返回的设置值）。");
 
+            // CD-TEXT needs the lead-in, which only Session-at-Once lets the host write. Every
+            // check happens before the first WRITE, so a refusal leaves a blank disc that the
+            // unchanged Track-at-Once sequence below can still record.
+            CdSaoLayout? sao = null;
+            long leadInStart = 0;
+            string? cdTextSkipped = null;
+            if (request.CdText is { } cdText)
+            {
+                (sao, leadInStart, cdTextSkipped) = PrepareSessionAtOnce(session, request, cdText,
+                    tracks: request.AudioTracks.Select(track => track.Sectors).ToArray(), finalize: false,
+                    Set, Diagnose, cancellationToken);
+            }
+
             long audioBase = 0;
             IDisposable? pinnedAudio = null;
             try
@@ -228,7 +241,15 @@ public sealed partial class WindowsImapiBurner : ICdExtraBurner
                     Set("media", "确认音乐文件未被修改");
                     pinnedAudio = request.PrepareAudio();
                 }
-                for (int index = 0; index < request.AudioTracks.Count; index++)
+                if (sao is not null)
+                {
+                    writeStarted = true;
+                    audioBase = WriteSessionAtOnce(session, sao, leadInStart, request.CdText!,
+                        request.AudioTracks.Select(track => (track.Sectors, track.ContentLength, track.ProducePcm)).ToArray(),
+                        request.EffectiveBufferOptions, tracker, Set, cancellationToken);
+                    trackStarts.AddRange(sao.TrackStarts);
+                }
+                for (int index = 0; sao is null && index < request.AudioTracks.Count; index++)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     CdExtraAudioTrack track = request.AudioTracks[index];
@@ -253,6 +274,7 @@ public sealed partial class WindowsImapiBurner : ICdExtraBurner
             CdExtraSessionStart start;
             if (request.TestWrite)
             {
+                if (sao is not null) session.Flush();
                 Set("flush", "模拟写入：跳过关闭第 1 区段");
                 start = new CdExtraSessionStart(request.PredictedSession2StartLba,
                     Math.Max(0, media.AtipLeadoutStart - request.PredictedSession2StartLba - CdExtraBurnRequest.RunOutSectors),
@@ -260,8 +282,16 @@ public sealed partial class WindowsImapiBurner : ICdExtraBurner
             }
             else
             {
-                Set("close-session", "关闭第 1 区段（写入导入区与导出区，请等待完成）");
-                session.CloseSession(finalize: false);
+                if (sao is null)
+                {
+                    Set("close-session", "关闭第 1 区段（写入导入区与导出区，请等待完成）");
+                    session.CloseSession(finalize: false);
+                }
+                else
+                {
+                    Set("close-session", "完成第 1 区段（光驱写入含 CD-TEXT 的导入区与导出区，请等待完成）");
+                    session.CompleteSessionAtOnce(finalize: false);
+                }
                 session1Closed = true;
                 Set("media", "读取第 2 区段起始地址");
                 (long nwa, long free) = session.ReadNextSessionStart();
@@ -322,10 +352,15 @@ public sealed partial class WindowsImapiBurner : ICdExtraBurner
                 Diagnose($"图案校验通过：LBA {start.NextWritableAddress} 起的 {data.Sectors} 个扇区与源镜像逐字节一致。");
             }
 
+            CdTextBurnOutcome? cdTextOutcome = request.CdText is null ? null
+                : sao is null ? new CdTextBurnOutcome(false, null, null, cdTextSkipped)
+                : request.TestWrite ? new CdTextBurnOutcome(false, null, null, "模拟写入不会写入 CD-TEXT。")
+                : ReadBackCdText(session, Set, Diagnose);
+
             Set("release", "释放刻录机");
             return new CdExtraBurnResult(request.DeviceId, trackStarts.AsReadOnly(), start.NextWritableAddress,
                 audioBase, dataBytes, timer.Elapsed, speed, request.TestWrite)
-            { VerifiedPictureSectors = finalized ? data.Sectors : 0 };
+            { VerifiedPictureSectors = finalized ? data.Sectors : 0, CdText = cdTextOutcome };
         }
         catch (Exception exception)
         {
@@ -389,6 +424,123 @@ public sealed partial class WindowsImapiBurner : ICdExtraBurner
         {
             try { reportDiagnostic?.Invoke(message); tracker.Stage("diagnostic", message); }
             catch { }
+        }
+    }
+
+    /// <summary>Decides whether the audio session is written Session-at-Once with CD-TEXT. Only
+    /// device queries and a cue sheet are sent; when the recorder cannot (no current CD
+    /// Mastering feature, no SAO, no test write in SAO, or it refuses the cue sheet), the user
+    /// decides whether to burn without CD-TEXT, and the Track-at-Once path runs unchanged.</summary>
+    internal static (CdSaoLayout? Layout, long LeadInStart, string? SkippedReason) PrepareSessionAtOnce(
+        ICdExtraSession session, CdTextLeadIn cdText, IReadOnlyList<long> tracks, bool finalize, bool testWrite,
+        Func<string, bool>? confirmWithoutCdText, Action<string, string> set, Action<string> diagnose,
+        CancellationToken cancellationToken, long? leadoutLimit = null)
+    {
+        set("media", "检查光驱能否写入 CD-TEXT（Session-at-Once）");
+        string? refusal = null;
+        // A finalized single-session disc needs no TAO-equal lead-out position.
+        CdSaoLayout layout = new(tracks, HasCdText: true, finalize ? 0 : CdSaoLayout.TrailingSilenceSectors);
+        long leadIn = 0;
+        try
+        {
+            CdSaoCapability capability = session.ReadSaoCapability();
+            diagnose($"CD-TEXT 写入能力：{capability.Describe()}。");
+            if (!capability.CanWriteCdText)
+                refusal = "所选光驱没有报告 Session-at-Once（SAO）写入，无法写入 CD-TEXT。";
+            else if (testWrite && !capability.TestWrite)
+                refusal = "所选光驱不支持 SAO 模式的模拟写入，无法在模拟写入中包含 CD-TEXT。";
+            else
+            {
+                leadIn = session.ReadLeadInStart();
+                byte[] cue = layout.BuildCueSheet();
+                if (leadoutLimit is { } limit && layout.LeadoutLba > limit)
+                    refusal = $"SAO 布局的导出区 LBA {layout.LeadoutLba:N0} 超出盘片可写范围（LBA {limit:N0}）。";
+                else if (capability.MaximumCueSheetLength > 0 && cue.Length > capability.MaximumCueSheetLength)
+                    refusal = $"光驱的 cue sheet 上限为 {capability.MaximumCueSheetLength} 字节，本盘需要 {cue.Length} 字节。";
+                else
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    session.BeginSessionAtOnce(cue, finalize, testWrite);
+                    diagnose($"已发送 SAO cue sheet：{cue.Length / 8} 项；导入区起点 LBA {leadIn}；CD-TEXT {cdText.PackCount} 个数据包；"
+                        + $"音轨起点 {string.Join(",", layout.TrackStarts)}；导出区 LBA {layout.LeadoutLba}。");
+                    return (layout, leadIn, null);
+                }
+            }
+        }
+        catch (Exception exception) when (exception is IOException or COMException or TimeoutException or NotSupportedException)
+        {
+            refusal = $"光驱拒绝了带 CD-TEXT 的 Session-at-Once 写入：{exception.Message}";
+        }
+
+        diagnose(refusal + " 尚未向盘片写入任何数据。");
+        if (confirmWithoutCdText?.Invoke(refusal) != true)
+            throw new OperationCanceledException($"{refusal} 已按你的选择取消刻录，盘片未被写入。");
+        diagnose("已确认不带 CD-TEXT 继续，改用原有写入方式。");
+        return (null, 0, refusal);
+    }
+
+    private static (CdSaoLayout? Layout, long LeadInStart, string? SkippedReason) PrepareSessionAtOnce(
+        ICdExtraSession session, CdExtraBurnRequest request, CdTextLeadIn cdText, IReadOnlyList<long> tracks,
+        bool finalize, Action<string, string> set, Action<string> diagnose, CancellationToken cancellationToken)
+        => PrepareSessionAtOnce(session, cdText, tracks, finalize, request.TestWrite, request.ConfirmWithoutCdText,
+            set, diagnose, cancellationToken);
+
+    /// <summary>Writes the whole SAO audio session: lead-in with CD-TEXT, the 150-block pre-gap,
+    /// each track (later tracks behind a 152-block silent pre-gap) and two closing blocks of
+    /// silence. Returns the music bytes written.</summary>
+    internal static long WriteSessionAtOnce(ICdExtraSession session, CdSaoLayout layout, long leadInStart,
+        CdTextLeadIn cdText, IReadOnlyList<(long Sectors, long Bytes, Action<Stream, CancellationToken> Produce)> tracks,
+        OpticalBurnBufferOptions buffer, CdExtraProgressTracker tracker, Action<string, string> set,
+        CancellationToken cancellationToken)
+    {
+        set("write", "写入导入区 CD-TEXT");
+        using (cancellationToken.Register(session.CancelWrite))
+            session.WriteSaoLeadIn(leadInStart, cdText);
+        using (cancellationToken.Register(session.CancelWrite))
+            session.WriteSaoSilence(-CdSaoLayout.FirstPregapSectors, CdSaoLayout.FirstPregapSectors);
+        IReadOnlyList<long> starts = layout.TrackStarts;
+        long audioBase = 0;
+        for (int index = 0; index < tracks.Count; index++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (index > 0)
+            {
+                using (cancellationToken.Register(session.CancelWrite))
+                    session.WriteSaoSilence(starts[index] - CdSaoLayout.LaterPregapSectors, CdSaoLayout.LaterPregapSectors);
+            }
+            string label = $"第 1 区段：写入第 {index + 1}/{tracks.Count} 首音乐（SAO，含 CD-TEXT）";
+            set("write", label);
+            tracker.BeginPhase(label, audioBase);
+            using GeneratedContentComStream pcm = new(tracks[index].Bytes, tracks[index].Produce, null,
+                cancellationToken, buffer);
+            pcm.WaitUntilPrebuffered(cancellationToken);
+            using (cancellationToken.Register(session.CancelWrite))
+                session.WriteSaoAudio(pcm, starts[index], tracks[index].Sectors);
+            audioBase += tracks[index].Bytes;
+        }
+        if (layout.TrailingSilence > 0)
+        {
+            using (cancellationToken.Register(session.CancelWrite))
+                session.WriteSaoSilence(starts[^1] + tracks[^1].Sectors, layout.TrailingSilence);
+        }
+        return audioBase;
+    }
+
+    /// <summary>Reads the CD-TEXT back from the finished disc. A failure is reported, never
+    /// thrown: the music and picture are already written and verified.</summary>
+    internal static CdTextBurnOutcome ReadBackCdText(ICdExtraSession session, Action<string, string> set, Action<string> diagnose)
+    {
+        set("cdtext-verify", "从盘片读回 CD-TEXT");
+        try
+        {
+            byte[] packs = session.ReadCdTextPacks();
+            diagnose($"CD-TEXT 读回：{packs.Length / CdTextLeadIn.PackBytes} 个数据包。");
+            return new CdTextBurnOutcome(true, packs, packs.Length == 0 ? "光驱没有从盘片读出 CD-TEXT。" : null);
+        }
+        catch (Exception exception) when (exception is IOException or COMException or TimeoutException)
+        {
+            diagnose($"CD-TEXT 读回失败：{exception.Message}");
+            return new CdTextBurnOutcome(true, null, exception.Message);
         }
     }
 

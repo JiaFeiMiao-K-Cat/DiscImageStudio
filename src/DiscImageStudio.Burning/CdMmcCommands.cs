@@ -78,6 +78,14 @@ internal sealed record CdWriteParameters(
         => new(TrackAtOnce, MultiSessionNextAllowed, AudioTrackMode, RawAudioBlock, CdDaOrCdRomSession,
             bufferUnderrunFree, testWrite);
 
+    internal const int SessionAtOnce = 2;
+
+    /// <summary>Session-at-Once audio session (used only when CD-TEXT is written): track mode
+    /// and block type are taken from the cue sheet, so they stay at their audio values.</summary>
+    internal static CdWriteParameters AudioSessionAtOnce(bool bufferUnderrunFree, bool testWrite, bool finalize)
+        => new(SessionAtOnce, finalize ? MultiSessionNone : MultiSessionNextAllowed, AudioTrackMode, RawAudioBlock,
+            CdDaOrCdRomSession, bufferUnderrunFree, testWrite);
+
     internal static CdWriteParameters FinalDataSession(bool bufferUnderrunFree, bool testWrite)
         => new(TrackAtOnce, MultiSessionNone, DataTrackMode, Mode1Block, CdDaOrCdRomSession,
             bufferUnderrunFree, testWrite);

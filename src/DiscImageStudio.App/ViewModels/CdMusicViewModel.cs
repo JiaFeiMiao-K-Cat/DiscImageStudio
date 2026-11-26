@@ -63,7 +63,8 @@ public sealed partial class CdMusicViewModel : ObservableObject
         {
             if (e.PropertyName is nameof(DiscParametersState.CdMusicTracks))
                 RebuildRows();
-            else if (e.PropertyName is nameof(DiscParametersState.CdExtraEnabled))
+            else if (e.PropertyName is nameof(DiscParametersState.CdExtraEnabled)
+                or nameof(DiscParametersState.CdText) or nameof(DiscParametersState.CdTrackTexts))
                 RefreshSummary();
         };
         _shell.PropertyChanged += (_, e) =>
@@ -140,7 +141,35 @@ public sealed partial class CdMusicViewModel : ObservableObject
     [ObservableProperty]
     private string _canvasLegendText = string.Empty;
 
-    partial void OnSelectedTrackChanged(CdMusicTrackRowViewModel? value) => NotifyCommands();
+    partial void OnSelectedTrackChanged(CdMusicTrackRowViewModel? value)
+    {
+        NotifyCommands();
+        OnPropertyChanged(nameof(SelectedTrackIndex));
+    }
+
+    /// <summary>Index of the selected track, shared by the list and the preview disc.</summary>
+    public int SelectedTrackIndex
+    {
+        get => SelectedTrack is null ? -1 : SelectedTrack.Number - 1;
+        set => SelectedTrack = value >= 0 && value < Tracks.Count ? Tracks[value] : null;
+    }
+
+    /// <summary>Track rings of the preview disc, from the same plan as the share bar.</summary>
+    [ObservableProperty]
+    private IReadOnlyList<Controls.CdTrackRange> _trackRanges = [];
+
+    [ObservableProperty]
+    private double _pictureInnerRadiusMm;
+
+    [ObservableProperty]
+    private double _pictureOuterRadiusMm;
+
+    /// <summary>"按 SAO（含 CD-TEXT）" or "按 TAO".</summary>
+    [ObservableProperty]
+    private string _rangeModeText = string.Empty;
+
+    internal static string DescribeWriteMode(bool cdText)
+        => cdText ? L.T("按 SAO（含 CD-TEXT）") : L.T("按 TAO");
 
     /// <summary>Appends WAV files after the current tracks; the picker and page drops call
     /// this. A picker or Explorer drag lists the focused file first, so each batch is added
@@ -295,15 +324,28 @@ public sealed partial class CdMusicViewModel : ObservableObject
             GapShareWidth = new GridLength(layout.SessionGapAreaFraction, GridUnitType.Star);
             PictureShareWidth = new GridLength(layout.PictureAreaFraction, GridUnitType.Star);
             CanvasLegendText = L.F($"音乐 {layout.MusicAreaFraction:P0} · 区段间隔 {layout.SessionGapAreaFraction:P1} · 图片 {layout.PictureAreaFraction:P0}");
+            TrackRanges = Controls.CdTrackRange.FromLayout(layout, index =>
+            {
+                string path = index < _state.CdMusicTracks.Count ? _state.CdMusicTracks[index] : string.Empty;
+                _state.CdTrackTexts.TryGetValue(path, out Core.CdTextTrack? text);
+                TimeSpan? duration = probes.TryGetValue(path, out CdExtraTrackProbe? probe) && probe.Info is { } info ? info.Duration : null;
+                return (string.IsNullOrWhiteSpace(text?.Title) ? System.IO.Path.GetFileNameWithoutExtension(path) : text.Title!,
+                    text?.Performer, duration);
+            });
+            PictureInnerRadiusMm = layout.PictureInnerRadiusMm;
+            PictureOuterRadiusMm = layout.PictureOuterRadiusMm;
         }
         else
         {
             MusicShareText = GapShareText = PictureShareText = Session2Text = CanvasLegendText = string.Empty;
+            TrackRanges = [];
+            PictureInnerRadiusMm = PictureOuterRadiusMm = 0;
             MusicShareWidth = new GridLength(0);
             GapShareWidth = new GridLength(0);
             PictureShareWidth = new GridLength(1, GridUnitType.Star);
         }
 
+        RangeModeText = DescribeWriteMode(_state.EffectiveCdText() is not null);
         string? problem = !_state.CdExtraEnabled ? null : Tracks.Count == 0
             ? L.T("添加 WAV 音乐后，这里会显示音乐区与图片区各占多少盘面。")
             : plan is null or { Problem: CdExtraPlanProblem.None or CdExtraPlanProblem.NoMusic }

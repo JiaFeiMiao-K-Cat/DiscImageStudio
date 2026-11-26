@@ -48,6 +48,7 @@ public sealed partial class BurnMilestonesViewModel : ObservableObject
     private readonly BurnMilestone _written = new("written");
     private readonly BurnMilestone _finalized = new("finalized");
     private readonly BurnMilestone _verified = new("verified");
+    private readonly BurnMilestone _cdText = new("cdtext");
     private bool _testWrite;
     private bool _sawVerify;
     private bool _tracking;
@@ -68,9 +69,17 @@ public sealed partial class BurnMilestonesViewModel : ObservableObject
 
     /// <summary>Starts tracking a new job. A resume job starts from a disc that may already
     /// be written and closed, so its first two rows begin as "checking".</summary>
-    internal void Begin(bool testWrite = false, bool resume = false)
+    internal void Begin(bool testWrite = false, bool resume = false, bool cdText = false)
     {
         Reset();
+        // The fourth row exists only for a burn that carries CD-TEXT.
+        if (cdText && !Items.Contains(_cdText)) Items.Add(_cdText);
+        else if (!cdText) Items.Remove(_cdText);
+        if (cdText && testWrite)
+        {
+            _cdText.State = MilestoneState.Skipped;
+            _cdText.Detail = L.T("模拟写入不会写入 CD-TEXT");
+        }
         _testWrite = testWrite;
         _tracking = true;
         IsVisible = true;
@@ -119,6 +128,9 @@ public sealed partial class BurnMilestonesViewModel : ObservableObject
                 Activate(_verified, progress.TotalBytes > 0
                     ? L.F($"已读回 {progress.Fraction:P0}")
                     : progress.Message);
+                break;
+            case "cdtext-verify":
+                Activate(_cdText, progress.Message);
                 break;
             case "complete":
                 Complete(_written, L.T("设备已接收全部数据"));
@@ -190,6 +202,35 @@ public sealed partial class BurnMilestonesViewModel : ObservableObject
         Relocalize();
     }
 
+    /// <summary>Result of the CD-TEXT read-back, compared by the caller with what was
+    /// requested. <paramref name="differences"/> empty means every field and the track order
+    /// matched.</summary>
+    internal void ReportCdText(CdTextBurnOutcome? outcome, IReadOnlyList<string>? differences)
+    {
+        if (!Items.Contains(_cdText) || _cdText.State == MilestoneState.Skipped) return;
+        if (outcome is null || !outcome.Written)
+        {
+            _cdText.State = MilestoneState.Skipped;
+            _cdText.Detail = outcome?.SkippedReason ?? L.T("本次未写入 CD-TEXT");
+        }
+        else if (outcome.ReadbackError is not null)
+        {
+            _cdText.State = MilestoneState.Failed;
+            _cdText.Detail = outcome.ReadbackError;
+        }
+        else if (differences is { Count: > 0 })
+        {
+            _cdText.State = MilestoneState.Failed;
+            _cdText.Detail = string.Join("；", differences.Take(3)) + (differences.Count > 3 ? L.F($"……共 {differences.Count} 处") : string.Empty);
+        }
+        else
+        {
+            _cdText.State = MilestoneState.Done;
+            _cdText.Detail = L.T("专辑、曲名、艺术家与曲序和设置一致");
+        }
+        Relocalize();
+    }
+
     internal void Hide() => IsVisible = false;
 
     internal void Relocalize()
@@ -202,13 +243,19 @@ public sealed partial class BurnMilestonesViewModel : ObservableObject
             MilestoneState.Skipped => L.T("未读回校验"),
             _ => L.T("读回校验通过"),
         };
+        _cdText.Title = _cdText.State switch
+        {
+            MilestoneState.Failed => L.T("CD-TEXT 不一致"),
+            MilestoneState.Skipped => L.T("未写入 CD-TEXT"),
+            _ => L.T("CD-TEXT 读回一致"),
+        };
     }
 
     private void Reset()
     {
         _testWrite = false;
         _sawVerify = false;
-        foreach (BurnMilestone item in Items)
+        foreach (BurnMilestone item in Items.Append(_cdText).Distinct())
         {
             item.State = MilestoneState.Pending;
             item.Detail = string.Empty;

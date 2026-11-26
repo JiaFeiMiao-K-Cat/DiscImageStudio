@@ -81,6 +81,7 @@ public partial class DesignViewModel : ObservableObject
         Layers.CollectionChanged += Layers_CollectionChanged;
         Tone = new ToneViewModel(shell, state, this);
         Music = new CdMusicViewModel(shell, state, this);
+        CdText = new CdTextViewModel(shell, state, this);
         RefreshDataRegionText();
     }
 
@@ -91,12 +92,16 @@ public partial class DesignViewModel : ObservableObject
     /// <summary>The left rail's CD-Extra module: music list and disc-share summary.</summary>
     public CdMusicViewModel Music { get; }
 
+    /// <summary>The left rail's CD-TEXT module (album, track titles and performers).</summary>
+    public CdTextViewModel CdText { get; }
+
     /// <summary>The design page itself builds its text from XAML; only the tone module and
     /// the overflow warning cache localized text.</summary>
     internal void Relocalize()
     {
         Tone.Relocalize();
         Music.Relocalize();
+        CdText.Relocalize();
         RefreshDataRegionText();
     }
 

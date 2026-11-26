@@ -1,0 +1,224 @@
+{
+  "Xaml.CdTextWrite": {
+    "zh-CN": "写入 CD-TEXT",
+    "en": "Write CD-TEXT",
+    "zh-TW": "寫入 CD-TEXT",
+    "ja": "CD-TEXT を書き込む"
+  },
+  "Xaml.CdTextAlbumTitle": {
+    "zh-CN": "专辑名",
+    "en": "Album title",
+    "zh-TW": "專輯名稱",
+    "ja": "アルバム名"
+  },
+  "Xaml.CdTextAlbumPerformer": {
+    "zh-CN": "专辑艺术家",
+    "en": "Album artist",
+    "zh-TW": "專輯演出者",
+    "ja": "アルバムアーティスト"
+  },
+  "Xaml.CdTextPictureTrack": {
+    "zh-CN": "图片音轨（曲名 / 艺术家）",
+    "en": "Picture track (title / artist)",
+    "zh-TW": "圖片音軌（曲名／演出者）",
+    "ja": "画像トラック（曲名／アーティスト）"
+  },
+  "Xaml.CdTextTrackTitle": {
+    "zh-CN": "曲名",
+    "en": "Title",
+    "zh-TW": "曲名",
+    "ja": "曲名"
+  },
+  "Xaml.CdTextTrackPerformer": {
+    "zh-CN": "艺术家",
+    "en": "Artist",
+    "zh-TW": "演出者",
+    "ja": "アーティスト"
+  },
+  "Xaml.CdTextTracks": {
+    "zh-CN": "各曲曲名与艺术家",
+    "en": "Track titles and artists",
+    "zh-TW": "各曲曲名與演出者",
+    "ja": "各曲の曲名とアーティスト"
+  },
+  "Xaml.CdTextFromTags": {
+    "zh-CN": "从标签读取",
+    "en": "Read from tags",
+    "zh-TW": "從標籤讀取",
+    "ja": "タグから読み込む"
+  },
+  "Xaml.CdTrackRangePreview": {
+    "zh-CN": "音轨刻录范围",
+    "en": "Track burn ranges",
+    "zh-TW": "音軌燒錄範圍",
+    "ja": "トラックの書き込み範囲"
+  },
+  "按 SAO（含 CD-TEXT）": {
+    "zh-CN": "按 SAO（含 CD-TEXT）",
+    "en": "SAO (with CD-TEXT)",
+    "zh-TW": "依 SAO（含 CD-TEXT）",
+    "ja": "SAO（CD-TEXT 付き）"
+  },
+  "按 TAO": {
+    "zh-CN": "按 TAO",
+    "en": "TAO",
+    "zh-TW": "依 TAO",
+    "ja": "TAO"
+  },
+  "本次未写入 CD-TEXT": {
+    "zh-CN": "本次未写入 CD-TEXT",
+    "en": "CD-TEXT was not written this time",
+    "zh-TW": "本次未寫入 CD-TEXT",
+    "ja": "今回は CD-TEXT を書き込みませんでした"
+  },
+  "不带 CD-TEXT 继续": {
+    "zh-CN": "不带 CD-TEXT 继续",
+    "en": "Continue without CD-TEXT",
+    "zh-TW": "不含 CD-TEXT 繼續",
+    "ja": "CD-TEXT なしで続行"
+  },
+  "光驱无法写入 CD-TEXT": {
+    "zh-CN": "光驱无法写入 CD-TEXT",
+    "en": "The recorder cannot write CD-TEXT",
+    "zh-TW": "光碟機無法寫入 CD-TEXT",
+    "ja": "ドライブは CD-TEXT を書き込めません"
+  },
+  "继续刻录时盘片不会带有专辑、曲名和艺术家文字，音乐与图案照常写入；盘片目前仍未写入任何数据。是否不带 CD-TEXT 继续？": {
+    "zh-CN": "继续刻录时盘片不会带有专辑、曲名和艺术家文字，音乐与图案照常写入；盘片目前仍未写入任何数据。是否不带 CD-TEXT 继续？",
+    "en": "If you continue, the disc will have no album, title or artist text; music and artwork are written as usual. Nothing has been written to the disc yet. Continue without CD-TEXT?",
+    "zh-TW": "繼續燒錄時光碟不會帶有專輯、曲名和演出者文字，音樂與圖案照常寫入；光碟目前仍未寫入任何資料。是否不含 CD-TEXT 繼續？",
+    "ja": "続行するとディスクにアルバム名・曲名・アーティストの文字は入りません。音楽と図案は通常どおり書き込まれます。ディスクにはまだ何も書き込まれていません。CD-TEXT なしで続行しますか？"
+  },
+  "模拟写入不会写入 CD-TEXT": {
+    "zh-CN": "模拟写入不会写入 CD-TEXT",
+    "en": "A test write does not write CD-TEXT",
+    "zh-TW": "模擬寫入不會寫入 CD-TEXT",
+    "ja": "テスト書き込みでは CD-TEXT は書き込まれません"
+  },
+  "未写入 CD-TEXT": {
+    "zh-CN": "未写入 CD-TEXT",
+    "en": "No CD-TEXT",
+    "zh-TW": "未寫入 CD-TEXT",
+    "ja": "CD-TEXT なし"
+  },
+  "专辑、曲名、艺术家与曲序和设置一致": {
+    "zh-CN": "专辑、曲名、艺术家与曲序和设置一致",
+    "en": "Album, titles, artists and track order match",
+    "zh-TW": "專輯、曲名、演出者與曲序皆與設定一致",
+    "ja": "アルバム・曲名・アーティスト・曲順が設定と一致"
+  },
+  "CD-TEXT 不一致": {
+    "zh-CN": "CD-TEXT 不一致",
+    "en": "CD-TEXT differs",
+    "zh-TW": "CD-TEXT 不一致",
+    "ja": "CD-TEXT が不一致"
+  },
+  "CD-TEXT 读回一致": {
+    "zh-CN": "CD-TEXT 读回一致",
+    "en": "CD-TEXT read back matches",
+    "zh-TW": "CD-TEXT 讀回一致",
+    "ja": "CD-TEXT 読み戻し一致"
+  },
+  "光驱不支持": {
+    "zh-CN": "光驱不支持",
+    "en": "not supported by the recorder",
+    "zh-TW": "光碟機不支援",
+    "ja": "ドライブが非対応"
+  },
+  "……共 {0} 处": {
+    "zh-CN": "……共 {0} 处",
+    "en": "… {0} in total",
+    "zh-TW": "……共 {0} 處",
+    "ja": "…計 {0} 件"
+  },
+  "CD-TEXT 文字太长：需要 {0} 个数据包，一张盘最多 {1} 个。请在设计页缩短标题。": {
+    "zh-CN": "CD-TEXT 文字太长：需要 {0} 个数据包，一张盘最多 {1} 个。请在设计页缩短标题。",
+    "en": "CD-TEXT is too long: it needs {0} packs, a disc holds at most {1}. Shorten the titles on the design page.",
+    "zh-TW": "CD-TEXT 文字太長：需要 {0} 個資料包，一張光碟最多 {1} 個。請在設計頁縮短標題。",
+    "ja": "CD-TEXT が長すぎます：{0} パック必要ですが、1 枚に入るのは最大 {1} パックです。デザインページで曲名を短くしてください。"
+  },
+  "CD-TEXT：{0}（按 SAO 写入导入区，刻录后读回核对）": {
+    "zh-CN": "CD-TEXT：{0}（按 SAO 写入导入区，刻录后读回核对）",
+    "en": "CD-TEXT: {0} (written to the lead-in in SAO, read back after the burn)",
+    "zh-TW": "CD-TEXT：{0}（依 SAO 寫入導入區，燒錄後讀回核對）",
+    "ja": "CD-TEXT：{0}（SAO でリードインに書き込み、書き込み後に読み戻して確認）"
+  },
+  "读回的 CD-TEXT 无法解析：{0}": {
+    "zh-CN": "读回的 CD-TEXT 无法解析：{0}",
+    "en": "The CD-TEXT read back cannot be parsed: {0}",
+    "zh-TW": "讀回的 CD-TEXT 無法解析：{0}",
+    "ja": "読み戻した CD-TEXT を解析できません：{0}"
+  },
+  "文字太长：需要 {0} 个数据包，一张盘最多 {1} 个。请缩短标题。": {
+    "zh-CN": "文字太长：需要 {0} 个数据包，一张盘最多 {1} 个。请缩短标题。",
+    "en": "Too long: needs {0} packs, a disc holds at most {1}. Shorten the titles.",
+    "zh-TW": "文字太長：需要 {0} 個資料包，一張光碟最多 {1} 個。請縮短標題。",
+    "ja": "長すぎます：{0} パック必要、最大 {1} パックです。曲名を短くしてください。"
+  },
+  "以下字符无法用 CD-TEXT 表示，将写成“？”：{0}": {
+    "zh-CN": "以下字符无法用 CD-TEXT 表示，将写成“？”：{0}",
+    "en": "These characters cannot be stored in CD-TEXT and will be written as “？”: {0}",
+    "zh-TW": "以下字元無法以 CD-TEXT 表示，將寫成「？」：{0}",
+    "ja": "次の文字は CD-TEXT で表せないため「？」として書き込まれます：{0}"
+  },
+  "CD-TEXT 读回一致：{0} 个数据包，曲序正确。": {
+    "zh-CN": "CD-TEXT 读回一致：{0} 个数据包，曲序正确。",
+    "en": "CD-TEXT read back matches: {0} packs, track order correct.",
+    "zh-TW": "CD-TEXT 讀回一致：{0} 個資料包，曲序正確。",
+    "ja": "CD-TEXT 読み戻し一致：{0} パック、曲順正常。"
+  },
+  "CD-TEXT 读回与设置不一致：{0}": {
+    "zh-CN": "CD-TEXT 读回与设置不一致：{0}",
+    "en": "CD-TEXT read back differs from the settings: {0}",
+    "zh-TW": "CD-TEXT 讀回與設定不一致：{0}",
+    "ja": "読み戻した CD-TEXT が設定と異なります：{0}"
+  },
+  "CD-TEXT 未写入：{0}": {
+    "zh-CN": "CD-TEXT 未写入：{0}",
+    "en": "CD-TEXT not written: {0}",
+    "zh-TW": "CD-TEXT 未寫入：{0}",
+    "ja": "CD-TEXT 未書き込み：{0}"
+  },
+  "CD-TEXT 已写入，但读回失败：{0}": {
+    "zh-CN": "CD-TEXT 已写入，但读回失败：{0}",
+    "en": "CD-TEXT was written, but reading it back failed: {0}",
+    "zh-TW": "CD-TEXT 已寫入，但讀回失敗：{0}",
+    "ja": "CD-TEXT は書き込みましたが読み戻しに失敗しました：{0}"
+  },
+  "{0} · {1} 个数据包（上限 {2}）· 刻录时需要光驱支持 SAO": {
+    "zh-CN": "{0} · {1} 个数据包（上限 {2}）· 刻录时需要光驱支持 SAO",
+    "en": "{0} · {1} packs (limit {2}) · the recorder must support SAO",
+    "zh-TW": "{0} · {1} 個資料包（上限 {2}）· 燒錄時需要光碟機支援 SAO",
+    "ja": "{0} · {1} パック（上限 {2}）· 書き込みには SAO 対応ドライブが必要"
+  },
+  "{0} · {1:N0} 扇区": {
+    "zh-CN": "{0} · {1:N0} 扇区",
+    "en": "{0} · {1:N0} sectors",
+    "zh-TW": "{0} · {1:N0} 磁區",
+    "ja": "{0} · {1:N0} セクター"
+  },
+  "日文 MS-JIS": {
+    "zh-CN": "日文 MS-JIS",
+    "en": "Japanese MS-JIS",
+    "zh-TW": "日文 MS-JIS",
+    "ja": "日本語 MS-JIS"
+  },
+  "尚未填写任何文字；留空时不写入 CD-TEXT。": {
+    "zh-CN": "尚未填写任何文字；留空时不写入 CD-TEXT。",
+    "en": "No text yet; nothing is written while all fields are empty.",
+    "zh-TW": "尚未填寫任何文字；留空時不寫入 CD-TEXT。",
+    "ja": "まだ文字がありません。空欄のままなら CD-TEXT は書き込まれません。"
+  },
+  "数据 CD 没有音频导入区，不能写入 CD-TEXT。": {
+    "zh-CN": "数据 CD 没有音频导入区，不能写入 CD-TEXT。",
+    "en": "A data CD has no audio lead-in and cannot carry CD-TEXT.",
+    "zh-TW": "資料 CD 沒有音訊導入區，不能寫入 CD-TEXT。",
+    "ja": "データ CD には音声のリードインがないため CD-TEXT を書き込めません。"
+  },
+  "CD-TEXT 已关闭：光盘不带文字信息，刻录方式与以前相同。": {
+    "zh-CN": "CD-TEXT 已关闭：光盘不带文字信息，刻录方式与以前相同。",
+    "en": "CD-TEXT is off: the disc carries no text and burns exactly as before.",
+    "zh-TW": "CD-TEXT 已關閉：光碟不帶文字資訊，燒錄方式與以前相同。",
+    "ja": "CD-TEXT はオフ：ディスクに文字情報は入らず、書き込み方法は従来どおりです。"
+  }
+}

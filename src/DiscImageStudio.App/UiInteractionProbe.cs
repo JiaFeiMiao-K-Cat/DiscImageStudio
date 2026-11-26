@@ -66,6 +66,11 @@ internal static class UiInteractionProbe
         {
             if (scenario is "all" or "settings") SettingsScenario();
             if (scenario is "all" or "reduced") ReducedMotionScenario();
+            if (scenario is "cdtext")
+            {
+                CreateProject();
+                CdTextScenario();
+            }
             if (scenario is "all" or "drive" or "canvas")
             {
                 string project = CreateProject();
@@ -333,6 +338,121 @@ internal static class UiInteractionProbe
         _shell.NavigateTo(Workspace.Design);
         Pump(700);
         return path;
+    }
+
+    // ------------------------------------------------------------------ CD-TEXT
+
+    /// <summary>CD-Extra with two tagged WAVs (one Japanese): tags fill the CD-TEXT card, the
+    /// track-range disc follows the list and the list follows a click on the disc, and the
+    /// burn page shows the same disc and a fourth milestone.</summary>
+    private static void CdTextScenario()
+    {
+        string music = Path.Combine(_output, "music");
+        Directory.CreateDirectory(music);
+        string first = Path.Combine(music, "01.wav"), second = Path.Combine(music, "02.wav");
+        WriteTaggedWave(first, 75 * 60 * 3, "風の谷のナウシカ", "安田成美", "風の谷 ベスト");
+        WriteTaggedWave(second, 75 * 60 * 4, "Song of Joy", "Felix", "風の谷 ベスト");
+        _shell.Design.Music.AddTracks([first, second]);
+        WaitFor(() => _shell.Design.Music.TrackRanges.Count == 2, 20000, "the plan yields two track ranges");
+        _shell.Design.CdText.IsEnabled = true;
+        Pump(400);
+        CdTextViewModel text = _shell.Design.CdText;
+        Note("cdtext-card", new { text.AlbumTitle, text.AlbumPerformer, text.StatusText, tracks = text.Tracks.Select(t => new { t.Title, t.Performer }) });
+        Require(text.AlbumTitle == "風の谷 ベスト" && text.Tracks.Count == 2 && text.Tracks[0].Title == "風の谷のナウシカ"
+                && text.Tracks[1].Performer == "Felix", "switching CD-TEXT on fills album and tracks from the WAV tags");
+        Require(text.StatusText.Contains("MS-JIS", StringComparison.Ordinal), "Japanese text is reported as MS-JIS: " + text.StatusText);
+        Require(_shell.Design.Music.RangeModeText.Contains("SAO", StringComparison.Ordinal), "the preview disc says SAO with CD-TEXT");
+
+        CdTrackRangeDisc disc = FindNamed<CdTrackRangeDisc>(_window, "MusicRangeDisc")
+            ?? throw new InvalidOperationException("track-range disc not found");
+        disc.BringIntoView();
+        FindNamed<FrameworkElement>(_window, "CdTextCardGate")?.BringIntoView();
+        Pump(500);
+        disc.BringIntoView();
+        Pump(500);
+        disc.Snap();
+        Capture("cdtext-00-design");
+
+        // Hover the second ring: the card shows that track.
+        MoveTo(disc.PointToScreen(disc.RingPoint(1)));
+        Pump(400);
+        Require(disc.HoverIndex == 1, $"hovering the second ring highlights track 2 (hover={disc.HoverIndex})");
+        Capture("cdtext-01-hover");
+
+        // Click the first ring: the list selects track 1; then the list drives the disc.
+        ClickAt(disc.PointToScreen(disc.RingPoint(0)));
+        Pump(300);
+        Require(_shell.Design.Music.SelectedTrack?.Number == 1 && disc.SelectedIndex == 0, "clicking a ring selects that track in the list");
+        _shell.Design.Music.SelectedTrack = _shell.Design.Music.Tracks[1];
+        Pump(300);
+        Require(disc.SelectedIndex == 1, "selecting in the list highlights the ring");
+        disc.Snap();
+        Capture("cdtext-02-linked");
+
+        // A longer second track: the rings morph to the new plan instead of jumping.
+        WriteTaggedWave(second, 75 * 60 * 9, "Song of Joy", "Felix", "風の谷 ベスト");
+        double before = disc.Tracks![1].OuterRadiusMm;
+        _shell.Design.Music.MoveTrack(_shell.Design.Music.Tracks[1], -1);
+        WaitFor(() => disc.Tracks!.Count == 2 && disc.Tracks[0].Title == "Song of Joy", 20000, "reordering re-plans the rings");
+        Note("cdtext-morph", new { before, animating = disc.IsAnimating, rings = disc.Tracks!.Select(t => new { t.Title, t.InnerRadiusMm, t.OuterRadiusMm }) });
+        Capture("cdtext-03-morph-frame");
+        Pump(500);
+        Require(!disc.IsAnimating, "the ring animation settles");
+        Capture("cdtext-04-reordered");
+
+        // Burn page: same disc, and the four milestones of a CD-TEXT burn.
+        _shell.NavigateTo(Workspace.Burn);
+        Pump(700);
+        BurnMilestonesViewModel milestones = _shell.Burn.Milestones;
+        milestones.Begin(cdText: true);
+        milestones.Observe(new DiscImageStudio.Burning.OpticalBurnProgress("complete", "图案读回一致", 1, 1));
+        milestones.Succeed("图案轨读回一致");
+        CdTextAlbum album = _shell.State.EffectiveCdText()!;
+        CdTextReadback.Report(milestones, album, new DiscImageStudio.Burning.CdTextBurnOutcome(true, CdTextPacks.Encode(album).Packs, null));
+        Pump(500);
+        Require(milestones.Items.Count == 4 && milestones.Items[3].State == MilestoneState.Done, "the burn page shows CD-TEXT read back as the fourth milestone");
+        CdTrackRangeDisc? burnDisc = FindNamed<CdTrackRangeDisc>(_window, "BurnRangeDisc");
+        Require(burnDisc is { Tracks.Count: 2 }, "the burn page shows the same track ranges");
+        burnDisc?.Snap();
+        burnDisc?.BringIntoView();
+        Pump(600);
+        Capture("cdtext-05-burn-ranges");
+        FindDescendant<BurnMilestoneStrip>(_window)?.BringIntoView();
+        Pump(600);
+        Capture("cdtext-06-burn-milestones");
+    }
+
+    private static void WriteTaggedWave(string path, int sectors, string title, string artist, string album)
+    {
+        static byte[] Info(string id, string value)
+        {
+            byte[] data = [.. System.Text.Encoding.UTF8.GetBytes(value), 0];
+            byte[] chunk = new byte[8 + data.Length + (data.Length & 1)];
+            System.Text.Encoding.ASCII.GetBytes(id).CopyTo(chunk, 0);
+            BitConverter.GetBytes(data.Length).CopyTo(chunk, 4);
+            data.CopyTo(chunk, 8);
+            return chunk;
+        }
+        byte[] info = [.. "INFO"u8, .. Info("INAM", title), .. Info("IART", artist), .. Info("IPRD", album)];
+        int pcm = sectors * 2352;
+        using FileStream file = File.Create(path);
+        using BinaryWriter w = new(file);
+        w.Write("RIFF"u8); w.Write(4 + 24 + 8 + pcm + 8 + info.Length); w.Write("WAVE"u8);
+        w.Write("fmt "u8); w.Write(16); w.Write((short)1); w.Write((short)2); w.Write(44100); w.Write(176400); w.Write((short)4); w.Write((short)16);
+        w.Write("data"u8); w.Write(pcm); w.Write(new byte[pcm]);
+        w.Write("LIST"u8); w.Write(info.Length); w.Write(info);
+    }
+
+    private static T? FindNamed<T>(DependencyObject root, string name) where T : FrameworkElement
+    {
+        int count = VisualTreeHelper.GetChildrenCount(root);
+        for (int i = 0; i < count; i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(root, i);
+            if (child is T match && match.Name == name) return match;
+            if (FindNamed<T>(child, name) is { } nested) return nested;
+        }
+        return null;
     }
 
     private static void CanvasScenario(string image, string projectPath)

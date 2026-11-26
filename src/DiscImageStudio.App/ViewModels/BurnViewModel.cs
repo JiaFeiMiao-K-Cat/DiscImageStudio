@@ -225,6 +225,10 @@ public partial class BurnViewModel : ObservableObject
         : _shell.CurrentProject?.FamilyLabel ?? "CD";
 
     /// <summary>A CD project in CD-Extra mode: music session plus picture session.</summary>
+    /// <summary>The design page's music module: the burn page shows the same track-range
+    /// preview, so what is confirmed here is what the design page planned.</summary>
+    public CdMusicViewModel Music => _design.Music;
+
     public bool IsCdExtraBurn => !UseCalibrationPattern
         && _shell.CurrentProject?.Family == OpticalDiscFamily.CompactDisc
         && _state.CdExtraEnabled;
@@ -657,6 +661,8 @@ public partial class BurnViewModel : ObservableObject
             BurnWriteSpeedOption selectedWriteSpeed = SelectedSpeed ?? BurnWriteSpeedOption.Automatic;
             OpticalBurnRequest? request = null;
             CdExtraBurnRequest? cdExtraRequest = null;
+            CdTextAlbum? cdTextAlbum = null;
+            CdTextLeadIn? cdTextLeadIn = null;
             string contentDescription;
             OpticalMediaCapacity capacity = await _opticalDiscBurner.GetMediaCapacityAsync(device.Id, mediaKind);
             if (preparationRevision != _burnPreparationRevision || !ConfirmChecked)
@@ -694,6 +700,8 @@ public partial class BurnViewModel : ObservableObject
                 // Streaming burns the same export-quality composite the file path writes, so
                 // what the read-back preview verified is the material that lands on the disc.
                 string compositePath = await _design.EnsureExportCompositeAsync();
+                cdTextAlbum = !bluRay && !dvd ? _state.EffectiveCdText() : null;
+                cdTextLeadIn = cdTextAlbum is null ? null : new CdTextLeadIn(EncodeCdText(cdTextAlbum));
                 if (bluRay)
                 {
                     BluRayDiscParameters disc = ReadBluRayParameters();
@@ -791,7 +799,7 @@ public partial class BurnViewModel : ObservableObject
                         return (CdExtraPlanner.CreateBurnRequest(compositePath, parameters, extra, dataDirectory, volumeLabel,
                             filesAtOuterRing, tone, device.Id, speed, testWrite), extra);
                     });
-                    cdExtraRequest = prepared.Request;
+                    cdExtraRequest = prepared.Request with { CdText = cdTextLeadIn };
                     CdExtraLayout layout = prepared.Plan.Layout!;
                     contentDescription = L.F($"CD-Extra · 第 1 区段 {music.Count} 首音乐（{CdMusicViewModel.FormatDuration(prepared.Plan.MusicDuration)}）")
                         + L.F($" · 第 2 区段图片预计从 LBA {layout.Session2StartLba:N0} 开始，约占盘面 {layout.PictureAreaFraction:P0}")
@@ -815,6 +823,8 @@ public partial class BurnViewModel : ObservableObject
                         _state.Tone,
                         device.Id,
                         selectedWriteSpeed.Speed);
+                    if (request.MediaKind == OpticalBurnMediaKind.CdAudio && cdTextLeadIn is not null)
+                        request = request with { CdText = cdTextLeadIn };
                     contentDescription = request.MediaKind == OpticalBurnMediaKind.CdData
                         ? L.F($"CD 数据盘（DAO） · 文件位于{(_state.CdFilesAtOuterRing ? L.T("外圈") : L.T("内圈"))}")
                         : L.T("CD 音轨");
@@ -824,6 +834,9 @@ public partial class BurnViewModel : ObservableObject
 
             if (dvdCompatibilitySummary is not null)
                 contentDescription += Environment.NewLine + dvdCompatibilitySummary;
+            bool cdTextRequested = (cdExtraRequest?.CdText ?? request?.CdText) is not null;
+            if (cdTextRequested)
+                contentDescription += Environment.NewLine + L.F($"CD-TEXT：{cdTextAlbum!.Title ?? cdTextAlbum.Tracks[0].Title}（按 SAO 写入导入区，刻录后读回核对）");
 
             // In-app danger modal; default focus sits on the refusing button.
             string warning = cdExtraRequest is null
@@ -859,6 +872,18 @@ public partial class BurnViewModel : ObservableObject
             IsBurnRunning = true;
             CancellationTokenSource burnCancellation = new();
             _burnCancellation = burnCancellation;
+            if (cdTextRequested)
+            {
+                var dispatcher = System.Windows.Threading.Dispatcher.CurrentDispatcher;
+                Func<string, bool> confirmWithoutCdText = reason => dispatcher.InvokeAsync(() => _shell.ConfirmAsync(
+                        L.T("光驱无法写入 CD-TEXT"),
+                        reason + "\n\n"
+                            + L.T("继续刻录时盘片不会带有专辑、曲名和艺术家文字，音乐与图案照常写入；盘片目前仍未写入任何数据。是否不带 CD-TEXT 继续？"),
+                        L.T("不带 CD-TEXT 继续")))
+                    .Task.Unwrap().GetAwaiter().GetResult();
+                if (cdExtraRequest is not null) cdExtraRequest = cdExtraRequest with { ConfirmWithoutCdText = confirmWithoutCdText };
+                else request = request! with { ConfirmWithoutCdText = confirmWithoutCdText };
+            }
             if (request is not null && bluRayPreparation is not null)
             {
                 Dispatcher dispatcher = Dispatcher.CurrentDispatcher;
@@ -887,7 +912,7 @@ public partial class BurnViewModel : ObservableObject
             _shell.AppendLog(
                 L.F($"\n[{DateTime.Now:HH:mm:ss}] 开始流式刻录：{contentDescription}；")
                 + L.F($"设备={device.DisplayName}；请求速度={selectedWriteSpeed.DisplayName}。\n"));
-            Milestones.Begin(testWrite: cdExtraRequest?.TestWrite == true);
+            Milestones.Begin(testWrite: cdExtraRequest?.TestWrite == true, cdText: cdTextRequested);
             Progress<OpticalBurnProgress> progress = new(value =>
             {
                 if (!IsBurnRunning || !ReferenceEquals(_burnCancellation, burnCancellation))
@@ -904,7 +929,8 @@ public partial class BurnViewModel : ObservableObject
                 CdExtraBurnResult extra = await ((ICdExtraBurner)_opticalDiscBurner).BurnCdExtraAsync(
                     cdExtraRequest, progress, burnCancellation.Token);
                 result = new OpticalBurnResult(extra.DeviceId, OpticalBurnMediaKind.CdAudio,
-                    extra.AudioBytesWritten + extra.DataBytesWritten, extra.Elapsed, extra.ActualWriteSpeed);
+                    extra.AudioBytesWritten + extra.DataBytesWritten, extra.Elapsed, extra.ActualWriteSpeed)
+                { CdText = extra.CdText };
                 _shell.AppendLog(L.F($"[{DateTime.Now:HH:mm:ss}] CD-Extra：音轨起点 LBA {string.Join(", ", extra.AudioTrackStarts)}；")
                     + L.F($"第 2 区段起点 LBA {extra.Session2StartLba}{(extra.TestWrite ? L.T("（模拟写入，未改变盘片）") : string.Empty)}。\n"));
             }
@@ -916,6 +942,7 @@ public partial class BurnViewModel : ObservableObject
                     burnCancellation.Token);
             }
             Milestones.Succeed();
+            if (cdTextRequested) ReportCdTextReadback(cdTextAlbum!, result.CdText);
             _shell.CompleteDockJob(L.T("完成：流式刻录 ") + contentDescription);
             _shell.AppendLog(
                 L.F($"[{DateTime.Now:HH:mm:ss}] 流式刻录完成：{result.BytesWritten} 字节，")
@@ -1033,6 +1060,20 @@ public partial class BurnViewModel : ObservableObject
                     Write(output, plan.WithPhysicalLayout(firstSector, layoutSectors), token),
         };
     }
+
+    /// <summary>Packs for the lead-in. A text that does not fit one CD-TEXT block stops the
+    /// burn before anything is written; the design page shows the same check while editing.</summary>
+    private static byte[] EncodeCdText(CdTextAlbum album)
+    {
+        try { return CdTextPacks.Encode(album).Packs; }
+        catch (CdTextTooLongException exception)
+        {
+            throw new ArgumentException(L.F($"CD-TEXT 文字太长：需要 {exception.Packs} 个数据包，一张盘最多 {CdTextPacks.MaximumTextPacks} 个。请在设计页缩短标题。"), exception);
+        }
+    }
+
+    private void ReportCdTextReadback(CdTextAlbum album, CdTextBurnOutcome? outcome)
+        => _shell.AppendLog($"[{DateTime.Now:HH:mm:ss}] {CdTextReadback.Report(Milestones, album, outcome)}\n");
 
     // Build the layout before physical writing and capture all generation options.
     internal static OpticalBurnRequest CreateCdBurnRequest(

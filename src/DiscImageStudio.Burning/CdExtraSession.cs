@@ -32,6 +32,20 @@ internal interface ICdExtraSession : IDisposable
     void Flush();
     void CancelWrite();
     void Release();
+
+    // Session-at-Once with CD-TEXT. Defaults report "not supported", so a recorder (or test
+    // script) that only knows Track-at-Once keeps using the unchanged TAO sequence.
+    CdSaoCapability ReadSaoCapability() => CdSaoCapability.None;
+    long ReadLeadInStart() => throw new NotSupportedException();
+    /// <summary>Selects SAO write parameters and sends the cue sheet. Nothing is recorded
+    /// yet, so a refusal still allows the Track-at-Once path on the same blank disc.</summary>
+    void BeginSessionAtOnce(byte[] cueSheet, bool finalize, bool testWrite) => throw new NotSupportedException();
+    void WriteSaoLeadIn(long leadInStart, CdTextLeadIn cdText) => throw new NotSupportedException();
+    void WriteSaoSilence(long lba, long sectors) => throw new NotSupportedException();
+    void WriteSaoAudio(IStream pcm, long lba, long sectors) => throw new NotSupportedException();
+    /// <summary>SYNCHRONIZE CACHE ends an SAO session; no CLOSE SESSION follows.</summary>
+    void CompleteSessionAtOnce(bool finalize) => throw new NotSupportedException();
+    byte[] ReadCdTextPacks() => [];
 }
 
 /// <summary>
@@ -223,6 +237,58 @@ internal sealed partial class DynamicCdExtraSession : ICdExtraSession
     }
 
     public void CancelWrite() => Interlocked.Exchange(ref _cancelRequested, 1);
+
+    public CdSaoCapability ReadSaoCapability()
+    {
+        RequireAcquired();
+        return _commands.ReadSaoFeature();
+    }
+
+    public long ReadLeadInStart()
+    {
+        RequireAcquired();
+        return _commands.ReadLeadInStart();
+    }
+
+    public void BeginSessionAtOnce(byte[] cueSheet, bool finalize, bool testWrite)
+    {
+        RequireMedia();
+        SelectWriteParameters(CdWriteParameters.AudioSessionAtOnce(_media!.TaoFeature.BufferUnderrunFree, testWrite, finalize));
+        _commands.SendCueSheet(cueSheet);
+    }
+
+    public void WriteSaoLeadIn(long leadInStart, CdTextLeadIn cdText)
+    {
+        RequireMedia();
+        CdSaoWriter.WriteLeadIn(_transport, leadInStart, cdText.ToSubchannel(),
+            () => Volatile.Read(ref _cancelRequested) != 0, _sleep ?? Thread.Sleep);
+    }
+
+    public void WriteSaoSilence(long lba, long sectors)
+    {
+        RequireMedia();
+        CdSaoWriter.WriteSilence(_transport, lba, sectors, () => Volatile.Read(ref _cancelRequested) != 0, _sleep ?? Thread.Sleep);
+    }
+
+    public void WriteSaoAudio(IStream pcm, long lba, long sectors)
+    {
+        RequireMedia();
+        CdSaoWriter.WriteAudio(_transport, pcm, lba, sectors, () => Volatile.Read(ref _cancelRequested) != 0,
+            _sleep ?? Thread.Sleep, _reportAcceptedBytes);
+    }
+
+    public void CompleteSessionAtOnce(bool finalize)
+    {
+        RequireMedia();
+        // The recorder writes the lead-in TOC and lead-out while it drains its cache.
+        _commands.CompleteSessionAtOnce(finalize);
+    }
+
+    public byte[] ReadCdTextPacks()
+    {
+        RequireAcquired();
+        return _commands.ReadCdTextPacks();
+    }
 
     public void Release()
     {

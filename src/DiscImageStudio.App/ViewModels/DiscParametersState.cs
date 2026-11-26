@@ -102,6 +102,31 @@ public partial class DiscParametersState : ObservableObject
     [NotifyPropertyChangedFor(nameof(HasCdMusic))]
     private IReadOnlyList<string> _cdMusicTracks = [];
 
+    /// <summary>CD-TEXT switch and album fields of the CD project (off by default: without it
+    /// every burn and export path behaves exactly as before). Every edit assigns a new record.</summary>
+    [ObservableProperty]
+    private ProjectCdText _cdText = new();
+
+    /// <summary>CD-TEXT title/performer of the music tracks, keyed by their path so the text
+    /// follows a track when the list is reordered.</summary>
+    [ObservableProperty]
+    private IReadOnlyDictionary<string, CdTextTrack> _cdTrackTexts =
+        new Dictionary<string, CdTextTrack>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The album as it will be written: CD-Extra music tracks, or the single picture
+    /// track of a picture-only audio CD. Null when CD-TEXT is off, empty, or the CD is a data
+    /// disc (which has no audio lead-in to carry it).</summary>
+    public CdTextAlbum? EffectiveCdText()
+    {
+        if (!CdText.Enabled || HasCdFiles && !CdExtraEnabled) return null;
+        CdTextTrack[] tracks = CdExtraEnabled
+            ? CdMusicTracks.Select(path => CdTrackTexts.TryGetValue(path, out CdTextTrack? text) ? text : new CdTextTrack()).ToArray()
+            : [new CdTextTrack(CdText.PictureTrackTitle, CdText.PictureTrackPerformer)];
+        if (tracks.Length == 0) return null;
+        CdTextAlbum album = new CdTextAlbum(CdText.AlbumTitle, CdText.AlbumPerformer, tracks).Normalized();
+        return album.IsEmpty ? null : album;
+    }
+
     // Second parameter set of the live preview page's calibration mode: the disc the reader
     // follows, as opposed to the generated geometry above. It is preview-only and never
     // feeds a generation job, so it is not a preset field either.

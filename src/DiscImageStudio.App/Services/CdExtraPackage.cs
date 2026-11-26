@@ -11,8 +11,19 @@ namespace DiscImageStudio.Services;
 
 internal sealed record CdExtraProgress(string Message, double? Fraction = null);
 internal sealed record CdExtraPackageTrack(string File, string Title, string Sha256, long Sectors);
+
+/// <summary>CD-TEXT of a burn package: album fields and one entry per track, in track order.
+/// Absent in packages without CD-TEXT (and in all packages made before CD-TEXT support), which then
+/// burn exactly as before.</summary>
+internal sealed record CdExtraPackageCdText(string? AlbumTitle, string? AlbumPerformer,
+    IReadOnlyList<CdTextTrack> Tracks)
+{
+    internal CdTextAlbum ToAlbum() => new CdTextAlbum(AlbumTitle, AlbumPerformer, Tracks).Normalized();
+}
 internal sealed record CdExtraPackage(int Version, CdDiscParameters Geometry, ToneProfile Tone,
-    string ArtworkSha256, IReadOnlyList<CdExtraPackageTrack> Tracks)
+    string ArtworkSha256, IReadOnlyList<CdExtraPackageTrack> Tracks,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    CdExtraPackageCdText? CdText = null)
 {
     internal const string ManifestName = "package.cdextra.json";
     internal static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
@@ -20,8 +31,13 @@ internal sealed record CdExtraPackage(int Version, CdDiscParameters Geometry, To
 
     internal static CdExtraPackage Create(string directory, string image, IReadOnlyList<string> music,
         CdDiscParameters geometry, ToneProfile tone, Action<string> progress, CancellationToken token,
-        IProgress<CdExtraProgress>? status = null)
+        IProgress<CdExtraProgress>? status = null, CdExtraPackageCdText? cdText = null)
     {
+        if (cdText is not null)
+        {
+            if (cdText.Tracks.Count != music.Count) throw new ArgumentException("CD-TEXT 曲目数与音乐数不一致。");
+            _ = CdTextPacks.Encode(cdText.ToAlbum());
+        }
         geometry.Validate(); tone.Validate();
         if (music.Count is < 1 or > 98) throw new ArgumentException("请选择 1–98 首音乐。");
         token.ThrowIfCancellationRequested();
@@ -29,7 +45,7 @@ internal sealed record CdExtraPackage(int Version, CdDiscParameters Geometry, To
         Directory.CreateDirectory(staging);
         try
         {
-            CdExtraPackage created = WritePackage(staging, image, music, geometry, tone, progress, token, status);
+            CdExtraPackage created = WritePackage(staging, image, music, geometry, tone, progress, token, status, cdText);
             token.ThrowIfCancellationRequested();
             Directory.Move(staging, directory);
             return created;
@@ -42,7 +58,7 @@ internal sealed record CdExtraPackage(int Version, CdDiscParameters Geometry, To
 
     private static CdExtraPackage WritePackage(string directory, string image, IReadOnlyList<string> music,
         CdDiscParameters geometry, ToneProfile tone, Action<string> progress, CancellationToken token,
-        IProgress<CdExtraProgress>? status)
+        IProgress<CdExtraProgress>? status, CdExtraPackageCdText? cdText)
     {
         File.Copy(image, Path.Combine(directory, "artwork.png"), overwrite: false);
         List<CdExtraPackageTrack> tracks = [];
@@ -57,7 +73,7 @@ internal sealed record CdExtraPackage(int Version, CdDiscParameters Geometry, To
             _ = CdExtraLayout.Plan(geometry, tracks.Select(t => t.Sectors).ToArray());
             status?.Report(new($"已转换音乐 {i + 1}/{music.Count}", (i + 1.0) / music.Count));
         }
-        CdExtraPackage package = new(1, geometry, tone, Hash(Path.Combine(directory, "artwork.png")), tracks);
+        CdExtraPackage package = new(1, geometry, tone, Hash(Path.Combine(directory, "artwork.png")), tracks, cdText);
         File.WriteAllText(Path.Combine(directory, ManifestName), JsonSerializer.Serialize(package, Json));
         File.WriteAllText(Path.Combine(directory, "README.txt"),
             "CD Extra 刻录包\r\n在 DiscImageStudio 导出页打开 CD Extra，选择“打开刻录包”。\r\n"
@@ -86,6 +102,13 @@ internal sealed record CdExtraPackage(int Version, CdDiscParameters Geometry, To
             ValidateWave(path, track.Sectors);
             if (Hash(path) != track.Sha256) throw new InvalidDataException("音乐文件已变化：" + track.File);
         }
+        if (package.CdText is { } text)
+        {
+            if (text.Tracks is null || text.Tracks.Count != package.Tracks.Count)
+                throw new InvalidDataException("刻录包的 CD-TEXT 曲目数与音乐数不一致。");
+            try { _ = CdTextPacks.Encode(text.ToAlbum()); }
+            catch (CdTextTooLongException) { throw new InvalidDataException("刻录包的 CD-TEXT 超出一张盘的容量。"); }
+        }
         _ = package.EstimatedStart;
         return package;
     }
@@ -101,8 +124,11 @@ internal sealed record CdExtraPackage(int Version, CdDiscParameters Geometry, To
             "DiscImageStudio artwork data session. Audio is in the first session.\r\n");
         string[] tracks = Tracks.Select(t => Path.Combine(directory, t.File)).ToArray();
         CdExtraPlan plan = CdExtraPlanner.Plan(Geometry, tracks, files, "CD_EXTRA", false, cancellationToken: token);
-        return CdExtraPlanner.CreateBurnRequest(Path.Combine(directory, "artwork.png"), Geometry, plan, files,
+        CdExtraBurnRequest request = CdExtraPlanner.CreateBurnRequest(Path.Combine(directory, "artwork.png"), Geometry, plan, files,
             "CD_EXTRA", false, Tone, deviceId, speed, prepareImage: SaveMeasuredImage);
+        CdTextAlbum? album = CdText?.ToAlbum();
+        return album is null || album.IsEmpty ? request
+            : request with { CdText = new CdTextLeadIn(CdTextPacks.Encode(album).Packs) };
 
         CdExtraDataContent SaveMeasuredImage(CdExtraLayout layout, CdDataLayoutPlan dataPlan, CdExtraDataContent data)
         {
