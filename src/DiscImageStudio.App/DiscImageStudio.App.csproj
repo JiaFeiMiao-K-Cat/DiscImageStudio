@@ -27,7 +27,10 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageReference Include="NAudio" Version="2.2.1" />
+    <!-- Only the parts the music import uses: WaveFileReader (Core) and the Media Foundation
+         reader/resampler (Wasapi). The NAudio metapackage would also pull in WinForms. -->
+    <PackageReference Include="NAudio.Core" Version="2.2.1" />
+    <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
     <PackageReference Include="MahApps.Metro.IconPacks.Lucide" Version="6.2.1" />
     <PackageReference Include="SharpVectors.Wpf" Version="1.8.6" />
   </ItemGroup>

@@ -3336,7 +3336,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE
 
 
-NAudio 2.2.1 (Core, Wasapi, WinMM, ASIO, MIDI) — MIT
+NAudio 2.2.1 (Core, Wasapi) — MIT
 https://github.com/naudio/NAudio
 
 Copyright 2020 Mark Heath
