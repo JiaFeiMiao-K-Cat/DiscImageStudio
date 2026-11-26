@@ -265,6 +265,10 @@ public partial class DiscParametersState : ObservableObject
 
     public bool HasCdMusic => CdMusicTracks.Count > 0;
 
+    /// <summary>Bumped when a background music conversion finishes, so the plans that read
+    /// the music are redone. Not part of the project.</summary>
+    [ObservableProperty] private int _cdMusicConversionRevision;
+
     /// <summary>The CD output carries an ISO9660 volume: a data disc or the CD-Extra picture session.</summary>
     public bool UsesCdVolumeLabel => HasCdFiles || CdExtraEnabled;
 

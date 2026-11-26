@@ -177,6 +177,7 @@ public partial class ToneViewModel : ObservableObject
             or nameof(DiscParametersState.CdOuterRingBleed)
             or nameof(DiscParametersState.CdExtraEnabled)
             or nameof(DiscParametersState.CdMusicTracks)
+            or nameof(DiscParametersState.CdMusicConversionRevision)
             or nameof(DiscParametersState.DvdInnerRadius)
             or nameof(DiscParametersState.DvdOuterRadius)
             or nameof(DiscParametersState.DvdUsableSectors)

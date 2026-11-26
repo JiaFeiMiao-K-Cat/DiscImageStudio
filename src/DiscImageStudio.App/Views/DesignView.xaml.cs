@@ -165,8 +165,7 @@ public partial class DesignView : UserControl
         && _viewModel.Music.AddMusicCommand.CanExecute(null)
         && (e.AllowedEffects & DragDropEffects.Copy) != 0;
 
-    private static bool IsMusicPath(string path) =>
-        Path.GetExtension(path).Equals(".wav", StringComparison.OrdinalIgnoreCase);
+    private static bool IsMusicPath(string path) => Services.CdMusicSources.IsMusicPath(path);
 
     private bool CanAcceptDrop(DragEventArgs e) =>
         _viewModel.ImportImagesCommand.CanExecute(null)

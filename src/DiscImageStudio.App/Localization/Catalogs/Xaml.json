@@ -1773,9 +1773,9 @@
     "cs": "Vnější prstenec"
   },
   "Xaml.OuterRingBleed": {
-    "zh-CN": "外缘出血",
-    "en": "Outer-edge bleed",
-    "zh-TW": "外緣出血",
+    "zh-CN": "避开最外缘",
+    "en": "Avoid the outer edge",
+    "zh-TW": "避開最外緣",
     "ja": "外縁マージン",
     "tr": "Dış kenar payı",
     "es": "Margen exterior",

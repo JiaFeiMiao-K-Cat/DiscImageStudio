@@ -15,6 +15,7 @@
 | 不支持时的回退 | 光驱不报告 SAO 或拒绝 cue sheet：弹窗确认，盘片尚未写入；确认后走原 TAO / IMAPI 路径，拒绝则取消 |
 | 纯图片音频 CD | 单轨 SAO 并封盘；不支持时回到原 IMAPI DAO 路径 |
 | 保存 | .discproj（schema 4）、package.cdextra.json、CUE 的 TITLE/PERFORMER 与 .cdt 往返 |
+| 设计页非 WAV 音乐 | CD 格式 WAV 原样使用、不进缓存；其他文件后台转换到缓存，列表与工程保留原路径；源文件改动后重新转换；解码失败标红；转换期间布局等待；缓存按 30 天未用和 2 GB 上限清理（`--test-music-sources`，解码器用替身） |
 
 ## 需要在实机上测试
 
@@ -31,5 +32,7 @@
 5. **CD-TEXT 关闭**：同一工程关闭 CD-TEXT 刻录一张，确认行为、日志与加入 CD-TEXT 之前相同。
 6. **刻录包**：在 CD Extra 窗口勾选“写入 CD-TEXT”准备刻录包，重新打开刻录包后刻录，结果同第 2 项。
 7. **导出**：导出 WAV+CUE，确认 CUE 中有 TITLE/PERFORMER 与 CDTEXTFILE，用 ImgBurn 等软件按 CUE 刻录时能读到文字。
+
+8. **设计页导入非 WAV 音乐**：在设计页分别添加 MP3、FLAC、M4A（AAC）、WMA 和一个 48 kHz 的 WAV。每行先显示“正在转换为 CD 音频…”，随后显示时长，时长应与播放器一致；音轨范围盘与区段占比随之更新。CD-TEXT 应从这些文件的标签自动填入曲名。保存工程、关闭再打开，列表仍是原文件；`%LOCALAPPDATA%\DiscImageStudio\MusicCache` 中有转换后的 WAV。导出 ISO 与刻录各一次，CD 机播放应与原曲一致（MP3/AAC 曲首曲尾可能有极短静音）。改一个源文件（例如重新导出）后，应重新转换。
 
 请记录：光驱型号与固件、盘片品牌、请求速度、日志文件（CD Extra 窗口“历史日志”或任务日志），以及失败时的完整错误信息。

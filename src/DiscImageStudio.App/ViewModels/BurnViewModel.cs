@@ -785,7 +785,7 @@ public partial class BurnViewModel : ObservableObject
                     };
                     IReadOnlyList<string> music = _state.CdMusicTracks;
                     if (music.Count == 0)
-                        throw new ArgumentException(L.T("CD-Extra 需要至少一首音乐：请在设计页添加 WAV 音乐，或切换回“整盘图片”。"));
+                        throw new ArgumentException(L.T("CD-Extra 需要至少一首音乐：请在设计页添加音乐，或切换回“整盘图片”。"));
                     string dataDirectory = _state.CdDataDirectory.Trim();
                     string volumeLabel = _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc);
                     bool filesAtOuterRing = _state.CdFilesAtOuterRing;

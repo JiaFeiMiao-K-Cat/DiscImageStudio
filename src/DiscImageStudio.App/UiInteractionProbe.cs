@@ -66,6 +66,11 @@ internal static class UiInteractionProbe
         {
             if (scenario is "all" or "settings") SettingsScenario();
             if (scenario is "all" or "reduced") ReducedMotionScenario();
+            if (scenario is "music")
+            {
+                CreateProject();
+                MusicFormatsScenario();
+            }
             if (scenario is "cdtext")
             {
                 CreateProject();
@@ -420,6 +425,69 @@ internal static class UiInteractionProbe
         FindDescendant<BurnMilestoneStrip>(_window)?.BringIntoView();
         Pump(600);
         Capture("cdtext-06-burn-milestones");
+    }
+
+    // ------------------------------------------------------------------ Music formats
+
+    /// <summary>Design-page music beyond CD WAV: a CD WAV is ready at once; a 48 kHz WAV and an
+    /// MP3 are converted in the background and end as a duration (Windows) or a red decode
+    /// error (Wine has no Media Foundation resampler). Then the outer-ring option's label.</summary>
+    private static void MusicFormatsScenario()
+    {
+        string music = Path.Combine(_output, "music");
+        Directory.CreateDirectory(music);
+        string cd = Path.Combine(music, "01 cd.wav"), hiRes = Path.Combine(music, "02 48k.wav"), mp3 = Path.Combine(music, "03 song.mp3");
+        WriteTaggedWave(cd, 75 * 60 * 2, "CD", "A", "B");
+        using (FileStream file = File.Create(hiRes))
+        using (BinaryWriter w = new(file))
+        {
+            int pcm = 48000 * 4 * 3;
+            w.Write("RIFF"u8); w.Write(36 + pcm); w.Write("WAVE"u8);
+            w.Write("fmt "u8); w.Write(16); w.Write((short)1); w.Write((short)2); w.Write(48000); w.Write(192000); w.Write((short)4); w.Write((short)16);
+            w.Write("data"u8); w.Write(pcm); w.Write(new byte[pcm]);
+        }
+        File.WriteAllBytes(mp3, [.. "ID3"u8, 4, 0, 0, 0, 0, 0, 0, 0xFF, 0xFB, 0x90, 0x00, .. new byte[400]]);
+        _shell.Design.Music.AddTracks([cd, hiRes, mp3]);
+        Pump(300);
+        Note("music-added", _shell.Design.Music.Tracks.Select(t => new { t.FileName, t.Detail, t.HasError }));
+        FindNamed<FrameworkElement>(_window, "MusicRangeDisc")?.BringIntoView();
+        Pump(300);
+        Capture("music-00-added");
+        RunAsync(Services.CdMusicSources.WhenIdleAsync, 120000, "the conversions finish");
+        WaitFor(() => _shell.Design.Music.Tracks.All(t => !t.Detail.Contains('…')), 20000, "every row settles");
+        Pump(500);
+        var rows = _shell.Design.Music.Tracks.Select(t => new { t.FileName, t.Detail, t.HasError }).ToArray();
+        Note("music-settled", rows);
+        FindDescendants<ItemsControl>(_window).FirstOrDefault(list => ReferenceEquals(list.ItemsSource, _shell.Design.Music.Tracks))
+            ?.BringIntoView();
+        Pump(500);
+        Require(!rows[0].HasError && rows[0].Detail.StartsWith("2:00", StringComparison.Ordinal), "the CD WAV is used as it is: " + rows[0].Detail);
+        Require(rows.Skip(1).All(r => r.HasError ? r.Detail.StartsWith("Windows 无法解码", StringComparison.Ordinal) : r.Detail.Length > 0),
+            "converted rows end as a duration or a decode error");
+        Capture("music-01-settled");
+
+        string files = Path.Combine(_output, "files");
+        Directory.CreateDirectory(files);
+        File.WriteAllText(Path.Combine(files, "readme.txt"), "probe");
+        _shell.State.CdDataDirectory = files;
+        _shell.State.CdFilesAtOuterRing = true;
+        Pump(800);
+        CheckBox? bleed = FindDescendants<CheckBox>(_window).FirstOrDefault(box => box.IsVisible && Equals(box.Content, "避开最外缘"));
+        Require(bleed is not null, "the outer-ring option reads 避开最外缘");
+        bleed!.BringIntoView();
+        Pump(500);
+        Capture("music-02-outer-edge");
+    }
+
+    private static IEnumerable<T> FindDescendants<T>(DependencyObject root) where T : DependencyObject
+    {
+        int count = VisualTreeHelper.GetChildrenCount(root);
+        for (int i = 0; i < count; i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(root, i);
+            if (child is T match) yield return match;
+            foreach (T nested in FindDescendants<T>(child)) yield return nested;
+        }
     }
 
     private static void WriteTaggedWave(string path, int sectors, string title, string artist, string album)

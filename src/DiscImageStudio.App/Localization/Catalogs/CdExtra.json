@@ -44,19 +44,37 @@
     "en": "Session gap (lead-out and lead-in)"
   },
   "Xaml.CdExtraHint": {
-    "zh-CN": "只接受 44.1 kHz、16 位、立体声 PCM 的 WAV，样本原样写入。按 Track-at-Once 写入：曲目之间有 2 秒间隔，不足 4 秒的曲目补静音。音频 CD 机只读取第 1 区段，图片区段不会被当作音轨播放。",
-    "en": "Only 44.1 kHz, 16-bit stereo PCM WAV files are accepted; their samples are written unchanged. Recording uses Track-at-Once: tracks are separated by 2-second gaps and tracks shorter than 4 seconds are padded with silence. Audio CD players read only session 1, so the picture session is never played as audio."
+    "zh-CN": "可添加 WAV、MP3、FLAC、M4A、AAC、WMA。44.1 kHz、16 位、立体声的 WAV 样本原样写入；其他文件在后台用 Windows 解码器转换为 CD 音频（缓存在本机，工程只记录原文件）。按 Track-at-Once 写入：曲目之间有 2 秒间隔，不足 4 秒的曲目补静音。音频 CD 机只读取第 1 区段，图片区段不会被当作音轨播放。",
+    "en": "WAV, MP3, FLAC, M4A, AAC and WMA can be added. A 44.1 kHz 16-bit stereo WAV is written with its samples unchanged; other files are converted to CD audio in the background with the Windows decoders (cached on this computer; the project stores the original file). Recording uses Track-at-Once: tracks are separated by 2-second gaps and tracks shorter than 4 seconds are padded with silence. Audio CD players read only session 1, so the picture session is never played as audio."
   },
   "Xaml.CdExtraTestWrite": {
     "zh-CN": "模拟写入（不改变盘片）",
     "en": "Test write (the disc is not changed)"
   },
-  "Xaml.CdExtraResumePicture": { "zh-CN": "图案断点续写 / 校验…", "en": "Resume or verify picture…" },
-  "选择图案断点": { "zh-CN": "选择图案断点", "en": "Open picture checkpoint" },
-  "CD Extra 图案断点": { "zh-CN": "CD Extra 图案断点", "en": "CD Extra picture checkpoint" },
-  "图案断点续写与校验": { "zh-CN": "图案断点续写与校验", "en": "Resume or verify picture" },
-  "图案读回校验通过": { "zh-CN": "图案读回校验通过", "en": "Picture readback verified" },
-  "确认原盘与已写数据后续写缺失部分。已封盘时只读校验。": { "zh-CN": "确认原盘与已写数据后续写缺失部分。已封盘时只读校验。", "en": "The recorded prefix is compared before the missing sectors are written. A finalized disc is verified read-only." },
+  "Xaml.CdExtraResumePicture": {
+    "zh-CN": "图案断点续写 / 校验…",
+    "en": "Resume or verify picture…"
+  },
+  "选择图案断点": {
+    "zh-CN": "选择图案断点",
+    "en": "Open picture checkpoint"
+  },
+  "CD Extra 图案断点": {
+    "zh-CN": "CD Extra 图案断点",
+    "en": "CD Extra picture checkpoint"
+  },
+  "图案断点续写与校验": {
+    "zh-CN": "图案断点续写与校验",
+    "en": "Resume or verify picture"
+  },
+  "图案读回校验通过": {
+    "zh-CN": "图案读回校验通过",
+    "en": "Picture readback verified"
+  },
+  "确认原盘与已写数据后续写缺失部分。已封盘时只读校验。": {
+    "zh-CN": "确认原盘与已写数据后续写缺失部分。已封盘时只读校验。",
+    "en": "The recorded prefix is compared before the missing sectors are written. A finalized disc is verified read-only."
+  },
   "Xaml.CdExtraBurnHint": {
     "zh-CN": "CD-Extra 用 Track-at-Once 命令依次写入并关闭音乐区段，再按光驱报告的第 2 区段地址生成图片并封盘。封盘后会逐扇区读回校验图案。图案写入超时、光驱断连或命令返回 0xC0AA0301 时，会尝试重连原光驱。确认盘片仍可写且已写内容与镜像一致后，从光驱报告的位置续写。模拟写入只检查光驱是否接受命令。",
     "en": "CD-Extra writes and closes the music session with Track-at-Once commands, then generates the picture for the session 2 address the recorder reports and closes the disc. The picture is read back and verified after finalization. After a timeout, disconnection, or ambiguous 0xC0AA0301 response, the job attempts to reconnect to the original recorder. It resumes at the reported address after confirming the disc is writable and the recorded prefix matches the image. Test writes only check command acceptance."
@@ -88,14 +106,6 @@
   "CD-Extra 图片区段输出位置": {
     "zh-CN": "CD-Extra 图片区段输出位置",
     "en": "CD-Extra picture session output location"
-  },
-  "CD-Extra 需要至少一首音乐：请在设计页添加 WAV 音乐，或切换回“整盘图片”。": {
-    "zh-CN": "CD-Extra 需要至少一首音乐：请在设计页添加 WAV 音乐，或切换回“整盘图片”。",
-    "en": "CD-Extra needs at least one music track: add WAV music on the Design page, or switch back to “Picture only”."
-  },
-  "WAV 音乐（44.1 kHz 16 位立体声）|*.wav|所有文件|*.*": {
-    "zh-CN": "WAV 音乐（44.1 kHz 16 位立体声）|*.wav|所有文件|*.*",
-    "en": "WAV music (44.1 kHz 16-bit stereo)|*.wav|All files|*.*"
   },
   "[{0:HH:mm:ss}] CD-Extra：音轨起点 LBA {1}；": {
     "zh-CN": "[{0:HH:mm:ss}] CD-Extra：音轨起点 LBA {1}；",
@@ -152,10 +162,6 @@
   "没有读取权限": {
     "zh-CN": "没有读取权限",
     "en": "No permission to read"
-  },
-  "添加 WAV 音乐后，这里会显示音乐区与图片区各占多少盘面。": {
-    "zh-CN": "添加 WAV 音乐后，这里会显示音乐区与图片区各占多少盘面。",
-    "en": "Add WAV music to see how much of the disc the music and the picture take."
   },
   "添加音乐": {
     "zh-CN": "添加音乐",
@@ -236,5 +242,37 @@
   "当前的刻录后端不支持 CD-Extra 刻录；可以在导出页生成图片区段 ISO 后用其他软件刻录。": {
     "zh-CN": "当前的刻录后端不支持 CD-Extra 刻录；可以在导出页生成图片区段 ISO 后用其他软件刻录。",
     "en": "This recorder back end cannot burn CD-Extra discs; export the picture session ISO and burn it with other software."
+  },
+  "CD-Extra 需要至少一首音乐：请在设计页添加音乐，或切换回“整盘图片”。": {
+    "zh-CN": "CD-Extra 需要至少一首音乐：请在设计页添加音乐，或切换回“整盘图片”。",
+    "en": "CD-Extra needs at least one music track: add music on the Design page, or switch back to “Picture only”."
+  },
+  "音乐文件（WAV、MP3、FLAC、M4A、AAC、WMA）|*.wav;*.mp3;*.flac;*.m4a;*.aac;*.wma|所有文件|*.*": {
+    "zh-CN": "音乐文件（WAV、MP3、FLAC、M4A、AAC、WMA）|*.wav;*.mp3;*.flac;*.m4a;*.aac;*.wma|所有文件|*.*",
+    "en": "Music files (WAV, MP3, FLAC, M4A, AAC, WMA)|*.wav;*.mp3;*.flac;*.m4a;*.aac;*.wma|All files|*.*"
+  },
+  "添加音乐后，这里会显示音乐区与图片区各占多少盘面。": {
+    "zh-CN": "添加音乐后，这里会显示音乐区与图片区各占多少盘面。",
+    "en": "Add music to see how much of the disc the music and the picture take."
+  },
+  "正在转换为 CD 音频…": {
+    "zh-CN": "正在转换为 CD 音频…",
+    "en": "Converting to CD audio…"
+  },
+  "无法转换为 CD 音频：{0}": {
+    "zh-CN": "无法转换为 CD 音频：{0}",
+    "en": "Cannot convert to CD audio: {0}"
+  },
+  "音乐正在转换为 CD 音频，完成后显示布局。": {
+    "zh-CN": "音乐正在转换为 CD 音频，完成后显示布局。",
+    "en": "The music is being converted to CD audio; the layout appears when it is done."
+  },
+  "音乐仍在转换为 CD 音频，请等转换完成后再试。": {
+    "zh-CN": "音乐仍在转换为 CD 音频，请等转换完成后再试。",
+    "en": "The music is still being converted to CD audio; try again when it is done."
+  },
+  "Windows 无法解码此文件（{0}）：可能缺少解码器，或文件已损坏": {
+    "zh-CN": "Windows 无法解码此文件（{0}）：可能缺少解码器，或文件已损坏",
+    "en": "Windows cannot decode this file ({0}): a decoder may be missing, or the file is damaged"
   }
 }

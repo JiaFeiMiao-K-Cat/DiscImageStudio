@@ -529,6 +529,7 @@ public partial class DesignViewModel : ObservableObject
             or nameof(DiscParametersState.CdFilesAtOuterRing)
             or nameof(DiscParametersState.CdOuterRingBleed)
             or nameof(DiscParametersState.CdExtraEnabled) or nameof(DiscParametersState.CdMusicTracks)
+            or nameof(DiscParametersState.CdMusicConversionRevision)
             or nameof(DiscParametersState.CdInnerRadius) or nameof(DiscParametersState.CdOuterRadius)
             or nameof(DiscParametersState.CdSectors) or nameof(DiscParametersState.CdUsableSectors)
             or nameof(DiscParametersState.CdPitchLinear) or nameof(DiscParametersState.CdPitchQuadratic)

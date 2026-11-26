@@ -73,6 +73,8 @@ public sealed partial class CdMusicViewModel : ObservableObject
                 NotifyCommands();
         };
         _design.CdExtraPlanChanged += RefreshSummary;
+        CdMusicSources.Changed += () => System.Windows.Application.Current?.Dispatcher.BeginInvoke(
+            () => _state.CdMusicConversionRevision++);
         // CanEdit depends on the disc family; opening a CD project after a DVD/BD one must
         // enable the buttons even when the (empty) music list itself does not change.
         _design.PropertyChanged += (_, e) =>
@@ -171,7 +173,7 @@ public sealed partial class CdMusicViewModel : ObservableObject
     internal static string DescribeWriteMode(bool cdText)
         => cdText ? L.T("按 SAO（含 CD-TEXT）") : L.T("按 TAO");
 
-    /// <summary>Appends WAV files after the current tracks; the picker and page drops call
+    /// <summary>Appends music files after the current tracks; the picker and page drops call
     /// this. A picker or Explorer drag lists the focused file first, so each batch is added
     /// in natural file-name order, as the CLI orders a folder; the list can be reordered
     /// afterwards. Paths already in the list are skipped. Files are validated by the guide.</summary>
@@ -251,6 +253,8 @@ public sealed partial class CdMusicViewModel : ObservableObject
         int number = 1;
         foreach (string path in _state.CdMusicTracks)
             Tracks.Add(new CdMusicTrackRowViewModel(number++, path));
+        // Non-CD files start converting now; the plan is redone when each one is ready.
+        CdMusicSources.Request(_state.CdMusicTracks);
         SelectedTrack = selectedPath is null ? null
             : Tracks.FirstOrDefault(row => string.Equals(row.Path, selectedPath, StringComparison.OrdinalIgnoreCase));
         OnPropertyChanged(nameof(HasTracks));
@@ -299,7 +303,7 @@ public sealed partial class CdMusicViewModel : ObservableObject
             else
             {
                 row.Detail = probe.Error ?? L.T("无法读取");
-                row.HasError = true;
+                row.HasError = !CdMusicSources.IsConverting(probe.Failure);
             }
         }
 
@@ -347,7 +351,7 @@ public sealed partial class CdMusicViewModel : ObservableObject
 
         RangeModeText = DescribeWriteMode(_state.EffectiveCdText() is not null);
         string? problem = !_state.CdExtraEnabled ? null : Tracks.Count == 0
-            ? L.T("添加 WAV 音乐后，这里会显示音乐区与图片区各占多少盘面。")
+            ? L.T("添加音乐后，这里会显示音乐区与图片区各占多少盘面。")
             : plan is null or { Problem: CdExtraPlanProblem.None or CdExtraPlanProblem.NoMusic }
                 ? null
                 : CdExtraPlanner.DescribeProblem(plan);

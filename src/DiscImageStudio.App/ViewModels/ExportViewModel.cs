@@ -286,7 +286,7 @@ public partial class ExportViewModel : ObservableObject
         string output = RequirePath(_state.CdOutputPath,
             cdExtra || _state.HasCdFiles ? L.T("请选择 CD ISO 输出位置。") : L.T("请选择 CD 音轨输出位置。"));
         if (cdExtra && !_state.HasCdMusic)
-            throw new ArgumentException(L.T("CD-Extra 需要至少一首音乐：请在设计页添加 WAV 音乐，或切换回“整盘图片”。"));
+            throw new ArgumentException(L.T("CD-Extra 需要至少一首音乐：请在设计页添加音乐，或切换回“整盘图片”。"));
         long? measuredSession2 = null;
         if (cdExtra && !string.IsNullOrWhiteSpace(CdExtraSession2StartLba))
         {
@@ -306,7 +306,7 @@ public partial class ExportViewModel : ObservableObject
             _state.CdInterleave, _state.CdWriteCue, _state.CdDataDirectory.Trim(),
             _state.ResolveVolumeLabel(OpticalDiscFamily.CompactDisc),
             _state.CdFilesAtOuterRing,
-            cdExtra ? _state.CdMusicTracks : null,
+            cdExtra ? ResolveMusic(_state.CdMusicTracks) : null,
             measuredSession2,
             _state.EffectiveCdText());
     }
@@ -352,6 +352,24 @@ public partial class ExportViewModel : ObservableObject
         if (await _shell.RunImageJobAsync(L.T("正在生成蓝光 ISO…"), output,
                 (progress, token) => generator.Generate(request, progress, token), request.ToString()))
             _state.BdIsoPath = output;
+    }
+
+    /// <summary>The CD-audio WAVs for the music list: CD WAVs as they are, other formats
+    /// through their finished conversion.</summary>
+    private static IReadOnlyList<string> ResolveMusic(IReadOnlyList<string> tracks)
+    {
+        try
+        {
+            return Services.CdMusicSources.ResolveAll(tracks);
+        }
+        catch (Services.CdMusicConvertingException exception)
+        {
+            throw new ArgumentException(L.T("音乐仍在转换为 CD 音频，请等转换完成后再试。"), exception);
+        }
+        catch (Services.CdMusicDecodeException exception)
+        {
+            throw new ArgumentException(L.F($"无法转换为 CD 音频：{exception.Message}") + " " + exception.SourcePath, exception);
+        }
     }
 
     private static string RequirePath(string raw, string message)

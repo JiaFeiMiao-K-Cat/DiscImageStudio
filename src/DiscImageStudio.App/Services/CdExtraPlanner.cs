@@ -59,7 +59,7 @@ internal static class CdExtraPlanner
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                probes.Add(new CdExtraTrackProbe(path, CdMusicFile.Inspect(path)));
+                probes.Add(new CdExtraTrackProbe(path, CdMusicFile.Inspect(CdMusicSources.Resolve(path))));
             }
             catch (Exception exception) when (exception is IOException or InvalidDataException
                 or UnauthorizedAccessException or ArgumentException or NotSupportedException)
@@ -128,7 +128,10 @@ internal static class CdExtraPlanner
         ArgumentNullException.ThrowIfNull(plan);
         return plan.Problem switch
         {
-            CdExtraPlanProblem.NoMusic => L.T("CD-Extra 需要至少一首音乐：请在设计页添加 WAV 音乐，或切换回“整盘图片”。"),
+            CdExtraPlanProblem.NoMusic => L.T("CD-Extra 需要至少一首音乐：请在设计页添加音乐，或切换回“整盘图片”。"),
+            CdExtraPlanProblem.UnreadableMusic when plan.Tracks.Any(track => track.Info is null)
+                && plan.Tracks.All(track => track.Info is not null || CdMusicSources.IsConverting(track.Failure))
+                => L.T("音乐正在转换为 CD 音频，完成后显示布局。"),
             CdExtraPlanProblem.UnreadableMusic => L.T("有音乐文件无法使用，请删除或替换标红的音轨。"),
             CdExtraPlanProblem.DataCapacity => L.T("随盘文件太大：图片区段放不下这些文件。"),
             CdExtraPlanProblem.DataError => L.F($"图片区段无法规划：{plan.DataFailure?.Message}"),
@@ -138,11 +141,18 @@ internal static class CdExtraPlanner
 
     internal static string DescribeProbeError(Exception exception) => exception switch
     {
+        CdMusicConvertingException => L.T("正在转换为 CD 音频…"),
+        CdMusicDecodeException { InnerException: System.Runtime.InteropServices.COMException or NotImplementedException } decode
+            => L.F($"Windows 无法解码此文件（{DescribeDecoderCode(decode.InnerException!)}）：可能缺少解码器，或文件已损坏"),
+        CdMusicDecodeException decode => L.F($"无法转换为 CD 音频：{decode.Message}"),
         FileNotFoundException or DirectoryNotFoundException => L.T("文件不存在"),
         InvalidDataException => L.T("需要 44.1 kHz、16 位、立体声 PCM 的 WAV 文件"),
         UnauthorizedAccessException => L.T("没有读取权限"),
         _ => exception.Message,
     };
+
+    private static string DescribeDecoderCode(Exception exception)
+        => exception is NotImplementedException ? "NotImplemented" : $"0x{exception.HResult:X8}";
 
     private static CdDataLayoutPlan PrepareSession(CdDiscParameters parameters, CdExtraLayout layout,
         string? dataDirectory, string volumeLabel, bool filesAtOuterRing)

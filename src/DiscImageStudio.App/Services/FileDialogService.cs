@@ -41,13 +41,13 @@ internal sealed class FileDialogService
         return dialog.ShowDialog(_ownerProvider()) == true ? dialog.FileNames : null;
     }
 
-    /// <summary>Multi-select picker for CD-Extra music; only CD-format PCM WAV is accepted.</summary>
+    /// <summary>Multi-select picker for CD-Extra music; the formats the CD-Extra window accepts.</summary>
     internal string[]? PickAudioFiles()
     {
         OpenFileDialog dialog = new()
         {
             Title = L.T("添加音乐"),
-            Filter = L.T("WAV 音乐（44.1 kHz 16 位立体声）|*.wav|所有文件|*.*"),
+            Filter = L.T("音乐文件（WAV、MP3、FLAC、M4A、AAC、WMA）|*.wav;*.mp3;*.flac;*.m4a;*.aac;*.wma|所有文件|*.*"),
             CheckFileExists = true,
             Multiselect = true,
         };
