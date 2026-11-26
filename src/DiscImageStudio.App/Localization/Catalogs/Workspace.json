@@ -1113,7 +1113,7 @@
     "ja": "実測値は内半径 24.848240 mm、外半径 58.041084 mm です。全 359,849 セクターのうち、359,847 セクターが書き込み可能です。3 次のトラックピッチ分布を使用します。ATIP は 97m34s23f、リングコードは 31CA0203 です。",
     "tr": "Ölçülen iç yarıçap 24,848240 mm, dış yarıçap 58,041084 mm’dir. Toplam 359.849 sektörün 359.847’si yazılabilir. Üçüncü dereceden iz aralığı dağılımı kullanılır. ATIP değeri 97m34s23f, halka kodu 31CA0203’tür.",
     "es": "El radio interior medido es de 24,848240 mm y el exterior, de 58,041084 mm. De los 359.849 sectores, 359.847 se pueden escribir. El preajuste usa una distribución cúbica del paso de pista. El ATIP es 97m34s23f y el código del anillo es 31CA0203.",
-    "cs": "Naměřený vnitřní poloměr je 24,848240 mm a vnější poloměr 58,041084 mm. Z celkových 359 849 sektorů je 359 847 zapisovatelných. Používá se kubické rozložení rozteče stop. ATIP je 97m34s23f a kód vnitřního prstence je 31CA0203."
+    "cs": "Naměřený vnitřní poloměr je 24,848240 mm a vnější poloměr 58,041084 mm. Z celkových 359 849 sektorů je 359 847 zapisovatelných. Používá se kubické rozložení rozteče stop. ATIP je 97m34s23f a kód vnitřního prstence je 31CA0203."
   },
   "标准 74min CD": {
     "zh-CN": "标准 74min CD",
