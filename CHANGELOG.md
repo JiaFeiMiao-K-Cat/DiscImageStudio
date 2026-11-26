@@ -2,10 +2,16 @@
 
 ## Unreleased
 
+## [1.7.0] - 2026-11-27
+
 ### 中文
 
+- CD-RW 流式刻录可在确认后快速擦除已写入的盘片。程序复查盘片为空白且可刻录后继续写入，该流程已通过实盘测试。
+- 流式刻录新增完成后自动弹出盘片的选项。CD-RW、DVD±RW 和 BD-RE 可在擦除或格式化前查询刻录速度。
+- 流式刻录支持无备用区的单层 BD-RE 绘图，并新增威宝 BD-RE (43614) 实测预设。光驱信息页可显示 CD 和蓝光介质标识。
 - 新增威宝 CD-RW (43480) 实测内置预设。ATIP 为 `97m34s23f`，圈码为 `31CA0203`，共 359,849 个扇区，其中 359,847 个可写。
 - 新增威宝 DVD-RW (43284 / 43285) 实测内置预设。MID 为 `MCC 01RW4X`，圈码为 `CD2260-DVRW-E47B2`，共 2,297,888 个扇区。
+- 新增威宝 DVD+RW (94520 / 95043) 实测内置预设。MID 为 `MKM A02`，圈码为 `CC5410-DVRW-Q47H`。
 - 新增铼德 Excellent X DVD+RW 4× 内置预设（MID `RITEK-004-48`，圈码 `VW47H-01062`）：内半径 23.941751 mm、外半径 58.143818 mm、2,295,104 扇区，三项轨距系数取自[讨论 #191](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/discussions/191)。该盘片已完成一次整盘 DVD+RW 覆写刻录。
 - 键盘可达性补全：阶段条、标定步骤手风琴、标题栏窗口按钮、侧边栏导航项与返回／工程头按钮现在可以获得键盘焦点；侧边栏项支持 Enter／空格激活；新增 Ctrl+1..5 按侧栏顺序切换工作区（设计／导出／刻录／预览／标定）。
 - 术语统一：标定工作区在侧边栏、页头、阶段条与相关提示中统一为「标定」（原页头作「辅助标定」）；删除 Xaml.Calibration2／ProjectSettings2／FitToWindow2 三个重复文案键。
@@ -18,11 +24,17 @@
 - 补齐 7 个本地化目录（标定校验错误、工程校验信息、标定拟合诊断、可用扇区、标定弹窗、工作流、标定介质）缺失的繁体中文、日语、西班牙语、土耳其语与捷克语译文共约 990 条；这些语言在相应页面不再回退到英文。
 
 - DVD 兼容性（实验性）改用 #188 的 WriteSafe，提供三档，启用时默认第 1 档。DVD 导出、流式刻录和新标定靶使用所选档位，已有标定靶和镜像继续识别各自的配方。较强的档位可能降低深色对比度或在区间边缘留下亮度变化。
+- Windows 便携版启用单文件压缩，减小 EXE 下载体积。CI 单独运行耗时的标定边界测试，并合并重复的 DVD 校验。
+- 新增巴西葡萄牙语 README 和英文标定指南及教程。
 
 ### English
 
+- Streaming burns can quick-erase a used CD-RW after confirmation. Recording resumes after the app verifies that the disc is blank and writable. The workflow was tested on physical media.
+- Added an option to eject the disc after a successful streaming burn. Write speeds can be queried before erasing or formatting CD-RW, DVD±RW, and BD-RE media.
+- Added streaming drawing burns on single-layer BD-RE without spare areas and a measured preset for Verbatim BD-RE (43614). Drive information can display CD and Blu-ray media identifiers.
 - Added a measured built-in preset for Verbatim CD-RW (43480) with 359,849 total sectors, 359,847 writable sectors, ATIP `97m34s23f`, and ring code `31CA0203`.
 - Added a measured built-in preset for Verbatim DVD-RW (43284 / 43285) with 2,297,888 sectors, MID `MCC 01RW4X`, and ring code `CD2260-DVRW-E47B2`.
+- Added a measured built-in preset for Verbatim DVD+RW (94520 / 95043) with MID `MKM A02` and ring code `CC5410-DVRW-Q47H`.
 - Added a built-in preset for the RiTEK Excellent X DVD+RW 4× (MID `RITEK-004-48`, ring code `VW47H-01062`): inner radius 23.941751 mm, outer radius 58.143818 mm, 2,295,104 sectors, with the three track-pitch coefficients contributed in [Discussion #191](https://github.com/JiaFeiMiao-K-Cat/DiscImageStudio/discussions/191). The same disc completed one full-disc DVD+RW overwrite burn.
 - Keyboard accessibility: the stage rail, the calibration step accordion, the title-bar window buttons, the sidebar navigation items and the back/project-header buttons now take keyboard focus; sidebar items activate with Enter/Space; Ctrl+1..5 switches workspaces in sidebar order (design, export, burn, preview, calibration).
 - Terminology: the calibration workspace is now consistently called "Calibration" across the sidebar, page header, stage rail and related hints (the page header previously read "auxiliary calibration"); removed the duplicated Xaml.Calibration2/ProjectSettings2/FitToWindow2 catalog keys.
@@ -35,6 +47,8 @@
 - Filled about 990 missing Traditional Chinese, Japanese, Spanish, Turkish and Czech translations in seven localization catalogs (calibration validation errors, project validation messages, calibration fit diagnostics, usable sectors, calibration popups, workflows, calibration media); those languages no longer fall back to English on the affected pages.
 
 - DVD compatibility (experimental) now uses WriteSafe from #188 with three selectable levels. Enabling the option defaults to level 1. DVD export, streaming burns and new calibration targets use the selection, while existing targets and images retain their original recipe. Stronger settings can reduce dark-area contrast or leave a brightness change at the zone boundaries.
+- Enabled single-file compression to reduce the download size of Windows portable EXEs. CI runs slow calibration boundary tests separately and consolidates duplicate DVD checks.
+- Added a Brazilian Portuguese README and English calibration guide and tutorial.
 
 ## [1.6.0] - 2026-11-15
 
