@@ -1,4 +1,5 @@
 using System.Dynamic;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -21,36 +22,65 @@ internal static class BurnWriteSpeedSelectionTests
     private static void CheckRewritableMediaSpeeds()
     {
         object recorder = new();
-        dynamic usedMinusRw = new ExpandoObject();
-        usedMinusRw.CurrentPhysicalMediaType = 0xA;
-        usedMinusRw.CurrentMediaStatus = 0x4000;
-        // Before erase the format lacks both the support query and the speed properties.
-        Require(WindowsImapiBurner.ReadCurrentMediaWriteSpeeds(
-            OpticalBurnMediaKind.DvdData, recorder, (object)usedMinusRw, default).Count == 0,
-            "a finalized DVD-RW defers speed enumeration until after the quick erase");
-
         dynamic format = new ExpandoObject();
-        format.CurrentPhysicalMediaType = 0x7;
-        format.CurrentMediaStatus = 0x1;
         format.MediaHeuristicallyBlank = false;
-        format.IsCurrentMediaSupported = new Func<object, bool>(device => ReferenceEquals(device, recorder));
+        format.IsRecorderSupported = new Func<object, bool>(_ => false);
+        format.IsCurrentMediaSupported = new Func<object, bool>(_ => false);
         dynamic fourTimes = new ExpandoObject();
         fourTimes.WriteSpeed = 2705;
         fourTimes.RotationTypeIsPureCAV = false;
         format.SupportedWriteSpeedDescriptors = new object[] { fourTimes };
-        Require(WindowsImapiBurner.ReadCurrentMediaWriteSpeeds(
-            OpticalBurnMediaKind.DvdData, recorder, (object)format, default)
-            .SequenceEqual(new[] { new OpticalWriteSpeed(2705, false) }),
-            "a formatted DVD+RW advertises 4× before overwrite");
+        var rewritableMedia = new (OpticalBurnMediaKind Kind, int Type, int State, string Description)[]
+        {
+            (OpticalBurnMediaKind.CdData, 0x3, 0x4000, "a finalized CD-RW"),
+            (OpticalBurnMediaKind.DvdData, 0x7, 0x1, "a formatted DVD+RW"),
+            (OpticalBurnMediaKind.DvdData, 0xA, 0x1, "an overwritable DVD-RW"),
+            (OpticalBurnMediaKind.DvdData, 0xA, 0x4000, "a finalized DVD-RW"),
+            (OpticalBurnMediaKind.DvdData, 0xD, 0x1, "a formatted DVD+RW DL"),
+            (OpticalBurnMediaKind.BluRayData, 0x13, 0x1, "a formatted BD-RE"),
+            (OpticalBurnMediaKind.BluRayData, 0x13, 0x0, "an unformatted BD-RE"),
+        };
+        OpticalWriteSpeed[] expected = [new(2705, false)];
+        foreach (var media in rewritableMedia)
+        {
+            format.CurrentPhysicalMediaType = media.Type;
+            format.CurrentMediaStatus = media.State;
+            Require(WindowsImapiBurner.ReadCurrentMediaWriteSpeeds(
+                media.Kind, media.Type, recorder, (object)format, default).SequenceEqual(expected),
+                $"{media.Description} advertises its speed while the data formatter reports it cannot write");
+        }
 
         format.CurrentPhysicalMediaType = 0xA;
         format.CurrentMediaStatus = 0x2;
         format.SupportedWriteSpeedDescriptors = Array.Empty<object>();
         format.SupportedWriteSpeeds = new[] { 2705 };
         Require(WindowsImapiBurner.ReadCurrentMediaWriteSpeeds(
-            OpticalBurnMediaKind.DvdData, recorder, (object)format, default)
-            .SequenceEqual(new[] { new OpticalWriteSpeed(2705, false) }),
+            OpticalBurnMediaKind.DvdData, 0xA, recorder, (object)format, default).SequenceEqual(expected),
             "a blank DVD-RW advertises its speed immediately");
+
+        format.CurrentMediaStatus = 0x4000;
+        format.SupportedWriteSpeeds = Array.Empty<int>();
+        Require(WindowsImapiBurner.ReadCurrentMediaWriteSpeeds(
+            OpticalBurnMediaKind.DvdData, 0xA, recorder, (object)format, default).Count == 0,
+            "a used DVD-RW with empty speed lists leaves the automatic choice available");
+
+        var unavailableDescriptors = new UnavailableSpeedDescriptors([2705]);
+        Require(WindowsImapiBurner.ReadCurrentMediaWriteSpeeds(
+            OpticalBurnMediaKind.DvdData, 0xA, recorder, unavailableDescriptors, default).SequenceEqual(expected),
+            "a used DVD-RW uses the simple speed list when the descriptor query fails");
+
+        COMException? failure = null;
+        try
+        {
+            WindowsImapiBurner.ReadCurrentMediaWriteSpeeds(
+                OpticalBurnMediaKind.DvdData, 0xA, recorder, new UnavailableSpeedDescriptors(null), default);
+        }
+        catch (COMException exception)
+        {
+            failure = exception;
+        }
+        Require(failure?.Message == UnavailableSpeedDescriptors.SimpleListError,
+            "a used DVD-RW reports the existing preview error if neither speed query works");
     }
 
     private static void CheckSelection()
@@ -158,6 +188,24 @@ internal static class BurnWriteSpeedSelectionTests
     private static void Require(bool condition, string message)
     {
         if (!condition) throw new InvalidOperationException("Burn speed selection: " + message);
+    }
+
+    private sealed class UnavailableSpeedDescriptors(int[]? fallbackSpeeds) : DynamicObject
+    {
+        internal const string SimpleListError = "Simple speed list unavailable.";
+
+        public override bool TryGetMember(GetMemberBinder binder, out object? result)
+        {
+            if (binder.Name == "SupportedWriteSpeedDescriptors")
+                throw new COMException("Speed descriptors unavailable.");
+            if (binder.Name == "SupportedWriteSpeeds")
+            {
+                result = fallbackSpeeds ?? throw new COMException(SimpleListError);
+                return true;
+            }
+            result = null;
+            return false;
+        }
     }
 
     private sealed class FakeBurner : IOpticalDiscBurner

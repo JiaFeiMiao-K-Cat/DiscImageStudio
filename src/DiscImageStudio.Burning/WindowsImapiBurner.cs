@@ -17,8 +17,10 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
     private const int EraseRequiredMediaState = 0x800;
     private const int WriteProtectedMediaState = 0x2000;
     private const int UnsupportedMediaStates = 0xFC00;
+    private const int CdRewritableMediaType = 0x3;
     private const int DvdPlusRw = 0x7;
     private const int DvdMinusRw = 0xA;
+    private const int DvdPlusRwDualLayer = 0xD;
     // IMAPI_MEDIA_PHYSICAL_TYPE and IMAPI_PROFILE_TYPE (imapi2.h).
     // https://learn.microsoft.com/windows/win32/api/imapi2/ne-imapi2-imapi_media_physical_type
     // https://learn.microsoft.com/windows/win32/api/imapi2/ne-imapi2-imapi_profile_type
@@ -288,19 +290,8 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             format.Recorder = recorder;
             format.ClientName = "Disc Image Studio";
             int physicalMediaType = ValidateRequestedMedia(mediaKind, (object)recorder, (object)format);
-            if (mediaKind == OpticalBurnMediaKind.BluRayData && physicalMediaType == BluRayRewritableMediaType)
-            {
-                OpticalMediaCapacity media = BluRayRewritableBurn.ReadCapacity(new ImapiMmcCommandTransport((object)recorder));
-                cancellationToken.ThrowIfCancellationRequested();
-                return media.BluRayRewritablePreparation == BluRayRewritablePreparation.Overwrite
-                    ? ReadSupportedWriteSpeeds(format)
-                    : [];
-            }
-            if (!(bool)format.IsRecorderSupported(recorder))
-            {
-                throw new InvalidOperationException("所选光驱不支持这种刻录方式。");
-            }
-            return ReadCurrentMediaWriteSpeeds(mediaKind, (object)recorder, (object)format, cancellationToken);
+            return ReadCurrentMediaWriteSpeeds(
+                mediaKind, physicalMediaType, (object)recorder, (object)format, cancellationToken);
         }
         catch (COMException exception)
         {
@@ -320,20 +311,23 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
     }
 
     internal static IReadOnlyList<OpticalWriteSpeed> ReadCurrentMediaWriteSpeeds(
-        OpticalBurnMediaKind mediaKind, dynamic recorder, dynamic format, CancellationToken cancellationToken)
+        OpticalBurnMediaKind mediaKind, int physicalMediaType, dynamic recorder, dynamic format,
+        CancellationToken cancellationToken)
     {
-        // A formatted DVD+RW is overwritten in place. A used DVD-RW is erased first,
-        // then its speeds are read again from the newly blank medium.
-        if (mediaKind == OpticalBurnMediaKind.DvdData
-            && Convert.ToInt32(format.CurrentPhysicalMediaType) == DvdMinusRw
-            && !IsDvdBlank((object)format))
+        // Rewritable media may report speeds while they still require erasing or formatting.
+        bool rewritable = mediaKind switch
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            return [];
-        }
-        if (!(bool)format.IsCurrentMediaSupported(recorder))
+            OpticalBurnMediaKind.CdAudio or OpticalBurnMediaKind.CdData => physicalMediaType == CdRewritableMediaType,
+            OpticalBurnMediaKind.DvdData => physicalMediaType is DvdPlusRw or DvdMinusRw or DvdPlusRwDualLayer,
+            OpticalBurnMediaKind.BluRayData => physicalMediaType == BluRayRewritableMediaType,
+            _ => false,
+        };
+        if (!rewritable)
         {
-            throw new InvalidOperationException("请放入与所选 CD/DVD/蓝光模式兼容的可写盘片。");
+            if (!(bool)format.IsRecorderSupported(recorder))
+                throw new InvalidOperationException("所选光驱不支持这种刻录方式。");
+            if (!(bool)format.IsCurrentMediaSupported(recorder))
+                throw new InvalidOperationException("请放入与所选 CD/DVD/蓝光模式兼容的可写盘片。");
         }
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -1383,7 +1377,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
             OpticalBurnMediaKind.CdAudio or OpticalBurnMediaKind.CdData => physicalMediaType switch
             {
                 0x2 => currentProfiles.Contains(0x9), // CD-R
-                0x3 => currentProfiles.Contains(0xA), // CD-RW
+                CdRewritableMediaType => currentProfiles.Contains(0xA),
                 _ => false,
             },
             OpticalBurnMediaKind.DvdData => physicalMediaType switch
@@ -1394,7 +1388,7 @@ public sealed class WindowsImapiBurner : IOpticalDiscBurner
                 0x9 => currentProfiles.Contains(0x11), // DVD-R
                 0xA => currentProfiles.Contains(0x13) || currentProfiles.Contains(0x14), // DVD-RW
                 0xB => currentProfiles.Contains(0x15) || currentProfiles.Contains(0x16), // DVD-R DL
-                0xD => currentProfiles.Contains(0x2A), // DVD+RW DL
+                DvdPlusRwDualLayer => currentProfiles.Contains(0x2A),
                 _ => false,
             },
             OpticalBurnMediaKind.BluRayData => physicalMediaType == BluRayRewritableMediaType
