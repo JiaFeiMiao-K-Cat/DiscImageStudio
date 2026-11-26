@@ -54,6 +54,19 @@ internal sealed class FileDialogService
         return dialog.ShowDialog(_ownerProvider()) == true ? dialog.FileNames : null;
     }
 
+    internal string? PickCdExtraCheckpoint(string? folder = null)
+    {
+        OpenFileDialog dialog = new()
+        {
+            Title = L.T("选择图案断点"),
+            Filter = L.T("CD Extra 图案断点") + "|" + Burning.CdExtraCheckpoint.FileName,
+            CheckFileExists = true,
+        };
+        string initial = folder ?? Burning.CdExtraCheckpoint.DefaultRoot;
+        if (Directory.Exists(initial)) dialog.InitialDirectory = initial;
+        return dialog.ShowDialog(_ownerProvider()) == true ? dialog.FileName : null;
+    }
+
     internal string? PickOpen(string title, string filter)
     {
         OpenFileDialog dialog = new()

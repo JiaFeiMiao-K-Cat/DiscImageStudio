@@ -16,6 +16,7 @@ public partial class ToastItem : ObservableObject
 {
     private readonly Dispatcher _dispatcher;
     private readonly DispatcherTimer _timer;
+    private bool _closed;
     private readonly EventHandler _onTick;
     private DateTime _deadline;
     private bool _paused;
@@ -93,6 +94,8 @@ public partial class ToastItem : ObservableObject
 
     public void Close()
     {
+        if (_closed) return;
+        _closed = true;
         _timer.Stop();
         _timer.Tick -= _onTick;
         Closed?.Invoke(this, EventArgs.Empty);

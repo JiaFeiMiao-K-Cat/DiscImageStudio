@@ -8,21 +8,21 @@
       key from Tokens.xaml must be overridden; ThemePaletteTests enforces that.
     -->
 
-    <Color x:Key="BackgroundColor">#F5F5F7</Color>
+    <Color x:Key="BackgroundColor">#FFFFFF</Color>
     <Color x:Key="Surface1Color">#FFFFFF</Color>
-    <Color x:Key="Surface2Color">#ECECEF</Color>
-    <Color x:Key="Surface3Color">#E2E2E6</Color>
-    <Color x:Key="DividerColor">#1A000000</Color>
-    <Color x:Key="TextPrimaryColor">#18181B</Color>
-    <Color x:Key="TextSecondaryColor">#52525B</Color>
-    <Color x:Key="TextMutedColor">#71717A</Color>
+    <Color x:Key="Surface2Color">#F3F3F3</Color>
+    <Color x:Key="Surface3Color">#E5E5E5</Color>
+    <Color x:Key="DividerColor">#16000000</Color>
+    <Color x:Key="TextPrimaryColor">#1B1B1B</Color>
+    <Color x:Key="TextSecondaryColor">#454545</Color>
+    <Color x:Key="TextMutedColor">#616161</Color>
     <!-- On light surfaces the base blue is darkened for white text on filled buttons;
          hover and pressed step further down rather than up. -->
-    <Color x:Key="PrimaryColor">#2569CC</Color>
+    <Color x:Key="PrimaryColor">#0078D4</Color>
     <Color x:Key="OnPrimaryColor">#FFFFFF</Color>
-    <Color x:Key="PrimaryHoverColor">#1D5BB4</Color>
-    <Color x:Key="PrimaryPressedColor">#16488F</Color>
-    <Color x:Key="PrimarySoftColor">#1F2569CC</Color>
+    <Color x:Key="PrimaryHoverColor">#106EBE</Color>
+    <Color x:Key="PrimaryPressedColor">#005A9E</Color>
+    <Color x:Key="PrimarySoftColor">#160078D4</Color>
     <Color x:Key="DangerColor">#D61F4E</Color>
     <Color x:Key="DangerHoverColor">#B81642</Color>
     <Color x:Key="DangerPressedColor">#9C0F36</Color>
@@ -41,6 +41,7 @@
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
     <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}" />
+    <SolidColorBrush x:Key="OnPrimaryBrush" Color="{StaticResource OnPrimaryColor}" />
     <SolidColorBrush x:Key="PrimaryHoverBrush" Color="{StaticResource PrimaryHoverColor}" />
     <SolidColorBrush x:Key="PrimaryPressedBrush" Color="{StaticResource PrimaryPressedColor}" />
     <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}" />
@@ -52,7 +53,7 @@
     <SolidColorBrush x:Key="ScrollbarThumbBrush" Color="{StaticResource ScrollbarThumbColor}" />
     <SolidColorBrush x:Key="ScrollbarThumbHoverBrush" Color="{StaticResource ScrollbarThumbHoverColor}" />
 
-    <Color x:Key="BackgroundFadeColor">#00F5F5F7</Color>
+    <Color x:Key="BackgroundFadeColor">#00FFFFFF</Color>
     <LinearGradientBrush x:Key="ScrollFadeTopBrush" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="{StaticResource BackgroundColor}" Offset="0" />
         <GradientStop Color="{StaticResource BackgroundFadeColor}" Offset="1" />
@@ -66,7 +67,7 @@
     <SolidColorBrush x:Key="PressedOverlayBrush" Color="#14000000" />
     <SolidColorBrush x:Key="TitleBarHoverBrush" Color="#0F000000" />
     <SolidColorBrush x:Key="BackdropBrush" Color="#66000000" />
-    <SolidColorBrush x:Key="PrimaryGlowBrush" Color="#4D2569CC" />
+    <SolidColorBrush x:Key="PrimaryGlowBrush" Color="#4D0067C0" />
     <SolidColorBrush x:Key="FocusRingBrush" Color="#4D2569CC" />
     <SolidColorBrush x:Key="WarningSoftBrush" Color="#1FB45309" />
     <SolidColorBrush x:Key="WarningBorderBrush" Color="#66B45309" />
@@ -77,8 +78,18 @@
     <SolidColorBrush x:Key="SuccessSoftBrush" Color="#1F15803D" />
     <SolidColorBrush x:Key="CloseHotSoftBrush" Color="#E6C42B1C" />
 
-    <Color x:Key="SurfaceHoverColor">#EBEBEF</Color>
+    <Color x:Key="SurfaceHoverColor">#E5E5E5</Color>
     <SolidColorBrush x:Key="SurfaceHoverBrush" Color="{StaticResource SurfaceHoverColor}" />
+    <SolidColorBrush x:Key="ControlStrokeBrush" Color="#24000000" />
+    <SolidColorBrush x:Key="CaptionSurfaceBrush" Color="#FFFFFF" />
+    <LinearGradientBrush x:Key="PaneSurfaceBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#F1F3F7" Offset="0" />
+        <GradientStop Color="#E9EEF5" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="HomeHeaderBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FBFCFE" Offset="0" />
+        <GradientStop Color="#E1EEFC" Offset="1" />
+    </LinearGradientBrush>
 
     <SolidColorBrush x:Key="BadgeSurfaceBrush" Color="#CCFFFFFF" />
 

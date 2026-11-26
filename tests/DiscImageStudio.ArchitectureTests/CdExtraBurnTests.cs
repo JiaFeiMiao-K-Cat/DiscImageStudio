@@ -14,20 +14,30 @@ using DiscImageStudio.ViewModels;
 /// session address.</summary>
 internal static class CdExtraBurnTests
 {
+    private static readonly string Scratch = Path.Combine(Path.GetTempPath(), "cd-extra-burn-" + Guid.NewGuid().ToString("N"));
+
     internal static void Run()
     {
-        TestSharedConstants();
-        TestWriteParametersPage();
-        TestTaoWriter();
-        TestCommands();
-        TestProgress();
-        TestOrchestration();
-        TestRecorderSequence();
-        string directory = Path.Combine(Path.GetTempPath(), "cd-extra-burn-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(directory);
-        try { TestBurnRequest(directory); }
-        finally { Directory.Delete(directory, recursive: true); }
-        Console.WriteLine("cd-extra-burn: passed (page 05h fields, TAO WRITE(10) addresses/data/retry, busy retries and CLOSE fallback, progress, two-session order, measured session 2 on a command-level CD-R model, music pinning, failure/cancel/test-write policy; no hardware)");
+        Directory.CreateDirectory(Scratch);
+        try
+        {
+            TestSharedConstants();
+            TestWriteParametersPage();
+            TestTaoWriter();
+            TestCommands();
+            TestProgress();
+            TestOrchestration();
+            TestRecorderSequence();
+            TestUnreportedTaoFormats();
+            TestPictureRecovery();
+            TestBurnRequest(Scratch);
+            TestPersistentPicture(Path.Combine(Scratch, "durable"));
+            TestAutomaticReconnect();
+            TestUnexpectedWriteResponse();
+            TestUnexpectedFinalizationResponse();
+        }
+        finally { Directory.Delete(Scratch, recursive: true); }
+        Console.WriteLine("cd-extra-burn: passed (TAO writes, two sessions, picture recovery and readback on a command-level CD-R model; no hardware)");
     }
 
     /// <summary>Burning has no project references, so it repeats the CD constants the Cd
@@ -251,6 +261,9 @@ internal static class CdExtraBurnTests
         Require(display.MultiplierText == "4.0×", "2048-byte Mode 1 sectors convert to the right speed: " + display.MultiplierText);
         display.Apply(new OpticalBurnProgress("write", "music", 1, 2, 2352 * 75 * 8.0, 2352));
         Require(display.MultiplierText == "8.0×", "audio sectors keep the 2352-byte conversion");
+        tracker.Verify(250, 1000);
+        display.Apply(reports[^1]);
+        Require(display.Percent == 25 && display.BytesPerSecond is null, "readback reports its own sector progress");
     }
 
     private static void TestOrchestration()
@@ -287,8 +300,8 @@ internal static class CdExtraBurnTests
         Require(failure is not null && failure.Message.Contains("第 1 区段（音乐）已经关闭", StringComparison.Ordinal)
                 && failure.InnerException is IOException,
             "the failure names the playable music session");
-        Require(!failing.Steps.Contains("close:True") && failing.Steps[^2] == "flush" && failing.Steps[^1] == "release",
-            "after a failure only drain and release");
+        Require(!failing.Steps.Contains("close:True") && !failing.Steps.Contains("flush") && failing.Steps[^1] == "release",
+            "release without closing the interrupted picture track");
 
         // Test write: nothing is closed and the predicted address is used.
         FakeSession simulated = new();
@@ -366,7 +379,7 @@ internal static class CdExtraBurnTests
         CdExtraPlan plan = CdExtraPlanner.Plan(parameters, [first, second], null, "CD_EXTRA", false);
         CdExtraLayout layout = plan.Layout!;
         Require(plan.IsValid && layout.Session2StartLba == 300 + 152 + 400 + 2 + 11_400, "plan from WAV files");
-        CdExtraBurnRequest request = BurnViewModel.CreateCdExtraBurnRequest(image, parameters, plan, null, "CD_EXTRA",
+        CdExtraBurnRequest request = CdExtraPlanner.CreateBurnRequest(image, parameters, plan, null, "CD_EXTRA",
             false, ToneProfile.Photo, "memory-device", new OpticalWriteSpeed(1200, false));
         request.Validate();
         Require(request.AudioTracks.Select(track => track.Sectors).SequenceEqual(new long[] { 300, 400 })
@@ -415,7 +428,7 @@ internal static class CdExtraBurnTests
         CdExtraPlan broken = CdExtraPlanner.Plan(parameters, [first, Path.Combine(directory, "missing.wav")], null, "CD_EXTRA", false);
         Require(broken.Problem == CdExtraPlanProblem.UnreadableMusic && broken.Tracks[1].Error is { Length: > 0 },
             "unreadable music is reported per track");
-        Throws<ArgumentException>(() => BurnViewModel.CreateCdExtraBurnRequest(image, parameters, broken, null, "CD_EXTRA",
+        Throws<ArgumentException>(() => CdExtraPlanner.CreateBurnRequest(image, parameters, broken, null, "CD_EXTRA",
             false, ToneProfile.Photo, "memory-device", null), "no burn request for unreadable music");
     }
 
@@ -532,7 +545,471 @@ internal static class CdExtraBurnTests
             "a test write sets Test Write on every page and records nothing");
     }
 
-    private static DynamicCdExtraSession Session(FakeTaoRecorder recorder, CdExtraProgressTracker? tracker)
+    private static void TestUnreportedTaoFormats()
+    {
+        foreach (string mode in new[] { "accept", "test-write", "reject-data", "ignore-audio", "ignore-test-bit", "inactive", "short-descriptor" })
+        {
+            bool simulated = mode is "test-write" or "ignore-test-bit";
+            var disc = new FakeTaoRecorder { TaoDataTypes = 0, RejectMode1 = mode == "reject-data",
+                IgnoreAudioSelection = mode == "ignore-audio", IgnoreTestBit = mode == "ignore-test-bit" };
+            using var session = Session(new CommandView(disc, (cdb, execute) =>
+            {
+                var response = execute();
+                if (cdb[0] == 0x46)
+                {
+                    if (mode == "inactive") response.Data[10] &= 0xfe;
+                    if (mode == "short-descriptor") response.Data[11] = 0;
+                }
+                return response;
+            }), null);
+            var request = Request(_ => DataContent(1000), testWrite: simulated);
+            CdExtraBurnResult? result = null;
+            Exception? error = null;
+            try { result = WindowsImapiBurner.BurnCdExtra(session, request, new CdExtraProgressTracker(null, 1, 1), default); }
+            catch (InvalidOperationException failure) { error = failure; }
+            if (mode is "accept" or "test-write")
+                Require(error is null && result?.VerifiedPictureSectors == (simulated ? 0 : 1000) && disc.DiscStatus == (simulated ? 0 : 2),
+                    mode + " completes with an empty capability bitmap: " + error);
+            else
+                Require(error is not null && disc.Writes.Count == 0 && disc.Tracks.Count == 0 && disc.DiscStatus == 0
+                    && !disc.Log.Any(s => s.StartsWith("close:")), mode + " stops before recording");
+        }
+        Console.WriteLine("cd-extra-tao-preflight: zero bitmap, confirmed audio and Mode 1, test bit, rejected/ignored settings, inactive/truncated descriptor passed");
+    }
+
+    private static void TestPictureRecovery()
+    {
+        foreach (int writtenBeforeTimeout in new[] { 0, 7, 32 })
+        {
+            FakeTaoRecorder drive = new() { DataTimeoutAfterBlocks = writtenBeforeTimeout };
+            using var session = Session(drive, null);
+            WindowsImapiBurner.BurnCdExtra(session, Request(_ => DataContent(1000)),
+                new CdExtraProgressTracker(null, 1, 1), CancellationToken.None);
+            Require(drive.DiscStatus == 2 && drive.TrackData[2].SequenceEqual(DataBytes(1000))
+                    && drive.PictureReadbacks == (writtenBeforeTimeout == 0 ? 0 : 1),
+                $"a lost acknowledgement after {writtenBeforeTimeout} blocks writes the exact picture once");
+        }
+        foreach (FakeTaoRecorder drive in new[]
+        {
+            new FakeTaoRecorder { DataTimeoutAfterBlocks = 5, CorruptReadback = true },
+            new FakeTaoRecorder { DataTimeoutAfterBlocks = 0, RepeatedTimeout = true },
+            new FakeTaoRecorder { DataTimeoutAfterBlocks = 3, InvalidRecoveryNwa = true },
+        })
+        {
+            using var session = Session(drive, null);
+            Throws<InvalidOperationException>(() => WindowsImapiBurner.BurnCdExtra(session, Request(_ => DataContent(1000)),
+                new CdExtraProgressTracker(null, 1, 1), CancellationToken.None), "an unconfirmed picture stops");
+            Require(!drive.Log.Contains("close:ms0") && drive.InjectedTimeouts is >= 1 and <= 3,
+                "bounded retries and no finalization of incomplete data");
+        }
+        Console.WriteLine("cd-extra-picture-recovery: zero, partial and full acknowledgement loss; bad readback, invalid NWA and retry exhaustion passed");
+    }
+
+    private static void TestPersistentPicture(string directory)
+    {
+        const long start = 12_254;
+        var drive = new FakeTaoRecorder { DataTimeoutAfterBlocks = 7, RepeatedTimeout = true, TimeoutOffset = 64 };
+        var request = Request(_ => DataContent(1000)) with { RecoveryRoot = directory };
+        var tracker = new CdExtraProgressTracker(null, request.AudioBytes, 1000 * 2048);
+        using (var initial = Session(drive, tracker))
+            Throws<InvalidOperationException>(() => WindowsImapiBurner.BurnCdExtra(initial, request, tracker,
+                CancellationToken.None), "persistent timeout leaves the picture open");
+        string record = Directory.GetFiles(directory, CdExtraCheckpoint.FileName, SearchOption.AllDirectories).Single();
+        int before = drive.Writes.Count;
+        Require(drive.Tracks.Count == 2 && drive.DiscStatus == 1 && drive.InjectedTimeouts == 3, "partial track retained");
+        drive.DataTimeoutAfterBlocks = null;
+        drive.DiscId = 99;
+        using (var wrong = Session(drive, tracker))
+            Throws<IOException>(() => wrong.ResumePicture("fake", record, tracker, default), "different disc ID");
+        drive.DiscId = 0x11223344;
+        using (var wrong = Session(drive, tracker))
+            Throws<IOException>(() => wrong.ResumePicture("another recorder", record, tracker, default), "different drive");
+        using (var cancelled = Session(drive, tracker))
+            Throws<OperationCanceledException>(() => cancelled.ResumePicture("fake", record, tracker,
+                new CancellationToken(true)), "cancel before writing");
+        string iso = Path.Combine(Path.GetDirectoryName(record)!, CdExtraCheckpoint.ImageName);
+        using (var changed = File.OpenWrite(iso)) changed.WriteByte(88);
+        using (var badSource = Session(drive, tracker))
+            Throws<InvalidDataException>(() => badSource.ResumePicture("fake", record, tracker, default), "changed ISO");
+        using (var original = File.OpenWrite(iso)) original.WriteByte(DataBytes(1)[0]);
+        drive.CorruptReadback = true;
+        using (var badPrefix = Session(drive, tracker))
+            Throws<InvalidDataException>(() => badPrefix.ResumePicture("fake", record, tracker, default), "corrupt recorded prefix");
+        drive.CorruptReadback = false;
+        using var stop = new CancellationTokenSource();
+        var cancelDuringRead = new CdExtraProgressTracker(p =>
+        {
+            if (p.Stage == "verify" && p.CompletedBytes > 0) stop.Cancel();
+        }, 0, 0);
+        using (var interruptedRead = Session(drive, cancelDuringRead))
+            Throws<OperationCanceledException>(() => interruptedRead.ResumePicture("fake", record, cancelDuringRead, stop.Token),
+                "cancel during prefix verification");
+        Require(drive.Writes.Count == before && drive.Tracks.Count == 2, "rejected recovery issues no WRITE or flush");
+        using (var restarted = Session(drive, tracker))
+            Require(restarted.ResumePicture("fake", record, tracker, default) == 1000, "resume from disk descriptor");
+        Require(drive.Writes[before].Lba == start + 85 && drive.Tracks.Count == 3
+            && drive.TrackData[^1].SequenceEqual(DataBytes(1000)) && drive.DiscStatus == 2,
+            "full prefix verified, only missing suffix written once, disc finalized");
+        int writes = drive.Writes.Count, closes = drive.Log.Count(s => s.StartsWith("close:"));
+        using (var sealedDisc = Session(drive, tracker))
+            Require(sealedDisc.ResumePicture("fake", record, tracker, default) == 1000, "finalized disc verifies only");
+        drive.CorruptFinalLba = start + 999;
+        using (var corrupted = Session(drive, tracker))
+        {
+            try { corrupted.ResumePicture("fake", record, tracker, default); throw new Exception("missed corruption"); }
+            catch (IOException e) { Require(e.Message.Contains((start + 999).ToString()) && e.Message.Contains("17"), "bad LBA and byte"); }
+        }
+        drive.CorruptFinalLba = null;
+        drive.ShortFinalLba = start + 811;
+        using (var shortRead = Session(drive, tracker))
+        {
+            try { shortRead.ResumePicture("fake", record, tracker, default); throw new Exception("accepted short read"); }
+            catch (IOException e) { Require(e.Message.Contains((start + 811).ToString()), "unreadable single LBA reported"); }
+        }
+        Require(writes == drive.Writes.Count && closes == drive.Log.Count(s => s.StartsWith("close:")),
+            "all re-verifications are physically read-only");
+
+        string fallback = Path.Combine(directory, "fingerprint");
+        var noId = new FakeTaoRecorder { DiscId = null, DataTimeoutAfterBlocks = 0, RepeatedTimeout = true };
+        using (var original = Session(noId, tracker))
+            Throws<InvalidOperationException>(() => WindowsImapiBurner.BurnCdExtra(original,
+                request with { RecoveryRoot = fallback }, tracker, default), "timeout before first picture sector");
+        string fallbackRecord = Directory.GetFiles(fallback, CdExtraCheckpoint.FileName, SearchOption.AllDirectories).Single();
+        noId.DataTimeoutAfterBlocks = null;
+        noId.TrackData[0][75 * 2352] ^= 1;
+        using (var otherAudio = Session(noId, tracker))
+            Throws<IOException>(() => otherAudio.ResumePicture("fake", fallbackRecord, tracker, default), "different recorded music");
+        noId.TrackData[0][75 * 2352] ^= 1;
+        using (var sameAudio = Session(noId, tracker))
+            Require(sameAudio.ResumePicture("fake", fallbackRecord, tracker, default) == 1000, "disc without ID identified by music");
+
+        string awaitingClose = Path.Combine(directory, "awaiting-close");
+        var closeFailure = new FakeTaoRecorder { RejectFinalClose = true };
+        using (var beforeClose = Session(closeFailure, tracker))
+            Throws<InvalidOperationException>(() => WindowsImapiBurner.BurnCdExtra(beforeClose,
+                request with { RecoveryRoot = awaitingClose }, tracker, default), "completed track before final close");
+        string closeRecord = Directory.GetFiles(awaitingClose, CdExtraCheckpoint.FileName, SearchOption.AllDirectories).Single();
+        int written = closeFailure.Writes.Count;
+        closeFailure.RejectFinalClose = false;
+        using (var afterFlush = Session(closeFailure, tracker))
+            Require(afterFlush.ResumePicture("fake", closeRecord, tracker, default) == 1000, "finish closing a complete track");
+        Require(closeFailure.Writes.Count == written && closeFailure.DiscStatus == 2, "completed track was never rewritten");
+
+        var failedVerify = new FakeTaoRecorder { CorruptFinalLba = start + 700 };
+        using (var bad = Session(failedVerify, tracker))
+        {
+            try { WindowsImapiBurner.BurnCdExtra(bad, request, tracker, default); throw new Exception("falsely verified"); }
+            catch (InvalidOperationException e)
+            { Require(failedVerify.DiscStatus == 2 && e.Message.Contains("盘片已封盘") && e.Message.Contains((start + 700).ToString()),
+                    "normal burn surfaces verification failure after finalization"); }
+        }
+        Console.WriteLine("cd-extra-checkpoint: reopen after timeout +85, disc and source identity, cancellation, complete picture readback, corrupt/short final sectors and sealed read-only retry passed");
+    }
+
+    private static void TestAutomaticReconnect()
+    {
+        const long first = 12_254;
+        var request = Request(_ => DataContent(1000));
+        List<OpticalBurnProgress> events = [];
+        var tracker = new CdExtraProgressTracker(events.Add, request.AudioBytes, 1000 * 2048);
+        var disc = new FakeTaoRecorder { TaoDataTypes = 0, DataTimeoutAfterBlocks = 7, TimeoutOffset = 64, RepeatedTimeout = true };
+        int opens = 0, starts = 0, waits = 0;
+        bool disposed = false;
+        var lost = new RecorderLink(disc, dropOnTimeout: true);
+        CdExtraBurnResult result = CdExtraReconnect.Burn(request, tracker, default, () =>
+        {
+            starts++;
+            try { using var session = Session(lost, tracker); return WindowsImapiBurner.BurnCdExtra(session, request, tracker, default); }
+            finally { disposed = true; }
+        }, use =>
+        {
+            Require(disposed && lost.StaleCalls > 0, "old connection was unusable and disposed before reconnect");
+            opens++;
+            if (opens == 1) throw new IOException("recorder unplugged", unchecked((int)0x8007048f));
+            if (opens == 2) throw new UnauthorizedAccessException("recorder still locked");
+            int priorWrites = disc.Writes.Count;
+            bool disconnectAgain = opens == 3;
+            if (disconnectAgain) disc.TimeoutOffset = 135;
+            else disc.DataTimeoutAfterBlocks = null;
+            using var session = Session(new RecorderLink(disc, dropOnTimeout: disconnectAgain), tracker);
+            try { use(session); }
+            finally
+            {
+                Require(disc.Writes[priorWrites].Lba == first + (disconnectAgain ? 71 : 142),
+                    "fresh handle starts exactly at authoritative NWA after a partial WRITE");
+            }
+        }, (_, _) => waits++);
+        Require(starts == 1 && opens == 4 && waits == 4 && disc.InjectedTimeouts == 2
+            && disc.DiscStatus == 2 && result.VerifiedPictureSectors == 1000 && result.AudioBytesWritten == request.AudioBytes
+            && result.DataBytesWritten == 1000 * 2048 && disc.Tracks.Count == 3 && disc.TrackData[2].SequenceEqual(DataBytes(1000))
+            && events.Any(e => e.Stage == "reconnect") && events.Any(e => e.Stage == "write" && e.CompletedBytes == request.AudioBytes + 142 * 2048)
+            && events[^1].Stage == "complete", "one job survived two lost connections and verified the finished disc");
+
+        var sealedDisc = new FakeTaoRecorder();
+        int sealedOpens = 0;
+        var sealedResult = CdExtraReconnect.Burn(request, tracker, default, () =>
+        {
+            using var firstHandle = Session(new RecorderLink(sealedDisc, dropOnSealedRead: true), tracker);
+            return WindowsImapiBurner.BurnCdExtra(firstHandle, request, tracker, default);
+        }, use =>
+        {
+            sealedOpens++;
+            int writes = sealedDisc.Writes.Count, closes = sealedDisc.Log.Count(s => s.StartsWith("close:"));
+            using var recovered = Session(sealedDisc, tracker);
+            use(recovered);
+            Require(writes == sealedDisc.Writes.Count && closes == sealedDisc.Log.Count(s => s.StartsWith("close:")),
+                "lost connection after finalization recovers by reading only");
+        }, (_, _) => {});
+        Require(sealedOpens == 1 && sealedResult.VerifiedPictureSectors == 1000, "verified on the reopened sealed disc");
+
+        foreach (string mode in new[] { "cancel", "offline", "same-nwa", "wrong-disc", "corrupt-prefix", "fatal" })
+        {
+            var medium = new FakeTaoRecorder { DataTimeoutAfterBlocks = mode == "same-nwa" ? 0 : 7,
+                TimeoutOffset = 32, RepeatedTimeout = true, CorruptReadback = mode == "corrupt-prefix" };
+            int reconnects = 0;
+            using var cancel = new CancellationTokenSource();
+            var job = request with { RecoveryRoot = Path.Combine(Scratch, mode) };
+            Exception? stopped = null;
+            try
+            {
+                CdExtraReconnect.Burn(job, tracker, cancel.Token, () =>
+                {
+                    using var session = Session(new RecorderLink(medium, fatalWrite: mode == "fatal"), tracker);
+                    return WindowsImapiBurner.BurnCdExtra(session, job, tracker, cancel.Token);
+                }, use =>
+                {
+                    reconnects++;
+                    if (mode == "offline") throw new IOException("disconnected", unchecked((int)0x8007048f));
+                    if (mode == "wrong-disc") medium.DiscId = 5;
+                    using var session = Session(medium, tracker);
+                    use(session);
+                }, (_, _) => { if (mode == "cancel") cancel.Cancel(); });
+            }
+            catch (Exception e) { stopped = e; }
+            if (stopped is null) throw new InvalidOperationException(mode + " incorrectly reported success");
+            Require(medium.DiscStatus == 1 && !medium.Log.Contains("close:ms0")
+                && Directory.GetFiles(job.RecoveryRoot!, CdExtraCheckpoint.FileName, SearchOption.AllDirectories).Length == 1,
+                mode + " leaves the checkpoint and incomplete disc open");
+            Require(mode switch
+            {
+                "cancel" => stopped is OperationCanceledException && reconnects == 0,
+                "offline" => reconnects == CdExtraReconnect.MaxUnavailablePolls,
+                "same-nwa" => reconnects == 4 && medium.InjectedTimeouts == 12 && stopped.Message.Contains("同一位置"),
+                "wrong-disc" => reconnects == 1 && medium.InjectedTimeouts == 3 && stopped.Message.Contains("标识"),
+                "corrupt-prefix" => reconnects == 0 && medium.InjectedTimeouts == 1,
+                _ => reconnects == 0 && stopped.Message.Contains("0xC0AA0301"),
+            }, mode + " handles only the eligible failure and has a bounded stop");
+        }
+        Console.WriteLine("cd-extra-auto-reconnect: one burn, two stale device handles, temporarily missing/locked recorder, " +
+            "partial writes +71/+142, complete readback; sealed read-only, cancel, unavailable, unchanged NWA, wrong disc, corrupt prefix and fatal error passed");
+    }
+
+    private static void TestUnexpectedWriteResponse()
+    {
+        const long start = 12_254;
+        const int hr = CdExtraWriteWindow.UnexpectedResponse;
+        var request = Request(_ => DataContent(1000));
+        var tracker = new CdExtraProgressTracker(_ => { }, request.AudioBytes, 1000 * 2048);
+        var checkpoint = new CdExtraCheckpoint(1, "fake", 9, 40_000, [0], 1, null, start, 1000, new string('a', 64));
+        CdExtraWriteWindow? Classify(Exception cause, int blockBytes = 2048)
+            => CdExtraWriteWindow.FromCommand(new CdTaoWriteException(start, 32, blockBytes, cause), checkpoint);
+        var raw = new System.Runtime.InteropServices.COMException("write response", hr);
+        Require(Classify(raw) == new CdExtraWriteWindow(0x2a, start, start + 32) && Classify(raw, 2352) is null,
+            "direct COM write error belongs only to a picture command");
+        foreach (int key in new[] { 3, 4, 5, 7, 0x0d })
+            Require(Classify(new MmcCommandException(0x2a, Sense(key, 0x0c, 0) with { HResult = hr })) is null,
+                "definitive SCSI sense " + key);
+        var deferred = Sense(0x0b, 0, 0) with { HResult = hr };
+        deferred.Sense[0] = 0x71;
+        var failedRead = new MmcCommandException(0x28, new(hr, [], []));
+        Require(Classify(new MmcCommandException(0x2a, deferred)) is null && Classify(failedRead) is null &&
+            Classify(new IOException("timeout reconciliation failed", failedRead)) is null, "deferred sense and read probes excluded");
+        foreach (string mode in new[] { "zero", "partial", "whole", "final", "again", "stalled", "outside-high",
+            "outside-low", "missing-nwa", "damaged", "mismatch", "swapped", "read-error", "cancel" })
+        {
+            int offset = mode switch { "zero" => 0, "final" => 992, _ => 64 };
+            int accepted = mode switch { "zero" or "stalled" => 0, "whole" => 32, "final" => 8, _ => 7 };
+            int opens = 0, firstWrites = 0;
+            var disc = new FakeTaoRecorder { DataTimeoutAfterBlocks = accepted, TimeoutOffset = offset,
+                InjectedWriteHResult = hr, RepeatedTimeout = mode is "stalled" or "again",
+                InvalidRecoveryNwa = mode == "missing-nwa", CorruptReadback = mode == "mismatch" };
+            using var cancel = new CancellationTokenSource();
+            var job = request with { RecoveryRoot = Path.Combine(Scratch, "unexpected-" + mode) };
+            CdExtraBurnResult? result = null;
+            Exception? stopped = null;
+            string Record() => Directory.GetFiles(job.RecoveryRoot!, CdExtraCheckpoint.FileName, SearchOption.AllDirectories).Single();
+            try
+            {
+                result = CdExtraReconnect.Burn(job, tracker, cancel.Token, () =>
+                {
+                    try { using var session = Session(disc, tracker); return WindowsImapiBurner.BurnCdExtra(session, job, tracker, cancel.Token); }
+                    finally { firstWrites = disc.Writes.Count; }
+                }, use =>
+                {
+                    opens++;
+                    long expectedStart = start + (mode == "again" && opens > 1 ? 103 : offset);
+                    var saved = CdExtraCheckpoint.Load(Record()).UncertainCommand;
+                    Require(saved == new CdExtraWriteWindow(0x2a, expectedStart,
+                        expectedStart + Math.Min(32, (int)(start + 1000 - expectedStart))), "exact failed WRITE persisted: " + mode);
+                    if (mode == "partial" && opens == 1) throw new IOException("missing drive", unchecked((int)0x8007048f));
+                    if (mode == "again") disc.TimeoutOffset = opens == 1 ? 103 : 2000;
+                    if (mode == "swapped") disc.DiscId = 5;
+                    using var session = Session(new CommandView(disc, (cdb, execute) =>
+                    {
+                        if (mode == "read-error" && cdb[0] == 0x28) return new(hr, [], []);
+                        var value = execute();
+                        if (cdb[0] == 0x52 && value.Data[3] == 2)
+                        {
+                            if (mode is "outside-high" or "outside-low")
+                                BinaryPrimitives.WriteUInt32BigEndian(value.Data.AsSpan(12), (uint)(expectedStart + (mode == "outside-high" ? 33 : -1)));
+                            if (mode == "damaged") value.Data[5] |= 0x20;
+                        }
+                        return value;
+                    }), tracker);
+                    int before = disc.Writes.Count;
+                    try { use(session); }
+                    finally
+                    {
+                        if (disc.Writes.Count > before)
+                            Require(disc.Writes[before].Lba == expectedStart + accepted, "first fresh WRITE at verified NWA: " + mode);
+                    }
+                }, (_, _) => { if (mode == "cancel") cancel.Cancel(); });
+            }
+            catch (Exception e) { stopped = e; }
+            if (mode is "zero" or "partial" or "whole" or "final" or "again")
+            {
+                Require(stopped is null && result?.VerifiedPictureSectors == 1000 && disc.DiscStatus == 2 &&
+                    opens == (mode is "partial" or "again" ? 2 : 1) && disc.TrackData[2].SequenceEqual(DataBytes(1000)),
+                    mode + " complete: " + stopped);
+                Require(mode != "final" || disc.Writes.Count == firstWrites, "last WRITE already accepted");
+                Require(CdExtraCheckpoint.Load(Record()).UncertainCommand is null, "verified writable position consumed");
+                continue;
+            }
+            string reason = mode switch { "stalled" => "重试", "outside-high" or "outside-low" => "允许的范围",
+                "missing-nwa" => "可续写地址", "damaged" => "损坏", "swapped" => "标识", "mismatch" => "LBA",
+                "read-error" => "0x28", _ => "取消" };
+            Require(stopped?.Message.Contains(reason) == true && disc.DiscStatus == 1 && disc.Writes.Count == firstWrites
+                && !disc.Log.Contains("close:ms0") && disc.InjectedTimeouts == (mode == "stalled" ? 2 : 1)
+                && opens == (mode == "stalled" ? 2 : mode == "cancel" ? 0 : 1)
+                && CdExtraCheckpoint.Load(Record()).UncertainCommand?.FirstLba == start + offset,
+                mode + " must stop and retain bounded checkpoint: " + stopped);
+            if (mode == "outside-low")
+            {
+                using var manual = Session(new CommandView(disc, (cdb, execute) =>
+                {
+                    var value = execute();
+                    if (cdb[0] == 0x52 && value.Data[3] == 2)
+                        BinaryPrimitives.WriteUInt32BigEndian(value.Data.AsSpan(12), (uint)(start + offset - 1));
+                    return value;
+                }), tracker);
+                Throws<IOException>(() => manual.ResumePicture("fake", Record(), tracker, default), "reloaded interval still enforced");
+                Require(disc.Writes.Count == firstWrites, "rejected manual retry sends no WRITE");
+            }
+        }
+        Console.WriteLine("cd-extra-unexpected-write: 0xC0AA0301, zero/partial/full/final WRITE, repeated errors, missing drive, " +
+            "bounds after restart, stalled, damaged, wrong disc, invalid NWA, mismatch, read error and cancellation passed");
+    }
+
+    private static void TestUnexpectedFinalizationResponse()
+    {
+        const int hr = CdExtraWriteWindow.UnexpectedResponse;
+        const long end = 12_254 + 1000;
+        var request = Request(_ => DataContent(1000));
+        var tracker = new CdExtraProgressTracker(_ => { }, request.AudioBytes, 1000 * 2048);
+        foreach (string mode in new[] { "flush", "flush-short", "close", "sealed", "sealed-bad", "read" })
+        {
+            var job = request with { RecoveryRoot = Path.Combine(Scratch, "control-" + mode) };
+            var disc = new FakeTaoRecorder();
+            int opens = 0, writes = 0, closes = 0;
+            var first = new CommandView(disc, (cdb, execute) =>
+            {
+                if (disc.Writes.Any(w => w.BlockBytes == 2048))
+                {
+                    if (cdb[0] == 0x35 && mode.StartsWith("flush")) return new(hr, [], []);
+                    if (cdb[0] == 0x5b && mode is "close" or "sealed" or "sealed-bad")
+                    {
+                        if (mode != "close") execute();
+                        return new(hr, [], []);
+                    }
+                    if (cdb[0] == 0x28 && mode == "read") return new(hr, [], []);
+                }
+                return execute();
+            });
+            Exception? stopped = null;
+            CdExtraBurnResult? result = null;
+            try
+            {
+                result = CdExtraReconnect.Burn(job, tracker, default, () =>
+                {
+                    try { using var session = Session(first, tracker); return WindowsImapiBurner.BurnCdExtra(session, job, tracker, default); }
+                    finally { writes = disc.Writes.Count; closes = disc.Log.Count(s => s == "close:ms0"); }
+                }, use =>
+                {
+                    opens++;
+                    var saved = CdExtraCheckpoint.Load(Directory.GetFiles(job.RecoveryRoot!, CdExtraCheckpoint.FileName, SearchOption.AllDirectories).Single());
+                    Require(saved.UncertainCommand == new CdExtraWriteWindow(mode.StartsWith("flush") ? (byte)0x35 : (byte)0x5b, end, end),
+                        "exact end required for finalization");
+                    if (mode == "sealed-bad") disc.CorruptFinalLba = end - 1;
+                    using var session = Session(new CommandView(disc, (cdb, execute) =>
+                    {
+                        var value = execute();
+                        if (mode == "flush-short" && cdb[0] == 0x52 && value.Data[3] == 2)
+                            BinaryPrimitives.WriteUInt32BigEndian(value.Data.AsSpan(12), (uint)(end - 1));
+                        return value;
+                    }), tracker);
+                    use(session);
+                }, (_, _) => {});
+            }
+            catch (Exception e) { stopped = e; }
+            Require(opens == (mode == "read" ? 0 : 1) && disc.Writes.Count == writes, "no picture rewrite: " + mode);
+            if (mode is "read" or "sealed-bad" or "flush-short")
+                Require(stopped is not null && result is null && disc.Log.Count(s => s == "close:ms0") == closes,
+                    "failed verification or short flush never retries finalization: " + mode);
+            else Require(stopped is null && result?.VerifiedPictureSectors == 1000 && disc.Log.Count(s => s == "close:ms0") == 1,
+                "final state verified: " + mode + " " + stopped);
+        }
+        Console.WriteLine("cd-extra-unexpected-finalization: flush/close, short track, sealed read-only success/failure, unrelated READ(10) passed");
+    }
+
+    private sealed class CommandView(FakeTaoRecorder disc, Func<byte[], Func<MmcCommandResult>, MmcCommandResult> executeCommand)
+        : IMmcCommandTransport
+    {
+        public MmcWriteTransferLimits GetWriteTransferLimits() => disc.GetWriteTransferLimits();
+        public MmcCommandResult Execute(byte[] cdb, int size, uint timeout)
+            => executeCommand(cdb, () => disc.Execute(cdb, size, timeout));
+        public MmcCommandResult SendData(byte[] cdb, IntPtr buffer, int size, uint timeout) => disc.SendData(cdb, buffer, size, timeout);
+    }
+
+    // A stale handle never recovers. New handles can still reach the same virtual medium.
+    private sealed class RecorderLink(FakeTaoRecorder disc, bool dropOnTimeout = false, bool dropOnSealedRead = false,
+        bool fatalWrite = false) : IMmcCommandTransport
+    {
+        private bool _offline;
+        internal int StaleCalls { get; private set; }
+        public MmcWriteTransferLimits GetWriteTransferLimits() => disc.GetWriteTransferLimits();
+        public MmcCommandResult Execute(byte[] cdb, int allocationLength, uint timeoutSeconds)
+        {
+            if (dropOnSealedRead && disc.DiscStatus == 2 && cdb[0] == 0x28) _offline = true;
+            if (!_offline) return disc.Execute(cdb, allocationLength, timeoutSeconds);
+            StaleCalls++;
+            return new(unchecked((int)0x8007048f), [], []);
+        }
+        public MmcCommandResult SendData(byte[] cdb, IntPtr buffer, int bufferLength, uint timeoutSeconds)
+        {
+            if (_offline) return new(unchecked((int)0x8007048f), [], []);
+            if (fatalWrite && cdb[0] == 0x2a && Lba(cdb) >= 12_254)
+                return Sense(3, 0x0c, 0) with { HResult = CdExtraWriteWindow.UnexpectedResponse };
+            var response = disc.SendData(cdb, buffer, bufferLength, timeoutSeconds);
+            if (dropOnTimeout && (uint)response.HResult == 0xc0aa020d) _offline = true;
+            return response;
+        }
+    }
+
+    private static long ResumePicture(this DynamicCdExtraSession session, string deviceId, string path,
+        CdExtraProgressTracker tracker, CancellationToken token)
+        => CdExtraReconnect.Resume(CdExtraCheckpoint.Load(path), path, deviceId, tracker, token, use => use(session)).Sectors;
+
+    private static DynamicCdExtraSession Session(IMmcCommandTransport recorder, CdExtraProgressTracker? tracker)
         => new(recorder, requested => requested ?? new OpticalWriteSpeed(1200, false),
             commands => new BluRaySessionCleanup(
                 acquireExclusive: () => { },
@@ -547,7 +1024,8 @@ internal static class CdExtraBurnTests
 
     private static CdExtraBurnRequest Request(Func<CdExtraSessionStart, CdExtraDataContent> createData, bool testWrite = false)
         => new("fake", [new CdExtraAudioTrack(300, Producer(Pcm(300, 1))), new CdExtraAudioTrack(400, Producer(Pcm(400, 2)))],
-            createData, 300 + 152 + 400 + 2 + 11_400, 1_000, new OpticalWriteSpeed(1200, false), TestWrite: testWrite);
+            createData, 300 + 152 + 400 + 2 + 11_400, 1_000, new OpticalWriteSpeed(1200, false), TestWrite: testWrite)
+        { RecoveryRoot = Path.Combine(Scratch, "other") };
 
     private static CdExtraDataContent DataContent(long sectors) => new(sectors, Producer(DataBytes(sectors)));
 
@@ -717,6 +1195,10 @@ internal static class CdExtraBurnTests
             _page[2] = 0x02; // drive default: SAO
         }
 
+        internal ushort TaoDataTypes { get; init; } = 0x0101;
+        internal bool RejectMode1 { get; init; }
+        internal bool IgnoreAudioSelection { get; init; }
+        internal bool IgnoreTestBit { get; init; }
         internal long LeadoutStart { get; init; } = 40_000;
         internal long Session2Offset { get; init; }
         /// <summary>State of Last Session after a multi-session close: 0 (the tested BU20N)
@@ -725,6 +1207,17 @@ internal static class CdExtraBurnTests
         internal long? Session2FreeBlocks { get; init; }
         internal long? Session2FreeBlocksOnSecondRead { get; init; }
         internal bool ShiftNwaAfterFirstSession2Read { get; init; }
+        internal int? DataTimeoutAfterBlocks { get; set; }
+        internal int InjectedWriteHResult { get; init; } = unchecked((int)0xc0aa020d);
+        internal int TimeoutOffset { get; set; }
+        internal uint? DiscId { get; set; } = 0x11223344;
+        internal long? CorruptFinalLba { get; set; }
+        internal long? ShortFinalLba { get; set; }
+        internal bool RepeatedTimeout { get; init; }
+        internal bool CorruptReadback { get; set; }
+        internal bool InvalidRecoveryNwa { get; init; }
+        internal int InjectedTimeouts { get; private set; }
+        internal int PictureReadbacks { get; private set; }
         internal int BusyAfterFlush { get; init; }
         internal int DiscStatus { get; private set; }
         internal List<(long Start, long Length, int Session)> Tracks { get; } = [];
@@ -757,7 +1250,7 @@ internal static class CdExtraBurnTests
                     data[10] = 0x01; // current
                     data[11] = 4;
                     data[12] = 0x40 | 0x04; // BUF, Test Write
-                    BinaryPrimitives.WriteUInt16BigEndian(data.AsSpan(14), 0x0101); // raw audio, Mode 1
+                    BinaryPrimitives.WriteUInt16BigEndian(data.AsSpan(14), TaoDataTypes);
                     return new(0, new byte[18], data);
                 }
                 case 0x51:
@@ -766,10 +1259,41 @@ internal static class CdExtraBurnTests
                     BinaryPrimitives.WriteUInt16BigEndian(data, 32);
                     data[2] = (byte)((_lastSessionState << 2) | DiscStatus);
                     data[3] = 1;
+                    if (DiscId.HasValue) { data[7] = 0x80; BinaryPrimitives.WriteUInt32BigEndian(data.AsSpan(12), DiscId.Value); }
                     data[4] = (byte)_session;
                     data[5] = (byte)_firstTrackInSession;
                     data[6] = (byte)(Tracks.Count + (DiscStatus == 2 ? 0 : 1));
                     return new(0, new byte[18], data);
+                }
+                case 0xbe:
+                {
+                    long lba = Lba(cdb);
+                    int n = Tracks.FindIndex(t => t.Session == 1 && lba >= t.Start && lba < t.Start + t.Length);
+                    if (n < 0 || cdb[1] != 4 || cdb[8] != 1 || cdb[9] != 0x10) return Sense(5, 0x24, 0);
+                    return new(0, [], TrackData[n].AsSpan((int)(lba - Tracks[n].Start) * 2352, 2352).ToArray());
+                }
+                case 0x28:
+                {
+                    long lba = Lba(cdb);
+                    int written = Tracks.FindIndex(t => t.Session == 2 && lba >= t.Start && lba < t.Start + t.Length);
+                    byte[] stored;
+                    if (written >= 0)
+                    {
+                        int offset = checked((int)(lba - Tracks[written].Start) * 2048);
+                        stored = TrackData[written].AsSpan(offset, allocationLength).ToArray();
+                        if (ShortFinalLba is long shortLba && shortLba >= lba && shortLba < lba + Blocks(cdb))
+                            return new(0, [], stored[..^1]);
+                        if (CorruptFinalLba is long bad && bad >= lba && bad < lba + Blocks(cdb))
+                            stored[(int)(bad - lba) * 2048 + 17] ^= 1;
+                    }
+                    else
+                    {
+                        PictureReadbacks++;
+                        int offset = checked((int)(lba - _openStart!.Value) * 2048);
+                        stored = _openData.SelectMany(chunk => chunk).Skip(offset).Take(allocationLength).ToArray();
+                        if (CorruptReadback) stored[0] ^= 1;
+                    }
+                    return new(0, [], stored);
                 }
                 case 0x52:
                     return new(0, new byte[18], TrackInformation(BinaryPrimitives.ReadInt32BigEndian(cdb.AsSpan(2))));
@@ -810,7 +1334,10 @@ internal static class CdExtraBurnTests
             {
                 if (data.AsSpan(0, 8).IndexOfAnyExcept((byte)0) >= 0 || data[8] != 0x05)
                     return Sense(5, 0x26, 0);
+                if (RejectMode1 && (data[12] & 15) == 8) return Sense(5, 0x26, 0);
+                if (IgnoreAudioSelection && (data[12] & 15) == 0) return Good();
                 data.AsSpan(8, _page.Length).CopyTo(_page);
+                if (IgnoreTestBit) _page[2] &= 0xef;
                 Log.Add("select:" + Page);
                 return Good();
             }
@@ -821,11 +1348,20 @@ internal static class CdExtraBurnTests
                 return Sense(5, 0x24, 0);
             if (lba != (_openStart is null ? _nwa : _writePointer))
                 return Sense(5, 0x21, 2); // invalid address for write
+            bool inject = BlockBytes == 2048 && DataTimeoutAfterBlocks.HasValue && lba - _nwa >= TimeoutOffset
+                && (InjectedTimeouts == 0 || RepeatedTimeout);
+            if (inject)
+            {
+                InjectedTimeouts++;
+                blocks = Math.Min(blocks, DataTimeoutAfterBlocks!.Value);
+                if (blocks == 0) return new(InjectedWriteHResult, [], []);
+                data = data[..(blocks * BlockBytes)];
+            }
             _openStart ??= lba;
             _writePointer = lba + blocks;
             _openData.Add(data);
             Writes.Add((lba, blocks, BlockBytes));
-            return Good();
+            return inject ? new(InjectedWriteHResult, [], []) : Good();
         }
 
         private MmcCommandResult? Busy(byte opcode)
@@ -855,16 +1391,19 @@ internal static class CdExtraBurnTests
                     : _session == 2 && Session2FreeBlocks is { } limit ? limit
                     : LeadoutStart - 2 - _nwa;
                 data[3] = (byte)_session;
-                data[6] = 0x40; // blank
-                data[7] = 1;    // NWA_V
+                data[5] = _session == 2 && _openStart.HasValue ? (byte)4 : (byte)0;
+                data[6] = _openStart.HasValue ? (byte)1 : (byte)0x40;
+                data[7] = InvalidRecoveryNwa && InjectedTimeouts > 0 ? (byte)0 : (byte)1;
                 BinaryPrimitives.WriteUInt32BigEndian(data.AsSpan(8), (uint)_nwa);
-                BinaryPrimitives.WriteUInt32BigEndian(data.AsSpan(12), (uint)_nwa);
+                BinaryPrimitives.WriteUInt32BigEndian(data.AsSpan(12), (uint)(_openStart.HasValue ? _writePointer : _nwa));
                 BinaryPrimitives.WriteUInt32BigEndian(data.AsSpan(16), (uint)free);
             }
             else
             {
                 (long start, long length, int session) = Tracks[track - 1];
                 data[3] = (byte)session;
+                data[5] = session == 2 ? (byte)4 : (byte)0;
+                data[6] = session == 2 ? (byte)1 : (byte)0;
                 BinaryPrimitives.WriteUInt32BigEndian(data.AsSpan(8), (uint)start);
                 BinaryPrimitives.WriteUInt32BigEndian(data.AsSpan(24), (uint)length);
             }
@@ -886,11 +1425,13 @@ internal static class CdExtraBurnTests
             _openStart = null;
         }
 
+        internal bool RejectFinalClose { get; set; }
+
         private MmcCommandResult Close(byte[] cdb)
         {
             if ((cdb[2] & 7) != 2) return Sense(5, 0x24, 0);
             Log.Add($"close:ms{MultiSession}");
-            if (TestWrite || Tracks.Count == 0) return Sense(5, 0x2c, 0);
+            if (TestWrite || Tracks.Count == 0 || MultiSession == 0 && RejectFinalClose) return Sense(5, 0x2c, 0);
             if (MultiSession == 3)
             {
                 long leadout = Tracks[^1].Start + Tracks[^1].Length + 2;
@@ -925,6 +1466,7 @@ internal static class CdExtraBurnTests
         internal Action? AfterAudio { get; init; }
         public void Acquire() => Steps.Add("acquire");
         public CdExtraMediaInfo ReadMedia() { Steps.Add("media"); return Media; }
+        public void ConfirmTaoWriteFormats(bool testWrite) => Steps.Add("confirm-formats");
         public OpticalWriteSpeed ConfigureWrite(OpticalWriteSpeed? requested)
         {
             Steps.Add("speed");
@@ -951,6 +1493,15 @@ internal static class CdExtraBurnTests
             if (FailData is not null) throw FailData;
             Data = ReadAll(data);
             return expectedStartLba;
+        }
+        public (uint? DiscId, string? Audio) ReadPictureIdentity(IReadOnlyList<long> audioStarts) => (1234, null);
+        public void VerifyPicture(Stream source, long start, long sectors, Action<long> progress, CancellationToken token)
+        {
+            source.Position = 0;
+            using var copy = new MemoryStream();
+            source.CopyTo(copy);
+            Require(Data!.SequenceEqual(copy.ToArray()), "verify the recorded picture against the pinned source");
+            progress(sectors);
         }
         public void Flush() => Steps.Add("flush");
         public void CancelWrite() { }

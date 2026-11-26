@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net10.0</TargetFrameworks>
-    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">net10.0;net10.0-windows</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows')) Or '$(EnableWindowsTargeting)' == 'true'">net10.0;net10.0-windows</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -11,7 +11,11 @@
     <ProjectReference Include="..\DiscImageStudio.Core\DiscImageStudio.Core.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
-    <ProjectReference Include="..\DvdImageSolver\DvdImageSolver.csproj" />
+    <ProjectReference Include="..\DvdImageSolver\DvdImageSolver.csproj">
+      <!-- The Windows engine is hosted as a DLL. WPF's temporary cross-build must
+           not try to publish that referenced executable for the Linux host. -->
+      <GlobalPropertiesToRemove Condition="!$([MSBuild]::IsOSPlatform('Windows'))">RuntimeIdentifier;SelfContained;PublishSingleFile</GlobalPropertiesToRemove>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <!-- Host the existing solver in the portable module. The standalone Windows

@@ -26,6 +26,11 @@ internal static class Marquee
     /// the next forward leg starts immediately, leaving the head unreadable.</summary>
     internal static void Begin(TranslateTransform target, double overflow)
     {
+        if (!Motion.Enabled)
+        {
+            Stop(target);
+            return;
+        }
         double seconds = Math.Clamp(
             overflow / PixelsPerSecond, MinimumSeconds, MaximumSeconds);
         var leg = TimeSpan.FromSeconds(seconds);
@@ -36,9 +41,9 @@ internal static class Marquee
             RepeatBehavior = RepeatBehavior.Forever,
         };
         animation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero), Motion.EaseOut));
-        animation.KeyFrames.Add(new EasingDoubleKeyFrame(-overflow, KeyTime.FromTimeSpan(leg), Motion.EaseOut));
+        animation.KeyFrames.Add(new EasingDoubleKeyFrame(-overflow, KeyTime.FromTimeSpan(leg), Motion.EaseInOut));
         animation.KeyFrames.Add(new LinearDoubleKeyFrame(-overflow, KeyTime.FromTimeSpan(leg + hold)));
-        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(leg + leg + hold), Motion.EaseOut));
+        animation.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(leg + leg + hold), Motion.EaseInOut));
         animation.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(leg + leg + hold + hold)));
         target.BeginAnimation(TranslateTransform.XProperty, animation);
     }

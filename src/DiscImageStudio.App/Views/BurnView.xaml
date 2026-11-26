@@ -56,6 +56,8 @@
                         <StackPanel>
                             <CheckBox Content="{loc:Text Xaml.CdExtraTestWrite}" IsChecked="{Binding CdExtraTestWrite}"
                                       IsEnabled="{Binding IsSetupEnabled}" />
+                            <Button Content="{loc:Text Xaml.CdExtraResumePicture}" Command="{Binding ResumePictureCommand}"
+                                    Style="{StaticResource CompactButton}" HorizontalAlignment="Left" Margin="0,8,0,0" />
                             <TextBlock Text="{loc:Text Xaml.CdExtraBurnHint}" Style="{StaticResource HintText}"
                                        Margin="0,6,0,0" TextWrapping="Wrap" />
                         </StackPanel>

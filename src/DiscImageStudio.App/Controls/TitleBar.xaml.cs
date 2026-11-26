@@ -65,6 +65,10 @@ public partial class TitleBar : UserControl
         set => SetValue(ShowSettingsButtonProperty, value);
     }
 
+    // A window retaining the native caption/resize styles can use Windows'
+    // animated system commands while rendering this shared caption.
+    public bool UseSystemWindowCommands { get; set; }
+
     /// <summary>Raised when the settings gear is clicked; the host opens the settings
     /// dialog directly.</summary>
     public event RoutedEventHandler SettingsRequested
@@ -143,7 +147,10 @@ public partial class TitleBar : UserControl
     {
         if (_window is not null)
         {
-            _window.WindowState = WindowState.Minimized;
+            if (UseSystemWindowCommands)
+                SystemCommands.MinimizeWindow(_window);
+            else
+                _window.WindowState = WindowState.Minimized;
         }
     }
 
@@ -151,6 +158,15 @@ public partial class TitleBar : UserControl
     {
         if (_window is null)
         {
+            return;
+        }
+
+        if (UseSystemWindowCommands)
+        {
+            if (_window.WindowState == WindowState.Maximized)
+                SystemCommands.RestoreWindow(_window);
+            else
+                SystemCommands.MaximizeWindow(_window);
             return;
         }
 

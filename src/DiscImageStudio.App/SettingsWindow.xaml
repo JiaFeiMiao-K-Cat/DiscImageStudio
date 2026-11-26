@@ -1,4 +1,5 @@
-<Window x:Class="DiscImageStudio.SettingsWindow"
+<app:TransitionWindow x:Class="DiscImageStudio.SettingsWindow"
+        xmlns:app="clr-namespace:DiscImageStudio"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:DiscImageStudio.Localization"
@@ -16,7 +17,7 @@
                       ResizeBorderThickness="0" UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
 
-    <Grid>
+    <Grid Background="{DynamicResource BackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="32" />
             <RowDefinition Height="*" />
@@ -32,7 +33,8 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,1,0"
+            <Border Grid.Column="0" Background="{DynamicResource PaneSurfaceBrush}"
+                    BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,1,0"
                     Padding="16,12">
                 <StackPanel>
                     <controls:SideNavItem x:Name="GeneralNav" LabelText="{loc:Text Settings.General}"
@@ -256,4 +258,4 @@
         <controls:ConfirmModal x:Name="UpdateConfirm" Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="31" />
         <controls:ConfirmModal x:Name="UnsavedConfirm" Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="32" />
     </Grid>
-</Window>
+</app:TransitionWindow>

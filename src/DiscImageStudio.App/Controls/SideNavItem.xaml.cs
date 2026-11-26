@@ -36,9 +36,8 @@ public partial class SideNavItem : UserControl
         nameof(Activated), RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(SideNavItem));
 
     private static readonly Duration TransitionDuration = Motion.Fast;
-    private static readonly IEasingFunction TransitionEase = Motion.EaseOut;
 
-    // Colors come from the theme tokens (TextPrimary/TextSecondary/Surface2/SurfaceHover) so
+    // Colors come from the theme tokens (TextPrimary/TextSecondary/Surface3/SurfaceHover) so
     // the sidebar cannot drift from the shared palette; the idle background keeps the hover
     // color's RGB at alpha 0 because a ColorAnimation interpolates every ARGB channel and
     // transparent->dark would pass ~50% white mid-flight (see Motion/ThemeValues).
@@ -95,7 +94,7 @@ public partial class SideNavItem : UserControl
         InitializeComponent();
         _activeTextColor = ThemeValues.Color("TextPrimaryColor", Color.FromRgb(0xFA, 0xFA, 0xFA));
         _idleTextColor = ThemeValues.Color("TextSecondaryColor", Color.FromRgb(0xA1, 0xA1, 0xAA));
-        _activeBackgroundColor = ThemeValues.Color("Surface2Color", Color.FromRgb(0x26, 0x26, 0x2B));
+        _activeBackgroundColor = ThemeValues.Color("Surface3Color", Color.FromRgb(0x26, 0x26, 0x2B));
         _hoverBackgroundColor = ThemeValues.Color("SurfaceHoverColor", Color.FromRgb(0x1B, 0x1B, 0x1C));
         _idleBackgroundColor = ThemeValues.WithAlpha(_hoverBackgroundColor, 0);
         _textBrush = new SolidColorBrush(_idleTextColor);
@@ -145,7 +144,7 @@ public partial class SideNavItem : UserControl
     {
         _activeTextColor = ThemeValues.Color("TextPrimaryColor", Color.FromRgb(0xFA, 0xFA, 0xFA));
         _idleTextColor = ThemeValues.Color("TextSecondaryColor", Color.FromRgb(0xA1, 0xA1, 0xAA));
-        _activeBackgroundColor = ThemeValues.Color("Surface2Color", Color.FromRgb(0x26, 0x26, 0x2B));
+        _activeBackgroundColor = ThemeValues.Color("Surface3Color", Color.FromRgb(0x26, 0x26, 0x2B));
         _hoverBackgroundColor = ThemeValues.Color("SurfaceHoverColor", Color.FromRgb(0x1B, 0x1B, 0x1C));
         _idleBackgroundColor = ThemeValues.WithAlpha(_hoverBackgroundColor, 0);
     }
@@ -184,7 +183,7 @@ public partial class SideNavItem : UserControl
 
     private void AnimateBrush(SolidColorBrush brush, Color target, ref Color? playingTarget, bool animate)
     {
-        if (animate)
+        if (animate && Motion.Enabled)
         {
             // Re-issuing an identical animation restarts it from the live value and reads as
             // a flicker, so only begin when the target color actually changed.
@@ -194,9 +193,7 @@ public partial class SideNavItem : UserControl
             }
 
             playingTarget = target;
-            brush.BeginAnimation(
-                SolidColorBrush.ColorProperty,
-                new ColorAnimation(target, TransitionDuration) { EasingFunction = TransitionEase });
+            Motion.Animate(brush, target, TransitionDuration);
         }
         else
         {

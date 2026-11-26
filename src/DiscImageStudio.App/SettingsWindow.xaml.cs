@@ -12,7 +12,7 @@ namespace DiscImageStudio;
 /// Save/Cancel pinned to the bottom. Nothing is applied until Save; Cancel or Escape drops
 /// every edit. The window owns the folder picker and the clear-cache confirmation so the view
 /// model stays free of dialogs.</summary>
-public partial class SettingsWindow : Window
+public partial class SettingsWindow : TransitionWindow
 {
     private readonly SettingsViewModel _viewModel;
     private string? _downloadedUpdatePath;

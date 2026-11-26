@@ -46,6 +46,7 @@ public partial class HomeViewModel : ObservableObject
         TemplateCommand = new AsyncRelayCommand<HomeTemplateTile>(CreateFromTemplate, _ => !_shell.IsBusy);
         OpenRecentCommand = new AsyncRelayCommand<RecentProjectTile>(OpenRecent, _ => !_shell.IsBusy);
         RemoveRecentCommand = new RelayCommand<RecentProjectTile>(RemoveRecent);
+        DeleteRecentCommand = new AsyncRelayCommand<RecentProjectTile>(DeleteRecentAsync, tile => tile is not null && !_shell.IsBusy);
         ClearRecentsCommand = new AsyncRelayCommand(ClearRecentsAsync, () => HasRecents);
         _shell.BusyChanged += NotifyCommands;
         _shell.PropertyChanged += Shell_PropertyChanged;
@@ -81,6 +82,8 @@ public partial class HomeViewModel : ObservableObject
     public IAsyncRelayCommand<RecentProjectTile> OpenRecentCommand { get; }
 
     public RelayCommand<RecentProjectTile> RemoveRecentCommand { get; }
+
+    public IAsyncRelayCommand<RecentProjectTile> DeleteRecentCommand { get; }
 
     public IAsyncRelayCommand ClearRecentsCommand { get; }
 
@@ -120,6 +123,7 @@ public partial class HomeViewModel : ObservableObject
         OpenProjectCommand.NotifyCanExecuteChanged();
         TemplateCommand.NotifyCanExecuteChanged();
         OpenRecentCommand.NotifyCanExecuteChanged();
+        DeleteRecentCommand.NotifyCanExecuteChanged();
         ContinueProjectCommand.NotifyCanExecuteChanged();
     }
 
@@ -270,6 +274,48 @@ public partial class HomeViewModel : ObservableObject
 
         _recentStore.Clear();
         RefreshRecentProjects();
+    }
+
+    private async Task DeleteRecentAsync(RecentProjectTile? tile)
+    {
+        if (tile is null || OpenRecentCommand.IsRunning || _shell.OpenProjectCommand.IsRunning)
+        {
+            return;
+        }
+
+        string path = tile.Entry.ProjectPath;
+        try
+        {
+            if (!Path.IsPathFullyQualified(path) || !Path.GetExtension(path).Equals(
+                ProjectJsonStore.FileExtension, StringComparison.OrdinalIgnoreCase))
+            {
+                _shell.ShowToast(L.T("无法删除工程"), L.F($"无效的工程文件路径：\n{path}"), ToastKind.Warning);
+                return;
+            }
+
+            path = Path.GetFullPath(path);
+            string message = L.F($"将永久删除以下工程文件：\n{path}");
+            if (_shell.IsCurrentProjectFile(path) && _shell.IsDirty)
+            {
+                message += "\n\n" + L.T("当前工程会关闭，未保存的更改将丢失。");
+            }
+
+            if (!await _shell.ConfirmAsync(L.T("删除工程"), message, L.T("永久删除")) || _shell.IsBusy)
+            {
+                return;
+            }
+
+            File.Delete(path);
+            _shell.CloseDeletedProject(path);
+            _recentStore.Remove(tile.Entry.ProjectPath);
+            RefreshRecentProjects();
+            _shell.ShowToast(L.T("工程已删除"), path, ToastKind.Success);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+                                          or ArgumentException or NotSupportedException)
+        {
+            _shell.ShowToast(L.T("无法删除工程"), L.F($"{L.Error(exception)}\n\n文件位置：\n{path}"), ToastKind.Error);
+        }
     }
 
     /// <summary>Presets name themselves after what the disc is; a trailing 「（…）」 marks how

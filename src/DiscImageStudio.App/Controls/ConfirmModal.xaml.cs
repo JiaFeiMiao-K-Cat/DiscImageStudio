@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using System.Windows.Media;
 using MahApps.Metro.IconPacks;
 
 namespace DiscImageStudio.Controls;
@@ -11,6 +12,8 @@ public partial class ConfirmModal : UserControl
 {
     private TaskCompletionSource<bool>? _pending;
     private TaskCompletionSource<bool?>? _pendingThreeWay;
+    private bool _closing;
+    private int _transitionVersion;
 
     public ConfirmModal()
     {
@@ -47,8 +50,8 @@ public partial class ConfirmModal : UserControl
         ConfirmButton.Content = confirmLabel;
         ConfirmButton.Style = (Style)FindResource("DangerButton");
         NeutralButton.Visibility = Visibility.Collapsed;
-        Root.Visibility = Visibility.Visible;
         _pending = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        ShowSurface();
         return _pending.Task;
     }
 
@@ -68,8 +71,8 @@ public partial class ConfirmModal : UserControl
         ConfirmButton.Content = confirmLabel;
         ConfirmButton.Style = (Style)FindResource("PrimaryButton");
         NeutralButton.Visibility = Visibility.Collapsed;
-        Root.Visibility = Visibility.Visible;
         _pending = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        ShowSurface();
         return _pending.Task;
     }
 
@@ -92,14 +95,63 @@ public partial class ConfirmModal : UserControl
         ConfirmButton.Style = (Style)FindResource("PrimaryButton");
         NeutralButton.Content = neutralLabel;
         NeutralButton.Visibility = Visibility.Visible;
-        Root.Visibility = Visibility.Visible;
         _pendingThreeWay = new TaskCompletionSource<bool?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        ShowSurface();
         return _pendingThreeWay.Task;
+    }
+
+    private void ShowSurface()
+    {
+        ++_transitionVersion;
+        _closing = false;
+        Root.IsHitTestVisible = true;
+        DialogCard.IsHitTestVisible = true;
+        Root.Visibility = Visibility.Visible;
+        Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+        {
+            if (IsOpen && !_closing) CancelButton.Focus();
+        }));
+        if (IsLoaded)
+        {
+            Motion.Enter(DialogCard);
+            Backdrop.BeginAnimation(OpacityProperty, null);
+            Backdrop.Opacity = Motion.Enabled ? 0 : 1;
+            Motion.Fade(Backdrop, 1, Motion.Base);
+        }
     }
 
     private void Complete(bool? confirmed)
     {
+        if (_closing || !IsOpen) return;
+        if (!IsLoaded || !Motion.Enabled)
+        {
+            Finish(confirmed);
+            return;
+        }
+        _closing = true;
+        int version = ++_transitionVersion;
+        DialogCard.IsHitTestVisible = false;
+        if (DialogCard.RenderTransform is TranslateTransform shift)
+            Motion.Animate(shift, TranslateTransform.YProperty, 4, Motion.Exit, exiting: true);
+        Motion.Fade(Backdrop, 0, Motion.Exit, exiting: true);
+        Motion.Fade(DialogCard, 0, Motion.Exit, exiting: true, completed: () =>
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (version == _transitionVersion) Finish(confirmed);
+            }));
+        });
+    }
+
+    private void Finish(bool? confirmed)
+    {
+        ++_transitionVersion;
+        _closing = false;
         Root.Visibility = Visibility.Collapsed;
+        DialogCard.BeginAnimation(OpacityProperty, null);
+        DialogCard.Opacity = 1;
+        Backdrop.BeginAnimation(OpacityProperty, null);
+        Backdrop.Opacity = 1;
         TaskCompletionSource<bool>? pending = _pending;
         TaskCompletionSource<bool?>? threeWay = _pendingThreeWay;
         _pending = null;
@@ -110,7 +162,7 @@ public partial class ConfirmModal : UserControl
 
     /// Resolves an outstanding confirmation as refusal. The host window calls this when it
     /// closes so an awaiting command can finish instead of leaking a pending task.
-    internal void CancelPending() => Complete(confirmed: null);
+    internal void CancelPending() => Finish(confirmed: null);
 
     /// Routes the modal-facing keys. Escape resolves the dialog (refusal for the burn
     /// confirm, cancel for the save dialog); Tab cycles focus across the modal's own

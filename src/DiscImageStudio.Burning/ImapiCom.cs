@@ -7,8 +7,16 @@ internal static class ImapiCom
     internal static dynamic CreateRecorder(string id)
     {
         dynamic recorder = CreateComObject("IMAPI2.MsftDiscRecorder2");
-        recorder.InitializeDiscRecorder(id);
-        return recorder;
+        try
+        {
+            recorder.InitializeDiscRecorder(id);
+            return recorder;
+        }
+        catch
+        {
+            ReleaseComObject((object)recorder);
+            throw;
+        }
     }
 
     internal static dynamic CreateComObject(string programmaticId)

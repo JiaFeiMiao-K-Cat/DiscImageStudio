@@ -3,33 +3,26 @@
                     xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime">
 
-    <!--
-      Design tokens (single source of truth).
-      Dark theme aligned with the reference design language: near-black background,
-      layered surfaces, 12% white dividers, and the product brand blue.
-    -->
+    <!-- Windows 10 / UWP surfaces. Light-specific colors and brushes live in Palette.Light. -->
 
-    <Color x:Key="BackgroundColor">#121212</Color>
-    <Color x:Key="Surface1Color">#18181B</Color>
-    <Color x:Key="Surface2Color">#26262B</Color>
-    <Color x:Key="Surface3Color">#2E2E33</Color>
-    <Color x:Key="DividerColor">#1FFFFFFF</Color>
-    <Color x:Key="TextPrimaryColor">#FAFAFA</Color>
-    <Color x:Key="TextSecondaryColor">#A1A1AA</Color>
-    <Color x:Key="TextMutedColor">#8C8C92</Color>
-    <!-- Brand blue pair: 3385FF is the base fill on dark surfaces, 74C0FF the lighter
-         emphasis used for hover states and accent text/icons on dark backgrounds. -->
-    <Color x:Key="PrimaryColor">#3385FF</Color>
-    <!-- Label on a filled Primary surface (segmented thumb): white in both themes. -->
-    <Color x:Key="OnPrimaryColor">#FFFFFFFF</Color>
-    <Color x:Key="PrimaryHoverColor">#74C0FF</Color>
-    <Color x:Key="PrimaryPressedColor">#2569CC</Color>
-    <Color x:Key="PrimarySoftColor">#1F3385FF</Color>
-    <Color x:Key="DangerColor">#F31260</Color>
+    <Color x:Key="BackgroundColor">#1F1F1F</Color>
+    <Color x:Key="Surface1Color">#2B2B2B</Color>
+    <Color x:Key="Surface2Color">#333333</Color>
+    <Color x:Key="Surface3Color">#3D3D3D</Color>
+    <Color x:Key="DividerColor">#1CFFFFFF</Color>
+    <Color x:Key="TextPrimaryColor">#FFFFFF</Color>
+    <Color x:Key="TextSecondaryColor">#D2D2D2</Color>
+    <Color x:Key="TextMutedColor">#A7A7A7</Color>
+    <Color x:Key="PrimaryColor">#0078D4</Color>
+    <Color x:Key="OnPrimaryColor">#FFFFFF</Color>
+    <Color x:Key="PrimaryHoverColor">#106EBE</Color>
+    <Color x:Key="PrimaryPressedColor">#005A9E</Color>
+    <Color x:Key="PrimarySoftColor">#330078D4</Color>
+    <Color x:Key="DangerColor">#C42B48</Color>
     <!-- Danger buttons keep their own hover/pressed ramp: a red action must not borrow the
          brand blue the way the shared filled-button triggers would otherwise give it. -->
-    <Color x:Key="DangerHoverColor">#FF4D84</Color>
-    <Color x:Key="DangerPressedColor">#C10A4A</Color>
+    <Color x:Key="DangerHoverColor">#CE3652</Color>
+    <Color x:Key="DangerPressedColor">#A7243D</Color>
     <Color x:Key="WarningColor">#F5A524</Color>
     <Color x:Key="SuccessColor">#17C964</Color>
     <Color x:Key="CloseHotColor">#C42B1C</Color>
@@ -45,6 +38,7 @@
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
     <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}" />
+    <SolidColorBrush x:Key="OnPrimaryBrush" Color="{StaticResource OnPrimaryColor}" />
     <SolidColorBrush x:Key="PrimaryHoverBrush" Color="{StaticResource PrimaryHoverColor}" />
     <SolidColorBrush x:Key="PrimaryPressedBrush" Color="{StaticResource PrimaryPressedColor}" />
     <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}" />
@@ -59,7 +53,7 @@
     <!-- Scroll edge fades: opaque background color blending to a transparent stop of the
          same hue; applied as template overlays because WPF OpacityMask breaks on scrolling
          ScrollContentPresenters (viewport blanks out on scroll). -->
-    <Color x:Key="BackgroundFadeColor">#00121212</Color>
+    <Color x:Key="BackgroundFadeColor">#001F1F1F</Color>
     <LinearGradientBrush x:Key="ScrollFadeTopBrush" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="{StaticResource BackgroundColor}" Offset="0" />
         <GradientStop Color="{StaticResource BackgroundFadeColor}" Offset="1" />
@@ -74,7 +68,7 @@
     <SolidColorBrush x:Key="PressedOverlayBrush" Color="#1FFFFFFF" />
     <SolidColorBrush x:Key="TitleBarHoverBrush" Color="#12FFFFFF" />
     <SolidColorBrush x:Key="BackdropBrush" Color="#80000000" />
-    <SolidColorBrush x:Key="PrimaryGlowBrush" Color="#803385FF" />
+    <SolidColorBrush x:Key="PrimaryGlowBrush" Color="#8060CDFF" />
     <!-- Keyboard-focus ring, shared by every interactive control through the FocusRing
          focus visual. Same family as the primary glow but a separate token so focus never
          borrows selection or hover semantics. -->
@@ -83,8 +77,8 @@
     <SolidColorBrush x:Key="WarningBorderBrush" Color="#4DF5A524" />
     <SolidColorBrush x:Key="WarningTextBrush" Color="#E5C783" />
     <SolidColorBrush x:Key="PrimarySoftBrush" Color="{StaticResource PrimarySoftColor}" />
-    <SolidColorBrush x:Key="DangerSoftBrush" Color="#1FF31260" />
-    <SolidColorBrush x:Key="DangerBorderBrush" Color="#4DF31260" />
+    <SolidColorBrush x:Key="DangerSoftBrush" Color="#21FF6076" />
+    <SolidColorBrush x:Key="DangerBorderBrush" Color="#59FF6076" />
     <SolidColorBrush x:Key="SuccessSoftBrush" Color="#1F17C964" />
     <!-- 90%-alpha variant of the close hot color; the plain CloseHotBrush is too heavy for
          a full-button hover fill at 32px. -->
@@ -92,8 +86,18 @@
 
     <!-- The neutral hover surface for list rows and sidebar entries. It sits between the
          background and Surface1 so a hovered row reads on any surface without a border. -->
-    <Color x:Key="SurfaceHoverColor">#1B1B1C</Color>
+    <Color x:Key="SurfaceHoverColor">#353535</Color>
     <SolidColorBrush x:Key="SurfaceHoverBrush" Color="{StaticResource SurfaceHoverColor}" />
+    <SolidColorBrush x:Key="ControlStrokeBrush" Color="#2EFFFFFF" />
+    <SolidColorBrush x:Key="CaptionSurfaceBrush" Color="#1F1F1F" />
+    <LinearGradientBrush x:Key="PaneSurfaceBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#242528" Offset="0" />
+        <GradientStop Color="#202329" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="HomeHeaderBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#24272B" Offset="0" />
+        <GradientStop Color="#233846" Offset="1" />
+    </LinearGradientBrush>
 
     <!-- Family badge chip painted over thumbnails (needs its own opacity to stay readable). -->
     <SolidColorBrush x:Key="BadgeSurfaceBrush" Color="#CC121212" />
@@ -106,39 +110,39 @@
 
     <!-- Transparent end of the sleeve's path fade. A transparent stop keeps its RGB during
          gradient interpolation, so it cannot reuse the surface color directly. -->
-    <Color x:Key="Surface1FadeColor">#0018181B</Color>
+    <Color x:Key="Surface1FadeColor">#002B2B2B</Color>
 
     <!-- Shape and metric tokens: radii, control heights and the shared page padding.
          Keeping them here is what stops every view from inventing its own 24/26/32.
-         The metrics follow a tool-density scale (controls 28–34 px, cards 12 px arcs):
+         The metrics follow a tool-density scale (controls 28–32 px, 2px field corners):
          a workspace application shows more working surface than chrome. -->
-    <CornerRadius x:Key="RadiusField">8</CornerRadius>
-    <CornerRadius x:Key="RadiusCard">12</CornerRadius>
+    <CornerRadius x:Key="RadiusField">2</CornerRadius>
+    <CornerRadius x:Key="RadiusCard">0</CornerRadius>
     <!-- Inner card headers sit inside the card's 1px stroke, so their top arc is one less. -->
-    <CornerRadius x:Key="RadiusCardHeader">11,11,0,0</CornerRadius>
+    <CornerRadius x:Key="RadiusCardHeader">0</CornerRadius>
     <!-- Mirror arc for the last row inside a card (footer strips, status rows). -->
-    <CornerRadius x:Key="RadiusCardFooter">0,0,11,11</CornerRadius>
+    <CornerRadius x:Key="RadiusCardFooter">0</CornerRadius>
     <!-- Small chips, dots and inline thumbnails. -->
-    <CornerRadius x:Key="RadiusChip">5</CornerRadius>
+    <CornerRadius x:Key="RadiusChip">2</CornerRadius>
     <!-- Inner panels nested inside a card body. -->
-    <CornerRadius x:Key="RadiusPanel">8</CornerRadius>
-    <sys:Double x:Key="ButtonHeight">34</sys:Double>
+    <CornerRadius x:Key="RadiusPanel">0</CornerRadius>
+    <sys:Double x:Key="ButtonHeight">32</sys:Double>
     <sys:Double x:Key="ControlHeight">32</sys:Double>
     <sys:Double x:Key="CompactHeight">28</sys:Double>
     <!-- Sidebar width: matches the page-column rhythm. -->
-    <sys:Double x:Key="SidebarWidth">264</sys:Double>
+    <sys:Double x:Key="SidebarWidth">240</sys:Double>
     <!-- Standard width for the context/inspector columns flanking a workspace stage; a
          GridLength so column definitions can take it directly. -->
-    <GridLength x:Key="SidePanelWidth">256</GridLength>
+    <GridLength x:Key="SidePanelWidth">224</GridLength>
     <Thickness x:Key="PagePadding">32,20,32,32</Thickness>
     <!-- Corner radius of floating surfaces (toasts, flyouts): between chip and card. -->
-    <CornerRadius x:Key="RadiusFloating">10</CornerRadius>
+    <CornerRadius x:Key="RadiusFloating">0</CornerRadius>
 
     <!-- Floating surfaces use one of exactly two elevations: FloatingShadow for popups,
          flyouts and toasts, ModalShadow for the confirmation card. -->
-    <DropShadowEffect x:Key="FloatingShadow" ShadowDepth="6" BlurRadius="18" Opacity="0.45"
+    <DropShadowEffect x:Key="FloatingShadow" ShadowDepth="4" BlurRadius="16" Opacity="0.18"
                       Color="#000000" po:Freeze="True" />
-    <DropShadowEffect x:Key="ModalShadow" ShadowDepth="10" BlurRadius="32" Opacity="0.5"
+    <DropShadowEffect x:Key="ModalShadow" ShadowDepth="8" BlurRadius="24" Opacity="0.26"
                       Color="#000000" po:Freeze="True" />
 
     <!-- Disc palette for the three custom canvases (annulus preview, design canvas,
@@ -172,22 +176,20 @@
     <SolidColorBrush x:Key="CalibrationHandleBrush" Color="#D4D4D8" />
     <SolidColorBrush x:Key="CalibrationOutlineBrush" Color="#000000" />
 
-    <!-- Fonts: embedded HarmonyOS Sans SC covers Latin + CJK for the whole UI; Cascadia Mono stays
-         the terminal/log face with Microsoft YaHei UI kept as the last system fallback. -->
+    <!-- Segoe UI follows the Windows UI type ramp. System CJK fonts cover native labels,
+         with the bundled font available as an additional fallback. -->
     <FontFamily x:Key="AppFontFamily">
-        pack://application:,,,/Assets/Fonts/HarmonyOS_Sans_SC_Regular.ttf#HarmonyOS Sans SC,
-        pack://application:,,,/Assets/Fonts/HarmonyOS_Sans_SC_Medium.ttf#HarmonyOS Sans SC,
-        pack://application:,,,/Assets/Fonts/HarmonyOS_Sans_SC_Bold.ttf#HarmonyOS Sans SC,
-        Microsoft YaHei UI, Segoe UI
+        Segoe UI, Microsoft YaHei UI, Yu Gothic UI,
+        /DiscImageStudio;component/Assets/Fonts/#HarmonyOS Sans SC
     </FontFamily>
     <FontFamily x:Key="MonoFontFamily">
         Cascadia Mono, Consolas,
-        pack://application:,,,/Assets/Fonts/HarmonyOS_Sans_SC_Regular.ttf#HarmonyOS Sans SC,
+        /DiscImageStudio;component/Assets/Fonts/#HarmonyOS Sans SC,
         Microsoft YaHei UI
     </FontFamily>
 
     <!-- App icon art -->
-    <ImageSource x:Key="AppIconSource">pack://application:,,,/Assets/DiscImageStudio-256.png</ImageSource>
+    <ImageSource x:Key="AppIconSource">pack://application:,,,/DiscImageStudio;component/Assets/DiscImageStudio-256.png</ImageSource>
 
     <!-- Window control glyphs (10x10, 1px strokes, aligned to the reference chrome).
          Every content icon (navigation, cards, dialogs) comes from the Lucide set via

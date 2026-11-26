@@ -566,6 +566,69 @@
     "es": "No se puede abrir el proyecto",
     "cs": "Projekt nejde otevřít"
   },
+  "删除工程": {
+    "zh-CN": "删除工程",
+    "en": "Delete project",
+    "zh-TW": "刪除專案",
+    "ja": "プロジェクトを削除",
+    "tr": "Projeyi sil",
+    "es": "Eliminar proyecto",
+    "cs": "Smazat projekt"
+  },
+  "永久删除": {
+    "zh-CN": "永久删除",
+    "en": "Delete permanently",
+    "zh-TW": "永久刪除",
+    "ja": "完全に削除",
+    "tr": "Kalıcı olarak sil",
+    "es": "Eliminar permanentemente",
+    "cs": "Trvale smazat"
+  },
+  "将永久删除以下工程文件：\n{0}": {
+    "zh-CN": "将永久删除以下工程文件：\n{0}",
+    "en": "This project file will be permanently deleted:\n{0}",
+    "zh-TW": "將永久刪除下列專案檔案：\n{0}",
+    "ja": "次のプロジェクトファイルを完全に削除します。\n{0}",
+    "tr": "Bu proje dosyası kalıcı olarak silinecek:\n{0}",
+    "es": "Se eliminará permanentemente este archivo de proyecto:\n{0}",
+    "cs": "Tento soubor projektu bude trvale smazán:\n{0}"
+  },
+  "当前工程会关闭，未保存的更改将丢失。": {
+    "zh-CN": "当前工程会关闭，未保存的更改将丢失。",
+    "en": "The current project will close, and unsaved changes will be lost.",
+    "zh-TW": "目前的專案將關閉，未儲存的變更將會遺失。",
+    "ja": "現在のプロジェクトが閉じ、未保存の変更は失われます。",
+    "tr": "Açık proje kapanacak ve kaydedilmemiş değişiklikler kaybolacak.",
+    "es": "El proyecto actual se cerrará y se perderán los cambios sin guardar.",
+    "cs": "Otevřený projekt se zavře a\u00A0neuložené změny se ztratí."
+  },
+  "无法删除工程": {
+    "zh-CN": "无法删除工程",
+    "en": "Could not delete project",
+    "zh-TW": "無法刪除專案",
+    "ja": "プロジェクトを削除できません",
+    "tr": "Proje silinemedi",
+    "es": "No se pudo eliminar el proyecto",
+    "cs": "Projekt nejde smazat"
+  },
+  "无效的工程文件路径：\n{0}": {
+    "zh-CN": "无效的工程文件路径：\n{0}",
+    "en": "Invalid project file path:\n{0}",
+    "zh-TW": "專案檔案路徑無效：\n{0}",
+    "ja": "プロジェクトファイルのパスが無効です。\n{0}",
+    "tr": "Geçersiz proje dosyası yolu:\n{0}",
+    "es": "Ruta de archivo de proyecto no válida:\n{0}",
+    "cs": "Neplatná cesta k\u00A0souboru projektu:\n{0}"
+  },
+  "工程已删除": {
+    "zh-CN": "工程已删除",
+    "en": "Project deleted",
+    "zh-TW": "專案已刪除",
+    "ja": "プロジェクトを削除しました",
+    "tr": "Proje silindi",
+    "es": "Proyecto eliminado",
+    "cs": "Projekt byl smazán"
+  },
   "无随盘文件时生成音轨，推荐 WAV 格式。": {
     "zh-CN": "无随盘文件时生成音轨，推荐 WAV 格式。",
     "en": "Without included files, an audio track is generated. WAV format is recommended.",

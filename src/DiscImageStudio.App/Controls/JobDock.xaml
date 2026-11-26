@@ -9,7 +9,7 @@
     <!-- Shell-level task strip. It lives in the window chrome rather than on a page so a job
          never navigates the user away from the workspace it was started from: the collapsed
          strip shows what is running and what it produced, and the expanded strip is the log. -->
-    <Border Background="{DynamicResource Surface1Brush}" BorderBrush="{DynamicResource DividerBrush}"
+    <Border Background="{DynamicResource CaptionSurfaceBrush}" BorderBrush="{DynamicResource DividerBrush}"
             BorderThickness="0,1,0,0">
         <Grid>
             <Grid.RowDefinitions>

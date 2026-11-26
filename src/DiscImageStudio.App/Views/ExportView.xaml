@@ -41,6 +41,17 @@
                 </StackPanel>
             </controls:SectionCard>
 
+            <controls:VisibilityGate IsOpen="{Binding IsCd}">
+                <controls:SectionCard Header="CD Extra 刻录包" IconKind="Music" Margin="0,0,0,24">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource HintText}" TextWrapping="Wrap"
+                                   Text="将音乐和当前图案保存为刻录包，或打开已有的刻录包。" />
+                        <Button Content="打开刻录包工具…" Style="{StaticResource PrimaryButton}"
+                                HorizontalAlignment="Left" Margin="0,12,0,0" Command="{Binding OpenCdExtraCommand}" />
+                    </StackPanel>
+                </controls:SectionCard>
+            </controls:VisibilityGate>
+
             <!-- The artifact's file options. The on-disc folder (随盘文件) is configured on
                  the design page next to the composite; this card only names the output file. -->
             <controls:SectionCard Header="{loc:Text Xaml.OutputFile}" IconKind="Folder">

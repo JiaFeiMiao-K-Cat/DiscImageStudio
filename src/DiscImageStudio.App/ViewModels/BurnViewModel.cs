@@ -97,6 +97,8 @@ public partial class BurnViewModel : ObservableObject
         RefreshDevicesCommand = new RelayCommand(() => _ = RefreshDevicesAsync(), () => !_shell.IsBusy);
         RefreshSpeedsCommand = new RelayCommand(() => _ = RefreshWriteSpeedsAsync(), () => !_shell.IsBusy);
         StartBurnCommand = new AsyncRelayCommand(() => StartStreamBurnAsync(), CanStartBurn);
+        ResumePictureCommand = new AsyncRelayCommand(() => StartStreamBurnAsync(resume: true),
+            () => IsCdExtraBurn && !CdExtraTestWrite && IsSetupEnabled && SelectedDevice is not null);
         CancelBurnCommand = new RelayCommand(CancelStreamBurn, () => IsBurnRunning);
         _shell.BusyChanged += () =>
         {
@@ -158,6 +160,7 @@ public partial class BurnViewModel : ObservableObject
     public RelayCommand RefreshSpeedsCommand { get; }
 
     public IAsyncRelayCommand StartBurnCommand { get; }
+    public IAsyncRelayCommand ResumePictureCommand { get; }
 
     public RelayCommand CancelBurnCommand { get; }
 
@@ -460,6 +463,7 @@ public partial class BurnViewModel : ObservableObject
     private void UpdateActionState()
     {
         StartBurnCommand.NotifyCanExecuteChanged();
+        ResumePictureCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(StartBurnDisabledReason));
     }
 
@@ -588,7 +592,7 @@ public partial class BurnViewModel : ObservableObject
             + $" · {speed.GetMegabytesPerSecond(mediaKind):0.0} MB/s{rotation}";
     }
 
-    private async Task StartStreamBurnAsync()
+    private async Task StartStreamBurnAsync(bool resume = false)
     {
         if (_shell.IsBusy)
         {
@@ -606,6 +610,30 @@ public partial class BurnViewModel : ObservableObject
             if (SelectedDevice is not OpticalBurnDevice device)
             {
                 throw new ArgumentException(L.T("请选择刻录机。"));
+            }
+
+            if (resume)
+            {
+                if (!IsCdExtraBurn || CdExtraTestWrite || _opticalDiscBurner is not ICdExtraBurner burner) return;
+                string? path = _shell.Dialogs?.PickCdExtraCheckpoint();
+                if (path is null || !await _shell.ConfirmAsync(L.T("图案断点续写与校验"),
+                    device.DisplayName + "\n" + path + "\n\n" + L.T("确认原盘与已写数据后续写缺失部分。已封盘时只读校验。"),
+                    L.T("继续")) || _shell.IsBusy || SelectedDevice != device || !IsCdExtraBurn || CdExtraTestWrite) return;
+                ownsBusyState = true;
+                _shell.SetBusy(true);
+                IsBurnRunning = true;
+                var recoveryCancellation = _burnCancellation = new CancellationTokenSource();
+                _shell.BeginDockJob(L.T("图案断点续写与校验"), determinate: true);
+                var recoveryProgress = new Progress<OpticalBurnProgress>(p =>
+                {
+                    if (_burnCancellation != recoveryCancellation) return;
+                    _shell.ReportDockJob(p.Message, p.Fraction * 100);
+                    if (p.Stage is "diagnostic" or "reconnect" or "finalize" or "complete") _shell.AppendLog(p.Message + "\n");
+                });
+                long sectors = await burner.ResumeCdExtraPictureAsync(device.Id, path, recoveryProgress, recoveryCancellation.Token);
+                _shell.CompleteDockJob(L.T("图案读回校验通过") + $" · {sectors:N0}");
+                _shell.ShowToast(L.T("图案读回校验通过"), device.DisplayName, ToastKind.Success);
+                return;
             }
 
             if (!ConfirmChecked)
@@ -754,7 +782,7 @@ public partial class BurnViewModel : ObservableObject
                     {
                         CdExtraPlan extra = CdExtraPlanner.Plan(parameters, music,
                             dataDirectory.Length == 0 ? null : dataDirectory, volumeLabel, filesAtOuterRing);
-                        return (CreateCdExtraBurnRequest(compositePath, parameters, extra, dataDirectory, volumeLabel,
+                        return (CdExtraPlanner.CreateBurnRequest(compositePath, parameters, extra, dataDirectory, volumeLabel,
                             filesAtOuterRing, tone, device.Id, speed, testWrite), extra);
                     });
                     cdExtraRequest = prepared.Request;
@@ -889,14 +917,17 @@ public partial class BurnViewModel : ObservableObject
             ConfirmChecked = false;
             if (cdExtraRequest?.TestWrite == true)
                 _shell.ShowToast(L.T("模拟写入完成"), L.T("光驱接受了全部写入命令，盘片没有被改变。"), ToastKind.Success);
+            else if (cdExtraRequest is not null)
+                _shell.ShowToast(L.T("图案读回校验通过"), device.DisplayName, ToastKind.Success);
             else
                 _shell.ShowToast(L.T("流式刻录完成"), L.T("流式刻录已经完成，可以取出光盘。"), ToastKind.Success);
         }
         catch (OperationCanceledException exception)
         {
             if (ownsBusyState) _shell.AbortDockJob(L.T("已取消：流式刻录"), expandLog: false);
-            _shell.AppendLog(
-                L.F($"[{DateTime.Now:HH:mm:ss}] 已取消流式刻录；当前盘片可能无法继续使用。\n"));
+            _shell.AppendLog(IsCdExtraBurn
+                ? $"[{DateTime.Now:HH:mm:ss}] {exception.Message}\n"
+                : L.F($"[{DateTime.Now:HH:mm:ss}] 已取消流式刻录；当前盘片可能无法继续使用。\n"));
             _shell.AppendLog(OpticalBurnDiagnostics.FormatException(exception) + "\n");
         }
         catch (Exception exception)
@@ -906,7 +937,7 @@ public partial class BurnViewModel : ObservableObject
             _shell.AppendLog(OpticalBurnDiagnostics.FormatException(exception) + "\n");
             _shell.ShowLogToast(
                 L.T("流式刻录未完成"),
-                L.T("详情见窗口底部的任务日志。") + L.T("\n\n如果写入已经开始，当前盘片可能无法继续使用。"),
+                IsCdExtraBurn ? exception.Message : L.T("详情见窗口底部的任务日志。") + L.T("\n\n如果写入已经开始，当前盘片可能无法继续使用。"),
                 ToastKind.Error);
         }
         finally
@@ -950,83 +981,6 @@ public partial class BurnViewModel : ObservableObject
                 return $"{path}:unreadable";
             }
         }));
-    }
-
-    /// <summary>
-    /// CD-Extra request: the music tracks stream their padded PCM; the picture session is
-    /// generated only after the recorder reports where session 2 starts, so the picture and
-    /// its filesystem use the measured address rather than the prediction. In a simulated
-    /// burn the predicted address is used.
-    /// </summary>
-    internal static CdExtraBurnRequest CreateCdExtraBurnRequest(
-        string imagePath,
-        CdDiscParameters parameters,
-        CdExtraPlan plan,
-        string? dataDirectory,
-        string volumeLabel,
-        bool filesAtOuterRing,
-        ToneProfile tone,
-        string deviceId,
-        OpticalWriteSpeed? writeSpeed,
-        bool testWrite = false)
-    {
-        ArgumentNullException.ThrowIfNull(plan);
-        parameters.Validate();
-        if (!plan.IsValid)
-        {
-            throw new ArgumentException(CdExtraPlanner.DescribeProblem(plan));
-        }
-
-        ToneProfile capturedTone = tone.Normalized();
-        string? folder = string.IsNullOrWhiteSpace(dataDirectory) ? null : dataDirectory.Trim();
-        string label = string.IsNullOrWhiteSpace(volumeLabel) ? "CD_IMAGE" : volumeLabel.Trim();
-        CdMusicTrackInfo[] tracks = plan.Tracks.Select(track => track.Info!).ToArray();
-        long[] sectors = tracks.Select(track => track.RecordedSectors).ToArray();
-        // PrepareAudio pins and verifies every file before the first WRITE; the producers
-        // then read the samples through those handles, so neither an edit nor a changed
-        // timestamp can stop the music session half-way.
-        PinnedMusic pinned = new();
-        CdExtraAudioTrack[] audio = tracks
-            .Select(track => new CdExtraAudioTrack(track.RecordedSectors,
-                (output, token) => pinned.WritePaddedPcm(track, output, token)))
-            .ToArray();
-        CdExtraLayout predicted = plan.Layout!;
-        return new CdExtraBurnRequest(deviceId, audio, start =>
-            {
-                CdExtraLayout layout = start.Simulated
-                    ? predicted
-                    : CdExtraLayout.Plan(parameters, sectors, start.NextWritableAddress, start.FreeBlocks);
-                CdDataLayoutPlan data = CdDataImageGenerator.PrepareSessionLayout(parameters,
-                    layout.Session2StartLba, layout.DataTrackSectors, folder, label, filesAtOuterRing);
-                return new CdExtraDataContent(data.TrackSectors, (output, token) =>
-                    CdDataImageGenerator.GenerateToStream(imagePath, output, parameters, data,
-                        cancellationToken: token, tone: capturedTone));
-            },
-            predicted.Session2StartLba,
-            plan.DataPlan!.TrackSectors,
-            writeSpeed,
-            TestWrite: testWrite,
-            PrepareAudio: () => pinned.Pin(tracks));
-    }
-
-    /// <summary>Hands the music files pinned by PrepareAudio to the track producers. Without a
-    /// pin (a recorder that never calls PrepareAudio) each producer verifies its file itself.</summary>
-    private sealed class PinnedMusic
-    {
-        private CdMusicPin? _pin;
-
-        internal IDisposable Pin(IReadOnlyList<CdMusicTrackInfo> tracks)
-        {
-            CdMusicPin pin = CdMusicFile.PinUnchanged(tracks);
-            Volatile.Write(ref _pin, pin);
-            return pin;
-        }
-
-        internal void WritePaddedPcm(CdMusicTrackInfo track, Stream output, CancellationToken cancellationToken)
-        {
-            if (Volatile.Read(ref _pin) is { } pin) pin.WritePaddedPcm(track, output, cancellationToken);
-            else CdMusicFile.WritePaddedPcm(track, output, cancellationToken);
-        }
     }
 
     private Task<bool> ConfirmBluRayRewritableAsync(OpticalBurnDevice device, BluRayRewritablePreparation operation)

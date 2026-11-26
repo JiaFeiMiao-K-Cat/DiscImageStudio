@@ -10,6 +10,20 @@ using System.Runtime.InteropServices.ComTypes;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
+if (args is ["--single-instance-probe", string instanceName])
+{
+    SingleInstanceTests.Probe(instanceName);
+    return;
+}
+
+if (args is ["--test-wpf-startup"])
+{
+    MotionTransitionTests.Run();
+    SingleInstanceTests.Run();
+    StartupFailureTests.Run();
+    return;
+}
+
 if (args is ["--test-toast"])
 {
     ToastHostTests.Run();
@@ -112,6 +126,7 @@ if (args is ["--test-cd-extra"])
 {
     CdExtraLayoutTests.Run();
     CdExtraBurnTests.Run();
+    CdExtraPackageTests.Run();
     CdExtraUiTests.Run();
     return;
 }
@@ -246,6 +261,10 @@ CdAudioCompatibilityTests.Run();
 CdParallelAudioTests.Run();
 CdExtraLayoutTests.Run();
 CdExtraBurnTests.Run();
+CdExtraPackageTests.Run();
+MotionTransitionTests.Run();
+SingleInstanceTests.Run();
+StartupFailureTests.Run();
 CdExtraUiTests.Run();
 CdDataImageTests.Run();
 VolumeLabelTests.Run();

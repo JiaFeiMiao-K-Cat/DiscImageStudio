@@ -15,6 +15,7 @@ internal sealed class BurnProgressDisplay
     private TimeSpan? _lastWriteTime;
     private double? _bytesPerSecond;
     private int? _sectorBytes;
+    private double? _verificationPercent;
     private bool _finished;
 
     internal BurnProgressDisplay(OpticalBurnMediaKind mediaKind, long totalBytes, Func<TimeSpan>? elapsed = null)
@@ -30,7 +31,7 @@ internal sealed class BurnProgressDisplay
     internal long WrittenBytes { get; private set; }
     internal double? BytesPerSecond => _lastWriteTime is { } time && _elapsed() - time <= TimeSpan.FromSeconds(3)
         ? _bytesPerSecond : null;
-    internal double Percent => 100.0 * WrittenBytes / TotalBytes;
+    internal double Percent => _verificationPercent ?? 100.0 * WrittenBytes / TotalBytes;
     internal string AmountText => TotalBytes >= 1024L * 1024 * 1024
         ? L.F($"已写入 {WrittenBytes / (1024.0 * 1024 * 1024):0.00} / {TotalBytes / (1024.0 * 1024 * 1024):0.00} GiB")
         : L.F($"已写入 {WrittenBytes / (1024.0 * 1024):0.0} / {TotalBytes / (1024.0 * 1024):0.0} MiB");
@@ -52,6 +53,7 @@ internal sealed class BurnProgressDisplay
         if (_finished) return null;
         if (progress.Stage is "write" or "complete")
         {
+            _verificationPercent = null;
             WrittenBytes = progress.Stage == "complete" ? TotalBytes
                 : Math.Max(WrittenBytes, Math.Clamp(progress.CompletedBytes, 0, TotalBytes));
             _lastWriteTime = _elapsed();
@@ -60,9 +62,11 @@ internal sealed class BurnProgressDisplay
             if (progress.SectorBytes is { } sectorBytes and > 0) _sectorBytes = sectorBytes;
             _finished = progress.Stage == "complete";
         }
-        else if (progress.Stage is "device" or "media" or "buffer" or "finalize" or "write-complete"
+        else if (progress.Stage is "device" or "media" or "buffer" or "reconnect" or "finalize" or "write-complete"
             or "verify" or "flush" or "close-track" or "close-disc" or "close-session" or "release")
         {
+            if (progress.Stage == "verify" && progress.SectorBytes.HasValue && progress.TotalBytes > 0)
+                _verificationPercent = progress.Fraction * 100;
             // Device write completion can still be followed by verification and session cleanup.
             // Only the lifecycle's complete stage above finishes this display.
             _bytesPerSecond = null;

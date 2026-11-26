@@ -25,13 +25,17 @@ internal sealed class MmcCommandException : IOException
     internal MmcCommandException(byte opcode, MmcCommandResult result)
         : base(Describe(opcode, result))
     {
+        Opcode = opcode;
         HResult = result.HResult;
+        IsDeferredSense = result.Sense.Length > 0 && (result.Sense[0] & 0x7f) is 0x71 or 0x73;
         (SenseKey, AdditionalSenseCode, AdditionalSenseQualifier) = ReadSense(result.Sense);
     }
 
+    internal byte Opcode { get; }
     public int SenseKey { get; }
     public int AdditionalSenseCode { get; }
     public int AdditionalSenseQualifier { get; }
+    public bool IsDeferredSense { get; }
     public bool HasValidSense => SenseKey >= 0;
     public bool IsOperationInProgress => HasValidSense
         ? SenseKey == 2 && AdditionalSenseCode == 4 && AdditionalSenseQualifier is 1 or 7 or 8

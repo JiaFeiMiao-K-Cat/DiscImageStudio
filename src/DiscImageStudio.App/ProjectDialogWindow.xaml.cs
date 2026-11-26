@@ -9,7 +9,7 @@ namespace DiscImageStudio;
 /// <summary>The app's second window: new-project creation and project-settings editing share
 /// one dialog. The view model does the validation; this class only wires pickers, the close
 /// path and Escape.</summary>
-public partial class ProjectDialogWindow : Window
+public partial class ProjectDialogWindow : TransitionWindow
 {
     public ProjectDialogWindow(ProjectDialogViewModel viewModel)
     {

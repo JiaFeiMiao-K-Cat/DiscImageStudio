@@ -51,9 +51,15 @@
     "zh-CN": "模拟写入（不改变盘片）",
     "en": "Test write (the disc is not changed)"
   },
+  "Xaml.CdExtraResumePicture": { "zh-CN": "图案断点续写 / 校验…", "en": "Resume or verify picture…" },
+  "选择图案断点": { "zh-CN": "选择图案断点", "en": "Open picture checkpoint" },
+  "CD Extra 图案断点": { "zh-CN": "CD Extra 图案断点", "en": "CD Extra picture checkpoint" },
+  "图案断点续写与校验": { "zh-CN": "图案断点续写与校验", "en": "Resume or verify picture" },
+  "图案读回校验通过": { "zh-CN": "图案读回校验通过", "en": "Picture readback verified" },
+  "确认原盘与已写数据后续写缺失部分。已封盘时只读校验。": { "zh-CN": "确认原盘与已写数据后续写缺失部分。已封盘时只读校验。", "en": "The recorded prefix is compared before the missing sectors are written. A finalized disc is verified read-only." },
   "Xaml.CdExtraBurnHint": {
-    "zh-CN": "CD-Extra 用 Track-at-Once 命令依次写入并关闭音乐区段，再按光驱报告的第 2 区段地址生成图片并封盘。需要空白 CD-R（或已擦除的 CD-RW）。模拟写入只检查光驱是否接受这些命令。",
-    "en": "CD-Extra writes and closes the music session with Track-at-Once commands, then generates the picture for the session 2 address the recorder reports and closes the disc. A blank CD-R (or an erased CD-RW) is required. A test write only checks that the recorder accepts these commands."
+    "zh-CN": "CD-Extra 用 Track-at-Once 命令依次写入并关闭音乐区段，再按光驱报告的第 2 区段地址生成图片并封盘。封盘后会逐扇区读回校验图案。图案写入超时、光驱断连或命令返回 0xC0AA0301 时，会尝试重连原光驱。确认盘片仍可写且已写内容与镜像一致后，从光驱报告的位置续写。模拟写入只检查光驱是否接受命令。",
+    "en": "CD-Extra writes and closes the music session with Track-at-Once commands, then generates the picture for the session 2 address the recorder reports and closes the disc. The picture is read back and verified after finalization. After a timeout, disconnection, or ambiguous 0xC0AA0301 response, the job attempts to reconnect to the original recorder. It resumes at the reported address after confirming the disc is writable and the recorded prefix matches the image. Test writes only check command acceptance."
   },
   " · 模拟写入": {
     "zh-CN": " · 模拟写入",

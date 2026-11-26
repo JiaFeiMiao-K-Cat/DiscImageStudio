@@ -7,9 +7,7 @@
     <!-- Field height: the selector is an input control, so it shares ControlHeight with the
          TextBox/ComboBox instead of riding the denser CompactHeight used by tool rows. -->
     <Grid x:Name="LayoutRoot" Height="{StaticResource ControlHeight}">
-        <!-- Rounded-rect track one level above the card surface, divider hairline;
-             8px radius matches the TextBox/ComboBox field language (not a pill) -->
-        <Border CornerRadius="8" Background="{DynamicResource Surface2Brush}"
+        <Border CornerRadius="{StaticResource RadiusField}" Background="{DynamicResource Surface2Brush}"
                 BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1" />
         <!-- Inner well: inset 3 keeps thumb and focus ring inside the rounded silhouette -->
         <Grid x:Name="Cells" Margin="3">
@@ -21,7 +19,7 @@
             <!-- Sliding selection thumb; code-behind translates it between the two equal cells.
                  The selected cell is the brand fill, not a neutral raised surface: on a dark
                  track a gray thumb reads as "disabled" rather than "chosen". -->
-            <Border x:Name="Thumb" Grid.Column="0" Margin="3" CornerRadius="6"
+            <Border x:Name="Thumb" Grid.Column="0" Margin="3" CornerRadius="{StaticResource RadiusChip}"
                     Background="{DynamicResource PrimaryBrush}"
                     BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="1">
                 <Border.RenderTransform>
@@ -36,7 +34,7 @@
                         <Grid Background="Transparent">
                             <!-- Focus ring hugs the rounded half-cell; the unchecked box itself
                                  carries no other chrome -->
-                            <Border x:Name="FocusRing" CornerRadius="7" BorderThickness="2"
+                            <Border x:Name="FocusRing" CornerRadius="{StaticResource RadiusChip}" BorderThickness="2"
                                     Background="Transparent" BorderBrush="Transparent" />
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                               RecognizesAccessKey="True" />
@@ -61,7 +59,7 @@
                 <RadioButton.Template>
                     <ControlTemplate TargetType="RadioButton">
                         <Grid Background="Transparent">
-                            <Border x:Name="FocusRing" CornerRadius="7" BorderThickness="2"
+                            <Border x:Name="FocusRing" CornerRadius="{StaticResource RadiusChip}" BorderThickness="2"
                                     Background="Transparent" BorderBrush="Transparent" />
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                               RecognizesAccessKey="True" />
@@ -87,7 +85,7 @@
                 <RadioButton.Template>
                     <ControlTemplate TargetType="RadioButton">
                         <Grid Background="Transparent">
-                            <Border x:Name="FocusRing" CornerRadius="7" BorderThickness="2"
+                            <Border x:Name="FocusRing" CornerRadius="{StaticResource RadiusChip}" BorderThickness="2"
                                     Background="Transparent" BorderBrush="Transparent" />
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                               RecognizesAccessKey="True" />

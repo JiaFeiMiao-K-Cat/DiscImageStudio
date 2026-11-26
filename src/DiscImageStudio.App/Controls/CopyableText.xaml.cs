@@ -109,12 +109,14 @@ public partial class CopyableText : UserControl
 
         CopiedPopup.IsOpen = true;
         CopiedChip.BeginAnimation(OpacityProperty, null);
-        DoubleAnimationUsingKeyFrames fade = new();
+        // The keyframes supply the visible hold; Stop must expose the final transparent base.
+        CopiedChip.Opacity = 0;
+        DoubleAnimationUsingKeyFrames fade = new() { FillBehavior = FillBehavior.Stop };
         fade.KeyFrames.Add(new LinearDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.Zero)));
         fade.KeyFrames.Add(new LinearDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(750))));
-        fade.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(1000)))
+        fade.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(Motion.Enabled ? 950 : 750)))
         {
-            EasingFunction = Motion.EaseOut,
+            EasingFunction = Motion.Enabled ? Motion.EaseOut : null,
         });
         fade.Completed += (_, _) => CopiedPopup.IsOpen = false;
         CopiedChip.BeginAnimation(OpacityProperty, fade);

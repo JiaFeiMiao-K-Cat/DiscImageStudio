@@ -13,18 +13,21 @@ internal sealed class CdTaoWriteException : IOException
     {
         Lba = lba;
         Blocks = blocks;
+        BlockBytes = blockBytes;
         HResult = inner.HResult;
     }
 
     public long Lba { get; }
     public int Blocks { get; }
+    internal int BlockBytes { get; }
 }
 
 /// <summary>
 /// Streams one Track-at-Once track with WRITE(10) commands starting at the recorder's next
 /// writable address. A WRITE answered with NOT READY / operation in progress (02/04/01,
 /// 07, 08) was not executed, so it is repeated after a short pause, as libburn and cdrecord
-/// do; every other failure stops the track without a retry.
+/// do. For real picture writes the caller can reconcile an uncertain acknowledgement against
+/// the open track and its stored bytes.
 /// </summary>
 internal static class CdTaoWriter
 {
@@ -58,7 +61,8 @@ internal static class CdTaoWriter
 
     internal static void Write(IMmcCommandTransport transport, IStream content, long startLba, long blockCount,
         int blockBytes, Action<long>? reportAcceptedBytes = null, Func<bool>? isCancellationRequested = null,
-        Action<TimeSpan>? sleep = null)
+        Action<TimeSpan>? sleep = null, Func<long, ReadOnlyMemory<byte>, int>? checkPictureWrite = null,
+        Action<string>? reportRecovery = null)
     {
         ArgumentNullException.ThrowIfNull(transport);
         ArgumentNullException.ThrowIfNull(content);
@@ -89,30 +93,8 @@ internal static class CdTaoWriter
                 int bytes = blocks * blockBytes;
                 ReadBlock(content, readBuffer, bytes, buffer.Pointer, countPointer, isCancellationRequested);
                 long lba = startLba + block;
-                byte[] cdb = CreateWriteCommand(lba, blocks);
-                Stopwatch? notReady = null;
-                while (true)
-                {
-                    MmcCommandResult result;
-                    try { result = transport.SendData(cdb, buffer.Pointer, bytes, WriteTimeoutSeconds); }
-                    catch (Exception exception) when (exception is COMException or IOException)
-                    {
-                        throw new CdTaoWriteException(lba, blocks, blockBytes, exception);
-                    }
-                    if (result.HResult >= 0 && result.HResult != BluRayMmcCommands.CommandHasSenseData) break;
-                    MmcCommandException failure = new(0x2a, result);
-                    if (failure.IsOperationInProgress)
-                    {
-                        notReady ??= Stopwatch.StartNew();
-                        if (notReady.Elapsed < NotReadyLimit)
-                        {
-                            sleep(TimeSpan.FromMilliseconds(50));
-                            ThrowIfCancelled(isCancellationRequested);
-                            continue;
-                        }
-                    }
-                    throw new CdTaoWriteException(lba, blocks, blockBytes, failure);
-                }
+                WriteBatch(transport, lba, blocks, blockBytes, buffer.Pointer, readBuffer, sleep,
+                    isCancellationRequested, checkPictureWrite, reportRecovery);
 
                 accepted += bytes;
                 try { reportAcceptedBytes?.Invoke(accepted); }
@@ -120,6 +102,93 @@ internal static class CdTaoWriter
             }
         }
         finally { Marshal.FreeHGlobal(countPointer); }
+    }
+
+    private static void WriteBatch(IMmcCommandTransport transport, long lba, int blocks, int blockBytes,
+        IntPtr buffer, byte[] scratch, Action<TimeSpan> sleep, Func<bool>? cancelled,
+        Func<long, ReadOnlyMemory<byte>, int>? checkPictureWrite, Action<string>? reportRecovery)
+    {
+        byte[] cdb = CreateWriteCommand(lba, blocks);
+        Stopwatch? busy = null;
+        int retries = 0;
+        while (true)
+        {
+            ThrowIfCancelled(cancelled);
+            int bytes = blocks * blockBytes;
+            Exception failure;
+            try
+            {
+                var result = transport.SendData(cdb, buffer, bytes, WriteTimeoutSeconds);
+                if (result.HResult >= 0 && result.HResult != BluRayMmcCommands.CommandHasSenseData) return;
+                failure = new MmcCommandException(0x2a, result);
+            }
+            catch (Exception exception) when (exception is COMException or IOException or TimeoutException)
+            {
+                failure = exception;
+            }
+
+            // This response gives no reliable completion count. Leave the handle before any retry.
+            if (failure.HResult == CdExtraWriteWindow.UnexpectedResponse && checkPictureWrite is not null)
+                throw new CdTaoWriteException(lba, blocks, blockBytes, failure);
+            if (failure is MmcCommandException { IsOperationInProgress: true, IsDeferredSense: false })
+            {
+                busy ??= Stopwatch.StartNew();
+                if (busy.Elapsed >= NotReadyLimit) throw new CdTaoWriteException(lba, blocks, blockBytes, failure);
+                sleep(TimeSpan.FromMilliseconds(50));
+                continue;
+            }
+            if (checkPictureWrite is null || !MayHaveWritten(failure))
+                throw new CdTaoWriteException(lba, blocks, blockBytes, failure);
+
+            ThrowIfCancelled(cancelled);
+            // IStream may be forward-only, and the adapter may require aligned transfers.
+            // Keep this batch, and copy any unwritten suffix back to the aligned base address.
+            Marshal.Copy(buffer, scratch, 0, bytes);
+            int confirmed;
+            try
+            {
+                confirmed = CheckWhenReady(lba, scratch.AsMemory(0, bytes), checkPictureWrite, sleep, cancelled);
+            }
+            catch (Exception probe) when (probe is IOException or COMException or TimeoutException)
+            {
+                throw new CdTaoWriteException(lba, blocks, blockBytes,
+                    new IOException($"{failure.Message} 无法确认写入位置：{probe.Message}", probe));
+            }
+
+            if (confirmed < 0 || confirmed > blocks)
+                throw new CdTaoWriteException(lba, blocks, blockBytes, new IOException("续写位置超出当前批次。", failure));
+            try { reportRecovery?.Invoke($"图案写入 LBA {lba}（{blocks} 扇区）：{failure.Message} 已核对 {confirmed} 扇区，下一位置 {lba + confirmed}。"); }
+            catch { /* Diagnostic observers must not affect recording. */ }
+            lba += confirmed;
+            blocks -= confirmed;
+            if (blocks == 0) return;
+            if (++retries > 2) throw new CdTaoWriteException(lba, blocks, blockBytes, failure);
+            Marshal.Copy(scratch, confirmed * blockBytes, buffer, blocks * blockBytes);
+            cdb = CreateWriteCommand(lba, blocks);
+            sleep(TimeSpan.FromMilliseconds(100 * retries));
+        }
+    }
+
+    private static bool MayHaveWritten(Exception failure)
+    {
+        if (failure is MmcCommandException { HasValidSense: true } sense)
+            return !sense.IsDeferredSense && sense.SenseKey is 1 or 0x0b; // recovered or aborted command
+        return failure is TimeoutException || (uint)failure.HResult is
+            0xc0aa020d or 0x80070079 or 0x800705b4 or 0xc0aa0205 or 0xc0aa0207;
+    }
+
+    private static int CheckWhenReady(long lba, ReadOnlyMemory<byte> expected,
+        Func<long, ReadOnlyMemory<byte>, int> check, Action<TimeSpan> sleep, Func<bool>? cancelled)
+    {
+        for (int attempt = 1; ; attempt++)
+        {
+            ThrowIfCancelled(cancelled);
+            try { return check(lba, expected); }
+            catch (MmcCommandException error) when (attempt < 6 && !error.IsDeferredSense && error.IsOperationInProgress)
+            {
+                sleep(TimeSpan.FromMilliseconds(200));
+            }
+        }
     }
 
     private static void ReadBlock(IStream content, byte[] readBuffer, int length, IntPtr destination,

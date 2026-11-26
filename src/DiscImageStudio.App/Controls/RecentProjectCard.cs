@@ -180,7 +180,7 @@ public class RecentProjectCard : Button
         SlideTo(_cardTranslate, CardShiftPixels, Motion.Slow);
         SlideTo(_discTranslate, DiscShiftPixels, Motion.Slow);
         _lastSpinTick = null;
-        CompositionTarget.Rendering += OnRenderingTick;
+        if (Motion.Enabled) CompositionTarget.Rendering += OnRenderingTick;
         StartLocationMarquee();
     }
 
@@ -246,8 +246,6 @@ public class RecentProjectCard : Button
 
     private static void SlideTo(TranslateTransform? transform, double offset, Duration duration)
     {
-        transform?.BeginAnimation(
-            TranslateTransform.XProperty,
-            new DoubleAnimation(offset, duration) { EasingFunction = Motion.EaseOut });
+        if (transform is not null) Motion.Animate(transform, TranslateTransform.XProperty, offset, duration);
     }
 }

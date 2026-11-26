@@ -11,7 +11,7 @@ internal sealed record CdDiscInformation(
     int Sessions,
     int FirstTrackInLastSession,
     int LastTrackInLastSession,
-    int DiscType)
+    int DiscType, uint? DiscId = null)
 {
     internal const int Empty = 0;
     internal const int Appendable = 1;
@@ -82,6 +82,11 @@ internal sealed record CdWriteParameters(
         => new(TrackAtOnce, MultiSessionNone, DataTrackMode, Mode1Block, CdDaOrCdRomSession,
             bufferUnderrunFree, testWrite);
 
+    internal bool Matches(ReadOnlySpan<byte> page) => page.Length >= MinimumPageLength + 2
+        && (page[2] & 0x1f) == (WriteType | (TestWrite ? 0x10 : 0))
+        && (page[3] & 0xcf) == ((MultiSession << 6) | TrackMode)
+        && (page[4] & 0x0f) == DataBlockType && page[8] == SessionFormat;
+
     /// <summary>The MODE SELECT(10) parameter list: an 8-byte header with no block
     /// descriptors, followed by the drive's own page 05h with these fields applied. The
     /// drive's page length and vendor bytes are kept; MCN, ISRC and sub-header are cleared.</summary>
@@ -118,7 +123,7 @@ internal sealed record CdWriteParameters(
 /// UNIT ATTENTION 06/28/00, which some drives raise once after a session is closed because
 /// the table of contents changed (libburn repeats the command in that case too).
 /// </summary>
-internal sealed class CdMmcCommands(IMmcCommandTransport transport, Action<TimeSpan>? sleep = null)
+internal sealed partial class CdMmcCommands(IMmcCommandTransport transport, Action<TimeSpan>? sleep = null)
 {
     private static readonly TimeSpan CompletionTimeout = TimeSpan.FromMinutes(15);
     private readonly Action<TimeSpan> _sleep = sleep ?? Thread.Sleep;
@@ -132,6 +137,8 @@ internal sealed class CdMmcCommands(IMmcCommandTransport transport, Action<TimeS
         int profile = BinaryPrimitives.ReadUInt16BigEndian(data.AsSpan(6, 2));
         if (data.Length < 16 || BinaryPrimitives.ReadUInt16BigEndian(data.AsSpan(8, 2)) != 0x002d)
             return new CdTaoFeature(profile, false, false, false, 0);
+        if (data[11] < 4 || BinaryPrimitives.ReadUInt32BigEndian(data) < 8u + data[11])
+            throw new IOException("GET CONFIGURATION 的 TAO 功能描述长度无效。");
         return new CdTaoFeature(profile, (data[10] & 1) != 0, (data[12] & 0x40) != 0, (data[12] & 0x04) != 0,
             BinaryPrimitives.ReadUInt16BigEndian(data.AsSpan(14, 2)));
     }
@@ -141,19 +148,20 @@ internal sealed class CdMmcCommands(IMmcCommandTransport transport, Action<TimeS
         byte[] disc = ExecuteWhenReady(CreateReadCdb(0x51, 64), 64, 30).Data;
         RequireResponseLength(disc, 12, 64, "READ DISC INFORMATION");
         return new CdDiscInformation(disc[2] & 3, (disc[2] >> 2) & 3, disc[4] | disc[9] << 8,
-            disc[5] | disc[10] << 8, disc[6] | disc[11] << 8, disc[8]);
+            disc[5] | disc[10] << 8, disc[6] | disc[11] << 8, disc[8],
+            (disc[7] & 0x80) != 0 && disc.Length >= 16 ? BinaryPrimitives.ReadUInt32BigEndian(disc.AsSpan(12)) : null);
     }
 
     /// <summary>Track number that addresses the invisible (next, not yet written) track.</summary>
     internal const int InvisibleTrack = 0xff;
 
-    internal CdTrackInformation ReadTrackInformation(int trackNumber)
+    internal CdTrackInformation ReadTrackInformation(int trackNumber, bool waitForReady = true)
     {
         if (trackNumber is <= 0 or > ushort.MaxValue) throw new ArgumentOutOfRangeException(nameof(trackNumber));
         byte[] cdb = CreateReadCdb(0x52, 48);
         cdb[1] = 1; // Address/number type 01b: logical track number.
         BinaryPrimitives.WriteUInt32BigEndian(cdb.AsSpan(2, 4), (uint)trackNumber);
-        byte[] track = ExecuteWhenReady(cdb, 48, 30).Data;
+        byte[] track = (waitForReady ? ExecuteWhenReady(cdb, 48, 30) : Execute(cdb, 48, 30)).Data;
         RequireResponseLength(track, 36, 48, "READ TRACK INFORMATION");
         int returned = track[2] | track[32] << 8;
         // The invisible track answers with its real number.
@@ -167,6 +175,25 @@ internal sealed class CdMmcCommands(IMmcCommandTransport transport, Action<TimeS
             BinaryPrimitives.ReadInt32BigEndian(track.AsSpan(12, 4)),
             BinaryPrimitives.ReadUInt32BigEndian(track.AsSpan(16, 4)),
             BinaryPrimitives.ReadUInt32BigEndian(track.AsSpan(24, 4)));
+    }
+
+    // During an ambiguous WRITE the open track may already contain a prefix of the
+    // transfer. Re-read only that prefix and compare its actual bytes before advancing.
+    internal int CheckPictureWrite(CdTrackInformation initial, long lba, ReadOnlyMemory<byte> expected)
+    {
+        CdTrackInformation current = ReadTrackInformation(initial.TrackNumber, waitForReady: false);
+        int blocks = expected.Length / CdTaoWriter.DataBlockBytes;
+        if (current.SessionNumber != initial.SessionNumber || current.TrackStartAddress != initial.TrackStartAddress
+            || !current.NextWritableAddressValid || current.NextWritableAddress < lba || current.NextWritableAddress > lba + blocks)
+            throw new IOException($"无法确认同一条图案轨的续写位置（请求 LBA {lba}，光驱报告 {current.NextWritableAddress}）。");
+
+        int recorded = (int)(current.NextWritableAddress - lba);
+        if (recorded == 0) return 0;
+        int bytes = recorded * CdTaoWriter.DataBlockBytes;
+        byte[] actual = ReadPicture(lba, recorded, waitForReady: false);
+        if (!actual.AsSpan().SequenceEqual(expected.Span[..bytes]))
+            throw new IOException($"LBA {lba} 起 {recorded} 个扇区的读回数据与图案不符。");
+        return recorded;
     }
 
     /// <summary>The next, not yet written track of the open session: READ DISC
@@ -229,9 +256,9 @@ internal sealed class CdMmcCommands(IMmcCommandTransport transport, Action<TimeS
 
     /// <summary>Drains the recorder cache. In Track-at-Once mode this also completes the
     /// current track (run-out blocks); the drive reports a long write in progress meanwhile.</summary>
-    internal void SynchronizeCache()
+    internal void SynchronizeCache(bool picture = false)
     {
-        ExecuteWhenReady([0x35, 0x02, 0, 0, 0, 0, 0, 0, 0, 0], 0, 120);
+        ExecuteWhenReady([0x35, 0x02, 0, 0, 0, 0, 0, 0, 0, 0], 0, 120, reconnectOnUnexpected: picture);
         WaitUntilReady();
     }
 
@@ -242,9 +269,9 @@ internal sealed class CdMmcCommands(IMmcCommandTransport transport, Action<TimeS
     {
         try
         {
-            ExecuteWhenReady([0x5b, 0x01, 0x02, 0, 0, 0, 0, 0, 0, 0], 0, 120);
+            ExecuteWhenReady([0x5b, 0x01, 0x02, 0, 0, 0, 0, 0, 0, 0], 0, 120, reconnectOnUnexpected: expectFinalized);
         }
-        catch (MmcCommandException)
+        catch (MmcCommandException e) when (!expectFinalized || e.HResult != CdExtraWriteWindow.UnexpectedResponse)
         {
             // As for BD-R: a CLOSE that reports an error may still have closed the session
             // (or the drive closed it on its own). Accept only the exact expected state.
@@ -268,12 +295,13 @@ internal sealed class CdMmcCommands(IMmcCommandTransport transport, Action<TimeS
         }, expectFinalized ? "等待光驱确认封盘完成超时。" : "等待光驱确认第 1 区段关闭超时。");
     }
 
-    internal void WaitUntilReady(TimeSpan? timeout = null)
+    internal void WaitUntilReady(TimeSpan? timeout = null, CancellationToken token = default)
     {
         TimeSpan limit = timeout ?? CompletionTimeout;
         Stopwatch elapsed = Stopwatch.StartNew();
         while (true)
         {
+            token.ThrowIfCancellationRequested();
             try
             {
                 Execute([0, 0, 0, 0, 0, 0], 0, 30);
@@ -324,27 +352,30 @@ internal sealed class CdMmcCommands(IMmcCommandTransport transport, Action<TimeS
         }
     }
 
-    private MmcCommandResult ExecuteWhenReady(byte[] cdb, int allocationLength, uint timeoutSeconds)
-        => RetryWhileBusy(() => Execute(cdb, allocationLength, timeoutSeconds));
+    private MmcCommandResult ExecuteWhenReady(byte[] cdb, int allocationLength, uint timeoutSeconds,
+        CancellationToken token = default, bool reconnectOnUnexpected = false)
+        => RetryWhileBusy(() => Execute(cdb, allocationLength, timeoutSeconds, reconnectOnUnexpected), token, reconnectOnUnexpected);
 
     /// <summary>Repeats a command the drive did not execute because it was busy, after
     /// TEST UNIT READY reports GOOD again; one deadline for the whole wait.</summary>
-    private T RetryWhileBusy<T>(Func<T> command)
+    private T RetryWhileBusy<T>(Func<T> command, CancellationToken token = default, bool reconnectOnUnexpected = false)
     {
         Stopwatch elapsed = Stopwatch.StartNew();
         while (true)
         {
+            token.ThrowIfCancellationRequested();
             try
             {
                 return command();
             }
-            catch (MmcCommandException exception) when (IsNotExecuted(exception))
+            catch (MmcCommandException exception) when (IsNotExecuted(exception)
+                && !(reconnectOnUnexpected && exception.HResult == CdExtraWriteWindow.UnexpectedResponse))
             {
                 TimeSpan remaining = CompletionTimeout - elapsed.Elapsed;
                 if (remaining <= TimeSpan.Zero)
                     throw new TimeoutException("CD 刻录机持续报告忙碌，命令未能执行。", exception);
                 _sleep(TimeSpan.FromMilliseconds(200));
-                WaitUntilReady(remaining);
+                WaitUntilReady(remaining, token);
             }
         }
     }
@@ -355,9 +386,12 @@ internal sealed class CdMmcCommands(IMmcCommandTransport transport, Action<TimeS
         => exception.IsOperationInProgress
             || exception is { SenseKey: 6, AdditionalSenseCode: 0x28, AdditionalSenseQualifier: 0 };
 
-    private MmcCommandResult Execute(byte[] cdb, int allocationLength, uint timeoutSeconds)
+    private MmcCommandResult Execute(byte[] cdb, int allocationLength, uint timeoutSeconds, bool reconnectOnUnexpected = false)
     {
-        MmcCommandResult result = transport.Execute(cdb, allocationLength, timeoutSeconds);
+        MmcCommandResult result;
+        try { result = transport.Execute(cdb, allocationLength, timeoutSeconds); }
+        catch (COMException e) when (reconnectOnUnexpected && e.HResult == CdExtraWriteWindow.UnexpectedResponse)
+        { throw new MmcCommandException(cdb[0], new(e.HResult, [], [])); }
         ThrowIfFailed(cdb[0], result);
         return result;
     }

@@ -10,52 +10,36 @@
         <!-- MaxWidth alone centers this column: Stretch + MaxWidth arranges it at 1120 and
              WPF centers the capped element, so the sections span the full page column. -->
         <StackPanel MaxWidth="1120" Margin="{StaticResource PagePadding}">
-            <TextBlock Text="Disc Image Studio" Style="{StaticResource H1Title}" />
-            <TextBlock Style="{StaticResource PageSubtitle}" Margin="0,8,0,0"
-                       Text="{loc:Text Xaml.CreateAndBurnVisibleArtworkOnOpticalDiscs}" />
-
-            <!-- One card for the three ways forward: the open project on the left, starting
-                 something else on the right. The project name appears once, on the control that
-                 actually goes there. -->
-            <Border Style="{StaticResource CardStyle}" Padding="14,12" Margin="0,20,0,0">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <Button Grid.Column="0" Style="{StaticResource SecondaryButton}"
-                            Height="{StaticResource ControlHeight}" Padding="18,0"
-                            Command="{Binding ContinueProjectCommand}"
-                            Visibility="{Binding IsProjectOpenVisibility}"
-                            ToolTip="{loc:Text Xaml.ReturnToTheOpenProjectAndContinueInDesign}">
-                        <StackPanel Orientation="Horizontal">
-                            <iconPacks:PackIconLucide Kind="ArrowLeft" Width="16" Height="16"
-                                                      VerticalAlignment="Center"
-                                                      Foreground="{DynamicResource PrimaryBrush}" />
-                            <TextBlock Text="{loc:Text Xaml.BackToProject}" Margin="8,0,0,0" VerticalAlignment="Center" />
-                            <TextBlock Text="{Binding CurrentProjectName}" Margin="8,0,0,0"
-                                       VerticalAlignment="Center" MaxWidth="260"
-                                       TextTrimming="CharacterEllipsis"
-                                       Foreground="{DynamicResource TextMutedBrush}" />
-                        </StackPanel>
-                    </Button>
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Style="{StaticResource SecondaryButton}" Content="{loc:Text Xaml.OpenProject}"
-                                Height="{StaticResource ControlHeight}" Padding="18,0"
-                                Command="{Binding OpenProjectCommand}" />
+            <Border Background="{DynamicResource HomeHeaderBrush}" BorderBrush="{DynamicResource DividerBrush}"
+                    BorderThickness="0" Padding="24,20,24,20">
+                <StackPanel>
+                    <TextBlock Text="Disc Image Studio" Style="{StaticResource H1Title}" />
+                    <TextBlock Style="{StaticResource PageSubtitle}" Margin="0,6,0,0"
+                               Text="{loc:Text Xaml.CreateAndBurnVisibleArtworkOnOpticalDiscs}" />
+                    <WrapPanel Margin="0,20,0,0">
                         <Button Style="{StaticResource PrimaryButton}" Content="{loc:Text Xaml.NewProject}"
-                                Height="{StaticResource ControlHeight}" Padding="18,0" Margin="10,0,0,0"
-                                Command="{Binding NewProjectCommand}" />
-                    </StackPanel>
-                </Grid>
+                                Padding="18,0" Margin="0,0,8,6" Command="{Binding NewProjectCommand}" />
+                        <Button Style="{StaticResource SecondaryButton}" Content="{loc:Text Xaml.OpenProject}"
+                                Padding="18,0" Margin="0,0,8,6" Command="{Binding OpenProjectCommand}" />
+                        <Button Style="{StaticResource SecondaryButton}" Padding="14,0" Margin="0,0,0,6"
+                                Command="{Binding ContinueProjectCommand}"
+                                Visibility="{Binding IsProjectOpenVisibility}"
+                                ToolTip="{loc:Text Xaml.ReturnToTheOpenProjectAndContinueInDesign}">
+                            <StackPanel Orientation="Horizontal">
+                                <iconPacks:PackIconLucide Kind="ArrowLeft" Width="16" Height="16" VerticalAlignment="Center"
+                                                          Foreground="{DynamicResource PrimaryBrush}" />
+                                <TextBlock Text="{loc:Text Xaml.BackToProject}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding CurrentProjectName}" Margin="8,0,0,0"
+                                           VerticalAlignment="Center" MaxWidth="200" TextTrimming="CharacterEllipsis"
+                                           Foreground="{DynamicResource TextMutedBrush}" />
+                            </StackPanel>
+                        </Button>
+                    </WrapPanel>
+                </StackPanel>
             </Border>
 
-            <!-- Sections follow the Adobe start-page idiom: a bare heading and the content
-                 sitting directly on the page, no surrounding card. -->
-            <TextBlock Text="{loc:Text Xaml.StartFromATemplate}" Style="{StaticResource CardTitle}" Margin="0,32,0,8" />
-            <!-- Tiles left-align with the section heading; a hanging last row is correct in
-                 the flat, Adobe-style layout. -->
+            <TextBlock Text="{loc:Text Xaml.StartFromATemplate}" Style="{StaticResource CardTitle}"
+                       FontSize="20" Margin="0,26,0,12" />
             <ItemsControl ItemsSource="{Binding Templates}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -64,25 +48,29 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Button Style="{StaticResource TileButton}" Width="146" Height="132" Margin="4"
+                        <Button Style="{StaticResource TileButton}" Width="148" Height="Auto" MinHeight="124" Margin="0,0,8,8"
                                 CommandParameter="{Binding}"
                                 Command="{Binding DataContext.TemplateCommand,
                                           RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                 ToolTip="{Binding ToolTipText}">
                             <Grid>
-                                <StackPanel VerticalAlignment="Center">
-                                    <iconPacks:PackIconLucide Kind="{Binding Icon}" Width="30" Height="30"
-                                                              HorizontalAlignment="Center"
-                                                              Foreground="{DynamicResource TextSecondaryBrush}" />
+                                <StackPanel>
+                                    <Border Width="32" Height="32" HorizontalAlignment="Left"
+                                            CornerRadius="{StaticResource RadiusField}"
+                                            Background="{DynamicResource PrimarySoftBrush}">
+                                        <iconPacks:PackIconLucide Kind="{Binding Icon}" Width="19" Height="19"
+                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                  Foreground="{DynamicResource PrimaryBrush}" />
+                                    </Border>
                                     <TextBlock Text="{Binding Title}" Style="{StaticResource RowText}"
-                                               FontWeight="Medium" Height="36" Margin="0,10,0,0" TextAlignment="Center"
-                                               TextWrapping="Wrap" />
+                                               FontWeight="SemiBold" MinHeight="36" MaxHeight="40" Margin="0,7,0,0"
+                                               TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
                                     <TextBlock Text="{Binding Detail}" Style="{StaticResource CompactHint}"
-                                               Height="20" Margin="0,4,0,0" TextAlignment="Center" />
+                                               Margin="0,3,0,0" />
                                 </StackPanel>
                                 <iconPacks:PackIconLucide Kind="Sprout" Width="13" Height="13"
-                                                          HorizontalAlignment="Left" VerticalAlignment="Top"
-                                                          Margin="6,4,0,0"
+                                                          HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                          Margin="0,3,1,0"
                                                           Foreground="{DynamicResource PrimaryBrush}"
                                                           Visibility="{Binding ContributorVisibility}"
                                                           ToolTip="{Binding ContributorToolTip}"
@@ -107,32 +95,30 @@
                         </Style.Triggers>
                     </Style>
                 </StackPanel.Style>
-                <Grid Margin="0,36,0,12">
+                <Grid Margin="0,22,0,12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="{loc:Text Xaml.RecentProjects}" Style="{StaticResource CardTitle}"
+                    <TextBlock Grid.Column="0" Text="{loc:Text Xaml.RecentProjects}" Style="{StaticResource CardTitle}" FontSize="20"
                                VerticalAlignment="Center" />
                     <Button Grid.Column="1" Style="{StaticResource QuietButton}" Content="{loc:Text Xaml.Clear}"
                             Height="{StaticResource CompactHeight}" Padding="14,0"
                             Command="{Binding ClearRecentsCommand}" />
                 </Grid>
-                <!-- Three mini tiles per row at any window width: UniformGrid stretches the
-                     tiles, the sleeve's 3*:1* template shrinks with them. Tag carries the
-                     remove command into the ContextMenu, which sits in a popup outside the
-                     visual tree: the menu item reaches it via PlacementTarget, and its own
+                <!-- Recent tiles use 1–3 columns according to their available width. The ContextMenu
+                     reaches the view model through PlacementTarget.Tag, while its own
                      DataContext stays the tile. -->
-                <ItemsControl ItemsSource="{Binding Recents}">
+                <ItemsControl x:Name="RecentProjects" ItemsSource="{Binding Recents}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <UniformGrid Columns="3" />
+                            <UniformGrid Columns="{Binding RecentColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <controls:RecentProjectCard Margin="4"
-                                                        Tag="{Binding DataContext.RemoveRecentCommand,
+                                                        Tag="{Binding DataContext,
                                                                   RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                         Title="{Binding Title}"
                                                         FamilyLabel="{Binding FamilyLabel}"
@@ -144,9 +130,13 @@
                                                         CommandParameter="{Binding}"
                                                         ToolTip="{Binding ToolTipText}">
                                 <controls:RecentProjectCard.ContextMenu>
-                                    <ContextMenu>
+                                    <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                                         <MenuItem Header="{loc:Text Xaml.RemoveFromList}"
-                                                  Command="{Binding PlacementTarget.Tag,
+                                                  Command="{Binding PlacementTarget.Tag.RemoveRecentCommand,
+                                                            RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                  CommandParameter="{Binding}" />
+                                        <MenuItem Header="{loc:Text 删除工程}"
+                                                  Command="{Binding PlacementTarget.Tag.DeleteRecentCommand,
                                                             RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                   CommandParameter="{Binding}" />
                                     </ContextMenu>

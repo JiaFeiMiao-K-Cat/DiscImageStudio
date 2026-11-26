@@ -33,6 +33,7 @@ public partial class ExportViewModel : ObservableObject
         BrowseOutputCommand = new RelayCommand(BrowseOutput, () => !_shell.IsBusy);
         BrowseDataCommand = new RelayCommand(BrowseData, () => !_shell.IsBusy);
         GenerateCommand = new AsyncRelayCommand(GenerateAsync, () => !_shell.IsBusy);
+        OpenCdExtraCommand = new AsyncRelayCommand(OpenCdExtraAsync, () => !_shell.IsBusy);
         _shell.BusyChanged += NotifyCommands;
         _shell.PropertyChanged += (_, args) =>
         {
@@ -110,6 +111,28 @@ public partial class ExportViewModel : ObservableObject
 
     public IAsyncRelayCommand GenerateCommand { get; }
 
+    public IAsyncRelayCommand OpenCdExtraCommand { get; }
+
+    private async Task OpenCdExtraAsync()
+    {
+        try
+        {
+            CdDiscParameters parameters = new(
+                ParameterParser.ParsePositiveDouble(_state.CdInnerRadius, "CD 内半径"),
+                ParameterParser.ParsePositiveDouble(_state.CdOuterRadius, "CD 外半径"),
+                ParameterParser.ParsePositiveLong(_state.CdSectors, "CD 扇区数"),
+                PitchLinear: ParameterParser.ParseDouble(_state.CdPitchLinear, "CD 轨距一次项"),
+                PitchQuadratic: ParameterParser.ParseDouble(_state.CdPitchQuadratic, "CD 轨距二次项"),
+                PitchCubic: ParameterParser.ParseDouble(_state.CdPitchCubic, "CD 轨距三次项"),
+                UsableSectors: _state.GetUsableSectors(OpticalDiscFamily.CompactDisc));
+            parameters.Validate();
+            string? composite = HasLayers ? await _design.EnsureExportCompositeAsync() : null;
+            new CdExtraWindow(composite, parameters, _state.Tone)
+            { Owner = System.Windows.Application.Current.MainWindow }.ShowDialog();
+        }
+        catch (Exception e) { _shell.ShowValidationError(e); }
+    }
+
     [ObservableProperty]
     private string _sourceSummary = L.T("请先在设计页导入图片。");
 
@@ -127,6 +150,7 @@ public partial class ExportViewModel : ObservableObject
         BrowseOutputCommand.NotifyCanExecuteChanged();
         BrowseDataCommand.NotifyCanExecuteChanged();
         GenerateCommand.NotifyCanExecuteChanged();
+        OpenCdExtraCommand.NotifyCanExecuteChanged();
     }
 
     private void BrowseOutput()

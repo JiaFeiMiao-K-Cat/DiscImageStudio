@@ -4,17 +4,16 @@ using System.Windows.Media.Animation;
 
 namespace DiscImageStudio.Controls;
 
-/// Collapsible parameter group: animates height 0↔content height with a
-/// CubicEase-out curve (the spring-stiffness-200 feel, without distortion).
+/// <summary>Reveals measured content without restarting on its own animated resize.</summary>
 public class RevealPanel : ContentControl
 {
     public static readonly DependencyProperty IsExpandedProperty = DependencyProperty.Register(
         nameof(IsExpanded), typeof(bool), typeof(RevealPanel),
         new PropertyMetadata(false, static (sender, _) => ((RevealPanel)sender).UpdateExpansion()));
 
-    private static readonly Duration ExpandDuration = Motion.Slow;
-    private static readonly Duration CollapseDuration = Motion.Base;
-    private static readonly IEasingFunction ExpandEase = Motion.EaseOut;
+    private bool? _lastExpanded;
+    private bool _transitioning;
+    private int _version;
 
     public bool IsExpanded
     {
@@ -22,66 +21,57 @@ public class RevealPanel : ContentControl
         set => SetValue(IsExpandedProperty, value);
     }
 
-    static RevealPanel()
-    {
-        DefaultStyleKeyProperty.OverrideMetadata(
-            typeof(RevealPanel),
-            new FrameworkPropertyMetadata(typeof(RevealPanel)));
-    }
+    static RevealPanel() => DefaultStyleKeyProperty.OverrideMetadata(
+        typeof(RevealPanel), new FrameworkPropertyMetadata(typeof(RevealPanel)));
 
     public RevealPanel()
     {
         Height = 0;
         Opacity = 0;
-        SizeChanged += (_, _) => UpdateExpansion();
+        ClipToBounds = true;
+        SizeChanged += (_, _) => { if (!_transitioning) UpdateExpansion(); };
         Loaded += (_, _) => UpdateExpansion();
     }
 
-    /// <summary>Last expansion state, or null before the first pass.</summary>
-    private bool? _lastExpanded;
-
-    /// <summary>Only a real expand/collapse animates. A first layout, a re-measure after a
-    /// resize, or a panel that opens already expanded jumps straight to its final state: an
-    /// opacity animation started there would fade in content the user did not ask to reveal,
-    /// and a headless render would sample it at an arbitrary progress.</summary>
     private void UpdateExpansion()
     {
         bool expanded = IsExpanded;
+        bool changed = _lastExpanded is { } previous && previous != expanded;
+        if (_transitioning && !changed) return;
+        double from = double.IsNaN(Height) ? ActualHeight : Height;
         double target = expanded ? MeasureContentHeight() : 0;
-        double from = Height;
-        double fromOpacity = Opacity;
-        bool animate = IsLoaded && _lastExpanded is { } previous && previous != expanded;
+        bool animate = Motion.Enabled && IsLoaded && changed;
         _lastExpanded = expanded;
-
-        // Set the base values first so the panel is correct even if no composition tick ever
-        // samples the animation (headless renders, hidden pages).
+        int version = ++_version;
+        _transitioning = true;
         BeginAnimation(HeightProperty, null);
-        BeginAnimation(OpacityProperty, null);
         Height = target;
-        Opacity = expanded ? 1 : 0;
         if (!animate)
         {
+            BeginAnimation(OpacityProperty, null);
+            Opacity = expanded ? 1 : 0;
+            Height = expanded ? double.NaN : 0;
+            _transitioning = false;
             return;
         }
 
-        DoubleAnimation heightAnimation = new(from, target, expanded ? ExpandDuration : CollapseDuration)
+        Motion.Fade(this, expanded ? 1 : 0, Motion.Base, exiting: !expanded);
+        DoubleAnimation height = Motion.Create(from, target, expanded ? Motion.Slow : Motion.Base);
+        height.Completed += (_, _) =>
         {
-            EasingFunction = ExpandEase,
+            if (version != _version) return;
+            // Return to normal layout once open; translated text and resized content can grow.
+            BeginAnimation(HeightProperty, null);
+            Height = IsExpanded ? double.NaN : 0;
+            _transitioning = false;
         };
-        BeginAnimation(HeightProperty, heightAnimation);
-        BeginAnimation(OpacityProperty, new DoubleAnimation(fromOpacity, expanded ? 1 : 0, CollapseDuration));
+        BeginAnimation(HeightProperty, height, HandoffBehavior.SnapshotAndReplace);
     }
 
     private double MeasureContentHeight()
     {
-        if (Content is not UIElement content)
-        {
-            return 0;
-        }
-
-        content.Measure(new Size(
-            ActualWidth > 0 ? ActualWidth : double.PositiveInfinity,
-            double.PositiveInfinity));
+        if (Content is not UIElement content) return 0;
+        content.Measure(new Size(ActualWidth > 0 ? ActualWidth : double.PositiveInfinity, double.PositiveInfinity));
         return Math.Max(content.DesiredSize.Height, 1);
     }
 }

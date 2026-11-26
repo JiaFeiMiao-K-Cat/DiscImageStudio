@@ -15,6 +15,7 @@ internal interface ICdExtraSession : IDisposable
 {
     void Acquire();
     CdExtraMediaInfo ReadMedia();
+    void ConfirmTaoWriteFormats(bool testWrite);
     OpticalWriteSpeed ConfigureWrite(OpticalWriteSpeed? requested);
     /// <summary>Writes one audio track at the next writable address and completes it.
     /// Returns the track's start LBA.</summary>
@@ -26,6 +27,8 @@ internal interface ICdExtraSession : IDisposable
     (long NextWritableAddress, long FreeBlocks) ReadNextSessionStart();
     /// <summary>Writes the Mode 1 data track and completes it. Returns its start LBA.</summary>
     long WriteDataTrack(IStream data, long sectors, long expectedStartLba, bool testWrite);
+    (uint? DiscId, string? Audio) ReadPictureIdentity(IReadOnlyList<long> audioStarts);
+    void VerifyPicture(Stream source, long start, long sectors, Action<long> progress, CancellationToken token);
     void Flush();
     void CancelWrite();
     void Release();
@@ -36,7 +39,7 @@ internal interface ICdExtraSession : IDisposable
 /// sessions (no media-change notification, removal prevented), Track-at-Once write
 /// parameters and WRITE(10) commands through IDiscRecorder2Ex.
 /// </summary>
-internal sealed class DynamicCdExtraSession : ICdExtraSession
+internal sealed partial class DynamicCdExtraSession : ICdExtraSession
 {
     private const int CdRecordableProfile = 0x0009;
     private const int CdRewritableProfile = 0x000a;
@@ -46,6 +49,7 @@ internal sealed class DynamicCdExtraSession : ICdExtraSession
     private readonly BluRaySessionCleanup _cleanup;
     private readonly Action<long>? _reportAcceptedBytes;
     private readonly Action<TimeSpan>? _sleep;
+    private readonly Action<string>? _reportDiagnostic;
     private CdExtraMediaInfo? _media;
     private byte[]? _writeParametersPage;
     private int _cancelRequested;
@@ -53,11 +57,11 @@ internal sealed class DynamicCdExtraSession : ICdExtraSession
     private bool _disposed;
 
     internal DynamicCdExtraSession(object recorder, object speedFormat, Action<long>? reportAcceptedBytes = null,
-        Action<string>? reportCleanupWarning = null)
+        Action<string>? reportCleanupWarning = null, Action<string>? reportDiagnostic = null)
         : this(new ImapiMmcCommandTransport(recorder ?? throw new ArgumentNullException(nameof(recorder))),
             CreateSpeedConfiguration(speedFormat ?? throw new ArgumentNullException(nameof(speedFormat))),
             commands => CreateRecorderCleanup(recorder, commands, reportCleanupWarning),
-            reportAcceptedBytes)
+            reportAcceptedBytes, reportDiagnostic: reportDiagnostic)
     {
     }
 
@@ -67,7 +71,7 @@ internal sealed class DynamicCdExtraSession : ICdExtraSession
         Func<OpticalWriteSpeed?, OpticalWriteSpeed> configureSpeed,
         Func<CdMmcCommands, BluRaySessionCleanup> createCleanup,
         Action<long>? reportAcceptedBytes = null,
-        Action<TimeSpan>? sleep = null)
+        Action<TimeSpan>? sleep = null, Action<string>? reportDiagnostic = null)
     {
         ArgumentNullException.ThrowIfNull(transport);
         ArgumentNullException.ThrowIfNull(configureSpeed);
@@ -76,6 +80,7 @@ internal sealed class DynamicCdExtraSession : ICdExtraSession
         _configureSpeed = configureSpeed;
         _reportAcceptedBytes = reportAcceptedBytes;
         _sleep = sleep;
+        _reportDiagnostic = reportDiagnostic;
         _commands = new CdMmcCommands(transport, sleep);
         _cleanup = createCleanup(_commands);
     }
@@ -133,6 +138,14 @@ internal sealed class DynamicCdExtraSession : ICdExtraSession
         return _media;
     }
 
+    public void ConfirmTaoWriteFormats(bool testWrite)
+    {
+        RequireMedia();
+        bool buffer = _media!.TaoFeature.BufferUnderrunFree;
+        SelectWriteParameters(CdWriteParameters.FinalDataSession(buffer, testWrite));
+        SelectWriteParameters(CdWriteParameters.AudioSession(buffer, testWrite));
+    }
+
     public OpticalWriteSpeed ConfigureWrite(OpticalWriteSpeed? requested)
     {
         RequireAcquired();
@@ -180,10 +193,28 @@ internal sealed class DynamicCdExtraSession : ICdExtraSession
         if (track.FreeBlocks < sectors)
             throw new IOException($"图片数据轨需要 {sectors:N0} 扇区，光驱报告可写 {track.FreeBlocks:N0} 扇区。");
         CdTaoWriter.Write(_transport, data, track.NextWritableAddress, sectors, CdTaoWriter.DataBlockBytes,
-            _reportAcceptedBytes, () => Volatile.Read(ref _cancelRequested) != 0, _sleep);
-        _commands.SynchronizeCache();
+            _reportAcceptedBytes, () => Volatile.Read(ref _cancelRequested) != 0, _sleep,
+            testWrite ? null : (lba, bytes) => _commands.CheckPictureWrite(track, lba, bytes), _reportDiagnostic);
+        _reportDiagnostic?.Invoke($"图案轨最后一批已被光驱接收（末扇区 LBA {track.NextWritableAddress + sectors - 1}），正在刷写光驱缓存。");
+        _commands.SynchronizeCache(picture: !testWrite);
+        _reportDiagnostic?.Invoke("图案轨缓存已刷写完成。");
         return track.NextWritableAddress;
     }
+
+    public (uint? DiscId, string? Audio) ReadPictureIdentity(IReadOnlyList<long> audioStarts)
+    {
+        uint? id = _commands.ReadDiscInformation().DiscId;
+        if (id.HasValue) return (id, null);
+        try { return (null, _commands.AudioFingerprint(audioStarts)); }
+        catch (Exception e) when (e is IOException or System.Runtime.InteropServices.COMException or TimeoutException)
+        {
+            _reportDiagnostic?.Invoke($"光驱未提供盘片标识且无法读取音轨指纹，重新打开断点时仅支持已封盘校验：{e.Message}");
+            return (null, null);
+        }
+    }
+
+    public void VerifyPicture(Stream source, long start, long sectors, Action<long> progress, CancellationToken token)
+        => _commands.VerifyPicture(source, start, sectors, progress, token);
 
     public void Flush()
     {
@@ -210,7 +241,28 @@ internal sealed class DynamicCdExtraSession : ICdExtraSession
     internal static bool IsRecordableCdProfile(int profile) => profile is CdRecordableProfile or CdRewritableProfile;
 
     private void SelectWriteParameters(CdWriteParameters parameters)
-        => _commands.ModeSelectWriteParameters(parameters.BuildModeSelectData(_writeParametersPage!));
+    {
+        byte[] selection = parameters.BuildModeSelectData(_writeParametersPage!);
+        if (_media!.TaoFeature.DataTypes != 0)
+        {
+            _commands.ModeSelectWriteParameters(selection);
+            return;
+        }
+
+        string format = parameters.DataBlockType == CdWriteParameters.Mode1Block ? "Mode 1 数据" : "CD-DA 音频";
+        try
+        {
+            _commands.ModeSelectWriteParameters(selection);
+            byte[] current = _commands.ModeSenseWriteParameters();
+            if (!parameters.Matches(current))
+                throw new IOException($"05h 模式页的读回值与请求不符（{Convert.ToHexString(current)}）。");
+            _writeParametersPage = current;
+        }
+        catch (Exception e) when (e is IOException or System.Runtime.InteropServices.COMException or TimeoutException)
+        {
+            throw new IOException($"光驱未能确认 {format} 写入参数：{e.Message}", e);
+        }
+    }
 
     private CdTrackInformation RequireWritableTrack()
     {

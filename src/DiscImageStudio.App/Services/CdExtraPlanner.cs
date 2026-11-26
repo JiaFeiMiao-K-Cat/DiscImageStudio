@@ -1,6 +1,8 @@
 using System.IO;
 using System.Security;
+using DiscImageStudio.Burning;
 using DiscImageStudio.Cd;
+using DiscImageStudio.Core;
 using DiscImageStudio.Localization;
 
 namespace DiscImageStudio.Services;
@@ -168,4 +170,84 @@ internal static class CdExtraPlanner
                     || argument.Message.Contains("disc has only")
                     || argument.Message.Contains("too small for filesystem metadata")
                     || argument.Message.Contains("does not fit the"));
+
+    /// <summary>
+    /// CD-Extra request: the music tracks stream their padded PCM; the picture session is
+    /// generated only after the recorder reports where session 2 starts, so the picture and
+    /// its filesystem use the measured address rather than the prediction. In a simulated
+    /// burn the predicted address is used.
+    /// </summary>
+    internal static CdExtraBurnRequest CreateBurnRequest(
+        string imagePath,
+        CdDiscParameters parameters,
+        CdExtraPlan plan,
+        string? dataDirectory,
+        string volumeLabel,
+        bool filesAtOuterRing,
+        ToneProfile tone,
+        string deviceId,
+        OpticalWriteSpeed? writeSpeed,
+        bool testWrite = false,
+        Func<CdExtraLayout, CdDataLayoutPlan, CdExtraDataContent, CdExtraDataContent>? prepareImage = null)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        parameters.Validate();
+        if (!plan.IsValid)
+        {
+            throw new ArgumentException(CdExtraPlanner.DescribeProblem(plan));
+        }
+
+        ToneProfile capturedTone = tone.Normalized();
+        string? folder = string.IsNullOrWhiteSpace(dataDirectory) ? null : dataDirectory.Trim();
+        string label = string.IsNullOrWhiteSpace(volumeLabel) ? "CD_IMAGE" : volumeLabel.Trim();
+        CdMusicTrackInfo[] tracks = plan.Tracks.Select(track => track.Info!).ToArray();
+        long[] sectors = tracks.Select(track => track.RecordedSectors).ToArray();
+        // PrepareAudio pins and verifies every file before the first WRITE; the producers
+        // then read the samples through those handles, so neither an edit nor a changed
+        // timestamp can stop the music session half-way.
+        PinnedMusic pinned = new();
+        CdExtraAudioTrack[] audio = tracks
+            .Select(track => new CdExtraAudioTrack(track.RecordedSectors,
+                (output, token) => pinned.WritePaddedPcm(track, output, token)))
+            .ToArray();
+        CdExtraLayout predicted = plan.Layout!;
+        return new CdExtraBurnRequest(deviceId, audio, start =>
+            {
+                CdExtraLayout layout = start.Simulated
+                    ? predicted
+                    : CdExtraLayout.Plan(parameters, sectors, start.NextWritableAddress, start.FreeBlocks);
+                CdDataLayoutPlan data = CdDataImageGenerator.PrepareSessionLayout(parameters,
+                    layout.Session2StartLba, layout.DataTrackSectors, folder, label, filesAtOuterRing);
+                var content = new CdExtraDataContent(data.TrackSectors, (output, token) =>
+                    CdDataImageGenerator.GenerateToStream(imagePath, output, parameters, data,
+                        cancellationToken: token, tone: capturedTone));
+                return prepareImage?.Invoke(layout, data, content) ?? content;
+            },
+            predicted.Session2StartLba,
+            plan.DataPlan!.TrackSectors,
+            writeSpeed,
+            TestWrite: testWrite,
+            PrepareAudio: () => pinned.Pin(tracks));
+    }
+
+    /// <summary>Hands the music files pinned by PrepareAudio to the track producers. Without a
+    /// pin (a recorder that never calls PrepareAudio) each producer verifies its file itself.</summary>
+    private sealed class PinnedMusic
+    {
+        private CdMusicPin? _pin;
+
+        internal IDisposable Pin(IReadOnlyList<CdMusicTrackInfo> tracks)
+        {
+            CdMusicPin pin = CdMusicFile.PinUnchanged(tracks);
+            Volatile.Write(ref _pin, pin);
+            return pin;
+        }
+
+        internal void WritePaddedPcm(CdMusicTrackInfo track, Stream output, CancellationToken cancellationToken)
+        {
+            if (Volatile.Read(ref _pin) is { } pin) pin.WritePaddedPcm(track, output, cancellationToken);
+            else CdMusicFile.WritePaddedPcm(track, output, cancellationToken);
+        }
+    }
+
 }

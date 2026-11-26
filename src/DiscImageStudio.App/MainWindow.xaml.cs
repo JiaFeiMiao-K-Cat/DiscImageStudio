@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
@@ -59,6 +60,8 @@ public partial class MainWindow : Window
         _shell.Calibration.ShowPresetSaveDialog = () => PresetSaveWindow.Show(this);
         _shell.ProjectSaved += PlayProjectSaveTrail;
         DataContext = _shell;
+        NavSave.IsEnabled = _shell.SaveProjectCommand.CanExecute(null);
+        _shell.SaveProjectCommand.CanExecuteChanged += (_, _) => NavSave.IsEnabled = _shell.SaveProjectCommand.CanExecute(null);
 
         // Indexed by the Workspace enum, so navigation, the sidebar and the snapshot CLI all
         // share one ordering.
@@ -94,7 +97,11 @@ public partial class MainWindow : Window
         PageHost.Content = _pages[(int)Workspace.Home];
 
         PreviewKeyDown += MainWindow_PreviewKeyDown;
-        SourceInitialized += (_, _) => WindowCorners.Apply(this);
+        SourceInitialized += (_, _) =>
+        {
+            WindowCorners.Apply(this);
+            WindowCorners.EnableTransitions(new WindowInteropHelper(this).Handle);
+        };
         Loaded += MainWindow_Loaded;
         Closing += MainWindow_Closing;
         Closed += MainWindow_Closed;
@@ -140,6 +147,11 @@ public partial class MainWindow : Window
         ScrollViewer? scroller = FindOuterScrollViewer(PageHost);
         scroller?.ScrollToVerticalOffset(offset);
         UpdateLayout();
+    }
+
+    private void SaveProject_Activated(object sender, RoutedEventArgs args)
+    {
+        if (_shell.SaveProjectCommand.CanExecute(null)) _shell.SaveProjectCommand.Execute(null);
     }
 
     private static ScrollViewer? FindOuterScrollViewer(DependencyObject root)
@@ -578,7 +590,7 @@ public partial class MainWindow : Window
     /// changed. If the header is collapsed, the toast is the only readable surface left.</summary>
     private void PlayProjectUpdateCelebration()
     {
-        if (!_shell.IsProjectOpen || SidebarBorder.Visibility != Visibility.Visible
+        if (!Motion.Enabled || !_shell.IsProjectOpen || SidebarBorder.Visibility != Visibility.Visible
             || ProjectHeaderButton.Visibility != Visibility.Visible)
         {
             _shell.ShowToast(L.T("标定参数已应用"), L.T("本工程的参数已更新。"), ToastKind.Success);
@@ -596,7 +608,7 @@ public partial class MainWindow : Window
         ProjectUpdateShineTranslate.X = -band * 1.5;
         var sweep = new DoubleAnimation(-band * 1.5, width + band * 1.5, TimeSpan.FromMilliseconds(700))
         {
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut },
+            EasingFunction = Motion.EaseInOut,
         };
         sweep.Completed += (_, _) =>
         {
@@ -1028,13 +1040,6 @@ public partial class MainWindow : Window
 
     private static void PlayEntrance(UIElement page)
     {
-        TranslateTransform translate = new(0, 8);
-        page.RenderTransform = translate;
-        page.BeginAnimation(
-            OpacityProperty,
-            new DoubleAnimation(0, 1, Motion.Base) { EasingFunction = Motion.EaseOut });
-        translate.BeginAnimation(
-            TranslateTransform.YProperty,
-            new DoubleAnimation(8, 0, Motion.Base) { EasingFunction = Motion.EaseOut });
+        Motion.Enter(page);
     }
 }

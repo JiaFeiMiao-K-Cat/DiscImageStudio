@@ -47,7 +47,6 @@ public partial class SegmentedControl : UserControl
     // emphasis, one step slower so the thumb visibly travels the shared track.
     private static readonly Duration SlideDuration = Motion.Base;
     private static readonly Duration ColorDuration = Motion.Fast;
-    private static readonly IEasingFunction TransitionEase = Motion.EaseOut;
 
     private Color _selectedTextColor;
     private Color _hoverTextColor;
@@ -199,9 +198,7 @@ public partial class SegmentedControl : UserControl
             return;
         }
 
-        ThumbShift.BeginAnimation(
-            TranslateTransform.XProperty,
-            new DoubleAnimation(target, SlideDuration) { EasingFunction = TransitionEase });
+        Motion.Animate(ThumbShift, TranslateTransform.XProperty, target, SlideDuration);
     }
 
     private void UpdateLabelColors(bool animate = true)
@@ -214,16 +211,14 @@ public partial class SegmentedControl : UserControl
 
     private void AnimateColor(SolidColorBrush brush, Color target, bool animate)
     {
-        if (animate && Realized)
+        if (animate && Realized && Motion.Enabled)
         {
             if (brush.Color == target)
             {
                 return;
             }
 
-            brush.BeginAnimation(
-                SolidColorBrush.ColorProperty,
-                new ColorAnimation(target, ColorDuration) { EasingFunction = TransitionEase });
+            Motion.Animate(brush, target, ColorDuration);
         }
         else
         {

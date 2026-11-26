@@ -101,7 +101,7 @@ internal static class FileRegionPreviewOverlay
     {
         token.ThrowIfCancellationRequested();
         BitmapSource source;
-        using (FileStream input = File.OpenRead(path))
+        using (MemoryStream input = new(File.ReadAllBytes(path), writable: false))
         {
             BitmapDecoder decoder = BitmapDecoder.Create(input,
                 BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
@@ -146,10 +146,24 @@ internal static class FileRegionPreviewOverlay
         token.ThrowIfCancellationRequested();
         BitmapSource result = BitmapSource.Create(size, size, source.DpiX, source.DpiY,
             PixelFormats.Bgra32, null, pixels, stride);
-        PngBitmapEncoder encoder = new();
-        encoder.Frames.Add(BitmapFrame.Create(result));
-        using FileStream output = File.Create(path);
-        encoder.Save(output);
+        SavePreview(path, result, token);
+    }
+
+    private static void SavePreview(string path, BitmapSource result, CancellationToken token)
+    {
+        // WIC can keep a mapped view of an input PNG alive after its stream is closed.
+        // Decode from memory above and publish a complete PNG in a single rename.
+        string temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            PngBitmapEncoder encoder = new();
+            encoder.Frames.Add(BitmapFrame.Create(result));
+            using (FileStream output = new(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                encoder.Save(output);
+            token.ThrowIfCancellationRequested();
+            File.Move(temporary, path, overwrite: true);
+        }
+        finally { File.Delete(temporary); }
     }
 
     private static void ValidateRange(uint total, uint start, uint end)
@@ -164,7 +178,7 @@ internal static class FileRegionPreviewOverlay
     {
         token.ThrowIfCancellationRequested();
         BitmapSource source;
-        using (FileStream input = File.OpenRead(path))
+        using (MemoryStream input = new(File.ReadAllBytes(path), writable: false))
         {
             BitmapDecoder decoder = BitmapDecoder.Create(input,
                 BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
@@ -206,9 +220,6 @@ internal static class FileRegionPreviewOverlay
         token.ThrowIfCancellationRequested();
         BitmapSource result = BitmapSource.Create(size, size, source.DpiX, source.DpiY,
             PixelFormats.Bgra32, null, pixels, stride);
-        PngBitmapEncoder encoder = new();
-        encoder.Frames.Add(BitmapFrame.Create(result));
-        using FileStream output = File.Create(path);
-        encoder.Save(output);
+        SavePreview(path, result, token);
     }
 }

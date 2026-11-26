@@ -4,11 +4,11 @@
         xmlns:loc="clr-namespace:DiscImageStudio.Localization"
         xmlns:controls="clr-namespace:DiscImageStudio.Controls"
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
-        Title="Disc Image Studio"
-        Width="1240" Height="780" MinWidth="720" MinHeight="560"
+        Title="Disc Image Studio" Icon="{StaticResource AppIconSource}"
+        Width="1180" Height="720" MinWidth="720" MinHeight="560"
         WindowStartupLocation="CenterScreen"
-        WindowState="Maximized"
-        WindowStyle="None" ResizeMode="CanResize"
+        WindowState="Normal"
+        WindowStyle="SingleBorderWindow" ResizeMode="CanResize"
         Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource AppFontFamily}"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
@@ -20,14 +20,15 @@
     <!-- About lives inside the settings window as its third category, so the title bar's
          gear opens the settings dialog directly — no intermediate menu. -->
 
-    <Grid x:Name="RootGrid">
+    <Grid x:Name="RootGrid" Background="{DynamicResource BackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="32" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <controls:TitleBar Grid.Row="0" ProjectTitle="{Binding ProjectTitleDisplay}"
-                           ShowSettingsButton="True" SettingsRequested="Settings_Click" />
+                           ShowSettingsButton="True" SettingsRequested="Settings_Click"
+                           UseSystemWindowCommands="True" />
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -38,10 +39,10 @@
             <!-- Sidebar: the workspace switcher, visible exactly when a workspace shows (the
                  home start screen owns the whole window). -->
             <Border x:Name="SidebarBorder" Grid.Column="0" Width="{StaticResource SidebarWidth}"
-                    Background="{DynamicResource BackgroundBrush}"
+                    Background="{DynamicResource PaneSurfaceBrush}"
                     BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,1,0" ClipToBounds="True"
                     Visibility="Collapsed">
-                <Grid x:Name="SidebarGrid" Margin="24,0">
+                <Grid x:Name="SidebarGrid" Margin="16,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
@@ -67,12 +68,12 @@
                                         Padding="6,2"
                                         ToolTip="{loc:Text Xaml.ProjectSettings}"
                                         Click="EditProject_Click">
-                                    <StackPanel Margin="0,0,30,0">
+                                    <StackPanel>
                                         <TextBlock x:Name="ProjectNameText" FontSize="14" FontWeight="Bold"
                                                    TextTrimming="CharacterEllipsis"
                                                    Foreground="{DynamicResource TextPrimaryBrush}" />
                                         <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
-                                            <Border Padding="5,1" CornerRadius="5"
+                                            <Border Padding="5,1" CornerRadius="{StaticResource RadiusChip}"
                                                     Background="{DynamicResource Surface3Brush}">
                                                 <TextBlock x:Name="ProjectFamilyText"
                                                            Style="{StaticResource BadgeText}" />
@@ -88,7 +89,7 @@
                                      sweeps the project header once, while a short "parameters
                                      updated" tag fades in and out. Both are presentation only and
                                      never take hit testing from the project button. -->
-                                <Border x:Name="ProjectUpdateShine" CornerRadius="8" ClipToBounds="True"
+                                <Border x:Name="ProjectUpdateShine" CornerRadius="{StaticResource RadiusField}" ClipToBounds="True"
                                         IsHitTestVisible="False" Opacity="0">
                                     <Rectangle x:Name="ProjectUpdateShineBand" Width="96"
                                                HorizontalAlignment="Left">
@@ -131,22 +132,12 @@
                                      louder one. -->
                                 <controls:ProjectSaveTrail x:Name="ProjectSaveTrail"
                                                            Stroke="{DynamicResource SuccessBrush}"
-                                                           CornerRadius="8" />
-                                <!-- Save lives on the header itself, not only on Ctrl+S:
-                                     a flat floppy button at the right edge. Its transparent
-                                     rest surface matches the card; hover adds one overlay
-                                     step, so it brightens without breaking the card. -->
-                                <Button x:Name="SaveProjectButton" Style="{StaticResource HeaderActionButton}"
-                                        HorizontalAlignment="Right" VerticalAlignment="Center"
-                                        AutomationProperties.Name="{loc:Text Xaml.Save}"
-                                        ToolTip="{loc:Text Xaml.Save}" ToolTipService.InitialShowDelay="0"
-                                        Command="{Binding SaveProjectCommand}">
-                                    <iconPacks:PackIconLucide Kind="Save" Width="15" Height="15"
-                                                              Foreground="{DynamicResource TextSecondaryBrush}" />
-                                </Button>
+                                                           CornerRadius="2" />
                             </Grid>
                         </Grid>
 
+                        <controls:SideNavItem x:Name="NavSave" LabelText="{loc:Text Xaml.Save}" IconKind="Save"
+                                              AutomationProperties.AcceleratorKey="Ctrl+S" Activated="SaveProject_Activated" />
                         <!-- Nav groups: disc-making workspaces and the calibration pair.
                              The groups carry no numbers — the flow order is the visual
                              order. -->

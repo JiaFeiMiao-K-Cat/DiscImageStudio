@@ -85,14 +85,10 @@ public partial class HelpHint : UserControl
     {
         Color color = _hovered ? _activeColor : _idleColor;
         double opacity = _hovered ? 1 : 0;
-        if (animate)
+        if (animate && Motion.Enabled)
         {
-            _glyphBrush.BeginAnimation(
-                SolidColorBrush.ColorProperty,
-                new ColorAnimation(color, Motion.Fast) { EasingFunction = Motion.EaseOut });
-            HelpCircle.BeginAnimation(
-                OpacityProperty,
-                new DoubleAnimation(opacity, Motion.Fast) { EasingFunction = Motion.EaseOut });
+            Motion.Animate(_glyphBrush, color, Motion.Fast);
+            Motion.Fade(HelpCircle, opacity, Motion.Fast);
             return;
         }
 

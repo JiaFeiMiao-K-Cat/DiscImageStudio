@@ -136,6 +136,8 @@ public partial class ShellViewModel : ObservableObject
     /// <summary>Installed by the window; opens ProjectDialogWindow modally. Null cancels.</summary>
     internal Func<ProjectDialogRequest, ProjectDialogResult?>? ShowProjectDialogHandler { get; set; }
 
+    internal Func<ProjectDialogRequest, Task<ProjectDialogResult?>>? ShowProjectDialogAsyncHandler { get; set; }
+
     [ObservableProperty]
     private Workspace _currentWorkspace = Workspace.Home;
 
@@ -494,8 +496,9 @@ public partial class ShellViewModel : ObservableObject
             return;
         }
 
-        ProjectDialogResult? result = ShowProjectDialogHandler?.Invoke(
-            new ProjectDialogRequest(EditMode: false, preselectFamily, presetId));
+        ProjectDialogRequest request = new(EditMode: false, preselectFamily, presetId);
+        ProjectDialogResult? result = ShowProjectDialogAsyncHandler is { } show
+            ? await show(request) : ShowProjectDialogHandler?.Invoke(request);
         if (result is null)
         {
             return;
@@ -664,8 +667,9 @@ public partial class ShellViewModel : ObservableObject
             return;
         }
 
-        ProjectDialogResult? result = ShowProjectDialogHandler?.Invoke(
-            new ProjectDialogRequest(EditMode: true, PreselectFamily: CurrentProject!.Family));
+        ProjectDialogRequest request = new(EditMode: true, PreselectFamily: CurrentProject!.Family);
+        ProjectDialogResult? result = ShowProjectDialogAsyncHandler is { } show
+            ? await show(request) : ShowProjectDialogHandler?.Invoke(request);
         if (result is null)
         {
             return;
@@ -818,6 +822,18 @@ public partial class ShellViewModel : ObservableObject
         }
 
         return true;
+    }
+
+    internal bool IsCurrentProjectFile(string path) =>
+        IsProjectOpen && string.Equals(ProjectFilePath, path, StringComparison.OrdinalIgnoreCase);
+
+    internal void CloseDeletedProject(string path)
+    {
+        if (IsCurrentProjectFile(path))
+        {
+            CloseCurrentProject();
+            NavigateTo(Workspace.Home);
+        }
     }
 
     private void CloseCurrentProject()
@@ -1313,7 +1329,7 @@ public partial class ShellViewModel : ObservableObject
     {
         if (_burnProgressDisplay is null) return;
         string? diagnostic = _burnProgressDisplay.Apply(progress);
-        if (!cancellationRequested && progress.Stage is ("device" or "media" or "buffer" or "write" or "finalize"
+        if (!cancellationRequested && progress.Stage is ("device" or "media" or "buffer" or "write" or "reconnect" or "finalize"
             or "write-complete" or "verify" or "flush" or "close-track" or "close-disc" or "close-session"
             or "release"))
             JobStatusText = progress.Message;

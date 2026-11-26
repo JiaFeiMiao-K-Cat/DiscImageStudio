@@ -10,7 +10,16 @@ internal static class Program
     {
         if (arguments.Length == 0)
         {
-            return AppHost.Run();
+            try
+            {
+                using Services.SingleInstanceGuard? instance = Services.SingleInstanceGuard.TryAcquire();
+                if (instance is null) return 0;
+                return AppHost.Run();
+            }
+            catch (Exception error)
+            {
+                return Services.StartupFailure.Report(error);
+            }
         }
 
         AttachToParentConsole();

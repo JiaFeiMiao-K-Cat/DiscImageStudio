@@ -38,9 +38,13 @@ public partial class DriveInfoCard : UserControl
     /// loaded disc does not start mid-animation.</summary>
     private void ApplyDiscState(bool present, bool animated)
     {
+        double opacity = DiscHost.Visibility == Visibility.Visible ? DiscHost.Opacity : 0;
+        double offset = DiscRise.Y;
         DiscHost.BeginAnimation(OpacityProperty, null);
         DiscRise.BeginAnimation(TranslateTransform.YProperty, null);
-        if (!animated)
+        DiscHost.Opacity = opacity;
+        DiscRise.Y = offset;
+        if (!animated || !Motion.Enabled)
         {
             DiscHost.Visibility = present ? Visibility.Visible : Visibility.Collapsed;
             DiscHost.Opacity = present ? 1 : 0;
@@ -48,31 +52,13 @@ public partial class DriveInfoCard : UserControl
             return;
         }
 
-        if (present)
-        {
-            DiscHost.Visibility = Visibility.Visible;
-            DiscHost.Opacity = 0;
-            DiscRise.Y = RiseDistance;
-            DiscHost.BeginAnimation(OpacityProperty,
-                new DoubleAnimation(0, 1, Motion.Slow) { EasingFunction = Motion.EaseOut });
-            DiscRise.BeginAnimation(TranslateTransform.YProperty,
-                new DoubleAnimation(RiseDistance, 0, Motion.Slow) { EasingFunction = Motion.EaseOut });
-            return;
-        }
-
-        var fade = new DoubleAnimation(1, 0, Motion.Base) { EasingFunction = Motion.EaseOut };
-        fade.Completed += (_, _) =>
-        {
-            if (!HasDisc)
+        DiscHost.Visibility = Visibility.Visible;
+        Motion.Animate(DiscRise, TranslateTransform.YProperty, present ? 0 : RiseDistance,
+            present ? Motion.Slow : Motion.Exit, exiting: !present);
+        Motion.Fade(DiscHost, present ? 1 : 0, present ? Motion.Base : Motion.Exit,
+            exiting: !present, completed: () =>
             {
-                DiscHost.Visibility = Visibility.Collapsed;
-            }
-        };
-        DiscHost.BeginAnimation(OpacityProperty, fade);
-        DiscRise.BeginAnimation(TranslateTransform.YProperty,
-            new DoubleAnimation(0, RiseDistance, Motion.Base)
-            {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn },
+                if (!HasDisc) DiscHost.Visibility = Visibility.Collapsed;
             });
     }
 }

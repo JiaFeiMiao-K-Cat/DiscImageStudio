@@ -188,6 +188,7 @@ public sealed record CdExtraSessionStart(
 public sealed record CdExtraDataContent(long Sectors, Action<Stream, CancellationToken> Produce)
 {
     public const int SectorBytes = 2048;
+    public string? SavedImagePath { get; init; }
     public long ContentLength => checked(Sectors * SectorBytes);
 }
 
@@ -213,6 +214,7 @@ public sealed record CdExtraBurnRequest(
     bool TestWrite = false,
     Func<IDisposable>? PrepareAudio = null)
 {
+    internal string? RecoveryRoot { get; init; }
     public const int MaximumAudioTracks = 98;
     /// <summary>Run-out blocks the recorder writes behind every Track-at-Once track.</summary>
     public const int RunOutSectors = 2;
@@ -257,7 +259,10 @@ public sealed record CdExtraBurnResult(
     long DataBytesWritten,
     TimeSpan Elapsed,
     OpticalWriteSpeed? ActualWriteSpeed = null,
-    bool TestWrite = false);
+    bool TestWrite = false)
+{
+    public long VerifiedPictureSectors { get; init; }
+}
 
 public interface IOpticalDiscBurner
 {
@@ -290,6 +295,10 @@ public interface IOpticalDiscBurner
 /// out before a burn is prepared rather than from an exception while it runs.</summary>
 public interface ICdExtraBurner
 {
+    Task<long> ResumeCdExtraPictureAsync(string deviceId, string checkpointPath,
+        IProgress<OpticalBurnProgress>? progress = null, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("此设备后端不支持 CD Extra 图案续写。");
+
     /// <summary>Records a two-session CD-Extra disc; see <see cref="CdExtraBurnRequest"/>.</summary>
     Task<CdExtraBurnResult> BurnCdExtraAsync(
         CdExtraBurnRequest request,

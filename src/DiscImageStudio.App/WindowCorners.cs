@@ -4,13 +4,13 @@ using System.Windows.Interop;
 
 namespace DiscImageStudio;
 
-/// <summary>Win11 rounded corners for the app's borderless windows, which draw square corners
-/// on their own. One recipe for every window so a new dialog cannot drift into a square one;
-/// call from SourceInitialized, when the handle exists.</summary>
+/// <summary>Keep Windows 10 square window geometry on newer Windows as well. DWM still
+/// owns the native border, shadow and window transitions. Call once the handle exists.</summary>
 internal static class WindowCorners
 {
     private const int DwmWindowAttributeCornerPreference = 33;
-    private const int DwmWindowCornerPreferenceRound = 2;
+    private const int DwmWindowCornerPreferenceDoNotRound = 1;
+    private const int DwmWindowAttributeTransitionsForceDisabled = 3;
 
     internal static void Apply(Window window)
     {
@@ -25,10 +25,16 @@ internal static class WindowCorners
             return;
         }
 
-        int preference = DwmWindowCornerPreferenceRound;
+        int preference = DwmWindowCornerPreferenceDoNotRound;
         _ = DwmSetWindowAttribute(handle, DwmWindowAttributeCornerPreference, ref preference, sizeof(int));
     }
 
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+    internal static void EnableTransitions(IntPtr handle)
+    {
+        int forceDisabled = 0;
+        _ = DwmSetWindowAttribute(handle, DwmWindowAttributeTransitionsForceDisabled, ref forceDisabled, sizeof(int));
+    }
 }

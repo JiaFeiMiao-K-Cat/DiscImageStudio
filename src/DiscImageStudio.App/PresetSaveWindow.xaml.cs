@@ -8,7 +8,7 @@ namespace DiscImageStudio;
 /// catalog. The name is required; the geometry itself is described by the card, so there is
 /// no free-form note to fill in. This window validates nothing about the geometry — the
 /// caller parses it before opening here.</summary>
-public partial class PresetSaveWindow : Window
+public partial class PresetSaveWindow : TransitionWindow
 {
     public PresetSaveWindow()
     {
