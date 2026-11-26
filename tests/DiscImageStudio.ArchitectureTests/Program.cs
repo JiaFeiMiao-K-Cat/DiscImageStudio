@@ -389,7 +389,7 @@ static void RunStreamingGenerationTests()
 static void TestDiscPresets()
 {
     DiscPresetJsonDocument builtIn = DiscPresetJsonStore.LoadBuiltIn();
-    Equal(4, builtIn.CdPresets.Count, "built-in CD preset count");
+    Equal(5, builtIn.CdPresets.Count, "built-in CD preset count");
     Equal(11, builtIn.DvdPresets.Count, "built-in DVD preset count");
     Equal(6, builtIn.BluRayPresets!.Count, "built-in Blu-ray preset count");
     Equal("zh-CN", builtIn.FallbackLanguage!, "built-in preset fallback language");
@@ -468,6 +468,19 @@ static void TestDiscPresets()
     Equal(359_848L, verbatim.Sectors, "Verbatim AZO 43438 preset sectors");
     Equal(24.837775, verbatim.InnerRadiusMm, "Verbatim AZO 43438 inner radius");
     Equal(58.020875, verbatim.OuterRadiusMm, "Verbatim AZO 43438 outer radius");
+    CdDiscPresetDefinition verbatimCdRw = builtIn.CdPresets.Single(
+        value => value.Id == "verbatim-cd-rw-43480");
+    Equal(359_849L, verbatimCdRw.Sectors, "Verbatim CD-RW 43480 total sectors");
+    Equal(359_847L, verbatimCdRw.UsableSectors!.Value, "Verbatim CD-RW 43480 usable sectors");
+    Equal(24.848239635686063, verbatimCdRw.InnerRadiusMm, "Verbatim CD-RW 43480 inner radius");
+    Equal(58.04108441549514, verbatimCdRw.OuterRadiusMm, "Verbatim CD-RW 43480 outer radius");
+    Equal(1_200.0, verbatimCdRw.LinearVelocityMmPerSecond, "Verbatim CD-RW 43480 scanning speed");
+    Equal(-6.950098231109995E-06, verbatimCdRw.PitchLinear, "Verbatim CD-RW 43480 linear pitch");
+    Equal(-1.7729155165195826E-05, verbatimCdRw.PitchQuadratic, "Verbatim CD-RW 43480 quadratic pitch");
+    Equal(1.630320478970918E-05, verbatimCdRw.PitchCubic, "Verbatim CD-RW 43480 cubic pitch");
+    True(verbatimCdRw.Description.Contains("97m34s23f", StringComparison.Ordinal)
+        && verbatimCdRw.Description.Contains("31CA0203", StringComparison.Ordinal),
+        "Verbatim CD-RW 43480 preserves the measured disc's ATIP and ring code");
     DvdDiscPresetDefinition dvd120 = builtIn.DvdPresets.Single(
         value => value.Id == "dvd-5-120mm");
     True(
@@ -643,7 +656,7 @@ static void TestDiscPresetJson()
             "user preset JSON keeps the fixed speed and channel-bit fields");
 
         DiscPresetJsonDocument merged = DiscPresetJsonStore.Merge(builtIn, created);
-        Equal(5, merged.CdPresets.Count, "merged CD preset count");
+        Equal(6, merged.CdPresets.Count, "merged CD preset count");
         Equal(12, merged.DvdPresets.Count, "merged DVD preset count");
         Equal(7, merged.BluRayPresets!.Count, "merged Blu-ray preset count");
         DvdDiscPresetDefinition verbatim = merged.DvdPresets.Single(

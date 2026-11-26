@@ -1097,6 +1097,24 @@
     "es": "Parámetros medidos: radio interior 24,837775 mm, radio exterior 58,020875 mm, 359.848 sectores; velocidad de exploración 1200 mm/s. MID: 97m34s23f. Código del anillo: ZE6778-CDR-A80A AZO.",
     "cs": "Naměřené parametry: vnitřní poloměr 24,837775 mm, vnější poloměr 58,020875 mm, 359 848 sektorů; lineární rychlost 1200 mm/s. MID: 97m34s23f. Kód vnitřního prstence: ZE6778-CDR-A80A AZO."
   },
+  "威宝 CD-RW (43480)（实测）": {
+    "zh-CN": "威宝 CD-RW (43480)（实测）",
+    "en": "Verbatim CD-RW (43480) (measured)",
+    "zh-TW": "Verbatim CD-RW (43480)（實測）",
+    "ja": "Verbatim CD-RW (43480) (実測)",
+    "tr": "Verbatim CD-RW (43480) (ölçülen)",
+    "es": "Verbatim CD-RW (43480) (medido)",
+    "cs": "Verbatim CD-RW (43480) (měřeno)"
+  },
+  "实测参数为内半径 24.848240 mm、外半径 58.041084 mm，共 359,849 扇区，其中 359,847 扇区可写。采用三次轨距分布，ATIP 为 97m34s23f，圈码为 31CA0203。": {
+    "zh-CN": "实测参数为内半径 24.848240 mm、外半径 58.041084 mm，共 359,849 扇区，其中 359,847 扇区可写。采用三次轨距分布，ATIP 为 97m34s23f，圈码为 31CA0203。",
+    "en": "The measured inner radius is 24.848240 mm and the outer radius is 58.041084 mm. Of 359,849 sectors, 359,847 are writable. The preset uses a cubic track pitch distribution. The ATIP is 97m34s23f and the ring code is 31CA0203.",
+    "zh-TW": "實測參數為內半徑 24.848240 mm、外半徑 58.041084 mm，共 359,849 個磁區，其中 359,847 個磁區可寫入。採用三次軌距分布，ATIP 為 97m34s23f，圈碼為 31CA0203。",
+    "ja": "実測値は内半径 24.848240 mm、外半径 58.041084 mm です。全 359,849 セクターのうち、359,847 セクターが書き込み可能です。3 次のトラックピッチ分布を使用します。ATIP は 97m34s23f、リングコードは 31CA0203 です。",
+    "tr": "Ölçülen iç yarıçap 24,848240 mm, dış yarıçap 58,041084 mm’dir. Toplam 359.849 sektörün 359.847’si yazılabilir. Üçüncü dereceden iz aralığı dağılımı kullanılır. ATIP değeri 97m34s23f, halka kodu 31CA0203’tür.",
+    "es": "El radio interior medido es de 24,848240 mm y el exterior, de 58,041084 mm. De los 359.849 sectores, 359.847 se pueden escribir. El preajuste usa una distribución cúbica del paso de pista. El ATIP es 97m34s23f y el código del anillo es 31CA0203.",
+    "cs": "Naměřený vnitřní poloměr je 24,848240 mm a vnější poloměr 58,041084 mm. Z celkových 359 849 sektorů je 359 847 zapisovatelných. Používá se kubické rozložení rozteče stop. ATIP je 97m34s23f a kód vnitřního prstence je 31CA0203."
+  },
   "标准 74min CD": {
     "zh-CN": "标准 74min CD",
     "en": "Standard 74 min CD",
